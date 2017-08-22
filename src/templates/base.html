@@ -1,0 +1,20 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
+
+    <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>
+</head>
+<body>
+
+    {% block content %}
+    {% endblock %}
+
+</body>
+</html>
