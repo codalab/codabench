@@ -25,7 +25,7 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
-    'rest_framework_docs',
+    'rest_framework_swagger',
 )
 OUR_APPS = (
     'competitions',

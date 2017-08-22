@@ -9,6 +9,9 @@ from competitions.models import Competition
 
 # class CompetitionViewSet(ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin, GenericAPIView):
 # class CompetitionViewSet(APIView):
-class CompetitionViewSet(GenericViewSet):
+class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     serializer_class = serializers.CompetitionSerializer
+
+    def post(self, *args, **kwargs):
+        return super().post(*args, **kwargs)

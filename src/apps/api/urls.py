@@ -1,5 +1,6 @@
 from django.conf.urls import url, include
 from rest_framework import routers
+from rest_framework_swagger.views import get_swagger_view
 
 from . import views
 
@@ -13,5 +14,5 @@ urlpatterns = [
 
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    url(r'^docs/', include('rest_framework_docs.urls')),
+    url(r'^docs/', get_swagger_view(title='Codalab'))
 ]
