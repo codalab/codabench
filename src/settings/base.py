@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # =============================================================================
 # Django
 # =============================================================================
-# ALLOWED_HOSTS = ['*']
-# USE_X_FORWARDED_HOST = True
+ALLOWED_HOSTS = ['*']
+USE_X_FORWARDED_HOST = True
 
 SITE_ID = 1
 
