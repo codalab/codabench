@@ -1,5 +1,5 @@
 Django==1.11.4
 psycopg2==2.7.3
 whitenoise==3.3.0
-django-rest-framework==3.6.3
-rest_framework_swagger==2.1.2
+djangorestframework==3.6.3
+django-rest-swagger==2.1.2
