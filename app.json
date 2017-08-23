@@ -1,6 +1,7 @@
 {
   "name": "competitions-v2",
   "scripts": {
+    "postdeploy": "bin/init_staging"
   },
   "env": {
   },
