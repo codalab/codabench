@@ -7,6 +7,10 @@ from . import views
 
 router = routers.DefaultRouter()
 router.register(r'competitions', views.CompetitionViewSet)
+router.register(r'phases', views.PhaseViewSet)
+router.register(r'submissions', views.SubmissionViewSet)
+router.register(r'data', views.DataViewSet)
+router.register(r'data_groups', views.DataGroupViewSet)
 # router.register(r'groups', views.GroupViewSet)
 
 urlpatterns = [
