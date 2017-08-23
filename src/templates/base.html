@@ -138,54 +138,72 @@
         }
     </style>
 
-        <style>
-            .masthead {
-                position: relative;
-            }
+    <style>
+        .masthead {
+            position: relative;
+        }
+        #bg {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+    </style>
+{##}
+{#        <style>#}
+{#            .masthead {#}
+{#                position: relative;#}
+{#            }#}
+{##}
+{#            #bg {#}
+{#                position: absolute;#}
+{#                top: 0;#}
+{#                left: 0;#}
+{#                right: 0;#}
+{#                bottom: 0;#}
+{#            }#}
+{#            #bg svg {#}
+{#                background: #3ee671;#}
+{#                opacity: 0.35;#}
+{#            }#}
+{##}
+{#            @-webkit-keyframes fadeIt {#}
+{#              0%   { opacity: 0.8; }#}
+{#              50%  { opacity: 0.6; }#}
+{#              100% { opacity: 0.75; }#}
+{#            }#}
+{#            @-moz-keyframes fadeIt {#}
+{#              0%   { opacity: 0.8; }#}
+{#              50%  { opacity: 0.6; }#}
+{#              100% { opacity: 0.75; }#}
+{#            }#}
+{#            @-o-keyframes fadeIt {#}
+{#              0%   { opacity: 0.8; }#}
+{#              50%  { opacity: 0.6; }#}
+{#              100% { opacity: 0.75; }#}
+{#            }#}
+{#            @keyframes fadeIt {#}
+{#              0%   { opacity: 0.8; }#}
+{#              50%  { opacity: 0.6; }#}
+{#              100% { opacity: 0.75; }#}
+{#            }#}
+{##}
+{#            .backgroundAnimated{#}
+{#                background-image:none !important;#}
+{#                -webkit-animation: fadeIt 7s linear infinite;#}
+{#                   -moz-animation: fadeIt 7s linear infinite;#}
+{#                     -o-animation: fadeIt 7s linear infinite;#}
+{#                        animation: fadeIt 7s linear infinite;#}
+{#            }#}
+{#        </style>#}
 
-            #bg {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-            }
-            #bg svg {
-                background: #3ee671;
-                opacity: 0.35;
-            }
+{#        <script src="{% static "js/polygons.js" %}"></script>#}
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 
-            @-webkit-keyframes fadeIt {
-              0%   { opacity: 0.8; }
-              50%  { opacity: 0.6; }
-              100% { opacity: 0.75; }
-            }
-            @-moz-keyframes fadeIt {
-              0%   { opacity: 0.8; }
-              50%  { opacity: 0.6; }
-              100% { opacity: 0.75; }
-            }
-            @-o-keyframes fadeIt {
-              0%   { opacity: 0.8; }
-              50%  { opacity: 0.6; }
-              100% { opacity: 0.75; }
-            }
-            @keyframes fadeIt {
-              0%   { opacity: 0.8; }
-              50%  { opacity: 0.6; }
-              100% { opacity: 0.75; }
-            }
-
-            .backgroundAnimated{
-                background-image:none !important;
-                -webkit-animation: fadeIt 7s linear infinite;
-                   -moz-animation: fadeIt 7s linear infinite;
-                     -o-animation: fadeIt 7s linear infinite;
-                        animation: fadeIt 7s linear infinite;
-            }
-        </style>
-
-        <script src="{% static "js/polygons.js" %}"></script>
+    <script>
+        particlesJS.load('bg', "{% static "particles/header.json" %}")
+    </script>
 </head>
 <body>
 
