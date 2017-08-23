@@ -1,4 +1,6 @@
-var refreshDuration = 20000;
+var polygonElementId = '#bg'
+var pointStep = 1;
+var refreshDuration = 10000;
 var refreshTimeout;
 var unitSizer = 20;
 var numPointsX;
@@ -10,20 +12,23 @@ var points;
 function onLoad()
 {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', window.innerWidth);
-    svg.setAttribute('height', window.innerHeight);
-    document.querySelector('#bg').appendChild(svg);
+    var bg = document.querySelector(polygonElementId)
 
-    var unitSize = (window.innerWidth + window.innerHeight) / unitSizer;
-    numPointsX = Math.ceil(window.innerWidth / unitSize) + 1;
-    numPointsY = Math.ceil(window.innerHeight / unitSize) + 1;
-    unitWidth = Math.ceil(window.innerWidth / (numPointsX - 1));
-    unitHeight = Math.ceil(window.innerHeight / (numPointsY - 1));
+    svg.setAttribute('width', bg.clientWidth);
+    svg.setAttribute('height', bg.clientHeight);
+
+    bg.appendChild(svg);
+
+    var unitSize = (bg.clientWidth + bg.clientHeight) / unitSizer;
+    numPointsX = Math.ceil(bg.clientWidth / unitSize) + 1;
+    numPointsY = Math.ceil(bg.clientHeight / unitSize) + 1;
+    unitWidth = Math.ceil(bg.clientWidth / (numPointsX - 1));
+    unitHeight = Math.ceil(bg.clientHeight / (numPointsY - 1));
 
     points = [];
 
-    for(var y = 0; y < numPointsY; y++) {
-        for(var x = 0; x < numPointsX; x++) {
+    for(var y = 0; y < numPointsY; y += pointStep) {
+        for(var x = 0; x < numPointsX; x += pointStep) {
             points.push({x: unitWidth*x, y: unitHeight*y, originX: unitWidth*x, originY: unitHeight*y});
         }
     }
@@ -71,12 +76,18 @@ function onLoad()
                         polygon.setAttribute('points',bottomLeftX+','+bottomLeftY+' '+topRightX+','+topRightY+' '+bottomRightX+','+bottomRightY);
                     }
                 }
-                polygon.setAttribute('fill','rgba(0,0,0,'+(Math.random()/3)+')');
+                polygon.setAttribute('fill', 'rgba(0, 0, 0, '+ (Math.random() / 3) + ')')
+                // Make background opacity go up/down
+                polygon.setAttribute('class', 'backgroundAnimated')
+                // Make a random animation delay for each polygon, so they aren't syncing their fading
+                // and making a strange effect
+                polygon.setAttribute('style', 'animation-delay: ' + (Math.random() * 7) + ';')
+
                 var animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-                animate.setAttribute('fill', 'freeze');
                 animate.setAttribute('attributeName', 'points');
                 animate.setAttribute('dur', refreshDuration + 'ms');
                 animate.setAttribute('calcMode', 'linear');
+
                 polygon.appendChild(animate);
                 svg.appendChild(polygon);
             }
@@ -90,10 +101,10 @@ function onLoad()
 function randomize() {
     for(var i = 0; i < points.length; i++) {
         if(points[i].originX != 0 && points[i].originX != unitWidth*(numPointsX-1)) {
-            points[i].x = points[i].originX + Math.random()*unitWidth-unitWidth/2;
+            points[i].x = points[i].originX + Math.random()*unitWidth-unitWidth/2
         }
         if(points[i].originY != 0 && points[i].originY != unitHeight*(numPointsY-1)) {
-            points[i].y = points[i].originY + Math.random()*unitHeight-unitHeight/2;
+            points[i].y = points[i].originY + Math.random()*unitHeight-unitHeight/2
         }
     }
 }
@@ -101,22 +112,22 @@ function randomize() {
 function refresh() {
     randomize();
     for(var i = 0; i < document.querySelector('#bg svg').childNodes.length; i++) {
-        var polygon = document.querySelector('#bg svg').childNodes[i];
-        var animate = polygon.childNodes[0];
+        var polygon = document.querySelector('#bg svg').childNodes[i]
+        var animate = polygon.childNodes[0]
         if(animate.getAttribute('to')) {
-            animate.setAttribute('from',animate.getAttribute('to'));
+            animate.setAttribute('from',animate.getAttribute('to'))
         }
-        animate.setAttribute('to',points[polygon.point1].x+','+points[polygon.point1].y+' '+points[polygon.point2].x+','+points[polygon.point2].y+' '+points[polygon.point3].x+','+points[polygon.point3].y);
-        animate.beginElement();
+        animate.setAttribute('to',points[polygon.point1].x+','+points[polygon.point1].y+' '+points[polygon.point2].x+','+points[polygon.point2].y+' '+points[polygon.point3].x+','+points[polygon.point3].y)
+        animate.beginElement()
     }
-    refreshTimeout = setTimeout(function() {refresh();}, refreshDuration);
+    refreshTimeout = setTimeout(function() {refresh()}, refreshDuration)
 }
 
 function onResize() {
-    document.querySelector('#bg svg').remove();
-    clearTimeout(refreshTimeout);
-    onLoad();
+    document.querySelector('#bg svg').remove()
+    clearTimeout(refreshTimeout)
+    onLoad()
 }
 
-window.onload = onLoad;
-window.onresize = onResize;
+window.onload = onLoad
+window.onresize = onResize
