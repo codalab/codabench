@@ -3,3 +3,4 @@ psycopg2==2.7.3
 whitenoise==3.3.0
 djangorestframework==3.6.3
 django-rest-swagger==2.1.2
+waitress==1.0.2
