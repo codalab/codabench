@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<link rel="stylesheet" href="{% static "css/auth.css" %}">
+
+
+{% block content %}
+    <div style="margin-top: 20px;" class="ui middle aligned center aligned grid">
+        <div class="column">
+            <div class="ui error message">
+                You have been logged out.
+            </div>
+        </div>
+    </div>
+{% endblock %}

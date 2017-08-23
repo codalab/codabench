@@ -202,8 +202,13 @@
                 <a class="item">Chalab</a>
                 <a class="item">Chagrade</a>
                 <div class="right item">
-                    <a class="ui inverted button">Log in</a>
-                    <a class="ui inverted button">Sign Up</a>
+{#                    <a class="ui inverted button">Log in</a>#}
+                    {% if user.is_authenticated %}
+                        <a class="ui inverted button" href="{% url "logout" %}">Logout</a>
+                    {% else %}
+                        <a class="ui inverted button" href="{% url "login" %}">Login</a>
+                        <a class="ui inverted button">Sign Up</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -230,6 +235,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="ui text container">
+        {% block content %}
+        {% endblock %}
     </div>
 
     <div class="ui vertical stripe segment">

@@ -29,6 +29,8 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'social_django',
+    'django_extensions',
 )
 OUR_APPS = (
     'competitions',
@@ -66,6 +68,8 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -100,6 +104,25 @@ LOGIN_REDIRECT_URL = '/'
 
 # AUTH_USER_MODEL = 'profiles.User'
 
+# =============================================================================
+# Authentication
+# =============================================================================
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.github.GithubOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+# SOCIAL_AUTH_PIPELINE = (
+#     # We would define our custom pipeline here. We may be able to use the default for now.
+# )
+
+# Change me
+SOCIAL_AUTH_GITHUB_KEY = '1e34985fdb157c961b7c'
+SOCIAL_AUTH_GITHUB_SECRET = 'b5e4b0d8611a90609b47344773a42f73d2450b7a'
+# Default so Django Admin doesn't break on search.
+SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
+SOCIAL_AUTH_GITHUB_EXTRA_DATA = [('avatar_url', 'avatar_url')]
 
 # =============================================================================
 # Debugging
