@@ -7,3 +7,7 @@ class HomeView(TemplateView):
 
 class CompetitionListTestView(TemplateView):
     template_name = 'pages/competition_list.html'
+
+
+class CompetitionFormView(TemplateView):
+    template_name = 'competitions/form.html'

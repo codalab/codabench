@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 
 from settings.base import BundleStorage
-from utils.data import get_path_wrapper
+from utils.data import PathWrapper
 
 
 class Data(models.Model):
@@ -12,7 +12,7 @@ class Data(models.Model):
     type = models.CharField(max_length=64, default="")
     description = models.TextField(null=True, blank=True)
     data_file = models.FileField(
-        upload_to=get_path_wrapper('dataset_data_file'),
+        upload_to=PathWrapper('dataset_data_file'),
         storage=BundleStorage
     )
     key = models.UUIDField()

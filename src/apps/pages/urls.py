@@ -5,5 +5,6 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.HomeView.as_view(), name="home"),
+    url(r'^competition/create', views.CompetitionFormView.as_view(), name="competition_create"),
     url(r'test', views.CompetitionListTestView.as_view()),
 ]
