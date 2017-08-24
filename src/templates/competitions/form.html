@@ -10,7 +10,7 @@
                     <a class="item" data-tab="phases">Phases</a>
                     <a class="item" data-tab="leaderboard">Leaderboard</a>
                 </div>
-                <div class="ui bottom active tab " data-tab="competition_details">
+                <div class="ui bottom active tab" data-tab="competition_details">
                     <div class="ui form">
                         <div class="field required">
                             <label>Title</label>
@@ -18,21 +18,21 @@
                         </div>
 
                         <div class="two fields">
-                            <div class="ui calendar field required" id="example2">
+                            <div class="ui calendar field required">
                                 <label>Start</label>
                                 <div class="ui input left icon">
 
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date/Time">
+                                    <input type="text">
                                 </div>
                             </div>
 
-                            <div class="ui calendar field" id="example2">
+                            <div class="ui calendar field">
                                 <label>End</label>
                                 <div class="ui input left icon">
 
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date/Time">
+                                    <input type="text">
                                 </div>
                             </div>
                         </div>
@@ -47,16 +47,25 @@
                         {#                        </div>#}
                     </div>
                 </div>
-                <div class="ui bottom tab " data-tab="pages">
+                <div class="ui bottom tab" data-tab="pages">
                     asdf
                 </div>
-                <div class="ui bottom tab " data-tab="phases">
+                <div class="ui bottom tab" data-tab="phases">
                     Second
                 </div>
-                <div class="ui bottom tab " data-tab="leaderboard">
+                <div class="ui bottom tab" data-tab="leaderboard">
                     Third
                 </div>
             </div>
+        </div>
+
+        <div class="row centered">
+<button class="ui primary button disabled">
+  Save
+</button>
+<button class="ui button">
+  Discard
+</button>
         </div>
     </div>
 
@@ -543,7 +552,7 @@
     <script>
         $('.menu .item').tab()
 
-        $('#example2').calendar({
+        $('.calendar.field').calendar({
             type: 'date',
             popupOptions: {
                 position: 'bottom left',
