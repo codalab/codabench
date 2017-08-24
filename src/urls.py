@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     url(r'', include('pages.urls', namespace='pages')),
+    url(r'^registration/', include('user_auth.urls', namespace='user_auth')),
     # url(r'^business/', include('businesses.urls', namespace='businesses')),
 
     # Third party

@@ -5,9 +5,8 @@
     <div style="margin-top: 20px;" class="ui middle aligned center aligned grid">
         <div class="column">
             <h2 class="ui teal image header">
-                {#                <img src="assets/images/logo.png" class="image">#}
                 <div class="content">
-                    Log-in to your account
+                    Create an Account
                 </div>
             </h2>
             <form class="ui large form" method="POST">
@@ -21,14 +20,12 @@
                                 {% else %}
                                     <i class="write icon"></i>
                                 {% endif %}
-                                {# <input type="text" name="email" placeholder="E-mail address">#}
                                 {{ field }}
                             </div>
                         </div>
-                        {# <div class="ui fluid large teal submit button">Login</div>#}
                     </div>
                 {% endfor %}
-                <button class="ui fluid large teal submit button" type="submit">Login</button>
+                <button class="ui fluid large teal submit button" type="submit">Sign-Up</button>
                 <div class="ui error message">
                     {% for error in form.errors %}
                         {{ error }}
@@ -36,13 +33,11 @@
                 </div>
             </form>
             <div class="ui message">
-                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "github" %}">
+                <h4>Use Github?</h4>
+                <a class="ui green submit labeled icon button" href="{% url "social:begin" "github" %}">
                     <i class="github icon"></i>
                     Sign In With GitHub
                 </a>
-            </div>
-            <div class="ui message">
-                New to us? <a href="{% url "user_auth:signup" %}">Sign Up</a>
             </div>
         </div>
     </div>

@@ -1,14 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'registration/base.html' %}
 {% load static %}
-
-<link rel="stylesheet" href="{% static "css/auth.css" %}">
-
-
 {% block content %}
     <div style="margin-top: 20px;" class="ui middle aligned center aligned grid">
-        <div class="column">
-            <div class="ui error message">
-                You have been logged out.
+        <div align="center" class="column">
+            <div class="ui text">
+                <img style="margin-left: -45%;" src="{% static "img/codalab-logo-onecolor-reverse.png" %}">
+                <h1>Accelerating reproducible computational research.</h1>
+                <hr>
+            </div>
+            <div class="ui segment">
+                <div class="ui error message">
+                    You have been logged out.
+                </div>
+                <a href="{% url "pages:home" %}" class="ui fluid blue submit labeled icon button">
+                    <i class="home icon"></i>
+                    Return to Index
+                </a>
             </div>
         </div>
     </div>

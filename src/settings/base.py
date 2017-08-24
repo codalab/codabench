@@ -36,6 +36,7 @@ OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
+    'user_auth',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -113,9 +114,21 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# SOCIAL_AUTH_PIPELINE = (
-#     # We would define our custom pipeline here. We may be able to use the default for now.
-# )
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    # 'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+    'user_auth.pipeline.associate_existing_user',
+    # Update the user record with any changed info from the user_auth service.
+    # 'social_core.pipeline.user.user_details',
+    'user_auth.pipeline.user_details',
+)
 
 # Change me
 SOCIAL_AUTH_GITHUB_KEY = '1e34985fdb157c961b7c'
@@ -123,6 +136,8 @@ SOCIAL_AUTH_GITHUB_SECRET = 'b5e4b0d8611a90609b47344773a42f73d2450b7a'
 # Default so Django Admin doesn't break on search.
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 SOCIAL_AUTH_GITHUB_EXTRA_DATA = [('avatar_url', 'avatar_url')]
+AUTH_USER_MODEL = 'user_auth.User'
+SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
 
 # =============================================================================
 # Debugging
