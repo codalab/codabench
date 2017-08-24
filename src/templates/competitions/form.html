@@ -39,7 +39,7 @@
 
                         <div class="field required">
                             <label>Description</label>
-                            <textarea></textarea>
+                            <textarea class="markdown-editor"></textarea>
                         </div>
                         {#                        <div class="field">#}
                         {#                            <label>Short Text</label>#}
@@ -48,7 +48,12 @@
                     </div>
                 </div>
                 <div class="ui bottom tab" data-tab="pages">
-                    asdf
+                    <div class="ui form">
+                    <div class="field required">
+                            <label>Page</label>
+                            <textarea class="markdown-editor"></textarea>
+                        </div>
+                        </div>
                 </div>
                 <div class="ui bottom tab" data-tab="phases">
                     Second
@@ -559,6 +564,14 @@
                 lastResort: 'bottom left',
                 hideOnScroll: false
             }
+        })
+
+{#        var elements = document.querySelectorAll('.markdown-editor'),#}
+{#        editor = new MediumEditor(elements, {#}
+{#            toolbar: true#}
+{#        })#}
+        $('.markdown-editor').each(function(i, ele){
+            new SimpleMDE({element: ele});
         })
     </script>
 {% endblock %}
