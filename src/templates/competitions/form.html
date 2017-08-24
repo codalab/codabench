@@ -9,6 +9,7 @@
                     <a class="item" data-tab="pages">Pages</a>
                     <a class="item" data-tab="phases">Phases</a>
                     <a class="item" data-tab="leaderboard">Leaderboard</a>
+                    <a class="item" data-tab="collaborators">Collaborators</a>
                 </div>
                 <div class="ui bottom active tab" data-tab="competition_details">
                     <div class="ui form">
@@ -47,30 +48,42 @@
                         {#                        </div>#}
                     </div>
                 </div>
+
                 <div class="ui bottom tab" data-tab="pages">
                     <div class="ui form">
-                    <div class="field required">
+                        <div class="field required">
                             <label>Page</label>
                             <textarea class="markdown-editor"></textarea>
                         </div>
-                        </div>
+                    </div>
                 </div>
+
                 <div class="ui bottom tab" data-tab="phases">
                     Second
                 </div>
+
                 <div class="ui bottom tab" data-tab="leaderboard">
                     Third
+                </div>
+
+                <div class="ui bottom tab" data-tab="collaborators">
+                    <div class="ui form">
+                        <div class="field required">
+                            <label>Title</label>
+                            <input/>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="row centered">
-<button class="ui primary button disabled">
-  Save
-</button>
-<button class="ui button">
-  Discard
-</button>
+            <button class="ui primary button disabled">
+                Save
+            </button>
+            <button class="ui button">
+                Discard
+            </button>
         </div>
     </div>
 
@@ -566,11 +579,11 @@
             }
         })
 
-{#        var elements = document.querySelectorAll('.markdown-editor'),#}
-{#        editor = new MediumEditor(elements, {#}
-{#            toolbar: true#}
-{#        })#}
-        $('.markdown-editor').each(function(i, ele){
+        {#        var elements = document.querySelectorAll('.markdown-editor'),#}
+        {#        editor = new MediumEditor(elements, {#}
+        {#            toolbar: true#}
+        {#        })#}
+        $('.markdown-editor').each(function (i, ele) {
             new SimpleMDE({element: ele});
         })
     </script>
