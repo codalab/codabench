@@ -17,15 +17,21 @@
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
 
 
-
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 
 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
 
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <script src="{% static "js/calendar.min.js" %}"></script>
+
+
+
+
+    <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
 
 
     <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>
@@ -130,8 +136,7 @@
 
         /* Blue background on top */
         #header {
-{#            background: rgba(22, 12, 160, 0.9);#}
-            background: transparent;
+        {#            background: rgba(22, 12, 160, 0.9);#} background: transparent;
         }
 
         .ui.secondary.inverted.pointing.menu {
@@ -166,19 +171,20 @@
         .footer {
             margin-top: 20px !important;
         }
+
         #header {
             margin-bottom: 20px;
         }
 
         /* Force the footer to stretch all the way to the bottom of viewport */
         .pusher {
-          display: flex;
-          min-height: 100vh;
-          flex-direction: column;
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
         }
 
         .pusher > .footer {
-          flex: 1;
+            flex: 1;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
@@ -220,7 +226,8 @@
 
 <!-- Page Contents -->
 <div class="pusher">
-    <div id="header" class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
+    <div id="header" class="ui inverted vertical center aligned segment masthead
+        {% block top_div_extra_class %}{% endblock %}">
         <div id="bg"></div>
         <div class="ui container">
             <div class="ui large secondary inverted pointing menu">
@@ -341,30 +348,34 @@
             }
         })
 
-        
-          $(document)
-    .ready(function() {
 
-      // fix menu when passed
-      $('.masthead')
-        .visibility({
-          once: false,
-          onBottomPassed: function() {
-            $('.fixed.menu').transition('fade in');
-          },
-          onBottomPassedReverse: function() {
-            $('.fixed.menu').transition('fade out');
-          }
-        })
-      ;
+    $(document).ready(function () {
 
-      // create sidebar and attach to menu open
-      $('.ui.sidebar')
-        .sidebar('attach events', '.toc.item')
-      ;
+        // fix menu when passed
+        $('.masthead')
+            .visibility({
+                once: false,
+                onBottomPassed: function () {
+                    $('.fixed.menu').transition('fade in')
+                },
+                onBottomPassedReverse: function () {
+                    $('.fixed.menu').transition('fade out')
+                }
+            })
 
+        // create sidebar and attach to menu open
+        $('.ui.sidebar')
+            .sidebar('attach events', '.toc.item')
+
+        // Websocket listener
+        var ws_protocol = window.location.protocol == 'https:' ? 'wss' : 'ws'
+        var socket = new ReconnectingWebSocket(ws_protocol + '://' + window.location.host + '/')
+        socket.onmessage = function(e) {
+            toastr.success("Received msg: " + e.data)
+        }
+        window.socket = socket
     })
-  
+
 </script>
 
 </body>

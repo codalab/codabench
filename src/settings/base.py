@@ -29,11 +29,13 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'channels',
 )
 OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
+    'sockets',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -176,3 +178,14 @@ elif STORAGE_IS_AZURE:
 else:
     BundleStorage = StorageClass()
     PublicStorage = StorageClass()
+
+
+# =============================================================================
+# Storage
+# =============================================================================
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgiref.inmemory.ChannelLayer",
+        "ROUTING": "sockets.routing.channel_routing",
+    },
+}
