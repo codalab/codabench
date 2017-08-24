@@ -3,6 +3,7 @@
   "scripts": {
   },
   "env": {
+    "CHANNEL_BACKEND": "asgi_redis.RedisChannelLayer"
   },
   "formation": {
     "web": {
@@ -15,7 +16,8 @@
     }
   },
   "addons": [
-    "heroku-postgresql"
+    "heroku-postgresql",
+    "heroku-redis"
   ],
   "buildpacks": [
     {

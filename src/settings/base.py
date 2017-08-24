@@ -183,9 +183,18 @@ else:
 # =============================================================================
 # Storage
 # =============================================================================
+CHANNEL_BACKEND = os.environ.get('CHANNEL_BACKEND', "asgiref.inmemory.ChannelLayer")
+CHANNEL_CONFIG = {}
+
+if CHANNEL_BACKEND != "asgiref.inmemory.ChannelLayer":
+    # If we're not using debug backend, setup extra things for Redis
+    CHANNEL_CONFIG["hosts"] = (os.environ.get('REDIS_URL', 'redis://localhost:6379'),)
+
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "asgiref.inmemory.ChannelLayer",
+        "CONFIG": CHANNEL_CONFIG,
         "ROUTING": "sockets.routing.channel_routing",
     },
 }
