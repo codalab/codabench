@@ -193,7 +193,7 @@ if CHANNEL_BACKEND != "asgiref.inmemory.ChannelLayer":
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "asgiref.inmemory.ChannelLayer",
+        "BACKEND": CHANNEL_BACKEND,
         "CONFIG": CHANNEL_CONFIG,
         "ROUTING": "sockets.routing.channel_routing",
     },
