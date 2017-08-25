@@ -118,19 +118,27 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.user.get_username',
+    # 'social_core.pipeline.user.get_username',
+    'user_auth.pipeline.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
-    # 'social_core.pipeline.user.user_details',
+    'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
+    # If there already is an account with the given steamid, pass it on to the pipeline
     'user_auth.pipeline.associate_existing_user',
-    # Update the user record with any changed info from the user_auth service.
+    # The username for the account is always the steamid
+    # 'social_core.pipeline.user.get_username', # Function to get the username was changed
+    # Update the user record with any changed info from the auth service.
     # 'social_core.pipeline.user.user_details',
+    # Use a custom function for this, since the details are provided separately
     'user_auth.pipeline.user_details',
 )
 
 # Change me
+SOCIAL_AUTH_GITHUB_SCOPE = ['user']
+SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
+SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 SOCIAL_AUTH_GITHUB_KEY = '1e34985fdb157c961b7c'
 SOCIAL_AUTH_GITHUB_SECRET = 'b5e4b0d8611a90609b47344773a42f73d2450b7a'
 # Default so Django Admin doesn't break on search.

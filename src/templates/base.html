@@ -17,11 +17,8 @@
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
 
 
-
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-
 
 
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
@@ -130,8 +127,7 @@
 
         /* Blue background on top */
         #header {
-{#            background: rgba(22, 12, 160, 0.9);#}
-            background: transparent;
+        {#            background: rgba(22, 12, 160, 0.9);#} background: transparent;
         }
 
         .ui.secondary.inverted.pointing.menu {
@@ -166,19 +162,20 @@
         .footer {
             margin-top: 20px !important;
         }
+
         #header {
             margin-bottom: 20px;
         }
 
         /* Force the footer to stretch all the way to the bottom of viewport */
         .pusher {
-          display: flex;
-          min-height: 100vh;
-          flex-direction: column;
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
         }
 
         .pusher > .footer {
-          flex: 1;
+            flex: 1;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
@@ -197,12 +194,16 @@
         <a class="item">Chalab</a>
         <a class="item">Chagrade</a>
         <div class="right menu">
-            <div class="item">
-                <a class="ui button">Log in</a>
-            </div>
-            <div class="item">
-                <a class="ui primary button">Sign Up</a>
-            </div>
+            {% if user.is_authenticated %}
+                <div class="item">
+                    <a class="ui inverted button" href="{% url "logout" %}">Logout</a>
+                </div>
+            {% else %}
+                <div class="item">
+                    <a class="ui inverted button" href="{% url "login" %}">Login</a>
+                    <a class="ui inverted button">Sign Up</a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -213,14 +214,19 @@
     <a class="item">Chagle</a>
     <a class="item">Chalab</a>
     <a class="item">Chagrade</a>
-    <a class="item">Login</a>
-    <a class="item">Signup</a>
+    {% if user.is_authenticated %}
+        <a class="item" href="{% url "logout" %}">Logout</a>
+    {% else %}
+        <a class="item" href="{% url "login" %}">Login</a>
+        <a class="item">Sign Up</a>
+    {% endif %}
 </div>
 
 
 <!-- Page Contents -->
 <div class="pusher">
-    <div id="header" class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
+    <div id="header"
+         class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
         <div id="bg"></div>
         <div class="ui container">
             <div class="ui large secondary inverted pointing menu">
@@ -243,55 +249,13 @@
             </div>
         </div>
 
-        <div class="ui text container">
-            {#            <h1 class="ui inverted header">#}
-            {#                Codalab Competitions#}
-            {#            </h1>#}
-            <img src="{% static "img/codalab-logo-onecolor-reverse.png" %}" style="margin-left: -45px;">
-            <h2>Accelerating reproducible computational research.</h2>
-            {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
-        </div>
-
-        <div class="ui middle aligned stackable grid container">
-            <div class="row">
-                <div class="fourteen wide column centered">
-                    <div class="ui fluid category search">
-                        <div class="ui fluid icon input">
-                            <input class="prompt" type="text" placeholder="Search machine learning...">
-                            <i class="search icon"></i>
-                        </div>
-                        <div class="results fluid"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="ui vertical stripe segment">
-        <div class="ui middle aligned stackable grid container">
-            <div class="row">
-                <div class="eight wide column">
-                    <h3 class="ui header">Lorem ipsum</h3>
-                    <p> Sed a congue lacus. Vivamus eu urna turpis. Sed vel massa et enim blandit sagittis. Etiam non posuere eros, at pretium velit. Curabitur cursus elit nec dolor fringilla, vel sollicitudin libero eleifend. Maecenas sed ante scelerisque, tristique velit nec, gravida nibh.</p>
-                    <h3 class="ui header">Lorem ipsum</h3>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc non pretium libero, vel iaculis sapien.</p>
-                </div>
-                <div class="six wide right floated column">
-                    <img src="http://via.placeholder.com/350x150" class="ui large bordered rounded image">
-                </div>
-            </div>
-            <div class="row">
-                <div class="center aligned column">
-                    <a class="ui huge button">Check Them Out</a>
-                </div>
-            </div>
-        </div>
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
     {% block content %}
 
     {% endblock %}
+
 
     <div class="ui inverted vertical footer segment">
         <div class="ui container">
@@ -388,30 +352,30 @@
             }
         })
 
-        
-          $(document)
-    .ready(function() {
 
-      // fix menu when passed
-      $('.masthead')
-        .visibility({
-          once: false,
-          onBottomPassed: function() {
-            $('.fixed.menu').transition('fade in');
-          },
-          onBottomPassedReverse: function() {
-            $('.fixed.menu').transition('fade out');
-          }
+    $(document)
+        .ready(function () {
+
+            // fix menu when passed
+            $('.masthead')
+                .visibility({
+                    once: false,
+                    onBottomPassed: function () {
+                        $('.fixed.menu').transition('fade in');
+                    },
+                    onBottomPassedReverse: function () {
+                        $('.fixed.menu').transition('fade out');
+                    }
+                })
+            ;
+
+            // create sidebar and attach to menu open
+            $('.ui.sidebar')
+                .sidebar('attach events', '.toc.item')
+            ;
+
         })
-      ;
 
-      // create sidebar and attach to menu open
-      $('.ui.sidebar')
-        .sidebar('attach events', '.toc.item')
-      ;
-
-    })
-  
 </script>
 
 </body>
