@@ -16,7 +16,7 @@ router.register(r'data_groups', views.DataGroupViewSet)
 urlpatterns = [
     url(r'^', include(router.urls)),
 
-    url(r'^api-user_auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     url(r'^docs/', get_swagger_view(title='Codalab'))
 ]
