@@ -30,15 +30,10 @@ def user_details(user, details, strategy, *args, **kwargs):
             try:
                 response = kwargs.pop("response")
                 for attr in user_attrs:
-                    # print("Current attribute is {}".format(attr))
                     user_attr_value = getattr(user, attr, None)
                     github_attr_value = response[attr]
                     if not user_attr_value or attr not in protected:
-                        # print("Setting value: {0} of attribute: {1} on userid: {2}".format(
-                        #     github_attr_value,
-                        #     attr,
-                        #     user.pk,
-                        # ))
+
                         setattr(user, attr, github_attr_value)
                 setattr(user, 'uid', response['id'])
                 user.save()
