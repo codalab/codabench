@@ -51,12 +51,12 @@
 
                 <div class="ui bottom tab" data-tab="pages">
                     <button class="ui primary button modal-button" data-modal-id="page-modal">
-                        Create new page
+                        <i class="add circle icon"></i> Create new page
                     </button>
 
                     <div class="ui top vertical centered segment grid">
 
-                        <div class="ten wide column">
+                        <div class="five wide column">
 
                             <div class="ui one cards">
                                 <a class="green card">
@@ -70,7 +70,7 @@
                                             <i class="edit icon"></i>
                                             Edit
                                         </span>
-                                                    <span class="right floated star">
+                                        <span class="right floated star">
                                             <i class="delete icon"></i>
                                             Delete
                                         </span>
@@ -88,7 +88,7 @@
                                             <i class="edit icon"></i>
                                             Edit
                                         </span>
-                                                    <span class="right floated star">
+                                        <span class="right floated star">
                                             <i class="delete icon"></i>
                                             Delete
                                         </span>
@@ -106,13 +106,21 @@
                                             <i class="edit icon"></i>
                                             Edit
                                         </span>
-                                                    <span class="right floated star">
+                                        <span class="right floated star">
                                             <i class="delete icon"></i>
                                             Delete
                                         </span>
                                     </div>
                                 </a>
                             </div>
+                        </div>
+
+                        <div class="eleven wide column">
+                            <div class="ui text centered fluid">
+
+                            </div>
+
+                            <img src="https://semantic-ui.com/images/wireframe/paragraph.png">
                         </div>
                     </div>
 
@@ -139,12 +147,28 @@
                 </div>
 
                 <div class="ui bottom tab" data-tab="collaborators">
-                    <div class="ui form">
-                        <div class="field required">
-                            <label>Title</label>
-                            <input/>
-                        </div>
-                    </div>
+                    <button class="ui primary button modal-button" data-modal-id="collaborator-modal">
+                        <i class="add circle icon"></i> Add new collaborator
+                    </button>
+
+                    <h2>Collaborators</h2>
+                    <table class="ui celled table">
+                        <thead>
+                        <tr>
+
+                            <th>Name</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Eric Carmichael</td>
+                            <td class="right aligned collapsing">
+                                <button class="ui button red">Remove</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -192,6 +216,28 @@
         </div>
     </div>
 
+
+
+
+    <div id="collaborator-modal" class="ui mini modal">
+        <i class="close icon"></i>
+        <div class="header">
+            Edit collaborator
+        </div>
+        <div class="content">
+
+            <div class="ui form">
+                <div class="field required">
+                    <label>Collaborator email</label>
+                    <input/>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui button">Cancel</div>
+            <div class="ui button primary">Add</div>
+        </div>
+    </div>
 
 
 
