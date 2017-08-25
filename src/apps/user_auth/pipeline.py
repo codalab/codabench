@@ -2,7 +2,7 @@ from .models import User
 
 
 def get_username(strategy, uid, user=None, *args, **kwargs):
-    """Removes unnecessary slugification and cleaning of the username since the uid is unique and well formed"""
+    """If no user, set username to UID."""
     if not user:
         username = uid
     else:
@@ -44,7 +44,7 @@ def user_details(user, details, strategy, *args, **kwargs):
 
 
 def associate_existing_user(uid, *args, **kwargs):
-    """If there already is an user with the given steamid, hand it over to the pipeline"""
+    """If there already is an user with the given uid, hand it over to the pipeline"""
     if User.objects.filter(uid=uid).exists():
         print("User already found: {}".format(uid))
         return {
