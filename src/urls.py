@@ -11,7 +11,7 @@ urlpatterns = [
 
     # Third party
     url('^api/', include('api.urls')),
-    url('', include('social_django.urls', namespace='social')),
+    url('^social/', include('social_django.urls', namespace='social')),
 
     # Django built in
     url('^accounts/', include('django.contrib.auth.urls')),

@@ -38,27 +38,29 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'uid'
-    username = models.CharField(max_length=50, unique=True)
-    uid = models.CharField(max_length=30, unique=True)
-    login = models.CharField(max_length=50)
+    # Github user attributes.
+    uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
+    login = models.CharField(max_length=50, blank=True, null=True)
     avatar_url = models.CharField(max_length=100, null=True, blank=True)
     url = models.CharField(max_length=100, null=True, blank=True)
     html_url = models.CharField(max_length=100, null=True, blank=True)
     name = models.CharField(max_length=100, null=True, blank=True)
     company = models.CharField(max_length=100, null=True, blank=True)
     bio = models.CharField(max_length=300, null=True, blank=True)
-    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
-
+    # Any User Attributes
+    username = models.CharField(max_length=50, unique=True)
+    email = models.CharField(max_length=200, unique=True)
+    # Utillity Attributes
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    # Required
     objects = UserManager()
 
     def get_short_name(self):
-        return self.personaname
+        return self.name
 
     def get_full_name(self):
-        return self.personaname
-
+        return self.name
