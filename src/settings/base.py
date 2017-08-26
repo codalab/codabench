@@ -29,11 +29,13 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'channels',
 )
 OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
+    'sockets',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -176,3 +178,23 @@ elif STORAGE_IS_AZURE:
 else:
     BundleStorage = StorageClass()
     PublicStorage = StorageClass()
+
+
+# =============================================================================
+# Storage
+# =============================================================================
+CHANNEL_BACKEND = os.environ.get('CHANNEL_BACKEND', "asgiref.inmemory.ChannelLayer")
+CHANNEL_CONFIG = {}
+
+if CHANNEL_BACKEND != "asgiref.inmemory.ChannelLayer":
+    # If we're not using debug backend, setup extra things for Redis
+    CHANNEL_CONFIG["hosts"] = (os.environ.get('REDIS_URL', 'redis://localhost:6379'),)
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": CHANNEL_BACKEND,
+        "CONFIG": CHANNEL_CONFIG,
+        "ROUTING": "sockets.routing.channel_routing",
+    },
+}
