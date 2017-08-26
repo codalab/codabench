@@ -29,6 +29,8 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'oauth2_provider',
+    'corsheaders',
 )
 OUR_APPS = (
     'competitions',
@@ -37,7 +39,7 @@ OUR_APPS = (
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -47,6 +49,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -124,6 +127,14 @@ DATABASES = {
 # DRF
 # =============================================================================
 
+
+# =============================================================================
+# OAuth
+# =============================================================================
+CORS_ORIGIN_ALLOW_ALL = True
+
+if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
+    raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
 
 
 # =============================================================================

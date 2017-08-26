@@ -9,8 +9,9 @@ urlpatterns = [
 
     # Third party
     url('^api/', include('api.urls')),
+    url('^oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 
     # Django built in
     url('^accounts/', include('django.contrib.auth.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url('^admin/', include(admin.site.urls)),
 ]
