@@ -11,3 +11,7 @@ class CompetitionListTestView(TemplateView):
 
 class CompetitionFormView(TemplateView):
     template_name = 'competitions/form.html'
+
+
+class SearchView(TemplateView):
+    template_name = 'search/form.html'
