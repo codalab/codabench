@@ -1,6 +1,7 @@
 import os
 import sys
 
+import dj_database_url
 from django.core.files.storage import get_storage_class
 
 
@@ -112,6 +113,7 @@ DEBUG = os.environ.get('DEBUG', True)
 # =============================================================================
 # Database
 # =============================================================================
+# Default local setup
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -119,6 +121,10 @@ DATABASES = {
         'CONN_MAX_AGE': 500,
     }
 }
+
+# Overridden by env settings
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
 
 
 # =============================================================================
