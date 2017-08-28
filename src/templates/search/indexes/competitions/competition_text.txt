@@ -1,0 +1,3 @@
+{{ object.title }}
+{{ object.created_by.get_full_name }}
+{{ object.created_when }}
