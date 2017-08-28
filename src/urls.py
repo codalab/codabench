@@ -4,7 +4,8 @@ from django.contrib import admin
 
 
 urlpatterns = [
-    url(r'', include('pages.urls', namespace='pages')),
+    url('', include('pages.urls', namespace='pages')),
+    # url('r^search/', include('search.urls', namespace='search')),
     # url(r'^business/', include('businesses.urls', namespace='businesses')),
 
     # Third party
@@ -12,5 +13,5 @@ urlpatterns = [
 
     # Django built in
     url('^accounts/', include('django.contrib.auth.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url('^admin/', include(admin.site.urls)),
 ]

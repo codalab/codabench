@@ -1,6 +1,7 @@
 import os
 import sys
 
+import dj_database_url
 from django.core.files.storage import get_storage_class
 
 
@@ -29,6 +30,7 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'django_elasticsearch_dsl',
 )
 OUR_APPS = (
     'competitions',
@@ -111,6 +113,7 @@ DEBUG = os.environ.get('DEBUG', True)
 # =============================================================================
 # Database
 # =============================================================================
+# Default local setup
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -119,11 +122,24 @@ DATABASES = {
     }
 }
 
+# Overridden by env settings
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
 
 # =============================================================================
 # DRF
 # =============================================================================
 
+
+# =============================================================================
+# Search
+# =============================================================================
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': [os.environ.get('BONSAI_URL', 'localhost:9200')]
+    },
+}
 
 
 # =============================================================================
