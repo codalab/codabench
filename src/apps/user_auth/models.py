@@ -1,9 +1,31 @@
-from django import contrib
-from django.utils import timezone
-
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, BaseUserManager
 from django.db import models
+
+
+class UserManager(BaseUserManager):
+
+    def _create_user(self, uid, password, **extra_fields):
+        if not uid:
+            raise ValueError('The given uid must be set')
+        user = self.model(uid=uid, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, uid, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(uid, password, **extra_fields)
+
+    def create_superuser(self, uid, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuse=True.')
+        return self._create_user(uid, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -28,7 +50,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     # Required
-    objects = contrib.auth.models.UserManager
+    objects = UserManager()
 
     def get_short_name(self):
         return self.name
