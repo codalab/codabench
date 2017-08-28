@@ -14,7 +14,6 @@ def user_details(user, details, strategy, *args, **kwargs):
     """Update user details using data from provider."""
     if user:
         changed = False  # flag to track changes
-        protected = ('id', 'pk') + tuple(strategy.setting('PROTECTED_USER_FIELDS', []))
         user_attrs = [
             'avatar_url',
             'url',
@@ -30,8 +29,7 @@ def user_details(user, details, strategy, *args, **kwargs):
                 for attr in user_attrs:
                     user_attr_value = getattr(user, attr, None)
                     github_attr_value = response[attr]
-                    if not user_attr_value or attr not in protected:
-
+                    if not user_attr_value:
                         setattr(user, attr, github_attr_value)
                 # Set the ID github returns to UID on user.
                 setattr(user, 'uid', response['id'])
@@ -43,7 +41,7 @@ def user_details(user, details, strategy, *args, **kwargs):
 
 
 def associate_existing_user(uid, *args, **kwargs):
-    """If there already is an user with the given uid, hand it over to the pipeline"""
+    """If there already is a user with the given uid, hand it over to the pipeline"""
     if User.objects.filter(uid=uid).exists():
         print("User already found: {}".format(uid))
         return {
