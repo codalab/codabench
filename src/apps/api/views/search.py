@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 def query(request):
-    client = Elasticsearch()
+    client = Elasticsearch([settings.])
     s = Search(using=client)
 
     # Do filters

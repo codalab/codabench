@@ -137,7 +137,7 @@ DATABASES['default'].update(db_from_env)
 # =============================================================================
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': os.environ['BONSAI_URL']
+        'hosts': [os.environ.get('BONSAI_URL', 'localhost:9200')]
     },
 }
 
