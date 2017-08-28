@@ -29,7 +29,7 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
-    'haystack',
+    'django_elasticsearch_dsl',
 )
 OUR_APPS = (
     'competitions',
@@ -129,11 +129,9 @@ DATABASES = {
 # =============================================================================
 # Search
 # =============================================================================
-HAYSTACK_CONNECTIONS = {
+ELASTICSEARCH_DSL = {
     'default': {
-        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'haystack',
+        'hosts': 'localhost:9200'
     },
 }
 

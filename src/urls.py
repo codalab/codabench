@@ -9,7 +9,6 @@ urlpatterns = [
 
     # Third party
     url('^api/', include('api.urls')),
-    url('^haystack/', include('haystack.urls')),
 
     # Django built in
     url('^accounts/', include('django.contrib.auth.urls')),

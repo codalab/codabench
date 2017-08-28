@@ -4,4 +4,5 @@ whitenoise==3.3.0
 djangorestframework==3.6.3
 django-rest-swagger==2.1.2
 waitress==1.0.2
-django
+django-elasticsearch-dsl==0.2.0
+elasticsearch-dsl==5.3.0
