@@ -16,7 +16,6 @@ def user_details(user, details, strategy, *args, **kwargs):
         changed = False  # flag to track changes
         protected = ('id', 'pk') + tuple(strategy.setting('PROTECTED_USER_FIELDS', []))
         user_attrs = [
-            'login' ,
             'avatar_url',
             'url',
             'html_url',
