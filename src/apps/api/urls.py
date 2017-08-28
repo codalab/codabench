@@ -1,13 +1,13 @@
 from django.conf.urls import url, include
+from rest_framework.routers import SimpleRouter
 from rest_framework_swagger.views import get_swagger_view
 
 from . import views
-from .routers import HybridRouter
 
 from .views.search import query
 
 
-router = HybridRouter()
+router = SimpleRouter()
 router.register('competitions', views.CompetitionViewSet)
 router.register('phases', views.PhaseViewSet)
 router.register('submissions', views.SubmissionViewSet)
