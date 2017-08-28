@@ -25,7 +25,6 @@ def user_details(user, details, strategy, *args, **kwargs):
             'bio',
             'email',
         ]
-
         if kwargs:
             try:
                 response = kwargs.pop("response")
@@ -35,6 +34,7 @@ def user_details(user, details, strategy, *args, **kwargs):
                     if not user_attr_value or attr not in protected:
 
                         setattr(user, attr, github_attr_value)
+                # Set the ID github returns to UID on user.
                 setattr(user, 'uid', response['id'])
                 user.save()
             except AttributeError:

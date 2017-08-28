@@ -127,19 +127,21 @@ SOCIAL_AUTH_PIPELINE = (
     'user_auth.pipeline.associate_existing_user',
     'user_auth.pipeline.user_details',
 )
+# Enviroment
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 
-SOCIAL_AUTH_GITHUB_SCOPE = ['user']
+#Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
-# Change me
-SOCIAL_AUTH_GITHUB_KEY = '1e34985fdb157c961b7c'
-# Change me
-SOCIAL_AUTH_GITHUB_SECRET = 'b5e4b0d8611a90609b47344773a42f73d2450b7a'
-# Default so Django Admin doesn't break on search.
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
-SOCIAL_AUTH_GITHUB_EXTRA_DATA = [('avatar_url', 'avatar_url')]
+
+# User Models
 AUTH_USER_MODEL = 'user_auth.User'
 SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
+
+# Github extra
+SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # =============================================================================
 # Debugging
