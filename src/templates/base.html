@@ -27,8 +27,13 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <script src="{% static "js/calendar.min.js" %}"></script>
 
-
     <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>
+    <script src="{% static "riot/search.tag" %}" type="riot/tag"></script>
+
+
+    <script src="{% static "js/ours/utils.js" %}"></script>
+    <script src="{% static "js/ours/client.js" %}"></script>
+    <script src="{% static "js/ours/init.js" %}"></script>
 
 
     <style type="text/css">
@@ -278,6 +283,11 @@
 
 
 <script>
+    CODALAB.URLS = {
+        API: "/api/"
+    }
+
+
     $('.ui.search')
         .search({
             type: 'category',
@@ -364,7 +374,8 @@
       ;
 
     })
-  
+
+    riot.mount('*')
 </script>
 
 </body>

@@ -9,7 +9,7 @@ competitions.settings(
 
 
 @competitions.doc_type
-class CarDocument(DocType):
+class CompetitionDocument(DocType):
     class Meta:
         model = Competition
 

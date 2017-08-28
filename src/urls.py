@@ -5,6 +5,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url('', include('pages.urls', namespace='pages')),
+    # url('r^search/', include('search.urls', namespace='search')),
     # url(r'^business/', include('businesses.urls', namespace='businesses')),
 
     # Third party
