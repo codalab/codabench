@@ -1,3 +1,4 @@
+from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 def query(request):
-    client = Elasticsearch()
+    client = Elasticsearch(settings.ELASTICSEARCH_DSL['default']['hosts'])
     s = Search(using=client)
 
     # Do filters
