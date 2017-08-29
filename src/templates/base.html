@@ -9,24 +9,24 @@
     <title>Codalab Competitions</title>
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
+    <!-- JQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- Riot -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
 
-
+    <!-- Semantic -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.css">
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
 
-
-
-
+    <!-- Simple markdown editor -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 
-
-
+    <!-- Datepicker -->
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <script src="{% static "js/calendar.min.js" %}"></script>
 
+    <!-- Riot tags -->
     <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>
     <script src="{% static "riot/search.tag" %}" type="riot/tag"></script>
 
@@ -38,10 +38,6 @@
     <link rel="stylesheet" href="{% static "output.css" %}">
 
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-
-    <script>
-        particlesJS.load('bg', "{% static "particles/header.json" %}")
-    </script>
 </head>
 <body>
 
@@ -73,7 +69,6 @@
     <a class="item">Signup</a>
 </div>
 
-
 <!-- Page Contents -->
 <div class="pusher">
     <div id="header" class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
@@ -97,8 +92,8 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-    {% block content %}
 
+    {% block content %}
     {% endblock %}
 
 
@@ -132,102 +127,14 @@
     </div>
 </div>
 
-
 <script>
+    // Load in URLs or other django generated goodies
     CODALAB.URLS = {
+        assets: {
+            header_particles: "{% static "particles/header.json" %}"
+        },
         API: "/api/"
     }
-
-
-    $('.ui.search')
-        .search({
-            type: 'category',
-            minCharacters: 1,
-            apiSettings: {
-                onResponse: function (githubResponse) {
-                    var data = {
-                        results: {}
-                    }
-                    data["results"]["test"] = {
-                        name: "Submissions",
-                        results: [{
-                            title: "submission.zip",
-                            description: "By changing so and so I was able to double my score for liver segmentation, I think it has to do with blah blah blah",
-                            url: "http://"
-                        }, {
-                            title: "starting_kit.zip",
-                            description: "My starting kit submission for liver segmentation",
-                            url: "http://"
-                        }]
-                    }
-                    data["results"]["worksheets"] = {
-                        name: "Worksheets",
-                        results: [{
-                            title: "Liver segmentation example worksheet",
-                            description: "Step-by-step through a machine learning example for liver segmentation, with example data",
-                            url: "http://"
-                        }, {
-                            title: "Liver segmentation submission example",
-                            description: "You can tweak the code in this worksheet and at the end a valid submission zip is output",
-                            url: "http://"
-                        }]
-                    }
-                    {##}
-                    {#                                // translate GitHub API response to work with search#}
-                    {#                                $.each(githubResponse.items, function (index, item) {#}
-                    {#                                    var#}
-                    {#                                        language = item.language || 'Unknown',#}
-                    {#                                        maxResults = 8#}
-                    {##}
-                    {#                                    if (index >= maxResults) {#}
-                    {#                                        return false#}
-                    {#                                    }#}
-                    {#                                    // create new language category#}
-                    {#                                    if (response.results[language] === undefined) {#}
-                    {#                                        response.results[language] = {#}
-                    {#                                            name: language,#}
-                    {#                                            results: []#}
-                    {#                                        }#}
-                    {#                                    }#}
-                    {#                                    // add result to category#}
-                    {#                                    response.results[language].results.push({#}
-                    {#                                        title: item.name,#}
-                    {#                                        description: item.description,#}
-                    {#                                        url: item.html_url#}
-                    {#                                    })#}
-                    {#                                });#}
-                    return data;
-                },
-                url: '//api.github.com/search/repositories?q={query}'
-            }
-        })
-
-        
-          $(document)
-    .ready(function() {
-
-      // fix menu when passed
-      $('.masthead')
-        .visibility({
-          once: false,
-          onBottomPassed: function() {
-            $('.fixed.menu').transition('fade in');
-          },
-          onBottomPassedReverse: function() {
-            $('.fixed.menu').transition('fade out');
-          }
-        })
-      ;
-
-      // create sidebar and attach to menu open
-      $('.ui.sidebar')
-        .sidebar('attach events', '.toc.item')
-      ;
-
-    })
-
-    riot.mount('*')
 </script>
-
 </body>
 </html>
