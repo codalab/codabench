@@ -1,0 +1,45 @@
+{
+  "name": "competitions-v2",
+  "dependencies": {
+    "jquery": "^3.2.1",
+    "npm-watch": "^0.2.0",
+    "riot": "^3.6.3",
+    "stylus": "^0.54.5",
+    "uglify-js": "^3.0.28"
+  },
+  "devDependencies": {},
+  "watch": {
+    "build-stylus": {
+      "patterns": [
+        "src/static/stylus"
+      ],
+      "extensions": "styl",
+      "quiet": true,
+      "legacyWatch": true,
+      "delay": 100
+    },
+    "build-riot": {
+      "patterns": [
+        "src/static/riot"
+      ],
+      "extensions": "tag",
+      "quiet": true,
+      "legacyWatch": true,
+      "delay": 100
+    }
+  },
+  "scripts": {
+    "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/output.css",
+    "build-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/riot.tag",
+    "build-riot-js": "riot src/static/riot src/static/riot.js --style stylus"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codalab/competitions-v2.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/codalab/competitions-v2/issues"
+  },
+  "homepage": "https://github.com/codalab/competitions-v2#readme"
+}

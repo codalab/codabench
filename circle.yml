@@ -9,4 +9,6 @@ dependencies:
 test:
   override:
     - python manage.py test
-
+    # Check templates and such for style= attributes
+    - if [[ `grep -rnw src/templates/ -e 'style='` ]]; then (exit -1); fi
+    - if [[ `grep -rnw src/static/riot -e 'style='` ]]; then (exit -1); fi
