@@ -19,8 +19,10 @@ $(document).ready(function () {
 
 
     // create sidebar and attach to menu open
-    $('.ui.sidebar')
-        .sidebar('attach events', '.toc.item')
+    $('.ui.sidebar').sidebar('attach events', '.toc.item')
+
+    // dropdowns (nice non-select ones!)
+    $(".ui.dropdown").dropdown()
 })
 
 /*-----------------------------------------------------------------------------

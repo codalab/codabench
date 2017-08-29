@@ -3,6 +3,7 @@
   "dependencies": {
     "jquery": "^3.2.1",
     "npm-watch": "^0.2.0",
+    "riot": "^3.6.3",
     "stylus": "^0.54.5",
     "uglify-js": "^3.0.28"
   },
@@ -16,11 +17,22 @@
       "quiet": true,
       "legacyWatch": true,
       "delay": 100
+    },
+    "build-riot": {
+      "patterns": [
+        "src/static/riot"
+      ],
+      "extensions": "tag",
+      "quiet": true,
+      "legacyWatch": true,
+      "delay": 100
     }
   },
   "scripts": {
     "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/output.css",
-    "gather-riot": ""
+    "build-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/riot.tag",
+    "build-riot-js": "riot src/static/riot src/static/riot.js --style stylus"
+
   },
   "repository": {
     "type": "git",
