@@ -1,4 +1,9 @@
 <search>
+    suggestions:
+    <ul>
+        <li each="{ suggestions }">{ text } (score: { score })</li>
+    </ul>
+
     <div class="ui middle aligned stackable grid container">
         <div class="row centered">
             <div class="twelve wide column">
@@ -133,7 +138,10 @@
         self.search = function () {
             CODALAB.api.search(self.refs.search_field.value)
                 .done(function(data) {
-                    self.update({results: data})
+                    self.update({
+                        results: data.results,
+                        suggestions: data.suggestions
+                    })
                 })
         }
     </script>
