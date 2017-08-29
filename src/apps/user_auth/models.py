@@ -4,20 +4,20 @@ from django.db import models
 
 class UserManager(BaseUserManager):
 
-    def _create_user(self, username, uid, password, **extra_fields):
-        if not uid:
-            raise ValueError('The given uid must be set')
-        user = self.model(uid=uid, username=username, **extra_fields)
+    def _create_user(self, username, password, **extra_fields):
+        if not username:
+            raise ValueError('The given username must be set')
+        user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, username, uid, password=None, **extra_fields):
+    def create_user(self, username, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        return self._create_user(username, uid, password, **extra_fields)
+        return self._create_user(username, password, **extra_fields)
 
-    def create_superuser(self, username, uid, password, **extra_fields):
+    def create_superuser(self, username, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuse=True.')
-        return self._create_user(username, uid, password, **extra_fields)
+        return self._create_user(username, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -43,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
-    email = models.CharField(max_length=200, unique=True)
+    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
 
     # Utillity Attributes
     date_joined = models.DateTimeField(auto_now_add=True)
