@@ -6,38 +6,6 @@ from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserM
 from django.db import models
 
 
-# class UserManager(BaseUserManager):
-#     def _create_user(self, uid, password, **extra_fields):
-#         """
-#         Creates and saves a User with the given id and password,
-#         :param id:
-#         :param password:
-#         :param extra_fields:
-#         :return:
-#         """
-#         if not uid:
-#             raise ValueError('The given uid must be set')
-#         user = self.model(uid=uid, **extra_fields)
-#         user.set_password(password)
-#         user.save(using=self._db)
-#         return user
-#
-#     def create_user(self, uid, password=None, **extra_fields):
-#         extra_fields.setdefault('is_staff', False)
-#         extra_fields.setdefault('is_superuser', False)
-#         return self._create_user(uid, password, **extra_fields)
-#
-#     def create_superuser(self, uid, password, **extra_fields):
-#         extra_fields.setdefault('is_staff', True)
-#         extra_fields.setdefault('is_superuser', True)
-#
-#         if extra_fields.get('is_staff') is not True:
-#             raise ValueError("Superuser must have is_staff=True.")
-#         if extra_fields.get('is_superuser') is not True:
-#             raise ValueError('Superuser must have is_superuse=True.')
-#         return self._create_user(uid, password, **extra_fields)
-
-
 class User(AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
@@ -55,13 +23,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
-    email = models.CharField(max_length=200, unique=True)
+    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
 
     # Utillity Attributes
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    # Required
+
+    # Required for social auth and such to create users
     objects = UserManager()
 
     def get_short_name(self):
