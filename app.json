@@ -4,6 +4,7 @@
     "postdeploy": "bin/init_staging"
   },
   "env": {
+    "USE_SSL": "True"
   },
   "formation": {
   },
