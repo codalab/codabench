@@ -1,3 +1,5 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,23 +17,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.css">
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
 
-    <style type="text/css">
-        body {
-            background-color: #DADADA;
-        }
+    <!-- Compiled stylus -->
+    <link rel="stylesheet" href="{% static "output.css" %}">
 
-        body > .grid {
-            height: 100%;
-        }
-
-        .image {
-            margin-top: -100px;
-        }
-
-        .column {
-            max-width: 450px;
-        }
-    </style>
     <script>
         $(document)
             .ready(function () {
