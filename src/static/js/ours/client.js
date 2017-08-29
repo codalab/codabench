@@ -13,6 +13,6 @@ CODALAB.api = {
         })
     },
     search: function (query) {
-        return CODALAB.api.request('GET', CODALAB.URLS.API + "query/")
+        return CODALAB.api.request('GET', CODALAB.URLS.API + "query/?q=" + query)
     }
 }

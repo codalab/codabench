@@ -19,8 +19,8 @@
     }
   },
   "scripts": {
-    "build-stylus": "stylus src/static/stylus/*.styl -o src/static/output.css",
-    "gather-riot": "stylus src/static/stylus/*.styl -o src/static/output.css"
+    "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/output.css",
+    "gather-riot": ""
   },
   "repository": {
     "type": "git",
