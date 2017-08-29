@@ -6,205 +6,48 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
     <title>Codalab Competitions</title>
+
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
+    <!-- JQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- Riot -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
-
-
+    <!-- Semantic -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.css">
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
-
-
-
-
+    <!-- Simple markdown editor -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-
-
-
+    <!-- Datepicker -->
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <script src="{% static "js/calendar.min.js" %}"></script>
-
-    <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>
-    <script src="{% static "riot/search.tag" %}" type="riot/tag"></script>
-
-
+    <!-- Riot tags -->
+{#    <script src="{% static "riot.js" %}"></script>#}
+    <script src="{% static "riot.tag" %}" type="riot/tag"></script>
+    <!-- Our JS -->
     <script src="{% static "js/ours/utils.js" %}"></script>
     <script src="{% static "js/ours/client.js" %}"></script>
     <script src="{% static "js/ours/init.js" %}"></script>
-
-
-    <style type="text/css">
-        .hidden.menu {
-            display: none;
-        }
-
-        .jumbotron {
-            min-height: 700px;
-            padding: 1em 0em;
-        }
-
-
-        .masthead .ui.menu {
-            margin: 0;
-        }
-        .masthead .menu .toc.item {
-            display: none;
-        }
-        .masthead .logo.item img {
-            margin-right: 1em;
-        }
-
-        .masthead .ui.menu .ui.button {
-            margin-left: 0.5em;
-        }
-
-        .masthead h1.ui.header {
-            margin-top: 3em;
-            margin-bottom: 0em;
-            font-size: 4em;
-            font-weight: normal;
-        }
-
-        .masthead h2 {
-            font-size: 1.7em;
-            font-weight: normal;
-        }
-
-        .ui.vertical.stripe {
-            padding: 8em 0em;
-        }
-
-        .ui.vertical.stripe h3 {
-            font-size: 2em;
-        }
-
-        .ui.vertical.stripe .button + h3,
-        .ui.vertical.stripe p + h3 {
-            margin-top: 3em;
-        }
-
-        .ui.vertical.stripe .floated.image {
-            clear: both;
-        }
-
-        .ui.vertical.stripe p {
-            font-size: 1.33em;
-        }
-
-        .ui.vertical.stripe .horizontal.divider {
-            margin: 3em 0em;
-        }
-
-        .quote.stripe.segment {
-            padding: 0em;
-        }
-
-        .quote.stripe.segment .grid .column {
-            padding-top: 5em;
-            padding-bottom: 5em;
-        }
-
-        .footer.segment {
-            padding: 5em 0em;
-        }
-
-        .secondary.pointing.menu .toc.item {
-            display: none;
-        }
-
-        @media only screen and (max-width: 700px) {
-            .ui.fixed.menu {
-                display: none !important;
-            }
-
-            .secondary.pointing.menu .item,
-            .secondary.pointing.menu .menu {
-                display: none;
-            }
-
-            .secondary.pointing.menu .toc.item {
-                display: block;
-            }
-
-            .masthead h1.ui.header {
-                font-size: 2em;
-                margin-top: 1.5em;
-            }
-
-            .masthead h2 {
-                margin-top: 0.5em;
-                font-size: 1.5em;
-            }
-        }
-
-        /* Blue background on top */
-        #header {
-{#            background: rgba(22, 12, 160, 0.9);#}
-            background: transparent;
-        }
-
-        .ui.secondary.inverted.pointing.menu {
-            border: transparent;
-        }
-
-        /* Search */
-        .ui.search {
-            padding-top: 30px;
-        }
-
-        .result .content {
-            text-align: left;
-        }
-    </style>
-
-    <style>
-        .masthead {
-            position: relative;
-        }
-
-        #bg {
-            z-index: -1;
-            background: rgba(22, 12, 160, 0.9);
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-
-        .footer {
-            margin-top: 20px !important;
-        }
-        #header {
-            margin-bottom: 20px;
-        }
-
-        /* Force the footer to stretch all the way to the bottom of viewport */
-        .pusher {
-          display: flex;
-          min-height: 100vh;
-          flex-direction: column;
-        }
-
-        .pusher > .footer {
-          flex: 1;
-        }
-    </style>
+    <!-- Compiled stylus -->
+    <link rel="stylesheet" href="{% static "output.css" %}">
+    <!-- ParticlesJS -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 
-    <script>
-        particlesJS.load('bg', "{% static "particles/header.json" %}")
-    </script>
+
+    {% block extra_head %}
+    {% endblock %}
+
+  
 </head>
 <body>
 
 <!-- Following Menu -->
 <div class="ui large top fixed hidden menu">
     <div class="ui container">
-        <a href="{% url "pages:home" %}" class="active item">Competitions</a>
+        <a href="{% url "pages:home" %}" class="item">Competitions</a>
         <a class="item">Chagle</a>
         <a class="item">Chalab</a>
         <a class="item">Chagrade</a>
@@ -221,14 +64,13 @@
 
 <!-- Sidebar Menu -->
 <div class="ui vertical inverted sidebar menu">
-    <a href="{% url "pages:home" %}" class="active item">Competitions</a>
+    <a href="{% url "pages:home" %}" class="item">Competitions</a>
     <a class="item">Chagle</a>
     <a class="item">Chalab</a>
     <a class="item">Chagrade</a>
     <a class="item">Login</a>
     <a class="item">Signup</a>
 </div>
-
 
 <!-- Page Contents -->
 <div class="pusher">
@@ -239,7 +81,7 @@
                 <a class="toc item">
                     <i class="sidebar icon"></i>
                 </a>
-                <a href="{% url "pages:home" %}" class="active item">Competitions</a>
+                <a href="{% url "pages:home" %}" class="item">Competitions</a>
                 <a class="item">Chagle</a>
                 <a class="item">Chalab</a>
                 <a class="item">Chagrade</a>
@@ -253,8 +95,8 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-    {% block content %}
 
+    {% block content %}
     {% endblock %}
 
 
@@ -288,102 +130,20 @@
     </div>
 </div>
 
-
 <script>
-    CODALAB.URLS = {
+    // Load in URLs or other django generated goodies
+    URLS = {
+        assets: {
+            header_particles: "{% static "particles/header.json" %}"
+        },
         API: "/api/"
     }
-
-
-    $('.ui.search')
-        .search({
-            type: 'category',
-            minCharacters: 1,
-            apiSettings: {
-                onResponse: function (githubResponse) {
-                    var data = {
-                        results: {}
-                    }
-                    data["results"]["test"] = {
-                        name: "Submissions",
-                        results: [{
-                            title: "submission.zip",
-                            description: "By changing so and so I was able to double my score for liver segmentation, I think it has to do with blah blah blah",
-                            url: "http://"
-                        }, {
-                            title: "starting_kit.zip",
-                            description: "My starting kit submission for liver segmentation",
-                            url: "http://"
-                        }]
-                    }
-                    data["results"]["worksheets"] = {
-                        name: "Worksheets",
-                        results: [{
-                            title: "Liver segmentation example worksheet",
-                            description: "Step-by-step through a machine learning example for liver segmentation, with example data",
-                            url: "http://"
-                        }, {
-                            title: "Liver segmentation submission example",
-                            description: "You can tweak the code in this worksheet and at the end a valid submission zip is output",
-                            url: "http://"
-                        }]
-                    }
-                    {##}
-                    {#                                // translate GitHub API response to work with search#}
-                    {#                                $.each(githubResponse.items, function (index, item) {#}
-                    {#                                    var#}
-                    {#                                        language = item.language || 'Unknown',#}
-                    {#                                        maxResults = 8#}
-                    {##}
-                    {#                                    if (index >= maxResults) {#}
-                    {#                                        return false#}
-                    {#                                    }#}
-                    {#                                    // create new language category#}
-                    {#                                    if (response.results[language] === undefined) {#}
-                    {#                                        response.results[language] = {#}
-                    {#                                            name: language,#}
-                    {#                                            results: []#}
-                    {#                                        }#}
-                    {#                                    }#}
-                    {#                                    // add result to category#}
-                    {#                                    response.results[language].results.push({#}
-                    {#                                        title: item.name,#}
-                    {#                                        description: item.description,#}
-                    {#                                        url: item.html_url#}
-                    {#                                    })#}
-                    {#                                });#}
-                    return data;
-                },
-                url: '//api.github.com/search/repositories?q={query}'
-            }
-        })
-
-        
-          $(document)
-    .ready(function() {
-
-      // fix menu when passed
-      $('.masthead')
-        .visibility({
-          once: false,
-          onBottomPassed: function() {
-            $('.fixed.menu').transition('fade in');
-          },
-          onBottomPassedReverse: function() {
-            $('.fixed.menu').transition('fade out');
-          }
-        })
-      ;
-
-      // create sidebar and attach to menu open
-      $('.ui.sidebar')
-        .sidebar('attach events', '.toc.item')
-      ;
-
-    })
-
-    riot.mount('*')
 </script>
+
+
+{% block extra_body %}
+{% endblock %}
+
 
 </body>
 </html>
