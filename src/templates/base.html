@@ -25,8 +25,6 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <script src="{% static "js/calendar.min.js" %}"></script>
     <!-- Riot tags -->
-{#    <script src="{% static "riot/competition_list.tag" %}" type="riot/tag"></script>#}
-{#    <script src="{% static "riot/search.tag" %}" type="riot/tag"></script>#}
 {#    <script src="{% static "riot.js" %}"></script>#}
     <script src="{% static "riot.tag" %}" type="riot/tag"></script>
     <!-- Our JS -->
@@ -134,7 +132,7 @@
 
 <script>
     // Load in URLs or other django generated goodies
-    CODALAB.URLS = {
+    URLS = {
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },

@@ -3,7 +3,7 @@
  */
 $(document).ready(function () {
     // header particles
-    particlesJS.load('bg', CODALAB.URLS.assets.header_particles)
+    particlesJS.load('bg', URLS.assets.header_particles)
 
     // fix menu when passed
     $('.masthead')
