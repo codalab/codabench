@@ -8,18 +8,33 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 def query(request):
+    if 'q' not in request.GET:
+        return Response()
+
     client = Elasticsearch(settings.ELASTICSEARCH_DSL['default']['hosts'])
     s = Search(using=client)
 
+    # Do keyword search
+    s = s.query("match_phrase_prefix", title=request.GET['q'])
+    s = s.highlight('title', fragment_size=50)
+    s = s.suggest('suggestions', request.GET['q'], term={'field': 'title'})
+    # s = s.slop(1)
+
     # Do filters
-    if 'q' in request.GET:
-        s = s.query("match", title=request.GET['q'])
+    # ...
 
     # Get results
     results = s.execute()
-    data = []
+
+    data = {
+        "results": [],
+        "suggestions": []
+    }
+
     for result in results:
-        # print(result)
-        data.append({key: result[key] for key in result})
+        data["results"].append({key: result[key] for key in result})
+
+    if 'suggest' in results:
+        data["suggestions"] = [s.to_dict() for s in results.suggest['suggestions'][0].options]
 
     return Response(data)
