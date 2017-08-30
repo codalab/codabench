@@ -1,0 +1,22 @@
+{% extends 'base_simple.html' %}
+{% load static %}
+{% block content %}
+    <div class="ui middle aligned center aligned grid registration_top_padding">
+        <div align="center" class="column">
+            <div class="ui text">
+                <img class="registration_logo_margin" src="{% static "img/codalab-logo-onecolor-reverse.png" %}">
+                <h1>Accelerating reproducible computational research.</h1>
+                <hr>
+            </div>
+            <div class="ui segment">
+                <div class="ui error message">
+                    You have been logged out.
+                </div>
+                <a href="{% url "pages:home" %}" class="ui fluid blue submit labeled icon button">
+                    <i class="home icon"></i>
+                    Return to Index
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
