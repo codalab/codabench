@@ -1,10 +1,5 @@
 <search>
-    suggestions:
-    <ul>
-        <li each="{ suggestions }">{ text } (score: { score })</li>
-    </ul>
-
-    <div class="ui middle aligned stackable grid container">
+    <div class="ui stackable grid container">
         <div class="row centered">
             <div class="twelve wide column">
                 <div class="ui form">
@@ -82,18 +77,36 @@
                     </div>
                 </div>
 
-                <div class="ui">
+                <div ref="search_wrapper" class="ui fluid search focus">
                     <div class="ui icon input fluid">
-                        <input ref="search_field" class="prompt" type="text" placeholder="Keywords" oninput="{ input_updated }">
+                        <!--<input ref="search_field" class="prompt" type="text" placeholder="Keywords" oninput="{ input_updated }">-->
+                        <input ref="search_field" class="prompt" type="text" placeholder="Keywords"">
                         <i class="search icon"></i>
                     </div>
+                    <!--<div class="results transition {visible: !!suggestions && suggestions.length > 0}">
+                        <a class="result" each="{ suggestions }">
+                            <div class="content">
+                                <div class="title">{ text } (score: { score })</div>
+                            </div>
+                        </a>
+                    </div>-->
+
+                    <!--<div ref="search_wrapper" class="ui fluid multiple search selection dropdown exclude-from-init">
+                        <input type="hidden" name="country" value="kp">
+                        <i class="search icon"></i>
+                        <input ref="search_field" class="search" oninput="{ input_updated }">
+                        <div class="default text">Search...</div>
+                        <div class="menu">
+                            <div class="item" each="{ suggestions }">{ text } (score: { score })</div>
+                        </div>
+                    </div>-->
                 </div>
             </div>
         </div>
 
-        <div class="row centered">
+        <div id="results_container" class="row centered">
             <div class="twelve wide column">
-                <div class="ui divided items">
+                <div class="ui divided stacked items">
                     <search-result each="{ results }"></search-result>
                 </div>
             </div>
@@ -125,8 +138,45 @@
     <script>
         var self = this
 
-        self.on('mount', function(){
-            console.log(self)
+        self.on('mount', function () {
+            /*$(self.refs.search_wrapper).dropdown({
+
+
+             on results do
+
+
+             onNoResults: function(search) {}
+             })*/
+            $(self.refs.search_wrapper).search({
+                apiSettings: {
+                    url: URLS.API + "query/?q={query}",
+                    onResponse: function (data) {
+                        // Let riotJS stuff know about updates
+                        self.update({
+                            results: data.results,
+                            suggestions: data.suggestions
+                        })
+
+                        // Handle SemanticUI stuff
+                        var response = {
+                            results: []
+                        };
+                        $.each(data.suggestions, function (index, item) {
+                            response.results.push({
+                                title: item.text
+                                //description: item.score
+                                //url: item.html_url
+                            });
+                        });
+                        return response;
+                    }
+                },
+                cache: false,  // Disabling cache makes results work properly
+                showNoResults: false,
+                minCharacters: 2,
+                duration: 300,
+                transition: 'slide down'
+            });
         })
 
         self.input_updated = function () {
@@ -135,19 +185,22 @@
             }, 100)
         }
 
+        /*
+         Just using semantic search instead.... for now...
         self.search = function () {
             CODALAB.api.search(self.refs.search_field.value)
-                .done(function(data) {
+                .done(function (data) {
                     self.update({
                         results: data.results,
                         suggestions: data.suggestions
                     })
                 })
-        }
+        }*/
     </script>
 
-    <style>
-
+    <style type="text/stylus">
+        #results_container
+            min-height 375px
     </style>
 </search>
 
@@ -158,10 +211,11 @@
     <div class="content">
         <a class="header">{ title }</a>
         <div class="meta">
-            <!--<span class="cinema">IFC</span>-->
+            <span class="price">$1200</span>
+            <span class="stay">1 Month</span>
         </div>
         <div class="description">
-            <p>{ description }</p>
+            <p>Blah blah lorem ipsum dolor sit amet, description about a competition.</p>
         </div>
         <div class="extra">
             <div class="ui right floated primary button">

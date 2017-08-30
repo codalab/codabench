@@ -1,7 +1,7 @@
-/*-----------------------------------------------------------------------------
- Load in template niceties
- */
 $(document).ready(function () {
+    /*-----------------------------------------------------------------------------
+     Template niceties
+     */
     // header particles
     particlesJS.load('bg', URLS.assets.header_particles)
 
@@ -22,10 +22,11 @@ $(document).ready(function () {
     $('.ui.sidebar').sidebar('attach events', '.toc.item')
 
     // dropdowns (nice non-select ones!)
-    $(".ui.dropdown").dropdown()
-})
+    $(".ui.dropdown:not(.exclude-from-init)").dropdown()
 
-/*-----------------------------------------------------------------------------
- Mount all riotjs components
- */
-riot.mount('*')
+
+    /*-----------------------------------------------------------------------------
+     Riotjs
+     */
+    riot.mount('*')
+})
