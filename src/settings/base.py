@@ -199,7 +199,7 @@ if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
 # =============================================================================
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': [os.environ.get('BONSAI_URL', 'localhost:9200')]
+        'hosts': [os.environ.get('SEARCHBOX_SSL_URL', 'localhost:9200')]
     },
 }
 

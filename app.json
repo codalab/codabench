@@ -10,7 +10,7 @@
   },
   "addons": [
     "heroku-postgresql",
-    "bonsai:sandbox-10"
+    "searchbox:starter"
   ],
   "buildpacks": [
     {
