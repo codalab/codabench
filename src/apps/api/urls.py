@@ -23,5 +23,6 @@ urlpatterns = [
 
     url('^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    url('^docs/', get_swagger_view(title='Codalab'))
+    # url('^docs/', get_swagger_view(title='Codalab'))
+    url(r'^docs/', include('rest_framework_docs.urls')),
 ]

@@ -28,7 +28,8 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
-    'rest_framework_swagger',
+    # 'rest_framework_swagger',
+    'rest_framework_docs',
     'whitenoise',
     'django_elasticsearch_dsl',
 )
@@ -130,6 +131,14 @@ DATABASES['default'].update(db_from_env)
 # =============================================================================
 # DRF
 # =============================================================================
+
+# Docs
+SWAGGER_SETTINGS = {
+    "SUPPORTED_SUBMIT_METHODS": ('get', 'post', 'delete'),
+    'USE_SESSION_AUTH': True,
+    'DOC_EXPANSION': 'list',
+    'APIS_SORTER': 'method',
+}
 
 
 # =============================================================================
