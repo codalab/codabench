@@ -116,7 +116,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'utils.auth_backends.CodalabOAuth2',
+    'utils.oauth_backends.CodalabOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -133,9 +133,15 @@ SOCIAL_AUTH_PIPELINE = (
     'user_auth.pipeline.associate_existing_user',
     'user_auth.pipeline.user_details',
 )
-# Environment
+
+# Github
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
+SOCIAL_AUTH_GITHUB_SCOPE = ['user']
+
+# Codalab TODO REMOVE THIS!
+SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'uPeSyEGE8auV27EfZ7fLZs44DjZtIiLBCId7apgp')
+SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'dk70ivsuhFMM3uC0iwh91xitMjj8flZMHWPO021TG6VpjJTlYlZkPmxrQHkRg02U2S46sfO74EiHTnhrJl9ZhOU19TLxpBu5s5xQ2sD8TP2GUJdxWTvMI05bCfEeApgY')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -146,8 +152,6 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 AUTH_USER_MODEL = 'user_auth.User'
 SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
 
-# Github extra
-SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # =============================================================================
 # Debugging
