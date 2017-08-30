@@ -22,7 +22,7 @@ $(document).ready(function () {
     $('.ui.sidebar').sidebar('attach events', '.toc.item')
 
     // dropdowns (nice non-select ones!)
-    $(".ui.dropdown:not(.exclude-from-init)").dropdown()
+    $(".ui.dropdown").dropdown()
 
 
     /*-----------------------------------------------------------------------------

@@ -5,7 +5,7 @@
                 <div class="ui form">
                     <div class="inline fields">
                         <div class="field">
-                            <div class="ui floating labeled icon dropdown button">
+                            <div id="time-range" class="ui floating labeled icon dropdown button">
                                 <i class="filter icon"></i>
                                 <span class="text">Any time</span>
                                 <div class="menu">
@@ -13,27 +13,27 @@
                                         Timeframe
                                     </div>
                                     <div class="divider"></div>
-                                    <div class="item">
+                                    <div class="item" data-value="active">
                                         Active
                                     </div>
-                                    <div class="item">
+                                    <div class="item" data-value="past_month">
                                         Started past month
                                     </div>
-                                    <div class="item">
+                                    <div class="item" data-value="past_year">
                                         Started past year
                                     </div>
                                     <div class="divider"></div>
                                     <div class="header">
                                         Date range
                                     </div>
-                                    <div class="ui left icon input">
-                                        <i class="calendar icon"></i>
-                                        <input type="text" name="search" placeholder="Start date">
-                                    </div>
-                                    <div class="ui left icon input">
-                                        <i class="calendar icon"></i>
-                                        <input type="text" name="search" placeholder="End date">
-                                    </div>
+                                        <div class="ui left icon input datepicker">
+                                            <i class="calendar icon"></i>
+                                            <input type="text" name="search" placeholder="Start date">
+                                        </div>
+                                        <div class="ui left icon input datepicker">
+                                            <i class="calendar icon"></i>
+                                            <input type="text" name="search" placeholder="End date">
+                                        </div>
                                 </div>
                             </div>
                         </div>
@@ -77,7 +77,7 @@
                     </div>
                 </div>
 
-                <div ref="search_wrapper" class="ui fluid search focus">
+                <div id="search_wrapper" ref="search_wrapper" class="ui fluid search focus">
                     <div class="ui icon input fluid">
                         <!--<input ref="search_field" class="prompt" type="text" placeholder="Keywords" oninput="{ input_updated }">-->
                         <input ref="search_field" class="prompt" type="text" placeholder="Keywords"">
@@ -147,10 +147,24 @@
 
              onNoResults: function(search) {}
              })*/
+            // Template stuff
+            $('.datepicker').calendar({
+                type: 'date',
+                popupOptions: {
+                    position: 'bottom left',
+                    lastResort: 'bottom left',
+                    hideOnScroll: false
+                }
+            })
+            $(".ui.dropdown").dropdown()
+
+            // Search handling
             $(self.refs.search_wrapper).search({
                 apiSettings: {
                     url: URLS.API + "query/?q={query}",
                     onResponse: function (data) {
+                        console.log($("#time-range").dropdown('get value'))
+
                         // Let riotJS stuff know about updates
                         self.update({
                             results: data.results,
@@ -171,6 +185,10 @@
                         return response;
                     }
                 },
+                onSearchQuery: function (query) {
+                    console.log("query: " + query)
+                    return 'asdf'
+                },
                 cache: false,  // Disabling cache makes results work properly
                 showNoResults: false,
                 minCharacters: 2,
@@ -187,20 +205,26 @@
 
         /*
          Just using semantic search instead.... for now...
-        self.search = function () {
-            CODALAB.api.search(self.refs.search_field.value)
-                .done(function (data) {
-                    self.update({
-                        results: data.results,
-                        suggestions: data.suggestions
-                    })
-                })
-        }*/
+         self.search = function () {
+         CODALAB.api.search(self.refs.search_field.value)
+         .done(function (data) {
+         self.update({
+         results: data.results,
+         suggestions: data.suggestions
+         })
+         })
+         }*/
     </script>
 
     <style type="text/stylus">
         #results_container
             min-height 375px
+
+        #search_wrapper .results
+            margin-top 1px
+
+        .ui.button:hover .icon
+            opacity 1
     </style>
 </search>
 

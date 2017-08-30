@@ -111,7 +111,9 @@
         margin-top 0.5em
         font-size 1.5em
 
-/* Force the footer to stretch all the way to the bottom of viewport */
+/* --------------------------------------------------------------------------------------
+ Force the footer to stretch all the way to the bottom of viewport
+ */
 .pusher
     display flex
     min-height 100vh
@@ -119,3 +121,11 @@
 
 .pusher > .footer
     flex 1
+
+
+/* --------------------------------------------------------------------------------------
+ Fix padding on menus
+ */
+.ui.floating.dropdown > .menu {
+    margin-top: 0.1em !important;
+}
