@@ -1,17 +1,23 @@
 {
   "name": "competitions-v2",
   "scripts": {
+    "postdeploy": "bin/init_staging"
   },
   "env": {
+    "USE_SSL": "True"
   },
   "formation": {
   },
   "addons": [
-    "heroku-postgresql"
+    "heroku-postgresql",
+    "bonsai:sandbox-10"
   ],
   "buildpacks": [
     {
       "url": "heroku/python"
+    },
+    {
+      "url": "heroku/nodejs"
     }
   ]
 }

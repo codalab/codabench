@@ -1,6 +1,7 @@
 import os
 import sys
 
+import dj_database_url
 from django.core.files.storage import get_storage_class
 
 
@@ -31,11 +32,15 @@ THIRD_PARTY_APPS = (
     'whitenoise',
     'oauth2_provider',
     'corsheaders',
+    'django_elasticsearch_dsl',
+    'social_django',
+    'django_extensions',
 )
 OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
+    'user_auth',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -69,6 +74,8 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -105,15 +112,53 @@ LOGIN_REDIRECT_URL = '/'
 
 
 # =============================================================================
+# Authentication
+# =============================================================================
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.github.GithubOAuth2',
+    'utils.auth_backends.CodalabOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    # 'user_auth.pipeline.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+    'user_auth.pipeline.associate_existing_user',
+    'user_auth.pipeline.user_details',
+)
+# Environment
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
+
+# Generic
+SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
+SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
+SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
+
+# User Models
+AUTH_USER_MODEL = 'user_auth.User'
+SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
+
+# Github extra
+SOCIAL_AUTH_GITHUB_SCOPE = ['user']
+
+# =============================================================================
 # Debugging
 # =============================================================================
-
 DEBUG = os.environ.get('DEBUG', True)
 
 
 # =============================================================================
 # Database
 # =============================================================================
+# Default local setup
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -121,6 +166,18 @@ DATABASES = {
         'CONN_MAX_AGE': 500,
     }
 }
+
+# Overridden by env settings
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
+
+# =============================================================================
+# SSL
+# =============================================================================
+if os.environ.get('USE_SSL'):
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # =============================================================================
@@ -135,6 +192,16 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
+
+
+# =============================================================================
+# Search
+# =============================================================================
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': [os.environ.get('BONSAI_URL', 'localhost:9200')]
+    },
+}
 
 
 # =============================================================================

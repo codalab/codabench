@@ -10,11 +10,11 @@
         {#            <h1 class="ui inverted header">#}
         {#                Codalab Competitions#}
         {#            </h1>#}
-        <img src="{% static "img/codalab-logo-onecolor-reverse.png" %}" style="margin-left: -45px;">
+        <img id="jumbo_logo" src="{% static "img/codalab-logo-onecolor-reverse.png" %}">
         <h2>Accelerating reproducible computational research.</h2>
         {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
 
-        <a href="#" class="ui huge primary button"><i class="left arrow icon"></i> Compete</a>
+        <a href="{% url "pages:search" %}" class="ui huge primary button"><i class="left arrow icon"></i> Compete</a>
         <a href="{% url "pages:competition_create" %}" class="ui huge primary button">Organize <i class="right arrow icon"></i></a>
     </div>
 
@@ -35,57 +35,135 @@
 {% endblock %}
 
 {% block content %}
-    <div class="ui vertical stripe segment">
-        <div class="ui middle aligned stackable grid container">
-            <div class="row">
-                <div class="eight wide column">
-                    <h3 class="ui header">Lorem ipsum</h3>
-                    <p> Sed a congue lacus. Vivamus eu urna turpis. Sed vel massa et enim blandit sagittis. Etiam non posuere eros, at pretium velit. Curabitur cursus elit nec dolor fringilla, vel sollicitudin libero eleifend. Maecenas sed ante scelerisque, tristique velit nec, gravida nibh.</p>
-                    <h3 class="ui header">Lorem ipsum</h3>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc non pretium libero, vel iaculis sapien.</p>
-                </div>
-                <div class="six wide right floated column">
-                    <img src="http://via.placeholder.com/350x150" class="ui large bordered rounded image">
-                </div>
-            </div>
-            <div class="row">
-                <div class="center aligned column">
-                    <a class="ui huge button">Check Them Out</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
-
-    <div class="ui vertical stripe quote segment">
-        <div class="ui equal width stackable internally celled grid">
-            <div class="center aligned row">
-                <div class="column">
-                    <h3>"What a Question"</h3>
-                    <p>This is a great answer</p>
-                </div>
-                <div class="column">
-                    <h3>"A testimonial"</h3>
-                    <p>
-                        <img src="http://via.placeholder.com/35x35?text=&nbsp;" class="ui avatar image">
-                        <b>Nan</b> Chief Fun Officer Acme Toys
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="ui vertical stripe segment">
-        <div class="ui text container">
-            <h3 class="ui header">Breaking The Grid, Grabs Your Attention</h3>
-            <p>Instead of focusing on content creation and hard work, we have learned how to master the art of doing nothing by providing massive amounts of whitespace and generic content that can seem massive, monolithic and worth your attention.</p>
-            <a class="ui large button">Read More</a>
-            <h4 class="ui horizontal header divider">
-                <a href="#">Case Studies</a>
-            </h4>
-            <h3 class="ui header">Lorem Ipsum?</h3>
-            <p>In hac habitasse platea dictumst. Aenean blandit odio libero, ut tempus erat tincidunt eu. Ut quis semper quam, interdum rutrum leo. Cras mi eros, ornare quis risus quis, porta maximus quam. Nunc aliquet enim in odio rhoncus, a efficitur augue congue. Mauris vitae cursus mauris. Ut condimentum aliquet dui quis sagittis. Nunc non est sed ante mollis pellentesque euismod quis mi.</p>
-            <a class="ui large button">I'm Still Quite Interested</a>
+        <div class="ui middle aligned stackable grid container centered">
+            <div class="row">
+                <div class="twelve wide column">
+
+                    <div class="ui divided items">
+                        <div class="item">
+                            <div class="image">
+                                <img src="https://semantic-ui.com/images/wireframe/image.png">
+                            </div>
+                            <div class="content">
+                                <a class="header">Liver Segmentation Challenge</a>
+                                <div class="meta">
+                                    <span class="cinema">IFC Cinema</span>
+                                </div>
+                                <div class="description">
+                                    <p></p>
+                                </div>
+                                <div class="extra">
+                                    <div class="ui right floated primary button">
+                                        View more
+                                        <i class="right chevron icon"></i>
+                                    </div>
+                                    <div class="ui label">Limited</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="image">
+                                <img src="https://semantic-ui.com/images/wireframe/image.png">
+                            </div>
+                            <div class="content">
+                                <a class="header">Liver Segmentation Challenge</a>
+                                <div class="meta">
+                                    <span class="cinema">IFC Cinema</span>
+                                </div>
+                                <div class="description">
+                                    <p></p>
+                                </div>
+                                <div class="extra">
+                                    <div class="ui right floated primary button">
+                                        View more
+                                        <i class="right chevron icon"></i>
+                                    </div>
+                                    <div class="ui label">Limited</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div class="image">
+                                <img src="https://semantic-ui.com/images/wireframe/image.png">
+                            </div>
+                            <div class="content">
+                                <a class="header">Liver Segmentation Challenge</a>
+                                <div class="meta">
+                                    <span class="cinema">IFC</span>
+                                </div>
+                                <div class="description">
+                                    <p></p>
+                                </div>
+                                <div class="extra">
+                                    <div class="ui right floated primary button">
+                                        View more
+                                        <i class="right chevron icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
+
+
+    {#    <div class="ui vertical stripe segment">#}
+    {#        <div class="ui middle aligned stackable grid container">#}
+    {#            <div class="row">#}
+    {#                <div class="eight wide column">#}
+    {#                    <h3 class="ui header">Lorem ipsum</h3>#}
+    {#                    <p> Sed a congue lacus. Vivamus eu urna turpis. Sed vel massa et enim blandit sagittis. Etiam non posuere eros, at pretium velit. Curabitur cursus elit nec dolor fringilla, vel sollicitudin libero eleifend. Maecenas sed ante scelerisque, tristique velit nec, gravida nibh.</p>#}
+    {#                    <h3 class="ui header">Lorem ipsum</h3>#}
+    {#                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc non pretium libero, vel iaculis sapien.</p>#}
+    {#                </div>#}
+    {#                <div class="six wide right floated column">#}
+    {#                    <img src="http://via.placeholder.com/350x150" class="ui large bordered rounded image">#}
+    {#                </div>#}
+    {#            </div>#}
+    {#            <div class="row">#}
+    {#                <div class="center aligned column">#}
+    {#                    <a class="ui huge button">Check Them Out</a>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+    {##}
+    {##}
+    {#    <div class="ui vertical stripe quote segment">#}
+    {#        <div class="ui equal width stackable internally celled grid">#}
+    {#            <div class="center aligned row">#}
+    {#                <div class="column">#}
+    {#                    <h3>"What a Question"</h3>#}
+    {#                    <p>This is a great answer</p>#}
+    {#                </div>#}
+    {#                <div class="column">#}
+    {#                    <h3>"A testimonial"</h3>#}
+    {#                    <p>#}
+    {#                        <img src="http://via.placeholder.com/35x35?text=&nbsp;" class="ui avatar image">#}
+    {#                        <b>Nan</b> Chief Fun Officer Acme Toys#}
+    {#                    </p>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+    {##}
+    {#    <div class="ui vertical stripe segment">#}
+    {#        <div class="ui text container">#}
+    {#            <h3 class="ui header">Breaking The Grid, Grabs Your Attention</h3>#}
+    {#            <p>Instead of focusing on content creation and hard work, we have learned how to master the art of doing nothing by providing massive amounts of whitespace and generic content that can seem massive, monolithic and worth your attention.</p>#}
+    {#            <a class="ui large button">Read More</a>#}
+    {#            <h4 class="ui horizontal header divider">#}
+    {#                <a href="#">Case Studies</a>#}
+    {#            </h4>#}
+    {#            <h3 class="ui header">Lorem Ipsum?</h3>#}
+    {#            <p>In hac habitasse platea dictumst. Aenean blandit odio libero, ut tempus erat tincidunt eu. Ut quis semper quam, interdum rutrum leo. Cras mi eros, ornare quis risus quis, porta maximus quam. Nunc aliquet enim in odio rhoncus, a efficitur augue congue. Mauris vitae cursus mauris. Ut condimentum aliquet dui quis sagittis. Nunc non est sed ante mollis pellentesque euismod quis mi.</p>#}
+    {#            <a class="ui large button">I'm Still Quite Interested</a>#}
+    {#        </div>#}
+    {#    </div>#}
 {% endblock %}

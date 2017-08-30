@@ -1,0 +1,131 @@
+/* --------------------------------------------------------------------------------------
+ misc styles for base template
+
+ header/background
+ */
+#bg
+    z-index -1
+    background rgba(22, 12, 160, 0.9)
+    position absolute
+    top 0
+    bottom 0
+    left 0
+    right 0
+
+#header
+    background transparent
+    margin-bottom 20px
+
+.ui.secondary.inverted.pointing.menu
+    border transparent
+
+.jumbotron
+    min-height 700px
+    padding 1em 0
+
+.masthead
+    position relative
+
+    .logo.item img
+        margin-right 1em
+
+    .ui.menu .ui.button
+        margin-left 0.5em
+
+    .ui.menu
+        margin 0
+
+    .menu .toc.item
+        display none
+
+    h1.ui.header
+        margin-top 3em
+        margin-bottom 0
+        font-size 4em
+        font-weight normal
+
+    h2
+        font-size 1.7em
+        font-weight normal
+
+.ui.vertical.stripe
+    padding 8em 0
+
+    h3
+        font-size 2em
+
+    .button + h3,
+    p + h3
+        margin-top 3em
+
+    .floated.image
+        clear both
+
+    p
+        font-size 1.33em
+
+    .horizontal.divider
+        margin 3em 0
+
+.quote.stripe.segment
+    padding 0
+
+    .grid .column
+        padding-top 5em
+        padding-bottom 5em
+
+.hidden.menu
+    display none
+
+/* --------------------------------------------------------------------------------------
+ footer
+ */
+
+.footer
+    margin-top 20px !important
+    &.segment
+        padding 5em 0
+
+.secondary.pointing.menu .toc.item
+    display none
+
+/* --------------------------------------------------------------------------------------
+ mobile
+ */
+@media only screen and (max-width 700px)
+    .ui.fixed.menu
+        display none !important
+
+    .secondary.pointing.menu .item,
+    .secondary.pointing.menu .menu
+        display none
+
+    .secondary.pointing.menu .toc.item
+        display block
+
+    .masthead h1.ui.header
+        font-size 2em
+        margin-top 1.5em
+
+    .masthead h2
+        margin-top 0.5em
+        font-size 1.5em
+
+/* --------------------------------------------------------------------------------------
+ Force the footer to stretch all the way to the bottom of viewport
+ */
+.pusher
+    display flex
+    min-height 100vh
+    flex-direction column
+
+.pusher > .footer
+    flex 1
+
+
+/* --------------------------------------------------------------------------------------
+ Fix padding on menus
+ */
+.ui.floating.dropdown > .menu {
+    margin-top: 0.1em !important;
+}

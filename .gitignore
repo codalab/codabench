@@ -1,2 +1,8 @@
 *.pyc
 __pycache__
+
+node_modules/
+src/static/output.css
+src/static/output.js
+src/static/riot.js
+src/static/riot.tag
