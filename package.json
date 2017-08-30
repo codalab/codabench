@@ -18,7 +18,7 @@
       "legacyWatch": true,
       "delay": 100
     },
-    "build-riot-js": {
+    "build-riot": {
       "patterns": [
         "src/static/riot"
       ],
@@ -30,8 +30,8 @@
   },
   "scripts": {
     "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/output.css",
-    "build-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/riot.tag",
-    "build-riot-js": "riot src/static/riot src/static/riot.js --style stylus"
+    "build-riot": "riot src/static/riot src/static/riot.js --style stylus",
+    "concat-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/riot.tag"
   },
   "repository": {
     "type": "git",
