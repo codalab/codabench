@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
+# Make elasticsearch indexes
 python manage.py search_index --create
+
+# Make a superuser
+echo "from django.contrib.auth.models import User; User.objects.filter(email='admin@admin.com').delete(); User.objects.create_superuser('admin', 'admin@admin.com', 'admin')" | python manage.py shell
