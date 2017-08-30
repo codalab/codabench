@@ -107,10 +107,10 @@ LOGIN_REDIRECT_URL = '/'
 
 # AUTH_USER_MODEL = 'profiles.User'
 
+
 # =============================================================================
 # Authentication
 # =============================================================================
-
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
@@ -129,11 +129,11 @@ SOCIAL_AUTH_PIPELINE = (
     'user_auth.pipeline.associate_existing_user',
     'user_auth.pipeline.user_details',
 )
-# Enviroment
+# Environment
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 
-#Generic
+# Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
 SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
@@ -148,7 +148,6 @@ SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 # =============================================================================
 # Debugging
 # =============================================================================
-
 DEBUG = os.environ.get('DEBUG', True)
 
 
