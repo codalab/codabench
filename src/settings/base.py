@@ -140,8 +140,8 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # Codalab TODO REMOVE THIS!
-SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'uPeSyEGE8auV27EfZ7fLZs44DjZtIiLBCId7apgp')
-SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'dk70ivsuhFMM3uC0iwh91xitMjj8flZMHWPO021TG6VpjJTlYlZkPmxrQHkRg02U2S46sfO74EiHTnhrJl9ZhOU19TLxpBu5s5xQ2sD8TP2GUJdxWTvMI05bCfEeApgY')
+SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'JiMCqTYwa8UQ1nkH5kP5HzaJTXWoS4yMhEWzxxXI')
+SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'VN1Ixqa2sUUyyDknAE02QvPvWSJEu96zvbKY754L1ISzVgJFGlYVVaRhnrRVUhGkcCe9l3qg5MRdRizLFtgnoTI79PJXPxXZJyJ6a76fSVliKJ975hAy0ED3XxGPbeis')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -182,6 +182,9 @@ DATABASES['default'].update(db_from_env)
 if os.environ.get('USE_SSL'):
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Allows us to use with django-oauth-toolkit on localhost sans https
+    SESSION_COOKIE_SECURE = False
 
 
 # =============================================================================

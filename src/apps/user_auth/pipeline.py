@@ -15,32 +15,31 @@ from .models import User
 
 def user_details(user, details, strategy, *args, **kwargs):
     """Update user details using data from provider."""
+    backend = kwargs.get('backend')
+
     if user:
-        changed = False  # flag to track changes
-        user_attrs = [
-            'avatar_url',
-            'url',
-            'html_url',
-            'name',
-            'company',
-            'bio',
-            'email',
-        ]
-        if kwargs:
-            try:
-                response = kwargs.pop("response")
-                for attr in user_attrs:
-                    user_attr_value = getattr(user, attr, None)
-                    github_attr_value = response[attr]
-                    if not user_attr_value:
-                        setattr(user, attr, github_attr_value)
-                # Set the ID github returns to UID on user.
-                setattr(user, 'uid', response['id'])
-                user.save()
-            except AttributeError:
-                print("Attribute not found.")
-        if changed:
-            strategy.storage.user.changed(user)
+        if backend and backend.name == 'codalab':
+            # user.save()  # Probably not necessary? was here to stop NoneType exception
+            pass
+        else:
+            user_attrs = [
+                'avatar_url',
+                'url',
+                'html_url',
+                'name',
+                'company',
+                'bio',
+                'email',
+            ]
+
+            response = kwargs.pop("response")
+            for attr in user_attrs:
+                if not getattr(user, attr):
+                    setattr(user, attr, response[attr])
+
+            # Set the ID github returns to UID on user.
+            user.github_uid = response['id']
+            user.save()
 
 
 def associate_existing_user(uid, *args, **kwargs):
