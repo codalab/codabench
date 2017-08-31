@@ -6,20 +6,24 @@ from social_core.backends.oauth import BaseOAuth2
 from social_core.exceptions import AuthFailed
 
 
+
+BASE_URL = "https://competitions-v2-staging-pr-17.herokuapp.com"
+
+
 class CodalabOAuth2(BaseOAuth2):
     """Github OAuth authentication backend"""
     name = 'codalab'
-    # API_URL = 'https://api.github.com/'
-    AUTHORIZATION_URL = 'https://competitions-v2-staging-pr-17.herokuapp.com/oauth/authorize/'
-    ACCESS_TOKEN_URL = 'https://competitions-v2-staging-pr-17.herokuapp.com/oauth/token/'
+    API_URL = '{}/api/'.format(BASE_URL)
+    AUTHORIZATION_URL = '{}/oauth/authorize/'.format(BASE_URL)
+    ACCESS_TOKEN_URL = '{}/oauth/token/'.format(BASE_URL)
     ACCESS_TOKEN_METHOD = 'POST'
 
     def get_user_details(self, response):
-        print("usa details", response)
+        my_profile_url = "{}my_profile/".format(self.API_URL)
+        data = self.get_json(my_profile_url)
+        print("usa details", data)
         return {
-            'username': "<username if any>,",
-            'email': "<user email if any>,",
-            'fullname': "<user full name if any>,",
-            'first_name': "<user first name if any>,",
-            'last_name': "<user last name if any>",
+            'username': data.username,
+            'email': data.email,
+            'name': data.name,
         }
