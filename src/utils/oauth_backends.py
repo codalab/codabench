@@ -19,8 +19,9 @@ class CodalabOAuth2(BaseOAuth2):
     ACCESS_TOKEN_METHOD = 'POST'
 
     def get_user_details(self, response):
+        access_token = response['access_token']
         my_profile_url = "{}my_profile/".format(self.API_URL)
-        data = self.get_json(my_profile_url)
+        data = self.get_json(my_profile_url, params={'Authorization: Bearer': access_token})
         print("usa details", data)
         return {
             'username': data.username,

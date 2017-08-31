@@ -190,6 +190,22 @@ else:
 # =============================================================================
 # DRF
 # =============================================================================
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+# OAuth Toolkit
+OAUTH2_PROVIDER = {
+    # this is the list of available scopes
+    'SCOPES': {}
+}
 
 
 # =============================================================================
