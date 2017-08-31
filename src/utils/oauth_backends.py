@@ -21,10 +21,10 @@ class CodalabOAuth2(BaseOAuth2):
     def get_user_details(self, response):
         access_token = response['access_token']
         my_profile_url = "{}my_profile/".format(self.API_URL)
-        data = self.get_json(my_profile_url, params={'Authorization: Bearer': access_token})
+        data = self.get_json(my_profile_url, headers={'Authorization': 'Bearer {}'.format(access_token)})
         print("usa details", data)
         return {
-            'username': data.username,
-            'email': data.email,
-            'name': data.name,
+            'username': data.get('username'),
+            'email': data.get('email'),
+            'name': data.get('name'),
         }
