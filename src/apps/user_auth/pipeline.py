@@ -1,19 +1,4 @@
-from .models import User
-
-
-# def get_username(strategy, uid, user=None, *args, **kwargs):
-#     # """If no user, set username to UID."""
-#     # if not user:
-#     #     username = uid
-#     # else:
-#     #     username = strategy.storage.user.get_username(user)
-#     print("Uid", uid)
-#     print("User", user)
-#     username = 'whatever'
-#     return {'username': username}
-
-
-def user_details(user, details, strategy, *args, **kwargs):
+def user_details(user, *args, **kwargs):
     """Update user details using data from provider."""
     backend = kwargs.get('backend')
 
@@ -40,12 +25,3 @@ def user_details(user, details, strategy, *args, **kwargs):
             # Set the ID github returns to UID on user.
             user.github_uid = response['id']
             user.save()
-
-
-def associate_existing_user(uid, *args, **kwargs):
-    """If there already is a user with the given uid, hand it over to the pipeline"""
-    if User.objects.filter(uid=uid).exists():
-        print("User already found: {}".format(uid))
-        return {
-            'user': User.objects.get(uid=uid)
-        }
