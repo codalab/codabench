@@ -29,6 +29,7 @@ THIRD_PARTY_APPS = (
 
     'rest_framework',
     'rest_framework_swagger',
+    'drf_openapi',
     'whitenoise',
     'django_elasticsearch_dsl',
     'social_django',
@@ -179,6 +180,9 @@ if os.environ.get('USE_SSL'):
 # =============================================================================
 # DRF
 # =============================================================================
+REST_FRAMEWORK = {
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
+}
 
 
 # =============================================================================
