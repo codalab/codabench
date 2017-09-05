@@ -1,10 +1,4 @@
-from requests import HTTPError
-
-from six.moves.urllib.parse import urljoin
-
 from social_core.backends.oauth import BaseOAuth2
-from social_core.exceptions import AuthFailed
-
 
 
 BASE_URL = "https://competitions-v2-staging-pr-17.herokuapp.com"

@@ -1,7 +1,6 @@
-from .models import User
 
 
-def user_details(user, *args, **kwargs):
+def user_details(user, **kwargs):
     """Update user details using data from provider."""
     backend = kwargs.get('backend')
 
