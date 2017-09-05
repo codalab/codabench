@@ -40,7 +40,7 @@ OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
-    'user_auth',
+    'profiles',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -129,7 +129,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
-    'user_auth.pipeline.user_details',
+    'profiles.pipeline.user_details',
 )
 
 # Github
@@ -147,8 +147,8 @@ SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 
 # User Models
-AUTH_USER_MODEL = 'user_auth.User'
-SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
+AUTH_USER_MODEL = 'profiles.User'
+SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 
 
 # =============================================================================

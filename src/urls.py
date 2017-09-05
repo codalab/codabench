@@ -6,7 +6,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     # Our URLS
     url('', include('pages.urls', namespace='pages')),
-    url('^registration/', include('user_auth.urls', namespace='user_auth')),
+    url('^profiles/', include('profiles.urls', namespace='profiles')),
 
     # Third party
     url('^api/', include('api.urls')),
