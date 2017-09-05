@@ -1,18 +1,6 @@
 from .models import User
 
 
-# def get_username(strategy, uid, user=None, *args, **kwargs):
-#     # """If no user, set username to UID."""
-#     # if not user:
-#     #     username = uid
-#     # else:
-#     #     username = strategy.storage.user.get_username(user)
-#     print("Uid", uid)
-#     print("User", user)
-#     username = 'whatever'
-#     return {'username': username}
-
-
 def user_details(user, details, strategy, *args, **kwargs):
     """Update user details using data from provider."""
     if user:

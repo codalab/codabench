@@ -53,9 +53,9 @@
         <a class="item">Chagrade</a>
         <div class="right menu">
             {% if user.is_authenticated %}
-                <div class="item"><a class="ui inverted button" href="{% url "logout" %}">Logout</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "accounts:logout" %}">Logout</a></div>
             {% else %}
-                <div class="item"><a class="ui inverted button" href="{% url "login" %}">Login</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "accounts:login" %}">Login</a></div>
                 <a href="{% url "user_auth:signup" %}" class="ui inverted button">Sign-up</a>
             {% endif %}
         </div>
@@ -69,9 +69,9 @@
     <a class="item">Chalab</a>
     <a class="item">Chagrade</a>
     {% if user.is_authenticated %}
-        <a href="{% url "logout" %}" class="item">Logout</a>
+        <a href="{% url "accounts:logout" %}" class="item">Logout</a>
     {% else %}
-        <a href="{% url "login" %}" class="item">Login</a>
+        <a href="{% url "accounts:login" %}" class="item">Login</a>
         <a href="{% url "user_auth:signup" %}" class="item">Sign-up</a>
     {% endif %}
 
@@ -92,9 +92,9 @@
                 <a class="item">Chagrade</a>
                 <div class="right item">
                     {% if user.is_authenticated %}
-                        <a href="{% url "logout" %}" class="ui inverted button">Logout</a>
+                        <a href="{% url "accounts:logout" %}" class="ui inverted button">Logout</a>
                     {% else %}
-                        <a href="{% url "login" %}" class="ui inverted button">Login</a>
+                        <a href="{% url "accounts:login" %}" class="ui inverted button">Login</a>
                         <a href="{% url "user_auth:signup" %}" class="ui inverted button">Sign-up</a>
                     {% endif %}
                 </div>

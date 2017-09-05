@@ -13,8 +13,6 @@ urlpatterns = [
     url('^social/', include('social_django.urls', namespace='social')),
 
     # Django built in
-    url('^accounts/', include('django.contrib.auth.urls')),
-    url(r'^login/$', auth_views.login, name='login'),
-    url(r'^logout/$', auth_views.logout, name='logout'),
+    url('^accounts/', include('django.contrib.auth.urls', namespace='accounts')),
     url(r'^admin/', include(admin.site.urls)),
 ]
