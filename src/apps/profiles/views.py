@@ -1,13 +1,10 @@
-from django.contrib.auth.forms import UserCreationForm
+# from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse
-from django.shortcuts import render
+# from django.shortcuts import render
 
 
 def sign_up(request):
     return HttpResponse("Not implemented yet!")
-
-
-
 
     # if request.method == 'POST':
     #     form = UserCreationForm(request.POST)

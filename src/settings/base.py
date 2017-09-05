@@ -30,6 +30,8 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'whitenoise',
+    'oauth2_provider',
+    'corsheaders',
     'django_elasticsearch_dsl',
     'social_django',
     'django_extensions',
@@ -38,11 +40,11 @@ OUR_APPS = (
     'competitions',
     'datasets',
     'pages',
-    'user_auth',
+    'profiles',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -52,6 +54,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -113,6 +116,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
+    'utils.oauth_backends.CodalabOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -120,18 +124,22 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    # 'user_auth.pipeline.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
-    'user_auth.pipeline.associate_existing_user',
-    'user_auth.pipeline.user_details',
+    'profiles.pipeline.user_details',
 )
-# Environment
+
+# Github
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
+SOCIAL_AUTH_GITHUB_SCOPE = ['user']
+
+# Codalab Example settings
+# SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'asdfasdfasfd')
+# SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'asdfasdfasfdasdfasdf')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -139,11 +147,9 @@ SOCIAL_AUTH_STORAGE = 'social_django.models.DjangoStorage'
 SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 
 # User Models
-AUTH_USER_MODEL = 'user_auth.User'
-SOCIAL_AUTH_USER_MODEL = 'user_auth.User'
+AUTH_USER_MODEL = 'profiles.User'
+SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 
-# Github extra
-SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # =============================================================================
 # Debugging
@@ -174,11 +180,38 @@ DATABASES['default'].update(db_from_env)
 if os.environ.get('USE_SSL'):
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Allows us to use with django-oauth-toolkit on localhost sans https
+    SESSION_COOKIE_SECURE = False
 
 
 # =============================================================================
 # DRF
 # =============================================================================
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+# OAuth Toolkit
+OAUTH2_PROVIDER = {
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+}
+
+
+# =============================================================================
+# OAuth
+# =============================================================================
+CORS_ORIGIN_ALLOW_ALL = True
+
+if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
+    raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
 
 
 # =============================================================================
@@ -186,7 +219,7 @@ if os.environ.get('USE_SSL'):
 # =============================================================================
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': [os.environ.get('BONSAI_URL', 'localhost:9200')]
+        'hosts': [os.environ.get('SEARCHBOX_SSL_URL', 'localhost:9200')]
     },
 }
 

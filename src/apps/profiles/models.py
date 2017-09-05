@@ -9,7 +9,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['email']
 
     # Github user attributes.
-    uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
+    github_uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
     avatar_url = models.CharField(max_length=100, null=True, blank=True)
     url = models.CharField(max_length=100, null=True, blank=True)
     html_url = models.CharField(max_length=100, null=True, blank=True)

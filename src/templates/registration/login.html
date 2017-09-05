@@ -40,6 +40,11 @@
                     <i class="github icon"></i>
                     Sign In With GitHub
                 </a>
+
+                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "codalab" %}">
+ +                    <i class="computer icon"></i>
+ +                    Sign In With CODALAB
+ +                </a>
             </div>
             <div class="ui message">
                 New to us? <a href="{% url "user_auth:signup" %}">Sign Up</a>

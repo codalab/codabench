@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 
-from api import serializers
+from api.serializers import competitions as serializers
 from competitions.models import Competition, Phase, Submission
 
 
