@@ -56,7 +56,7 @@
                 <div class="item"><a class="ui inverted button" href="{% url "accounts:logout" %}">Logout</a></div>
             {% else %}
                 <div class="item"><a class="ui inverted button" href="{% url "accounts:login" %}">Login</a></div>
-                <a href="{% url "user_auth:signup" %}" class="ui inverted button">Sign-up</a>
+                <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
             {% endif %}
         </div>
     </div>
@@ -72,7 +72,7 @@
         <a href="{% url "accounts:logout" %}" class="item">Logout</a>
     {% else %}
         <a href="{% url "accounts:login" %}" class="item">Login</a>
-        <a href="{% url "user_auth:signup" %}" class="item">Sign-up</a>
+        <a href="{% url "profiles:signup" %}" class="item">Sign-up</a>
     {% endif %}
 
 </div>
@@ -95,7 +95,7 @@
                         <a href="{% url "accounts:logout" %}" class="ui inverted button">Logout</a>
                     {% else %}
                         <a href="{% url "accounts:login" %}" class="ui inverted button">Login</a>
-                        <a href="{% url "user_auth:signup" %}" class="ui inverted button">Sign-up</a>
+                        <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
                     {% endif %}
                 </div>
             </div>
