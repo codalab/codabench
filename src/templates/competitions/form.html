@@ -137,11 +137,87 @@
                 </div>
 
                 <div class="ui bottom tab" data-tab="phases">
-                    Second
+                    <button class="ui primary button modal-button" data-modal-id="phase-modal">
+                        <i class="add circle icon"></i> Create new phase
+                    </button>
+
+                    <div class="ui top vertical centered segment grid">
+
+                        <div class="ten wide column">
+
+                            <div class="ui one cards">
+                                <a class="green card">
+                                    <div class="content">
+                                        <i class="right floated chevron down icon"></i>
+                                        <i class="right floated chevron up icon"></i>
+                                        <div class="header">Why do this?</div>
+                                        <div class="description">
+                                            Matthew is an interior designer living in New York.
+                                        </div>
+                                    </div>
+                                    <div class="extra content">
+                                        <span class="left floated like">
+                                            <i class="edit icon"></i>
+                                            Edit
+                                        </span>
+                                        <span class="right floated star">
+                                            <i class="delete icon"></i>
+                                            Delete
+                                        </span>
+                                    </div>
+                                </a>
+
+                                <a class="red card">
+                                    <div class="content">
+                                        <i class="right floated chevron down icon"></i>
+                                        <i class="right floated chevron up icon"></i>
+                                        <div class="header">How to determine something</div>
+                                        <div class="description">
+                                            Matthew is an interior designer living in New York.
+                                        </div>
+                                    </div>
+                                    <div class="extra content">
+                                        <span class="left floated like">
+                                            <i class="edit icon"></i>
+                                            Edit
+                                        </span>
+                                        <span class="right floated star">
+                                            <i class="delete icon"></i>
+                                            Delete
+                                        </span>
+                                    </div>
+                                </a>
+
+                                <a class="orange card">
+                                    <div class="content">
+                                        <i class="right floated chevron down icon"></i>
+                                        <i class="right floated chevron up icon"></i>
+                                        <div class="header">Testing something</div>
+                                        <div class="description">
+                                            Matthew is an interior designer living in New York.
+                                        </div>
+                                    </div>
+                                    <div class="extra content">
+                                        <span class="left floated like">
+                                            <i class="edit icon"></i>
+                                            Edit
+                                        </span>
+                                        <span class="right floated star">
+                                            <i class="delete icon"></i>
+                                            Delete
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="ui bottom tab" data-tab="leaderboard">
-                    Third
+                    <button class="ui primary button modal-button" data-modal-id="page-modal">
+                        <i class="add circle icon"></i> Create new leaderboard
+                    </button>
+
                 </div>
 
                 <div class="ui bottom tab" data-tab="collaborators">
@@ -199,6 +275,98 @@
                     <label>Content</label>
                     <textarea class="markdown-editor"></textarea>
                 </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui button">Cancel</div>
+            <div class="ui button primary">Save</div>
+        </div>
+    </div>
+
+
+    <div id="phase-modal" class="ui modal">
+        <i class="close icon"></i>
+        <div class="header">
+            Edit phase
+        </div>
+        <div class="content">
+
+            <div class="ui form">
+                <div class="field required">
+                    <label>Name</label>
+                    <input/>
+                </div>
+
+                <div class="two fields">
+                    <div class="ui calendar field required">
+                        <label>Start</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text">
+                        </div>
+                    </div>
+
+                    <div class="ui calendar field">
+                        <label>End</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field required smaller-mde">
+                    <label>Description</label>
+                    <textarea class="markdown-editor"></textarea>
+                </div>
+
+                <div class="three fields">
+                    <div class="field">
+                        <label>Input Data</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Reference Data</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                    <div class="field required">
+                        <label>Scoring Program</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="three fields">
+                    <div class="field">
+                        <label>Ingestion Program</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Public Data</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Starting Kit</label>
+                        <select class="ui dropdown">
+                            <option value="test">Test</option>
+                            <option value="test">Test</option>
+                        </select>
+                    </div>
+                </div>
+
             </div>
         </div>
         <div class="actions">
