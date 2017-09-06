@@ -29,9 +29,9 @@
     }
   },
   "scripts": {
-    "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/output.css",
-    "build-riot": "riot src/static/riot src/static/riot.js --style stylus",
-    "concat-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/riot.tag"
+    "build-stylus": "stylus --compress --sourcemap-inline < src/static/stylus/index.styl > src/static/generated/output.css",
+    "build-riot": "riot src/static/riot src/static/generated/riot.js --style stylus",
+    "concat-riot": "find src/static/riot -name '*.tag' -exec cat {} \\; -exec echo '' \\; > src/static/generated/riot.tag"
   },
   "repository": {
     "type": "git",
