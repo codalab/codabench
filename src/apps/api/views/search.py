@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
@@ -22,6 +24,12 @@ def query(request):
 
     # Do filters
     # ...
+
+    # Filter on dates...
+    # s = s.filter('range', created_when={
+    #     'gt': datetime.date(1988, 2, 29),
+    #     'lte': 'now'
+    # })
 
     # Get results
     results = s.execute()
