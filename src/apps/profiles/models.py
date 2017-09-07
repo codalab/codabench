@@ -19,7 +19,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
-    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    email = models.EmailField(max_length=254, unique=True, null=True, blank=True)
 
     # Utillity Attributes
     date_joined = models.DateTimeField(auto_now_add=True)
