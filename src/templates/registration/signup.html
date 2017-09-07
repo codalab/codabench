@@ -11,26 +11,36 @@
             </h2>
             <form class="ui large form" method="POST">
                 {% csrf_token %}
-                {% for field in form %}
-                    <div class="ui stacked segment">
-                        <div class="field">
-                            <div class="ui left icon input">
-                                {% if field.name == 'username' %}
-                                    <i class="user icon"></i>
-                                {% else %}
-                                    <i class="write icon"></i>
-                                {% endif %}
-                                {{ field }}
-                            </div>
+                <div class="ui stacked segment">
+                    <div class="field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input name="username" type="text" placeholder="username">
                         </div>
+                        <div class="ui left icon input">
+                            <i class="mail icon"></i>
+                            <input name="email" type="text" placeholder="email">
+                        </div>
+                        {%if form.email.errors %}{{ form.email.errors }}
+                        <div class="ui left icon input">
+                            <i class="write icon"></i>
+                            <input name="password1" type="password" placeholder="password">
+                        </div>
+                        {%if form.password1.errors %}{{ form.password1.errors }}
+                        <div class="ui left icon input">
+                            <i class="write icon"></i>
+                            <input name="password2" type="password" placeholder="password">
+                        </div>
+                        {%if form.password2.errors %}{{ form.password2.errors }}
                     </div>
-                {% endfor %}
-                <button class="ui fluid large teal submit button" type="submit">Sign-Up</button>
-                <div class="ui error message">
-                    {% for error in form.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
+                    <button class="ui fluid large teal submit button" type="submit">Sign-Up</button>
+                    {% if form.non_field_errors %}
+                        <div class="ui error message">
+                            {% for error in form.non_field_errors %}
+                                {{ error}}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
             </form>
             <div class="ui message">
                 <h4>Use Github?</h4>
