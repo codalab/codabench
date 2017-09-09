@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -13,9 +15,10 @@ class Data(models.Model):
     description = models.TextField(null=True, blank=True)
     data_file = models.FileField(
         upload_to=PathWrapper('dataset_data_file'),
-        storage=BundleStorage
+        storage=BundleStorage,
     )
-    key = models.UUIDField()
+    key = models.UUIDField(default=uuid.uuid4, editable=False)
+    is_public = models.BooleanField(default=False)
 
 
 class DataGroup(models.Model):
