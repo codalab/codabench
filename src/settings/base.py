@@ -41,6 +41,7 @@ OUR_APPS = (
     'datasets',
     'pages',
     'profiles',
+    'leaderboards',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
