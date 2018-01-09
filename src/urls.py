@@ -1,18 +1,18 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-
+from django.urls import path
 
 urlpatterns = [
     # Our URLS
-    url('', include('pages.urls', namespace='pages')),
-    url('^profiles/', include('profiles.urls', namespace='profiles')),
+    path('', include('pages.urls', namespace='pages')),
+    path('profiles/', include('profiles.urls', namespace='profiles')),
 
     # Third party
-    url('^api/', include('api.urls')),
-    url('^oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('api/', include('api.urls')),
+    path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 
     # Django built in
-    url('^accounts/', include('django.contrib.auth.urls', namespace='accounts')),
-    url('^admin/', include(admin.site.urls)),
-    url('^social/', include('social_django.urls', namespace='social')),
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('admin/', admin.site.urls),
+    path('social/', include('social_django.urls', namespace='social')),
 ]

@@ -39,4 +39,16 @@ CODALAB.api = {
     delete_column: function(pk) {
         return CODALAB.api.request('DELETE', URLS.API + "leaderboards_columns/" + pk + "/")
     },
+    get_leaderboards: function () {
+        return CODALAB.api.request('GET', URLS.API + "leaderboards_leaderboards")
+    },
+    create_leaderboard: function (data) {
+        return CODALAB.api.request('POST', URLS.API + "leaderboards_leaderboards/", data)
+    },
+    update_leaderboard: function (pk, data) {
+        return CODALAB.api.request('PUT', URLS.API + "leaderboards_leaderboards/" + pk + "/", data)
+    },
+    delete_leaderboard: function (pk) {
+        return CODALAB.api.request('DELETE', URLS.API + "leaderboards_leaderboards/" + pk + "/")
+    },
 }

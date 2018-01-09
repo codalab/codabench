@@ -8,10 +8,10 @@ from utils.data import PathWrapper
 
 
 class Leaderboard(models.Model):
-    name = models.CharField(max_length=50, blank=False, default='')
-    competition = models.OneToOneField(Competition, related_name='leaderboard')
+    competition = models.OneToOneField(Competition, related_name='leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True)
     column_count = models.IntegerField(default=0, blank=False, null=False)
-    main_column = models.OneToOneField('Column', related_name='attached_leaderboard', blank=True, null=True)
+    main_column = models.OneToOneField('Column', related_name='attached_leaderboard', blank=True, null=True,
+                                       on_delete=models.SET_NULL)
 
     def __str__(self):
         return "leaderboard-{0}-{1}-{2}".format(self.name, self.pk, self.competition.title)
@@ -32,7 +32,7 @@ class Metric(models.Model):
     name = models.CharField(max_length=50, blank=False, default='')
     description = models.CharField(max_length=50, blank=False, default=timezone.now)
     key = models.CharField(max_length=10, unique=True, blank=False, null=False)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_metrics')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_metrics', on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return "metric-{0}-{1}".format(self.name, self.pk)
@@ -40,8 +40,9 @@ class Metric(models.Model):
 
 class Column(models.Model):
     name = models.CharField(max_length=50, blank=False, default='new_metric')
-    metric = models.ForeignKey(Metric, related_name='columns')
-    leaderboard = models.ForeignKey(Leaderboard, related_name='columns', blank=True, null=True)
+    metric = models.ForeignKey(Metric, related_name='columns', on_delete=models.DO_NOTHING)
+    leaderboard = models.ForeignKey(Leaderboard, related_name='columns', blank=True, null=True,
+                                    on_delete=models.SET_NULL)
 
     def __str__(self):
         return "column-{0}-{1}".format(self.name, self.pk)
