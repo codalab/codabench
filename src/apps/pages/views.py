@@ -30,7 +30,7 @@ class CompetitionFormView(TemplateView, ContextMixin):
         context['column_form'] = ColumnForm()
         return context
 
-
+      
 class CompetitionDetailView(DetailView, ContextMixin):
     template_name = 'competitions/detail.html'
     # queryset = Competition.objects.all()
@@ -48,25 +48,4 @@ class CompetitionDetailView(DetailView, ContextMixin):
             competition = Competition.objects.get(pk=comp_pk)
             print("Self.object is {}".format(competition))
         return competition
-
-
-
-class SearchView(TemplateView):
-    template_name = 'search/form.html'
-
-
-# class CreateMetricView(CreateView, ContextMixin):
-#     model = Metric
-#     fields = '__all__'
-#     template_name = 'leaderboards/metric_form.html'
-#     success_url = '/'
-#
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         # context['leaderboard'] = {
-#         #     'metric_form': MetricForm(),
-#         #     'column_form': ColumnForm()
-#         # }
-#         context['metric_form'] = MetricForm()
-#         context['column_form'] = ColumnForm()
-#         return context
+      

@@ -196,6 +196,5 @@
             }
         }
 
-
     </script>
 </leaderboard-widget>
