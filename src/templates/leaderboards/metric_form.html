@@ -1,0 +1,30 @@
+<div class="content">
+    <div class="ui form">
+        <form action="/metric/create" method="post">
+            {% csrf_token %}
+
+            <div class="ui field">
+                {{ metric_form.name.errors }}
+                {{ metric_form.name.label_tag }}
+                {{ metric_form.name }}
+            </div>
+            <div class="ui field">
+                {{ metric_form.description.errors }}
+                {{ metric_form.description.label_tag }}
+                {{ metric_form.description }}
+            </div>
+            <div class="ui field">
+                {{ metric_form.key.errors }}
+                {{ metric_form.key.label_tag }}
+                {{ metric_form.key }}
+            </div>
+            <div class="ui field">
+                {{ metric_form.owner.errors }}
+                {{ metric_form.owner.label_tag }}
+                {{ metric_form.owner }}
+            </div>
+
+            <input type="submit" value="Submit"/>
+        </form>
+    </div>
+</div>
