@@ -6,7 +6,7 @@ from utils.data import PathWrapper
 
 
 class Data(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=64, default="")
@@ -19,7 +19,7 @@ class Data(models.Model):
 
 
 class DataGroup(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255)
     datas = models.ManyToManyField(Data, related_name="groups")
