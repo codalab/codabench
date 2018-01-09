@@ -11,5 +11,6 @@ urlpatterns = [
     url(r'^competition/create', views.CompetitionFormView.as_view(), name="competition_create"),
     path('competition/view/<int:competition_pk>/', views.CompetitionDetailView.as_view()),
     url(r'^search', views.SearchView.as_view(), name="search"),
+    url(r'^organize', views.OrganizeView.as_view(), name="organize"),
     url(r'test', views.CompetitionListTestView.as_view()),
 ]

@@ -1,4 +1,4 @@
-{% extends 'base_simple.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
@@ -12,43 +12,56 @@
             </h2>
             <form class="ui large form" method="POST">
                 {% csrf_token %}
-                {% for field in form %}
-                    <div class="ui stacked segment">
-                        <div class="field">
-                            <div class="ui left icon input">
-                                {% if field.name == 'username' %}
-                                    <i class="user icon"></i>
-                                {% else %}
-                                    <i class="write icon"></i>
-                                {% endif %}
-                                {# <input type="text" name="email" placeholder="E-mail address">#}
-                                {{ field }}
-                            </div>
-                        </div>
-                        {# <div class="ui fluid large teal submit button">Login</div>#}
-                    </div>
-                {% endfor %}
-                <button class="ui fluid large teal submit button" type="submit">Login</button>
-                <div class="ui error message">
-                    {% for error in form.errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            </form>
-            <div class="ui message">
-                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "github" %}">
-                    <i class="github icon"></i>
-                    Sign In With GitHub
-                </a>
 
-                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "codalab" %}">
- +                    <i class="computer icon"></i>
- +                    Sign In With CODALAB
- +                </a>
-            </div>
-            <div class="ui message">
-                New to us? <a href="{% url "profiles:signup" %}">Sign Up</a>
-            </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="text" name="username" autofocus="" maxlength="254" required="" id="id_username">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+
+                        <i class="write icon"></i>
+
+
+                        <input type="password" name="password" required="" id="id_password">
+                    </div>
+                </div>
+                {#                {% for field in form %}#}
+                {#                    <div class="ui stacked segment">#}
+                {#                        <div class="field">#}
+                {#                            <div class="ui left icon input">#}
+                {#                                {% if field.name == 'username' %}#}
+                {#                                    <i class="user icon"></i>#}
+                {#                                {% else %}#}
+                {#                                    <i class="write icon"></i>#}
+                {#                                {% endif %}#}
+                {# <input type="text" name="email" placeholder="E-mail address">#}
+                {#                                {{ field }}#}
+                {#                            </div>#}
+                {#                        </div>#}
+                {# <div class="ui fluid large teal submit button">Login</div>#}
+                {#                    </div>#}
+                {#                {% endfor %}#}
+                <button class="ui teal submit button" type="submit">Login</button>
+                {#                <div class="ui error message">#}
+                {#                    {% for error in form.errors %}#}
+                {#                        {{ error }}#}
+                {#                    {% endfor %}#}
+                {#                </div>#}
+            </form>
+            <a class="ui green submit labeled icon button" href="{% url "social:begin" "github" %}">
+                <i class="github icon"></i>
+                Sign In With GitHub
+            </a>
+
+            {#                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "codalab" %}">#}
+            {#                    <i class="computer icon"></i>#}
+            {#                    Sign In With CODALAB#}
+            {#                </a>#}
+
+            New to us? <a href="{% url "profiles:signup" %}">Sign Up</a>
         </div>
     </div>
 {% endblock %}

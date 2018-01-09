@@ -26,7 +26,7 @@
     <script src="{% static "js/calendar.min.js" %}"></script>
     <!-- Riot tags -->
     <script src="{% static "generated/riot.js" %}"></script>
-{#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
+    {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <!-- Our JS -->
     <script src="{% static "js/ours/utils.js" %}"></script>
     <script src="{% static "js/ours/client.js" %}"></script>
@@ -82,7 +82,8 @@
 
 <!-- Page Contents -->
 <div class="pusher">
-    <div id="header" class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
+    <div id="header" class="ui inverted vertical center aligned segment masthead
+        {% block top_div_extra_class %}{% endblock %}">
         <div id="bg"></div>
         <div class="ui container">
             <div class="ui large secondary inverted menu">
@@ -95,7 +96,60 @@
                 <a class="item">Chagrade</a>
                 <div class="right item">
                     {% if user.is_authenticated %}
-                        <a href="accounts/logout" class="ui inverted button">Logout</a>
+                        {#                        <a href="accounts/logout" class="ui inverted button">Logout</a>#}
+
+
+                        <div class="ui inline dropdown">
+                            <div class="text">
+                                <i class="icon user outline"></i>
+                                {{ request.user.name }}
+                            </div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="header">Your management</div>
+                                <div class="item">
+                                    <a href="#">Competitions</a>
+                                </div>
+                                <div class="item">
+                                    <a href="#">Teams</a>
+                                </div>
+
+                                {% if request.user.is_staff %}
+                                    <div class="ui divider"></div>
+                                    <div class="header">Admin management</div>
+
+                                    <div class="item">
+                                        <a href="#">Customize Codalab</a>
+                                    </div>
+                                    <div class="item">
+                                        <a href="#">Monitors</a>
+                                    </div>
+                                    <div class="item">
+                                        <a href="#">Analytics</a>
+                                    </div>
+                                    <div class="item">
+                                        <a href="#">Health</a>
+                                    </div>
+                                    <div class="item">
+                                        <a href="#">Users</a>
+                                    </div>
+                                    <div class="item">
+                                        <a href="#">Submissions</a>
+                                    </div>
+                                {% endif %}
+
+                                <div class="ui divider"></div>
+                                <div class="header">You</div>
+                                <div class="item">
+                                    <i class="icon user"></i>
+                                    <a href="#">Edit profile</a>
+                                </div>
+                                <div class="item">
+                                    <i class="icon sign out"></i>
+                                    <a href="accounts/logout">Logout</a>
+                                </div>
+                            </div>
+                        </div>
                     {% else %}
                         <a href="accounts/login" class="ui inverted button">Login</a>
                         <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
@@ -107,9 +161,12 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-
-    {% block content %}
-    {% endblock %}
+    <div class="ui container grid">
+        <div class="row">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
 
 
     <div class="ui inverted vertical footer segment">

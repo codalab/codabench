@@ -13,6 +13,14 @@ class HomeView(TemplateView):
     template_name = 'pages/home.html'
 
 
+class OrganizeView(TemplateView):
+    template_name = 'pages/organize.html'
+
+
+class SearchView(TemplateView):
+    template_name = 'search/form.html'
+
+
 class CompetitionListTestView(TemplateView):
     template_name = 'pages/competition_list.html'
 
