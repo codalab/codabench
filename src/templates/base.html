@@ -107,47 +107,30 @@
                             <i class="dropdown icon"></i>
                             <div class="menu">
                                 <div class="header">Your management</div>
-                                <div class="item">
-                                    <a href="{% url "competitions:management" %}">Competitions</a>
-                                </div>
-                                <div class="item">
-                                    <a href="#">Teams</a>
-                                </div>
+                                <a class="item" href="{% url "competitions:management" %}">Competitions</a>
+                                <a class="item" href="#">Teams</a>
 
                                 {% if request.user.is_staff %}
                                     <div class="ui divider"></div>
                                     <div class="header">Admin management</div>
-
-                                    <div class="item">
-                                        <a href="#">Customize Codalab</a>
-                                    </div>
-                                    <div class="item">
-                                        <a href="#">Monitors</a>
-                                    </div>
-                                    <div class="item">
-                                        <a href="#">Analytics</a>
-                                    </div>
-                                    <div class="item">
-                                        <a href="#">Health</a>
-                                    </div>
-                                    <div class="item">
-                                        <a href="#">Users</a>
-                                    </div>
-                                    <div class="item">
-                                        <a href="#">Submissions</a>
-                                    </div>
+                                    <a class="item" href="#">Customize Codalab</a>
+                                    <a class="item" href="#">Monitors</a>
+                                    <a class="item" href="#">Analytics</a>
+                                    <a class="item" href="#">Health</a>
+                                    <a class="item" href="#">Users</a>
+                                    <a class="item" href="#">Submissions</a>
                                 {% endif %}
 
                                 <div class="ui divider"></div>
                                 <div class="header">You</div>
-                                <div class="item">
+                                <a class="item" href="#">
                                     <i class="icon user"></i>
-                                    <a href="#">Edit profile</a>
-                                </div>
-                                <div class="item">
+                                    Edit profile
+                                </a>
+                                <a class="item" href="#">
                                     <i class="icon sign out"></i>
-                                    <a href="accounts/logout">Logout</a>
-                                </div>
+                                    Logout
+                                </a>
                             </div>
                         </div>
                     {% else %}

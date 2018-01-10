@@ -15,7 +15,6 @@
 
         self.one("mount", function() {
             if(!self.opts.competitions) {
-                console.log("Hatsa matsa")
                 // If no competitions specified, get ALL competitions
                 CODALAB.api.get_competitions()
                     .done(function (data) {
@@ -26,7 +25,6 @@
                         toastr.error("Could not load competition list....")
                     })
             }
-            console.log("Hatsa matsa2")
         })
     </script>
 </competition-list>

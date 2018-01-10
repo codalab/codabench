@@ -8,8 +8,15 @@ class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     serializer_class = serializers.CompetitionSerializer
 
-    # def post(self, *args, **kwargs):
-    #     return super().post(*args, **kwargs)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # Filter to only see competitions you own
+        mine = self.request.query_params.get('mine', None)
+
+        if mine:
+            qs = qs.filter(created_by=self.request.user)
+
+        return qs
 
 
 class PhaseViewSet(ModelViewSet):

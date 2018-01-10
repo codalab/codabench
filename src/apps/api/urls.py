@@ -22,7 +22,7 @@ router.register('leaderboards_leaderboards', leaderboards.LeaderboardViewSet)
 
 urlpatterns = [
     url('^', include(router.urls)),
-    url('^query/', search.query),
+    # url('^query/', search.query),
     url('^my_profile/', profiles.GetMyProfile.as_view()),
 
     url('^api-auth/', include('rest_framework.urls', namespace='rest_framework')),

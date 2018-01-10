@@ -14,14 +14,14 @@ CODALAB.api = {
     },
 
     search: function (query) {
+        // TODO: This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
     },
 
-    get_competitions: function () {
-        return CODALAB.api.request('GET', URLS.API + "competitions")
-    },
-    my_competitions: function () {
-        return CODALAB.api.request('GET', URLS.API + "competitions")
+    get_competitions: function (query) {
+        // To not pass "undefined" in URL...
+        query = query || ''
+        return CODALAB.api.request('GET', URLS.API + "competitions" + query)
     }
 
     // get_metrics: function () {

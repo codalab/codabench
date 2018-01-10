@@ -1,14 +1,21 @@
 <competition-management>
-    <h1>Yo here are your stupid competitions you nerd</h1>
+    <h1>Competition Management</h1>
+
+    <h3>Todo:</h3>
+    <ol>
+        <li><s>Actually filter this list by who owns it</s></li>
+        <li>Create</li>
+        <li>Edit</li>
+        <li>Delete</li>
+    </ol>
 
     <competition-list competitions="{ competitions }"></competition-list>
-    <!--<competition-tile each="{competition in competitions}"></competition-tile>-->
 
     <script>
         var self = this
 
         self.one("mount", function() {
-            CODALAB.api.my_competitions()
+            CODALAB.api.get_competitions("?mine=true")
                 .done(function(data){
                     self.update({competitions: data})
                 })
