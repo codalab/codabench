@@ -26,7 +26,7 @@
     <script src="{% static "js/calendar.min.js" %}"></script>
     <!-- Riot tags -->
     <script src="{% static "generated/riot.js" %}"></script>
-{#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
+    {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <!-- Our JS -->
     <script src="{% static "js/ours/utils.js" %}"></script>
     <script src="{% static "js/ours/client.js" %}"></script>
@@ -56,9 +56,9 @@
         <a class="item">Chagrade</a>
         <div class="right menu">
             {% if user.is_authenticated %}
-                <div class="item"><a class="ui inverted button" href="accounts/logout">Logout</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "logout" %}">Logout</a></div>
             {% else %}
-                <div class="item"><a class="ui inverted button" href="accounts/login">Login</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "login" %}">Login</a></div>
                 <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
             {% endif %}
         </div>
@@ -82,7 +82,8 @@
 
 <!-- Page Contents -->
 <div class="pusher">
-    <div id="header" class="ui inverted vertical center aligned segment masthead {% block top_div_extra_class %}{% endblock %}">
+    <div id="header" class="ui inverted vertical center aligned segment masthead
+        {% block top_div_extra_class %}{% endblock %}">
         <div id="bg"></div>
         <div class="ui container">
             <div class="ui large secondary inverted menu">
@@ -95,7 +96,43 @@
                 <a class="item">Chagrade</a>
                 <div class="right item">
                     {% if user.is_authenticated %}
-                        <a href="accounts/logout" class="ui inverted button">Logout</a>
+                        {#                        <a href="accounts/logout" class="ui inverted button">Logout</a>#}
+
+
+                        <div class="ui inline dropdown">
+                            <div class="text">
+                                <i class="icon user outline"></i>
+                                {{ request.user.name }}
+                            </div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="header">Your management</div>
+                                <a class="item" href="{% url "competitions:management" %}">Competitions</a>
+                                <a class="item" href="#">Teams</a>
+
+                                {% if request.user.is_staff %}
+                                    <div class="ui divider"></div>
+                                    <div class="header">Admin management</div>
+                                    <a class="item" href="#">Customize Codalab</a>
+                                    <a class="item" href="#">Monitors</a>
+                                    <a class="item" href="#">Analytics</a>
+                                    <a class="item" href="#">Health</a>
+                                    <a class="item" href="#">Users</a>
+                                    <a class="item" href="#">Submissions</a>
+                                {% endif %}
+
+                                <div class="ui divider"></div>
+                                <div class="header">You</div>
+                                <a class="item" href="#">
+                                    <i class="icon user"></i>
+                                    Edit profile
+                                </a>
+                                <a class="item" href="#">
+                                    <i class="icon sign out"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
                     {% else %}
                         <a href="accounts/login" class="ui inverted button">Login</a>
                         <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
@@ -107,9 +144,12 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-
-    {% block content %}
-    {% endblock %}
+    <div class="ui container grid">
+        <div class="row">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
 
 
     <div class="ui inverted vertical footer segment">
@@ -148,7 +188,9 @@
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },
-        API: "/api/"
+        API: "/api/",
+        COMPETITION_ADD: "{% url "competitions:form" %}",
+        COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) }
     }
 </script>
 

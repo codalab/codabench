@@ -5,6 +5,7 @@ from django.urls import path
 urlpatterns = [
     # Our URLS
     path('', include('pages.urls', namespace='pages')),
+    path('competitions/', include('competitions.urls', namespace='competitions')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
 
     # Third party

@@ -12,10 +12,6 @@
     left 0
     right 0
 
-#header
-    background transparent
-    margin-bottom 20px
-
 .ui.secondary.inverted.pointing.menu
     border transparent
 
@@ -76,6 +72,23 @@
 
 .hidden.menu
     display none
+
+
+/* --------------------------------------------------------------------------------------
+ top menu/dropdowns
+ */
+#header
+    background transparent
+    margin-bottom 20px
+
+    .ui.menu .ui.dropdown .menu>.item
+        color rgba(0, 0, 0, 0.6) !important
+
+    .icon.user.outline
+        // User profile icon
+        margin-right 0
+
+
 
 /* --------------------------------------------------------------------------------------
  footer
