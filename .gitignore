@@ -9,3 +9,5 @@ src/static/output.js
 src/static/riot.js
 src/static/riot.tag
 src/static/generated/*
+
+src/uploads/
