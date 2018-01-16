@@ -36,7 +36,7 @@
 
 
 
-                    <!--<leaderboard-widget></leaderboard-widget>-->
+                    <leaderboard-widget></leaderboard-widget>
 
 
 

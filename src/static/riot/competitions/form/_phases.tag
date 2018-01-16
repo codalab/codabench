@@ -10,8 +10,6 @@
             <div class="ui one cards">
                 <a each="{phase, index in phases}" class="green card">
                     <div class="content">
-                        <!--<i class="right floated chevron down icon" show="{ index + 1 < phases.length }" onclick="{ move_phase_down.bind(this, index) }"></i>
-                        <i class="right floated chevron up icon" show="{ index > 0 }" onclick="{ move_phase_up.bind(this, index) }"></i>-->
                         <sorting-chevrons data="{ phases }" index="{ index }"></sorting-chevrons>
                         <div class="header">{ phase.name }</div>
                         <div class="description">
@@ -29,49 +27,6 @@
                         </span>
                     </div>
                 </a>
-
-                <!--
-                <a class="red card">
-                    <div class="content">
-                        <i class="right floated chevron down icon"></i>
-                        <i class="right floated chevron up icon"></i>
-                        <div class="header">How to determine something</div>
-                        <div class="description">
-                            Matthew is an interior designer living in New York.
-                        </div>
-                    </div>
-                    <div class="extra content">
-                                        <span class="left floated like">
-                                            <i class="edit icon"></i>
-                                            Edit
-                                        </span>
-                        <span class="right floated star">
-                                            <i class="delete icon"></i>
-                                            Delete
-                                        </span>
-                    </div>
-                </a>
-
-                <a class="orange card">
-                    <div class="content">
-                        <i class="right floated chevron down icon"></i>
-                        <i class="right floated chevron up icon"></i>
-                        <div class="header">Testing something</div>
-                        <div class="description">
-                            Matthew is an interior designer living in New York.
-                        </div>
-                    </div>
-                    <div class="extra content">
-                                        <span class="left floated like">
-                                            <i class="edit icon"></i>
-                                            Edit
-                                        </span>
-                        <span class="right floated star">
-                                            <i class="delete icon"></i>
-                                            Delete
-                                        </span>
-                    </div>
-                </a>-->
             </div>
         </div>
     </div>
@@ -211,24 +166,5 @@
                 }
             })
         })
-
-        /*self.move_phase_up = function(phase_index) {
-            self.move_phase(phase_index, -1)
-        }
-
-        self.move_phase_down = function(phase_index) {
-            self.move_phase(phase_index, 1)
-        }
-        self.move_phase = function(phase_index, offset){
-            var phase_to_move = self.phases[phase_index]
-
-            // Remove 1 item
-            self.phases.splice(phase_index, 1)
-
-            // Add 1 item offset up OR down
-            self.phases.splice(phase_index + offset, 0, phase_to_move)
-
-            self.update()
-        }*/
     </script>
 </competition-phases>
