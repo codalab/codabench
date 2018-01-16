@@ -56,9 +56,9 @@
         <a class="item">Chagrade</a>
         <div class="right menu">
             {% if user.is_authenticated %}
-                <div class="item"><a class="ui inverted button" href="accounts/logout">Logout</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "logout" %}">Logout</a></div>
             {% else %}
-                <div class="item"><a class="ui inverted button" href="accounts/login">Login</a></div>
+                <div class="item"><a class="ui inverted button" href="{% url "login" %}">Login</a></div>
                 <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
             {% endif %}
         </div>
@@ -188,7 +188,9 @@
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },
-        API: "/api/"
+        API: "/api/",
+        COMPETITION_ADD: "{% url "competitions:form" %}",
+        COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) }
     }
 </script>
 

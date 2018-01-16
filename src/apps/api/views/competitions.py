@@ -1,4 +1,4 @@
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.serializers import competitions as serializers
 from competitions.models import Competition, Phase, Submission
@@ -18,12 +18,17 @@ class CompetitionViewSet(ModelViewSet):
 
         return qs
 
+    def get_serializer_context(self):
+        return {
+            "created_by": self.request.user
+        }
 
-class PhaseViewSet(ModelViewSet):
+
+class PhaseViewSet(ReadOnlyModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = serializers.PhaseSerializer
 
 
-class SubmissionViewSet(ModelViewSet):
+class SubmissionViewSet(ReadOnlyModelViewSet):
     queryset = Submission.objects.all()
     serializer_class = serializers.SubmissionSerializer

@@ -13,8 +13,8 @@
     <script>
         var self = this
 
-        self.one("mount", function() {
-            if(!self.opts.competitions) {
+        self.one("mount", function () {
+            if (!self.opts.competitions) {
                 // If no competitions specified, get ALL competitions
                 CODALAB.api.get_competitions()
                     .done(function (data) {
@@ -30,24 +30,36 @@
 </competition-list>
 
 <competition-tile class="ui item">
-        <div class="image">
-            <img src="https://semantic-ui.com/images/wireframe/image.png">
+    <div class="image">
+        <img src="https://semantic-ui.com/images/wireframe/image.png">
+    </div>
+    <div class="content">
+        <a class="header">{ competition.title }</a>
+        <div class="meta">
+            <span>created by { competition.created_by }</span>
         </div>
-        <div class="content">
-            <a class="header">{ competition.title }</a>
-            <div class="meta">
-                <span>created by { competition.created_by }</span>
-            </div>
-            <div class="description">
-                <p>{ competition.description }</p>
-            </div>
-            <div class="extra">
-                <div class="ui right floated primary button">
-                    View more
-                    <i class="right chevron icon"></i>
+        <div class="description">
+            <p>{ competition.description }</p>
+        </div>
+        <div class="extra">
+            <a class="ui right floated button" href="{ URLS.COMPETITION_DETAIL(competition.id) }">
+                View
+                <i class="right chevron icon"></i>
+            </a>
+
+            <div class="ui right floated buttons">
+
+                <div class="ui negative button">
+                    <i class="delete icon"></i>
+                    Delete
                 </div>
-                <div class="ui label">Active</div>
+                <div class="ui button">
+                    <i class="pencil icon"></i>
+                    Edit
+                </div>
             </div>
+
+            <div class="ui label">Active</div>
         </div>
     </div>
     <script>

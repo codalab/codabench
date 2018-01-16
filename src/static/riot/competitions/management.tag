@@ -9,6 +9,14 @@
         <li>Delete</li>
     </ol>
 
+    <div class="ui right aligned grid">
+        <div class="sixteen wide column">
+            <a class="ui green button" href="{ URLS.COMPETITION_ADD }">
+                <i class="add square icon"></i> Create new competition
+            </a>
+        </div>
+    </div>
+
     <competition-list competitions="{ competitions }"></competition-list>
 
     <script>

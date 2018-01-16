@@ -21,7 +21,7 @@ CODALAB.api = {
     get_competitions: function (query) {
         // To not pass "undefined" in URL...
         query = query || ''
-        return CODALAB.api.request('GET', URLS.API + "competitions" + query)
+        return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
     }
 
     // get_metrics: function () {

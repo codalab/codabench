@@ -1,0 +1,57 @@
+// Hide all file inputs
+input[type="file"]
+    display none
+
+// Fix input icon border bug
+.ui[class*="left action"].input > .dropdown
+    border-radius 0
+    border-bottom-right-radius 4px
+    border-top-right-radius 4px
+
+
+// Smaller markdown editor
+.smaller-mde
+    .CodeMirror
+        height 150px
+        min-height 150px
+
+
+
+// Fix progress bar borders
+.ui.left
+    .ui.progress,
+    .ui.progress .bar
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+
+
+//
+//.ui.action.file.input > input {
+//    display: none;
+//}
+//.ui.action.file.input:not([class*="left action"]) > label {
+//    border-top-right-radius: 0 !important;
+//    border-bottom-right-radius: 0 !important;
+//    border-right-color: transparent !important;
+//}
+//.ui.action.file.input > label:first-child {
+//    cursor: pointer;
+//    width: auto;
+//    -webkit-box-flex: 1;
+//    -webkit-flex: 1 0 auto;
+//    -ms-flex: 1 0 auto;
+//    flex: 1 0 auto;
+//    outline: 0;
+//    -webkit-tap-highlight-color: rgba(255,255,255,0);
+//    padding: .67861429em 1em;
+//    background: #FFF;
+//    border: 1px solid rgba(34,36,38,.15);
+//    color: rgba(0,0,0,.87);
+//    border-radius: .28571429rem;
+//    -webkit-transition: box-shadow .1s ease,border-color .1s ease;
+//    transition: box-shadow .1s ease,border-color .1s ease;
+//    box-shadow: none;
+//}
+//.ui.action.file.input > label:last-child {
+//    border-radius: 0 .28571429rem .28571429rem 0 !important;
+//}
