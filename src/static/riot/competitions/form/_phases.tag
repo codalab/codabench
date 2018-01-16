@@ -10,8 +10,9 @@
             <div class="ui one cards">
                 <a each="{phase, index in phases}" class="green card">
                     <div class="content">
-                        <i class="right floated chevron down icon" show="{ index + 1 < phases.length }" onclick="{ move_phase_down.bind(this, index) }"></i>
-                        <i class="right floated chevron up icon" show="{ index > 0 }" onclick="{ move_phase_up.bind(this, index) }"></i>
+                        <!--<i class="right floated chevron down icon" show="{ index + 1 < phases.length }" onclick="{ move_phase_down.bind(this, index) }"></i>
+                        <i class="right floated chevron up icon" show="{ index > 0 }" onclick="{ move_phase_up.bind(this, index) }"></i>-->
+                        <sorting-chevrons data="{ phases }" index="{ index }"></sorting-chevrons>
                         <div class="header">{ phase.name }</div>
                         <div class="description">
                             { phase.description }
@@ -211,7 +212,7 @@
             })
         })
 
-        self.move_phase_up = function(phase_index) {
+        /*self.move_phase_up = function(phase_index) {
             self.move_phase(phase_index, -1)
         }
 
@@ -228,6 +229,6 @@
             self.phases.splice(phase_index + offset, 0, phase_to_move)
 
             self.update()
-        }
+        }*/
     </script>
 </competition-phases>
