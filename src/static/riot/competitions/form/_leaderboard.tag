@@ -3,7 +3,21 @@
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <h1>Leaderboard</h1>
+    <competition-leaderboard-item each="{ leaderboards }"></competition-leaderboard-item>
+
+    <script>
+        var self = this
+
+        self.leaderboards = [
+            {name: "Leaderboard"},
+            {name: "Another leaderboard"}
+        ]
+    </script>
+</competition-leaderboards>
+
+<competition-leaderboard-item>
+    <h1>{ name }</h1>
+
     <table class="ui compact celled stackable small table table-bordered definition">
         <thead>
         <tr>
@@ -161,7 +175,8 @@
 
     <style>
         :scope {
-
+            display: block;
+            padding: 20px 0;
         }
 
         .multiselect {
@@ -189,4 +204,4 @@
             float: right;
         }
     </style>
-</competition-leaderboards>
+</competition-leaderboard-item>
