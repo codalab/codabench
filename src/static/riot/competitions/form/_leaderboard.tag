@@ -18,104 +18,106 @@
 <competition-leaderboard-item>
     <h1>{ name }</h1>
 
-    <table class="ui compact celled stackable small table table-bordered definition">
-        <thead>
-        <tr>
-            <th class="right aligned" width="175px">
+    <form>
+        <table class="ui compact celled stackable small table table-bordered definition">
+            <thead>
+            <tr>
+                <th class="right aligned" width="175px">
 
-            </th>
-            <!--<th>
-                <button class="ui tiny blue icon button" onclick="{ add_column }">
-                    <i class="add square icon"></i> Add column
-                </button>
-            </th>-->
-            <th each="{ column, index in columns }" class="center aligned" width="175px">
-                <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
+                </th>
+                <!--<th>
+                    <button class="ui tiny blue icon button" onclick="{ add_column }">
+                        <i class="add square icon"></i> Add column
+                    </button>
+                </th>-->
+                <th each="{ column, index in columns }" class="center aligned" width="175px">
+                    <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
 
 
-                <span show="{ !column.editing }" onclick="{ edit_column_name.bind(this, column, index) }">
+                    <span show="{ !column.editing }" onclick="{ edit_column_name.bind(this, column, index) }">
                 <!--<span onclick="{ column.editing = true }">-->
                     <i class="icon pencil small"></i> { column.name }
                 </span>
 
-                <div class="ui input" show="{ column.editing }">
-                    <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, column) }">
-                </div>
+                    <div class="ui input" show="{ column.editing }">
+                        <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, column) }">
+                    </div>
 
-                <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
-                <!--<select>
-                    <option selected>
-                        ------
-                    </option>
-                    <option></option>
-                </select>-->
-            </th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr class="ui aligned right">
-            <td>Primary Column?</td>
-            <td each="{ columns }" class="center aligned">
-                <input type="radio">
-            </td>
-            <td></td> <!-- Empty cell so it cuts off nicely at the end of rows -->
-        </tr>
-
-        <tr class="ui aligned right">
-            <td>
-                <span data-tooltip="This operation is applied to every other column" data-inverted="" data-position="right center">
-                    Applied computation <i class="help icon circle"></i>
-                </span>
-            </td>
-            <td each="{ column, index in columns }" class="center aligned">
-                <div class="ui field">
-                    <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, column) }">
+                    <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
+                    <!--<select>
                         <option selected>
                             ------
                         </option>
-                        <option>Average</option>
-                    </select>
-                </div>
-                <div class="ui field" show="{ column.computation }">
-                    <label>Apply to:</label>
-                    <select class="ui fluid small multiselect" multiple="">
-                        <option each="{ inner_column, inner_index in columns }" show="{ index != inner_index }"> { inner_column.name }</option>
-                    </select>
-                </div>
-            </td>
-            <td></td>
-        </tr>
+                        <option></option>
+                    </select>-->
+                </th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="ui aligned right">
+                <td>Primary Column?</td>
+                <td each="{ columns }" class="center aligned">
+                    <input type="radio" name="primary" checked="{ selected }">
+                </td>
+                <td></td> <!-- Empty cell so it cuts off nicely at the end of rows -->
+            </tr>
 
-        <tr class="ui aligned right">
-            <td>Sorting</td>
-            <td each="{ columns }" class="center aligned">
-                <select class="ui fluid small dropdown">
-                    <option selected>Descending</option>
-                    <option>Ascending</option>
-                </select>
-            </td>
-            <td></td>
-        </tr>
-        </tbody>
+            <tr class="ui aligned right">
+                <td>
+                <span data-tooltip="This operation is applied to every other column" data-inverted="" data-position="right center">
+                    Applied computation <i class="help icon circle"></i>
+                </span>
+                </td>
+                <td each="{ column, index in columns }" class="center aligned">
+                    <div class="ui field">
+                        <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, column) }">
+                            <option selected>
+                                ------
+                            </option>
+                            <option>Average</option>
+                        </select>
+                    </div>
+                    <div class="ui field" show="{ column.computation }">
+                        <label>Apply to:</label>
+                        <select class="ui fluid small multiselect" multiple="">
+                            <option each="{ inner_column, inner_index in columns }" show="{ index != inner_index }"> { inner_column.name }</option>
+                        </select>
+                    </div>
+                </td>
+                <td></td>
+            </tr>
 
-        <tfoot class="full-width">
-        <tr>
-            <th></th>
-            <th colspan="{ columns.length + 1}">
-                <button class="ui  small primary labeled icon button" onclick="{ add_column }">
-                    <i class="add square icon"></i> Add column
-                </button>
-            </th>
-        </tr>
-        </tfoot>
-    </table>
+            <tr class="ui aligned right">
+                <td>Sorting</td>
+                <td each="{ columns }" class="center aligned">
+                    <select class="ui fluid small dropdown">
+                        <option selected>Descending</option>
+                        <option>Ascending</option>
+                    </select>
+                </td>
+                <td></td>
+            </tr>
+            </tbody>
+
+            <tfoot class="full-width">
+            <tr>
+                <th></th>
+                <th colspan="{ columns.length + 1}">
+                    <button type="button" class="ui small primary labeled icon button" onclick="{ add_column }">
+                        <i class="add square icon"></i> Add column
+                    </button>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+    </form>
 
     <script>
         var self = this
 
         self.columns = [
-            {name: "Score"}
+            {name: "Score", selected: true}
         ]
 
         self.one("mount", function () {
