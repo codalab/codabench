@@ -1,6 +1,6 @@
 <competition-pages>
     <button class="ui primary button modal-button" ref="modal_button">
-        <i class="add circle icon"></i> Create new page
+        <i class="add circle icon"></i> Add page
     </button>
 
     <div class="ui top vertical centered segment grid">

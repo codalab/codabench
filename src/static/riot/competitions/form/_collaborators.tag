@@ -1,6 +1,6 @@
 <competition-collaborators>
     <button class="ui primary button modal-button" ref="modal_button">
-        <i class="add circle icon"></i> Add new collaborator
+        <i class="add circle icon"></i> Add collaborator
     </button>
 
     <h2>Collaborators</h2>

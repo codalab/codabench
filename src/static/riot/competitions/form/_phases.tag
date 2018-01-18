@@ -1,6 +1,6 @@
 <competition-phases>
     <button class="ui primary button modal-button" ref="modal_button">
-        <i class="add circle icon"></i> Create new phase
+        <i class="add circle icon"></i> Add phase
     </button>
 
     <div class="ui top vertical centered segment grid">
@@ -37,81 +37,99 @@
         </div>
         <div class="content">
 
+            <div class="ui top pointing secondary menu">
+                <a class="active item" data-tab="phase_details">Phase details</a>
+                <a class="item" data-tab="phase_datasets">Datasets</a>
+            </div>
+
             <div class="ui form">
-                <div class="field required">
-                    <label>Name</label>
-                    <input/>
-                </div>
-
-                <div class="two fields">
-                    <div class="ui calendar field required" ref="calendar">
-                        <label>Start</label>
-                        <div class="ui input left icon">
-                            <i class="calendar icon"></i>
-                            <input type="text">
-                        </div>
-                    </div>
-
-                    <div class="ui calendar field" ref="calendar">
-                        <label>End</label>
-                        <div class="ui input left icon">
-                            <i class="calendar icon"></i>
-                            <input type="text">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field required smaller-mde">
-                    <label>Description</label>
-                    <textarea class="markdown-editor" ref="description"></textarea>
-                </div>
-
-                <div class="three fields">
-                    <div class="field">
-                        <label>Input Data</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Reference Data</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
-                    </div>
+                <div class="ui bottom active tab" data-tab="phase_details">
                     <div class="field required">
-                        <label>Scoring Program</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
+                        <label>Name</label>
+                        <input/>
                     </div>
+
+                    <div class="two fields">
+                        <div class="ui calendar field required" ref="calendar">
+                            <label>Start</label>
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text">
+                            </div>
+                        </div>
+
+                        <div class="ui calendar field" ref="calendar">
+                            <label>End</label>
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field required smaller-mde">
+                        <label>Description</label>
+                        <textarea class="markdown-editor" ref="description"></textarea>
+                    </div>
+
                 </div>
-                <div class="three fields">
-                    <div class="field">
-                        <label>Ingestion Program</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
+
+                <div class="ui bottom tab" data-tab="phase_datasets">
+                    <div class="field required">
+                        <a class="ui fluid large primary button" type="submit">
+                            <i class="icon sign out"></i> Manage Datasets
+                        </a>
                     </div>
-                    <div class="field">
-                        <label>Public Data</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
+
+                    <div class="three fields">
+                        <div class="field">
+                            <label>Input Data</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Reference Data</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
+                        <div class="field required">
+                            <label>Scoring Program</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="field">
-                        <label>Starting Kit</label>
-                        <select class="ui dropdown">
-                            <option value="test">Test</option>
-                            <option value="test">Test</option>
-                        </select>
+                    <div class="three fields">
+                        <div class="field">
+                            <label>Ingestion Program</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Public Data</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Starting Kit</label>
+                            <select class="ui dropdown">
+                                <option value="test">Test</option>
+                                <option value="test">Test</option>
+                            </select>
+                        </div>
                     </div>
+
                 </div>
+
 
             </div>
         </div>
@@ -137,7 +155,7 @@
                 $(self.refs.modal).modal('show')
 
                 // Have to initialize calendars here (instead of on mount) because they don't exist yet
-                if(!self.has_initialized_calendars) {
+                if (!self.has_initialized_calendars) {
                     $(self.refs.calendar).calendar({
                         type: 'date',
                         popupOptions: {

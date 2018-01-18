@@ -2,7 +2,7 @@
     <div class="ui middle aligned stackable grid container">
         <div class="row centered">
             <div class="twelve wide column">
-                <div class="ui top  pointing secondary menu">
+                <div class="ui top pointing secondary menu">
                     <a class="active item" data-tab="competition_details">Competition details</a>
                     <a class="item" data-tab="pages">Pages</a>
                     <a class="item" data-tab="phases">Phases</a>
@@ -29,17 +29,14 @@
 <!--                    {% include "leaderboards/widget.html" %} -->
 
 
+                    <competition-leaderboards></competition-leaderboards>
 
 
 
 
 
 
-
-                    <leaderboard-widget></leaderboard-widget>
-
-
-
+                    <!--<leaderboard-widget></leaderboard-widget>-->
 
 
 
@@ -48,14 +45,13 @@
 
 
 
-<!--                    <leaderboard-form></leaderboard-form> -->
+
 
 
                 </div>
 
                 <div class="ui bottom tab" data-tab="collaborators">
                     <competition-collaborators></competition-collaborators>
-
                 </div>
             </div>
         </div>
