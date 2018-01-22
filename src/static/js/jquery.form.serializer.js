@@ -1,69 +1,43 @@
-/**
- * Created by admin on 1/3/18.
- */
 (function ($) {
-    $.fn.serializeObject = function () {
+    $.fn.serializeJSON = function (options) {
+        var o = $.extend({}, options || {});
 
-        var self = this,
-            json = {},
-            push_counters = {},
-            patterns = {
-                "validate": /^[a-zA-Z][a-zA-Z0-9_]*(?:\[(?:\d*|[a-zA-Z0-9_]+)\])*$/,
-                "key": /[a-zA-Z0-9_]+|(?=\[\])/g,
-                "push": /^$/,
-                "fixed": /^\d+$/,
-                "named": /^[a-zA-Z0-9_]+$/
-            };
+        var rselectTextarea = /select|textarea/i;
+        var rinput = /text|hidden|password|search/i;
 
+        var data = this.map(function () {
+            return this.elements ? $.makeArray(this.elements) : this;
+        })
+            .filter(function () {
+                return this.name && !this.disabled &&
+                    (this.checked
+                        || this.type === 'checkbox'
+                        || rselectTextarea.test(this.nodeName)
+                        || rinput.test(this.type));
+            })
+            .map(function (i, elem) {
+                var val = $(this).val();
+                return val == null ?
+                    null :
+                    $.isArray(val) ?
+                        $.map(val, function (val, i) {
+                            return {name: elem.name, value: val};
+                        }) :
+                        {
+                            name: elem.name,
+                            value: (this.type === 'checkbox') ? //moar ternaries!
+                                (this.checked ? 'true' : 'false') :
+                                val
+                        };
+            }).get();
 
-        this.build = function (base, key, value) {
-            base[key] = value;
-            return base;
-        };
+        var indexed_array = {};
 
-        this.push_counter = function (key) {
-            if (push_counters[key] === undefined) {
-                push_counters[key] = 0;
-            }
-            return push_counters[key]++;
-        };
-
-        $.each($(this).serializeArray(), function () {
-
-            // skip invalid keys
-            if (!patterns.validate.test(this.name)) {
-                return;
-            }
-
-            var k,
-                keys = this.name.match(patterns.key),
-                merge = this.value,
-                reverse_key = this.name;
-
-            while ((k = keys.pop()) !== undefined) {
-
-                // adjust reverse_key
-                reverse_key = reverse_key.replace(new RegExp("\\[" + k + "\\]$"), '');
-
-                // push
-                if (k.match(patterns.push)) {
-                    merge = self.build([], self.push_counter(reverse_key), merge);
-                }
-
-                // fixed
-                else if (k.match(patterns.fixed)) {
-                    merge = self.build([], k, merge);
-                }
-
-                // named
-                else if (k.match(patterns.named)) {
-                    merge = self.build({}, k, merge);
-                }
-            }
-
-            json = $.extend(true, json, merge);
+        $.map(data, function (n, i) {
+            indexed_array[n['name']] = n['value'];
         });
 
-        return json;
+        return indexed_array;
     };
+
 })(jQuery);

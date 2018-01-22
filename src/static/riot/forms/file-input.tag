@@ -5,7 +5,7 @@
         <button class="ui icon button" onclick="{ click }">
             <i class="attach icon"></i>
         </button>
-        <input type="file" ref="file_input" accept="{ opts.accept }">
+        <input type="file" name="{ opts.name }" ref="file_input" accept="{ opts.accept }">
 
 
         <!-- Drop down selector -->

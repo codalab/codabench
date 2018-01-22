@@ -8,13 +8,27 @@
             <div class="ui segment">
                 <h3>Form</h3>
 
-                <form class="ui form" onsubmit="{ save }">
+                <form class="ui form" ref="form" onsubmit="{ save }">
                     <div class="field">
-                        <input type="text" placeholder="Name">
+                        <input type="text" name="name" placeholder="Name">
                     </div>
+
+                    <div class="field">
+                        <select name="type" class="ui dropdown">
+                            <option value="">Type</option>
+                            <option value="-">----</option>
+                            <option>Ingestion Program</option>
+                            <option>Input Data</option>
+                            <option>Public Data</option>
+                            <option>Reference Data</option>
+                            <option>Scoring Program</option>
+                            <option>Starting Kit</option>
+                        </select>
+                    </div>
+
                     <div class="field">
                         <!--<input type="file" name="last-name" placeholder="Name">-->
-                        <file-input accept=".zip"></file-input>
+                        <file-input name="data_file" accept=".zip"></file-input>
                     </div>
                     <!--<div class="ui right floated compact basic segment stepper">
                         <button class="ui button" type="submit">Submit</button>
@@ -22,7 +36,7 @@
 
                     <div class="field">
                         <div class="ui checkbox">
-                            <input type="checkbox" tabindex="0" class="hidden">
+                            <input type="checkbox" name="is_public" tabindex="0" class="hidden">
                             <label>Public?</label>
                         </div>
                     </div>
@@ -43,7 +57,7 @@
                 <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
                 <i class="search icon"></i>
             </div>
-            <select class="ui dropdown" ref="type" onchange="{ filter }">
+            <select class="ui dropdown" ref="type_filter" onchange="{ filter }">
                 <option value="">Type</option>
                 <option value="-">----</option>
                 <option>Ingestion Program</option>
@@ -117,8 +131,9 @@
         self.filtered_datasets = self.datasets.slice(0)
 
         self.one("mount", function () {
-            // Make dropdowns work
+            // Make semantic elements work
             $(".ui.dropdown").dropdown()
+            $(".ui.checkbox").checkbox()
 
             // init
             self.update_datasets()
@@ -136,7 +151,7 @@
 
                 // Filters
                 var search = self.refs.search.value.toLowerCase()
-                var type = self.refs.type.value
+                var type = self.refs.type_filter.value
                 console.log(type)
 
                 if (search) {
@@ -171,9 +186,8 @@
                 })
         }
 
-        self.delete_dataset = function(dataset) {
-            console.log(this)
-            if(confirm("Are you sure you want to delete '" + dataset.name + "'?")) {
+        self.delete_dataset = function (dataset) {
+            if (confirm("Are you sure you want to delete '" + dataset.name + "'?")) {
                 CODALAB.api.delete_dataset(dataset.id)
                     .done(function () {
                         self.update_datasets()
@@ -189,6 +203,12 @@
             if (event) {
                 event.preventDefault()
             }
+
+            var data = $(self.refs.form).serializeJSON()
+
+            // TODO: Upload the file, note: files aren't included in JSON data above,
+            // we need to send file with like FormData(form object) or something weird,
+            // IIRC...
         }
     </script>
 
