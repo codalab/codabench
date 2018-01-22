@@ -13,7 +13,7 @@ class PathWrapper(object):
 
     def __call__(self, instance, filename):
         name, extension = os.path.splitext(filename)
-        truncated_uuid = str(uuid.uuid4())[0:5]
+        truncated_uuid = str(uuid.uuid4())[0:6]
         truncated_name = name[0:35]
         return os.path.join(
             self.path,

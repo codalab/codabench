@@ -189,8 +189,13 @@
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
+
+        // Competitions
         COMPETITION_ADD: "{% url "competitions:form" %}",
-        COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) }
+        COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) },
+
+        // Datasets
+        DATASET_MANAGEMENT: "{% url "datasets:management" %}"
     }
 </script>
 

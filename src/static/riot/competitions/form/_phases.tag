@@ -80,7 +80,7 @@
 
                 <div class="ui bottom tab" data-tab="phase_datasets">
                     <div class="field required">
-                        <a class="ui fluid large primary button" type="submit">
+                        <a href="{ URLS.DATASET_MANAGEMENT }" class="ui fluid large primary button" target="_blank">
                             <i class="icon sign out"></i> Manage Datasets
                         </a>
                     </div>
@@ -92,12 +92,9 @@
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
 
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -106,12 +103,9 @@
                                 Reference Data
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -120,12 +114,9 @@
                                 Scoring Program
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -136,12 +127,9 @@
                                 Ingestion Program
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -150,12 +138,9 @@
                                 Public Data
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -164,12 +149,9 @@
                                 Starting Kit
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled action input search">
-                                <i class="search icon asdfasdfasdf"></i>
+                            <div class="ui fluid left icon labeled input search">
+                                <i class="search icon"></i>
                                 <input type="text" class="prompt">
-                                <button class="ui icon button">
-                                    <i class="attach icon"></i>
-                                </button>
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -189,6 +171,9 @@
     <script>
         var self = this
 
+        /*---------------------------------------------------------------------
+         Init
+        ---------------------------------------------------------------------*/
         self.has_initialized_calendars = false
         self.phases = [
             {name: "First phase"},
@@ -242,14 +227,6 @@
         })
     </script>
     <style>
-        .icon.search {
-            opacity: .15 !important;
-        }
-
-        .asdfasdfasdf {
-            opacity: .15 !important;;
-        }
-
         .ui[class*="left icon"].input>i.icon {
             opacity: .15;
         }
