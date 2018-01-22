@@ -2,6 +2,8 @@
 __pycache__
 
 node_modules/
+staticfiles/
+uploads/
 
 
 src/static/output.css

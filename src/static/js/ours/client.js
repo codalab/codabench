@@ -20,10 +20,23 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
     },
 
+    /*---------------------------------------------------------------------
+         Competitions
+    ---------------------------------------------------------------------*/
     get_competitions: function (query) {
         // To not pass "undefined" in URL...
         query = query || ''
         return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
+    },
+
+    /*---------------------------------------------------------------------
+         Methods
+    ---------------------------------------------------------------------*/
+    get_datasets: function() {
+        return CODALAB.api.request('GET', URLS.API + "datasets/")
+    },
+    delete_dataset: function(id) {
+        return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     }
 
     // get_metrics: function () {

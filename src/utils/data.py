@@ -1,6 +1,7 @@
 import os
 import uuid
 
+import time
 from django.utils.deconstruct import deconstructible
 
 
@@ -13,11 +14,11 @@ class PathWrapper(object):
 
     def __call__(self, instance, filename):
         name, extension = os.path.splitext(filename)
-        truncated_uuid = str(uuid.uuid4())[0:6]
+        truncated_uuid = uuid.uuid4().hex[0:12]
         truncated_name = name[0:35]
         return os.path.join(
             self.path,
-            str(instance.pk),
+            time.strftime('%Y/%m/%d'),
             truncated_uuid,
             "{0}{1}".format(truncated_name, extension)
         )

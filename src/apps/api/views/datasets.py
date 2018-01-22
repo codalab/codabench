@@ -1,6 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 
-from api.serializers import data as serializers
+from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 
 

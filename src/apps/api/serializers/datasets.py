@@ -6,6 +6,7 @@ class DataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Data
         fields = (
+            'id',
             'created_by',
             'created_when',
             'name',
@@ -14,6 +15,10 @@ class DataSerializer(serializers.ModelSerializer):
             'data_file',
             'key',
         )
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "key": {"read_only": True}
+        }
 
 
 class DataGroupSerializer(serializers.ModelSerializer):
