@@ -2,7 +2,7 @@
     <div class="ui form">
         <div class="field required">
             <label>Title</label>
-            <input>
+            <input ref="title">
         </div>
 
         <!--<div class="field required">
@@ -13,7 +13,6 @@
 
         <div class="field required">
             <label>Logo</label>
-
 
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
             <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
@@ -42,19 +41,19 @@
         </div>
 
         <div class="two fields">
-            <div class="ui calendar field required" ref="calendar">
+            <div class="ui calendar field required" ref="calendar_start">
                 <label>Start</label>
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
-                    <input type="text">
+                    <input type="text" ref="start">
                 </div>
             </div>
 
-            <div class="ui calendar field" ref="calendar">
+            <div class="ui calendar field" ref="calendar_end">
                 <label>End</label>
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
-                    <input type="text">
+                    <input type="text" ref="end">
                 </div>
             </div>
         </div>
@@ -73,20 +72,39 @@
     <script>
         var self = this
 
+        /*---------------------------------------------------------------------
+         Init
+        ---------------------------------------------------------------------*/
+        self.fields = [
+            'title',
+            'logo',
+            'start',
+            'end'
+        ]
+
         // We temporarily store this to display it nicely to the user, could be a behavior we break out into its own
         // component later!
         self.logo_file_name = ''
 
         self.one("mount", function () {
             // datetime pickers
-            $(self.refs.calendar).calendar({
+            var datetime_options = {
                 type: 'date',
                 popupOptions: {
                     position: 'bottom left',
                     lastResort: 'bottom left',
                     hideOnScroll: false
+                },
+                onHide: function(){
+                    // Have to do this because onchange isn't fired when date is picked
+                    self.form_update()
                 }
-            })
+            }
+            var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
+            var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
+
+            $(self.refs.calendar_start).calendar(start_options)
+            $(self.refs.calendar_end).calendar(end_options)
 
             // awesome markdown editor
             $(self.refs.description).each(function (i, ele) {
@@ -99,6 +117,29 @@
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
             })
+
+            // Form change events
+            self.fields.forEach(function(field) {
+                self.refs[field].addEventListener('change', self.form_update)
+                self.refs[field].addEventListener('keydown', self.form_update)
+            })
         })
+
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+        self.form_update = function() {
+            var data = {}
+            var is_valid = true
+
+            self.fields.forEach(function(field) {
+                data[field] = self.refs[field].value
+                if(!data[field]) {
+                    is_valid = false
+                }
+            })
+
+            CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
+        }
     </script>
 </competition-details>

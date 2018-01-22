@@ -1,9 +1,9 @@
-<competition-leaderboards>
+<competition-leaderboards-form>
     <button class="ui primary button modal-button" ref="modal_button">
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <competition-leaderboard-item each="{ leaderboards }"></competition-leaderboard-item>
+    <competition-leaderboard-table-form each="{ leaderboards }"></competition-leaderboard-table-form>
 
     <script>
         var self = this
@@ -13,13 +13,13 @@
             {name: "Another leaderboard"}
         ]
     </script>
-</competition-leaderboards>
+</competition-leaderboards-form>
 
-<competition-leaderboard-item>
+<competition-leaderboard-table-form>
     <h1>{ name }</h1>
 
-    <form>
-        <table class="ui compact celled stackable small table table-bordered definition">
+    <form onsubmit="return false">
+        <table class="ui compact celled small table table-bordered definition">
             <thead>
             <tr>
                 <th class="right aligned" width="175px">
@@ -34,10 +34,10 @@
                     <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
 
 
-                    <span show="{ !column.editing }" onclick="{ edit_column_name.bind(this, column, index) }">
-                <!--<span onclick="{ column.editing = true }">-->
-                    <i class="icon pencil small"></i> { column.name }
-                </span>
+                    <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, column, index) }">
+                    <!--<span onclick="{ column.editing = true }">-->
+                        <i class="counterclockwise rotated icon pencil small"></i> { column.name }
+                    </span>
 
                     <div class="ui input" show="{ column.editing }">
                         <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, column) }">
@@ -65,9 +65,12 @@
 
             <tr class="ui aligned right">
                 <td>
-                <span data-tooltip="This operation is applied to every other column" data-inverted="" data-position="right center">
-                    Applied computation <i class="help icon circle"></i>
-                </span>
+                    <span>
+                        Applied computation
+                        <span data-tooltip="This operation is applied to every other column" data-inverted="" data-position="right center">
+                            <i class="help icon circle"></i>
+                        </span>
+                    </span>
                 </td>
                 <td each="{ column, index in columns }" class="center aligned">
                     <div class="ui field">
@@ -116,6 +119,9 @@
     <script>
         var self = this
 
+        /*---------------------------------------------------------------------
+         Initializing
+        ---------------------------------------------------------------------*/
         self.columns = [
             {name: "Score", selected: true}
         ]
@@ -131,6 +137,9 @@
             //$(".dropdown").dropdown("refresh")
         })
 
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
         self.add_column = function () {
             self.columns.push({name: "Score2"})
             self.update()
@@ -179,6 +188,7 @@
         :scope {
             display: block;
             padding: 20px 0;
+            overflow-x: scroll;
         }
 
         .multiselect {
@@ -205,5 +215,18 @@
         .chevron.floated.right {
             float: right;
         }
+
+        .column_name {
+            cursor: pointer;
+            position: relative;
+        }
+        .column_name:hover .pencil {
+            opacity: 1;
+        }
+        .column_name .pencil {
+            position: absolute;
+            left: -1.3em;
+            opacity: .45;
+        }
     </style>
-</competition-leaderboard-item>
+</competition-leaderboard-table-form>

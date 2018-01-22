@@ -1,3 +1,7 @@
+<file-search>
+
+</file-search>
+
 <competition-phases>
     <button class="ui primary button modal-button" ref="modal_button">
         <i class="add circle icon"></i> Add phase
@@ -83,48 +87,91 @@
 
                     <div class="three fields">
                         <div class="field">
-                            <label>Input Data</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Input Data
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                         <div class="field">
-                            <label>Reference Data</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Reference Data
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                         <div class="field required">
-                            <label>Scoring Program</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Scoring Program
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="three fields">
                         <div class="field">
-                            <label>Ingestion Program</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Ingestion Program
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                         <div class="field">
-                            <label>Public Data</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Public Data
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                         <div class="field">
-                            <label>Starting Kit</label>
-                            <select class="ui dropdown">
-                                <option value="test">Test</option>
-                                <option value="test">Test</option>
-                            </select>
+                            <label>
+                                Starting Kit
+                                <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                            </label>
+                            <div class="ui fluid left icon labeled action input search">
+                                <i class="search icon asdfasdfasdf"></i>
+                                <input type="text" class="prompt">
+                                <button class="ui icon button">
+                                    <i class="attach icon"></i>
+                                </button>
+                                <div class="results"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -183,6 +230,28 @@
                     hideOnScroll: false
                 }
             })
+
+            // data search
+            var content = [
+                {title: 'Andorra'}
+            ];
+            $('.ui.search')
+                .search({
+                    source: content
+                })
         })
     </script>
+    <style>
+        .icon.search {
+            opacity: .15 !important;
+        }
+
+        .asdfasdfasdf {
+            opacity: .15 !important;;
+        }
+
+        .ui[class*="left icon"].input>i.icon {
+            opacity: .15;
+        }
+    </style>
 </competition-phases>

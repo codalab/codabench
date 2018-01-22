@@ -2,6 +2,8 @@ var CODALAB = {
     URLS: []  // Set in base.html
 }
 
+CODALAB.events = riot.observable()
+
 CODALAB.api = {
     request: function (method, url, data) {
         return $.ajax({
