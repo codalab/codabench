@@ -8,8 +8,6 @@
             <div class="ui segment">
                 <h3>Form</h3>
 
-                <button class="ui button primary" onclick="{ clear_form }">clear</button>
-
                 <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
                     <div class="header">
                         Error(s) creating dataset
@@ -183,6 +181,7 @@
             // The transition delays are for timing the animations, so they're one after the other
             self.refs.form.style.transitionDelay = '0s'
             self.refs.form.style.maxHeight = 0
+            self.refs.form.style.overflow = 'hidden'
 
             self.refs.progress.style.transitionDelay = '1s'
             self.refs.progress.style.height = '24px'
@@ -195,6 +194,10 @@
 
             self.refs.form.style.transitionDelay = '.1s'
             self.refs.form.style.maxHeight = '1000px'
+            setTimeout(function() {
+                // Do this after transition has been totally completed
+                self.refs.form.style.overflow = 'visible'
+            }, 1000)
         }
 
         self.filter = function () {
@@ -340,7 +343,6 @@
 
         form {
             max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions */
-            overflow: hidden;
 
             -webkit-transition: all 1s ease-in-out;
             -moz-transition: all 1s ease-in-out;
