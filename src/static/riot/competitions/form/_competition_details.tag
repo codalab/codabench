@@ -20,7 +20,7 @@
                 <button class="ui icon button" onclick="document.getElementById('form_file_logo').click()">
                     <i class="attach icon"></i>
                 </button>
-                <input id="form_file_logo" type="file" ref="logo">
+                <input id="form_file_logo" type="file" ref="logo" accept="image/*">
 
 
                 <!-- Drop down selector -->

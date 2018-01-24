@@ -19,7 +19,7 @@ class Data(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=64, choices=TYPES, default=TYPES[0])
+    type = models.CharField(max_length=64, choices=TYPES)
     description = models.TextField(null=True, blank=True)
     data_file = models.FileField(
         upload_to=PathWrapper('dataset'),
@@ -27,6 +27,10 @@ class Data(models.Model):
     )
     key = models.UUIDField(default=uuid.uuid4, blank=True)
     is_public = models.BooleanField(default=False)
+    upload_completed_successfully = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('name', 'created_by')
 
 
 class DataGroup(models.Model):

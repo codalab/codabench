@@ -34,13 +34,13 @@
                     <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
 
 
-                    <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, column, index) }">
+                    <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, index) }">
                     <!--<span onclick="{ column.editing = true }">-->
                         <i class="counterclockwise rotated icon pencil small"></i> { column.name }
                     </span>
 
                     <div class="ui input" show="{ column.editing }">
-                        <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, column) }">
+                        <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, index) }">
                     </div>
 
                     <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
@@ -74,7 +74,7 @@
                 </td>
                 <td each="{ column, index in columns }" class="center aligned">
                     <div class="ui field">
-                        <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, column) }">
+                        <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, index) }">
                             <option selected>
                                 ------
                             </option>
@@ -144,23 +144,25 @@
             self.columns.push({name: "Score2"})
             self.update()
             $(".dropdown").dropdown("refresh")
+
+            // Automatically start editing the last column we added
+            self.edit_column_name(self.columns.length - 1)
         }
 
-        self.edit_column_name = function (column, index) {
-            column.editing = true
+        self.edit_column_name = function (index) {
+            self.columns[index].editing = true
             self.update()
             $("#column_input_" + index).focus()
         }
 
-        self.edit_column_type = function (column, event) {
-            column.computation = event.target.value
+        self.edit_column_type = function (index, event) {
+            self.columns[index].computation = event.target.value
         }
 
-        self.edit_column_name_submit = function (column, event) {
+        self.edit_column_name_submit = function (index, event) {
             if (event.keyCode === 13) {
-                column.name = event.target.value
-                column.editing = false
-                console.log(column.name)
+                self.columns[index].name = event.target.value
+                self.columns[index].editing = false
             }
         }
 

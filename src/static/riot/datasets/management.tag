@@ -8,13 +8,27 @@
             <div class="ui segment">
                 <h3>Form</h3>
 
-                <form class="ui form" ref="form" onsubmit="{ save }">
-                    <div class="field">
-                        <input type="text" name="name" placeholder="Name">
-                    </div>
+                <button class="ui button primary" onclick="{ clear_form }">clear</button>
 
-                    <div class="field">
-                        <select name="type" class="ui dropdown">
+                <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
+                    <div class="header">
+                        Error(s) creating dataset
+                    </div>
+                    <ul class="list">
+                        <li each="{ error, field in errors }">
+                            <strong>{field}:</strong> {error}
+                        </li>
+                    </ul>
+                </div>
+
+                <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
+                    <!--<div class="field">
+                        <input type="text" name="name" placeholder="Name">
+                    </div>-->
+                    <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+
+                    <div class="field {error: errors.type}">
+                        <select name="type" ref="type" class="ui dropdown">
                             <option value="">Type</option>
                             <option value="-">----</option>
                             <option>Ingestion Program</option>
@@ -26,13 +40,7 @@
                         </select>
                     </div>
 
-                    <div class="field">
-                        <!--<input type="file" name="last-name" placeholder="Name">-->
-                        <file-input name="data_file" accept=".zip"></file-input>
-                    </div>
-                    <!--<div class="ui right floated compact basic segment stepper">
-                        <button class="ui button" type="submit">Submit</button>
-                    </div>-->
+                    <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
 
                     <div class="field">
                         <div class="ui checkbox">
@@ -49,6 +57,12 @@
                         </div>
                     </div>
                 </form>
+
+                <div class="ui indicating progress" style="margin: 0; height: 0; -ms-flex: 1 0 auto; flex: 1 0 auto; overflow: hidden;" ref="progress">
+                    <div class="bar" style="height: 24px;">
+                        <div class="progress">{ upload_progress }%</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -84,7 +98,7 @@
                     <td>{ dataset.type }</td>
                     <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
                     <td class="center aligned">
-                        <i class="checkmark box icon green" show="{ dataset.public }"></i>
+                        <i class="checkmark box icon green" show="{ dataset.is_public }"></i>
                     </td>
                     <td class="center aligned">
                         <button class="mini ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
@@ -121,6 +135,7 @@
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
+        self.errors = []
         self.datasets = [
             /*{name: "Scoring Program", type: "Scoring Program", created_when: "Jan 21, 2018", public: true},
             {name: "Starting Kit", type: "Starting Kit", created_when: "Jan 1, 2018", public: true},
@@ -129,6 +144,7 @@
         ]
         // Clone of original
         self.filtered_datasets = self.datasets.slice(0)
+        self.upload_progress = undefined
 
         self.one("mount", function () {
             // Make semantic elements work
@@ -137,11 +153,50 @@
 
             // init
             self.update_datasets()
+
+
+            /*var percent = 0;
+            var loopy = function () {
+                percent += .1
+                if (percent > 1) {
+                    self.clear_form()
+                    return
+                }
+                self.file_upload_progress_handler(percent)
+                window.setTimeout(loopy, 250)
+            }
+            loopy()
+
+            setTimeout(function () {
+                $('form input[name="name"]').val('awefjk' + (Math.floor(Math.random() * 20)))
+                $('form select[name="type"]').dropdown('set selected', 'Ingestion Program')
+            }, 100)*/
+            //self.refs.progress.style.height = '24px'
+
+
         })
 
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.show_progress_bar = function() {
+            // The transition delays are for timing the animations, so they're one after the other
+            self.refs.form.style.transitionDelay = '0s'
+            self.refs.form.style.maxHeight = 0
+
+            self.refs.progress.style.transitionDelay = '1s'
+            self.refs.progress.style.height = '24px'
+        }
+
+        self.hide_progress_bar = function() {
+            // The transition delays are for timing the animations, so they're one after the other
+            self.refs.progress.style.transitionDelay = '0s'
+            self.refs.progress.style.height = 0
+
+            self.refs.form.style.transitionDelay = '.1s'
+            self.refs.form.style.maxHeight = '1000px'
+        }
+
         self.filter = function () {
             // Delay makes this batch filters and only send one out after 100ms of not
             // receiving a call to filter
@@ -199,23 +254,98 @@
             }
         }
 
+        self.file_upload_progress_handler = function (upload_progress) {
+            if(self.upload_progress === undefined) {
+                // First iteration of this upload, nice transitions
+                self.show_progress_bar()
+            }
+
+            self.upload_progress = upload_progress * 100;
+            $(self.refs.progress).progress({percent: self.upload_progress})
+            self.update();
+        }
+
+        self.clear_form = function () {
+            // Clear form
+            $(':input', self.refs.form)
+                .not(':button, :submit, :reset, :hidden')
+                .val('')
+                .removeAttr('checked')
+                .removeAttr('selected');
+
+            $('.dropdown', self.refs.form).dropdown('restore defaults')
+
+            self.upload_progress = undefined
+
+            self.errors = {}
+            self.update()
+        }
+
         self.save = function (event) {
             if (event) {
                 event.preventDefault()
             }
 
-            var data = $(self.refs.form).serializeJSON()
+            // We don't want to send "" as a type and get a weird error, so clear that if empty
+            if (self.refs.type.value === "") {
+                self.refs.type.value = undefined
+            }
 
-            // TODO: Upload the file, note: files aren't included in JSON data above,
-            // we need to send file with like FormData(form object) or something weird,
-            // IIRC...
+            // Have to get the "FormData" to get the file in a special way
+            // jquery likes to work with
+            var data = new FormData(self.refs.form)
+
+            CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
+                .done(function (data) {
+                    //data = xml_to_json(data);
+                    //success_callback(data);
+                    toastr.success("Dataset successfully uploaded!")
+                    self.update_datasets()
+                    self.clear_form()
+                    self.hide_progress_bar()
+                })
+                .fail(function (response) {
+                    if (response) {
+                        var errors = JSON.parse(response.responseText);
+
+                        // Clean up errors to not be arrays but plain text
+                        Object.keys(errors).map(function (key, index) {
+                            errors[key] = errors[key].join('; ')
+                        })
+
+                        console.log(errors)
+
+                        self.update({errors: errors})
+                    }
+                    toastr.error("Creation failed, error occurred");
+                });
         }
     </script>
 
     <style>
         .dataset-row:hover {
-            cursor: pointer;
             background-color: rgba(46, 91, 183, 0.05);
+        }
+
+        *, div {
+
+        }
+
+        .progress {
+            -webkit-transition: all .1s ease-in-out;
+            -moz-transition: all .1s ease-in-out;
+            -o-transition: all .1s ease-in-out;
+            transition: all .1s ease-in-out;
+        }
+
+        form {
+            max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions */
+            overflow: hidden;
+
+            -webkit-transition: all 1s ease-in-out;
+            -moz-transition: all 1s ease-in-out;
+            -o-transition: all 1s ease-in-out;
+            transition: all 1s ease-in-out;
         }
     </style>
 </data-management>

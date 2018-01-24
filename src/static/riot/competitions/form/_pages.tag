@@ -72,8 +72,8 @@
         self.selected_page_index = undefined
         self.pages = [
             //{name: "Welcome!", content: ""}
-            {name: "Welcome!", content: "welcome msg"},
-            {name: "sdafasdafds!", content: "asdfasdfasdfdasf"}
+            {name: "Welcome!", content: "welcome msg"}
+            //{name: "sdafasdafds!", content: "asdfasdfasdfdasf"}
         ]
 
         self.one("mount", function () {
