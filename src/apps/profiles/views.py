@@ -8,17 +8,6 @@ from .forms import SignUpForm
 
 
 def sign_up(request):
-    # return HttpResponse("Not implemented yet!")
-
-    # if request.method == 'POST':
-    #     form = UserCreationForm(request.POST)
-    #     if form.is_valid():
-    #         form.save()
-    #         return HttpResponse("User created successfully!")
-    # else:
-    #     form = UserCreationForm()
-    #     return render(request, 'registration/signup.html', {'form': form})
-
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
