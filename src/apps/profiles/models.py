@@ -36,4 +36,4 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return self.name
+        return self.name if self.name else ''

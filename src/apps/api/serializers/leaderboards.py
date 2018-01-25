@@ -1,25 +1,31 @@
-from requests import Response
-from rest_framework import serializers, status
-from leaderboards.models import Metric, Column, Leaderboard
+from drf_writable_nested import WritableNestedModelSerializer
+from rest_framework import serializers
 
-
-class MetricSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Metric
-        fields = ('name', 'description', 'key', 'pk', 'id', )
-
-    def create(self, validated_data):
-        validated_data['owner'] = self.context['request'].user
-        return super().create(validated_data)
+from leaderboards.models import Leaderboard, Column
 
 
 class ColumnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Column
-        fields = ('name', 'metric', 'leaderboard', 'id', 'pk', )
+        fields = (
+            'leaderboard',
+            'computation',
+            'computation_columns',
+            'title',
+            'key',
+            'sorting',
+            'index',
+        )
 
 
-class LeaderboardSerializer(serializers.ModelSerializer):
+class LeaderboardSerializer(WritableNestedModelSerializer):
+    columns = ColumnSerializer(many=True)
     class Meta:
         model = Leaderboard
-        fields = ('name', 'competition',)
+        fields = (
+            'competition',
+            'primary_column',
+            'title',
+            'key',
+            'columns',
+        )

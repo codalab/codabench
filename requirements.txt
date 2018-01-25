@@ -15,3 +15,4 @@ social-auth-app-django==2.0.0
 django-extensions==1.9.0
 channels==1.1.8
 asgi_redis==1.4.3
+drf-writable-nested==0.4.1
