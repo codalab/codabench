@@ -4,7 +4,7 @@ from rest_framework import serializers
 from leaderboards.models import Leaderboard, Column
 
 
-class ColumnSerializer(serializers.ModelSerializer):
+class ColumnSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Column
         fields = (
@@ -20,6 +20,7 @@ class ColumnSerializer(serializers.ModelSerializer):
 
 class LeaderboardSerializer(WritableNestedModelSerializer):
     columns = ColumnSerializer(many=True)
+
     class Meta:
         model = Leaderboard
         fields = (

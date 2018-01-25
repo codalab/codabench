@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Leaderboard(models.Model):
-    competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE)
+    competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE, related_name="leaderboards")
     primary_column = models.ForeignKey('Column', on_delete=models.SET_NULL, null=True, related_name="primaries")
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
