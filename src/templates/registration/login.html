@@ -2,66 +2,160 @@
 {% load static %}
 
 {% block content %}
-    <div class="ui middle aligned center aligned grid registration_top_padding">
-        <div class="column">
-            <h2 class="ui teal image header">
-                {#                <img src="assets/images/logo.png" class="image">#}
-                <div class="content">
-                    Log-in to your account
+    {#    <div class="ui middle aligned center aligned grid registration_top_padding">#}
+    {#        <div class="column">#}
+    {#            <h2 class="ui teal image header">#}
+    {#                <img src="assets/images/logo.png" class="image">#}
+    {#                <div class="content">#}
+    {#                    Log-in to your account#}
+    {#                </div>#}
+    {#            </h2>#}
+    {#            <form class="ui large form" method="POST">#}
+    {#                {% csrf_token %}#}
+    {##}
+    {#                <div class="field">#}
+    {#                    <div class="ui left icon input">#}
+    {#                        <i class="user icon"></i>#}
+    {#                        <input type="text" name="username" autofocus="" maxlength="254" required="" id="id_username">#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#                <div class="field">#}
+    {#                    <div class="ui left icon input">#}
+    {##}
+    {#                        <i class="write icon"></i>#}
+    {##}
+    {##}
+    {#                        <input type="password" name="password" required="" id="id_password">#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#                {% for field in form %}#}
+    {#                    <div class="ui stacked segment">#}
+    {#                        <div class="field">#}
+    {#                            <div class="ui left icon input">#}
+    {#                                {% if field.name == 'username' %}#}
+    {#                                    <i class="user icon"></i>#}
+    {#                                {% else %}#}
+    {#                                    <i class="write icon"></i>#}
+    {#                                {% endif %}#}
+    {# <input type="text" name="email" placeholder="E-mail address">#}
+    {#                                {{ field }}#}
+    {#                            </div>#}
+    {#                        </div>#}
+    {# <div class="ui fluid large teal submit button">Login</div>#}
+    {#                    </div>#}
+    {#                {% endfor %}#}
+    {#                    <button class="ui teal submit button" type="submit">Login</button>#}
+    {#                <div class="ui error message">#}
+    {#                    {% for error in form.errors %}#}
+    {#                        {{ error }}#}
+    {#                    {% endfor %}#}
+    {#                </div>#}
+    {#            </form>#}
+    {#            <a class="ui green submit labeled icon button" href="{% url "social:begin" "github" %}">#}
+    {#                <i class="github icon"></i>#}
+    {#                Sign In With GitHub#}
+    {#            </a>#}
+    {##}
+    {#                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "codalab" %}">#}
+    {#                    <i class="computer icon"></i>#}
+    {#                    Sign In With CODALAB#}
+    {#                </a>#}
+    {##}
+    {#            New to us? <a href="{% url "profiles:signup" %}">Sign Up</a>#}
+    {#        </div>#}
+    {#    </div>#}
+
+    <div class="ui middle aligned center aligned grid>
+        <div class=" column">
+    {#            <h2 class="ui blue image header segment">#}
+    {#                <div class="content">#}
+    {#                    Login#}
+    {#                </div>#}
+    {#            </h2>#}
+    <form class="ui large form" method="POST">
+        <div class="ui divider"></div>
+        <h2 class="ui blue header">
+            Login
+        </h2>
+        {% csrf_token %}
+        <div class="ui stacked segment">
+
+            {#            {% for field in form %}#}
+            {##}
+            {#                        <div class="ui message">#}
+            {#                {{ field.label_tag }}#}
+            {#                <div class="field">#}
+            {#                    <div class="ui left icon input">#}
+            {#                        {% if field.name == 'username' or field.name == 'email' %}#}
+            {#                            <i class="user icon"></i>#}
+            {#                        {% else %}#}
+            {#                            <i class="write icon"></i>#}
+            {#                        {% endif %}#}
+            {#                        {{ field }}#}
+            {#                    #}
+            {#                    </div>#}
+            {#                </div>#}
+            {#                {% for error in field.errors %}#}
+            {#                    <p style="color: red">{{ error }}</p>#}
+            {#                {% endfor %}#}
+            {#                        </div>#}
+            {##}
+            {#            {% endfor %}#}
+
+            <div class="ui field">
+                <div class="ui left icon input">
+                    <i class="user icon"></i>
+                    <input type="text"
+                           name="{{ form.username.name }}"
+                           placeholder="{{ form.username.name }}"
+                           id="{{ form.username.id_for_label }}"
+                           {% if form.username.value != None %}value="
+                                   {{ form.username.value|stringformat:'s' }}"{% endif %}
+                           maxlength="{{ form.username.field.max_length }}"
+                           {% if form.username.field.required %}required{% endif %}>
                 </div>
-            </h2>
-            <form class="ui large form" method="POST">
-                {% csrf_token %}
-
-                <div class="field">
-                    <div class="ui left icon input">
-                        <i class="user icon"></i>
-                        <input type="text" name="username" autofocus="" maxlength="254" required="" id="id_username">
-                    </div>
+            </div>
+            <div class="ui field">
+                <div class="ui left icon input">
+                    <i class="user icon"></i>
+                    <input type="password"
+                           name="{{ form.password.name }}"
+                           placeholder="{{ form.password.name }}"
+                           id="{{ form.password.id_for_label }}"
+                           {% if form.password.value != None %}value="
+                                   {{ form.password.value|stringformat:'s' }}"{% endif %}
+                           maxlength="{{ form.password.field.max_length }}"
+                           {% if form.password.field.required %}required{% endif %}>
                 </div>
-                <div class="field">
-                    <div class="ui left icon input">
+            </div>
 
-                        <i class="write icon"></i>
+            {#                    <div class="field">#}
+            {#                        <div class="ui left icon input">#}
+            {#                            <i class="user icon"></i>#}
+            {#                            <input type="text" name="email" placeholder="E-mail address">#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                    <div class="field">#}
+            {#                        <div class="ui left icon input">#}
+            {#                            <i class="lock icon"></i>#}
+            {#                            <input type="password" name="password" placeholder="Password">#}
+            {#                        </div>#}
+            {#                    </div>#}
 
-
-                        <input type="password" name="password" required="" id="id_password">
-                    </div>
-                </div>
-                {#                {% for field in form %}#}
-                {#                    <div class="ui stacked segment">#}
-                {#                        <div class="field">#}
-                {#                            <div class="ui left icon input">#}
-                {#                                {% if field.name == 'username' %}#}
-                {#                                    <i class="user icon"></i>#}
-                {#                                {% else %}#}
-                {#                                    <i class="write icon"></i>#}
-                {#                                {% endif %}#}
-                {# <input type="text" name="email" placeholder="E-mail address">#}
-                {#                                {{ field }}#}
-                {#                            </div>#}
-                {#                        </div>#}
-                {# <div class="ui fluid large teal submit button">Login</div>#}
-                {#                    </div>#}
-                {#                {% endfor %}#}
-                <button class="ui teal submit button" type="submit">Login</button>
-                {#                <div class="ui error message">#}
-                {#                    {% for error in form.errors %}#}
-                {#                        {{ error }}#}
-                {#                    {% endfor %}#}
-                {#                </div>#}
-            </form>
-            <a class="ui green submit labeled icon button" href="{% url "social:begin" "github" %}">
-                <i class="github icon"></i>
-                Sign In With GitHub
-            </a>
-
-            {#                <a class="ui fluid green submit labeled icon button" href="{% url "social:begin" "codalab" %}">#}
-            {#                    <i class="computer icon"></i>#}
-            {#                    Sign In With CODALAB#}
-            {#                </a>#}
-
-            New to us? <a href="{% url "profiles:signup" %}">Sign Up</a>
+            {#                    <div class="ui fluid large blue submit button">Login</div>#}
+            <button class="ui blue submit button" type="submit">Login</button>
+            <div class="ui divider"></div>
+            <p>New to us? <a href="#">Sign Up</a></p>
         </div>
+
+        <div class="ui error message"></div>
+
+    </form>
+
+    {#            <div class="ui message">#}
+    {#                New to us? <a href="#">Sign Up</a>#}
+    {#            </div>#}
     </div>
+    </div>
+
 {% endblock %}

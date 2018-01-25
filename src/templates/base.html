@@ -72,9 +72,9 @@
     <a class="item">Chalab</a>
     <a class="item">Chagrade</a>
     {% if user.is_authenticated %}
-        <a href="accounts/logout" class="item">Logout</a>
+        <a href="/accounts/logout" class="item">Logout</a>
     {% else %}
-        <a href="accounts/login" class="item">Login</a>
+        <a href="/accounts/login" class="item">Login</a>
         <a href="{% url "profiles:signup" %}" class="item">Sign-up</a>
     {% endif %}
 
@@ -128,14 +128,14 @@
                                     <i class="icon user"></i>
                                     Edit profile
                                 </a>
-                                <a class="item" href="#">
+                                <a class="item" href="/accounts/logout/">
                                     <i class="icon sign out"></i>
                                     Logout
                                 </a>
                             </div>
                         </div>
                     {% else %}
-                        <a href="accounts/login" class="ui inverted button">Login</a>
+                        <a href="/accounts/login" class="ui inverted button">Login</a>
                         <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
                     {% endif %}
                 </div>
@@ -145,7 +145,7 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-    <div class="ui container grid">
+    <div class="ui container centered grid">
         <div class="row">
             {% block content %}
             {% endblock %}
