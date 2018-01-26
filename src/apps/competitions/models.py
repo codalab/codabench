@@ -13,7 +13,7 @@ class Competition(models.Model):
 
 
 class Phase(models.Model):
-    competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.DO_NOTHING)
+    competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE)
     number = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField()
@@ -29,18 +29,18 @@ class Phase(models.Model):
 
 
 class Submission(models.Model):
-    phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.DO_NOTHING)
+    phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
 
 
 class CompetitionParticipant(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='participant',
                                 on_delete=models.DO_NOTHING)
-    competition = models.OneToOneField(Competition, related_name='participants', on_delete=models.DO_NOTHING)
+    competition = models.OneToOneField(Competition, related_name='participants', on_delete=models.CASCADE)
 
 
 class Page(models.Model):
-    competition = models.ForeignKey(Competition, related_name='pages', on_delete=models.DO_NOTHING)
+    competition = models.ForeignKey(Competition, related_name='pages', on_delete=models.CASCADE)
     title = models.TextField(max_length=255)
     content = models.TextField()
     index = models.PositiveIntegerField()

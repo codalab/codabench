@@ -6,7 +6,7 @@ from competitions.models import Competition, Phase, Submission, Page
 from profiles.models import User
 
 
-class PhaseSerializer(serializers.ModelSerializer):
+class PhaseSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Phase
         fields = (
@@ -22,9 +22,12 @@ class PhaseSerializer(serializers.ModelSerializer):
             'public_data',
             'starting_kit',
         )
+        extra_kwargs = {
+            "competition": {"required": False}
+        }
 
 
-class PageSerializer(serializers.ModelSerializer):
+class PageSerializer(WritableNestedModelSerializer):
     # *NOTE* The competition property has to be replicated at the end of the file
     # after the CompetitionSerializer class is declared
     # competition = CompetitionSerializer(many=True)
@@ -37,6 +40,9 @@ class PageSerializer(serializers.ModelSerializer):
             'content',
             'index',
         )
+        extra_kwargs = {
+            "competition": {"required": False}
+        }
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -48,9 +54,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     pages = PageSerializer(many=True)
-    # phases = PhaseSerializer(many=True)
-    # leaderboards = LeaderboardSerializer(many=True)
-    # collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+    phases = PhaseSerializer(many=True)
+    leaderboards = LeaderboardSerializer(many=True)
+    collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
     class Meta:
         model = Competition
@@ -59,9 +65,9 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'title',
             'created_by',
             'pages',
-            # 'phases',
-            # 'leaderboards',
-            # 'collaborators',
+            'phases',
+            'leaderboards',
+            'collaborators',
         )
 
     def get_created_by(self, object):
