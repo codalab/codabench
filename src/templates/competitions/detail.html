@@ -1,13 +1,122 @@
 {% extends "base.html" %}
-<div class="ui grid">
-    <div class="four wide column">
-        <div class="ui image">
-            <img src="">
+{% block content %}
+    {#<div class="ui grid">#}
+    {#    <div class="row">#}
+    {#        <div class="four wide column">#}
+    {#            <div class="ui card">#}
+    {#                <div class="content">#}
+    {#                    <div class="right floated meta">14h</div>#}
+    {#                    <img class="ui avatar image" src="/images/avatar/large/elliot.jpg"> Elliot#}
+    {#                </div>#}
+    {#                <div class="image">#}
+    {#                    <img>#}
+    {#                </div>#}
+    {#                <div class="content">#}
+    {#        <span class="right floated">#}
+    {#          <i class="heart outline like icon"></i>#}
+    {#          17 likes#}
+    {#        </span>#}
+    {#                    <i class="comment icon"></i>#}
+    {#                    3 comments#}
+    {#                </div>#}
+    {#                <div class="extra content">#}
+    {#                    <div class="ui large transparent left icon input">#}
+    {#                        <i class="heart outline icon"></i>#}
+    {#                        <input type="text" placeholder="Add Comment...">#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#        <div class="ui twelve wide column">#}
+    {#            <div class="ui stacked segment">#}
+    {#                <h2>Description</h2>#}
+    {#                <p>#}
+    {#                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam ut#}
+    {#                    ligula#}
+    {#                    rhoncus, semper nibh quis, tincidunt neque. Fusce eget condimentum elit. Vivamus in arcu interdum,#}
+    {#                    semper massa sit amet, lobortis nulla. Fusce fermentum, ex ac accumsan viverra, felis nulla#}
+    {#                    vestibulum#}
+    {#                    nulla, sed rhoncus ligula libero ut lorem. Donec odio tortor, consequat non purus in, interdum#}
+    {#                    posuere#}
+    {#                    ipsum. Pellentesque vulputate nunc efficitur enim ultricies, nec auctor urna sagittis. Vivamus#}
+    {#                    sodales#}
+    {#                    facilisis rutrum. Etiam volutpat mi ac volutpat rutrum. Cras vel nunc vitae nisl sodales dictum eget#}
+    {#                    vitae nulla. Cras vitae aliquet justo. Morbi varius libero tellus. Fusce eget felis eu ante mollis#}
+    {#                    dignissim.#}
+    {#                </p>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+    <div class="row">
+        <div class="sixteen wide column">
+            <div class="ui stacked segment">
+                <h2>{{ comp.title }}</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam
+                    ut
+                </p>
+                <div class="ui bottom attached tabular menu">
+                    <div class="item">Tab</div>
+                    <div class="item">Tab</div>
+                    <div class="item">Tab</div>
+                    <div class="item">Tab</div>
+                    <div class="item">Tab</div>
+                </div>
+            </div>
+        </div>
+        {#        <div class="sixteen wide column">#}
+
+        {#        </div>#}
+    </div>
+    <div class="row">
+        <div class="ui top attached tab segment">
+            <p></p>
+            <p></p>
+        </div>
+        <div class="ui eight wide column">
+            <div class="ui stacked segment">
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam
+                    ut
+                    ligula
+                    rhoncus, semper nibh quis, tincidunt neque. Fusce eget condimentum elit. Vivamus in arcu
+                    interdum,
+                    semper massa sit amet, lobortis nulla. Fusce fermentum, ex ac accumsan viverra, felis nulla
+                    vestibulum
+                    nulla, sed rhoncus ligula libero ut lorem. Donec odio tortor, consequat non purus in, interdum
+                    posuere
+                    ipsum. Pellentesque vulputate nunc efficitur enim ultricies, nec auctor urna sagittis. Vivamus
+                    sodales
+                    facilisis rutrum. Etiam volutpat mi ac volutpat rutrum. Cras vel nunc vitae nisl sodales dictum
+                    eget
+                    vitae nulla. Cras vitae aliquet justo. Morbi varius libero tellus. Fusce eget felis eu ante
+                    mollis
+                    dignissim.
+                </p>
+            </div>
+        </div>
+        <div class="ui eight wide column">
+            <div class="ui stacked segment">
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam
+                    ut
+                    ligula
+                    rhoncus, semper nibh quis, tincidunt neque. Fusce eget condimentum elit. Vivamus in arcu
+                    interdum,
+                    semper massa sit amet, lobortis nulla. Fusce fermentum, ex ac accumsan viverra, felis nulla
+                    vestibulum
+                    nulla, sed rhoncus ligula libero ut lorem. Donec odio tortor, consequat non purus in, interdum
+                    posuere
+                    ipsum. Pellentesque vulputate nunc efficitur enim ultricies, nec auctor urna sagittis. Vivamus
+                    sodales
+                    facilisis rutrum. Etiam volutpat mi ac volutpat rutrum. Cras vel nunc vitae nisl sodales dictum
+                    eget
+                    vitae nulla. Cras vitae aliquet justo. Morbi varius libero tellus. Fusce eget felis eu ante
+                    mollis
+                    dignissim.
+                </p>
+            </div>
         </div>
     </div>
-    <div class="twelve wide column">
-        <h1 class="ui header">{{ object.title }}</h1>
-        <p class="ui text segment">{{ object.created_when }}</p>
-        <p class="ui text segment">{{ object.created_by }}</p>
-    </div>
-</div>
+    {#</div>#}
+{% endblock %}
