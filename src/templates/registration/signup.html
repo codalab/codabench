@@ -4,28 +4,69 @@
 {% block content %}
     <div class="ui middle aligned center aligned grid">
         <div class="column">
-         <div class="ui divider"></div>
+            <div class="ui divider"></div>
             <form class="ui large form" method="post">
                 <h2 class="ui blue header">
                     Sign-Up
                 </h2>
                 {% csrf_token %}
                 <div class="ui stacked segment">
-                    {% for field in form %}
-                        <div class="field">
-                            <div class="ui left icon input">
-                                {% if field.name == 'username' or field.name == 'email' %}
-                                    <i class="user icon"></i>
-                                {% else %}
-                                    <i class="write icon"></i>
-                                {% endif %}
-                                {{ field }}
-                            </div>
+                    <div class="ui field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input type="text"
+                                   name="{{ form.username.name }}"
+                                   placeholder="{{ form.username.name }}"
+                                   id="{{ form.username.id_for_label }}"
+                                   {% if form.username.value != None %}value="
+                                   {{ form.username.value|stringformat:'s' }}"{% endif %}
+                                   maxlength="{{ form.username.field.max_length }}"
+                                   {% if form.username.field.required %}required{% endif %}>
                         </div>
-                        {% for error in field.errors %}
-                            <p style="color: red">{{ error }}</p>
-                        {% endfor %}
-                    {% endfor %}
+                    </div>
+
+                    <div class="ui field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input type="text"
+                                   name="{{ form.email.name }}"
+                                   placeholder="{{ form.email.name }}"
+                                   id="{{ form.email.id_for_label }}"
+                                   {% if form.email.value != None %}value="
+                                   {{ form.email.value|stringformat:'s' }}"{% endif %}
+                                   maxlength="{{ form.email.field.max_length }}"
+                                   {% if form.email.field.required %}required{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="ui field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input type="password"
+                                   name="{{ form.password1.name }}"
+                                   placeholder="{{ form.password1.name }}"
+                                   id="{{ form.password1.id_for_label }}"
+                                   {% if form.password1.value != None %}value="
+                                   {{ form.password1.value|stringformat:'s' }}"{% endif %}
+                                   maxlength="{{ form.password1.field.max_length }}"
+                                   {% if form.password1.field.required %}required{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="ui field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input type="password"
+                                   name="{{ form.password2.name }}"
+                                   placeholder="{{ form.password2.name }}"
+                                   id="{{ form.password2.id_for_label }}"
+                                   {% if form.password2.value != None %}value="
+                                   {{ form.password2.value|stringformat:'s' }}"{% endif %}
+                                   maxlength="{{ form.password2.field.max_length }}"
+                                   {% if form.password2.field.required %}required{% endif %}>
+                        </div>
+                    </div>
+
                     <button class="ui blue submit button" type="submit">Sign-Up</button>
                 </div>
             </form>
