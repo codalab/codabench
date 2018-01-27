@@ -1,3 +1,4 @@
+from drf_extra_fields.fields import Base64ImageField
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
@@ -10,7 +11,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Phase
         fields = (
-            'competition',
+            'id',
             'number',
             'start',
             'end',
@@ -22,9 +23,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'public_data',
             'starting_kit',
         )
-        extra_kwargs = {
-            "competition": {"required": False}
-        }
 
 
 class PageSerializer(WritableNestedModelSerializer):
@@ -35,14 +33,11 @@ class PageSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Page
         fields = (
-            'competition',
+            'id',
             'title',
             'content',
             'index',
         )
-        extra_kwargs = {
-            "competition": {"required": False}
-        }
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -53,6 +48,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
+    logo = Base64ImageField(required=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
@@ -64,6 +60,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'id',
             'title',
             'created_by',
+            'logo',
             'pages',
             'phases',
             'leaderboards',
@@ -73,10 +70,10 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def get_created_by(self, object):
         return str(object.created_by)
 
-    # def create(self, validated_data):
-    #     validated_data["created_by"] = self.context['created_by']
-    #     print(validated_data)
-    #     return super().create(validated_data)
+    def validate_leaderboards(self, value):
+        if not value:
+            raise serializers.ValidationError("Competitions require at least 1 leaderboard")
+        return value
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')

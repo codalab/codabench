@@ -20,9 +20,6 @@
                 </div>
 
                 <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
-                    <!--<div class="field">
-                        <input type="text" name="name" placeholder="Name">
-                    </div>-->
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
 
                     <div class="field {error: errors.type}">
@@ -106,7 +103,8 @@
                 </tr>
                 </tbody>
                 <tfoot>
-                <!--<tr>
+                <!-- Pagination that we may want later...
+                <tr>
                     <th colspan="3">
                         <div class="ui right floated pagination menu">
                             <a class="icon item">
@@ -121,7 +119,8 @@
                             </a>
                         </div>
                     </th>
-                </tr>-->
+                </tr>
+                -->
                 </tfoot>
             </table>
         </div>
@@ -134,13 +133,9 @@
          Init
         ---------------------------------------------------------------------*/
         self.errors = []
-        self.datasets = [
-            /*{name: "Scoring Program", type: "Scoring Program", created_when: "Jan 21, 2018", public: true},
-            {name: "Starting Kit", type: "Starting Kit", created_when: "Jan 1, 2018", public: true},
-            {name: "Reference Data", type: "Reference Data", created_when: "Mar 21, 2017", public: true},
-            {name: "Ingestion Program", type: "Ingestion Program", created_when: "Sep 24, 1988", public: true},*/
-        ]
-        // Clone of original
+        self.datasets = []
+
+        // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
 
@@ -151,27 +146,6 @@
 
             // init
             self.update_datasets()
-
-
-            /*var percent = 0;
-            var loopy = function () {
-                percent += .1
-                if (percent > 1) {
-                    self.clear_form()
-                    return
-                }
-                self.file_upload_progress_handler(percent)
-                window.setTimeout(loopy, 250)
-            }
-            loopy()
-
-            setTimeout(function () {
-                $('form input[name="name"]').val('awefjk' + (Math.floor(Math.random() * 20)))
-                $('form select[name="type"]').dropdown('set selected', 'Ingestion Program')
-            }, 100)*/
-            //self.refs.progress.style.height = '24px'
-
-
         })
 
         /*---------------------------------------------------------------------
@@ -300,8 +274,6 @@
 
             CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
                 .done(function (data) {
-                    //data = xml_to_json(data);
-                    //success_callback(data);
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()

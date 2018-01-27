@@ -3,9 +3,10 @@ from django.db import models
 
 
 class Competition(models.Model):
+    title = models.CharField(max_length=256)
+    logo = models.ImageField(null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
     created_when = models.DateTimeField(auto_now_add=True)
-    title = models.CharField(max_length=256)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations")
 
     def __str__(self):

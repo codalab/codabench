@@ -75,12 +75,7 @@
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
-        self.fields = [
-            'title',
-            'logo',
-            'start',
-            'end'
-        ]
+        self.data = {}
 
         // We temporarily store this to display it nicely to the user, could be a behavior we break out into its own
         // component later!
@@ -95,7 +90,7 @@
                     lastResort: 'bottom left',
                     hideOnScroll: false
                 },
-                onHide: function(){
+                onHide: function () {
                     // Have to do this because onchange isn't fired when date is picked
                     self.form_update()
                 }
@@ -112,34 +107,81 @@
             })
 
             // logo selection
-            $(self.refs.logo).on('change', function(event){
+            $(self.refs.logo).on('change', function (event) {
                 // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
             })
 
             // Form change events
-            self.fields.forEach(function(field) {
-                self.refs[field].addEventListener('change', self.form_update)
-                self.refs[field].addEventListener('keydown', self.form_update)
+            //self.fields.forEach(function (field) {
+            //    self.refs[field].addEventListener('change', self.form_update)
+            //    self.refs[field].addEventListener('keydown', self.form_update)
+            //})
+            $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
+                this.addEventListener('keydown', self.form_update)
+            })
+
+            // Capture and convert images to base64 for easy uploading
+            $('input[type="file"]', self.root).change(function() {
+                getBase64(this.files[0]).then(function(data) {
+                    self.data['logo'] = data
+                    self.form_update()
+                })
             })
         })
 
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.form_update = function() {
-            var data = {}
+        self.form_update = function () {
+            //get_form_data(self.root)
+
             var is_valid = true
 
-            self.fields.forEach(function(field) {
+            /*input_fields.forEach(function (field) {
                 data[field] = self.refs[field].value
-                if(!data[field]) {
+                if (!data[field]) {
                     is_valid = false
                 }
-            })
+            })*/
+
+            // NOTE: logo is excluded here because it is converted to 64 upon changing
+            self.data['title'] = self.refs.title.value
+
+            if(!self.data['title'] || !self.data['logo']) {
+                is_valid = false
+            }
+
 
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // IN THE DATA YOU SEND BACK, WE NEED TO HANDLE FormData for the logo file.....
+            // *** so we should set formData.append('logo', data['logo'] = $(logo).files[0]) ***
+
+
+
+
+
+
+
+
+            //if(is_valid) {
+            CODALAB.events.trigger('competition_data_update', self.data)
+            //}
         }
     </script>
 </competition-details>

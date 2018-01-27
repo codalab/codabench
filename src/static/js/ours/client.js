@@ -28,6 +28,16 @@ CODALAB.api = {
         query = query || ''
         return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
     },
+    create_competition: function(data) {
+        return CODALAB.api.request('POST', URLS.API + "competitions/", data)
+        /*return $.ajax({
+            type: 'POST',
+            url: URLS.API + "competitions/",
+            data: form_data,
+            processData: false,
+            contentType: false
+        })*/
+    },
 
     /*---------------------------------------------------------------------
          Datasets

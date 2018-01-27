@@ -33,7 +33,16 @@
         </div>
 
         <div class="row centered">
-            <button class="ui primary button disabled">
+
+
+            <!--
+
+            REMEMBER TO MAKE THIS DISABLED UNTIL VALID!
+
+            <button class="ui primary button disabled" onclick="{ save }">
+            -->
+
+            <button class="ui primary button" onclick="{ save }">
                 Save
             </button>
             <button class="ui button">
@@ -57,23 +66,128 @@
             'collaborators': {valid: false}
         }
 
-        self.one("mount", function(){
+        self.one("mount", function () {
             // tabs
             $('.menu .item').tab()
         })
 
-        self.save = function() {
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+        self.save = function () {
+
+
+            Object.assign(self.competition, {
+                "title": "asdf",
+                "pages": [
+                    {
+                        "title": "test",
+                        "content": "test",
+                        "index": 1
+                    }
+                ],
+                "phases": [
+                    {
+                        "number": 1,
+                        "start": "2018-12-01T00:00:00Z",
+                        "end": "2018-12-05T00:00:00Z",
+                        "description": "test",
+                        "input_data": null,
+                        "reference_data": null,
+                        "scoring_program": null,
+                        "ingestion_program": null,
+                        "public_data": null,
+                        "starting_kit": null
+                    }
+                ],
+                "leaderboards": [
+                    {
+                        "primary_index": 0,
+                        "title": "test",
+                        "key": "RESULTS",
+                        "columns": [
+                            {
+                                "computation": null,
+                                "computation_indexes": null,
+                                "title": "test",
+                                "key": "SCORE_1",
+                                "sorting": "desc",
+                                "index": 0
+                            }, {
+                                "computation": "avg",
+                                "computation_indexes": ["0"],
+                                "title": "test",
+                                "key": "SCORE_2",
+                                "sorting": "desc",
+                                "index": 1
+                            }
+                        ]
+                    },{
+                        "primary_index": 0,
+                        "title": "test",
+                        "key": "RESULTS",
+                        "columns": [
+                            {
+                                "computation": null,
+                                "computation_indexes": null,
+                                "title": "test",
+                                "key": "SCORE_1",
+                                "sorting": "desc",
+                                "index": 0
+                            }, {
+                                "computation": "avg",
+                                "computation_indexes": ["0"],
+                                "title": "test",
+                                "key": "SCORE_2",
+                                "sorting": "desc",
+                                "index": 1
+                            }
+                        ]
+                    }
+                ],
+                "collaborators": []
+            })
+
+
             console.log("MAIN FORM SAVING")
+
+            console.log("competition data:")
+            console.log(self.competition)
+
+            //var form_data = objectToFormData(self.competition)
+
+            //var form_data = new FormData()
+
+            //form_data.append('logo', self.competition.logo)
+            //form_data.append('logo', $("input[type='file']")[0].files[0])
+
+            //for (var pair of form_data.entries()) {
+            //    console.log(pair[0]+ ', ' + pair[1]);
+            //}
+            //console.log(form_data)
+
+            // DO THE BULK!
+            CODALAB.api.create_competition(self.competition)
+                .done(function () {
+                    toastr.success("Competition successfully created!")
+
+                    // It worked! Do the
+                })
+                .fail(function (response) {
+                    toastr.error("Creation failed, error occurred");
+                });
         }
 
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
-        CODALAB.events.on('competition_data_update', function(data) {
+        CODALAB.events.on('competition_data_update', function (data) {
+            console.log("new data:")
+            console.log(data)
             Object.assign(self.competition, data)
             self.update()
         })
-        CODALAB.events.on('competition_is_valid_update', function(name, is_valid) {
+        CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
             console.log(name + " is_valid -> " + is_valid)
             self.sections[name].valid = is_valid
             self.update()
