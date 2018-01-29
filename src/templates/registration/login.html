@@ -16,7 +16,7 @@
                             <i class="user icon"></i>
                             <input type="text"
                                    name="{{ form.username.name }}"
-                                   placeholder="{{ form.username.name }}"
+                                   placeholder="username"
                                    id="{{ form.username.id_for_label }}"
                                    {% if form.username.value != None %}value="
                                    {{ form.username.value|stringformat:'s' }}"{% endif %}
@@ -29,7 +29,7 @@
                             <i class="user icon"></i>
                             <input type="password"
                                    name="{{ form.password.name }}"
-                                   placeholder="{{ form.password.name }}"
+                                   placeholder="password"
                                    id="{{ form.password.id_for_label }}"
                                    {% if form.password.value != None %}value="
                                    {{ form.password.value|stringformat:'s' }}"{% endif %}

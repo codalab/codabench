@@ -16,7 +16,7 @@
                             <i class="user icon"></i>
                             <input type="text"
                                    name="{{ form.username.name }}"
-                                   placeholder="{{ form.username.name }}"
+                                   placeholder="username"
                                    id="{{ form.username.id_for_label }}"
                                    {% if form.username.value != None %}value="
                                    {{ form.username.value|stringformat:'s' }}"{% endif %}
@@ -30,7 +30,7 @@
                             <i class="user icon"></i>
                             <input type="text"
                                    name="{{ form.email.name }}"
-                                   placeholder="{{ form.email.name }}"
+                                   placeholder="email"
                                    id="{{ form.email.id_for_label }}"
                                    {% if form.email.value != None %}value="
                                    {{ form.email.value|stringformat:'s' }}"{% endif %}
@@ -44,7 +44,7 @@
                             <i class="user icon"></i>
                             <input type="password"
                                    name="{{ form.password1.name }}"
-                                   placeholder="{{ form.password1.name }}"
+                                   placeholder="password"
                                    id="{{ form.password1.id_for_label }}"
                                    {% if form.password1.value != None %}value="
                                    {{ form.password1.value|stringformat:'s' }}"{% endif %}
@@ -58,7 +58,7 @@
                             <i class="user icon"></i>
                             <input type="password"
                                    name="{{ form.password2.name }}"
-                                   placeholder="{{ form.password2.name }}"
+                                   placeholder="confirm password"
                                    id="{{ form.password2.id_for_label }}"
                                    {% if form.password2.value != None %}value="
                                    {{ form.password2.value|stringformat:'s' }}"{% endif %}
