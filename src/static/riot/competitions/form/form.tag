@@ -9,9 +9,15 @@
                     <a class="item" data-tab="pages">
                         <i class="checkmark box icon green" show="{ sections.pages.valid }"></i> Pages
                     </a>
-                    <a class="item" data-tab="phases">Phases</a>
-                    <a class="item" data-tab="leaderboard">Leaderboard</a>
-                    <a class="item" data-tab="collaborators">Collaborators</a>
+                    <a class="item" data-tab="phases">
+                        <i class="checkmark box icon green" show="{ sections.phases.valid }"></i> Phases
+                    </a>
+                    <a class="item" data-tab="leaderboard">
+                        <i class="checkmark box icon green" show="{ sections.leaderboards.valid }"></i>  Leaderboard
+                    </a>
+                    <a class="item" data-tab="collaborators">
+                        <i class="checkmark box icon green" show="{ sections.collaborators.valid }"></i> Collaborators
+                    </a>
                 </div>
 
                 <div class="ui bottom active tab" data-tab="competition_details">
@@ -62,7 +68,7 @@
             'details': {valid: false},
             'pages': {valid: false},
             'phases': {valid: false},
-            'leaderboard': {valid: false},
+            'leaderboards': {valid: false},
             'collaborators': {valid: false}
         }
 
@@ -77,7 +83,7 @@
         self.save = function () {
 
 
-            Object.assign(self.competition, {
+            /*Object.assign(self.competition, {
                 "title": "asdf",
                 "pages": [
                     {
@@ -146,7 +152,7 @@
                     }
                 ],
                 "collaborators": []
-            })
+            })*/
 
 
             console.log("MAIN FORM SAVING")
@@ -182,10 +188,13 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_data_update', function (data) {
-            console.log("new data:")
-            console.log(data)
             Object.assign(self.competition, data)
             self.update()
+
+            console.log("new data:")
+            console.log(data)
+            console.log("updated competition data")
+            console.log(self.competition)
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
             console.log(name + " is_valid -> " + is_valid)

@@ -1,21 +1,119 @@
 <competition-leaderboards-form>
-    <button class="ui primary button modal-button" ref="modal_button">
+    <button class="ui primary button modal-button" onclick="{ add }">
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <competition-leaderboard-table-form each="{ leaderboards }"></competition-leaderboard-table-form>
+    <competition-leaderboard-form-table each="{ leaderboards }"></competition-leaderboard-form-table>
+
+    <div class="ui modal" ref="modal">
+        <i class="close icon"></i>
+        <div class="header">
+            Leaderboard form
+        </div>
+        <div class="content">
+            <form class="ui form" onsubmit="{ save }">
+                <div class="field required">
+                    <label>Name</label>
+                    <input ref="name"/>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui button" onclick="{ close }">Cancel</div>
+            <div class="ui button primary" onclick="{ save }">Save</div>
+        </div>
+    </div>
 
     <script>
         var self = this
 
+        /*---------------------------------------------------------------------
+         Initializing
+        ---------------------------------------------------------------------*/
         self.leaderboards = [
-            {name: "Leaderboard"},
-            {name: "Another leaderboard"}
+            {name: "Leaderboard", columns: [{name: "Score", is_primary: true}]}
+            //{name: "Another leaderboard"}
         ]
+
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+        self.add = function () {
+            $(self.refs.modal).modal('show')
+        }
+
+        self.edit = function () {
+
+        }
+
+        self.close = function () {
+            $(self.refs.modal).modal('hide')
+        }
+
+        self.save = function () {
+            if (self.selected_leaderboard === undefined) {
+                var new_leaderboard = {name: self.refs.name.value, columns: [{name: "Score", is_primary: true}]}
+                self.leaderboards.push(new_leaderboard)
+            } else {
+
+
+
+
+
+
+
+
+
+                // find selected leaderboard and update it
+
+
+            }
+            self.clear_form()
+            self.close()
+        }
+
+        self.clear_form = function () {
+            self.refs.name.value = ''
+
+            self.form_update()
+            self.update()
+        }
+
+        self.form_update = function () {
+            var is_valid = true
+
+            // Make sure we have at least 1 leaderboard
+            if (self.leaderboards.length === 0) {
+                is_valid = false
+            } else {
+                // Make sure we have 1 column
+                if (self.leaderboards[0].columns.length === 0) {
+                    is_valid = false
+                }
+
+                // Make sure no columns are currently being edited, have keys, etc.
+                self.leaderboards.forEach(function (leaderboard) {
+                    leaderboard.columns.forEach(function (column) {
+                        if (column.editing) {
+                            is_valid = false
+                        }
+                        if (column.key === '') {
+                            is_valid = false
+                        }
+                    })
+                })
+            }
+
+            CODALAB.events.trigger('competition_is_valid_update', 'leaderboards', is_valid)
+
+            if (is_valid) {
+                CODALAB.events.trigger('competition_data_update', {leaderboards: self.leaderboards})
+            }
+        }
     </script>
 </competition-leaderboards-form>
 
-<competition-leaderboard-table-form>
+<competition-leaderboard-form-table>
     <h1>{ name }</h1>
 
     <form onsubmit="return false">
@@ -57,8 +155,8 @@
             <tbody>
             <tr class="ui aligned right">
                 <td>Primary Column?</td>
-                <td each="{ columns }" class="center aligned">
-                    <input type="radio" name="primary" checked="{ selected }">
+                <td each="{ column, index in columns }" class="center aligned">
+                    <input type="radio" name="primary" checked="{ column.is_primary }" onchange="{ set_primary.bind(this, index) }">
                 </td>
                 <td></td> <!-- Empty cell so it cuts off nicely at the end of rows -->
             </tr>
@@ -101,6 +199,33 @@
                 </td>
                 <td></td>
             </tr>
+
+            <tr class="ui aligned right">
+                <td>
+                    <span>
+                        Key
+                        <span data-tooltip="This is the key you will use to assign scoring values in your scoring program" data-inverted="" data-position="right center">
+                            <i class="help icon circle"></i>
+                        </span>
+                    </span>
+                </td>
+                <td each="{ c, index in columns }" class="center aligned">
+                    <div class="ui fluid input">
+                        <input type="text" placeholder="Key" onkeyup="{ edit_key.bind(this, index) }">
+                    </div>
+                </td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td></td>
+                <td each="{ c, index in columns }" class="center aligned">
+                    <button type="button" class="ui button mini red icon remove" onclick="{ remove_column.bind(this, index) }">
+                        <i class="icon delete"></i>
+                    </button>
+                </td>
+                <td></td>
+            </tr>
             </tbody>
 
             <tfoot class="full-width">
@@ -122,10 +247,6 @@
         /*---------------------------------------------------------------------
          Initializing
         ---------------------------------------------------------------------*/
-        self.columns = [
-            {name: "Score", selected: true}
-        ]
-
         self.one("mount", function () {
             //$(".tooltip").popup()
             $(".dropdown").dropdown()
@@ -141,7 +262,7 @@
          Methods
         ---------------------------------------------------------------------*/
         self.add_column = function () {
-            self.columns.push({name: "Score2"})
+            self.columns.push({name: "Score2", key: ''})
             self.update()
             $(".dropdown").dropdown("refresh")
 
@@ -153,17 +274,49 @@
             self.columns[index].editing = true
             self.update()
             $("#column_input_" + index).focus()
+
+            // Even though we're just starting editing, we want to change validation so
+            // the user knows they have to finish editing or the form will remain invalid
+            self.parent.form_update()
         }
 
         self.edit_column_type = function (index, event) {
             self.columns[index].computation = event.target.value
+            self.parent.form_update()
         }
 
         self.edit_column_name_submit = function (index, event) {
             if (event.keyCode === 13) {
                 self.columns[index].name = event.target.value
                 self.columns[index].editing = false
+                self.parent.form_update()
             }
+        }
+
+        self.edit_key = function(index, event) {
+            self.columns[index].key = event.target.value
+            self.parent.form_update()
+        }
+
+        self.remove_column = function (index) {
+            if (self.columns.length === 1) {
+                toastr.error("Each leaderboard must have at least 1 column!")
+                return
+            }
+
+            self.columns.splice(index, 1)
+            self.update()
+            self.parent.form_update()
+        }
+
+        self.set_primary = function (index) {
+            // remove is_primary for everyone else
+            self.columns.forEach(function (column) {
+                delete column.is_primary
+            })
+
+            self.columns[index].is_primary = true
+            self.parent.form_update()
         }
 
         self.move_left = function (index) {
@@ -183,6 +336,7 @@
             self.columns.splice(index + offset, 0, data_to_move)
 
             self.update()
+            self.parent.form_update()
         }
     </script>
 
@@ -222,13 +376,23 @@
             cursor: pointer;
             position: relative;
         }
+
         .column_name:hover .pencil {
             opacity: 1;
         }
+
         .column_name .pencil {
             position: absolute;
             left: -1.3em;
             opacity: .45;
         }
+
+        .button.remove {
+            opacity: 0.25;
+        }
+
+        .button.remove:hover {
+            opacity: 1;
+        }
     </style>
-</competition-leaderboard-table-form>
+</competition-leaderboard-form-table>

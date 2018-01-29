@@ -9,7 +9,7 @@
             <div class="ui one cards">
                 <a each="{page, index in pages}" class="green card">
                     <div class="content">
-                        <sorting-chevrons data="{ pages }" index="{ index }"></sorting-chevrons>
+                        <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_update }"></sorting-chevrons>
                         <div class="header" onclick="{ edit.bind(this, index) }">{ page.name }</div>
                     </div>
                     <div class="extra content">
@@ -17,7 +17,7 @@
                             <i class="edit icon"></i>
                             Edit
                         </span>
-                        <span class="right floated star" onclick="{ delete.bind(this, index) }">
+                        <span class="right floated star" onclick="{ delete_page.bind(this, index) }">
                             <i class="delete icon"></i>
                             Delete
                         </span>
@@ -123,12 +123,13 @@
             $(self.refs.modal).modal('show')
         }
 
-        self.delete = function (page_index) {
+        self.delete_page = function (page_index) {
             if (self.pages.length == 1) {
                 toastr.error("You cannot delete the first page in your competition! You need at least one page.")
             } else {
                 if (confirm("Are you sure you want to delete '" + self.pages[page_index].name + "'?")) {
                     self.pages.splice(page_index, 1)
+                    self.form_update()
                 }
             }
         }
@@ -147,6 +148,16 @@
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'pages', is_valid)
+
+            if(is_valid) {
+                // Format data nicely, insert indexes so they can be saved
+                var indexed_pages = self.pages.map(function(page, index) {
+                    page.index = index
+                    return page
+                })
+
+                CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
+            }
         }
 
         self.save = function (event) {
@@ -154,12 +165,17 @@
                 event.preventDefault()
             }
 
-            $(self.refs.modal).modal('hide')
-
             var data = {
                 name: self.refs.name.value,
-                content: self.refs.content.value
+                content: self.simple_markdown_editor.value()
             }
+
+            if(data.content === '') {
+                toastr.error("Cannot save, content is required for a page to save")
+                return
+            }
+
+            $(self.refs.modal).modal('hide')
 
             if(self.selected_page_index === undefined) {
                 self.pages.push(data)

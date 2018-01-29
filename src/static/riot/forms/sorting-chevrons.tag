@@ -22,6 +22,11 @@
             self.opts.data.splice(index + offset, 0, data_to_move)
 
             self.parent.update()
+
+            // Let form_updates and such know we changed
+            if(self.opts.onupdate) {
+                self.opts.onupdate()
+            }
         }
     </script>
 </sorting-chevrons>
