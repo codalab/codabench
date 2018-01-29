@@ -23,6 +23,7 @@ class CompetitionDetail(LoginRequiredMixin, TemplateView, ContextMixin):
             my_pk = kwargs.pop('pk')
             comp = Competition.objects.get(pk=my_pk)
             context['comp'] = comp
+            context['comp_pk'] = comp.pk
         except KeyError:
             print("Key error oh no")
         return context

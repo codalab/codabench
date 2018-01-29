@@ -29,7 +29,7 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
     },
     get_competition: function (query) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
+        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk)
     },
 
     /*---------------------------------------------------------------------
