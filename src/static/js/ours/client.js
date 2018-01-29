@@ -28,6 +28,9 @@ CODALAB.api = {
         query = query || ''
         return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
     },
+    get_competition: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
+    },
 
     /*---------------------------------------------------------------------
          Datasets

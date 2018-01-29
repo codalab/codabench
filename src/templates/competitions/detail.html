@@ -3,7 +3,7 @@
     <div class="row">
         <div class="sixteen wide column">
             <div class="ui message">
-                <h2>{{ comp.title }}</h2>
+                <h1 class="ui header">{{ comp.title }}</h1>
                 <p>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam
                     ut
@@ -27,6 +27,19 @@
                     <a class="item">
                         Files
                     </a>
+                    {% if user.is_superuser %} <!-- is_authenicated is not working here -->
+                        <div class="right menu">
+                            <a class="item">
+                                <div class="ui green button">Participants</div>
+                            </a>
+                            <a class="item">
+                                <div class="ui teal button">Submissions</div>
+                            </a>
+                            <a class="item">
+                                <div class="ui red button">Edit</div>
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="ui grid">
                     <div class="four wide column">
@@ -81,26 +94,44 @@
     <div class="centered row">
         <div class="five wide column">
             <h4 class="ui top attached header">
-                Public Submissions
+                Leaderboard
             </h4>
-            <div class="ui attached message">
-                <div class="ui relaxed divided list">
+            <div class="ui attached message forced-full-height">
+                <div class="ui relaxed divided mini list">
                     <div class="item">
                         <div class="content">
-                            <div class="header">Snickerdoodle</div>
-                            An excellent companion
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
                         </div>
                     </div>
                     <div class="item">
                         <div class="content">
-                            <div class="header">Poodle</div>
-                            A poodle, its pretty basic
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
                         </div>
                     </div>
                     <div class="item">
                         <div class="content">
-                            <div class="header">Paulo</div>
-                            He's also a dog
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">Participant</div>
+                            Metric 1: x Metric 2: x
                         </div>
                     </div>
                 </div>
@@ -110,24 +141,48 @@
             <h4 class="ui top attached header">
                 Public Submissions
             </h4>
-            <div class="ui attached message">
-                <div class="ui relaxed divided list">
+            <div class="ui attached message forced-full-height">
+                <div class="ui relaxed divided mini list">
                     <div class="item">
                         <div class="content">
-                            <div class="header">Snickerdoodle</div>
-                            An excellent companion
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
                         </div>
                     </div>
                     <div class="item">
                         <div class="content">
-                            <div class="header">Poodle</div>
-                            A poodle, its pretty basic
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
                         </div>
                     </div>
                     <div class="item">
                         <div class="content">
-                            <div class="header">Paulo</div>
-                            He's also a dog
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="content">
+                            <div class="header">
+                                <div class="item">Submission_01 by (user)</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -137,7 +192,7 @@
             <h4 class="ui top attached header">
                 Comment Feed
             </h4>
-            <div class="ui attached message">
+            <div class="ui attached message forced-full-height">
                 <div class="ui relaxed divided list">
                     <div class="item">
                         <div class="content">
@@ -163,31 +218,76 @@
     </div>
     <div class="row">
         <div class="sixteen wide column">
-            <div class="ui stacked message">
+            <div align="center" class="ui stacked centered message">
                 <h5>Competition Run Time</h5>
+                <div class="ui ordered centered steps">
+                    <div class="completed step">
+                        <div class="content">
+                            <div class="title">Phase 1: Testing</div>
+                            <div class="description">Choose your shipping options</div>
+                        </div>
+                    </div>
+                    <div class="completed step">
+                        <div class="content">
+                            <div class="title">Phase 2: Validation Test</div>
+                            <div class="description">Enter billing information</div>
+                        </div>
+                    </div>
+                    <div class="active step">
+                        <div class="content">
+                            <div class="title">Phase 3: Feedback Final</div>
+                            <div class="description">Verify order details</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="content">
+                            <div class="title">Phase 4: Blind Final</div>
+                            <div class="description">Verify order details</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="row">
         <div class="four wide column">
-            <div class="ui message">
-                <h5>Statistics</h5>
+            <div class="ui message forced-full-height">
+                <h4>Statistics</h4>
+                <div class="ui compact menu">
+                    <a class="item">
+                        <i class="icon users"></i> Teams
+                        <div class="floating ui red label">10</div>
+                    </a>
+                    <a class="item">
+                        <i class="icon user"></i> Participants
+                        <div class="floating ui teal label">63</div>
+                    </a>
+                </div>
             </div>
         </div>
         <div class="twelve wide column">
-            <div class="ui message">
-                <h5>
+            <div class="ui message forced-full-height">
+                <h4>
                     Points and Tiers?
-                </h5>
+                </h4>
             </div>
         </div>
     </div>
     <div class="row">
         <div class="sixteen wide column">
             <div class="ui message">
-                <h5>Competition Tags</h5>
+                <h5>Competition Tags:</h5>
+                <div class="ui spaced compact menu">
+                    <a class="item">
+                        <i class="icon settings"></i> Beginner
+                    </a>
+                    <a class="item">
+                        <i class="icon wrench"></i> Mechanics
+                    </a>
+                </div>
             </div>
         </div>
     </div>
     {#</div>#}
+    <script></script>
 {% endblock %}
