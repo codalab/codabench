@@ -48,7 +48,6 @@
             </a>
 
             <div class="ui right floated buttons">
-
                 <div class="ui negative button">
                     <i class="delete icon"></i>
                     Delete

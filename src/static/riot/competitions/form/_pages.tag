@@ -9,7 +9,7 @@
             <div class="ui one cards">
                 <a each="{page, index in pages}" class="green card">
                     <div class="content">
-                        <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_update }"></sorting-chevrons>
+                        <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
                         <div class="header" onclick="{ edit.bind(this, index) }">{ page.name }</div>
                     </div>
                     <div class="extra content">
@@ -129,12 +129,12 @@
             } else {
                 if (confirm("Are you sure you want to delete '" + self.pages[page_index].name + "'?")) {
                     self.pages.splice(page_index, 1)
-                    self.form_update()
+                    self.form_updated()
                 }
             }
         }
 
-        self.form_update = function () {
+        self.form_updated = function () {
             var is_valid = true
 
             // Make sure we have at least 1 page and it has content
@@ -184,7 +184,7 @@
             }
 
             self.clear_form()
-            self.form_update()
+            self.form_updated()
         }
     </script>
 </competition-pages>

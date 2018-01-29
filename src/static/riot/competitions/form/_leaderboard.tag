@@ -3,7 +3,39 @@
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <competition-leaderboard-form-table each="{ leaderboards }"></competition-leaderboard-form-table>
+    <div class="ui fluid styled accordion">
+        <virtual each="{ leaderboard, index in leaderboards }">
+            <div class="title">
+                <h1>
+                    <span class="trigger"><i class="dropdown icon"></i> { leaderboard.name }</span>
+                    <div class="ui right floated buttons">
+                        <div class="ui negative button">
+                            <i class="delete icon"></i>
+                            Delete
+                        </div>
+                        <div class="ui button" onclick="{ edit.bind(this, index) }">
+                            <i class="pencil icon"></i>
+                            Edit
+                        </div>
+                    </div>
+
+                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
+                </h1>
+            </div>
+            <div class="content">
+                <competition-leaderboard-form-table columns="{ leaderboard.columns }"></competition-leaderboard-form-table>
+            </div>
+        </virtual>
+    </div>
+
+
+    <div class="ui container center aligned grid" show="{ leaderboards.length == 0 }">
+        <div class="row">
+            <div class="four wide column">
+                <i>No leaderboards added yet, at least 1 is required!</i>
+            </div>
+        </div>
+    </div>
 
     <div class="ui modal" ref="modal">
         <i class="close icon"></i>
@@ -16,10 +48,19 @@
                     <label>Name</label>
                     <input ref="name"/>
                 </div>
+                <div class="field required">
+                    <label>
+                        Key
+                        <span data-tooltip="This is the key you will use to assign scores to leaderboards in your scoring program" data-inverted="" data-position="right center">
+                            <i class="help icon circle"></i>
+                        </span>
+                    </label>
+                    <input ref="key"/>
+                </div>
             </form>
         </div>
         <div class="actions">
-            <div class="ui button" onclick="{ close }">Cancel</div>
+            <div class="ui button" onclick="{ close_modal }">Cancel</div>
             <div class="ui button primary" onclick="{ save }">Save</div>
         </div>
     </div>
@@ -31,9 +72,10 @@
          Initializing
         ---------------------------------------------------------------------*/
         self.leaderboards = [
-            {name: "Leaderboard", columns: [{name: "Score", is_primary: true}]}
-            //{name: "Another leaderboard"}
+            //{name: "Leaderboard", columns: [{name: "Score", is_primary: true}]},
+            //{name: "Another leaderboard", columns: []}
         ]
+        self.selected_leaderboard_index = undefined
 
         /*---------------------------------------------------------------------
          Methods
@@ -42,44 +84,55 @@
             $(self.refs.modal).modal('show')
         }
 
-        self.edit = function () {
+        self.edit = function (index) {
+            $(self.refs.modal).modal('show')
+            var leaderboard = self.leaderboards[index]
+            self.refs.name.value = leaderboard.name
+            self.refs.key.value = leaderboard.key
 
+            self.selected_leaderboard_index = index
         }
 
-        self.close = function () {
+        self.close_modal = function () {
             $(self.refs.modal).modal('hide')
+            self.clear_form()
         }
 
         self.save = function () {
-            if (self.selected_leaderboard === undefined) {
-                var new_leaderboard = {name: self.refs.name.value, columns: [{name: "Score", is_primary: true}]}
-                self.leaderboards.push(new_leaderboard)
+            var leaderboard_data = {
+                name: self.refs.name.value,
+                key: self.refs.key.value
+            }
+            if (self.selected_leaderboard_index === undefined) {
+                leaderboard_data['columns'] = [{name: "Score", is_primary: true}]
+                self.leaderboards.push(leaderboard_data)
             } else {
-
-
-
-
-
-
-
-
-
-                // find selected leaderboard and update it
-
-
+                Object.assign(self.leaderboards[self.selected_leaderboard_index], leaderboard_data)
             }
             self.clear_form()
-            self.close()
+
+            // make sure to init new accordions
+            $(".ui.accordion").accordion({
+                selector: {
+                    trigger: '.title .trigger'
+                }
+            })
+
+            // then unhide modal
+            self.close_modal()
         }
 
         self.clear_form = function () {
             self.refs.name.value = ''
+            self.refs.key.value = ''
 
-            self.form_update()
+            self.selected_leaderboard_index = undefined
+
+            self.form_updated()
             self.update()
         }
 
-        self.form_update = function () {
+        self.form_updated = function () {
             var is_valid = true
 
             // Make sure we have at least 1 leaderboard
@@ -97,7 +150,7 @@
                         if (column.editing) {
                             is_valid = false
                         }
-                        if (column.key === '') {
+                        if (column.key === '' || column.key === undefined) {
                             is_valid = false
                         }
                     })
@@ -111,11 +164,15 @@
             }
         }
     </script>
+    <style>
+        .modal-button {
+            margin-bottom: 20px !important;
+        }
+    </style>
 </competition-leaderboards-form>
 
 <competition-leaderboard-form-table>
-    <h1>{ name }</h1>
-
+    <!-- The form is here for the radio button to work -->
     <form onsubmit="return false">
         <table class="ui compact celled small table table-bordered definition">
             <thead>
@@ -130,7 +187,6 @@
                 </th>-->
                 <th each="{ column, index in columns }" class="center aligned" width="175px">
                     <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
-
 
                     <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, index) }">
                     <!--<span onclick="{ column.editing = true }">-->
@@ -203,8 +259,8 @@
             <tr class="ui aligned right">
                 <td>
                     <span>
-                        Key
-                        <span data-tooltip="This is the key you will use to assign scoring values in your scoring program" data-inverted="" data-position="right center">
+                        Key <span class="required">*</span>
+                        <span data-tooltip="This is the key you will use to assign scoring columns, along with leaderboard key, in your scoring program" data-inverted="" data-position="right center">
                             <i class="help icon circle"></i>
                         </span>
                     </span>
@@ -247,9 +303,15 @@
         /*---------------------------------------------------------------------
          Initializing
         ---------------------------------------------------------------------*/
+        self.columns = []
+
         self.one("mount", function () {
             //$(".tooltip").popup()
             $(".dropdown").dropdown()
+
+
+            // *NOTE* Assigning columns this way gets it out of "opts" and makes it namespace properly!
+            self.columns = self.opts.columns
         })
 
         self.on("update", function () {
@@ -277,25 +339,25 @@
 
             // Even though we're just starting editing, we want to change validation so
             // the user knows they have to finish editing or the form will remain invalid
-            self.parent.form_update()
+            self.parent.form_updated()
         }
 
         self.edit_column_type = function (index, event) {
             self.columns[index].computation = event.target.value
-            self.parent.form_update()
+            self.parent.form_updated()
         }
 
         self.edit_column_name_submit = function (index, event) {
             if (event.keyCode === 13) {
                 self.columns[index].name = event.target.value
                 self.columns[index].editing = false
-                self.parent.form_update()
+                self.parent.form_updated()
             }
         }
 
-        self.edit_key = function(index, event) {
+        self.edit_key = function (index, event) {
             self.columns[index].key = event.target.value
-            self.parent.form_update()
+            self.parent.form_updated()
         }
 
         self.remove_column = function (index) {
@@ -306,7 +368,7 @@
 
             self.columns.splice(index, 1)
             self.update()
-            self.parent.form_update()
+            self.parent.form_updated()
         }
 
         self.set_primary = function (index) {
@@ -316,7 +378,11 @@
             })
 
             self.columns[index].is_primary = true
-            self.parent.form_update()
+            self.parent.form_updated()
+        }
+
+        self.edit_leaderboard_details = function () {
+            CODALAB.events.trigger('leaderboard_select_index')
         }
 
         self.move_left = function (index) {
@@ -336,7 +402,7 @@
             self.columns.splice(index + offset, 0, data_to_move)
 
             self.update()
-            self.parent.form_update()
+            self.parent.form_updated()
         }
     </script>
 
@@ -393,6 +459,11 @@
 
         .button.remove:hover {
             opacity: 1;
+        }
+
+        /* Special class just to color the label for "Key" required asterisk! */
+        .required {
+            color: #DB2828;
         }
     </style>
 </competition-leaderboard-form-table>

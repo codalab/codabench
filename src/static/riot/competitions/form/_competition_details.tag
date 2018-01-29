@@ -70,7 +70,7 @@
                 },
                 onHide: function () {
                     // Have to do this because onchange isn't fired when date is picked
-                    self.form_update()
+                    self.form_updated()
                 }
             }
             var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
@@ -94,14 +94,14 @@
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
-                this.addEventListener('keydown', self.form_update)
+                this.addEventListener('keydown', self.form_updated)
             })
 
             // Capture and convert logo to base64 for easy uploading
             $('input[name="logo"]', self.root).change(function() {
                 getBase64(this.files[0]).then(function(data) {
                     self.data['logo'] = data
-                    self.form_update()
+                    self.form_updated()
                 })
             })
         })
@@ -109,7 +109,7 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.form_update = function () {
+        self.form_updated = function () {
             var is_valid = true
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way

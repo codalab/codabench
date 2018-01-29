@@ -23,7 +23,7 @@
 
             self.parent.update()
 
-            // Let form_updates and such know we changed
+            // Let form_updateds and such know we changed
             if(self.opts.onupdate) {
                 self.opts.onupdate()
             }

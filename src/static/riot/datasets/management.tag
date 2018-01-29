@@ -184,7 +184,6 @@
                 // Filters
                 var search = self.refs.search.value.toLowerCase()
                 var type = self.refs.type_filter.value
-                console.log(type)
 
                 if (search) {
                     self.filtered_datasets = self.filtered_datasets.filter(function (dataset) {
@@ -287,8 +286,6 @@
                         Object.keys(errors).map(function (key, index) {
                             errors[key] = errors[key].join('; ')
                         })
-
-                        console.log(errors)
 
                         self.update({errors: errors})
                     }
