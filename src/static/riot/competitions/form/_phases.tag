@@ -88,16 +88,16 @@
                         </a>
                     </div>
 
-                    <div class="three fields">
+                    <div class="three fields" data-no-js>
                         <div class="field">
                             <label>
                                 Input Data
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Input+Data" data-name="input_data">
                                 <i class="search icon"></i>
-                                <input type="text" name="input_data" class="prompt">
+                                <!--<input type="hidden" name="input_data">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -106,9 +106,10 @@
                                 Reference Data
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Reference+Data" data-name="reference_data">
                                 <i class="search icon"></i>
-                                <input type="text" name="reference_data" class="prompt">
+                                <!--<input type="hidden" name="reference_data">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -117,9 +118,10 @@
                                 Scoring Program
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Scoring+Program" data-name="scoring_program">
                                 <i class="search icon"></i>
-                                <input type="text" name="scoring_program" class="prompt">
+                                <!--<input type="hidden" name="scoring_program">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -130,9 +132,10 @@
                                 Ingestion Program
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Ingestion+Program" data-name="ingestion_program">
                                 <i class="search icon"></i>
-                                <input type="text" name="ingestion_program" class="prompt">
+                                <!--<input type="hidden" name="ingestion_program">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -141,9 +144,10 @@
                                 Public Data
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Public+Data" data-name="public_data">
                                 <i class="search icon"></i>
-                                <input type="text" name="public_data" class="prompt">
+                                <!--<input type="hidden" name="public_data">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -152,9 +156,10 @@
                                 Starting Kit
                                 <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <div class="ui fluid left icon labeled input search">
+                            <div class="ui fluid left icon labeled input search" data-search-type="Starting+Kit" data-name="starting_kit">
                                 <i class="search icon"></i>
-                                <input type="text" name="starting_kit" class="prompt">
+                                <!--<input type="hidden" name="starting_kit">-->
+                                <input type="text" class="prompt">
                                 <div class="results"></div>
                             </div>
                         </div>
@@ -179,6 +184,7 @@
         ---------------------------------------------------------------------*/
         self.has_initialized_calendars = false
         self.form_is_valid = false
+        self.form_datasets = {}
         self.phases = [
             /*{
                 name: "Test",
@@ -202,15 +208,38 @@
                 this.addEventListener('keyup', self.form_updated)
             })
 
-            // data search
-            var content = [
-                {title: 'Andorra'}
-            ];
-            $('.ui.search')
-                .search({
-                    source: content,
-                    onSelect: self.form_updated
-                })
+            // data search for all 6 data types
+            $('.ui.search').each(function (i, item) {
+                $(item)
+                    .search({
+                        apiSettings: {
+                            url: URLS.API + 'datasets/?q=${query}&type=' + (item.dataset.searchType || ""),
+                            onResponse: function (data) {
+                                // Put results in array to use maxResults setting
+                                var data_in_array = []
+
+                                Object.keys(data).forEach(key => {
+                                    // Get rid of "null" in semantic UI search results
+                                    data[key].description = data[key].description || ''
+                                    data_in_array.push(data[key])
+                                })
+                                return {results: data_in_array}
+                            }
+                        },
+                        preserveHTML: false,
+                        minCharacters: 2,
+                        fields: {
+                            title: 'name'
+                        },
+                        maxResults: 4,
+                        onSelect: function(result, response) {
+                            // It's hard to store the dataset information (hidden fields suck), so let's just put it here temporarily
+                            // and grab it back on save
+                            self.form_datasets[item.dataset.name] = result
+                            self.form_updated()
+                        }
+                    })
+            })
 
             // Modal callback to draw markdown on EDIT show
             $(self.refs.modal).modal({
@@ -284,7 +313,7 @@
                     phase.index = i
 
                     // having an empty "end" causes problems with DRF validation, remove that
-                    if(!phase.end) {
+                    if (!phase.end) {
                         delete phase.end
                     }
                 })
@@ -301,20 +330,14 @@
             var data = get_form_data(self.refs.form)
             console.log(data)
             // All of these must be present
-            self.form_is_valid = !!data.name && !!data.start && !!data.description && !!data.scoring_program
+            self.form_is_valid = !!data.name && !!data.start && !!data.description && !!self.form_datasets.scoring_program
 
             console.log("form is valid: " + self.form_is_valid)
         }
 
-        /*self.get_form_data = function() {
-            // Wrapper around normal get form data to also include simplemde
-            var data = get_form_data(self.refs.form)
-            //data.description = self.simple_markdown_editor.value()
-            return data
-        }*/
-
         self.clear_form = function () {
             self.selected_phase_index = undefined
+            self.form_datasets = {}
 
             $(':input', self.refs.form).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 $(field).val('')
@@ -354,7 +377,10 @@
 
         self.save = function () {
             var data = get_form_data(self.refs.form)
-            console.log(data)
+
+            // insert all 6 programs into data
+            Object.assign(data, self.form_datasets)
+
             if (!self.selected_phase_index) {
                 self.phases.push(data)
                 self.clear_form()

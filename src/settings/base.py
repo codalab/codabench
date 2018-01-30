@@ -35,6 +35,7 @@ THIRD_PARTY_APPS = (
     'django_elasticsearch_dsl',
     'social_django',
     'django_extensions',
+    'django_filters',
 )
 OUR_APPS = (
     'competitions',
@@ -183,7 +184,7 @@ REST_FRAMEWORK = {
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        # 'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',

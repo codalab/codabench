@@ -21,6 +21,7 @@
 
                 <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                    <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
                     <div class="field {error: errors.type}">
                         <select name="type" ref="type" class="ui dropdown">
