@@ -94,7 +94,7 @@
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
-                this.addEventListener('keydown', self.form_updated)
+                this.addEventListener('keyup', self.form_updated)
             })
 
             // Capture and convert logo to base64 for easy uploading

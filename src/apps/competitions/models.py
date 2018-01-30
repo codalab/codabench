@@ -15,9 +15,9 @@ class Competition(models.Model):
 
 class Phase(models.Model):
     competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE)
-    number = models.PositiveIntegerField()
+    index = models.PositiveIntegerField()
     start = models.DateTimeField()
-    end = models.DateTimeField()
+    end = models.DateTimeField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...

@@ -166,7 +166,6 @@
             </form>
         </div>
         <div class="actions">
-            <div class="ui button danger" onclick="{ clear_form }">CLEAR!!!</div>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
             <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
@@ -256,7 +255,7 @@
             }
         }
 
-        self.close_modal = function() {
+        self.close_modal = function () {
             $(self.refs.modal).modal('hide')
             self.clear_form()
         }
@@ -280,6 +279,16 @@
             CODALAB.events.trigger('competition_is_valid_update', 'phases', is_valid)
 
             if (is_valid) {
+                self.phases.forEach(function (phase, i) {
+                    // Since we have valid data, let's attach our "index" to the phaases
+                    phase.index = i
+
+                    // having an empty "end" causes problems with DRF validation, remove that
+                    if(!phase.end) {
+                        delete phase.end
+                    }
+                })
+
                 CODALAB.events.trigger('competition_data_update', {phases: self.phases})
             }
 
@@ -287,7 +296,7 @@
             self.update()
         }
 
-        self.form_check_is_valid = function() {
+        self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
             console.log(data)
@@ -304,7 +313,7 @@
             return data
         }*/
 
-        self.clear_form = function() {
+        self.clear_form = function () {
             self.selected_phase_index = undefined
 
             $(':input', self.refs.form).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
@@ -316,12 +325,12 @@
             self.form_updated()
         }
 
-        self.add = function() {
+        self.add = function () {
             self.clear_form()
             self.show_modal()
         }
 
-        self.edit = function(index) {
+        self.edit = function (index) {
             self.selected_phase_index = index
 
             set_form_data(self.phases[index], self.refs.form)
@@ -332,7 +341,7 @@
             self.show_modal()
         }
 
-        self.delete_phase = function(index) {
+        self.delete_phase = function (index) {
             if (self.phases.length == 1) {
                 toastr.error("Cannot delete, you need at least one phase")
             } else {
@@ -343,10 +352,10 @@
             }
         }
 
-        self.save = function() {
+        self.save = function () {
             var data = get_form_data(self.refs.form)
             console.log(data)
-            if(!self.selected_phase_index) {
+            if (!self.selected_phase_index) {
                 self.phases.push(data)
                 self.clear_form()
                 self.close_modal()
@@ -367,6 +376,7 @@
         .hover:hover {
             color: #262626;
         }
+
         .hover-red:hover {
             color: #DB2828;
         }

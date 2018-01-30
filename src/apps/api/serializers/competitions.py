@@ -4,15 +4,23 @@ from rest_framework import serializers
 
 from api.serializers.leaderboards import LeaderboardSerializer
 from competitions.models import Competition, Phase, Submission, Page
+from datasets.models import Data
 from profiles.models import User
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
+    input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=True, allow_null=False, slug_field='key')
+    ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    public_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    starting_kit = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+
     class Meta:
         model = Phase
         fields = (
             'id',
-            'number',
+            'index',
             'start',
             'end',
             'description',

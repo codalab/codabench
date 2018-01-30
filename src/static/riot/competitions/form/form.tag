@@ -1,55 +1,100 @@
+<errors>
+    <ul class="list">
+        <li each="{ error_object, field in opts.errors }">
+            <strong>{field}:</strong>
+
+            <span each="{error in error_object}">
+                <!-- Error is not an object, no need to go deeper -->
+                <virtual if="{ error.constructor != Object }">
+                    {error}
+                </virtual>
+
+                <!-- We have more errors to loop through recursively -->
+                <virtual if="{ error.constructor == Object }">
+                    <errors errors="{ error }"></errors>
+                </virtual>
+            </span>
+        </li>
+    </ul>
+</errors>
+
+
 <competition-form>
     <div class="ui middle aligned stackable grid container">
         <div class="row centered">
             <div class="twelve wide column">
+
+                <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
+                    <div class="header">
+                        Error(s) saving competition
+                    </div>
+                    <errors errors="{errors}"></errors>
+                </div>
+                <!--
+                            <virtual if="{ error_object.constructor == Array }">
+                                asdfasdfasdf
+                                <span each="{error in error_object}">{error}</span>
+                            </virtual>
+
+                            <virtual if="{ error_object.constructor == Object }">
+                                AYESSSS
+                                <span each="{inline_error, i in error_object}">{inline_error} - {i}</span>
+                            </virtual>
+                            -->
+
+
                 <div class="ui top pointing secondary menu">
                     <a class="active item" data-tab="competition_details">
-                        <i class="checkmark box icon green" show="{ sections.details.valid }"></i> Competition details
+                        <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
+                        <i class="minus circle icon red" show="{ errors.details }"></i>
+                        Competition details
                     </a>
                     <a class="item" data-tab="pages">
-                        <i class="checkmark box icon green" show="{ sections.pages.valid }"></i> Pages
+                        <i class="checkmark box icon green" show="{ sections.pages.valid && !errors.pages }"></i>
+                        <i class="minus circle icon red" show="{ errors.pages }"></i>
+                        Pages
                     </a>
                     <a class="item" data-tab="phases">
-                        <i class="checkmark box icon green" show="{ sections.phases.valid }"></i> Phases
+                        <i class="checkmark box icon green" show="{ sections.phases.valid && !errors.phases }"></i>
+                        <i class="minus circle icon red" show="{ errors.phases }"></i>
+                        Phases
                     </a>
                     <a class="item" data-tab="leaderboard">
-                        <i class="checkmark box icon green" show="{ sections.leaderboards.valid }"></i>  Leaderboard
+                        <i class="checkmark box icon green" show="{ sections.leaderboards.valid && !errors.leaderboards }"></i>
+                        <i class="minus circle icon red" show="{ errors.leaderboards }"></i>
+                        Leaderboard
                     </a>
                     <a class="item" data-tab="collaborators">
-                        <i class="checkmark box icon green" show="{ sections.collaborators.valid }"></i> Collaborators
+                        <i class="checkmark box icon green" show="{ sections.collaborators.valid && !errors.collaborators }"></i>
+                        <i class="minus circle icon red" show="{ errors.collaborators }"></i>
+                        Collaborators
                     </a>
                 </div>
 
                 <div class="ui bottom active tab" data-tab="competition_details">
-                    <competition-details></competition-details>
+                    <competition-details errors="{ errors.details }"></competition-details>
                 </div>
                 <div class="ui bottom tab" data-tab="pages">
-                    <competition-pages></competition-pages>
+                    <competition-pages errors="{ errors.pages }"></competition-pages>
                 </div>
                 <div class="ui bottom tab" data-tab="phases">
-                    <competition-phases></competition-phases>
+                    <competition-phases errors="{ errors.phases }"></competition-phases>
                 </div>
                 <div class="ui bottom tab" data-tab="leaderboard">
-                    <competition-leaderboards-form></competition-leaderboards-form>
+                    <competition-leaderboards-form errors="{ errors.details }"></competition-leaderboards-form>
                 </div>
                 <div class="ui bottom tab" data-tab="collaborators">
-                    <competition-collaborators></competition-collaborators>
+                    <competition-collaborators errors="{ errors.details }"></competition-collaborators>
                 </div>
             </div>
         </div>
 
         <div class="row centered">
-
-
-            <!--
-
-            REMEMBER TO MAKE THIS DISABLED UNTIL VALID!
-
-            <button class="ui primary button disabled" onclick="{ save }">
-            -->
-
-            <button class="ui primary button" onclick="{ save }">
+            <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
                 Save
+            </button>
+            <button class="ui primary button" onclick="{ save }">
+                TEST Save
             </button>
             <button class="ui button">
                 Discard
@@ -71,6 +116,7 @@
             'leaderboards': {valid: false},
             'collaborators': {valid: false}
         }
+        self.errors = {}
 
         self.one("mount", function () {
             // tabs
@@ -80,6 +126,20 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.are_all_sections_valid = function () {
+            for (var section in self.sections) {
+                if(section === 'collaborators') {
+                    // collaborators is optional
+                    continue;
+                }
+
+                if (!self.sections[section].valid) {
+                    return false
+                }
+            }
+            return true
+        }
+
         self.save = function () {
 
 
@@ -166,6 +226,61 @@
                     toastr.success("Competition successfully created!")
                 })
                 .fail(function (response) {
+                    if (response) {
+                        var errors = JSON.parse(response.responseText);
+
+                        // to make errors clearer, move errors for "detail" page into the errors "details" key
+                        var details_section_fields = ['title', 'logo']
+                        details_section_fields.forEach(function(field) {
+                            if(errors[field]) {
+                                // initialize section, if not already
+                                errors.details = errors.details || []
+
+                                // make temp dict containing key: value
+                                var new_error_dict = {}
+                                new_error_dict[field] = errors[field]
+
+                                // push it and delete the original
+                                errors.details.push(new_error_dict)
+                                delete errors[field]
+                            }
+                        })
+
+
+                        self.update({errors: errors})
+
+                        console.log(errors)
+
+                        // pre-make the keys for each section
+                        /*
+                        var errors = {}
+
+                        for(var key in self.sections) {
+                            errors[key] = []
+                        }
+
+                        console.log("PREPROS")
+                        console.log(errors)*/
+
+
+                        /*
+                        // Clean up errors to not be arrays but plain text
+                        Object.keys(errors).map(function (key, index) {
+                            // If the error is for a whole section, insert it there instead
+                            if(self.sections[key] !== undefined) {
+                                console.log(errors[])
+                                errors[key]
+                            } else {
+                                errors[key] = errors[key].join('; ')
+                            }
+                        })
+                        */
+
+                        //self.update({errors: data})
+
+                        //console.log("ERRORS:")
+                        //console.log(errors)
+                    }
                     toastr.error("Creation failed, error occurred");
                 });
         }

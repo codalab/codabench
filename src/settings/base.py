@@ -184,6 +184,10 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         # 'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DATETIME_INPUT_FORMATS': (
+        'iso-8601',
+        '%B %d, %Y',
     )
 }
 

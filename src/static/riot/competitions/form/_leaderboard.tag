@@ -7,7 +7,7 @@
         <virtual each="{ leaderboard, index in leaderboards }">
             <div class="title { active: leaderboard.is_active }">
                 <h1>
-                    <span class="trigger"><i class="dropdown icon"></i> { leaderboard.name }</span>
+                    <span class="trigger"><i class="dropdown icon"></i> { leaderboard.title }</span>
                     <div class="ui right floated buttons">
                         <div class="ui negative button" onclick="{ delete_leaderboard.bind(this, index) }">
                             <i class="delete icon"></i>
@@ -44,8 +44,8 @@
         <div class="content">
             <form class="ui form" onsubmit="{ save }">
                 <div class="field required">
-                    <label>Name</label>
-                    <input ref="name"/>
+                    <label>Title</label>
+                    <input ref="title"/>
                 </div>
                 <div class="field required">
                     <label>
@@ -86,7 +86,7 @@
         self.edit = function (index) {
             $(self.refs.modal).modal('show')
             var leaderboard = self.leaderboards[index]
-            self.refs.name.value = leaderboard.name
+            self.refs.title.value = leaderboard.title
             self.refs.key.value = leaderboard.key
 
             self.selected_leaderboard_index = index
@@ -97,8 +97,8 @@
             self.clear_form()
         }
 
-        self.delete_leaderboard = function(index) {
-            if(confirm("Are you sure you want to delete this?")) {
+        self.delete_leaderboard = function (index) {
+            if (confirm("Are you sure you want to delete this?")) {
                 self.leaderboards.splice(index, 1)
                 self.update()
                 self.form_updated()
@@ -107,12 +107,12 @@
 
         self.save = function () {
             var leaderboard_data = {
-                name: self.refs.name.value,
+                title: self.refs.title.value,
                 key: self.refs.key.value
             }
             if (self.selected_leaderboard_index === undefined) {
                 leaderboard_data['is_active'] = true
-                leaderboard_data['columns'] = [{name: "Score", is_primary: true}]
+                leaderboard_data['columns'] = [{title: "Score", is_primary: true}]
                 self.leaderboards.push(leaderboard_data)
             } else {
                 Object.assign(self.leaderboards[self.selected_leaderboard_index], leaderboard_data)
@@ -131,7 +131,7 @@
         }
 
         self.clear_form = function () {
-            self.refs.name.value = ''
+            self.refs.title.value = ''
             self.refs.key.value = ''
 
             self.selected_leaderboard_index = undefined
@@ -168,6 +168,13 @@
             CODALAB.events.trigger('competition_is_valid_update', 'leaderboards', is_valid)
 
             if (is_valid) {
+                // Since we have valid data, let's attach our "index" to the columns
+                self.leaderboards.forEach(function (leaderboard) {
+                    leaderboard.columns.forEach(function (column, i) {
+                        column.index = i
+                    })
+                })
+
                 CODALAB.events.trigger('competition_data_update', {leaderboards: self.leaderboards})
             }
         }
@@ -198,11 +205,11 @@
 
                     <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, index) }">
                     <!--<span onclick="{ column.editing = true }">-->
-                        <i class="counterclockwise rotated icon pencil small"></i> { column.name }
+                        <i class="counterclockwise rotated icon pencil small"></i> { column.title }
                     </span>
 
                     <div class="ui input" show="{ column.editing }">
-                        <input id="column_input_{ index }" type="text" value="{ column.name }" onkeydown="{ edit_column_name_submit.bind(this, index) }">
+                        <input id="column_input_{ index }" type="text" value="{ column.title }" onkeydown="{ edit_column_name_submit.bind(this, index) }">
                     </div>
 
                     <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
@@ -246,7 +253,7 @@
                     <div class="ui field" show="{ column.computation }">
                         <label>Apply to:</label>
                         <select class="ui fluid small multiselect" multiple="">
-                            <option each="{ inner_column, inner_index in columns }" show="{ index != inner_index }"> { inner_column.name }</option>
+                            <option each="{ inner_column, inner_index in columns }" show="{ index != inner_index }"> { inner_column.title }</option>
                         </select>
                     </div>
                 </td>
@@ -332,7 +339,7 @@
          Methods
         ---------------------------------------------------------------------*/
         self.add_column = function () {
-            self.columns.push({name: "Score2", key: ''})
+            self.columns.push({title: "Score2", key: ''})
             self.update()
             $(".dropdown").dropdown("refresh")
 
@@ -357,7 +364,7 @@
 
         self.edit_column_name_submit = function (index, event) {
             if (event.keyCode === 13) {
-                self.columns[index].name = event.target.value
+                self.columns[index].title = event.target.value
                 self.columns[index].editing = false
                 self.parent.form_updated()
             }

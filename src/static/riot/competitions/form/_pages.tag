@@ -10,7 +10,7 @@
                 <a each="{page, index in pages}" class="green card">
                     <div class="content">
                         <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
-                        <div class="header" onclick="{ edit.bind(this, index) }">{ page.name }</div>
+                        <div class="header" onclick="{ edit.bind(this, index) }">{ page.title }</div>
                     </div>
                     <div class="extra content">
                         <span class="left floated like" onclick="{ edit.bind(this, index) }">
@@ -28,7 +28,7 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages[0].name }</h1>
+                <h1>{ pages[0].title }</h1>
                 <p>(This is the first page people will see upon visiting your competition!)</p>
             </div>
 
@@ -46,8 +46,8 @@
         <div class="content">
             <form class="ui form" onsubmit="{ save }">
                 <div class="field required">
-                    <label>Name</label>
-                    <input ref="name"/>
+                    <label>Title</label>
+                    <input ref="title"/>
                 </div>
 
                 <div class="field required">
@@ -71,9 +71,7 @@
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
         self.pages = [
-            //{name: "Welcome!", content: ""}
-            {name: "Welcome!", content: "welcome msg"}
-            //{name: "sdafasdafds!", content: "asdfasdfasdfdasf"}
+            {title: "Welcome!", content: "welcome msg"}
         ]
 
         self.one("mount", function () {
@@ -105,7 +103,7 @@
         }
 
         self.clear_form = function () {
-            self.refs.name.value = ''
+            self.refs.title.value = ''
             self.simple_markdown_editor.value('')
         }
 
@@ -116,7 +114,7 @@
         self.edit = function (page_index) {
             self.selected_page_index = page_index
             var page = self.pages[page_index]
-            self.refs.name.value = page.name
+            self.refs.title.value = page.title
             self.refs.content.value = page.content
             self.simple_markdown_editor.value(page.content)
 
@@ -127,7 +125,7 @@
             if (self.pages.length == 1) {
                 toastr.error("You cannot delete the first page in your competition! You need at least one page.")
             } else {
-                if (confirm("Are you sure you want to delete '" + self.pages[page_index].name + "'?")) {
+                if (confirm("Are you sure you want to delete '" + self.pages[page_index].title + "'?")) {
                     self.pages.splice(page_index, 1)
                     self.form_updated()
                 }
@@ -166,7 +164,7 @@
             }
 
             var data = {
-                name: self.refs.name.value,
+                title: self.refs.title.value,
                 content: self.simple_markdown_editor.value()
             }
 
