@@ -184,5 +184,13 @@
             self.clear_form()
             self.form_updated()
         }
+
+        /*---------------------------------------------------------------------
+         Events
+        ---------------------------------------------------------------------*/
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.pages = competition.pages
+            self.form_updated()
+        })
     </script>
 </competition-pages>

@@ -126,6 +126,7 @@
                 CODALAB.api.get_competition(self.opts.competition_id)
                     .done(function (data) {
                         self.competition = data
+                        CODALAB.events.trigger('competition_loaded', self.competition)
                         self.update()
                     })
                     .fail(function (response) {

@@ -178,6 +178,14 @@
                 CODALAB.events.trigger('competition_data_update', {leaderboards: self.leaderboards})
             }
         }
+
+        /*---------------------------------------------------------------------
+         Events
+        ---------------------------------------------------------------------*/
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.leaderboards = competition.leaderboards
+            self.form_updated()
+        })
     </script>
     <style>
         .modal-button {

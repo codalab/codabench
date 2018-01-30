@@ -14,7 +14,7 @@
         <div class="field required">
             <label>Logo</label>
 
-            <input-file name="logo" accept="image/*"></input-file>
+            <input-file name="logo" accept="image/*" ref="logo"></input-file>
         </div>
 
         <!--<div class="two fields">
@@ -53,6 +53,7 @@
          Init
         ---------------------------------------------------------------------*/
         self.data = {}
+        self.is_editing_competition = false
 
         // We temporarily store this to display it nicely to the user, could be a behavior we break out into its own
         // component later!
@@ -115,15 +116,32 @@
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value
 
-            if(!self.data['title'] || !self.data['logo']) {
+            // Require title, logo is optional IF we are editing -- will just keep the old one if
+            // a new one is not provided
+            if(!self.data['title'] || (!self.data['logo'] && !self.is_editing_competition)) {
                 is_valid = false
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
 
             if(is_valid) {
+                // If we don't have logo data AND we're editing, put in empty data
+                if(!self.data['logo'] && self.is_editing_competition){
+                    self.data['logo'] = undefined
+                }
                 CODALAB.events.trigger('competition_data_update', self.data)
             }
         }
+
+        /*---------------------------------------------------------------------
+         Events
+        ---------------------------------------------------------------------*/
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.is_editing_competition = true
+
+            self.refs.title.value = competition.title
+            self.refs.logo.refs.file_input_display.value = competition.logo
+            self.form_updated()
+        })
     </script>
 </competition-details>

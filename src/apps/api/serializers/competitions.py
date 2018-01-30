@@ -23,6 +23,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'index',
             'start',
             'end',
+            'name',
             'description',
             'input_data',
             'reference_data',

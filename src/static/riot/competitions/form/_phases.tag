@@ -330,7 +330,7 @@
 
                     // Get just the key from each file field
                     self.file_fields.forEach(function(file_field_name){
-                        if(!!phase[file_field_name]) {
+                        if(!!phase[file_field_name] && !!phase[file_field_name].key) {
                             phase[file_field_name] = phase[file_field_name].key
                         }
                     })
@@ -407,6 +407,14 @@
                 // We have a selected phase, do an update instead of a create
             }
         }
+
+        /*---------------------------------------------------------------------
+         Events
+        ---------------------------------------------------------------------*/
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.phases = competition.phases
+            self.form_updated()
+        })
     </script>
     <style>
         .ui[class*="left icon"].input > i.icon {
