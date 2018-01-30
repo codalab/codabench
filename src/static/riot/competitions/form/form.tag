@@ -249,6 +249,8 @@
             api_endpoint(self.competition, self.opts.competition_id)
                 .done(function () {
                     toastr.success("Competition successfully created!")
+                    self.errors = {}
+                    self.update()
                 })
                 .fail(function (response) {
                     if (response) {

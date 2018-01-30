@@ -101,7 +101,11 @@
             // Capture and convert logo to base64 for easy uploading
             $('input[name="logo"]', self.root).change(function() {
                 getBase64(this.files[0]).then(function(data) {
-                    self.data['logo'] = data
+
+                    self.update()
+                    var file_name = $('input[ref="file_input_display"]', self.root).val()
+                    console.log(file_name)
+                    self.data['logo'] = JSON.stringify({file_name: file_name, data: data})
                     self.form_updated()
                 })
             })
@@ -140,7 +144,9 @@
             self.is_editing_competition = true
 
             self.refs.title.value = competition.title
-            self.refs.logo.refs.file_input_display.value = competition.logo
+            // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
+            self.refs.logo.refs.file_input_display.value = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
+            
             self.form_updated()
         })
     </script>

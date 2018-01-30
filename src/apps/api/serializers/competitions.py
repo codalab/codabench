@@ -2,6 +2,7 @@ from drf_extra_fields.fields import Base64ImageField
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
+from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from competitions.models import Competition, Phase, Submission, Page
 from datasets.models import Data
@@ -57,7 +58,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
-    logo = Base64ImageField(required=True)
+    logo = NamedBase64ImageField(required=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
