@@ -182,6 +182,14 @@
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
+        self.file_fields = [
+            "input_data",
+            "reference_data",
+            "scoring_program",
+            "ingestion_program",
+            "public_data",
+            "starting_kit"
+        ]
         self.has_initialized_calendars = false
         self.form_is_valid = false
         self.form_datasets = {}
@@ -308,7 +316,10 @@
             CODALAB.events.trigger('competition_is_valid_update', 'phases', is_valid)
 
             if (is_valid) {
-                self.phases.forEach(function (phase, i) {
+                // We keep a copy of the list where we store JUST the dataset key
+                var phases_copy = JSON.parse(JSON.stringify(self.phases))
+
+                phases_copy.forEach(function (phase, i) {
                     // Since we have valid data, let's attach our "index" to the phaases
                     phase.index = i
 
@@ -316,9 +327,16 @@
                     if (!phase.end) {
                         delete phase.end
                     }
+
+                    // Get just the key from each file field
+                    self.file_fields.forEach(function(file_field_name){
+                        if(!!phase[file_field_name]) {
+                            phase[file_field_name] = phase[file_field_name].key
+                        }
+                    })
                 })
 
-                CODALAB.events.trigger('competition_data_update', {phases: self.phases})
+                CODALAB.events.trigger('competition_data_update', {phases: phases_copy})
             }
 
             self.form_check_is_valid()
