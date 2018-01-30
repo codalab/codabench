@@ -5,11 +5,11 @@
 
     <div class="ui fluid styled accordion">
         <virtual each="{ leaderboard, index in leaderboards }">
-            <div class="title">
+            <div class="title { active: leaderboard.is_active }">
                 <h1>
                     <span class="trigger"><i class="dropdown icon"></i> { leaderboard.name }</span>
                     <div class="ui right floated buttons">
-                        <div class="ui negative button">
+                        <div class="ui negative button" onclick="{ delete_leaderboard.bind(this, index) }">
                             <i class="delete icon"></i>
                             Delete
                         </div>
@@ -22,12 +22,11 @@
                     <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
                 </h1>
             </div>
-            <div class="content">
+            <div class="content { active: leaderboard.is_active }">
                 <competition-leaderboard-form-table columns="{ leaderboard.columns }"></competition-leaderboard-form-table>
             </div>
         </virtual>
     </div>
-
 
     <div class="ui container center aligned grid" show="{ leaderboards.length == 0 }">
         <div class="row">
@@ -98,12 +97,21 @@
             self.clear_form()
         }
 
+        self.delete_leaderboard = function(index) {
+            if(confirm("Are you sure you want to delete this?")) {
+                self.leaderboards.splice(index, 1)
+                self.update()
+                self.form_updated()
+            }
+        }
+
         self.save = function () {
             var leaderboard_data = {
                 name: self.refs.name.value,
                 key: self.refs.key.value
             }
             if (self.selected_leaderboard_index === undefined) {
+                leaderboard_data['is_active'] = true
                 leaderboard_data['columns'] = [{name: "Score", is_primary: true}]
                 self.leaderboards.push(leaderboard_data)
             } else {
