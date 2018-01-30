@@ -82,7 +82,7 @@ function timeSince(date) {
 }
 
 /* ----------------------------------------------------------------------------
- Get form data helpers
+ Form data helpers
  ----------------------------------------------------------------------------*/
 function get_form_fields(base_element) {
     //return $(':input', self.root).not('button').not('[readonly]').each(function (i, field) {
@@ -93,71 +93,35 @@ function get_form_fields(base_element) {
 
 function get_form_data(base_element) {
     var fields = get_form_fields(base_element)
+    var data = {}
     fields.each(function (i, field) {
-        console.log($(field).val())
+        if (!!field.name) {
+            //console.log("@@@@@")
+            //console.log(field)
+            data[field.name] = $(field).val()
+        }
+        //console.log(field.name + " -> " + $(field).val())
+    })
+    return data
+}
+
+function set_form_data(data, base_element) {
+    var fields = get_form_fields(base_element)
+    fields.each(function (i, field) {
+        if (!!field.name) {
+            //console.log("@@@@@")
+            //console.log(field)
+            console.log(field.name + " -> " + data[field.name])
+            $(field).val(data[field.name])
+        }
     })
 }
 
-
-
-
-
-
-function isObject (value) {
-  return value === Object(value)
-}
-
-function isArray (value) {
-  return Array.isArray(value)
-}
-
-function isFile (value) {
-  return value instanceof File
-}
-
-function makeArrayKey (key) {
-  if (key.length > 2 && key.lastIndexOf('[]') === key.length - 2) {
-    return key
-  } else {
-    return key + '[]'
-  }
-}
-
-function objectToFormData (obj, fd, pre) {
-  fd = fd || new FormData()
-
-  Object.keys(obj).forEach(function (prop) {
-    var key = pre ? (pre + '[' + prop + ']') : prop
-
-    if (isObject(obj[prop]) && !isArray(obj[prop]) && !isFile(obj[prop])) {
-      objectToFormData(obj[prop], fd, key)
-    } else if (isArray(obj[prop])) {
-      obj[prop].forEach(function (value) {
-        var arrayKey = makeArrayKey(key)
-
-        if (isObject(value) && !isFile(value)) {
-          objectToFormData(value, fd, arrayKey)
-        } else {
-          fd.append(arrayKey, value)
-        }
-      })
-    } else {
-      fd.append(key, obj[prop])
-    }
-  })
-
-  return fd
-}
-
-
-
-
-
 function getBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = error => reject(error)
-  })
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = error => reject(error)
+    })
 }

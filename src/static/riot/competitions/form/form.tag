@@ -160,24 +160,10 @@
             console.log("competition data:")
             console.log(self.competition)
 
-            //var form_data = objectToFormData(self.competition)
-
-            //var form_data = new FormData()
-
-            //form_data.append('logo', self.competition.logo)
-            //form_data.append('logo', $("input[type='file']")[0].files[0])
-
-            //for (var pair of form_data.entries()) {
-            //    console.log(pair[0]+ ', ' + pair[1]);
-            //}
-            //console.log(form_data)
-
             // DO THE BULK!
             CODALAB.api.create_competition(self.competition)
                 .done(function () {
                     toastr.success("Competition successfully created!")
-
-                    // It worked! Do the
                 })
                 .fail(function (response) {
                     toastr.error("Creation failed, error occurred");
