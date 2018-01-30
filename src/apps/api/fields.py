@@ -8,6 +8,7 @@ import six
 from django.core.files.base import ContentFile
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework.exceptions import ValidationError
+from rest_framework.relations import SlugRelatedField
 
 
 class NamedBase64ImageField(Base64ImageField):
@@ -40,3 +41,13 @@ class NamedBase64ImageField(Base64ImageField):
             data = ContentFile(decoded_file, name=file_name)
             return data
         raise ValidationError(_('This is not an base64 string'))
+
+
+class SlugWriteDictReadField(SlugRelatedField):
+
+    def __init__(self, read_serializer, **kwargs):
+        self.read_serializer = read_serializer
+        super().__init__(**kwargs)
+
+    def to_representation(self, obj):
+        return self.read_serializer(obj).data

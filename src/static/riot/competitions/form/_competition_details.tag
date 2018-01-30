@@ -146,7 +146,7 @@
             self.refs.title.value = competition.title
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
             self.refs.logo.refs.file_input_display.value = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
-            
+
             self.form_updated()
         })
     </script>

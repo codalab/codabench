@@ -192,7 +192,6 @@
         ]
         self.has_initialized_calendars = false
         self.form_is_valid = false
-        self.form_datasets = {}
         self.phases = [
             /*{
                 name: "Test",
@@ -202,6 +201,10 @@
             }*/
         ]
         self.selected_phase_index = undefined
+
+        // Form datasets have to live on their own, because they don't match up to a representation
+        // on form well.. unless we use weird hidden fields everywhere.
+        self.form_datasets = {}
 
         self.one("mount", function () {
             // awesome markdown editor
@@ -373,8 +376,17 @@
 
         self.edit = function (index) {
             self.selected_phase_index = index
+            var phase = self.phases[index]
 
-            set_form_data(self.phases[index], self.refs.form)
+            set_form_data(phase, self.refs.form)
+
+            self.file_fields.forEach(function(file_field_name){
+                if(!!phase[file_field_name]) {
+                    //phase[file_field_name] = phase[file_field_name].key
+                    $(`.input.search[data-name="${file_field_name}"] input`).val(phase[file_field_name].name)
+                    console.log("FOUND IT " + phase[file_field_name].name)
+                }
+            })
 
             // stupid simplemde special case
             self.simple_markdown_editor.value(self.phases[index].description)
@@ -399,13 +411,15 @@
             // insert all 6 programs into data
             Object.assign(data, self.form_datasets)
 
-            if (!self.selected_phase_index) {
+            if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
-                self.clear_form()
-                self.close_modal()
+
             } else {
                 // We have a selected phase, do an update instead of a create
+                self.phases[self.selected_phase_index] = data
             }
+            self.clear_form()
+            self.close_modal()
         }
 
         /*---------------------------------------------------------------------
