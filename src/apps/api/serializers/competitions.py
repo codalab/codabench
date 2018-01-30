@@ -83,5 +83,9 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             raise serializers.ValidationError("Competitions require at least 1 leaderboard")
         return value
 
+    def create(self, validated_data):
+        validated_data["created_by"] = self.context['created_by']
+        return super().create(validated_data)
+
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')

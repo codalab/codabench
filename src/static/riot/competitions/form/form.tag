@@ -121,6 +121,17 @@
         self.one("mount", function () {
             // tabs
             $('.menu .item').tab()
+
+            if (!!self.opts.competition_id) {
+                CODALAB.api.get_competition(self.opts.competition_id)
+                    .done(function (data) {
+                        self.competition = data
+                        self.update()
+                    })
+                    .fail(function (response) {
+                        toastr.error("Could not find competition");
+                    });
+            }
         })
 
         /*---------------------------------------------------------------------
@@ -128,7 +139,7 @@
         ---------------------------------------------------------------------*/
         self.are_all_sections_valid = function () {
             for (var section in self.sections) {
-                if(section === 'collaborators') {
+                if (section === 'collaborators') {
                     // collaborators is optional
                     continue;
                 }
@@ -141,6 +152,8 @@
         }
 
         self.save = function () {
+
+
 
 
             /*Object.assign(self.competition, {
@@ -220,8 +233,19 @@
             console.log("competition data:")
             console.log(self.competition)
 
-            // DO THE BULK!
-            CODALAB.api.create_competition(self.competition)
+            var api_endpoint = undefined
+
+            if (!self.opts.competition_id) {
+                // CREATE competition
+                api_endpoint = CODALAB.api.create_competition
+            } else {
+                // UPDATE competition
+                api_endpoint = CODALAB.api.update_competition
+            }
+
+            // Send competition_id for either create or update, won't hurt anything but is
+            // useless for creation
+            api_endpoint(self.competition, self.opts.competition_id)
                 .done(function () {
                     toastr.success("Competition successfully created!")
                 })
@@ -231,8 +255,8 @@
 
                         // to make errors clearer, move errors for "detail" page into the errors "details" key
                         var details_section_fields = ['title', 'logo']
-                        details_section_fields.forEach(function(field) {
-                            if(errors[field]) {
+                        details_section_fields.forEach(function (field) {
+                            if (errors[field]) {
                                 // initialize section, if not already
                                 errors.details = errors.details || []
 
@@ -246,43 +270,11 @@
                             }
                         })
 
-
                         self.update({errors: errors})
-
-                        console.log(errors)
-
-                        // pre-make the keys for each section
-                        /*
-                        var errors = {}
-
-                        for(var key in self.sections) {
-                            errors[key] = []
-                        }
-
-                        console.log("PREPROS")
-                        console.log(errors)*/
-
-
-                        /*
-                        // Clean up errors to not be arrays but plain text
-                        Object.keys(errors).map(function (key, index) {
-                            // If the error is for a whole section, insert it there instead
-                            if(self.sections[key] !== undefined) {
-                                console.log(errors[])
-                                errors[key]
-                            } else {
-                                errors[key] = errors[key].join('; ')
-                            }
-                        })
-                        */
-
-                        //self.update({errors: data})
-
-                        //console.log("ERRORS:")
-                        //console.log(errors)
                     }
-                    toastr.error("Creation failed, error occurred");
-                });
+                    toastr.error("Creation failed, error occurred")
+                })
+
         }
 
         /*---------------------------------------------------------------------

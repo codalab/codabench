@@ -52,10 +52,10 @@
                     <i class="delete icon"></i>
                     Delete
                 </div>
-                <div class="ui button">
+                <a href="{ URLS.COMPETITION_EDIT(competition.id) }" class="ui button">
                     <i class="pencil icon"></i>
                     Edit
-                </div>
+                </a>
             </div>
 
             <div class="ui label">Active</div>

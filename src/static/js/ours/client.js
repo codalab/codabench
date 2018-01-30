@@ -23,6 +23,9 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Competitions
     ---------------------------------------------------------------------*/
+    get_competition: function (pk) {
+        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+    },
     get_competitions: function (query) {
         // To not pass "undefined" in URL...
         query = query || ''
@@ -30,13 +33,9 @@ CODALAB.api = {
     },
     create_competition: function(data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
-        /*return $.ajax({
-            type: 'POST',
-            url: URLS.API + "competitions/",
-            data: form_data,
-            processData: false,
-            contentType: false
-        })*/
+    },
+    update_competition: function(data, pk) {
+        return CODALAB.api.request('PUT', URLS.API + "competitions/" + pk + "/", data)
     },
 
     /*---------------------------------------------------------------------

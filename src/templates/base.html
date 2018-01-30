@@ -194,6 +194,7 @@
         // Competitions
         COMPETITION_ADD: "{% url "competitions:form" %}",
         COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) },
+        COMPETITION_EDIT: function(pk){ return "{% url "competitions:edit" pk=0 %}".replace(0, pk) },
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}"
