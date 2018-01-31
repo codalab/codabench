@@ -97,15 +97,13 @@
                 <div class="right item">
                     {% if user.is_authenticated %}
                         {#                        <a href="accounts/logout" class="ui inverted button">Logout</a>#}
-
-
                         <div class="ui inline dropdown">
                             <div class="text">
                                 <i class="icon user outline"></i>
                                 {{ request.user.name }}
                             </div>
                             <i class="dropdown icon"></i>
-                            <div class="menu">
+                            <div class="menu fix-right-bleed">
                                 <div class="header">Your management</div>
                                 <a class="item" href="{% url "competitions:management" %}">Competitions</a>
                                 <a class="item" href="#">Teams</a>
@@ -194,6 +192,7 @@
         // Competitions
         COMPETITION_ADD: "{% url "competitions:form" %}",
         COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) },
+        COMPETITION_EDIT: function(pk){ return "{% url "competitions:edit" pk=0 %}".replace(0, pk) },
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}"

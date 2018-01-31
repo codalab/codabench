@@ -80,3 +80,48 @@ function timeSince(date) {
     }
     return Math.floor(seconds) + " seconds";
 }
+
+/* ----------------------------------------------------------------------------
+ Form data helpers
+ ----------------------------------------------------------------------------*/
+function get_form_fields(base_element) {
+    //return $(':input', self.root).not('button').not('[readonly]').each(function (i, field) {
+    //    console.log(field)
+    //})
+    return $(':input', base_element).not('button').not('[readonly]')
+}
+
+function get_form_data(base_element) {
+    var fields = get_form_fields(base_element)
+    var data = {}
+    fields.each(function (i, field) {
+        if (!!field.name) {
+            //console.log("@@@@@")
+            //console.log(field)
+            data[field.name] = $(field).val()
+        }
+        //console.log(field.name + " -> " + $(field).val())
+    })
+    return data
+}
+
+function set_form_data(data, base_element) {
+    var fields = get_form_fields(base_element)
+    fields.each(function (i, field) {
+        if (!!field.name) {
+            //console.log("@@@@@")
+            //console.log(field)
+            console.log(field.name + " -> " + data[field.name])
+            $(field).val(data[field.name])
+        }
+    })
+}
+
+function getBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = error => reject(error)
+    })
+}

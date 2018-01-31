@@ -3,14 +3,14 @@ from django.db import models
 
 class Leaderboard(models.Model):
     competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE, related_name="leaderboards")
-    primary_column = models.ForeignKey('Column', on_delete=models.SET_NULL, null=True, related_name="primaries")
+    primary_index = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
 
 
 class Column(models.Model):
     COMPUTATIONS = (
-        ('AVG', 'Average'),
+        ('avg', 'Average'),
     )
     SORTING = (
         ('desc', 'Descending'),
@@ -18,12 +18,16 @@ class Column(models.Model):
     )
 
     computation = models.TextField(choices=COMPUTATIONS, null=True, blank=True)
-    computation_columns = models.ManyToManyField('Column')
+    # computation_columns = models.ManyToManyField('Column')
+    computation_indexes = models.TextField(max_length=255, null=True, blank=True)
     title = models.CharField(max_length=36)
     key = models.CharField(max_length=36)
-    sorting = models.TextField(choices=SORTING, default=SORTING[0])
+    sorting = models.TextField(choices=SORTING, default=SORTING[0][0])
     index = models.PositiveIntegerField()
     leaderboard = models.ForeignKey(Leaderboard, on_delete=models.CASCADE, related_name="columns")
+
+    class Meta:
+        unique_together = ('leaderboard', 'key')
 
 
 class SubmissionResult(models.Model):
