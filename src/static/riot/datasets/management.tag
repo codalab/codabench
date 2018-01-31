@@ -9,7 +9,7 @@
             overflow: hidden;
         }
 
-        .progress.bar {
+        .progress .bar {
             height: 24px;
         }
 
