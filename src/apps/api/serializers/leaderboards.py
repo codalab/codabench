@@ -1,4 +1,4 @@
-from drf_writable_nested import WritableNestedModelSerializer
+from drf_writable_nested import WritableNestedModelSerializer, serializers
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
