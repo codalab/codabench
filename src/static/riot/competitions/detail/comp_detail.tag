@@ -91,5 +91,7 @@
             ],
             "collaborators": []
         })
+
+        console.log(self.competition)
     </script>
 </comp-detail>

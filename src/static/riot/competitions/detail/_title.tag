@@ -5,7 +5,7 @@
         <div class="row">
             <div class="sixteen wide column">
                 <div class="ui message">
-                    <h1 class="ui header">{ self.competition.title }</h1>
+                    <h1 class="ui header">{ competition.title }</h1>
                     <p>
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod fringilla. Nam
                         ut
