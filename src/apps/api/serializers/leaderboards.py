@@ -1,6 +1,8 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from leaderboards.models import Leaderboard, Column
 
+from .fields import CharacterSeparatedField
+
 
 class ColumnSerializer(WritableNestedModelSerializer):
     computation_indexes = CharacterSeparatedField(allow_null=True, required=False)
