@@ -56,8 +56,8 @@
                     </div>
                 </form>
 
-                <div class="ui indicating progress" style="margin: 0; height: 0; -ms-flex: 1 0 auto; flex: 1 0 auto; overflow: hidden;" ref="progress">
-                    <div class="bar" style="height: 24px;">
+                <div class="ui indicating progress progress-style" ref="progress">
+                    <div class="bar progress24height">
                         <div class="progress">{ upload_progress }%</div>
                     </div>
                 </div>
