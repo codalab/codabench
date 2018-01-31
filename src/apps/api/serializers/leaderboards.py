@@ -1,6 +1,4 @@
 from drf_writable_nested import WritableNestedModelSerializer
-from rest_framework import serializers
-
 from leaderboards.models import Leaderboard, Column
 
 
