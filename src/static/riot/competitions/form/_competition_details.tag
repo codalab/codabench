@@ -31,12 +31,6 @@
 
                 <!-- Just showing the file after it is uploaded -->
                 <input value="{ logo_file_name }" readonly onclick="document.getElementById('form_file_logo').click()">
-
-                <!--<div class="ui progress" data-percent="14" style="margin: 0; -ms-flex: 1 0 auto; flex: 1 0 auto;">
-                    <div class="bar" style="height: 100%;">
-                        <div class="progress">14%</div>
-                    </div>
-                </div>-->
             </div>
         </div>
 
