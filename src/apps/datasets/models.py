@@ -33,7 +33,7 @@ class Data(models.Model):
 
 
 
-    # TODO: add Model manager that automatically filters out upload_completed_successfully=False
+    # todo: add Model manager that automatically filters out upload_completed_successfully=False
 
 
 
