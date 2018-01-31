@@ -136,6 +136,8 @@
         self.errors = []
         self.datasets = []
 
+
+
         // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
@@ -263,9 +265,21 @@
                 event.preventDefault()
             }
 
-            // We don't want to send "" as a type and get a weird error, so clear that if empty
-            if (self.refs.type.value === "") {
-                self.refs.type.value = undefined
+            // Let's do some quick validation
+            self.errors = {}
+            var validate_data = get_form_data(self.refs.form)
+
+            var required_fields = ['name', 'type', 'data_file']
+            required_fields.forEach(field => {
+                if(validate_data[field] === '') {
+                    self.errors[field] = "This field is required"
+                }
+            })
+
+            if(Object.keys(self.errors).length > 0) {
+                // display errors and drop out
+                self.update()
+                return
             }
 
             // Have to get the "FormData" to get the file in a special way
@@ -277,11 +291,10 @@
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()
-                    self.hide_progress_bar()
                 })
                 .fail(function (response) {
                     if (response) {
-                        var errors = JSON.parse(response.responseText);
+                        var errors = JSON.parse(response.responseText)
 
                         // Clean up errors to not be arrays but plain text
                         Object.keys(errors).map(function (key, index) {
@@ -290,8 +303,12 @@
 
                         self.update({errors: errors})
                     }
-                    toastr.error("Creation failed, error occurred");
-                });
+                    toastr.error("Creation failed, error occurred")
+                })
+                .always(function() {
+                    self.hide_progress_bar()
+                })
+
         }
     </script>
 

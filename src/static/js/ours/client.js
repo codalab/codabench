@@ -71,8 +71,9 @@ CODALAB.api = {
             data: form_data,
             processData: false,
             contentType: false,
-            xhr: function () {
+            xhr: function (xhr) {
                 var request = new window.XMLHttpRequest();
+
                 // Upload progress
                 request.upload.addEventListener("progress", function (event) {
                     if (event.lengthComputable) {
@@ -85,15 +86,6 @@ CODALAB.api = {
                 return request;
             }
         })
-            /*.success(function (data) {
-                //data = xml_to_json(data);
-                //success_callback(data);
-                toastr.success("Dataset successfully uploaded!")
-            })
-            .error(function () {
-                toastr.error("Could not upload to S3.");
-            });*/
-
 
         /*IFC.api.get_upload_url(file, destination)
             .success(function (data) {
@@ -140,6 +132,7 @@ CODALAB.api = {
                 toastr.error("Could not get URL for uploading.");
             });*/
     },
+    /* We will use the following functions when we implement remote storage */
     get_upload_url: function (file, destination) {
         /*var form = new FormData();
 

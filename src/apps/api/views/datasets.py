@@ -19,7 +19,7 @@ class DataViewSet(mixins.CreateModelMixin,
     queryset = Data.objects.all()
     serializer_class = serializers.DataSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type',)
+    filter_fields = ('type', 'name')
     search_fields = ('name', 'description',)
 
     def get_queryset(self):
