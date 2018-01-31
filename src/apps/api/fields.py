@@ -2,7 +2,7 @@ import base64
 
 import binascii
 import json
-import uuid
+# import uuid
 
 import six
 from django.core.files.base import ContentFile

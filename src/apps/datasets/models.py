@@ -29,15 +29,7 @@ class Data(models.Model):
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
 
-
-
-
-
     # todo: add Model manager that automatically filters out upload_completed_successfully=False
-
-
-
-
 
     class Meta:
         unique_together = ('name', 'created_by')
