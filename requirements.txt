@@ -2,7 +2,7 @@ Django==2.0.1
 psycopg2==2.7.3
 whitenoise==3.3.0
 djangorestframework==3.7.3
-#django-rest-swagger==2.1.2
+django-rest-swagger==2.1.2
 #drf-openapi==1.0.0
 waitress==1.0.2
 django-filter==1.1.0
