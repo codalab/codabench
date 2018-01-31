@@ -254,8 +254,6 @@
 
             $('.dropdown', self.refs.form).dropdown('restore defaults')
 
-            self.upload_progress = undefined
-
             self.errors = {}
             self.update()
         }
@@ -264,6 +262,10 @@
             if (event) {
                 event.preventDefault()
             }
+
+            // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
+            // best place to do it
+            self.upload_progress = undefined
 
             // Let's do some quick validation
             self.errors = {}
@@ -294,14 +296,18 @@
                 })
                 .fail(function (response) {
                     if (response) {
-                        var errors = JSON.parse(response.responseText)
+                        try {
+                            var errors = JSON.parse(response.responseText)
 
-                        // Clean up errors to not be arrays but plain text
-                        Object.keys(errors).map(function (key, index) {
-                            errors[key] = errors[key].join('; ')
-                        })
+                            // Clean up errors to not be arrays but plain text
+                            Object.keys(errors).map(function (key, index) {
+                                errors[key] = errors[key].join('; ')
+                            })
 
-                        self.update({errors: errors})
+                            self.update({errors: errors})
+                        } catch(e) {
+
+                        }
                     }
                     toastr.error("Creation failed, error occurred")
                 })
