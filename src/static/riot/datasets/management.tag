@@ -1,4 +1,20 @@
 <data-management>
+
+    <style>
+        .progress {
+            margin: 0;
+            height: 0;
+            -ms-flex: 1 0 auto;
+            flex: 1 0 auto;
+            overflow: hidden;
+        }
+
+        .progress.bar {
+            height: 24px;
+        }
+
+    </style>
+
     <h1>Dataset Management</h1>
 
     <div class="ui divider"></div>
@@ -56,8 +72,8 @@
                     </div>
                 </form>
 
-                <div class="ui indicating progress progress-style" ref="progress">
-                    <div class="bar progress24height">
+                <div class="ui indicating progress" ref="progress">
+                    <div class="bar">
                         <div class="progress">{ upload_progress }%</div>
                     </div>
                 </div>
