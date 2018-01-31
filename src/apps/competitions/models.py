@@ -58,4 +58,3 @@ What if the competition creator adds/removes leaderboards?
 
 what if the competition creator adds/removes columns?
 """
-

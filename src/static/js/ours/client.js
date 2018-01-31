@@ -16,7 +16,7 @@ CODALAB.api = {
     },
 
     search: function (query) {
-        // This should call chahub??
+        // Todo This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
     },
 
