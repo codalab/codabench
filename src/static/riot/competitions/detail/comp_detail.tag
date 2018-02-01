@@ -2,17 +2,17 @@
 
     <!--<div class="ui container grid">-->
 
-        <comp-detail-title></comp-detail-title>
+        <comp-detail-title competition={competition}></comp-detail-title>
 
-        <comp-tabs></comp-tabs>
+        <comp-tabs competition={competition}></comp-tabs>
 
-        <comp-run-info></comp-run-info>
+        <comp-run-info competition={competition}></comp-run-info>
 
-        <comp-phase-info></comp-phase-info>
+        <comp-phase-info competition={competition}></comp-phase-info>
 
-        <comp-stats></comp-stats>
+        <comp-stats competition={competition}></comp-stats>
 
-        <comp-tags></comp-tags>
+        <comp-tags competition={competition}></comp-tags>
 
     <!--</div>-->
 
@@ -22,19 +22,39 @@
         self.competition = {}
 
         Object.assign(self.competition, {
-            "title": "asdf",
+            "title": "Iris Data Challenge",
+            "description": "An iris data challenge brought to you by Chalearn to accelearate the growth of machine learning",
             "pages": [
                 {
-                    "title": "test",
-                    "content": "test",
+                    "title": "Overview",
+                    "content": "This competition aims to mimick real ones",
                     "index": 1
+                },
+                {
+                    "title": "FAQ",
+                    "content": "Will I lose all my points?",
+                    "index": 2
                 }
             ],
             "phases": [
                 {
+                    "title": "Initial Testing",
                     "number": 1,
                     "start": "2018-12-01T00:00:00Z",
                     "end": "2018-12-05T00:00:00Z",
+                    "description": "test",
+                    "input_data": null,
+                    "reference_data": null,
+                    "scoring_program": null,
+                    "ingestion_program": null,
+                    "public_data": null,
+                    "starting_kit": null
+                },
+                {
+                    "title": "Initial Feedback",
+                    "number": 2,
+                    "start": "2018-12-06T00:00:00Z",
+                    "end": "2018-12-08T00:00:00Z",
                     "description": "test",
                     "input_data": null,
                     "reference_data": null,

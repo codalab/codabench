@@ -28,6 +28,7 @@
     </div>
 
     <script>
-
+        var self = this
+        self.competition = opts.competition
     </script>
 </comp-stats>

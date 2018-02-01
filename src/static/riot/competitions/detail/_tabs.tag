@@ -4,92 +4,331 @@
         <div class="row">
             <div class="ui sixteen wide column">
                 <div class="container">
-                    <div class="ui blue secondary pointing inverted menu">
-                        <a class="active item">
-                            Overview
-                        </a>
-                        <a class="item">
-                            Evaluation
-                        </a>
-                        <a class="item">
-                            Terms and Conditions
-                        </a>
-                        <a class="item">
-                            Files
-                        </a>
-                        <!--{% if user.is_superuser %} &lt;!&ndash; is_authenicated is not working here &ndash;&gt;-->
+                    <!--<div class="ui blue tabular menu">-->
+
+                    <!--<div name="learn_the_details_tab" id="learn_the_details" data-tab="learn_the_details"-->
+                    <!--class="active item">-->
+                    <!--Learn The Details-->
+                    <!--</div>-->
+
+                    <!--<div name="phases_tab" id="phases" data-tab="phases" class="item">-->
+                    <!--Phases-->
+                    <!--</div>-->
+
+                    <!--<div name="participate_tab" id="participate" data-tab="participate" class="item">-->
+                    <!--Participate-->
+                    <!--</div>-->
+
+                    <!--<div name="results_tab" id="results" data-tab="results" class="item">-->
+                    <!--Results-->
+                    <!--</div>-->
+                    <!--&lt;!&ndash;{% if user.is_superuser %} &lt;!&ndash; is_authenicated is not working here &ndash;&gt;&ndash;&gt;-->
+                    <!--<div class="right menu">-->
+                    <!--<a class="item">-->
+                    <!--<div class="ui green button">Participants</div>-->
+                    <!--</a>-->
+                    <!--<a class="item">-->
+                    <!--<div class="ui teal button">Submissions</div>-->
+                    <!--</a>-->
+                    <!--<a class="item">-->
+                    <!--<div class="ui red button">Edit</div>-->
+                    <!--</a>-->
+                    <!--</div>-->
+                    <!--&lt;!&ndash;{% endif %}&ndash;&gt;-->
+                    <!--</div>-->
+                    <!--</div>-->
+                    <!--<div class="ui tab" data-tab="learn_the_details">-->
+                    <!--<div class="ui message">-->
+                    <!--<h2>Oh no</h2>-->
+                    <!--</div>-->
+                    <!--</div>-->
+                    <!--<div class="ui tabular menu">-->
+                    <!--<div class="item" data-tab="tab-name">Tab Name</div>-->
+                    <!--<div class="item" data-tab="tab-name2">Tab Name 2</div>-->
+                    <!--</div>-->
+                    <!--<div class="ui tab" data-tab="tab-name">-->
+                    <!--&lt;!&ndash; Tab Content !&ndash;&gt;-->
+                    <!--</div>-->
+                    <!--<div class="ui tab" data-tab="tab-name2">-->
+                    <!--&lt;!&ndash; Tab Content !&ndash;&gt;-->
+                    <!--</div>-->
+                    <!--</div>-->
+
+                    <!-- Tab menu -->
+                    <div class="ui blue secondary pointing inverted tabular menu">
+                        <div class="item header">
+                            Competition Navigation:
+                        </div>
+                        <div class="active item" data-tab="learn_the_details_tab">Learn The Details</div>
+                        <div class="item" data-tab="phases_tab">Phases</div>
+                        <div class="item" data-tab="participate_tab">Participate</div>
+                        <div class="item" data-tab="results_tab">Results</div>
                         <div class="right menu">
-                            <a class="item">
-                                <div class="ui green button">Participants</div>
-                            </a>
-                            <a class="item">
-                                <div class="ui teal button">Submissions</div>
-                            </a>
-                            <a class="item">
-                                <div class="ui red button">Edit</div>
-                            </a>
+                            <div class="item header">
+                                Admin features:
+                            </div>
+                            <div class="item">Admin</div>
                         </div>
-                        <!--{% endif %}-->
                     </div>
-                    <div class="ui grid">
-                        <div class="four wide column">
-                            <div class="ui vertical fluid blue tabular menu">
-                                <a class="active item">
-                                    Bio
-                                </a>
-                                <a class="item">
-                                    Pics
-                                </a>
-                                <a class="item">
-                                    Companies
-                                </a>
-                                <a class="item">
-                                    Links
-                                </a>
+
+                    <!--Learn the details-->
+                    <div class="ui active tab" data-tab="learn_the_details_tab">
+                        <div class="ui grid">
+                            <div class="row">
+                                <div class="four wide column">
+
+                                    <!--<div class="ui message">-->
+                                    <!--<p>Show pages here</p>-->
+                                    <div class="ui side green vertical tabular menu">
+                                        <div class="active item" data-tab="_tab_overview">Overview</div>
+                                        <div class="item" data-tab="_tab_terms">Terms And Conditions</div>
+                                        <div class="item" data-tab="_tab_faq">FAQ</div>
+                                    </div>
+                                </div>
+                                <!--</div>-->
+                                <div class="twelve wide column">
+                                    <div class="ui active tab" data-tab="_tab_overview">
+                                        <!-- Tab Content !-->
+                                        <div class="ui message">
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
+                                            consectetur
+                                            elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus
+                                            gravida
+                                            ultrices, diam nunc vulputate urna, nec euismod purus urna non mi. Nunc
+                                            vehicula
+                                            quam vel tellus iaculis, eu fringilla eros consequat. Suspendisse
+                                            malesuada
+                                            lobortis
+                                            velit, id tincidunt est dignissim in. Morbi elementum quis ipsum vitae
+                                            lacinia.
+                                            Sed
+                                            imperdiet pellentesque rutrum. In commodo tempus mauris at accumsan.
+                                            Vestibulum
+                                            hendrerit sodales enim eu auctor. Phasellus consectetur, mi eget blandit
+                                            luctus,
+                                            sem
+                                            ligula bibendum est, id lobortis felis velit ut est. Sed quam risus,
+                                            suscipit
+                                            quis
+                                            lacus id, fermentum sagittis massa. Morbi posuere orci arcu, id varius
+                                            lorem
+                                            hendrerit sed. In gravida elit eu justo molestie, nec pellentesque elit
+                                            finibus.
+                                            Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
+                                        </div>
+                                    </div>
+
+                                    <div class="ui tab" data-tab="_tab_terms">
+                                        <!-- Tab Content !-->
+                                        <div class="ui message">
+                                            <p>
+                                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
+                                                porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
+                                                lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
+                                                malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
+                                                a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
+                                                in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
+                                                dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
+                                                facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
+                                                pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
+                                                tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
+                                                gravida.
+                                            </p>
+                                            <p>
+                                                Aenean at iaculis leo, vel luctus diam. Quisque hendrerit orci sed
+                                                bibendum mollis. Morbi diam leo, luctus eget suscipit ac, hendrerit sit
+                                                amet ex. Duis lectus erat, ornare quis justo ut, pulvinar consectetur
+                                                lacus. Duis molestie sem diam, vitae dapibus leo tristique vel.
+                                                Suspendisse rhoncus iaculis lacinia. Sed quis elit mauris. Phasellus
+                                                ornare posuere molestie. Aliquam vestibulum commodo enim a iaculis.
+                                            </p>
+                                            <p>
+                                                Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
+                                                penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+                                                Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
+                                                Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
+                                                diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
+                                                vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
+                                                consectetur in. Nunc at leo dolor.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="ui tab" data-tab="_tab_faq">
+                                        <!-- Tab Content !-->
+                                        <div class="ui message">
+                                            <p>
+                                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
+                                                porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
+                                                lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
+                                                malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
+                                                a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
+                                                in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
+                                                dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
+                                                facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
+                                                pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
+                                                tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
+                                                gravida.
+                                            </p>
+
+                                            <p>
+                                                Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
+                                                penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+                                                Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
+                                                Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
+                                                diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
+                                                vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
+                                                consectetur in. Nunc at leo dolor.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
-                        <div class="twelve wide stretched column">
-                            <div class="ui message">
-                                <p>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ultrices euismod
-                                    fringilla.
-                                    Nam
-                                    ut
-                                    ligula
-                                    rhoncus, semper nibh quis, tincidunt neque. Fusce eget condimentum elit. Vivamus in
-                                    arcu
-                                    interdum,
-                                    semper massa sit amet, lobortis nulla. Fusce fermentum, ex ac accumsan viverra,
-                                    felis
-                                    nulla
-                                    vestibulum
-                                    nulla, sed rhoncus ligula libero ut lorem. Donec odio tortor, consequat non purus
-                                    in,
-                                    interdum
-                                    posuere
-                                    ipsum. Pellentesque vulputate nunc efficitur enim ultricies, nec auctor urna
-                                    sagittis.
-                                    Vivamus
-                                    sodales
-                                    facilisis rutrum. Etiam volutpat mi ac volutpat rutrum. Cras vel nunc vitae nisl
-                                    sodales
-                                    dictum
-                                    eget
-                                    vitae nulla. Cras vitae aliquet justo. Morbi varius libero tellus. Fusce eget felis
-                                    eu
-                                    ante
-                                    mollis
-                                    dignissim.
-                                </p>
+                    </div>
+
+                    <!--phases tab-->
+                    <div class="ui tab" data-tab="phases_tab">
+                        <div class="ui grid">
+                            <div class="row">
+                                <div class="four wide column">
+
+                                    <!--<div class="ui message">-->
+                                    <!--<p>Show pages here</p>-->
+                                    <div class="ui side green vertical tabular menu">
+                                        <div class="active item" data-tab="_tab_phase2">Phase 1</div>
+                                        <div class="item" data-tab="_tab_phase1">Phase 2</div>
+                                    </div>
+                                </div>
+                                <!--</div>-->
+                                <div class="twelve wide column">
+                                    <div class="ui active tab" data-tab="_tab_phase1">
+                                        <!-- Tab Content !-->
+                                        <div class="ui message">
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
+                                            consectetur
+                                            elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus
+                                            gravida
+                                            ultrices, diam nunc vulputate urna, nec euismod purus urna non mi. Nunc
+                                            vehicula
+                                            quam vel tellus iaculis, eu fringilla eros consequat. Suspendisse
+                                            malesuada
+                                            lobortis
+                                            velit, id tincidunt est dignissim in. Morbi elementum quis ipsum vitae
+                                            lacinia.
+                                            Sed
+                                            imperdiet pellentesque rutrum. In commodo tempus mauris at accumsan.
+                                            Vestibulum
+                                            hendrerit sodales enim eu auctor. Phasellus consectetur, mi eget blandit
+                                            luctus,
+                                            sem
+                                            ligula bibendum est, id lobortis felis velit ut est. Sed quam risus,
+                                            suscipit
+                                            quis
+                                            lacus id, fermentum sagittis massa. Morbi posuere orci arcu, id varius
+                                            lorem
+                                            hendrerit sed. In gravida elit eu justo molestie, nec pellentesque elit
+                                            finibus.
+                                            Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
+                                        </div>
+                                    </div>
+
+                                    <div class="ui tab" data-tab="_tab_phase2">
+                                        <!-- Tab Content !-->
+                                        <div class="ui message">
+                                            <p>
+                                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
+                                                porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
+                                                lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
+                                                malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
+                                                a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
+                                                in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
+                                                dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
+                                                facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
+                                                pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
+                                                tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
+                                                gravida.
+                                            </p>
+                                            <p>
+                                                Aenean at iaculis leo, vel luctus diam. Quisque hendrerit orci sed
+                                                bibendum mollis. Morbi diam leo, luctus eget suscipit ac, hendrerit sit
+                                                amet ex. Duis lectus erat, ornare quis justo ut, pulvinar consectetur
+                                                lacus. Duis molestie sem diam, vitae dapibus leo tristique vel.
+                                                Suspendisse rhoncus iaculis lacinia. Sed quis elit mauris. Phasellus
+                                                ornare posuere molestie. Aliquam vestibulum commodo enim a iaculis.
+                                            </p>
+                                            <p>
+                                                Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
+                                                penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+                                                Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
+                                                Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
+                                                diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
+                                                vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
+                                                consectetur in. Nunc at leo dolor.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!--participate tab-->
+                    <div class="ui tab" data-tab="participate_tab">
+                        <!-- Tab Content !-->
+                        <div class="ui message">
+                            <p>Ask to participate? Make submissions etc</p>
+                        </div>
+                    </div>
+
+                    <!--results tab-->
+                    <div class="ui tab" data-tab="results_tab">
+                        <!-- Tab Content !-->
+                        <div class="ui message">
+                            <p>View results</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <script>
+            <script>
 
-    </script>
+                $('.tabular.menu .item').tab(); // Activate tabs
+
+                var self = this
+                self.competition = opts.competition
+
+                // Handling tabs
+                self.tabs = ["learn_details", "phases", "participate", "results"]
+                self.active_tab = self.tabs[0]
+
+                // Dynamic based on which `tab` object is active
+                self.active_tab_active_subtab = {}
+                self.active_tab_subtabs = {}
+
+                // handling pages if we're on learn the details
+                self.active_page = self.competition.pages[0]
+
+                self.one("mount", function () {
+                    // tabs
+                    $('.tabular.menu .item').tab(); // Activate tabs
+                    // $('.menu .item').tab()
+                })
+
+                self.set_active_tab = function (index) {
+                    // On set active, we need to remove the current active_tab's `active` class, and add it to the new tab
+                    self.active_tab = self.tabs[index]
+                }
+
+                self.tab_string_to_index = function (string_tab_id) {
+                    for (i = 0; i < self.tabs.length; i++) {
+                        if (self.tabs[i] === string_tab_id) {
+                            return i
+                        }
+                    }
+                }
+
+            </script>
 </comp-tabs>
