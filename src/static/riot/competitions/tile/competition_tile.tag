@@ -8,26 +8,22 @@
 
     <!--</div>-->
     <!--</div>-->
-    <div class="ui divider"></div>
     <div class="ui equal height grid">
-        <div class="ui middle aligned equal height attached message container row">
+        <div class="ui middle aligned equal height attached message container row" style="padding: 0px; margin: 0px;">
             <div class="one wide green column" style="min-height: 100%">
             </div>
-            <div class="four wide column">
+            <div class="four wide padded column">
                 <div class="ui square bordered small image">
                     <img src="https://i.imgur.com/n2XUSxU.png">
                 </div>
             </div>
             <div class="eight wide column">
-                <div class="ui grid">
+                <div class="ui padded grid">
                     <div class="ui row">
                         <div class="eight wide column">
                             <h1 class="ui large header">
                                 {competition.title}
                             </h1>
-                            <p>
-                                {competition.description}
-                            </p>
                         </div>
                         <div class="eight wide right justify left align column">
                             <div align="right" class="content">
@@ -38,7 +34,9 @@
                     <div class="ui row">
                         <div class="sixteen wide column">
                             <div class="content">
-                                <!--Tags?-->
+                                <p style="font-size: 14px">
+                                    {competition.description}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -53,7 +51,7 @@
                     </div>
                 </div>
             </div>
-            <div class="three wide blue column">
+            <div class="three wide blue column" style="min-height: 100%">
                 <div align="center" class="content">
                     <i>Comp deadline:</i>
                     <br>
@@ -86,7 +84,11 @@
             </div>
         </div>
     </div>
-    <div class="ui divider"></div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
 
     <script>
     </script>
