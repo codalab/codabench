@@ -20,13 +20,18 @@
             <div class="eight wide column">
                 <div class="ui grid">
                     <div class="ui row">
-                        <div class="four wide column">
-                            <div class="ui header">
+                        <div class="eight wide column">
+                            <h1 class="ui large header">
                                 {competition.title}
-                            </div>
+                            </h1>
+                            <p>
+                                {competition.description}
+                            </p>
                         </div>
-                        <div class="twelve wide right justify column">
-                            <div align="right" class="content"><i>Organized by: <b>Someone</b></i></div>
+                        <div class="eight wide right justify left align column">
+                            <div align="right" class="content">
+                                <i>Organized by: <b>Someone</b></i>
+                            </div>
                         </div>
                     </div>
                     <div class="ui row">
@@ -40,6 +45,8 @@
                         <div class="sixteen wide column">
                             <div class="content">
                                 Tags: <b>Beginner</b>, <b>AutoML</b>
+                                <br>
+                                Admins: <b>tthomas63</b>
                             </div>
                         </div>
                     </div>
