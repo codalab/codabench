@@ -127,6 +127,11 @@
             </div>
         </div>
     </div>
+    <br>
+
+    <div class="ui horizontal divider"></div>
+
+    <br>
 
     <script>
         var self = this
