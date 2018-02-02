@@ -4,6 +4,7 @@
             <div class="row">
                 <div class="twelve wide column">
                     <div class="ui divided items" if="{opts.competitions}">
+                        <!--<competition-tile each="{competition in opts.competitions}"></competition-tile>-->
                         <competition-tile each="{competition in opts.competitions}"></competition-tile>
                     </div>
                 </div>
@@ -29,45 +30,45 @@
     </script>
 </competition-list>
 
-<competition-tile class="ui item">
-    <div class="image">
-        <img src="https://semantic-ui.com/images/wireframe/image.png">
-    </div>
-    <div class="content">
-        <a class="header">{ competition.title }</a>
-        <div class="meta">
-            <span>created by { competition.created_by }</span>
-        </div>
-        <div class="description">
-            <p>{ competition.description }</p>
-        </div>
-        <div class="extra">
-            <a class="ui right floated button" href="{ URLS.COMPETITION_DETAIL(competition.id) }">
-                View
-                <i class="right chevron icon"></i>
-            </a>
+<!--<competition-tile class="ui item">-->
+    <!--<div class="image">-->
+        <!--<img src="https://semantic-ui.com/images/wireframe/image.png">-->
+    <!--</div>-->
+    <!--<div class="content">-->
+        <!--<a class="header">{ competition.title }</a>-->
+        <!--<div class="meta">-->
+            <!--<span>created by { competition.created_by }</span>-->
+        <!--</div>-->
+        <!--<div class="description">-->
+            <!--<p>{ competition.description }</p>-->
+        <!--</div>-->
+        <!--<div class="extra">-->
+            <!--<a class="ui right floated button" href="{ URLS.COMPETITION_DETAIL(competition.id) }">-->
+                <!--View-->
+                <!--<i class="right chevron icon"></i>-->
+            <!--</a>-->
 
-            <div class="ui right floated buttons">
-                <div class="ui negative button">
-                    <i class="delete icon"></i>
-                    Delete
-                </div>
-                <a href="{ URLS.COMPETITION_EDIT(competition.id) }" class="ui button">
-                    <i class="pencil icon"></i>
-                    Edit
-                </a>
-            </div>
+            <!--<div class="ui right floated buttons">-->
+                <!--<div class="ui negative button">-->
+                    <!--<i class="delete icon"></i>-->
+                    <!--Delete-->
+                <!--</div>-->
+                <!--<a href="{ URLS.COMPETITION_EDIT(competition.id) }" class="ui button">-->
+                    <!--<i class="pencil icon"></i>-->
+                    <!--Edit-->
+                <!--</a>-->
+            <!--</div>-->
 
-            <div class="ui label">Active</div>
-        </div>
-    </div>
-    <script>
-        var self = this
-    </script>
+            <!--<div class="ui label">Active</div>-->
+        <!--</div>-->
+    <!--</div>-->
+    <!--<script>-->
+        <!--var self = this-->
+    <!--</script>-->
 
-    <style>
-        :scope {
-            display: block;
-        }
-    </style>
-</competition-tile>
+    <!--<style>-->
+        <!--:scope {-->
+            <!--display: block;-->
+        <!--}-->
+    <!--</style>-->
+<!--</competition-tile>-->
