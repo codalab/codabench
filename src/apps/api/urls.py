@@ -4,8 +4,6 @@ from rest_framework_swagger.views import get_swagger_view
 
 from .views import competitions, datasets, profiles
 
-# from .views.search import query
-
 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)

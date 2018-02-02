@@ -18,10 +18,9 @@
                                    name="username"
                                    placeholder="username"
                                    id="id_username"
-                                   {% if form.username.value != None %}value="
-                                   {{ form.username.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.username.value|default:""}}"
                                    maxlength="{{ form.username.field.max_length }}"
-                                   {% if form.username.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
 
@@ -32,10 +31,9 @@
                                    name="email"
                                    placeholder="email"
                                    id="id_email"
-                                   {% if form.email.value != None %}value="
-                                   {{ form.email.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.email.value|default:""}}"
                                    maxlength="{{ form.email.field.max_length }}"
-                                   {% if form.email.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
 
@@ -46,10 +44,9 @@
                                    name="password1"
                                    placeholder="password"
                                    id="id_password1"
-                                   {% if form.password1.value != None %}value="
-                                   {{ form.password1.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.password1.value|default:""}}"
                                    maxlength="{{ form.password1.field.max_length }}"
-                                   {% if form.password1.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
 
@@ -60,10 +57,9 @@
                                    name="password2"
                                    placeholder="confirm password"
                                    id="id_password2"
-                                   {% if form.password2.value != None %}value="
-                                   {{ form.password2.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.password2.value|default:""}}"
                                    maxlength="{{ form.password2.field.max_length }}"
-                                   {% if form.password2.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
 

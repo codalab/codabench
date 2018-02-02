@@ -18,10 +18,9 @@
                                    name="username"
                                    placeholder="username"
                                    id="id_username"
-                                   {% if form.username.value != None %}value="
-                                   {{ form.username.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.username.value|default:""}}"
                                    maxlength="{{ form.username.field.max_length }}"
-                                   {% if form.username.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
                     <div class="ui field">
@@ -31,10 +30,9 @@
                                    name="password"
                                    placeholder="password"
                                    id="id_password"
-                                   {% if form.password.value != None %}value="
-                                   {{ form.password.value|stringformat:'s' }}"{% endif %}
+                                   value="{{ form.password.value|default:""}}"
                                    maxlength="{{ form.password.field.max_length }}"
-                                   {% if form.password.field.required %}required{% endif %}>
+                                   required>
                         </div>
                     </div>
                     <button class="ui blue submit button" type="submit">Login</button>
