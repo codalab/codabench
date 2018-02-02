@@ -1,8 +1,8 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
-
-from api.serializers.fields import CharacterSeparatedField
 from leaderboards.models import Leaderboard, Column
+
+from .fields import CharacterSeparatedField
 
 
 class ColumnSerializer(WritableNestedModelSerializer):

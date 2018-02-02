@@ -2,7 +2,6 @@ import base64
 
 import binascii
 import json
-import uuid
 
 import six
 from django.core.files.base import ContentFile
@@ -40,7 +39,7 @@ class NamedBase64ImageField(Base64ImageField):
 
             data = ContentFile(decoded_file, name=file_name)
             return data
-        raise ValidationError(_('This is not an base64 string'))
+        raise ValidationError('This is not an base64 string')
 
 
 class SlugWriteDictReadField(SlugRelatedField):

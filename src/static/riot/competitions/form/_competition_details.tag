@@ -14,7 +14,24 @@
         <div class="field required">
             <label>Logo</label>
 
-            <input-file name="logo" accept="image/*" ref="logo"></input-file>
+            <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
+            <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
+            <div class="ui left action file input">
+                <button class="ui icon button" onclick="document.getElementById('form_file_logo').click()">
+                    <i class="attach icon"></i>
+                </button>
+                <input id="form_file_logo" type="file" ref="logo" accept="image/*">
+
+
+                <!-- Drop down selector -->
+                <!--<select class="dropdown fluid">
+                    <option value="test">Test</option>
+                    <option value="test">Test</option>
+                </select>-->
+
+                <!-- Just showing the file after it is uploaded -->
+                <input value="{ logo_file_name }" readonly onclick="document.getElementById('form_file_logo').click()">
+            </div>
         </div>
 
         <!--<div class="two fields">

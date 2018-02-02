@@ -54,8 +54,8 @@
                     </div>
                 </form>
 
-                <div class="ui indicating progress" style="margin: 0; height: 0; -ms-flex: 1 0 auto; flex: 1 0 auto; overflow: hidden;" ref="progress">
-                    <div class="bar" style="height: 24px;">
+                <div class="ui indicating progress" ref="progress">
+                    <div class="bar">
                         <div class="progress">{ upload_progress }%</div>
                     </div>
                 </div>
@@ -332,6 +332,11 @@
             -moz-transition: all .1s ease-in-out;
             -o-transition: all .1s ease-in-out;
             transition: all .1s ease-in-out;
+            margin: 0;
+            height: 0;
+            -ms-flex: 1 0 auto;
+            flex: 1 0 auto;
+            overflow: hidden;
         }
 
         form {
@@ -342,5 +347,10 @@
             -o-transition: all 1s ease-in-out;
             transition: all 1s ease-in-out;
         }
+
+        .progress .bar {
+            height: 24px;
+        }
+
     </style>
 </data-management>
