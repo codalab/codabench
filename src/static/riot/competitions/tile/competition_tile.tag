@@ -8,6 +8,7 @@
 
     <!--</div>-->
     <!--</div>-->
+    <div class="ui divider"></div>
     <div class="ui equal height grid">
         <div class="ui middle aligned equal height attached message container row">
             <div class="one wide green column" style="min-height: 100%">
@@ -85,10 +86,8 @@
             </div>
         </div>
     </div>
+    <div class="ui divider"></div>
 
     <script>
-        // var self = this
-        // self.competition = self.opts.competition
-        // console.log(self.competition)
     </script>
 </competition-tile>
