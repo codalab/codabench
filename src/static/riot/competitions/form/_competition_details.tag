@@ -104,19 +104,22 @@
             */
 
             // logo selection
-            /*$(self.refs.logo).on('change', function (event) {
+            $(self.refs.logo).on('change', function (event) {
                 // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
+                console.log("Logo should be updated")
                 self.update()
-            })*/
+            })
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
+                console.log("Form Change Event Broadcast")
             })
 
             // Capture and convert logo to base64 for easy uploading
             $('input[name="logo"]', self.root).change(function() {
+                console.log("Print before getBase64")
                 getBase64(this.files[0]).then(function(data) {
 
                     self.update()
@@ -133,6 +136,9 @@
         ---------------------------------------------------------------------*/
         self.form_updated = function () {
             var is_valid = true
+
+            console.log(self.data['title'])
+            console.log(self.data['logo'])
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value

@@ -39,6 +39,21 @@ CODALAB.api = {
     },
 
     /*---------------------------------------------------------------------
+         Management
+    ---------------------------------------------------------------------*/
+
+    get_submissions: function () {
+        return CODALAB.api.request('GET', URLS.API + 'submissions/')
+    },
+    create_submission: function(data) {
+        return CODALAB.api.request('POST', URLS.API + "submissions/", data)
+    },
+    update_submission: function(data, pk) {
+        return CODALAB.api.request('PATCH', URLS.API + "submissions/" + pk + "/", data)
+    },
+
+
+    /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/
     get_datasets: function (query, type) {
