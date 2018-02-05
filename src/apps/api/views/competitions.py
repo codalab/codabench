@@ -1,4 +1,3 @@
-from rest_framework.parsers import FileUploadParser, JSONParser
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.serializers import competitions as serializers
