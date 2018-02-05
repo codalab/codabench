@@ -14,7 +14,7 @@
                         <h1 class="ui large header">
                             {title}
                         </h1>
-                        <p style="font-size: 14px">
+                        <p class="comp-tile-paragraph">
                             A competition description
                             {description}
                         </p>
@@ -42,7 +42,7 @@
                     </div>
                 </div>
             </div>
-            <div class="three wide blue column center aligned" style="min-height: 100%">
+            <div class="three wide blue column center aligned comp-tile-full-height">
                 <i>Comp deadline:</i>
                 <i>August 14 2018</i>
                 <div class="ui divider"></div>
@@ -66,6 +66,12 @@
             border-left 5px solid lightgreen
             border-top-left-radius 6px !important
             border-bottom-left-radius 6px !important
+
+        .comp-tile-paragraph
+            font-size 14px !important
+
+        .comp-tile-full-height
+            min-height 100% !important
     </style>
 </competition-tile>
 
