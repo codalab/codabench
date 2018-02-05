@@ -103,26 +103,17 @@
             })
             */
 
-            // logo selection
-            /*$(self.refs.logo).on('change', function (event) {
-                // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
-                self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
-                self.update()
-            })*/
-
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
             })
 
             // Capture and convert logo to base64 for easy uploading
-            $('input[name="logo"]', self.root).change(function() {
+            $(self.refs.logo).change(function() {
+                self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
+                self.update()
                 getBase64(this.files[0]).then(function(data) {
-
-                    self.update()
-                    var file_name = $('input[ref="file_input_display"]', self.root).val()
-                    console.log(file_name)
-                    self.data['logo'] = JSON.stringify({file_name: file_name, data: data})
+                    self.data['logo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
                     self.form_updated()
                 })
             })
