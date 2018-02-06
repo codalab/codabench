@@ -1,0 +1,63 @@
+version: '3'
+volumes:
+  dbvolume:
+services:
+  web:
+    build: .
+    container_name: django
+    env_file: .env
+    command: /usr/local/bin/gunicorn src.wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload
+    environment:
+      - "DJANGO_SETTINGS_MODULE=src.settings.base"
+    env_file: .env
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+      - "80:80"
+    depends_on:
+      - db
+      - celery
+  db:
+    image: postgres
+    container_name: db
+    env_file: .env
+    environment:
+      - "PGDATA=/var/lib/postgresql/data/pgdata"
+    ports:
+      - 5432:5432
+    volumes:
+      - dbvolume:/var/lib/postgresql/data
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbit
+    env_file: .env
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  celery:
+    container_name: celery
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    depends_on:
+      - rabbitmq
+      - db
+    environment:
+      - "DJANGO_SETTINGS_MODULE=src.settings.base"
+    env_file: .env
+    volumes:
+      - .:/code
+    command: celery -A src.comp_worker worker --loglevel=debug
+  flower:
+    container_name: flower
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
+    ports:
+      - "15555:5555"
+    depends_on:
+      - celery
+      - rabbitmq

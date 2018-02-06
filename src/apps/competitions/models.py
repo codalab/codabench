@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from utils.data import PathWrapper
+from src.utils.data import PathWrapper
 
 
 class Competition(models.Model):

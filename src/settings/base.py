@@ -36,6 +36,7 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
+    'djcelery',
 )
 OUR_APPS = (
     'competitions',
@@ -59,7 +60,7 @@ MIDDLEWARE = (
     'corsheaders.middleware.CorsMiddleware',
 )
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = 'src.urls'
 
 TEMPLATES = [
     {
@@ -173,6 +174,17 @@ if os.environ.get('USE_SSL'):
 else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
+
+# ============================================================================
+# Celery
+# ============================================================================
+
+import djcelery
+
+djcelery.setup_loader()
+
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/gpy')
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
 # =============================================================================

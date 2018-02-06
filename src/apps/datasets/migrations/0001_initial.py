@@ -2,7 +2,7 @@
 
 import django.core.files.storage
 from django.db import migrations, models
-import utils.data
+import src.utils.data
 import uuid
 
 

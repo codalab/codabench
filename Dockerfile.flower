@@ -1,0 +1,14 @@
+FROM python:3
+
+ENV PYTHONUNBUFFERED 1
+
+# Dockerfile based on the official Celery
+# https://github.com/docker-library/celery
+
+# Prepare app folders & cmd
+RUN pip install flower
+
+CMD ["flower", \
+     "--broker=amqp://admin:admin@rabbitmq:5672/comps", \
+     "--broker_api=http://admin:admin@rabbitmq:15672/api/", \
+     "--port=5555"]
