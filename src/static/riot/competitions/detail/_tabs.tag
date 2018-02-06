@@ -1,8 +1,7 @@
 <comp-tabs>
-
-    <div class="ui container relaxed grid">
+    <div class="ui container relaxed center aligned grid comp-tabs">
         <div class="row">
-            <div class="ui sixteen wide column">
+            <div class="ui fourteen wide column">
                 <div class="container">
                     <!-- Tab menu -->
                     <div class="ui blue secondary pointing inverted tabular menu">
@@ -62,9 +61,7 @@
                                             finibus.
                                             Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
                                         </p>
-
                                         <comp-run-info competition={competition}></comp-run-info>
-                                        <comp-phase-info competition={competition}></comp-phase-info>
                                         <comp-stats competition={competition}></comp-stats>
                                         <comp-tags competition={competition}></comp-tags>
                                     </div>
@@ -243,6 +240,10 @@
                     </div>
                 </div>
             </div>
+            <style type="text/stylus">
+                .comp-tabs
+                    margin 3vh !important
+            </style>
             <script>
                 $('.tabular.menu .item').tab(); // Activate tabs
 

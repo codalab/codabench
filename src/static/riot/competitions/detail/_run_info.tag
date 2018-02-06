@@ -1,5 +1,5 @@
 <comp-run-info>
-    <div class="ui container grid">
+    <div class="ui container grid comp-run-info">
         <div class="centered row">
             <div class="five wide column">
                 <h4 class="ui top attached header">
@@ -126,9 +126,12 @@
             </div>
         </div>
     </div>
-    <br>
     <div class="ui horizontal divider"></div>
-    <br>
+    <style type="text/stylus">
+        .comp-run-info
+            /*padding 50vh !important*/
+            margin 5vh !important
+    </style>
     <script>
         var self = this
         self.competition = opts.competition

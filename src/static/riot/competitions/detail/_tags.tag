@@ -1,6 +1,6 @@
 <comp-tags>
     <div class="ui container relaxed grid">
-        <div class="row">
+        <div align="center" class="row">
             <div class="sixteen wide column">
                 <div class="ui">
                     <h1>Tags</h1>

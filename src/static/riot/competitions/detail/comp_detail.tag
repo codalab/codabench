@@ -1,7 +1,11 @@
 <comp-detail>
-    <comp-detail-title competition={competition}></comp-detail-title>
-    <comp-tabs competition={competition}></comp-tabs>
-
+    <comp-detail-title class="comp-detail-paragraph-text" competition={competition}></comp-detail-title>
+    <comp-tabs class="comp-detail-paragraph-text" competition={competition}></comp-tabs>
+    <style type="text/stylus">
+        .comp-detail-paragraph-text
+            font-size 16px !important
+            line-height 20px !important
+    </style>
     <script>
         var self = this
 
@@ -37,8 +41,21 @@
                     "starting_kit": null
                 },
                 {
-                    "title": "Initial Feedback",
+                    "title": "Initial Secondary Testing",
                     "number": 2,
+                    "start": "2018-12-01T00:00:00Z",
+                    "end": "2018-12-05T00:00:00Z",
+                    "description": "test",
+                    "input_data": null,
+                    "reference_data": null,
+                    "scoring_program": null,
+                    "ingestion_program": null,
+                    "public_data": null,
+                    "starting_kit": null
+                },
+                {
+                    "title": "Initial Feedback",
+                    "number": 3,
                     "start": "2018-12-06T00:00:00Z",
                     "end": "2018-12-08T00:00:00Z",
                     "description": "test",
