@@ -1,6 +1,6 @@
 <comp-tabs>
 
-    <div class="ui container grid">
+    <div class="ui container relaxed grid">
         <div class="row">
             <div class="ui sixteen wide column">
                 <div class="container">
@@ -21,19 +21,21 @@
                         </div>
                     </div>
                     <div class="ui active tab" data-tab="learn_the_details_tab">
-                        <div class="ui grid">
+                        <div class="ui relaxed grid">
                             <div class="row">
-                                <div class="four wide column">
-                                    <div class="ui side green vertical tabular menu">
+                                <div class="sixteen wide column">
+                                    <div class="ui side green tabular secondary menu">
                                         <div class="active item" data-tab="_tab_overview">Overview</div>
                                         <div class="item" data-tab="_tab_terms">Terms And Conditions</div>
                                         <div class="item" data-tab="_tab_faq">FAQ</div>
                                     </div>
                                 </div>
-                                <div class="twelve wide column">
+                            </div>
+                            <div class="row">
+                                <div class="sixteen wide column">
                                     <div class="ui active tab" data-tab="_tab_overview">
                                         <!-- Tab Content !-->
-                                        <div class="ui message">
+                                        <p>
                                             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
                                             consectetur
                                             elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus
@@ -59,12 +61,17 @@
                                             hendrerit sed. In gravida elit eu justo molestie, nec pellentesque elit
                                             finibus.
                                             Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
-                                        </div>
+                                        </p>
+
+                                        <comp-run-info competition={competition}></comp-run-info>
+                                        <comp-phase-info competition={competition}></comp-phase-info>
+                                        <comp-stats competition={competition}></comp-stats>
+                                        <comp-tags competition={competition}></comp-tags>
                                     </div>
 
                                     <div class="ui tab" data-tab="_tab_terms">
                                         <!-- Tab Content !-->
-                                        <div class="ui message">
+                                        <div class="ui">
                                             <p>
                                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
                                                 porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
@@ -100,7 +107,7 @@
 
                                     <div class="ui tab" data-tab="_tab_faq">
                                         <!-- Tab Content !-->
-                                        <div class="ui message">
+                                        <div class="ui ">
                                             <p>
                                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
                                                 porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
@@ -134,7 +141,7 @@
 
                     <!--phases tab-->
                     <div class="ui tab" data-tab="phases_tab">
-                        <div class="ui grid">
+                        <div class="ui relaxed grid">
                             <div class="row">
                                 <div class="four wide column">
 
@@ -149,7 +156,7 @@
                                 <div class="twelve wide column">
                                     <div class="ui active tab" data-tab="_tab_phase1">
                                         <!-- Tab Content !-->
-                                        <div class="ui message">
+                                        <div class="ui ">
                                             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
                                             consectetur
                                             elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus
@@ -180,7 +187,7 @@
 
                                     <div class="ui tab" data-tab="_tab_phase2">
                                         <!-- Tab Content !-->
-                                        <div class="ui message">
+                                        <div class="ui ">
                                             <p>
                                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
                                                 porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
@@ -222,7 +229,7 @@
                     <!--participate tab-->
                     <div class="ui tab" data-tab="participate_tab">
                         <!-- Tab Content !-->
-                        <div class="ui message">
+                        <div class="ui ">
                             <p>Ask to participate? Make submissions etc</p>
                         </div>
                     </div>
@@ -230,7 +237,7 @@
                     <!--results tab-->
                     <div class="ui tab" data-tab="results_tab">
                         <!-- Tab Content !-->
-                        <div class="ui message">
+                        <div class="ui ">
                             <p>View results</p>
                         </div>
                     </div>

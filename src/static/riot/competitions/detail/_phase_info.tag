@@ -1,9 +1,9 @@
 <comp-phase-info>
-    <div class="ui container grid">
+    <div class="ui container relaxed grid">
         <div class="row">
             <div class="sixteen wide column">
-                <div align="center" class="ui stacked centered message">
-                    <h5>Competition Run Time</h5>
+                <div align="center" class="ui stacked centered">
+                    <h1>Phases</h1>
                     <div class="ui ordered centered steps">
                         <div each="{competition.phases}" class="step">
                             <div class="content">

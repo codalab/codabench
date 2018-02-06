@@ -1,10 +1,7 @@
 <comp-detail>
     <comp-detail-title competition={competition}></comp-detail-title>
     <comp-tabs competition={competition}></comp-tabs>
-    <comp-run-info competition={competition}></comp-run-info>
-    <comp-phase-info competition={competition}></comp-phase-info>
-    <comp-stats competition={competition}></comp-stats>
-    <comp-tags competition={competition}></comp-tags>
+
     <script>
         var self = this
 
@@ -103,4 +100,8 @@
 
         console.log(self.competition)
     </script>
+    <style type="text/stylus">
+        :scope
+            min-height 500px
+    </style>
 </comp-detail>

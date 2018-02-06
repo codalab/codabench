@@ -1,5 +1,5 @@
 <comp-stats>
-    <div class="ui container grid">
+    <div class="ui container relaxed grid">
         <div class="row">
             <div class="four wide column">
                 <div class="ui message forced-full-height">
