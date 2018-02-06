@@ -35,7 +35,7 @@
       "random": true,
       "anim": {
         "enable": false,
-        "speed": 40,
+        "speed": 50,
         "size_min": 0.1,
         "sync": false
       }
@@ -44,8 +44,8 @@
       "enable": true,
       "distance": 150,
       "color": "#24ebeb",
-      "opacity": 0.4,
-      "width": 1
+      "opacity": 0.2,
+      "width": 2
     },
     "move": {
       "enable": true,

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from datasets.models import Data, DataGroup
 
 
@@ -21,6 +22,11 @@ class DataSerializer(serializers.ModelSerializer):
             "key": {"read_only": True},
             "created_by": {"read_only": True},
         }
+
+    def validate_name(self, name):
+        if Data.objects.filter(name=name, created_by=self.context['created_by']).exists():
+            raise ValidationError("You already have a dataset by this name, please delete that dataset or rename this one")
+        return name
 
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']

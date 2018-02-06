@@ -16,27 +16,33 @@ CODALAB.api = {
     },
 
     search: function (query) {
-        // TODO: This should call chahub??
+        // Todo This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
     },
 
     /*---------------------------------------------------------------------
          Competitions
     ---------------------------------------------------------------------*/
+    get_competition: function (pk) {
+        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+    },
     get_competitions: function (query) {
         // To not pass "undefined" in URL...
         query = query || ''
         return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
     },
-    get_competition: function (query) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk)
+    create_competition: function(data) {
+        return CODALAB.api.request('POST', URLS.API + "competitions/", data)
+    },
+    update_competition: function(data, pk) {
+        return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
 
     /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/
-    get_datasets: function () {
-        return CODALAB.api.request('GET', URLS.API + "datasets/")
+    get_datasets: function (query, type) {
+        return CODALAB.api.request('GET', URLS.API + `datasets/?q=${query || ''}&type=${type || ''}`)
     },
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
@@ -65,8 +71,9 @@ CODALAB.api = {
             data: form_data,
             processData: false,
             contentType: false,
-            xhr: function () {
+            xhr: function (xhr) {
                 var request = new window.XMLHttpRequest();
+
                 // Upload progress
                 request.upload.addEventListener("progress", function (event) {
                     if (event.lengthComputable) {
@@ -79,15 +86,6 @@ CODALAB.api = {
                 return request;
             }
         })
-            /*.success(function (data) {
-                //data = xml_to_json(data);
-                //success_callback(data);
-                toastr.success("Dataset successfully uploaded!")
-            })
-            .error(function () {
-                toastr.error("Could not upload to S3.");
-            });*/
-
 
         /*IFC.api.get_upload_url(file, destination)
             .success(function (data) {
@@ -134,6 +132,7 @@ CODALAB.api = {
                 toastr.error("Could not get URL for uploading.");
             });*/
     },
+    /* We will use the following functions when we implement remote storage */
     get_upload_url: function (file, destination) {
         /*var form = new FormData();
 

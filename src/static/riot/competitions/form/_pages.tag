@@ -9,15 +9,15 @@
             <div class="ui one cards">
                 <a each="{page, index in pages}" class="green card">
                     <div class="content">
-                        <sorting-chevrons data="{ pages }" index="{ index }"></sorting-chevrons>
-                        <div class="header" onclick="{ edit.bind(this, index) }">{ page.name }</div>
+                        <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
+                        <div class="header" onclick="{ edit.bind(this, index) }">{ page.title }</div>
                     </div>
                     <div class="extra content">
                         <span class="left floated like" onclick="{ edit.bind(this, index) }">
                             <i class="edit icon"></i>
                             Edit
                         </span>
-                        <span class="right floated star" onclick="{ delete.bind(this, index) }">
+                        <span class="right floated star" onclick="{ delete_page.bind(this, index) }">
                             <i class="delete icon"></i>
                             Delete
                         </span>
@@ -28,7 +28,7 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages[0].name }</h1>
+                <h1>{ pages[0].title }</h1>
                 <p>(This is the first page people will see upon visiting your competition!)</p>
             </div>
 
@@ -46,8 +46,8 @@
         <div class="content">
             <form class="ui form" onsubmit="{ save }">
                 <div class="field required">
-                    <label>Name</label>
-                    <input ref="name"/>
+                    <label>Title</label>
+                    <input ref="title"/>
                 </div>
 
                 <div class="field required">
@@ -71,9 +71,7 @@
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
         self.pages = [
-            //{name: "Welcome!", content: ""}
-            {name: "Welcome!", content: "welcome msg"}
-            //{name: "sdafasdafds!", content: "asdfasdfasdfdasf"}
+            {title: "Welcome!", content: "welcome msg"}
         ]
 
         self.one("mount", function () {
@@ -105,7 +103,7 @@
         }
 
         self.clear_form = function () {
-            self.refs.name.value = ''
+            self.refs.title.value = ''
             self.simple_markdown_editor.value('')
         }
 
@@ -116,24 +114,25 @@
         self.edit = function (page_index) {
             self.selected_page_index = page_index
             var page = self.pages[page_index]
-            self.refs.name.value = page.name
+            self.refs.title.value = page.title
             self.refs.content.value = page.content
             self.simple_markdown_editor.value(page.content)
 
             $(self.refs.modal).modal('show')
         }
 
-        self.delete = function (page_index) {
+        self.delete_page = function (page_index) {
             if (self.pages.length == 1) {
                 toastr.error("You cannot delete the first page in your competition! You need at least one page.")
             } else {
-                if (confirm("Are you sure you want to delete '" + self.pages[page_index].name + "'?")) {
+                if (confirm("Are you sure you want to delete '" + self.pages[page_index].title + "'?")) {
                     self.pages.splice(page_index, 1)
+                    self.form_updated()
                 }
             }
         }
 
-        self.form_update = function () {
+        self.form_updated = function () {
             var is_valid = true
 
             // Make sure we have at least 1 page and it has content
@@ -147,6 +146,16 @@
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'pages', is_valid)
+
+            if(is_valid) {
+                // Format data nicely, insert indexes so they can be saved
+                var indexed_pages = self.pages.map(function(page, index) {
+                    page.index = index
+                    return page
+                })
+
+                CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
+            }
         }
 
         self.save = function (event) {
@@ -154,12 +163,17 @@
                 event.preventDefault()
             }
 
-            $(self.refs.modal).modal('hide')
-
             var data = {
-                name: self.refs.name.value,
-                content: self.refs.content.value
+                title: self.refs.title.value,
+                content: self.simple_markdown_editor.value()
             }
+
+            if(data.content === '') {
+                toastr.error("Cannot save, content is required for a page to save")
+                return
+            }
+
+            $(self.refs.modal).modal('hide')
 
             if(self.selected_page_index === undefined) {
                 self.pages.push(data)
@@ -168,7 +182,15 @@
             }
 
             self.clear_form()
-            self.form_update()
+            self.form_updated()
         }
+
+        /*---------------------------------------------------------------------
+         Events
+        ---------------------------------------------------------------------*/
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.pages = competition.pages
+            self.form_updated()
+        })
     </script>
 </competition-pages>

@@ -1,11 +1,14 @@
 from django.conf import settings
 from django.db import models
 
+from utils.data import PathWrapper
+
 
 class Competition(models.Model):
+    title = models.CharField(max_length=256)
+    logo = models.ImageField(upload_to=PathWrapper('logos'), null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
     created_when = models.DateTimeField(auto_now_add=True)
-    title = models.CharField(max_length=256)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations")
 
     def __str__(self):
@@ -14,9 +17,10 @@ class Competition(models.Model):
 
 class Phase(models.Model):
     competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE)
-    number = models.PositiveIntegerField()
+    index = models.PositiveIntegerField()
     start = models.DateTimeField()
-    end = models.DateTimeField()
+    end = models.DateTimeField(null=True, blank=True)
+    name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...
@@ -58,4 +62,3 @@ What if the competition creator adds/removes leaderboards?
 
 what if the competition creator adds/removes columns?
 """
-

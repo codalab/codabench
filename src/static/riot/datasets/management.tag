@@ -20,10 +20,8 @@
                 </div>
 
                 <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
-                    <!--<div class="field">
-                        <input type="text" name="name" placeholder="Name">
-                    </div>-->
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                    <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
                     <div class="field {error: errors.type}">
                         <select name="type" ref="type" class="ui dropdown">
@@ -56,8 +54,8 @@
                     </div>
                 </form>
 
-                <div class="ui indicating progress" style="margin: 0; height: 0; -ms-flex: 1 0 auto; flex: 1 0 auto; overflow: hidden;" ref="progress">
-                    <div class="bar" style="height: 24px;">
+                <div class="ui indicating progress" ref="progress">
+                    <div class="bar">
                         <div class="progress">{ upload_progress }%</div>
                     </div>
                 </div>
@@ -106,7 +104,8 @@
                 </tr>
                 </tbody>
                 <tfoot>
-                <!--<tr>
+                <!-- Pagination that we may want later...
+                <tr>
                     <th colspan="3">
                         <div class="ui right floated pagination menu">
                             <a class="icon item">
@@ -121,7 +120,8 @@
                             </a>
                         </div>
                     </th>
-                </tr>-->
+                </tr>
+                -->
                 </tfoot>
             </table>
         </div>
@@ -134,13 +134,11 @@
          Init
         ---------------------------------------------------------------------*/
         self.errors = []
-        self.datasets = [
-            /*{name: "Scoring Program", type: "Scoring Program", created_when: "Jan 21, 2018", public: true},
-            {name: "Starting Kit", type: "Starting Kit", created_when: "Jan 1, 2018", public: true},
-            {name: "Reference Data", type: "Reference Data", created_when: "Mar 21, 2017", public: true},
-            {name: "Ingestion Program", type: "Ingestion Program", created_when: "Sep 24, 1988", public: true},*/
-        ]
-        // Clone of original
+        self.datasets = []
+
+
+
+        // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
 
@@ -151,27 +149,6 @@
 
             // init
             self.update_datasets()
-
-
-            /*var percent = 0;
-            var loopy = function () {
-                percent += .1
-                if (percent > 1) {
-                    self.clear_form()
-                    return
-                }
-                self.file_upload_progress_handler(percent)
-                window.setTimeout(loopy, 250)
-            }
-            loopy()
-
-            setTimeout(function () {
-                $('form input[name="name"]').val('awefjk' + (Math.floor(Math.random() * 20)))
-                $('form select[name="type"]').dropdown('set selected', 'Ingestion Program')
-            }, 100)*/
-            //self.refs.progress.style.height = '24px'
-
-
         })
 
         /*---------------------------------------------------------------------
@@ -210,7 +187,6 @@
                 // Filters
                 var search = self.refs.search.value.toLowerCase()
                 var type = self.refs.type_filter.value
-                console.log(type)
 
                 if (search) {
                     self.filtered_datasets = self.filtered_datasets.filter(function (dataset) {
@@ -278,8 +254,6 @@
 
             $('.dropdown', self.refs.form).dropdown('restore defaults')
 
-            self.upload_progress = undefined
-
             self.errors = {}
             self.update()
         }
@@ -289,9 +263,25 @@
                 event.preventDefault()
             }
 
-            // We don't want to send "" as a type and get a weird error, so clear that if empty
-            if (self.refs.type.value === "") {
-                self.refs.type.value = undefined
+            // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
+            // best place to do it
+            self.upload_progress = undefined
+
+            // Let's do some quick validation
+            self.errors = {}
+            var validate_data = get_form_data(self.refs.form)
+
+            var required_fields = ['name', 'type', 'data_file']
+            required_fields.forEach(field => {
+                if(validate_data[field] === '') {
+                    self.errors[field] = "This field is required"
+                }
+            })
+
+            if(Object.keys(self.errors).length > 0) {
+                // display errors and drop out
+                self.update()
+                return
             }
 
             // Have to get the "FormData" to get the file in a special way
@@ -300,28 +290,31 @@
 
             CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
                 .done(function (data) {
-                    //data = xml_to_json(data);
-                    //success_callback(data);
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()
-                    self.hide_progress_bar()
                 })
                 .fail(function (response) {
                     if (response) {
-                        var errors = JSON.parse(response.responseText);
+                        try {
+                            var errors = JSON.parse(response.responseText)
 
-                        // Clean up errors to not be arrays but plain text
-                        Object.keys(errors).map(function (key, index) {
-                            errors[key] = errors[key].join('; ')
-                        })
+                            // Clean up errors to not be arrays but plain text
+                            Object.keys(errors).map(function (key, index) {
+                                errors[key] = errors[key].join('; ')
+                            })
 
-                        console.log(errors)
+                            self.update({errors: errors})
+                        } catch(e) {
 
-                        self.update({errors: errors})
+                        }
                     }
-                    toastr.error("Creation failed, error occurred");
-                });
+                    toastr.error("Creation failed, error occurred")
+                })
+                .always(function() {
+                    self.hide_progress_bar()
+                })
+
         }
     </script>
 
@@ -339,6 +332,11 @@
             -moz-transition: all .1s ease-in-out;
             -o-transition: all .1s ease-in-out;
             transition: all .1s ease-in-out;
+            margin: 0;
+            height: 0;
+            -ms-flex: 1 0 auto;
+            flex: 1 0 auto;
+            overflow: hidden;
         }
 
         form {
@@ -349,5 +347,10 @@
             -o-transition: all 1s ease-in-out;
             transition: all 1s ease-in-out;
         }
+
+        .progress .bar {
+            height: 24px;
+        }
+
     </style>
 </data-management>
