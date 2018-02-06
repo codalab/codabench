@@ -1,5 +1,4 @@
 <comp-stats>
-
     <div class="ui container grid">
         <div class="row">
             <div class="four wide column">
@@ -26,7 +25,6 @@
             </div>
         </div>
     </div>
-
     <script>
         var self = this
         self.competition = opts.competition

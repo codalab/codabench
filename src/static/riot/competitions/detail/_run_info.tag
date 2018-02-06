@@ -1,5 +1,4 @@
 <comp-run-info>
-
     <div class="ui container grid">
         <div class="centered row">
             <div class="five wide column">
@@ -128,11 +127,8 @@
         </div>
     </div>
     <br>
-
     <div class="ui horizontal divider"></div>
-
     <br>
-
     <script>
         var self = this
         self.competition = opts.competition

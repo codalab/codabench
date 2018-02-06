@@ -4,56 +4,6 @@
         <div class="row">
             <div class="ui sixteen wide column">
                 <div class="container">
-                    <!--<div class="ui blue tabular menu">-->
-
-                    <!--<div name="learn_the_details_tab" id="learn_the_details" data-tab="learn_the_details"-->
-                    <!--class="active item">-->
-                    <!--Learn The Details-->
-                    <!--</div>-->
-
-                    <!--<div name="phases_tab" id="phases" data-tab="phases" class="item">-->
-                    <!--Phases-->
-                    <!--</div>-->
-
-                    <!--<div name="participate_tab" id="participate" data-tab="participate" class="item">-->
-                    <!--Participate-->
-                    <!--</div>-->
-
-                    <!--<div name="results_tab" id="results" data-tab="results" class="item">-->
-                    <!--Results-->
-                    <!--</div>-->
-                    <!--&lt;!&ndash;{% if user.is_superuser %} &lt;!&ndash; is_authenicated is not working here &ndash;&gt;&ndash;&gt;-->
-                    <!--<div class="right menu">-->
-                    <!--<a class="item">-->
-                    <!--<div class="ui green button">Participants</div>-->
-                    <!--</a>-->
-                    <!--<a class="item">-->
-                    <!--<div class="ui teal button">Submissions</div>-->
-                    <!--</a>-->
-                    <!--<a class="item">-->
-                    <!--<div class="ui red button">Edit</div>-->
-                    <!--</a>-->
-                    <!--</div>-->
-                    <!--&lt;!&ndash;{% endif %}&ndash;&gt;-->
-                    <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="ui tab" data-tab="learn_the_details">-->
-                    <!--<div class="ui message">-->
-                    <!--<h2>Oh no</h2>-->
-                    <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="ui tabular menu">-->
-                    <!--<div class="item" data-tab="tab-name">Tab Name</div>-->
-                    <!--<div class="item" data-tab="tab-name2">Tab Name 2</div>-->
-                    <!--</div>-->
-                    <!--<div class="ui tab" data-tab="tab-name">-->
-                    <!--&lt;!&ndash; Tab Content !&ndash;&gt;-->
-                    <!--</div>-->
-                    <!--<div class="ui tab" data-tab="tab-name2">-->
-                    <!--&lt;!&ndash; Tab Content !&ndash;&gt;-->
-                    <!--</div>-->
-                    <!--</div>-->
-
                     <!-- Tab menu -->
                     <div class="ui blue secondary pointing inverted tabular menu">
                         <div class="item header">
@@ -70,22 +20,16 @@
                             <div class="item">Admin</div>
                         </div>
                     </div>
-
-                    <!--Learn the details-->
                     <div class="ui active tab" data-tab="learn_the_details_tab">
                         <div class="ui grid">
                             <div class="row">
                                 <div class="four wide column">
-
-                                    <!--<div class="ui message">-->
-                                    <!--<p>Show pages here</p>-->
                                     <div class="ui side green vertical tabular menu">
                                         <div class="active item" data-tab="_tab_overview">Overview</div>
                                         <div class="item" data-tab="_tab_terms">Terms And Conditions</div>
                                         <div class="item" data-tab="_tab_faq">FAQ</div>
                                     </div>
                                 </div>
-                                <!--</div>-->
                                 <div class="twelve wide column">
                                     <div class="ui active tab" data-tab="_tab_overview">
                                         <!-- Tab Content !-->
@@ -292,9 +236,7 @@
                     </div>
                 </div>
             </div>
-
             <script>
-
                 $('.tabular.menu .item').tab(); // Activate tabs
 
                 var self = this
