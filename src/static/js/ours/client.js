@@ -4,6 +4,30 @@ var CODALAB = {
 
 CODALAB.events = riot.observable()
 
+var _upload_ajax = function(endpoint) {
+    $.ajax({
+            type: 'POST',
+            url: URLS.API + endpoint,
+            data: form_data,
+            processData: false,
+            contentType: false,
+            xhr: function (xhr) {
+                var request = new window.XMLHttpRequest();
+
+                // Upload progress
+                request.upload.addEventListener("progress", function (event) {
+                    if (event.lengthComputable) {
+                        var percent_complete = event.loaded / event.total;
+                        if (progress_update_callback) {
+                            progress_update_callback(percent_complete);
+                        }
+                    }
+                }, false);
+                return request;
+            }
+        })
+}
+
 CODALAB.api = {
     request: function (method, url, data) {
         return $.ajax({
@@ -66,27 +90,7 @@ CODALAB.api = {
                 * POST to mark upload as done, so un-finished uploads can be pruned later
 
         */
-        return $.ajax({
-            type: 'POST',
-            url: URLS.API + "submissions/",
-            data: form_data,
-            processData: false,
-            contentType: false,
-            xhr: function (xhr) {
-                var request = new window.XMLHttpRequest();
-
-                // Upload progress
-                request.upload.addEventListener("progress", function (event) {
-                    if (event.lengthComputable) {
-                        var percent_complete = event.loaded / event.total;
-                        if (progress_update_callback) {
-                            progress_update_callback(percent_complete);
-                        }
-                    }
-                }, false);
-                return request;
-            }
-        })
+        return _upload_ajax("submissions/")
     },
 
     /*---------------------------------------------------------------------
@@ -116,27 +120,7 @@ CODALAB.api = {
                 * POST to mark upload as done, so un-finished uploads can be pruned later
 
         */
-        return $.ajax({
-            type: 'POST',
-            url: URLS.API + "datasets/",
-            data: form_data,
-            processData: false,
-            contentType: false,
-            xhr: function (xhr) {
-                var request = new window.XMLHttpRequest();
-
-                // Upload progress
-                request.upload.addEventListener("progress", function (event) {
-                    if (event.lengthComputable) {
-                        var percent_complete = event.loaded / event.total;
-                        if (progress_update_callback) {
-                            progress_update_callback(percent_complete);
-                        }
-                    }
-                }, false);
-                return request;
-            }
-        })
+        return _upload_ajax("submissions/")
 
         /*IFC.api.get_upload_url(file, destination)
             .success(function (data) {

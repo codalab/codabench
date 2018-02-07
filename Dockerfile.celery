@@ -3,4 +3,3 @@ ENV PYTHONUNBUFFERED 1
 ENV C_FORCE_ROOT True
 ADD requirements.txt .
 RUN pip install -r requirements.txt
-#CMD ["celery", "-A", "comp_worker", "worker", "--loglevel=debug"]
