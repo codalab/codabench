@@ -29,6 +29,21 @@ class PhaseViewSet(ReadOnlyModelViewSet):
     serializer_class = serializers.PhaseSerializer
 
 
-class SubmissionViewSet(ReadOnlyModelViewSet):
+class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all()
     serializer_class = serializers.SubmissionSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # Filter to only see competitions you own
+        # mine = self.request.query_params.get('mine', None)
+
+        # if mine:
+        qs = qs.filter(owner=self.request.user)
+
+        return qs
+
+    def get_serializer_context(self):
+        return {
+            "owner": self.request.user
+        }

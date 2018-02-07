@@ -106,6 +106,7 @@
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
+                console.log("Form Change Event Broadcast")
             })
 
             // Capture and convert logo to base64 for easy uploading
@@ -124,6 +125,9 @@
         ---------------------------------------------------------------------*/
         self.form_updated = function () {
             var is_valid = true
+
+            console.log(self.data['title'])
+            console.log(self.data['logo'])
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value
