@@ -1,14 +1,4 @@
-FROM python:3
+FROM totem/celery-flower-docker
 
-ENV PYTHONUNBUFFERED 1
-
-# Dockerfile based on the official Celery
-# https://github.com/docker-library/celery
-
-# Prepare app folders & cmd
-RUN pip install flower
-
-CMD ["flower", \
-     "--broker=amqp://admin:admin@rabbitmq:5672/comps", \
-     "--broker_api=http://admin:admin@rabbitmq:15672/api/", \
-     "--port=5555"]
+# Edit the default docker image to take BROKER_USE_SSL
+RUN echo "BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL')" >> /opt/celery-flower/celeryconfig.py
