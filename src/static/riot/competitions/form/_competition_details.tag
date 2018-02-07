@@ -126,9 +126,6 @@
         self.form_updated = function () {
             var is_valid = true
 
-            console.log(self.data['title'])
-            console.log(self.data['logo'])
-
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value
 
