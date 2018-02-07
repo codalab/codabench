@@ -29,6 +29,6 @@ class PhaseViewSet(ReadOnlyModelViewSet):
     serializer_class = serializers.PhaseSerializer
 
 
-class SubmissionViewSet(ReadOnlyModelViewSet):
+class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all()
     serializer_class = serializers.SubmissionSerializer

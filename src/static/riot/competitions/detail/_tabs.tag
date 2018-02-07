@@ -5,9 +5,6 @@
                 <div class="container">
                     <!-- Tab menu -->
                     <div class="ui blue secondary pointing inverted tabular menu">
-                        <div class="item header">
-                            Competition Navigation:
-                        </div>
                         <div class="active item" data-tab="learn_the_details_tab">Learn The Details</div>
                         <div class="item" data-tab="phases_tab">Phases</div>
                         <div class="item" data-tab="participate_tab">Participate</div>

@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 
 from src.utils.data import PathWrapper
+# from .tasks import score_submission
+from competitions import tasks
 
 
 class Competition(models.Model):
@@ -37,10 +39,25 @@ class Submission(models.Model):
     appear_on_leaderboards = models.BooleanField(default=False)
 
     # Experimental
-    score = models.IntegerField(default=0, null=True, blank=True)
+    name = models.CharField(max_length=120, default="", null=True, blank=True)
+    description = models.CharField(max_length=120, default="", null=True, blank=True)
+    score = models.IntegerField(default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
     zip_file = models.FileField(upload_to=PathWrapper('submissions'), null=True, blank=True)
+    created_when = models.DateTimeField(auto_now_add=True)
+    is_public = models.BooleanField(default=False)
+
+    # uber experimental
+    track = models.IntegerField(default=1)
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+
+        super(Submission, self).save()
+
+        if not self.score:
+            tasks.score_submission.delay(self.pk)
 
 
 class CompetitionParticipant(models.Model):

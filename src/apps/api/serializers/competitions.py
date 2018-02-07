@@ -53,7 +53,7 @@ class PageSerializer(WritableNestedModelSerializer):
 class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
-        fields = ('phase',)
+        fields = ('phase', 'name', 'description', 'pk', 'id', 'created_when', 'is_public', 'zip_file')
 
 
 class CompetitionSerializer(WritableNestedModelSerializer):

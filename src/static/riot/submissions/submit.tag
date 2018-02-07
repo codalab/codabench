@@ -22,21 +22,22 @@
                 <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
                     <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
+                    <input-text name="phase" ref="phase" error="{errors.phase}" placeholder="Phase"></input-text>
 
-                    <div class="field {error: errors.type}">
-                        <select name="type" ref="type" class="ui dropdown">
-                            <option value="">Type</option>
-                            <option value="-">----</option>
-                            <option>Ingestion Program</option>
-                            <option>Input Data</option>
-                            <option>Public Data</option>
-                            <option>Reference Data</option>
-                            <option>Scoring Program</option>
-                            <option>Starting Kit</option>
-                        </select>
-                    </div>
+                    <!--<div class="field {error: errors.type}">-->
+                        <!--<select name="type" ref="type" class="ui dropdown">-->
+                            <!--<option value="">Type</option>-->
+                            <!--<option value="-">&#45;&#45;&#45;&#45;</option>-->
+                            <!--<option>Ingestion Program</option>-->
+                            <!--<option>Input Data</option>-->
+                            <!--<option>Public Data</option>-->
+                            <!--<option>Reference Data</option>-->
+                            <!--<option>Scoring Program</option>-->
+                            <!--<option>Starting Kit</option>-->
+                        <!--</select>-->
+                    <!--</div>-->
 
-                    <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+                    <input-file name="zip_file" error="{errors.zip_file}" accept=".zip"></input-file>
 
                     <div class="field">
                         <div class="ui checkbox">
@@ -67,22 +68,24 @@
                 <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
                 <i class="search icon"></i>
             </div>
-            <select class="ui dropdown" ref="type_filter" onchange="{ filter }">
-                <option value="">Type</option>
-                <option value="-">----</option>
-                <option>Ingestion Program</option>
-                <option>Input Data</option>
-                <option>Public Data</option>
-                <option>Reference Data</option>
-                <option>Scoring Program</option>
-                <option>Starting Kit</option>
-            </select>
+            <!--<select class="ui dropdown" ref="type_filter" onchange="{ filter }">-->
+                <!--&lt;!&ndash;<option value="">Type</option>&ndash;&gt;-->
+                <!--<option value="-">&#45;&#45;&#45;&#45;</option>-->
+                <!--<option>Ingestion Program</option>-->
+                <!--<option>Input Data</option>-->
+                <!--<option>Public Data</option>-->
+                <!--<option>Reference Data</option>-->
+                <!--<option>Scoring Program</option>-->
+                <!--<option>Starting Kit</option>-->
+            <!--</select>-->
 
             <table class="ui celled compact table">
                 <thead>
                 <tr>
                     <th>Name</th>
-                    <th width="175px">Type</th>
+                    <th>Phase</th>
+                    <th>File</th>
+                    <!--<th width="175px">Type</th>-->
                     <th width="125px">Uploaded...</th>
                     <th width="50px">Public</th>
                     <th width="50px">Delete?</th>
@@ -91,7 +94,10 @@
                 <tbody>
                 <tr class="submission-row" each="{ submission, index in filtered_submissions }">
                     <td>{ submission.name }</td>
-                    <td>{ submission.type }</td>
+                    <td>{ submission.phase }</td>
+                    <!--<td>{ submission.zip_file }</td>-->
+                    <td><a href="{submission.zip_file}" class="ui small blue button">Download File</a> </td>
+                    <!--<td>{ submission.type }</td>-->
                     <td>{ timeSince(Date.parse(submission.created_when)) } ago</td>
                     <td class="center aligned">
                         <i class="checkmark box icon green" show="{ submission.is_public }"></i>
@@ -186,7 +192,7 @@
 
                 // Filters
                 var search = self.refs.search.value.toLowerCase()
-                var type = self.refs.type_filter.value
+                // var type = self.refs.type_filter.value
 
                 if (search) {
                     self.filtered_submissions = self.filtered_submissions.filter(function (submission) {
@@ -195,11 +201,11 @@
                 }
 
                 // A dash is the "N/A" filter option
-                if (type && type !== "-") {
-                    self.filtered_submissions = self.filtered_submissions.filter(function (submission) {
-                        return submission.type === type
-                    })
-                }
+                // if (type && type !== "-") {
+                //     self.filtered_submissions = self.filtered_submissions.filter(function (submission) {
+                //         return submission.type === type
+                //     })
+                // }
 
                 self.update()
             }, 100)
@@ -271,7 +277,8 @@
             self.errors = {}
             var validate_data = get_form_data(self.refs.form)
 
-            var required_fields = ['name', 'type', 'data_file']
+            // var required_fields = ['name', 'type', 'data_file']
+            var required_fields = ['name', 'phase', 'zip_file']
             required_fields.forEach(field => {
                 if(validate_data[field] === '') {
                     self.errors[field] = "This field is required"
