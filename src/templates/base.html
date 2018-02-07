@@ -143,11 +143,11 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
 
-    <div class="ui container centered grid">
-        <div class="row">
+    <div class="ui container grid">
+{#        <div class="row">#}
             {% block content %}
             {% endblock %}
-        </div>
+{#        </div>#}
     </div>
 
 
@@ -190,7 +190,7 @@
         API: "/api/",
 
         // Competitions
-        COMPETITION_ADD: "{% url "competitions:form" %}",
+        // We still might need the below. Might've messed up in a merge.
         COMPETITION_DETAIL: function(pk){ return "{% url "competitions:detail" pk=0 %}".replace(0, pk) },
         COMPETITION_EDIT: function(pk){ return "{% url "competitions:edit" pk=0 %}".replace(0, pk) },
 

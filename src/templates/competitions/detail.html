@@ -1,13 +1,4 @@
 {% extends "base.html" %}
-<div class="ui grid">
-    <div class="four wide column">
-        <div class="ui image">
-            <img src="">
-        </div>
-    </div>
-    <div class="twelve wide column">
-        <h1 class="ui header">{{ object.title }}</h1>
-        <p class="ui text segment">{{ object.created_when }}</p>
-        <p class="ui text segment">{{ object.created_by }}</p>
-    </div>
-</div>
+{% block content %}
+    <comp-detail></comp-detail>
+{% endblock %}
