@@ -7,7 +7,6 @@ node_modules/
 staticfiles/
 uploads/
 
-
 src/static/output.css
 src/static/output.js
 src/static/riot.js
