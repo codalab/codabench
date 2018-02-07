@@ -8,17 +8,17 @@ from competitions import tasks
 
 class Competition(models.Model):
     title = models.CharField(max_length=256)
-    logo = models.ImageField(upload_to=PathWrapper('logos'), null=True)
+    logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
     created_when = models.DateTimeField(auto_now_add=True)
-    collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations")
+    collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", null=True, blank=True)
 
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)
 
 
 class Phase(models.Model):
-    competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE, null=True, blank=True)
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
@@ -28,7 +28,7 @@ class Phase(models.Model):
     # These related names are all garbage. Had to do it this way just to prevent clashes...
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="input_datas")
     reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="reference_datas")
-    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, related_name="scoring_programs")
+    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="scoring_programs")
     ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="ingestion_programs")
     public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="public_datas")
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="starting_kits")
@@ -51,7 +51,7 @@ class Submission(models.Model):
     )
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='submission', on_delete=models.DO_NOTHING)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name='submission', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=128, default=NONE, null=False, blank=False)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
@@ -75,7 +75,10 @@ class Submission(models.Model):
         super(Submission, self).save()
 
         if not self.score:
-            tasks.score_submission.delay(self.pk)
+            if self.phase:
+                if self.phase.scoring_program:
+                    tasks.score_submission.delay(self.pk, self.phase.pk)
+            tasks.score_submission_lazy.delay(self.pk)
 
 
 class CompetitionParticipant(models.Model):

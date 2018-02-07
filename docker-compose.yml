@@ -49,7 +49,8 @@ services:
   #-----------------------------------------------
   celery:
     container_name: celery
-    command: cd /app/src && celery -A comp_worker worker --loglevel=debug
+#    command: cd /app/src && celery -A comp_worker worker --loglevel=debug
+    command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
     env_file: .env
     build:
       context: .
@@ -62,7 +63,7 @@ services:
     env_file: .env
     volumes:
       - .:/app
-    command: celery -A comp_worker worker --loglevel=debug
+#    command: celery -A comp_worker worker --loglevel=debug
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
