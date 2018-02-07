@@ -152,16 +152,29 @@ DEBUG = os.environ.get('DEBUG', True)
 # Database
 # =============================================================================
 
-# Docker Postgresql
+# # Default local setup
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite'),
+#         'CONN_MAX_AGE': 500,
+#     }
+# }
+#
+# # Overridden by env settings
+# db_from_env = dj_database_url.config(conn_max_age=500)
+# DATABASES['default'].update(db_from_env)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'HOST': 'db',
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USERNAME', 'postgres'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),   # set this to DB for me
         'PORT': 5432
     }
 }
+# db_from_env = dj_database_url.config(conn_max_age=500)
 db_from_env = dj_database_url.config()
 DATABASES['default'].update(db_from_env)
 
