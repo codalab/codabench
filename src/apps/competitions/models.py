@@ -53,7 +53,7 @@ class Submission(models.Model):
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='submission', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=128, default=NONE, null=False, blank=False)
-    # phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
+    phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
 
     # Experimental
