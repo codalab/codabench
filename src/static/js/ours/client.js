@@ -4,8 +4,8 @@ var CODALAB = {
 
 CODALAB.events = riot.observable()
 
-var _upload_ajax = function(endpoint) {
-    $.ajax({
+var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
+    return $.ajax({
             type: 'POST',
             url: URLS.API + endpoint,
             data: form_data,
@@ -90,7 +90,7 @@ CODALAB.api = {
                 * POST to mark upload as done, so un-finished uploads can be pruned later
 
         */
-        return _upload_ajax("submissions/")
+        return _upload_ajax("submissions/", form_data, progress_update_callback)
     },
 
     /*---------------------------------------------------------------------
@@ -120,7 +120,7 @@ CODALAB.api = {
                 * POST to mark upload as done, so un-finished uploads can be pruned later
 
         */
-        return _upload_ajax("submissions/")
+        return _upload_ajax("datasets/", form_data, progress_update_callback)
 
         /*IFC.api.get_upload_url(file, destination)
             .success(function (data) {
