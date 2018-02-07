@@ -7,6 +7,7 @@ from django.urls import path
 urlpatterns = [
     # Our URLS
     path('', include('pages.urls', namespace='pages')),
+    path('management/', include('management.urls', namespace='management')),
     path('competitions/', include('competitions.urls', namespace='competitions')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
