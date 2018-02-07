@@ -152,19 +152,6 @@ DEBUG = os.environ.get('DEBUG', True)
 # Database
 # =============================================================================
 
-# # Default local setup
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite'),
-#         'CONN_MAX_AGE': 500,
-#     }
-# }
-#
-# # Overridden by env settings
-# db_from_env = dj_database_url.config(conn_max_age=500)
-# DATABASES['default'].update(db_from_env)
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -174,7 +161,6 @@ DATABASES = {
         'PORT': 5432
     }
 }
-# db_from_env = dj_database_url.config(conn_max_age=500)
 db_from_env = dj_database_url.config()
 DATABASES['default'].update(db_from_env)
 
