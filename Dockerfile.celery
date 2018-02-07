@@ -5,5 +5,4 @@ RUN mkdir /code
 WORKDIR /code
 ADD requirements.txt /code/
 RUN pip install -r requirements.txt
-#ADD . /code/
 CMD ["celery", "-A", "src.comp_worker", "worker", "--loglevel=debug"]
