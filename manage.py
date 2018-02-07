@@ -8,6 +8,7 @@ if __name__ == "__main__":
     settings_module = os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.base')
 
     if 'runserver' in sys.argv:
+        print("npm-watching")
         subprocess.Popen(["npm-watch"])
 
     from django.core.management import execute_from_command_line

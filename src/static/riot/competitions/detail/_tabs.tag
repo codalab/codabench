@@ -228,6 +228,7 @@
                         <!-- Tab Content !-->
                         <div class="ui ">
                             <p>Ask to participate? Make submissions etc</p>
+                            <submission-management></submission-management>
                         </div>
                     </div>
 

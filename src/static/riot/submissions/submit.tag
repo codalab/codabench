@@ -1,4 +1,4 @@
-<data-management>
+<submission-management>
     <h1>Submission Management</h1>
 
     <div class="ui divider"></div>
@@ -353,4 +353,4 @@
         }
 
     </style>
-</data-management>
+</submission-management>

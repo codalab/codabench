@@ -38,7 +38,8 @@ class Submission(models.Model):
 
     # Experimental
     score = models.IntegerField(default=0, null=True, blank=True)
-    participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE, null=True, blank=True)
+    participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
+                                    null=True, blank=True)
     zip_file = models.FileField(upload_to=PathWrapper('submissions'), null=True, blank=True)
 
 

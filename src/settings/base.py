@@ -107,7 +107,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'utils.oauth_backends.CodalabOAuth2',
+    'src.utils.oauth_backends.CodalabOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -183,7 +183,7 @@ import djcelery
 
 djcelery.setup_loader()
 
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/gpy')
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
