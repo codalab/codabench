@@ -1,6 +1,8 @@
 *.pyc
 __pycache__
 
+.env
+
 node_modules/
 staticfiles/
 uploads/
