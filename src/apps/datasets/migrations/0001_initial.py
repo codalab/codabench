@@ -2,7 +2,7 @@
 
 import django.core.files.storage
 from django.db import migrations, models
-import src.utils.data
+import utils.data
 import uuid
 
 
@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('type', models.CharField(choices=[('Ingestion Program', 'Ingestion Program'), ('Input Data', 'Input Data'), ('Public Data', 'Public Data'), ('Reference Data', 'Reference Data'), ('Scoring Program', 'Scoring Program'), ('Starting Kit', 'Starting Kit')], max_length=64)),
                 ('description', models.TextField(blank=True, null=True)),
-                ('data_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(), upload_to=src.utils.data.PathWrapper('dataset'))),
+                ('data_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(), upload_to=utils.data.PathWrapper('dataset'))),
                 ('key', models.UUIDField(blank=True, default=uuid.uuid4)),
                 ('is_public', models.BooleanField(default=False)),
                 ('upload_completed_successfully', models.BooleanField(default=False)),

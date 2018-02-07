@@ -3,8 +3,8 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from src.settings.base import BundleStorage
-from src.utils.data import PathWrapper
+from settings.base import BundleStorage
+from utils.data import PathWrapper
 
 
 class Data(models.Model):

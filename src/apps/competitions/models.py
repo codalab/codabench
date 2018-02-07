@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from src.utils.data import PathWrapper
+from utils.data import PathWrapper
 # from .tasks import score_submission
 from competitions import tasks
 

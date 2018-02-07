@@ -60,7 +60,7 @@ MIDDLEWARE = (
     'corsheaders.middleware.CorsMiddleware',
 )
 
-ROOT_URLCONF = 'src.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -107,7 +107,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'src.utils.oauth_backends.CodalabOAuth2',
+    'utils.oauth_backends.CodalabOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
