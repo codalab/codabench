@@ -1,6 +1,4 @@
 version: '3'
-volumes:
-  dbvolume:
 services:
   #-----------------------------------------------
   #   Web Service
@@ -33,7 +31,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - dbvolume:/var/lib/postgresql/data
+      - ./var/postgres:/var/lib/postgresql/data
   #-----------------------------------------------
   #   Rabbitmq Service
   #-----------------------------------------------
@@ -44,12 +42,13 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+    volumes:
+      - ./var/rabbitmq:/var/lib/rabbitmq/
   #-----------------------------------------------
   #   Celery Service
   #-----------------------------------------------
   celery:
     container_name: celery
-#    command: cd /app/src && celery -A comp_worker worker --loglevel=debug
     command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
     env_file: .env
     build:
@@ -63,7 +62,6 @@ services:
     env_file: .env
     volumes:
       - .:/app
-#    command: celery -A comp_worker worker --loglevel=debug
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
