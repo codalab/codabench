@@ -192,12 +192,12 @@ else:
 # Celery
 # ============================================================================
 
-import djcelery
-
-djcelery.setup_loader()
+# import djcelery
+#
+# djcelery.setup_loader()
 
 BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
 # =============================================================================

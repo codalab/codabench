@@ -1,20 +1,3 @@
-<!-- Field class on initial definition to keep Semantic UI styling -->
-<field class="field">
-    <div class="field {error: opts.error}">
-        <label>{opts.name}</label>
-        <input type="text" name="{ opts.input_name }" ref="input">
-    </div>
-    <div class="ui error message" show="{ opts.error }">
-        <p>{ opts.error }</p>
-    </div>
-    <style>
-        /* Make this component "div like" */
-        :scope {
-            display: block;
-        }
-    </style>
-</field>
-
 <submission-management>
     <!-- Top buttons -->
     <div class="ui right aligned grid">
@@ -66,27 +49,11 @@
         </div>
     </div>
 
-    <!-- New key modal -->
-    <div id="submission_secret_key_modal" class="ui modal">
-        <div class="header">Secret key</div>
-        <div class="content">
-            <div class="ui grid">
-                <div class="column sixteen wide center aligned">
-                    <h3 class="ui center aligned header">{secret_key}</h3>
-                    <p class="ui center aligned">Send this key to the submission, it will not be revealed again.</p>
-                </div>
-            </div>
-        </div>
-        <div class="actions">
-            <div class="ui cancel button">I've copied down this key</div>
-        </div>
-    </div>
-
     <script>
         // --------------------------------------------------------------------
         // Initializers
         var self = this
-        self.comp_pk = 1
+        self.comp_pk = Null
         self.submissions = {}
         self.selected_submission = {}
         self.errors = []
