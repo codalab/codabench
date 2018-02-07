@@ -36,6 +36,11 @@ class Submission(models.Model):
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
 
+    # Experimental
+    score = models.IntegerField(default=0, null=True, blank=True)
+    participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE, null=True, blank=True)
+    zip_file = models.FileField(upload_to='submissions/', null=True, blank=True)
+
 
 class CompetitionParticipant(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='participant',

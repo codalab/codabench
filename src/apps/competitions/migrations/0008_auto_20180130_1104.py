@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='competition',
             name='logo',
-            field=models.ImageField(null=True, upload_to=utils.data.PathWrapper('logos')),
+            field=models.ImageField(null=True, upload_to=src.utils.data.PathWrapper('logos')),
         ),
     ]
