@@ -8,5 +8,6 @@ urlpatterns = [
     # path('', views.CompetitionList.as_view(), name="list"),
     path('', views.CompetitionManagement.as_view(), name="management"),
     path('<int:pk>/', views.CompetitionDetail.as_view(), name="detail"),
+    path('create/', views.CompetitionForm.as_view(), name="create"),
     path('edit/<int:pk>/', views.CompetitionForm.as_view(), name="edit"),
 ]

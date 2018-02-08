@@ -32,11 +32,9 @@ THIRD_PARTY_APPS = (
     'whitenoise',
     'oauth2_provider',
     'corsheaders',
-    'django_elasticsearch_dsl',
     'social_django',
     'django_extensions',
     'django_filters',
-    # 'djcelery',
 )
 OUR_APPS = (
     'competitions',
@@ -157,7 +155,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': os.environ.get('DB_NAME', 'postgres'),
         'USER': os.environ.get('DB_USERNAME', 'postgres'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),   # set this to DB for me
+        'HOST': os.environ.get('DB_HOST', 'db'),
         'PORT': 5432
     }
 }
@@ -178,11 +176,6 @@ else:
 # ============================================================================
 # Celery
 # ============================================================================
-
-# import djcelery
-#
-# djcelery.setup_loader()
-
 BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
 # CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
@@ -217,16 +210,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
-
-
-# =============================================================================
-# Search
-# =============================================================================
-ELASTICSEARCH_DSL = {
-    'default': {
-        'hosts': [os.environ.get('SEARCHBOX_SSL_URL', 'localhost:9200')]
-    },
-}
 
 
 # =============================================================================
