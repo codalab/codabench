@@ -36,7 +36,6 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
-    'djcelery',
 )
 OUR_APPS = (
     'competitions',
@@ -178,11 +177,6 @@ else:
 # ============================================================================
 # Celery
 # ============================================================================
-
-# import djcelery
-#
-# djcelery.setup_loader()
-
 BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
 # CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
