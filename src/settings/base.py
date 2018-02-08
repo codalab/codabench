@@ -32,7 +32,6 @@ THIRD_PARTY_APPS = (
     'whitenoise',
     'oauth2_provider',
     'corsheaders',
-    'django_elasticsearch_dsl',
     'social_django',
     'django_extensions',
     'django_filters',
@@ -211,16 +210,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
-
-
-# =============================================================================
-# Search
-# =============================================================================
-ELASTICSEARCH_DSL = {
-    'default': {
-        'hosts': [os.environ.get('SEARCHBOX_SSL_URL', 'localhost:9200')]
-    },
-}
 
 
 # =============================================================================
