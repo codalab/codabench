@@ -28,11 +28,9 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
-    'rest_framework_swagger',
     'whitenoise',
     'oauth2_provider',
     'corsheaders',
-    'django_elasticsearch_dsl',
     'social_django',
     'django_extensions',
     'django_filters',
@@ -150,17 +148,17 @@ DEBUG = os.environ.get('DEBUG', True)
 # =============================================================================
 # Database
 # =============================================================================
-# Default local setup
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite'),
-        'CONN_MAX_AGE': 500,
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USERNAME', 'postgres'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': 5432
     }
 }
-
-# Overridden by env settings
-db_from_env = dj_database_url.config(conn_max_age=500)
+db_from_env = dj_database_url.config()
 DATABASES['default'].update(db_from_env)
 
 
@@ -173,6 +171,12 @@ if os.environ.get('USE_SSL'):
 else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
+
+# ============================================================================
+# Celery
+# ============================================================================
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
+# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 
 # =============================================================================
@@ -205,16 +209,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
-
-
-# =============================================================================
-# Search
-# =============================================================================
-ELASTICSEARCH_DSL = {
-    'default': {
-        'hosts': [os.environ.get('SEARCHBOX_SSL_URL', 'localhost:9200')]
-    },
-}
 
 
 # =============================================================================

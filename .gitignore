@@ -1,10 +1,11 @@
 *.pyc
 __pycache__
 
+.env
+
 node_modules/
 staticfiles/
 uploads/
-
 
 src/static/output.css
 src/static/output.js
