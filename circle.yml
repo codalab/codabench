@@ -1,4 +1,6 @@
 machine:
+  environment:
+    DB_HOST: localhost
   python:
     version: 3.6.1
 
