@@ -19,11 +19,8 @@ asgi_redis==1.4.3
 drf-writable-nested==0.4.1
 django-extra-fields==0.9
 pillow==5.0.0
-# celery==3.1.23
-# django-celery==3.2.1
-# django-celery-beat==1.1.0
-# django-celery-results==1.0.1
-celery
+celery==3.1.23
+kombu==3.0.35
 gunicorn==19.7.1
 flower==0.9.2
 gevent==1.2.2

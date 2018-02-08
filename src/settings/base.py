@@ -36,7 +36,7 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
-    'djcelery',
+    # 'djcelery',
 )
 OUR_APPS = (
     'competitions',
