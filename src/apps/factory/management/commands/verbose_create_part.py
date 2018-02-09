@@ -82,7 +82,8 @@ class Command(BaseCommand):
                 user=temp_user
             )
             self.stdout.write(self.style.SUCCESS(
-                'Successfully created new participant for user {0} on competition {1}'.format(
+                'Successfully created new participant {0} for user {1} on competition {2}'.format(
+                    new_part,
                     temp_user,
                     temp_competition,
                 )

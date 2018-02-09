@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--start',
-            type=lambda d: datetime.strptime(d, '%Y%m%d'), # Convert to string
+            type=lambda d: datetime.strptime(d, '%Y%m%d'),  # Convert to string
             dest='start_date',
             help='Start date in Y-m-d format',
         )

@@ -19,10 +19,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         count = 1
         if options['amount']:
-            print(options['amount'])
             count = options['amount']
         for i in range(count):
-            print(i)
             try:
                 # Create a random user
                 temp_username = uuid.uuid4()

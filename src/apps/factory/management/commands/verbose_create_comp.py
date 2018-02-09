@@ -2,11 +2,10 @@ import datetime
 import random
 import uuid
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from competitions.models import Competition, Phase, Submission
-from datasets.models import DataGroup, Data
+from competitions.models import Competition
 from profiles.models import User as CodalabUser
 
 
@@ -61,7 +60,6 @@ class Command(BaseCommand):
 
         # If we have an amount inputted, set our count to that
         if options['amount'] and options['multiple']:
-            print(options['amount'])
             count = options['amount']
         # If we have a title inputed, set our title to that
         if options['title']:
@@ -69,7 +67,6 @@ class Command(BaseCommand):
 
         # If we are given a user
         if options['user']:
-            print("User email given as : {}".format(options['user']))
             # Try to grab them and say whether we found them, alert on fail
             try:
                 temp_user = CodalabUser.objects.get(email=options['user'])
