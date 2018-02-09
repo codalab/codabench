@@ -39,16 +39,7 @@ class Command(BaseCommand):
                 new_comp = Competition.objects.create(title="Competition {}".format(uuid.uuid4()), created_by=temp_user)
                 new_comp.created_when = timezone.now() + datetime.timedelta(days=random.randint(-15, 15))
                 new_comp.save()
-                self.stdout.write(
-                    colored(
-                        'Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp),
-                        'green',
-                    )
-                )
+                print(colored('Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp),
+                              'green'))
             except:
-                self.stdout.write(
-                    colored(
-                        'Failed to create competition',
-                        'red',
-                    )
-                )
+                print(colored('Failed to create competition', 'red'))

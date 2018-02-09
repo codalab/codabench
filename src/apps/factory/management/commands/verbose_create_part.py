@@ -26,29 +26,13 @@ class Command(BaseCommand):
         # Init specific vars
         temp_competition = None
         temp_user = None
-        existing_part = None
 
         if options['user']:
             try:
                 temp_user = CodalabUser.objects.get(email=options['user'])
-                self.stdout.write(
-                    colored(
-                        'Successfully found user {0} for email {1}'.format(
-                            temp_user,
-                            options['user'],
-                        ),
-                        'green',
-                    )
-                )
+                print(colored('Successfully found user {0} for email {1}'.format(temp_user, options['user']), 'green'))
             except ObjectDoesNotExist:
-                self.stdout.write(
-                    colored(
-                        'Failed to find user for email {}'.format(
-                            options['user'],
-                        ),
-                        'red',
-                    )
-                )
+                print(colored('Failed to find user for email {}'.format(options['user']), 'red'))
                 raise ObjectDoesNotExist('Failed to find user for email {}'.format(
                     options['user'],
                 ))
@@ -56,24 +40,10 @@ class Command(BaseCommand):
         if options['comp']:
             try:
                 temp_competition = Competition.objects.get(pk=options['comp'])
-                self.stdout.write(
-                    colored(
-                        'Successfully found comp {0} for pk {1}'.format(
-                            temp_competition,
-                            options['comp'],
-                        ),
-                        'green',
-                    )
-                )
+                print(colored('Successfully found comp {0} for pk {1}'.format(temp_competition, options['comp']),
+                              'green'))
             except ObjectDoesNotExist:
-                self.stdout.write(
-                    colored(
-                        'Failed to find comp for pk {}'.format(
-                            options['comp'],
-                        ),
-                        'red',
-                    )
-                )
+                print(colored('Failed to find comp for pk {}'.format(options['comp']), 'red'))
                 raise ObjectDoesNotExist('Failed to find comp for pk {}'.format(
                     options['comp'],
                 ))
@@ -81,20 +51,12 @@ class Command(BaseCommand):
         # See if one exists already before making a new one
         try:
             existing_part = CompetitionParticipant.objects.get(competition=temp_competition, user=temp_user)
-            self.stdout.write(
-                colored(
-                    'Failed to create participant, one already exists for this user and comp',
-                    'red',
-                )
+            print(
+                colored('Failed to create participant, one already exists for this user and comp', 'red')
             )
             raise ValueError("Object already exists!")
         except ObjectDoesNotExist:
-            self.stdout.write(
-                colored(
-                    'Particpant does not exist for competition and user, proceeding.'
-                    'green',
-                )
-            )
+            print(colored('Particpant does not exist for competition and user, proceeding.', 'green'))
             existing_part = None
 
         try:
@@ -102,17 +64,11 @@ class Command(BaseCommand):
                 competition=temp_competition,
                 user=temp_user
             )
-            self.stdout.write(
-                colored(
-                    'Successfully created new participant {0} for user {1} on competition {2}'.format(
-                        new_part,
-                        temp_user,
-                        temp_competition,
-                    ),
-                    'green',
-                )
-            )
+            print(colored(
+                'Successfully created new participant {0} for user {1} on competition {2}'.format(new_part, temp_user,
+                                                                                                  temp_competition),
+                'green'))
         except:
-            self.stdout.write(
+            print(
                 colored('Failed to create participant', 'red')
             )

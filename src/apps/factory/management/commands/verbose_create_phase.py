@@ -69,19 +69,11 @@ class Command(BaseCommand):
         if options['comp']:
             try:
                 temp_competition = Competition.objects.get(pk=options['comp'])
-                self.stdout.write(
-                    colored(
-                        'Successfully found competition {0} with pk {1}'.format(temp_competition, options['comp']),
-                        'green',
-                    )
-                )
+                print(
+                    colored('Successfully found competition {0} with pk {1}'.format(temp_competition, options['comp']),
+                            'green'))
             except ObjectDoesNotExist:
-                self.stdout.write(
-                    colored(
-                        'Failed to find competition with pk: {}'.format(options['comp']),
-                        'red',
-                    )
-                )
+                print(colored('Failed to find competition with pk: {}'.format(options['comp']), 'red'))
                 raise ObjectDoesNotExist(
                     'Failed to find the competition to attach to. Breaking...'
                 )
@@ -134,17 +126,11 @@ class Command(BaseCommand):
                 start=temp_start,
                 end=temp_end,
             )
-            self.stdout.write(
-                colored(
-                    'Successfully created new phase {0} with index {1} for competition {2}!'.format(
-                        new_phase,
-                        temp_index,
-                        temp_competition
-                    ),
-                    'green',
-                )
-            )
+            print(colored(
+                'Successfully created new phase {0} with index {1} for competition {2}!'.format(new_phase, temp_index,
+                                                                                                temp_competition),
+                'green'))
         except:
-            self.stdout.write(
+            print(
                 colored('Failed to create phase', 'red')
             )

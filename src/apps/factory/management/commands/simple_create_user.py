@@ -30,16 +30,6 @@ class Command(BaseCommand):
                 temp_name = "Bot_{}".format(temp_username)
                 temp_user = CodalabUser.objects.create(username=temp_username, name=temp_name, email=temp_email)
 
-                self.stdout.write(
-                    colored(
-                        'Successfully created user "%s"' % temp_user,
-                        'green',
-                    )
-                )
+                print(colored('Successfully created user "%s"' % temp_user, 'green'))
             except:
-                self.stdout.write(
-                    colored(
-                        'Failed to create user',
-                        'red',
-                    )
-                )
+                print(colored('Failed to create user', 'red'))
