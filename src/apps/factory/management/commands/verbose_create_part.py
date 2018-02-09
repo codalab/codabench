@@ -50,14 +50,13 @@ class Command(BaseCommand):
 
         # See if one exists already before making a new one
         try:
-            existing_part = CompetitionParticipant.objects.get(competition=temp_competition, user=temp_user)
+            CompetitionParticipant.objects.get(competition=temp_competition, user=temp_user)
             print(
                 colored('Failed to create participant, one already exists for this user and comp', 'red')
             )
             raise ValueError("Object already exists!")
         except ObjectDoesNotExist:
             print(colored('Particpant does not exist for competition and user, proceeding.', 'green'))
-            existing_part = None
 
         try:
             new_part = CompetitionParticipant.objects.create(
