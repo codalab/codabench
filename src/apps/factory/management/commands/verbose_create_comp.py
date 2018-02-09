@@ -14,53 +14,39 @@ class Command(BaseCommand):
     help = 'Creates a dummy competition'
 
     def add_arguments(self, parser):
-        #     # parser.add_argument('poll_id', nargs='+', type=int)
-
         # Named (optional) arguments
         parser.add_argument(
             '--number',
-            # action='store_true',
-            # dest='delete',
             type=int,
             dest='amount',
             help='Amount of comps/users to create',
         )
         parser.add_argument(
             '--user',
-            # action='store_true',
-            # dest='delete',
             type=str,
             dest='user',
             help='Creator of the comp',
         )
         parser.add_argument(
             '--title',
-            # action='store_true',
-            # dest='delete',
             type=str,
             dest='title',
             help='Title of the competition',
         )
         parser.add_argument(
             '--multiple',
-            # action='store_true',
-            # dest='delete',
             type=bool,
             dest='multiple',
             help='Create multiple users/competitions?',
         )
         parser.add_argument(
             '--random',
-            # action='store_true',
-            # dest='delete',
             type=bool,
             dest='random_date',
             help='Random Start Date?',
         )
         parser.add_argument(
             '--fail_easy',
-            # action='store_true',
-            # dest='delete',
             type=bool,
             dest='fail_easy',
             help='Fail if user not found, or error.',

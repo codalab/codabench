@@ -3,34 +3,25 @@ import random
 import uuid
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from competitions.models import Competition, Phase, Submission
-from datasets.models import DataGroup, Data
-from profiles.models import User as CodalabUser
+from competitions.models import Competition, Phase
 
 
 class Command(BaseCommand):
     help = 'Creates a dummy competition'
 
     def add_arguments(self, parser):
-        #     # parser.add_argument('poll_id', nargs='+', type=int)
-
-        # Named (optional) arguments
+        # Named (optional) arguments + Required positional args
         parser.add_argument(
             'comp',
-            # action='store_true',
-            # dest='delete',
             type=int,
-            #dest='competition',
             help='PK of the competition',
         )
 
         parser.add_argument(
             '--index',
-            # action='store_true',
-            # dest='delete',
             type=int,
             dest='index',
             help='Index of the phase',
@@ -38,8 +29,6 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--start',
-            # action='store_true',
-            # dest='delete',
             type=lambda d: datetime.strptime(d, '%Y%m%d'), # Convert to string
             dest='start_date',
             help='Start date in Y-m-d format',
@@ -47,8 +36,6 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--end',
-            # action='store_true',
-            # dest='delete',
             type=lambda d: datetime.strptime(d, '%Y%m%d'),  # Convert to string
             dest='end_date',
             help='End date in Y-m-d format',
@@ -56,8 +43,6 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--desc',
-            # action='store_true',
-            # dest='delete',
             type=str,
             dest='description',
             help='Description of the phase',
@@ -65,8 +50,6 @@ class Command(BaseCommand):
 
         parser.add_argument(
             '--name',
-            # action='store_true',
-            # dest='delete',
             type=str,
             dest='name',
             help='Name of the phase',
@@ -81,6 +64,7 @@ class Command(BaseCommand):
         temp_name = None
         temp_description = None
 
+        # Get our referenced competition or break.
         if options['comp']:
             try:
                 temp_competition = Competition.objects.get(pk=options['comp'])
@@ -92,6 +76,7 @@ class Command(BaseCommand):
                     'Failed to find the competition to attach to. Breaking...'
                 )
 
+        # Get our start_date or set default
         if options['start_date']:
             temp_start = options['start_date']
         else:
@@ -118,11 +103,13 @@ class Command(BaseCommand):
                 else:
                     temp_index = 0
 
+        # Get or set random name
         if options['name']:
             temp_name = options['name']
         else:
             temp_name = "Phase_{}".format(uuid.uuid4())
 
+        # Get or set random description
         if options['description']:
             temp_description = options['description']
         else:

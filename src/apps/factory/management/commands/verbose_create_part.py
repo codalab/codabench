@@ -9,23 +9,15 @@ class Command(BaseCommand):
     help = 'Creates a dummy competition'
 
     def add_arguments(self, parser):
-        #     # parser.add_argument('poll_id', nargs='+', type=int)
-
-        # Named (optional) arguments
+        # Required Positional args
         parser.add_argument(
             'user',
-            # action='store_true',
-            # dest='delete',
             type=str,
-            # dest='competition',
             help='email of the user',
         )
         parser.add_argument(
             'comp',
-            # action='store_true',
-            # dest='delete',
             type=int,
-            # dest='competition',
             help='pk of the competition',
         )
 
