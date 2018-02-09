@@ -85,7 +85,7 @@ class Submission(models.Model):
 
 
 class CompetitionParticipant(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='participant',
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='participants',
                                 on_delete=models.DO_NOTHING)
     competition = models.OneToOneField(Competition, related_name='participants', on_delete=models.CASCADE)
 
