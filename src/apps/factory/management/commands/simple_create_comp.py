@@ -4,6 +4,7 @@ import uuid
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from termcolor import colored
 
 from competitions.models import Competition
 from profiles.models import User as CodalabUser
@@ -38,6 +39,16 @@ class Command(BaseCommand):
                 new_comp = Competition.objects.create(title="Competition {}".format(uuid.uuid4()), created_by=temp_user)
                 new_comp.created_when = timezone.now() + datetime.timedelta(days=random.randint(-15, 15))
                 new_comp.save()
-                self.stdout.write(self.style.SUCCESS('Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp)))
+                self.stdout.write(
+                    colored(
+                        'Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp),
+                        'green',
+                    )
+                )
             except:
-                self.stdout.write(self.style.SUCCESS('Failed to create competition'))
+                self.stdout.write(
+                    colored(
+                        'Failed to create competition',
+                        'red',
+                    )
+                )

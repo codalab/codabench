@@ -21,3 +21,4 @@ flower==0.9.2
 gevent==1.2.2
 gevent-eventemitter==2.0
 greenlet==0.4.12
+termcolor==1.1.0

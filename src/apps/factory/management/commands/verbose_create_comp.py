@@ -4,6 +4,7 @@ import uuid
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from termcolor import colored
 
 from competitions.models import Competition
 from profiles.models import User as CodalabUser
@@ -70,9 +71,18 @@ class Command(BaseCommand):
             # Try to grab them and say whether we found them, alert on fail
             try:
                 temp_user = CodalabUser.objects.get(email=options['user'])
-                self.stdout.write(self.style.SUCCESS('Succesfully found user with email: {}'.format(options['user'])))
+                self.stdout.write(
+                    colored(
+                        'Succesfully found user with email: {}'.format(options['user']),
+                        'red',
+                    ))
             except:
-                self.stdout.write(self.style.SUCCESS('Failed to find user with email: {}'.format(options['user'])))
+                self.stdout.write(
+                    colored(
+                        'Failed to find user with email: {}'.format(options['user']),
+                        'red'
+                    )
+                )
                 if options['fail_easy']:
                     raise ValueError(
                         'The user with email: `{}` was not found and the fail_easy flag is set. Breaking...'.format(
@@ -100,9 +110,20 @@ class Command(BaseCommand):
                 new_comp = Competition.objects.create(title=temp_title, created_by=temp_user)
                 new_comp.created_when = temp_date
                 new_comp.save()
-                self.stdout.write(self.style.SUCCESS('Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp)))
+                self.stdout.write(
+                    colored(
+                        'Successfully created new user and competition: {0}, {1}'.format(temp_user, new_comp),
+                        'green',
+                    )
+                )
             except:
-                self.stdout.write(self.style.SUCCESS('Failed to create competition'))
+                # self.stdout.write(self.style.SUCCESS('Failed to create competition'))
+                self.stdout.write(
+                    colored(
+                        'Failed to create competition',
+                        'red',
+                    )
+                )
                 if options['fail_easy']:
                     raise ValueError(
                         'Failed to create one or more competitions. Breaking...'
