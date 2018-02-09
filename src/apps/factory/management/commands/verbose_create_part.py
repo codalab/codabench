@@ -76,25 +76,16 @@ class Command(BaseCommand):
                 self.style.SUCCESS('Particpant does not exist for competition and user, proceeding.'))
             existing_part = None
 
-        if existing_part:
-            # DO NOTHING
-            self.stdout.write(
-                self.style.SUCCESS('Failed to create participant, one already exists for this user and comp'))
-        else:
-            self.stdout.write(
-                self.style.SUCCESS('Competition pk: {0}, User email: {1}, Existing Participant?: {2}'.format(
-                    options['comp'], options['user'], existing_part
-                )))
-            try:
-                new_part = CompetitionParticipant.objects.create(
-                    competition=temp_competition,
-                    user=temp_user
+        try:
+            new_part = CompetitionParticipant.objects.create(
+                competition=temp_competition,
+                user=temp_user
+            )
+            self.stdout.write(self.style.SUCCESS(
+                'Successfully created new participant for user {0} on competition {1}'.format(
+                    temp_user,
+                    temp_competition,
                 )
-                self.stdout.write(self.style.SUCCESS(
-                    'Successfully created new participant for user {0} on competition {1}'.format(
-                        temp_user,
-                        temp_competition,
-                    )
-                ))
-            except:
-                self.stdout.write(self.style.SUCCESS('Failed to create participant'))
+            ))
+        except:
+            self.stdout.write(self.style.SUCCESS('Failed to create participant'))
