@@ -162,7 +162,7 @@ class Command(BaseCommand):
                                                           email=temp_bot_email)
 
                     # Grab our succesfully made user
-                    bot_part = CompetitionParticipant.objects.create(
+                    CompetitionParticipant.objects.create(
                         competition=new_comp,
                         user=temp_bot
                     )
