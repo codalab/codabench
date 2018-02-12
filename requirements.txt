@@ -23,4 +23,4 @@ gevent-eventemitter==2.0
 greenlet==0.4.12
 termcolor==1.1.0
 faker==0.8.10
-tqdm-4.19.5
+tqdm==4.19.5
