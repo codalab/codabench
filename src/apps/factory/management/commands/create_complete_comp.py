@@ -38,7 +38,7 @@ class Command(BaseCommand):
             help='How many phases to create for this comp',
         )
         parser.add_argument(
-            '--num-parts',
+            '--num-participants',
             type=int,
             dest='num-parts',
             help='How many participants to create',

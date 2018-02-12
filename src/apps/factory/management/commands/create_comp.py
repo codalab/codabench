@@ -34,12 +34,6 @@ class Command(BaseCommand):
             help='Title of the competition',
         )
         parser.add_argument(
-            '--multiple',
-            type=bool,
-            dest='multiple',
-            help='Create multiple users/competitions?',
-        )
-        parser.add_argument(
             '--random',
             type=bool,
             dest='random_date',
@@ -60,7 +54,7 @@ class Command(BaseCommand):
         temp_date = None
 
         # If we have an amount inputted, set our count to that
-        if options['amount'] and options['multiple']:
+        if options['amount']:
             count = options['amount']
         # If we have a title inputed, set our title to that
         if options['title']:
