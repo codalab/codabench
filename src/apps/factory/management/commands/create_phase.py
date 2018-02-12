@@ -11,7 +11,7 @@ from competitions.models import Competition, Phase
 
 
 class Command(BaseCommand):
-    help = 'Creates a dummy competition'
+    help = 'Creates a dummy phase attached to a competition. Required args: `comp`'
 
     def add_arguments(self, parser):
         # Named (optional) arguments + Required positional args

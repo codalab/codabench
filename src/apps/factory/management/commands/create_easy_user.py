@@ -7,7 +7,7 @@ from profiles.models import User as CodalabUser
 
 
 class Command(BaseCommand):
-    help = 'Closes the specified poll for voting'
+    help = 'Creates a simple user, or multiple'
 
     def add_arguments(self, parser):
         # Named (optional) arguments

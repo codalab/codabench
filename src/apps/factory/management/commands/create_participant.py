@@ -7,7 +7,7 @@ from profiles.models import User as CodalabUser
 
 
 class Command(BaseCommand):
-    help = 'Creates a dummy competition'
+    help = 'Creates a dummy participant with a user and a competition PK'
 
     def add_arguments(self, parser):
         # Required Positional args

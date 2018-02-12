@@ -11,7 +11,7 @@ from profiles.models import User as CodalabUser
 
 
 class Command(BaseCommand):
-    help = 'Creates a dummy competition'
+    help = 'Creates a specific dummy competition'
 
     def add_arguments(self, parser):
         # Named (optional) arguments
