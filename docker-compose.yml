@@ -5,12 +5,10 @@ services:
   #-----------------------------------------------
   django:
     build: .
-    container_name: django
     env_file: .env
-    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
-    env_file: .env
     volumes:
       - .:/app
     ports:
@@ -18,7 +16,7 @@ services:
       - 80:80
     depends_on:
       - db
-      - celery
+      - rabbitmq
   #-----------------------------------------------
   #   Database Service
   #-----------------------------------------------
@@ -37,7 +35,6 @@ services:
   #-----------------------------------------------
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbit
     env_file: .env
     ports:
       - 15672:15672
@@ -47,9 +44,8 @@ services:
   #-----------------------------------------------
   #   Celery Service
   #-----------------------------------------------
-  celery:
-    container_name: celery
-    command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
+  worker-site:
+    command: bash -c "cd /app/src && celery worker --loglevel=debug"
     env_file: .env
     build:
       context: .
@@ -59,20 +55,29 @@ services:
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
+    volumes:
+      - .:/app
+
+  worker-compute:
+    command: bash -c "cd /app/src && celery -A compute_worker worker --loglevel=debug"
     env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.compute_worker
+    depends_on:
+      - rabbitmq
     volumes:
       - .:/app
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-  flower:
-    container_name: flower
-    env_file: .env
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
-    ports:
-      - 15555:5555
-    depends_on:
-      - celery
-      - rabbitmq
+#  flower:
+#    container_name: flower
+#    env_file: .env
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.flower
+#    ports:
+#      - 15555:5555
+#    depends_on:
+#      - rabbitmq
