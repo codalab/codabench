@@ -35,6 +35,9 @@ class Phase(models.Model):
     public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="public_datas")
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="starting_kits")
 
+    def __str__(self):
+        return self.name
+
 
 class Submission(models.Model):
     # TODO: Check null and blank attributes
@@ -61,7 +64,6 @@ class Submission(models.Model):
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
-    description = models.CharField(max_length=120, default="", null=True, blank=True)
     score = models.IntegerField(default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
