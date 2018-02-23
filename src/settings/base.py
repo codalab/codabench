@@ -41,6 +41,7 @@ OUR_APPS = (
     'pages',
     'profiles',
     'leaderboards',
+    'factory',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
