@@ -6,7 +6,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.base')
 
 app = Celery()
 
-from django.conf import settings  # noqa
+# Load settings from Django first
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
-app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+# Final set of settings
+app.conf.update(
+    broker_url='amqp://guest:guest@rabbitmq:5672//',
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+)

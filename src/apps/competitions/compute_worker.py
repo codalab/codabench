@@ -1,8 +1,14 @@
 import requests
 
-from celery import Celery
+from celery import Celery, task
 
 app = Celery()
+app.conf.update(
+    broker_url='amqp://guest:guest@rabbitmq:5672//',
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+)
 
 
 def _put(url, file_path):
@@ -17,6 +23,7 @@ def _put(url, file_path):
 
 
 def _send_update(submission_name, args, virtual_host='/'):
+    # NOTE: This sends updates to be asynchronously processed
     with app.connection() as new_connection:
         # We need to send on the main virtual host, not whatever host we're currently
         # connected to.
@@ -32,6 +39,7 @@ def update_output(submission_id, submission_secret, output):
     _send_update('competition.submissions.update_output', (submission_id, submission_secret, output))
 
 
+@task
 def predict(submission_id, submission_secret, submission_program, ingestion_program, input_data, stderr_path, stdout_path, output_path):
     """
 
@@ -52,6 +60,7 @@ def predict(submission_id, submission_secret, submission_program, ingestion_prog
     pass
 
 
+@task
 def score(submission_id, submission_secret, scoring_program, reference_data, stderr_path, stdout_path, output_path):
     """
 
