@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView
+from django import forms
+from django.views.generic import TemplateView, CreateView
 from django.views.generic.base import ContextMixin
 
-from .models import Competition
+from .models import Competition, Submission
 
 
 class CompetitionManagement(LoginRequiredMixin, TemplateView):

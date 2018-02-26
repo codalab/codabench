@@ -19,9 +19,9 @@ class CompetitionViewSet(ModelViewSet):
         return qs
 
     def get_serializer_context(self):
-        return {
-            "created_by": self.request.user
-        }
+        context = super().get_serializer_context()
+        context["created_by"] = self.request.user
+        return context
 
 
 class PhaseViewSet(ModelViewSet):

@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
+    'channels',
 )
 OUR_APPS = (
     'competitions',
@@ -81,7 +82,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
+# WSGI_APPLICATION = 'wsgi.application'
+ASGI_APPLICATION = "routing.application"
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
@@ -175,8 +177,11 @@ else:
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://guest:guest@rabbitmq:5672//')
 # CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 
 # =============================================================================

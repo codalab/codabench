@@ -55,6 +55,11 @@ class SubmissionSerializer(serializers.ModelSerializer):
         model = Submission
         fields = ('phase', 'name', 'description', 'pk', 'id', 'created_when', 'is_public', 'zip_file')
 
+    def create(self, validated_data):
+        submission = super().create(validated_data)
+        submission.evaluate()
+        return submission
+
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
