@@ -83,8 +83,8 @@
                         odio. Praesent vel nisl vitae libero vulputate pulvinar. Donec sagittis, risus ac consectetur mollis,
                         eros nunc rutrum purus, vitae viverra...</p>
                 </div>
-                <div style="margin-top:20px;" class="ui horizontal divider"><i class="user icon"></i>About Me</div>
-                <div style="margin-top:20px;" class="ui grid">
+                <div id="horiz-margin" class="ui horizontal divider"><i class="user icon"></i>About Me</div>
+                <div id="grid-margin" class="ui grid">
                     <span class="three wide column"><i class="world icon"></i>Website:</span>
                     <a href="https://google.com/" class="thirteen wide column">https://myweb.site/</a>
                     <span class="three wide column"><i class="github icon"></i>GitHub:</span>
@@ -178,6 +178,11 @@
         .fourteen.wide.column
             margin-bottom -5px
 
+        #horiz-margin
+            margin-top 20px
+
+        #grid-margin
+            margin-top 20px
     </style>
 
 </user-profile>
