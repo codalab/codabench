@@ -1,7 +1,6 @@
 <user-profile>
 
     <!------------------------------------------ HTML ------------------------------------------->
-    <link href="https://fonts.googleapis.com/css?family=Raleway:400,800" rel="stylesheet">
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
             <div class="column">
@@ -116,7 +115,6 @@
     <style type="text/stylus">
 
         :scope
-            font-family 'Raleway', sans-serif
             margin-top 20px
 
         #avatar
