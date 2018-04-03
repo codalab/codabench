@@ -152,9 +152,9 @@ DEBUG = os.environ.get('DEBUG', True)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME', 'postgres'),
-        'USER': os.environ.get('DB_USERNAME', 'postgres'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
+        'NAME': os.environ.get('DB_NAME', 'competitions_v2'),
+        'USER': os.environ.get('DB_USERNAME', None),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': 5432
     }
 }
