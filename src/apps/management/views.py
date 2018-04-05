@@ -7,6 +7,3 @@ class SubmissionsView(TemplateView):
 
 class UserManagementView(TemplateView):
     template_name = 'management/user_management.html'
-
-
-
