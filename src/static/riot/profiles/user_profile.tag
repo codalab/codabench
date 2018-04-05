@@ -1,5 +1,4 @@
 <user-profile>
-
     <!------------------------------------------ HTML ------------------------------------------->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
@@ -19,7 +18,6 @@
                         </div>
                     </div>
                     <div class="content">
-
                         <div class="description">
                             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
                                 distinct...</p>
@@ -32,7 +30,6 @@
                         </a>
                     </div>
                 </div>
-
                 <div class="ui fluid card">
                     <div class="comp_card center aligned image">
                         <div  class="comp_header center aligned header content">
@@ -42,7 +39,6 @@
                         </div>
                     </div>
                     <div class="content">
-
                         <div class="description">
                             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
                                 distinct...</p>
@@ -94,26 +90,13 @@
                     <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
                     <a href="https://twitter.com/" class="thirteen wide column">https://twitter.com/my/</a>
                 </div>
-
-
-
             </div>
-
-
         </div>
     </div>
-
     <!------------------------------------------ JavaScript ------------------------------------->
-
-    <script>
-
-    </script>
-
-
+    <script></script>
     <!------------------------------------------ CSS Styling ------------------------------------>
-
     <style type="text/stylus">
-
         :scope
             margin-top 20px
 
@@ -184,5 +167,4 @@
         #grid-margin
             margin-top 20px
     </style>
-
 </user-profile>
