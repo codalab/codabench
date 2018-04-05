@@ -165,5 +165,17 @@
 
         #grid-margin
             margin-top 20px
+
+        .world.icon
+            color grey
+
+        .github.icon
+            color #6e5494
+
+        .twitter.icon
+            color #1DA1F2
+
+        .linkedin.icon
+            color #0077B5
     </style>
 </user-profile>
