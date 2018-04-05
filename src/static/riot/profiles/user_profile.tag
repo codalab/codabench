@@ -64,7 +64,6 @@
                 <i class="marker alternate icon"></i>
                 <span id="location">Spokane, WA</span>
                 <div id="job_title">Backend Engineer</div>
-
                 <div class="ui justified container">
                     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sit amet sapien eleifend,
                         aliquam mauris quis, aliquam turpis. Donec eget risus vitae neque faucibus pulvinar. Curabitur
