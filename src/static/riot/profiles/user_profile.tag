@@ -1,5 +1,4 @@
 <user-profile>
-
     <!------------------------------------------ HTML ------------------------------------------->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
@@ -19,7 +18,6 @@
                         </div>
                     </div>
                     <div class="content">
-
                         <div class="description">
                             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
                                 distinct...</p>
@@ -32,7 +30,6 @@
                         </a>
                     </div>
                 </div>
-
                 <div class="ui fluid card">
                     <div class="comp_card center aligned image">
                         <div  class="comp_header center aligned header content">
@@ -42,7 +39,6 @@
                         </div>
                     </div>
                     <div class="content">
-
                         <div class="description">
                             <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
                                 distinct...</p>
@@ -68,7 +64,6 @@
                 <i class="marker alternate icon"></i>
                 <span id="location">Spokane, WA</span>
                 <div id="job_title">Backend Engineer</div>
-
                 <div class="ui justified container">
                     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sit amet sapien eleifend,
                         aliquam mauris quis, aliquam turpis. Donec eget risus vitae neque faucibus pulvinar. Curabitur
@@ -94,26 +89,13 @@
                     <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
                     <a href="https://twitter.com/" class="thirteen wide column">https://twitter.com/my/</a>
                 </div>
-
-
-
             </div>
-
-
         </div>
     </div>
-
     <!------------------------------------------ JavaScript ------------------------------------->
-
-    <script>
-
-    </script>
-
-
+    <script></script>
     <!------------------------------------------ CSS Styling ------------------------------------>
-
     <style type="text/stylus">
-
         :scope
             margin-top 20px
 
@@ -183,6 +165,17 @@
 
         #grid-margin
             margin-top 20px
-    </style>
 
+        .world.icon
+            color grey
+
+        .github.icon
+            color #6e5494
+
+        .twitter.icon
+            color #1DA1F2
+
+        .linkedin.icon
+            color #0077B5
+    </style>
 </user-profile>
