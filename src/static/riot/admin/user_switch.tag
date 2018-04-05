@@ -1,7 +1,7 @@
 <user_switch>
 
     <!------------------------------------------ HTML ------------------------------------------->
-    <div id="user_switch_modal" class="ui modal">
+    <div id="user_switch_modal" class="ui mini modal">
         <i class="close icon"></i>
         <div class="header">
             Change User
@@ -30,8 +30,7 @@
         var self = this
 
         self.on('mount', function(){
-            $('.ui.modal').modal({
-                detachable: false
+            $('#user_switch_modal').modal({
             })
         });
 
@@ -39,14 +38,4 @@
             self.refs.form.submit()
         }
     </script>
-    <!------------------------------------------ CSS Styling ------------------------------------>
-
-    <style type="text/stylus">
-
-        #user_switch_modal
-            width 450px !important
-            margin -225px 0 0 -225px  !important
-
-    </style>
-
 </user_switch>
