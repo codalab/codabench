@@ -1,6 +1,5 @@
 <user_management>
     <!------------------------------------------ HTML ------------------------------------------->
-
     <div class="row">
         <h1 class="ui center aligned header">
             User Management Portal
@@ -28,8 +27,7 @@
                 <td class="first_row">
                     <a data-tooltip="Delete User" data-inverted="" href="#"
                        onclick="$('#delete_user_modal').modal('show')">
-                        <i class="trash icon">
-                        </i>
+                        <i class="trash icon"></i>
                     </a>
                 </td>
                 <td>John Doe</td>
@@ -38,10 +36,6 @@
                 <td>Competition Admin</td>
             </tr>
         </table>
-
-        <!-- EDIT USER MODAL -->
-
-
     <!-- DELETE USER MODAL -->
     <div id="delete_user_modal" class="ui mini modal">
         <div class="header">Delete User JDoe40?</div>
@@ -64,7 +58,6 @@
             }, function () {
                 $(this).css('color', 'grey')
             });
-
             $('#delete_user_modal').modal({
                 onApprove: function () {
                     window.alert('User Deleted!')
@@ -72,7 +65,6 @@
             })
         })
     </script>
-
     <!------------------------------------------ CSS Styling ------------------------------------>
     <style type="text/stylus">
         user_management
@@ -102,8 +94,5 @@
 
         .ui.right.aligned.container
             margin-top 1em
-
-
     </style>
-
 </user_management>
