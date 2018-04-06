@@ -36,14 +36,14 @@
                 <td>Competition Admin</td>
             </tr>
         </table>
-    <!-- DELETE USER MODAL -->
-    <div id="delete_user_modal" class="ui mini modal">
-        <div class="header">Delete User JDoe40?</div>
-        <div class="actions">
-            <div class="basic grey ui cancel button">Cancel</div>
-            <div class="ui red approve button">Delete User</div>
+        <!-- DELETE USER MODAL -->
+        <div id="delete_user_modal" class="ui mini modal">
+            <div class="header">Delete User JDoe40?</div>
+            <div class="actions">
+                <div class="basic grey ui cancel button">Cancel</div>
+                <div class="ui red approve button">Delete User</div>
+            </div>
         </div>
-    </div>
     </div>
     <!------------------------------------------ JavaScript ------------------------------------->
     <script>
