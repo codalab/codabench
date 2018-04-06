@@ -55,12 +55,9 @@
                     See More Competitions...
                 </button>
             </div>
-
             <!-- Second Column -->
             <div class="eight wide column">
-                <span class="header content">
-                    John Doe
-                </span>
+                <span class="header content">John Doe</span>
                 <i class="marker alternate icon"></i>
                 <span id="location">Spokane, WA</span>
                 <div id="job_title">Backend Engineer</div>
@@ -72,7 +69,6 @@
                         sollicitudin metus ligula, ac pharetra urna faucibus eu. Maecenas varius sem nec tellus semper, in
                         porttitor libero iaculis. Proin nibh elit, ultrices at nisi vitae, mattis laoreet risus. Fusce et
                         commodo nisi. </p>
-
                     <p>Praesent ut leo venenatis magna iaculis laoreet quis in diam. Curabitur tristique nisi volutpat risus
                         venenatis, non semper magna convallis. Nulla ac pharetra nulla, in ultrices massa. Donec non consectetur
                         odio. Praesent vel nisl vitae libero vulputate pulvinar. Donec sagittis, risus ac consectetur mollis,
@@ -92,8 +88,6 @@
             </div>
         </div>
     </div>
-    <!------------------------------------------ JavaScript ------------------------------------->
-    <script></script>
     <!------------------------------------------ CSS Styling ------------------------------------>
     <style type="text/stylus">
         :scope
@@ -169,11 +163,11 @@
         .world.icon
             color grey
 
-        .github.icon
-            color #6e5494
-
         .twitter.icon
             color #1DA1F2
+
+        .github.icon
+            color #6e5494
 
         .linkedin.icon
             color #0077B5
