@@ -2,15 +2,15 @@
 __pycache__
 
 .env
+.envrc
 
 node_modules/
 staticfiles/
 uploads/
+venv/
 
 src/static/output.css
 src/static/output.js
 src/static/riot.js
 src/static/riot.tag
 src/static/generated/*
-
-/venv/
