@@ -47,7 +47,7 @@
                 </div>
         </div>
     </div>
-    <table class="ui compact celled table">
+    <table class="ui sixteen wide single line compact celled unstackable table">
         <thead>
         <tr>
             <th>
