@@ -106,7 +106,8 @@
                                     <a class="item" href="#">Health</a>
                                     <a class="item" href="#">Users</a>
                                     <a class="item" href="#">Submissions</a>
-                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch User</a>
+                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
+                                        User</a>
                                 {% endif %}
                                 <div class="ui divider"></div>
                                 <div class="header">You</div>
@@ -130,8 +131,10 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
     <div class="ui container grid">
-        {% block content %}
-        {% endblock %}
+        <div class="row">
+            {% block content %}
+            {% endblock %}
+        </div>
     </div>
     <div class="ui inverted vertical footer segment">
         <div class="ui container">
@@ -176,8 +179,12 @@
 
         // Competitions
         COMPETITION_ADD: "{% url "competitions:create" %}",
-        COMPETITION_DETAIL: function(pk){return "{% url "competitions:detail" pk=0 %}".replace(0, pk)},
-        COMPETITION_EDIT: function(pk){return "{% url "competitions:edit" pk=0 %}".replace(0, pk)},
+        COMPETITION_DETAIL: function (pk) {
+            return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+        },
+        COMPETITION_EDIT: function (pk) {
+            return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
+        },
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}"
