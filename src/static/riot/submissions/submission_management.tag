@@ -29,15 +29,15 @@
     </div>
     <div id="table_scroll" class="ui">
         <div id="left_rail" class="ui left attached rail">
-            <div class="ui sticky leftrail">
+            <div class="ui sticky">
                 <div class="ui vertical icon buttons">
-                    <button class="ui right icon button" data-tooltip="Re-run Selected" data-position="top left">
+                    <button class="ui right icon button" data-tooltip="Re-run Selected" data-position="right center">
                         <i class="refresh icon"></i>
                     </button>
-                    <button class="ui right icon button" data-tooltip="Stop Selected" data-position="bottom left">
+                    <button class="ui right icon button" data-tooltip="Stop Selected" data-position="right center">
                         <i class="minus circle icon"></i>
                     </button>
-                    <button class="ui right icon button" data-tooltip="Delete Selected" data-position="bottom left">
+                    <button class="ui right icon button" data-tooltip="Delete Selected" data-position="right center">
                         <i class="trash icon"></i>
                     </button>
                 </div>
@@ -233,7 +233,7 @@
 
     <script>
         $(document).ready(function () {
-            $('.ui.sticky.leftrail')
+            $('#left_rail .ui.sticky')
                 .sticky({
                     context: '.ui.compact.celled.table',
                     offset: 75
@@ -259,14 +259,14 @@
             border-top-right-radius 0 !important
             border-bottom-right-radius 0 !important
 
-        @media all and (max-width: 1200px)
+        @media all and (max-width: 1235px)
             #left_rail
                 display none
 
             #horiz_buttons
                 display block
 
-        @media all and (min-width: 1200px)
+        @media all and (min-width: 1235px)
             .ui.compact.celled.unstackable.table
                 border-top-left-radius 0 !important
 
