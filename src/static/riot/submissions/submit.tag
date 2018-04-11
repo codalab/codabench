@@ -4,7 +4,7 @@
     <div class="ui divider"></div>
 
     <div class="ui two column grid">
-        <div class="six wide column form-empty">
+        <div class="five wide column form-empty">
             <div class="ui segment">
                 <h3>Form</h3>
 
@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <div class="ten wide column">
+        <div class="eleven wide column">
             <div class="ui icon input">
                 <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
                 <i class="search icon"></i>
