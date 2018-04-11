@@ -1,5 +1,4 @@
 <submission_management>
-    <!-- HTML -->
     <h1>Submission Management</h1>
     <div class="ui divider"></div>
     <div class="stackable ui menu">
@@ -17,7 +16,7 @@
             <div class="results"></div>
         </div>
     </div>
-    <div id="horizButtons" class="ui horizontal icon buttons">
+    <div id="horiz_buttons" class="ui horizontal icon buttons">
         <button class="ui button" data-tooltip="Re-run Selected" data-position="top left">
             <i class="refresh icon"></i>
         </button>
@@ -28,9 +27,9 @@
             <i class="trash icon"></i>
         </button>
     </div>
-    <div class="ui">
-        <div id="leftRail" class="ui left rail">
-            <div class="ui sticky">
+    <div id="table_scroll" class="ui">
+        <div id="left_rail" class="ui left attached rail">
+            <div class="ui sticky leftrail">
                 <div class="ui vertical icon buttons">
                     <button class="ui right icon button" data-tooltip="Re-run Selected" data-position="top left">
                         <i class="refresh icon"></i>
@@ -230,37 +229,51 @@
             </tfoot>
         </table>
     </div>
-    <!-- Javascript -->
+
+
     <script>
         $(document).ready(function () {
-            $('.ui.sticky')
+            $('.ui.sticky.leftrail')
                 .sticky({
                     context: '.ui.compact.celled.table',
                     offset: 75
                 })
         })
     </script>
-    <!-- CSS -->
+
+
     <style type="text/stylus">
         submission_management
             width 100%
-            overflow-y auto
-            white-space wrap
 
-        .ui.left.rail
-            padding-top 144px
-            width 2%
+        #table_scroll
+            width 100%
+            overflow-y auto
+            white-space nowrap
+
+        .ui.left.attached.rail
+            padding-top 157px
+            text-align right
+
+        .ui.right.icon.button
+            border-top-right-radius 0 !important
+            border-bottom-right-radius 0 !important
 
         @media all and (max-width: 1200px)
-            #leftRail
+            #left_rail
                 display none
-            #horizButtons
+
+            #horiz_buttons
                 display block
 
         @media all and (min-width: 1200px)
-            #leftRail
+            .ui.compact.celled.unstackable.table
+                border-top-left-radius 0 !important
+
+            #left_rail
                 display block
-            #horizButtons
+
+            #horiz_buttons
                 display none
     </style>
 </submission_management>
