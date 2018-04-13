@@ -11,3 +11,7 @@ class OrganizeView(TemplateView):
 
 class SearchView(TemplateView):
     template_name = 'search/form.html'
+
+
+class ServerStatusView(TemplateView):
+    template_name = 'pages/server_status.html'
