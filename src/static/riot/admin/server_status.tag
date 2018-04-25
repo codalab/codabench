@@ -34,6 +34,26 @@
             </div>
         </div>
     </div>
+    <div class="ui grid">
+        <div class="column">
+            <table class="ui celled table">
+                <thead>
+                <tr>
+                    <th>CPU Usage</th>
+                    <th>Disk Space</th>
+                    <th>Memory Usage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>32%</td>
+                    <td>127 MB / 1250 MB</td>
+                    <td>1.4 GB / 32.0 GB</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div id="external_monitors" class="ui two column centered grid">
         <div class="column">
             <div class="ui basic center aligned orange button">RabbitMQ Message Broker</div>
@@ -123,6 +143,6 @@
             text-align center
 
         #external_monitors
-            margin-top -1em
+            margin-top -0.5em
     </style>
 </server_status>
