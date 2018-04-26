@@ -14,7 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
     <!-- Semantic -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js" integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
+            integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
     <!-- Simple markdown editor -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
@@ -106,7 +107,8 @@
                                     <a class="item" href="#">Health</a>
                                     <a class="item" href="#">Users</a>
                                     <a class="item" href="#">Submissions</a>
-                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch User</a>
+                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
+                                        User</a>
                                 {% endif %}
                                 <div class="ui divider"></div>
                                 <div class="header">You</div>
@@ -130,8 +132,10 @@
         {% block top_div_extra_content %}{% endblock %}
     </div>
     <div class="ui container grid">
-        {% block content %}
-        {% endblock %}
+        <div class="row">
+            {% block content %}
+            {% endblock %}
+        </div>
     </div>
     <div class="ui inverted vertical footer segment">
         <div class="ui container">
@@ -165,7 +169,6 @@
 
 {# Admin only user switching #}
 <user_switch></user_switch>
-
 <script>
     // Load in URLs or other django generated goodies
     URLS = {
@@ -176,8 +179,12 @@
 
         // Competitions
         COMPETITION_ADD: "{% url "competitions:create" %}",
-        COMPETITION_DETAIL: function(pk){return "{% url "competitions:detail" pk=0 %}".replace(0, pk)},
-        COMPETITION_EDIT: function(pk){return "{% url "competitions:edit" pk=0 %}".replace(0, pk)},
+        COMPETITION_DETAIL: function (pk) {
+            return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+        },
+        COMPETITION_EDIT: function (pk) {
+            return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
+        },
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}"

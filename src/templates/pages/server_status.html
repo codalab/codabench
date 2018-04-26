@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extra_head %}
+    <script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
+{% endblock %}
+{% block content %}
+    <server_status></server_status>
+{% endblock %}
