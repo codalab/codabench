@@ -55,7 +55,7 @@
         </div>
     </div>
     <div id="external_monitors" class="ui two column centered grid">
-        <div class="column">
+        <div class="ui cards">
             <div class="ui card">
                 <a class="image" href="#">
                     <img class="ui large image" src="/static/img/RabbitMQ.png">
@@ -64,14 +64,13 @@
                     <a class="header" href="#">RabbitMQ</a>
                     <div class="meta">
                         <a href="#">
-                            This page allows admins to view connections, queued messages, message rates, channels, exchanges, and other
-                            administrative features relating to RabbitMQ e.g. Creating users, adding v-hosts, and creating policies.
+                            This page allows admins to view connections, queued messages, message rates, channels,
+                            exchanges, and other administrative features relating to RabbitMQ e.g. Creating users,
+                            adding v-hosts, and creating policies.
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column">
             <div class="ui card">
                 <a class="image" href="#">
                     <img class="ui large image" src="/static/img/Flower.png">
@@ -80,10 +79,11 @@
                     <a class="header" href="#">Flower</a>
                     <div class="meta">
                         <a href="#">
-                            Flower is a powerful web-based Celery monitoring tool designed to keep track of our tasks. Admins may view
-                            the state of which tasks were run, with what arguments, and many more features. Here you may also view which
-                            queues your celery workers are consuming, and the state of any tasks in them. At last, there is also a great
-                            monitoring page for viewing the systemic impact of your workers.
+                            Flower is a powerful web-based Celery monitoring tool designed to keep track of our tasks.
+                            Admins may view the state of which tasks were run, with what arguments, and many more
+                            features. Here you may also view which queues your celery workers are consuming, and the
+                            state of any tasks in them. At last, there is also a great monitoring page for viewing the
+                            systemic impact of your workers.
                         </a>
                     </div>
                 </div>
@@ -165,13 +165,14 @@
         #external_monitors.column .button
             margin-bottom 10px
 
-        #external_monitors .column
-            text-align center
-
         #external_monitors
             margin-top -0.5em
 
+        div.ui.cards
+            flex-wrap nowrap
+            text-align justify
+
         div.ui.card
-            width 100%
+            width inherit !important
     </style>
 </server_status>
