@@ -13,12 +13,9 @@ class ChahubOAuth2(BaseOAuth2):
     AUTHORIZATION_URL = '{}/oauth/authorize/'.format(BASE_URL)
     ACCESS_TOKEN_URL = '{}/oauth/token/'.format(BASE_URL)
     ACCESS_TOKEN_METHOD = 'POST'
-    # STATE_PARAMETER = 'False'
-    # REDIRECT_STATE = 'False'
     ID_KEY = 'id'
 
     def get_user_id(self, details, response):
-        print("id in details is {}".format(details.get('id')))
         return details.get('id')
 
     def get_user_details(self, response):
@@ -26,7 +23,7 @@ class ChahubOAuth2(BaseOAuth2):
         my_profile_url = "{}my_profile/".format(self.API_URL)
         data = self.get_json(my_profile_url, headers={'Authorization': 'Bearer {}'.format(access_token)})
 
-        print("usa details", data)
+        print("user details", data)
         return {
             'username': data.get('username'),
             'email': data.get('email'),
