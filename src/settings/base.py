@@ -96,8 +96,6 @@ SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 
 LOGIN_REDIRECT_URL = '/'
 
-# AUTH_USER_MODEL = 'profiles.User'
-
 # =============================================================================
 # Authentication
 # =============================================================================
@@ -125,8 +123,6 @@ SOCIAL_AUTH_CHAHUB_BASE_URL = os.environ.get('SOCIAL_AUTH_CHAHUB_BASE_URL', 'htt
 # User Models
 AUTH_USER_MODEL = 'profiles.User'
 SOCIAL_AUTH_USER_MODEL = 'profiles.User'
-
-# SOCIAL_AUTH_ALWAYS_ASSOCIATE = True
 
 
 # =============================================================================
