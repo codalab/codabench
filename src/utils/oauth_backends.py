@@ -1,7 +1,5 @@
 from django.conf import settings
 from social_core.backends.oauth import BaseOAuth2
-from social_core.exceptions import AuthMissingParameter, AuthStateMissing, AuthStateForbidden
-from social_core.utils import handle_http_errors, constant_time_compare
 
 BASE_URL = settings.SOCIAL_AUTH_CHAHUB_BASE_URL
 
