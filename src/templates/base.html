@@ -189,7 +189,10 @@
         },
 
         // Datasets
-        DATASET_MANAGEMENT: "{% url "datasets:management" %}"
+        DATASET_MANAGEMENT: "{% url "datasets:management" %}",
+        DATASET_DOWNLOAD: function(key) {
+            return "{% url "datasets:download" key=0 %}".replace(0, key)
+        }
     }
 
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
