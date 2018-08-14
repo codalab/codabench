@@ -18,4 +18,4 @@ def download(request, key):
     try:
         return FileResponse(open(data.data_file.path, 'rb'), as_attachment=True)
     except FileNotFoundError:
-        return Http404()
+        raise Http404()
