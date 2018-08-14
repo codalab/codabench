@@ -173,7 +173,8 @@
         DATASET_MANAGEMENT: "{% url "datasets:management" %}"
     }
 
-    CSRF_TOKEN = "{% csrf_token %}"
+    // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
+    CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
 
 
