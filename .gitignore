@@ -8,9 +8,12 @@ node_modules/
 staticfiles/
 uploads/
 venv/
+var/
 
 src/static/output.css
 src/static/output.js
 src/static/riot.js
 src/static/riot.tag
 src/static/generated/*
+
+db.sqlite3
