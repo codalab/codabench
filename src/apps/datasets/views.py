@@ -13,5 +13,6 @@ class DataManagement(LoginRequiredMixin, TemplateView):
 
 
 def download(request, key):
+    # TODO: This should redirect to the proper storage with a SAS
     data = get_object_or_404(Data, key=key)
     return FileResponse(open(data.data_file.path, 'rb'), as_attachment=True)
