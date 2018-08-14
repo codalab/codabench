@@ -153,6 +153,24 @@
 
 {# Admin only user switching #}
 <user_switch></user_switch>
+
+<!-- Vendor -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
+        integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="{% static "js/calendar.min.js" %}"></script>
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+
+<!-- Ours -->
+<script src="{% static "generated/riot.js" %}"></script>
+<script src="{% static "js/ours/utils.js" %}"></script>
+<script src="{% static "js/ours/client.js" %}"></script>
+<script src="{% static "js/ours/init.js" %}"></script>
+<script src="{% static "js/jquery.form.serializer.js" %}"></script>
+
 <script>
     // Load in URLs or other django generated goodies
     URLS = {
@@ -177,24 +195,6 @@
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
-
-
-<!-- Vendor -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
-        integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="{% static "js/calendar.min.js" %}"></script>
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-
-<!-- Ours -->
-<script src="{% static "generated/riot.js" %}"></script>
-<script src="{% static "js/ours/utils.js" %}"></script>
-<script src="{% static "js/ours/client.js" %}"></script>
-<script src="{% static "js/ours/init.js" %}"></script>
-<script src="{% static "js/jquery.form.serializer.js" %}"></script>
 
 {% block extra_body %}
 {% endblock %}
