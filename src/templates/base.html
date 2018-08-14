@@ -50,10 +50,10 @@
         <a class="item">Chagrade</a>
         <div class="right menu">
             {% if user.is_authenticated %}
-                <div class="item"><a class="ui inverted button" href="{% url "logout" %}">Logout</a></div>
+                <div class="item"><a class="ui button" href="{% url "logout" %}">Logout</a></div>
             {% else %}
-                <div class="item"><a class="ui inverted button" href="{% url "login" %}">Login</a></div>
-                <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
+                <div class="item"><a class="ui button" href="{% url "login" %}">Login</a></div>
+                <a href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
             {% endif %}
         </div>
     </div>
@@ -123,8 +123,8 @@
                             </div>
                         </div>
                     {% else %}
-                        <a href="/accounts/login" class="ui inverted button">Login</a>
-                        <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
+                        <a href="/accounts/login" class="ui button">Login</a>
+                        <a href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
                     {% endif %}
                 </div>
             </div>
