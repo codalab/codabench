@@ -71,7 +71,7 @@
                 <a class="item">Chagrade</a>
                 <div class="right item">
                     {% if user.is_authenticated %}
-                        <div class="ui inline dropdown">
+                        <div id="user_dropdown" class="ui inline dropdown">
                             <div class="text">
                                 <i class="icon user outline"></i>
                                 {{ request.user.username }}

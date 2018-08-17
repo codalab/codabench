@@ -142,10 +142,12 @@
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
 
+        console.log('WHAT')
+
         self.one("mount", function () {
             // Make semantic elements work
-            $(".ui.dropdown").dropdown()
-            $(".ui.checkbox").checkbox()
+            $(".ui.dropdown", self.root).dropdown()
+            $(".ui.checkbox", self.root).checkbox()
 
             // init
             self.update_datasets()
