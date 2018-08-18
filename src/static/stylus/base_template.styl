@@ -5,31 +5,30 @@
  */
 #bg
     z-index -1
-
     position absolute
     top 0
     bottom 0
     left 0
     right 0
+    background rgba(19, 48, 70, 0.9)
 
 .ui.secondary.inverted.pointing.menu
     border transparent
 
 .jumbotron
-    min-height 700px
+    min-height 450px
     padding 1em 0
 
     canvas
-        background rgba(19, 48, 70, 0.9)
 
-.ui.button
-    margin-top 10px!important
+
+#style_button
     color #e2e2e2!important
     background-color rgba(255, 255, 255, .15)!important
     font-weight 100!important
     box-shadow none!important
 
-.ui.button:hover
+#style_button:hover
     color #3f3f3f!important
     background-color rgba(255, 255, 255, .65)!important
     box-shadow none!important
@@ -39,6 +38,7 @@
 .right.item
     position absolute!important
     right 0!important
+    margin-top 0
 
 
 .masthead
@@ -102,9 +102,16 @@
     right 0 !important
     left auto !important
 
+#topleft_menu.toc.item
+    left 0
+    top 0
+    margin-top 0!important
+
 /* --------------------------------------------------------------------------------------
  top menu/dropdowns
  */
+.ui.thin.sidebar
+    z-index 3
 #header
     background transparent
     margin-bottom 20px
@@ -136,6 +143,33 @@
 @media only screen and (max-width 700px)
     .ui.fixed.menu
         display none !important
+
+@media only screen and (max-width 615px)
+    .tl.item
+        display none!important
+
+#hamburger_button
+        position absolute
+        top 16px
+        left 1em
+        z-index 100
+
+        .button
+            color #e2e2e2 !important
+            background-color rgba(255, 255, 255, .15) !important
+
+
+        .button:hover
+            color #3f3f3f !important
+            background-color rgba(255, 255, 255, .65) !important
+
+        .icon
+            display inherit
+            cursor pointer
+            margin 0
+
+        @media screen and (min-width 615px)
+            display none
 
     .secondary.pointing.menu .item,
     .secondary.pointing.menu .menu
