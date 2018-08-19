@@ -21,6 +21,15 @@ services:
       - db
       - celery
   #-----------------------------------------------
+  #   Local development helper, rebuilds RiotJS/Stylus on change
+  #-----------------------------------------------
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.builder
+    volumes:
+      - .:/app
+  #-----------------------------------------------
   #   Database Service
   #-----------------------------------------------
   db:

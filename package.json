@@ -1,5 +1,6 @@
 {
   "name": "competitions-v2",
+  "version": "0.0.1",
   "dependencies": {
     "jquery": "^3.2.1",
     "npm-watch": "^0.2.0",
