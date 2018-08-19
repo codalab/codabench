@@ -137,12 +137,9 @@
         self.datasets = []
 
 
-
         // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
-
-        console.log('WHAT')
 
         self.one("mount", function () {
             // Make semantic elements work
@@ -156,7 +153,7 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.show_progress_bar = function() {
+        self.show_progress_bar = function () {
             // The transition delays are for timing the animations, so they're one after the other
             self.refs.form.style.transitionDelay = '0s'
             self.refs.form.style.maxHeight = 0
@@ -166,14 +163,14 @@
             self.refs.progress.style.height = '24px'
         }
 
-        self.hide_progress_bar = function() {
+        self.hide_progress_bar = function () {
             // The transition delays are for timing the animations, so they're one after the other
             self.refs.progress.style.transitionDelay = '0s'
             self.refs.progress.style.height = 0
 
             self.refs.form.style.transitionDelay = '.1s'
             self.refs.form.style.maxHeight = '1000px'
-            setTimeout(function() {
+            setTimeout(function () {
                 // Do this after transition has been totally completed
                 self.refs.form.style.overflow = 'visible'
             }, 1000)
@@ -236,7 +233,7 @@
         }
 
         self.file_upload_progress_handler = function (upload_progress) {
-            if(self.upload_progress === undefined) {
+            if (self.upload_progress === undefined) {
                 // First iteration of this upload, nice transitions
                 self.show_progress_bar()
             }
@@ -275,12 +272,12 @@
 
             var required_fields = ['name', 'type', 'data_file']
             required_fields.forEach(field => {
-                if(validate_data[field] === '') {
+                if (validate_data[field] === '') {
                     self.errors[field] = "This field is required"
                 }
             })
 
-            if(Object.keys(self.errors).length > 0) {
+            if (Object.keys(self.errors).length > 0) {
                 // display errors and drop out
                 self.update()
                 return
@@ -307,13 +304,13 @@
                             })
 
                             self.update({errors: errors})
-                        } catch(e) {
+                        } catch (e) {
 
                         }
                     }
                     toastr.error("Creation failed, error occurred")
                 })
-                .always(function() {
+                .always(function () {
                     self.hide_progress_bar()
                 })
 
@@ -329,6 +326,7 @@
 
         }
 
+        /*
         .progress {
             -webkit-transition: all .1s ease-in-out;
             -moz-transition: all .1s ease-in-out;
@@ -342,7 +340,7 @@
         }
 
         form {
-            max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions */
+            max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions *//*
 
             -webkit-transition: all 1s ease-in-out;
             -moz-transition: all 1s ease-in-out;
@@ -352,7 +350,7 @@
 
         .progress .bar {
             height: 24px;
-        }
+        }*/
 
     </style>
 </data-management>

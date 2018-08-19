@@ -17,13 +17,6 @@ input[type="file"]
 
 
 
-// Fix progress bar borders
-.ui.left
-    .ui.progress,
-    .ui.progress .bar
-        height 24px
-
-
 // Make search icons less apparent
 .ui[class*="left icon"].input>i.icon.search
     opacity .2
@@ -58,3 +51,22 @@ input[type="file"]
 //.ui.action.file.input > label:last-child {
 //    border-radius: 0 .28571429rem .28571429rem 0 !important;
 //}
+
+/******************************************************************************
+ Form animations / progress bar
+ */
+
+.progress
+    transition all .1s ease-in-out
+    margin 0
+    height 0
+    -ms-flex 1 0 auto
+    flex 1 0 auto
+    overflow hidden
+
+form
+    max-height 1000px  // a max height we'll never hit, useful for CSS transitions
+    transition all 1s ease-in-out
+
+.progress .bar
+    height 24px

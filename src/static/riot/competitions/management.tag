@@ -11,11 +11,11 @@
 
     <div class="ui right aligned grid">
         <div class="sixteen wide column">
-            <a class="ui green button" href="{ URLS.COMPETITION_ADD }">
+            <a class="ui green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>
             <a class="ui green button" href="{ URLS.COMPETITION_ADD }">
-                <i class="add square icon"></i> Create new
+                <i class="add square icon"></i> Create
             </a>
         </div>
     </div>
