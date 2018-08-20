@@ -14,8 +14,10 @@
         <h2>Accelerating reproducible computational research.</h2>
         {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
 
-        <a id="style_button" href="{% url "pages:search" %}" class="ui huge primary button"><i class="left arrow icon"></i> Compete</a>
-        <a id="style_button" href="{% url "pages:organize" %}" class="ui huge primary button">Organize <i class="right arrow icon"></i></a>
+        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge primary button"><i
+                class="left arrow icon"></i> Compete</a>
+        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge primary button">Organize <i
+                class="right arrow icon"></i></a>
     </div>
 
     {#        <div class="ui middle aligned stackable grid container">#}
@@ -31,7 +33,22 @@
     {#                </div>#}
     {#            </div>#}
     {#        </div>#}
+    <script>
+    // Prevent buttons from stacking in mobile view
+    $(document).ready(function () {
+        $(window).resize(function resize() {
+            if ($(window).width() < 390) {
+                return $('.pages')
+                    .removeClass('huge')
+                    .addClass('large');
+            }
 
+            $('.pages')
+                .removeClass('large')
+                .addClass('huge');
+        }).trigger('resize');
+    });
+    </script>
 {% endblock %}
 
 {% block content %}

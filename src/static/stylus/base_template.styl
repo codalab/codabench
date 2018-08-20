@@ -19,9 +19,6 @@
     min-height 450px
     padding 1em 0
 
-    canvas
-
-
 #style_button
     color #e2e2e2!important
     background-color rgba(255, 255, 255, .15)!important
@@ -35,11 +32,26 @@
     .icon
         opacity 1 !important
 
-.right.item
+.ui.dropdown
     position absolute!important
-    right 0!important
-    margin-top 0
+    right 1em!important
+    top 16px!important
+    color rgba(255,255,255,.7)!important
+    text-align right!important
+    a
+        width 100%
+        border-radius 0!important
 
+.fixed.menu
+    background-color rgba(19, 48, 70, 0.95)!important
+    a
+        color rgba(255,255,255,.7)!important
+    .item:before
+        width 0
+
+    .dropdown.item
+        top 0!important
+        right 0!important
 
 .masthead
     position relative
@@ -65,9 +77,6 @@
     h2
         font-size 1.7em
         font-weight normal
-
-.ui.vertical.stripe
-    padding 8em 0
 
     h3
         font-size 2em
@@ -107,11 +116,13 @@
     top 0
     margin-top 0!important
 
+#topleft_menu
 /* --------------------------------------------------------------------------------------
  top menu/dropdowns
  */
 .ui.thin.sidebar
     z-index 3
+
 #header
     background transparent
     margin-bottom 20px
@@ -140,9 +151,9 @@
 /* --------------------------------------------------------------------------------------
  mobile
  */
-@media only screen and (max-width 700px)
+@media only screen and (max-width 563px)
     .ui.fixed.menu
-        display none !important
+        display none!important
 
 @media only screen and (max-width 615px)
     .tl.item
