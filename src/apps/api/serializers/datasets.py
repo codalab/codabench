@@ -24,7 +24,7 @@ class DataSerializer(serializers.ModelSerializer):
         }
 
     def validate_name(self, name):
-        if Data.objects.filter(name=name, created_by=self.context['created_by']).exists():
+        if name and Data.objects.filter(name=name, created_by=self.context['created_by']).exists():
             raise ValidationError("You already have a dataset by this name, please delete that dataset or rename this one")
         return name
 

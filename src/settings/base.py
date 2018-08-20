@@ -172,11 +172,26 @@ else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
 
+
+# =========================================================================
+# RabbitMQ
+# =========================================================================
+RABBITMQ_DEFAULT_USER = os.environ.get('RABBITMQ_DEFAULT_USER', 'guest')
+RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+
+
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
-# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
+
+if not BROKER_URL:
+    # BROKER_URL might be set but empty, make sure it's set!
+    BROKER_URL = 'pyamqp://{}:{}@{}:{}//'.format(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS, RABBITMQ_HOST,
+                                                 RABBITMQ_PORT)
 
 
 # =============================================================================

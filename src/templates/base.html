@@ -115,7 +115,7 @@
         </div>
         {% block top_div_extra_content %}{% endblock %}
     </div>
-    <div class="ui container grid">
+    <div id="main_container" class="ui container grid">
         <div class="row">
             {% block content %}
             {% endblock %}
@@ -166,9 +166,10 @@
 
 <!-- Ours -->
 <script src="{% static "generated/riot.js" %}"></script>
-<script src="{% static "js/ours/utils.js" %}"></script>
 <script src="{% static "js/ours/client.js" %}"></script>
 <script src="{% static "js/ours/init.js" %}"></script>
+<script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+<script src="{% static "js/ours/utils.js" %}"></script>
 <script src="{% static "js/jquery.form.serializer.js" %}"></script>
 
 <script>

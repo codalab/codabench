@@ -7,19 +7,17 @@ from competitions import tasks
 
 
 class Competition(models.Model):
-    # TODO: Check null and blank attributes
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
     created_when = models.DateTimeField(auto_now_add=True)
-    collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", null=True, blank=True)
+    collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
 
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)
 
 
 class Phase(models.Model):
-    # TODO: Check null and blank attributes
     competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE, null=True, blank=True)
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
@@ -37,7 +35,6 @@ class Phase(models.Model):
 
 
 class Submission(models.Model):
-    # TODO: Check null and blank attributes
     FINISHED = "FINISHED"
     FAILED = "FAILED"
     NONE = "NONE"

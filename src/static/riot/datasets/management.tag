@@ -129,13 +129,13 @@
 
     <script>
         var self = this
+        self.mixin(ProgressBarMixin)
 
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
         self.errors = []
         self.datasets = []
-
 
         // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
@@ -153,29 +153,6 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.show_progress_bar = function () {
-            // The transition delays are for timing the animations, so they're one after the other
-            self.refs.form.style.transitionDelay = '0s'
-            self.refs.form.style.maxHeight = 0
-            self.refs.form.style.overflow = 'hidden'
-
-            self.refs.progress.style.transitionDelay = '1s'
-            self.refs.progress.style.height = '24px'
-        }
-
-        self.hide_progress_bar = function () {
-            // The transition delays are for timing the animations, so they're one after the other
-            self.refs.progress.style.transitionDelay = '0s'
-            self.refs.progress.style.height = 0
-
-            self.refs.form.style.transitionDelay = '.1s'
-            self.refs.form.style.maxHeight = '1000px'
-            setTimeout(function () {
-                // Do this after transition has been totally completed
-                self.refs.form.style.overflow = 'visible'
-            }, 1000)
-        }
-
         self.filter = function () {
             // Delay makes this batch filters and only send one out after 100ms of not
             // receiving a call to filter
@@ -230,17 +207,6 @@
                         toastr.error("Could not delete dataset!")
                     })
             }
-        }
-
-        self.file_upload_progress_handler = function (upload_progress) {
-            if (self.upload_progress === undefined) {
-                // First iteration of this upload, nice transitions
-                self.show_progress_bar()
-            }
-
-            self.upload_progress = upload_progress * 100;
-            $(self.refs.progress).progress({percent: self.upload_progress})
-            self.update();
         }
 
         self.clear_form = function () {

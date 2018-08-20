@@ -19,7 +19,7 @@ var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
                     if (event.lengthComputable) {
                         var percent_complete = event.loaded / event.total;
                         if (progress_update_callback) {
-                            progress_update_callback(percent_complete);
+                            progress_update_callback(percent_complete * 100);
                         }
                     }
                 }, false);

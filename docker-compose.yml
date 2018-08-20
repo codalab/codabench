@@ -47,7 +47,7 @@ services:
   #   Rabbitmq Service
   #-----------------------------------------------
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.6.6-management
     container_name: rabbit
     env_file: .env
     ports:
@@ -75,14 +75,14 @@ services:
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-  flower:
-    container_name: flower
-    env_file: .env
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
-    ports:
-      - 15555:5555
-    depends_on:
-      - celery
-      - rabbitmq
+#  flower:
+#    container_name: flower
+#    env_file: .env
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.flower
+#    ports:
+#      - 15555:5555
+#    depends_on:
+#      - celery
+#      - rabbitmq
