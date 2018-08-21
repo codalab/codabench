@@ -17,7 +17,6 @@ $(document).ready(function () {
             }
         })
 
-
     // create sidebar and attach to menu open
     $('.ui.sidebar').sidebar('attach events', '.toc.item')
 
@@ -25,6 +24,13 @@ $(document).ready(function () {
     $("#user_dropdown").dropdown({
         action: 'hide'
     })
+
+    // Sidebar helpers
+    $('.ui.thin.sidebar')
+        .sidebar({
+            transition: 'overlay'
+        })
+        .sidebar('attach events', '#hamburger_button');
 
     /*-----------------------------------------------------------------------------
      Riotjs

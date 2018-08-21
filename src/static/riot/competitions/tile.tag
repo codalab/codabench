@@ -2,7 +2,7 @@
     <div class="ui vertical stripe segment">
         <div class="ui middle aligned stackable grid container centered">
             <div class="row">
-                <div class="twelve wide column">
+                <div class="fourteen wide column">
                     <div class="ui divided items" if="{opts.competitions}">
                         <competition-tile each="{competition in competitions}"></competition-tile>
                     </div>
