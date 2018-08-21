@@ -279,7 +279,6 @@
                 .always(function () {
                     self.hide_progress_bar()
                 })
-
         }
     </script>
 

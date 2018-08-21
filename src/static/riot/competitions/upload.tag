@@ -65,7 +65,7 @@
                 <h1 class="ui header">
                     Competition upload
                     <div class="sub header">
-                        For more information on creating bundles, please visit the <a href="">Wiki</a>!
+                        For more information on creating bundles, please visit the <a href="https://github.com/codalab/competitions-v2/wiki">Wiki</a>!
                     </div>
                 </h1>
 

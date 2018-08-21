@@ -17,8 +17,27 @@ class Competition(models.Model):
         return "competition-{0}-{1}".format(self.title, self.pk)
 
 
+class CompetitionCreationTaskStatus(models.Model):
+    STARTING = "Starting"
+    FINISHED = "Finished"
+    FAILED = "Failed"
+
+    STATUS_CHOICES = (
+        (STARTING, "None"),
+        (FINISHED, "Finished"),
+        (FAILED, "Failed"),
+    )
+
+    dataset = models.ForeignKey('datasets.Data', on_delete=models.CASCADE, related_name="competition_bundles")
+    status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
+    details = models.TextField(null=True, blank=True)
+
+    # The resulting competition is only made on success
+    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True)
+
+
 class Phase(models.Model):
-    competition = models.ForeignKey(Competition, related_name='phases', on_delete=models.CASCADE, null=True, blank=True)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
     end = models.DateTimeField(null=True, blank=True)
@@ -35,13 +54,13 @@ class Phase(models.Model):
 
 
 class Submission(models.Model):
-    FINISHED = "FINISHED"
-    FAILED = "FAILED"
-    NONE = "NONE"
-    SUBMITTED = "SUBMITTED"
-    SUBMITTING = "SUBMITTING"
+    FINISHED = "Finished"
+    FAILED = "Failed"
+    NONE = "None"
+    SUBMITTED = "Submitted"
+    SUBMITTING = "Submitting"
 
-    MONTH_CHOICES = (
+    STATUS_CHOICES = (
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
         (NONE, "None"),
@@ -52,7 +71,7 @@ class Submission(models.Model):
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name='submission', on_delete=models.DO_NOTHING)
-    status = models.CharField(max_length=128, default=NONE, null=False, blank=False)
+    status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
 

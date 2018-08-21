@@ -19,7 +19,7 @@ services:
       - 80:80
     depends_on:
       - db
-      - celery
+      - rabbitmq
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #-----------------------------------------------
@@ -54,12 +54,12 @@ services:
       - 15672:15672
       - 5672:5672
     volumes:
+      # To save rabbitmq state between container ups/downs
       - ./var/rabbitmq:/var/lib/rabbitmq/
   #-----------------------------------------------
   #   Celery Service
   #-----------------------------------------------
-  celery:
-    container_name: celery
+  site_worker:
     command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
     env_file: .env
     build:
@@ -75,14 +75,14 @@ services:
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-#  flower:
-#    container_name: flower
-#    env_file: .env
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.flower
-#    ports:
-#      - 15555:5555
-#    depends_on:
-#      - celery
-#      - rabbitmq
+  # flower:
+  #   container_name: flower
+  #   env_file: .env
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.flower
+  #   ports:
+  #     - 15555:5555
+  #   depends_on:
+  #     - celery
+  #     - rabbitmq

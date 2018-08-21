@@ -1,6 +1,7 @@
 from comp_worker import app
 
 from competitions import models
+from datasets.models import Data
 
 
 @app.task
@@ -18,3 +19,14 @@ def score_submission(submission_pk, phase_pk):
     file_to_score = sub_to_score.zip_file
     print(scoring_program)
     print(file_to_score)
+
+
+@app.task
+def unpack_competition(competition_dataset_pk):
+    competition_dataset = Data.objects.get(pk=competition_dataset_pk)
+
+    status = models.CompetitionCreationTaskStatus.objects.create(
+        dataset=competition_dataset,
+        status=models.CompetitionCreationTaskStatus.STARTING,
+    )
+    # competition_creation_task = CompetitionCreationTaskStatus.objects.get(pk=competition_creation_task_pk)

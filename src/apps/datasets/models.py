@@ -9,14 +9,22 @@ from utils.data import PathWrapper
 
 class Data(models.Model):
     """Data models are unqiue based on name + created_by. If no name is given, then there is no uniqueness to enforce"""
+    INGESTION_PROGRAM = 'Ingestion Program'
+    INPUT_DATA = 'Input Data'
+    PUBLIC_DATA = 'Public Data'
+    REFERENCE_DATA = 'Reference Data'
+    SCORING_PROGRAM = 'Scoring Program'
+    STARTING_KIT = 'Starting Kit'
+    COMPETITION_BUNDLE = 'Competition Bundle'
+
     TYPES = (
-        ('Ingestion Program', 'Ingestion Program',),
-        ('Input Data', 'Input Data',),
-        ('Public Data', 'Public Data',),
-        ('Reference Data', 'Reference Data',),
-        ('Scoring Program', 'Scoring Program',),
-        ('Starting Kit', 'Starting Kit',),
-        ('Competition Bundle', 'Competition Bundle',),
+        (INGESTION_PROGRAM, 'Ingestion Program',),
+        (INPUT_DATA, 'Input Data',),
+        (PUBLIC_DATA, 'Public Data',),
+        (REFERENCE_DATA, 'Reference Data',),
+        (SCORING_PROGRAM, 'Scoring Program',),
+        (STARTING_KIT, 'Starting Kit',),
+        (COMPETITION_BUNDLE, 'Competition Bundle',),
     )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)
