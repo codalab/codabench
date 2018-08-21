@@ -29,4 +29,13 @@ def unpack_competition(competition_dataset_pk):
         dataset=competition_dataset,
         status=models.CompetitionCreationTaskStatus.STARTING,
     )
-    # competition_creation_task = CompetitionCreationTaskStatus.objects.get(pk=competition_creation_task_pk)
+
+    # unpack zip to temp directory
+    # read the competition.yaml file
+    # validate YAML
+    #    - uhhhhhhhhhhhhhhhhhhhh
+    # for each dataset in each phase, upload them. -- DO NOT DO DUPLICATES! Be smaht about it
+    # create JSON pointing to the datasets properly
+    # send it to the serializer + save it
+    # return errors to user if any
+    # IF ERRORS DESTROY BABY DATASETS!

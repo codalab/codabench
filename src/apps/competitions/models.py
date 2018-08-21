@@ -35,6 +35,9 @@ class CompetitionCreationTaskStatus(models.Model):
     # The resulting competition is only made on success
     resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True)
 
+    def __str__(self):
+        return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
+
 
 class Phase(models.Model):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
