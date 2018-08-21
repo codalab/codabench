@@ -90,7 +90,7 @@
                 </thead>
                 <tbody>
                 <tr class="dataset-row" each="{ dataset, index in filtered_datasets }">
-                    <td>{ dataset.name }</td>
+                    <td><a href="{ URLS.DATASET_DOWNLOAD(dataset.key) }">{ dataset.name }</a></td>
                     <td>{ dataset.type }</td>
                     <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
                     <td class="center aligned">
@@ -142,10 +142,12 @@
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
 
+        console.log('WHAT')
+
         self.one("mount", function () {
             // Make semantic elements work
-            $(".ui.dropdown").dropdown()
-            $(".ui.checkbox").checkbox()
+            $(".ui.dropdown", self.root).dropdown()
+            $(".ui.checkbox", self.root).checkbox()
 
             // init
             self.update_datasets()

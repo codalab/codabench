@@ -148,18 +148,18 @@ DEBUG = os.environ.get('DEBUG', True)
 # =============================================================================
 # Database
 # =============================================================================
+DATABASES = {'default': {}}
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME', 'postgres'),
-        'USER': os.environ.get('DB_USERNAME', 'postgres'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': 5432
-    }
-}
 db_from_env = dj_database_url.config()
-DATABASES['default'].update(db_from_env)
+if db_from_env:
+    DATABASES['default'].update(db_from_env)
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+            'NAME': os.environ.get('DB_NAME', 'db.sqlite3'),
+        }
+    }
 
 
 # =============================================================================
