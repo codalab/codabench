@@ -1,0 +1,212 @@
+/* --------------------------------------------------------------------------------------
+    ********************************** Color Reference **********************************
+
+    Jumbotron Background Color [Dark Blue]: rgba(19, 48, 70, 0.9)
+
+    Button Text Color [Light Grey]: #e2e2e2
+    Button Background Color [White, Low Opacity]: rgba(255, 255, 255, .15)
+
+    Button Text Color w/ Hover [Lighter Grey]: #3f3f3f
+    Button Background Color w/ Hover [White, Medium Opacity]: rgba(255, 255, 255, .65)
+
+    Competition Tile Color [Lighter Blue]: #4a6778
+    Competition Tile Color [Darker Red]: #c7402d
+*/
+/* --------------------------------------------------------------------------------------
+ misc styles for base template
+
+ header/background
+ */
+#bg {
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(19,48,70,0.9);
+}
+#jumbo_logo {
+  margin-top: 4em;
+  width: 85%;
+}
+.right.item {
+  position: absolute !important;
+}
+.left.item {
+  position: absolute !important;
+  left: 0;
+  top: 0;
+}
+.ui.secondary.inverted.pointing.menu {
+  border: transparent;
+}
+.jumbotron {
+  padding: 0 0 2em 0 !important;
+}
+#style_button {
+  color: #e2e2e2;
+  background-color: rgba(255,255,255,0.15);
+  font-weight: 100;
+}
+#style_button:hover {
+  color: #3f3f3f;
+  background-color: rgba(255,255,255,0.65);
+}
+#style_button:hover .icon {
+  opacity: 1;
+}
+.ui.dropdown {
+  position: absolute !important;
+  right: 19px !important;
+  top: 14px;
+  color: rgba(255,255,255,0.7) !important;
+}
+.ui.dropdown a {
+  width: 100%;
+  border-radius: 0 !important;
+}
+.masthead {
+  position: relative;
+}
+.masthead .logo.item img {
+  margin-right: 1em;
+}
+.masthead .ui.menu .ui.button {
+  margin-left: 0.5em;
+}
+.masthead .ui.menu {
+  margin: 0;
+}
+.masthead .menu .toc.item {
+  display: none;
+}
+.masthead h1.ui.header {
+  margin-top: 3em;
+  margin-bottom: 0;
+  font-size: 4em;
+  font-weight: normal;
+}
+.masthead h2 {
+  font-size: 1.7em;
+  font-weight: normal;
+}
+.masthead h3 {
+  font-size: 2em;
+}
+.masthead .button + h3,
+.masthead p + h3 {
+  margin-top: 3em;
+}
+.masthead .floated.image {
+  clear: both;
+}
+.masthead p {
+  font-size: 1.33em;
+}
+.masthead .horizontal.divider {
+  margin: 3em 0;
+}
+.quote.stripe.segment {
+  padding: 0;
+}
+.quote.stripe.segment .grid .column {
+  padding-top: 5em;
+  padding-bottom: 5em;
+}
+#page_content {
+  min-height: 35vh;
+}
+#header {
+  background: transparent;
+  margin-bottom: 20px;
+}
+#header .ui.menu .ui.dropdown .menu>.item {
+  color: rgba(0,0,0,0.6) !important;
+}
+#header .icon.user.outline {
+  margin-right: 0;
+}
+#toast-container {
+  opacity: 0.8;
+  margin-top: 4em;
+}
+.ui.text.container#style_button {
+  bottom: 0 !important;
+}
+/* --------------------------------------------------------------------------------------
+ top menu/dropdowns
+ */
+.ui.thin.sidebar {
+  z-index: 3;
+}
+/* --------------------------------------------------------------------------------------
+ footer
+ */
+.footer.segment {
+  padding: 2em 0;
+}
+/* --------------------------------------------------------------------------------------
+ mobile
+ */
+@media only screen and (max-width: 625px) {
+  .tl.item {
+    display: none !important;
+  }
+}
+#hamburger_button {
+  position: absolute;
+  top: 14px;
+  left: 19px;
+  z-index: 100;
+}
+#hamburger_button .button {
+  color: #e2e2e2 !important;
+  background-color: rgba(255,255,255,0.15) !important;
+}
+#hamburger_button .button:hover {
+  color: #3f3f3f !important;
+  background-color: rgba(255,255,255,0.65) !important;
+}
+#hamburger_button .icon {
+  display: inherit;
+  cursor: pointer;
+  margin: 0;
+}
+@media screen and (min-width: 626px) {
+  #hamburger_button {
+    display: none;
+  }
+}
+.secondary.pointing.menu .item,
+.secondary.pointing.menu .menu {
+  display: none;
+}
+.secondary.pointing.menu .toc.item {
+  display: block;
+}
+.masthead h1.ui.header {
+  font-size: 2em;
+  margin-top: 1.5em;
+}
+.masthead h2 {
+  margin-top: 0.5em;
+  font-size: 1.5em;
+}
+/* --------------------------------------------------------------------------------------
+ Force the footer to stretch all the way to the bottom of viewport
+ */
+.pusher {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+.pusher > .footer {
+  flex: 1;
+}
+/* --------------------------------------------------------------------------------------
+ Fix padding on menus
+ */
+.ui.menu .ui.dropdown .menu>.item {
+  margin-top: -0.6em !important;
+}
