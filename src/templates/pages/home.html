@@ -15,9 +15,9 @@
         {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
 
         <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i
-                class="left arrow icon"></i> Compete</a>
+            class="left arrow icon"></i> Compete</a>
         <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i
-                class="right arrow icon"></i></a>
+            class="right arrow icon"></i></a>
     </div>
 
     {#            <div class="ui middle aligned stackable grid container">#}
@@ -33,6 +33,13 @@
     {#                    </div>#}
     {#                </div>#}
     {#            </div>#}
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}
+
+{% block extra_body %}
     <script>
         // Prevent buttons from stacking in mobile view
         $(window).resize(function () {
@@ -46,8 +53,4 @@
                 .addClass('huge');
         }).trigger('resize');
     </script>
-{% endblock %}
-
-{% block content %}
-
 {% endblock %}
