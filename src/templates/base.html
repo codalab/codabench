@@ -8,7 +8,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Codalab Competitions</title>
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
-    
+
+    <!-- Vendor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
+    {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <!-- Ours -->
+    <link rel="stylesheet" href="{% static "generated/output.css" %}">
+
     {% block extra_head %}
     {% endblock %}
 </head>
