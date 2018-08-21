@@ -32,6 +32,8 @@
 }
 .right.item {
   position: absolute !important;
+  right: 0;
+  top: 9px;
 }
 .left.item {
   position: absolute !important;
@@ -129,7 +131,8 @@
 }
 #toast-container {
   opacity: 0.8;
-  margin-top: 4em;
+  margin-top: 3em;
+  margin-right: 0.5em;
 }
 .ui.text.container#style_button {
   bottom: 0 !important;
