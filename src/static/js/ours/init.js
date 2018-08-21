@@ -25,6 +25,13 @@ $(document).ready(function () {
         action: 'hide'
     })
 
+    // Sidebar helpers
+    $('.ui.thin.sidebar')
+        .sidebar({
+            transition: 'overlay'
+        })
+        .sidebar('attach events', '#hamburger_button');
+
     /*-----------------------------------------------------------------------------
      Riotjs
      */
