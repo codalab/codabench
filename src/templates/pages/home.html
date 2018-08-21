@@ -14,44 +14,40 @@
         <h2>Accelerating reproducible computational research.</h2>
         {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
 
-        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge primary button"><i
+        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i
                 class="left arrow icon"></i> Compete</a>
-        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge primary button">Organize <i
+        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i
                 class="right arrow icon"></i></a>
     </div>
 
-    {#        <div class="ui middle aligned stackable grid container">#}
-    {#            <div class="row">#}
-    {#                <div class="fourteen wide column centered">#}
-    {#                    <div class="ui fluid category search">#}
-    {#                        <div class="ui fluid icon input">#}
-    {#                            <input class="prompt" type="text" placeholder="Search machine learning...">#}
-    {#                            <i class="search icon"></i>#}
+    {#            <div class="ui middle aligned stackable grid container">#}
+    {#                <div class="row">#}
+    {#                    <div class="fourteen wide column centered">#}
+    {#                        <div class="ui fluid category search">#}
+    {#                            <div class="ui fluid icon input">#}
+    {#                                <input class="prompt" type="text" placeholder="Search machine learning...">#}
+    {#                                <i class="search icon"></i>#}
+    {#                            </div>#}
+    {#                            <div class="results fluid"></div>#}
     {#                        </div>#}
-    {#                        <div class="results fluid"></div>#}
     {#                    </div>#}
     {#                </div>#}
     {#            </div>#}
-    {#        </div>#}
     <script>
-    // Prevent buttons from stacking in mobile view
-    $(document).ready(function () {
-        $(window).resize(function resize() {
+        // Prevent buttons from stacking in mobile view
+        $(window).resize(function () {
             if ($(window).width() < 390) {
                 return $('.pages')
                     .removeClass('huge')
                     .addClass('large');
             }
-
             $('.pages')
                 .removeClass('large')
                 .addClass('huge');
         }).trigger('resize');
-    });
     </script>
 {% endblock %}
 
 {% block content %}
-
     <competition-list></competition-list>
 {% endblock %}
