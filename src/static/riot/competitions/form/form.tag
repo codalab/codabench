@@ -120,7 +120,7 @@
 
         self.one("mount", function () {
             // tabs
-            $('.menu .item').tab()
+            $('.menu .item', self.root).tab()
 
             if (!!self.opts.competition_id) {
                 CODALAB.api.get_competition(self.opts.competition_id)

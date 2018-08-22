@@ -1,3 +1,9 @@
+import os
+import yaml
+import zipfile
+
+from tempfile import TemporaryDirectory
+
 from comp_worker import app
 
 from competitions import models
@@ -39,3 +45,75 @@ def unpack_competition(competition_dataset_pk):
     # send it to the serializer + save it
     # return errors to user if any
     # IF ERRORS DESTROY BABY DATASETS!
+
+    with TemporaryDirectory() as temp_directory:
+
+        zip_pointer = zipfile.ZipFile(competition_dataset.data_file.path, 'r')
+        zip_pointer.extractall(temp_directory)
+        zip_pointer.close()
+
+        # print(temp_directory)
+        print("yaaaaaaaaaaaaaayy")
+
+        # for r, d, f in os.walk(temp_directory):
+        #     for file in f:
+        #         print(os.path.join(r, file))
+
+        yaml_path = os.path.join(temp_directory, "competition.yaml")
+        yaml_data = open(yaml_path).read()
+        competition_yaml = yaml.load(yaml_data)
+
+        """
+
+            title: Example Hello World Competition
+            image: logo.jpg
+            pages:
+              - title: Welcome!
+                content: welcome.md
+              - title: Terms and conditions
+                content: terms_and_conditions.md
+            phases:
+              - name: Test
+                description: A test phase
+                start: 08/01/2018
+                end: 09/01/2018
+                scoring_program: scoring_program.zip
+            leaderboards:
+              - title: Hello World Leaderboard!
+                key: main
+                columns:
+                  - label: Correct?
+                    key: correct
+                    rank: 0
+
+        """
+
+        # Can maybe split this into a separate function
+        image_path = os.path.join(temp_directory, competition_yaml.get('image'))
+        image_base64 = open(image_path, "rb").read().encode("base64")
+
+        competition = {
+            "title": competition_yaml.get('title'),
+            "image": image_base64,
+            "pages": [],
+            "phases": [],
+            "leaderboards": [],
+        }
+
+        # print(competition)
+        # for thing in competition_yaml['html']:
+        #     print(thing)
+        #
+        #
+        #
+        #
+        #
+        # print("as")
+
+        
+
+
+
+
+
+

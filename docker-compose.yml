@@ -20,6 +20,11 @@ services:
     depends_on:
       - db
       - rabbitmq
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #-----------------------------------------------
@@ -29,6 +34,11 @@ services:
       dockerfile: Dockerfile.builder
     volumes:
       - .:/app
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Database Service
   #-----------------------------------------------
@@ -43,6 +53,11 @@ services:
       - 5432:5432
     volumes:
       - ./var/postgres:/var/lib/postgresql/data
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Rabbitmq Service
   #-----------------------------------------------
@@ -56,12 +71,19 @@ services:
     volumes:
       # To save rabbitmq state between container ups/downs
       - ./var/rabbitmq:/var/lib/rabbitmq/
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Celery Service
   #-----------------------------------------------
   site_worker:
-    command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
+    # This auto-reloads
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A comp_worker worker"
     env_file: .env
+    working_dir: /app/src
     build:
       context: .
     depends_on:
@@ -72,6 +94,10 @@ services:
     env_file: .env
     volumes:
       - .:/app
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------

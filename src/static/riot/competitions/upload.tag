@@ -20,7 +20,7 @@
                     </ul>
                 </div>
 
-                <form enctype="multipart/form-data" class="ui form {error: errors}" ref="form" onsubmit="{ upload }">
+                <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data" onsubmit="{ upload }">
                     <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
                     <input type="hidden" name="type" ref="type" class="ui dropdown" value="Competition Bundle">
 
@@ -60,10 +60,6 @@
                 event.preventDefault()
             }
 
-            // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
-            // best place to do it
-            self.upload_progress = undefined
-
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
             var data = new FormData(self.refs.form)
@@ -71,8 +67,6 @@
             CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
                 .done(function (data) {
                     toastr.success("Competition uploaded successfully!")
-                    self.update_datasets()
-                    self.clear_form()
                 })
                 .fail(function (response) {
                     if (response) {

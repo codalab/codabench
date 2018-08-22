@@ -19,7 +19,7 @@
                     </ul>
                 </div>
 
-                <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
+                <form class="ui form coda-animated {error: errors}" ref="form" onsubmit="{ save }">
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
                     <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
@@ -229,8 +229,8 @@
             }
 
             // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
-            // best place to do it
-            self.upload_progress = undefined
+            // best place to do it -- also resets animations
+            self.file_upload_progress_handler(undefined)
 
             // Let's do some quick validation
             self.errors = {}
