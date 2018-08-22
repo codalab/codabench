@@ -78,6 +78,12 @@ def unpack_competition(competition_dataset_pk):
         }
 
         # Pages
+        for index, page in enumerate(competition_yaml.get('pages')):
+            competition['pages'].append({
+                "title": page["title"],
+                "content": open(os.path.join(temp_directory, page["file"])).read(),
+                "index": index
+            })
 
         # Phases
 
