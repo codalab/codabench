@@ -1,26 +1,29 @@
+import base64
+import json
 import os
 import yaml
 import zipfile
 
 from tempfile import TemporaryDirectory
 
+from api.serializers.competitions import CompetitionSerializer
 from comp_worker import app
+from competitions.models import Submission, Phase, CompetitionCreationTaskStatus
 
-from competitions import models
 from datasets.models import Data
 
 
 @app.task
 def score_submission_lazy(submission_pk):
-    sub_to_score = models.Submission.objects.get(pk=submission_pk)
+    sub_to_score = Submission.objects.get(pk=submission_pk)
     sub_to_score.score = 1
     sub_to_score.save()
 
 
 @app.task
 def score_submission(submission_pk, phase_pk):
-    sub_to_score = models.Submission.objects.get(pk=submission_pk)
-    scoring_phase = models.Phase.objects.get(pk=phase_pk)
+    sub_to_score = Submission.objects.get(pk=submission_pk)
+    scoring_phase = Phase.objects.get(pk=phase_pk)
     scoring_program = scoring_phase.scoring_program
     file_to_score = sub_to_score.zip_file
     print(scoring_program)
@@ -31,9 +34,9 @@ def score_submission(submission_pk, phase_pk):
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
 
-    status = models.CompetitionCreationTaskStatus.objects.create(
+    status = CompetitionCreationTaskStatus.objects.create(
         dataset=competition_dataset,
-        status=models.CompetitionCreationTaskStatus.STARTING,
+        status=CompetitionCreationTaskStatus.STARTING,
     )
 
     # unpack zip to temp directory
@@ -47,68 +50,50 @@ def unpack_competition(competition_dataset_pk):
     # IF ERRORS DESTROY BABY DATASETS!
 
     with TemporaryDirectory() as temp_directory:
-
         zip_pointer = zipfile.ZipFile(competition_dataset.data_file.path, 'r')
         zip_pointer.extractall(temp_directory)
         zip_pointer.close()
-
-        # print(temp_directory)
-        print("yaaaaaaaaaaaaaayy")
-
-        # for r, d, f in os.walk(temp_directory):
-        #     for file in f:
-        #         print(os.path.join(r, file))
 
         yaml_path = os.path.join(temp_directory, "competition.yaml")
         yaml_data = open(yaml_path).read()
         competition_yaml = yaml.load(yaml_data)
 
-        """
-
-            title: Example Hello World Competition
-            image: logo.jpg
-            pages:
-              - title: Welcome!
-                content: welcome.md
-              - title: Terms and conditions
-                content: terms_and_conditions.md
-            phases:
-              - name: Test
-                description: A test phase
-                start: 08/01/2018
-                end: 09/01/2018
-                scoring_program: scoring_program.zip
-            leaderboards:
-              - title: Hello World Leaderboard!
-                key: main
-                columns:
-                  - label: Correct?
-                    key: correct
-                    rank: 0
-
-        """
-
-        # Can maybe split this into a separate function
+        # Turn image into base64 version for easy uploading
+        # (Can maybe split this into a separate function)
         image_path = os.path.join(temp_directory, competition_yaml.get('image'))
-        image_base64 = open(image_path, "rb").read().encode("base64")
+        with open(image_path, "rb") as image:
+            image_json = json.dumps({
+                "file_name": os.path.basename(competition_yaml.get('image')),
+                # Converts to b64 then to string
+                "data": base64.b64encode(image.read()).decode()
+            })
 
         competition = {
             "title": competition_yaml.get('title'),
-            "image": image_base64,
+            # NOTE! We use 'logo' instead of 'image' here....
+            "logo": image_json,
             "pages": [],
             "phases": [],
             "leaderboards": [],
         }
 
-        # print(competition)
-        # for thing in competition_yaml['html']:
-        #     print(thing)
-        #
-        #
-        #
-        #
-        #
-        # print("as")
+        # Pages
+
+        # Phases
+
+        # Leaderboards
+        for leaderboard in competition_yaml.get('leaderboards'):
+            competition['leaderboards'].append(leaderboard)
+
+        # SAVE IT!
+        serializer = CompetitionSerializer(
+            data=competition,
+            # We have to pass the creator here this special way, because this is how the API
+            # takes the request.user
+            context={"created_by": competition_dataset.created_by}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         
 

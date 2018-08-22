@@ -3,7 +3,6 @@ from django.db import models
 
 from utils.data import PathWrapper
 # from .tasks import score_submission
-from competitions import tasks
 
 
 class Competition(models.Model):
@@ -97,6 +96,9 @@ class Submission(models.Model):
         super(Submission, self).save()
 
         if not self.score:
+            # Import here to stop circular imports
+            from competitions import tasks
+
             if self.phase:
                 if self.phase.scoring_program:
                     tasks.score_submission.delay(self.pk, self.phase.pk)

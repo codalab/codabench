@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from competitions.tasks import unpack_competition
 from datasets.models import Data, DataGroup
 
 
@@ -34,10 +33,9 @@ class DataSerializer(serializers.ModelSerializer):
         validated_data["created_by"] = self.context['created_by']
         new_dataset = super().create(validated_data)
 
-        print("made a thing")
-        print(new_dataset)
-
         if new_dataset.type == Data.COMPETITION_BUNDLE:
+            # Doing a local import here to avoid circular imports
+            from competitions.tasks import unpack_competition
             unpack_competition.apply_async((new_dataset.pk,))
 
         return new_dataset
