@@ -58,13 +58,13 @@
 #style_button:hover .icon {
   opacity: 1;
 }
-.ui.dropdown {
+#user_dropdown {
   position: absolute !important;
   right: 19px !important;
   top: 14px;
   color: rgba(255,255,255,0.7) !important;
 }
-.ui.dropdown a {
+#user_dropdown a {
   width: 100%;
   border-radius: 0 !important;
 }
