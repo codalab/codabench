@@ -17,9 +17,6 @@ $(document).ready(function () {
             }
         })
 
-    // create sidebar and attach to menu open
-    $('.ui.sidebar').sidebar('attach events', '.toc.item')
-
     // Make base template dropdown not change text on selection
     $("#user_dropdown").dropdown({
         action: 'hide'
