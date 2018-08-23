@@ -1,7 +1,7 @@
 import os
 import uuid
 
-import time
+from django.utils.timezone import now
 from django.utils.deconstruct import deconstructible
 
 
@@ -19,7 +19,7 @@ class PathWrapper(object):
 
         return os.path.join(
             self.path,
-            time.strftime('%Y-%m-%d:%s'),
+            now().strftime('%Y-%m-%d:%s'),
             truncated_uuid,
             "{0}{1}".format(truncated_name, extension)
         )

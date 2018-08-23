@@ -113,19 +113,6 @@ def unpack_competition(competition_dataset_pk):
         ]
 
         for index, phase_data in enumerate(competition_yaml.get('phases')):
-            """
-            {  
-               "phases":[  
-                  {  
-                     "name":"asdf",
-                     "start":"August 8, 2018",
-                     "end":"August 30, 2018",
-                     "description":"asdf",
-                     "scoring_program":"f7be77da-745f-4845-86eb-c3c9cf74fea1",
-                     "index":0
-                  }
-               ]
-            }"""
             new_phase = {
                 "index": index,
                 "name": phase_data['name'],
@@ -147,7 +134,7 @@ def unpack_competition(competition_dataset_pk):
                     new_dataset = Data(
                         created_by=creator,
                         type=file_type,
-                        name=f"{file_type} uploaded @ {now()}",
+                        name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
                         was_created_by_competition=True,
                     )
                     # This saves the file AND saves the model
