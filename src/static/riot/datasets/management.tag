@@ -70,12 +70,12 @@
             <select class="ui dropdown" ref="type_filter" onchange="{ filter }">
                 <option value="">Type</option>
                 <option value="-">----</option>
-                <option>Ingestion Program</option>
-                <option>Input Data</option>
-                <option>Public Data</option>
-                <option>Reference Data</option>
-                <option>Scoring Program</option>
-                <option>Starting Kit</option>
+                <option value="ingestion_program">Ingestion Program</option>
+                <option value="input_data">Input Data</option>
+                <option value="public_data">Public Data</option>
+                <option value="reference_data">Reference Data</option>
+                <option value="scoring_program">Scoring Program</option>
+                <option value="starting_kit">Starting Kit</option>
             </select>
 
             <table class="ui celled compact table">

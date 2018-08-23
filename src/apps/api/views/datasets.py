@@ -19,7 +19,7 @@ class DataViewSet(mixins.CreateModelMixin,
     queryset = Data.objects.all()
     serializer_class = serializers.DataSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type', 'name')
+    filter_fields = ('type', 'name', 'key',)
     search_fields = ('name', 'description',)
 
     def get_queryset(self):
@@ -27,13 +27,13 @@ class DataViewSet(mixins.CreateModelMixin,
 
         filters = Q(is_public=True) | Q(created_by=self.request.user)
 
-        # Check if they are searching for a UUID
-        if query is not None and len(query) > 15:
-            try:
-                filters |= Q(key=UUID(query))
-            except ValueError:
-                # Not a valid uuid, ignore
-                pass
+        # # Check if they are searching for a UUID
+        # if query is not None and len(query) > 15:
+        #     try:
+        #         filters |= Q(key=UUID(query))
+        #     except ValueError:
+        #         # Not a valid uuid, ignore
+        #         pass
 
         return Data.objects.filter(filters)
 

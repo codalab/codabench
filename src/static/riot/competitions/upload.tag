@@ -22,7 +22,7 @@
 
                 <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data" onsubmit="{ upload }">
                     <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-                    <input type="hidden" name="type" ref="type" class="ui dropdown" value="Competition Bundle">
+                    <input type="hidden" name="type" ref="type" class="ui dropdown" value="competition_bundle">
 
                     <div class="ui grid">
                         <div class="sixteen wide column right aligned">
