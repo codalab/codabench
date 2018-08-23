@@ -103,9 +103,6 @@ CODALAB.api = {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     },
     create_dataset: function (form_data, progress_update_callback) {
-        // This resets progress bars and starts displaying progress bars
-        progress_update_callback(undefined)
-
         // NOTE: this function takes a special "form_data" not like the normal
         // dictionary other methods take
         return _upload_ajax("datasets/", form_data, progress_update_callback)

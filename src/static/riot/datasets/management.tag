@@ -19,7 +19,7 @@
                     </ul>
                 </div>
 
-                <form class="ui form coda-animated {error: errors}" ref="form" onsubmit="{ save }">
+                <form class="ui form coda-animated {error: errors}" ref="form" onsubmit="{ check_form }">
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
                     <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
@@ -27,12 +27,12 @@
                         <select name="type" ref="type" class="ui dropdown">
                             <option value="">Type</option>
                             <option value="-">----</option>
-                            <option>Ingestion Program</option>
-                            <option>Input Data</option>
-                            <option>Public Data</option>
-                            <option>Reference Data</option>
-                            <option>Scoring Program</option>
-                            <option>Starting Kit</option>
+                            <option value="ingestion_program">Ingestion Program</option>
+                            <option value="input_data">Input Data</option>
+                            <option value="public_data">Public Data</option>
+                            <option value="reference_data">Reference Data</option>
+                            <option value="scoring_program">Scoring Program</option>
+                            <option value="starting_kit">Starting Kit</option>
                         </select>
                     </div>
 
@@ -223,7 +223,7 @@
             self.update()
         }
 
-        self.save = function (event) {
+        self.check_form = function (event) {
             if (event) {
                 event.preventDefault()
             }
@@ -249,6 +249,12 @@
                 return
             }
 
+            // Call the progress bar wrapper and do the upload -- we want to check and display errors
+            // first before doing the actual upload
+            self.prepare_upload(self.upload)()
+        }
+
+        self.upload = function() {
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
             var data = new FormData(self.refs.form)

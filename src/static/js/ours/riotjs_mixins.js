@@ -1,3 +1,11 @@
+/* ----------------------------------------------------------------------------
+ Progress bar mixin
+
+ This shows a progress bar intended to be used with out client API functions like
+ `create_dataset`. To use this class, you should add the mixin to your RiotJS
+ component, have your form submit event call `prepare_upload(your_form_submit_function)`,
+ */
+
 var ProgressBarMixin = {
     show_progress_bar: function () {
         // The transition delays are for timing the animations, so they're one after the other
@@ -29,13 +37,28 @@ var ProgressBarMixin = {
     },
     file_upload_progress_handler: function (upload_progress) {
         if (this.upload_progress === undefined || upload_progress === undefined) {
-            // the upload is just starting, show and reset everything
-            this.show_progress_bar()
             upload_progress = 0
         }
 
         this.upload_progress = upload_progress;
         $(this.refs.progress).progress({percent: this.upload_progress})
         this.update()
+    },
+    prepare_upload: function(upload_callback) {
+        // Need to keep track of self inside this wrapped function
+        var self = this
+
+        return function(event) {
+            // This function shows the progress bar then a short time later begins the actual upload
+            if (event) {
+                event.preventDefault()
+            }
+
+            // the upload is just starting, show and reset everything
+            self.file_upload_progress_handler(undefined)
+            self.show_progress_bar()
+
+            setTimeout(upload_callback, 500)
+        }
     }
 }

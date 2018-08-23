@@ -20,7 +20,7 @@
                     </ul>
                 </div>
 
-                <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data" onsubmit="{ upload }">
+                <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data" onsubmit="{ prepare_upload(upload) }">
                     <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
                     <input type="hidden" name="type" ref="type" class="ui dropdown" value="competition_bundle">
 
@@ -55,11 +55,7 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.upload = function (event) {
-            if (event) {
-                event.preventDefault()
-            }
-
+        self.upload = function () {
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
             var data = new FormData(self.refs.form)
@@ -86,7 +82,7 @@
                     toastr.error("Creation failed, error occurred")
                 })
                 .always(function () {
-                    self.hide_progress_bar()
+                    setTimeout(self.hide_progress_bar, 500)
                 })
         }
     </script>
