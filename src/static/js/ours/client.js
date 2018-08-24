@@ -1,9 +1,9 @@
-var CODALAB = {
-    URLS: []  // Set in base.html
-}
+var CODALAB = {}
 
+CODALAB.URLS = []  // Set in base.html
 CODALAB.events = riot.observable()
 
+// Private function, shouldn't be directly used
 var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
     return $.ajax({
             type: 'POST',
@@ -105,7 +105,31 @@ CODALAB.api = {
     create_dataset: function (form_data, progress_update_callback) {
         // NOTE: this function takes a special "form_data" not like the normal
         // dictionary other methods take
+
+        // TODO: CHECK WHAT KIND OF STORAGE WE ARE!
+
+        // For local storage we can directly upload
         return _upload_ajax("datasets/", form_data, progress_update_callback)
+
+
+
+
+
+
+        // Actually, cancel direct uploads, we should make remote uploads for local storage work
+        // we will eventually have to do that anyway.........
+
+
+
+
+
+
+
+
+        // For remote storage we have to do...
+        //  get_upload_url
+        //  _upload_ajax
+        //    when above is completed, mark_dataset_upload_complete
     },
 
     /* We will use the following functions when we implement remote storage */

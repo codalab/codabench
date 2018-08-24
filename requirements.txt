@@ -6,6 +6,7 @@ waitress==1.0.2
 django-filter==2.0.0
 django-oauth-toolkit==1.0.0
 django-cors-middleware==1.3.1
+django-storages==1.6.6
 dj-database-url==0.4.2
 social-auth-core==1.5.0
 social-auth-app-django==2.0.0
@@ -24,3 +25,4 @@ greenlet==0.4.14
 pyyaml==3.13
 watchdog==0.8.3
 python-dateutil==2.7.3
+boto3==1.7.84

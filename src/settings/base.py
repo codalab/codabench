@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
+    'storages',
 )
 OUR_APPS = (
     'competitions',
@@ -273,7 +274,8 @@ BUNDLE_AZURE_ACCOUNT_KEY = os.environ.get('BUNDLE_AZURE_ACCOUNT_KEY', AZURE_ACCO
 BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 
 # Helper booleans
-STORAGE_IS_AWS = DEFAULT_FILE_STORAGE == 'storages.backends.s3boto.S3BotoStorage'
+STORAGE_IS_AWS = DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage'
+STORAGE_IS_GCS = DEFAULT_FILE_STORAGE == 'apps.web.storage.CodalabGoogleCloudStorage'
 STORAGE_IS_AZURE = DEFAULT_FILE_STORAGE == 'storages.backends.azure_storage.AzureStorage'
 STORAGE_IS_LOCAL = DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage'
 
@@ -283,6 +285,8 @@ StorageClass = get_storage_class(DEFAULT_FILE_STORAGE)
 if STORAGE_IS_AWS:
     BundleStorage = StorageClass(bucket=AWS_STORAGE_PRIVATE_BUCKET_NAME)
     PublicStorage = StorageClass(bucket=AWS_STORAGE_BUCKET_NAME)
+elif STORAGE_IS_GCS:
+    raise NotImplementedError()
 elif STORAGE_IS_AZURE:
     BundleStorage = StorageClass(account_name=BUNDLE_AZURE_ACCOUNT_NAME,
                                  account_key=BUNDLE_AZURE_ACCOUNT_KEY,
