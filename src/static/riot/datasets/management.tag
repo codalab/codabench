@@ -154,6 +154,18 @@
          Methods
         ---------------------------------------------------------------------*/
         self.filter = function () {
+
+
+
+
+            // TODO: This filter should call an API to get back results, not what's currently on the page!
+
+
+
+
+
+
+
             // Delay makes this batch filters and only send one out after 100ms of not
             // receiving a call to filter
             delay(function () {
@@ -261,6 +273,7 @@
 
             CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
                 .done(function (data) {
+                    console.log("UPLOAD SUCCESSFUL")
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()

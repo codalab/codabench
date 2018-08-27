@@ -1,4 +1,6 @@
 from django.conf.urls import url, include
+from django.urls import path
+from rest_framework.documentation import include_docs_urls
 from rest_framework.routers import SimpleRouter
 
 from .views import competitions, datasets, profiles, leaderboards
@@ -16,9 +18,14 @@ router.register('leaderboards', leaderboards.LeaderboardViewSet)
 # router.register('query', url('^query/', query), base_name='query')
 
 urlpatterns = [
-    url('^', include(router.urls)),
     # url('^query/', search.query),
-    url('^my_profile/', profiles.GetMyProfile.as_view()),
+    path('my_profile/', profiles.GetMyProfile.as_view()),
+    path('datasets/completed/<uuid:key>/', datasets.upload_completed),
 
-    url('^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+    path('docs/', include_docs_urls(title='My API title')),
+
+    # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
+    path('', include(router.urls)),
 ]

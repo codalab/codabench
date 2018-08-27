@@ -1,7 +1,10 @@
 Django==2.1
 psycopg2==2.7.3
 whitenoise==3.3.0
-djangorestframework==3.7.3
+coreapi==2.3.3
+djangorestframework==3.8.2
+markdown==2.6.11
+pygments==2.2.0
 waitress==1.0.2
 django-filter==2.0.0
 django-oauth-toolkit==1.0.0

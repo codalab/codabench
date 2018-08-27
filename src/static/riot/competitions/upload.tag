@@ -65,6 +65,8 @@
                     toastr.success("Competition uploaded successfully!")
                 })
                 .fail(function (response) {
+                    console.log("FAILED")
+                    console.log(response)
                     if (response) {
                         try {
                             var errors = JSON.parse(response.responseText)

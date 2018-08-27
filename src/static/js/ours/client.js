@@ -6,26 +6,26 @@ CODALAB.events = riot.observable()
 // Private function, shouldn't be directly used
 var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
     return $.ajax({
-            type: 'POST',
-            url: URLS.API + endpoint,
-            data: form_data,
-            processData: false,
-            contentType: false,
-            xhr: function (xhr) {
-                var request = new window.XMLHttpRequest();
+        type: 'PUT',
+        url: endpoint,
+        data: form_data,
+        processData: false,
+        contentType: false,
+        xhr: function (xhr) {
+            var request = new window.XMLHttpRequest();
 
-                // Upload progress
-                request.upload.addEventListener("progress", function (event) {
-                    if (event.lengthComputable) {
-                        var percent_complete = event.loaded / event.total;
-                        if (progress_update_callback) {
-                            progress_update_callback(percent_complete * 100);
-                        }
+            // Upload progress
+            request.upload.addEventListener("progress", function (event) {
+                if (event.lengthComputable) {
+                    var percent_complete = event.loaded / event.total;
+                    if (progress_update_callback) {
+                        progress_update_callback(percent_complete * 100);
                     }
-                }, false);
-                return request;
-            }
-        })
+                }
+            }, false);
+            return request;
+        }
+    })
 }
 
 CODALAB.api = {
@@ -90,7 +90,7 @@ CODALAB.api = {
                 * POST to mark upload as done, so un-finished uploads can be pruned later
 
         */
-        return _upload_ajax("submissions/", form_data, progress_update_callback)
+        return _upload_ajax(URLS.API + "submissions/", form_data, progress_update_callback)
     },
 
     /*---------------------------------------------------------------------
@@ -102,14 +102,101 @@ CODALAB.api = {
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     },
-    create_dataset: function (form_data, progress_update_callback) {
+    create_dataset: function (form_data, progress_update_callback, success_callback, error_callback) {
         // NOTE: this function takes a special "form_data" not like the normal
         // dictionary other methods take
 
         // TODO: CHECK WHAT KIND OF STORAGE WE ARE!
 
+
+        console.log(form_data)
+
+        var payload = {};
+        form_data.forEach(function(value, key){
+            // Add everything but data_file to the form_data so we can get the SAS URL for uploading
+            if(key === 'data_file') {
+                payload['request_sassy_file_name'] = value.name
+            } else {
+                payload[key] = value
+            }
+        })
+
+        // This will be set on successful dataset creation, then used to complete the dataset upload
+        var dataset = {}
+        console.log("Payload:")
+        console.log(payload)
+
+        return CODALAB.api.request('POST', URLS.API + "datasets/", payload)
+            // We have an upload URL, so upload now..
+            .then(function(result, result_status) {
+                console.log(result)
+                console.log("Result status: " + result_status)
+                dataset = result
+
+                return $.ajax({
+                    type: 'PUT',
+                    url: result.sassy_url,
+                    data: form_data.get('data_file'),
+                    processData: false,
+                    contentType: false,
+                    xhr: function (xhr) {
+                        var request = new window.XMLHttpRequest();
+
+                        // Upload progress
+                        request.upload.addEventListener("progress", function (event) {
+                            if (event.lengthComputable) {
+                                var percent_complete = event.loaded / event.total;
+                                if (progress_update_callback) {
+                                    progress_update_callback(percent_complete * 100);
+                                }
+                            }
+                        }, false);
+                        return request;
+                    }
+                })
+            })
+            // Now we should complete the upload by telling Codalab! (so competition unpacking and such can start)
+            .then(function(result, result_status) {
+                console.log(result)
+                console.log("Result status: " + result_status)
+
+                return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
+
+            })
+
+
+
+
+
+
+
+
+
+
+
+
         // For local storage we can directly upload
-        return _upload_ajax("datasets/", form_data, progress_update_callback)
+        //return _upload_ajax(URLS.API + "datasets/", form_data, progress_update_callback)
+        //    .then(function() {
+        //        console.log("THEN'd")
+        //    })
+
+
+
+
+
+
+        // First we need to get a signed URL
+
+        // Then we upload to it
+
+
+
+
+
+
+
+
 
 
 
@@ -131,24 +218,4 @@ CODALAB.api = {
         //  _upload_ajax
         //    when above is completed, mark_dataset_upload_complete
     },
-
-    /* We will use the following functions when we implement remote storage */
-    get_upload_url: function (file, destination) {
-        /*var form = new FormData();
-
-        form.append('name', file.name);
-        form.append('type', file.type);
-        form.append('dest', destination);
-
-        return $.ajax({
-            type: 'POST',
-            url: URL.pages.s3_direct,
-            data: form,
-            processData: false,
-            contentType: false
-        });*/
-    },
-    mark_dataset_upload_complete: function (id) {
-
-    }
 }

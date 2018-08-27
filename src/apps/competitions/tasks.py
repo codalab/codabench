@@ -61,7 +61,26 @@ def unpack_competition(competition_dataset_pk):
     with TemporaryDirectory() as temp_directory:
         # ---------------------------------------------------------------------
         # Extract bundle
-        zip_pointer = zipfile.ZipFile(competition_dataset.data_file.path, 'r')
+
+
+
+
+
+
+
+
+        # TODO: Download data_file
+
+
+
+
+
+
+
+
+
+
+        zip_pointer = zipfile.ZipFile(competition_dataset.data_file, 'r')
         zip_pointer.extractall(temp_directory)
         zip_pointer.close()
 

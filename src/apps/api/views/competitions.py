@@ -19,6 +19,10 @@ class CompetitionViewSet(ModelViewSet):
         return qs
 
     def get_serializer_context(self):
+        # Have to do this because of docs sending blank requests (?)
+        if not self.request:
+            return {}
+
         return {
             "created_by": self.request.user
         }

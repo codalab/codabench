@@ -1,7 +1,7 @@
 import os
 
 from django.http import Http404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied
 from uuid import UUID
 
@@ -48,6 +48,10 @@ class DataViewSet(mixins.CreateModelMixin,
         return qs
 
     def get_serializer_context(self):
+        # Have to do this because of docs sending blank requests (?)
+        if not self.request:
+            return {}
+
         return {
             "created_by": self.request.user
         }
@@ -55,19 +59,17 @@ class DataViewSet(mixins.CreateModelMixin,
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        new_dataset = serializer.save()
+        new_dataset = serializer.save()  # request_sassy_file_name is temporarily set via this serializer
         headers = self.get_success_headers(serializer.data)
 
-        data = serializer.data
-
-        sassy_file_name = request.data.get('request_sassy_file_name')
-        if sassy_file_name:
-            # we didn't have a data file so let's make a sassy URL
-            sassy_file_name = os.path.basename(sassy_file_name)
-            new_dataset.data_file.save(sassy_file_name, ContentFile(''))
-            data['sassy_url'] = _make_url_sassy(new_dataset.data_file.name, 'w')
-
-        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+        # Make an empty placeholder so we can sign a URL allowing us to upload to it
+        sassy_file_name = os.path.basename(new_dataset.request_sassy_file_name)
+        new_dataset.data_file.save(sassy_file_name, ContentFile(''))
+        context = {
+            "key": new_dataset.key,
+            "sassy_url": _make_url_sassy(new_dataset.data_file.name, 'w'),
+        }
+        return Response(context, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         if request.user != self.get_object().created_by:
@@ -78,6 +80,24 @@ class DataViewSet(mixins.CreateModelMixin,
 class DataGroupViewSet(ModelViewSet):
     queryset = DataGroup.objects.all()
     serializer_class = serializers.DataGroupSerializer
+
+
+@api_view(['PUT'])
+def upload_completed(request, key):
+    try:
+        dataset = Data.objects.get(created_by=request.user, key=key)
+    except Data.DoesNotExist:
+        raise Http404()
+
+    dataset.upload_completed_successfully = True
+    dataset.save()
+
+    if dataset.type == Data.COMPETITION_BUNDLE:
+        # Doing a local import here to avoid circular imports
+        from competitions.tasks import unpack_competition
+        unpack_competition.apply_async((dataset.pk,))
+
+    return Response()
 
 
 #
@@ -108,17 +128,6 @@ class DataGroupViewSet(ModelViewSet):
 #         raise Http404()
 #
 #
-# @api_view(['POST'])
-# def upload_completed(request):
-#     # if new_dataset.type == Data.COMPETITION_BUNDLE:
-#     #     # Doing a local import here to avoid circular imports
-#     #     from competitions.tasks import unpack_competition
-#     #     unpack_competition.apply_async((new_dataset.pk,))
-#
-#
-#     # instance.upload_completed_successfully = True
-#     # instance.save()
-#     pass
 #
 #
 # # TODO: Implement this so we can do local storage and receive stdout/etc. jazz
