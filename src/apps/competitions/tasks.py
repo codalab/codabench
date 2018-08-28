@@ -34,6 +34,11 @@ def score_submission(submission_pk, phase_pk):
     print(file_to_score)
 
 
+
+class CompetitionUnpackingException(Exception):
+    pass
+
+
 @app.task
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
@@ -58,141 +63,136 @@ def unpack_competition(competition_dataset_pk):
     # return errors to user if any
     # IF ERRORS DESTROY BABY DATASETS!
 
-    with TemporaryDirectory() as temp_directory:
-        # ---------------------------------------------------------------------
-        # Extract bundle
+    try:
+        with TemporaryDirectory() as temp_directory:
+            # ---------------------------------------------------------------------
+            # Extract bundle
+            try:
+                with zipfile.ZipFile(competition_dataset.data_file, 'r') as zip_pointer:
+                    zip_pointer.extractall(temp_directory)
+            except zipfile.BadZipFile:
+                raise CompetitionUnpackingException("Bad zip file uploaded.")
 
+            # ---------------------------------------------------------------------
+            # Read metadata (competition.yaml)
+            yaml_path = os.path.join(temp_directory, "competition.yaml")
 
+            if not os.path.exists(yaml_path):
+                raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
+                                                    "to make sure competition.yaml is in the root directory.")
 
+            yaml_data = open(yaml_path).read()
+            competition_yaml = yaml.load(yaml_data)
 
+            # Turn image into base64 version for easy uploading
+            # (Can maybe split this into a separate function)
+            image_path = os.path.join(temp_directory, competition_yaml.get('image'))
+            with open(image_path, "rb") as image:
+                image_json = json.dumps({
+                    "file_name": os.path.basename(competition_yaml.get('image')),
+                    # Converts to b64 then to string
+                    "data": base64.b64encode(image.read()).decode()
+                })
 
-
-
-
-        # TODO: Download data_file
-
-
-
-
-
-
-
-
-
-
-        zip_pointer = zipfile.ZipFile(competition_dataset.data_file, 'r')
-        zip_pointer.extractall(temp_directory)
-        zip_pointer.close()
-
-        # ---------------------------------------------------------------------
-        # Read metadata (competition.yaml)
-        yaml_path = os.path.join(temp_directory, "competition.yaml")
-        yaml_data = open(yaml_path).read()
-        competition_yaml = yaml.load(yaml_data)
-
-        # Turn image into base64 version for easy uploading
-        # (Can maybe split this into a separate function)
-        image_path = os.path.join(temp_directory, competition_yaml.get('image'))
-        with open(image_path, "rb") as image:
-            image_json = json.dumps({
-                "file_name": os.path.basename(competition_yaml.get('image')),
-                # Converts to b64 then to string
-                "data": base64.b64encode(image.read()).decode()
-            })
-
-        # ---------------------------------------------------------------------
-        # Initialize the competition dict
-        competition = {
-            "title": competition_yaml.get('title'),
-            # NOTE! We use 'logo' instead of 'image' here....
-            "logo": image_json,
-            "pages": [],
-            "phases": [],
-            "leaderboards": [],
-        }
-
-        # ---------------------------------------------------------------------
-        # Pages
-        for index, page in enumerate(competition_yaml.get('pages')):
-            competition['pages'].append({
-                "title": page["title"],
-                "content": open(os.path.join(temp_directory, page["file"])).read(),
-                "index": index
-            })
-
-        # ---------------------------------------------------------------------
-        # Phases
-        file_types = [
-            "input_data",
-            "reference_data",
-            "scoring_program",
-            "ingestion_program",
-            "public_data",
-            "starting_kit",
-        ]
-
-        for index, phase_data in enumerate(competition_yaml.get('phases')):
-            new_phase = {
-                "index": index,
-                "name": phase_data['name'],
-                "description": phase_data.get('description') if 'description' in phase_data else None,
-                "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
-                "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
+            # ---------------------------------------------------------------------
+            # Initialize the competition dict
+            competition = {
+                "title": competition_yaml.get('title'),
+                # NOTE! We use 'logo' instead of 'image' here....
+                "logo": image_json,
+                "pages": [],
+                "phases": [],
+                "leaderboards": [],
             }
 
-            for file_type in file_types:
-                # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
-                file_name = phase_data.get(file_type)
+            # ---------------------------------------------------------------------
+            # Pages
+            for index, page in enumerate(competition_yaml.get('pages')):
+                competition['pages'].append({
+                    "title": page["title"],
+                    "content": open(os.path.join(temp_directory, page["file"])).read(),
+                    "index": index
+                })
 
-                if not file_name:
-                    continue
+            # ---------------------------------------------------------------------
+            # Phases
+            file_types = [
+                "input_data",
+                "reference_data",
+                "scoring_program",
+                "ingestion_program",
+                "public_data",
+                "starting_kit",
+            ]
 
-                file_path = os.path.join(temp_directory, file_name)
-                if os.path.exists(file_path):
-                    # We have a file, not UUID, needs to be uploaded
-                    new_dataset = Data(
-                        created_by=creator,
-                        type=file_type,
-                        name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
-                        was_created_by_competition=True,
-                    )
-                    # This saves the file AND saves the model
-                    new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
-                    new_phase[file_type] = new_dataset.key
-                elif len(file_name) in (32, 36):
-                    # Keys are length 32 or 36, so check if we can find a dataset matching this already
-                    new_phase[file_type] = file_name
-                else:
-                    raise ValidationError(f"Cannot find dataset: {file_name} for phase \"{phase['name']}\"")
+            for index, phase_data in enumerate(competition_yaml.get('phases')):
+                new_phase = {
+                    "index": index,
+                    "name": phase_data['name'],
+                    "description": phase_data.get('description') if 'description' in phase_data else None,
+                    "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
+                    "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
+                }
 
-            competition['phases'].append(new_phase)
+                for file_type in file_types:
+                    # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
+                    file_name = phase_data.get(file_type)
 
-        # ---------------------------------------------------------------------
-        # Leaderboards
-        for leaderboard in competition_yaml.get('leaderboards'):
-            competition['leaderboards'].append(leaderboard)
+                    if not file_name:
+                        continue
 
-        # SAVE IT!
-        print("Saving competition....")
+                    file_path = os.path.join(temp_directory, file_name)
+                    if os.path.exists(file_path):
+                        # We have a file, not UUID, needs to be uploaded
+                        new_dataset = Data(
+                            created_by=creator,
+                            type=file_type,
+                            name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+                            was_created_by_competition=True,
+                        )
+                        # This saves the file AND saves the model
+                        new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+                        new_phase[file_type] = new_dataset.key
+                    elif len(file_name) in (32, 36):
+                        # Keys are length 32 or 36, so check if we can find a dataset matching this already
+                        new_phase[file_type] = file_name
+                    else:
+                        raise ValidationError(f"Cannot find dataset: {file_name} for phase \"{phase['name']}\"")
 
-        # ---------------------------------------------------------------------
-        # Finalize
-        serializer = CompetitionSerializer(
-            data=competition,
-            # We have to pass the creator here this special way, because this is how the API
-            # takes the request.user
-            context={"created_by": creator}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+                competition['phases'].append(new_phase)
 
-        print("Competition saved!")
+            # ---------------------------------------------------------------------
+            # Leaderboards
+            for leaderboard in competition_yaml.get('leaderboards'):
+                competition['leaderboards'].append(leaderboard)
+
+            # SAVE IT!
+            print("Saving competition....")
+
+            # ---------------------------------------------------------------------
+            # Finalize
+            serializer = CompetitionSerializer(
+                data=competition,
+                # We have to pass the creator here this special way, because this is how the API
+                # takes the request.user
+                context={"created_by": creator}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            print("Competition saved!")
 
 
 
-        # TODO: If something fails delete baby datasets and such!!!!
+            # TODO: If something fails delete baby datasets and such!!!!
+    except CompetitionUnpackingException as e:
+        status.details = str(e)
+        status.status = CompetitionCreationTaskStatus.FAILED
+        status.save()
 
-        
+        print("FAILED!")
+        print(status.details)
+
 
 
 
