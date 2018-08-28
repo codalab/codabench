@@ -6,7 +6,6 @@ services:
   django:
     build: .
     container_name: django
-    env_file: .env
     command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
@@ -20,10 +19,39 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - minio
     logging:
       options:
         max-size: "500k"
         max-file: "10"
+
+
+  #-----------------------------------------------
+  # Minio local storage helper
+  #-----------------------------------------------
+  minio:
+    image: minio/minio
+    command: server /export
+    volumes:
+      - /tmp/codalab-competitions-v2-minio:/export
+      - ./docker/run_minio.sh:/app/run_minio.sh
+    ports:
+      - 9000:9000
+    env_file: .env
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add minio_docker http://minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+      /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      exit 0;
+      "
+
 
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
@@ -38,6 +66,7 @@ services:
       options:
         max-size: "500k"
         max-file: "10"
+
 
   #-----------------------------------------------
   #   Database Service
