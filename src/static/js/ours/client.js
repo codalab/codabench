@@ -102,41 +102,30 @@ CODALAB.api = {
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     },
-    create_dataset: function (form_data, progress_update_callback, success_callback, error_callback) {
-        // NOTE: this function takes a special "form_data" not like the normal
-        // dictionary other methods take
+    /**
+     * Creates a dataset
+     * @param {object} metadata - name, description, type, data_file, is_public
+     * @param {object} file - the actual file object to use
+     * @param {function} progress_update_callback
+     */
+    create_dataset: function (metadata, data_file, progress_update_callback) {
+        // TODO: CHECK WHAT KIND OF STORAGE WE ARE! ???
 
-        // TODO: CHECK WHAT KIND OF STORAGE WE ARE!
-
-
-        console.log(form_data)
-
-        var payload = {};
-        form_data.forEach(function(value, key){
-            // Add everything but data_file to the form_data so we can get the SAS URL for uploading
-            if(key === 'data_file') {
-                payload['request_sassy_file_name'] = value.name
-            } else {
-                payload[key] = value
-            }
-        })
+        // Pass the requested file name for the SAS url
+        metadata.request_sassy_file_name = data_file.name
 
         // This will be set on successful dataset creation, then used to complete the dataset upload
         var dataset = {}
-        console.log("Payload:")
-        console.log(payload)
 
-        return CODALAB.api.request('POST', URLS.API + "datasets/", payload)
+        return CODALAB.api.request('POST', URLS.API + "datasets/", metadata)
             // We have an upload URL, so upload now..
-            .then(function(result, result_status) {
-                console.log(result)
-                console.log("Result status: " + result_status)
+            .then(function(result) {
                 dataset = result
 
                 return $.ajax({
                     type: 'PUT',
                     url: result.sassy_url,
-                    data: form_data.get('data_file'),
+                    data: data_file,
                     processData: false,
                     contentType: false,
                     xhr: function (xhr) {
@@ -156,66 +145,8 @@ CODALAB.api = {
                 })
             })
             // Now we should complete the upload by telling Codalab! (so competition unpacking and such can start)
-            .then(function(result, result_status) {
-                console.log(result)
-                console.log("Result status: " + result_status)
-
+            .then(function() {
                 return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
-
             })
-
-
-
-
-
-
-
-
-
-
-
-
-        // For local storage we can directly upload
-        //return _upload_ajax(URLS.API + "datasets/", form_data, progress_update_callback)
-        //    .then(function() {
-        //        console.log("THEN'd")
-        //    })
-
-
-
-
-
-
-        // First we need to get a signed URL
-
-        // Then we upload to it
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Actually, cancel direct uploads, we should make remote uploads for local storage work
-        // we will eventually have to do that anyway.........
-
-
-
-
-
-
-
-
-        // For remote storage we have to do...
-        //  get_upload_url
-        //  _upload_ajax
-        //    when above is completed, mark_dataset_upload_complete
     },
 }

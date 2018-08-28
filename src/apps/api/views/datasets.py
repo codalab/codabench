@@ -97,38 +97,4 @@ def upload_completed(request, key):
         from competitions.tasks import unpack_competition
         unpack_competition.apply_async((dataset.pk,))
 
-    return Response()
-
-
-#
-#
-# """
-#
-# Make `request upload` and `upload completed` API endpoints! (and `do upload` for local storage?)
-#
-# They should use serializers to confirm the data and such
-#
-# We should also have a `receive_upload` function for local storage, so everything is consistent
-#
-# """
-#
-# @api_view(['GET'])
-# def request_upload(request):
-#     # I need:
-#     #   - Desired file name
-#     #   - Dataset PK where upload_completed_successfully=False and created_by = request.user
-#
-#     try:
-#         dataset = Data.objects.get(
-#             pk=request.GET.get('pk'),
-#             created_by=request.user,
-#             upload_completed_successfully=False
-#         )
-#     except Data.DoesNotExist:
-#         raise Http404()
-#
-#
-#
-#
-# # TODO: Implement this so we can do local storage and receive stdout/etc. jazz
-# # def do_upload(request)
+    return Response("{}")

@@ -36,7 +36,7 @@
                         </select>
                     </div>
 
-                    <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+                    <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
 
                     <div class="field">
                         <div class="ui checkbox">
@@ -269,9 +269,12 @@
         self.upload = function() {
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
-            var data = new FormData(self.refs.form)
+            var metadata = get_form_data(self.refs.form)
+            delete metadata.data_file  // dont send this with metadata
 
-            CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+
+            CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     console.log("UPLOAD SUCCESSFUL")
                     toastr.success("Dataset successfully uploaded!")

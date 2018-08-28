@@ -20,17 +20,8 @@
                     </ul>
                 </div>
 
-                <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data" onsubmit="{ prepare_upload(upload) }">
-                    <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-                    <input type="hidden" name="type" ref="type" class="ui dropdown" value="competition_bundle">
-
-                    <div class="ui grid">
-                        <div class="sixteen wide column right aligned">
-                            <button class="ui button" type="submit">
-                                <i class="upload icon"></i> Upload
-                            </button>
-                        </div>
-                    </div>
+                <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+                    <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
                 </form>
 
                 <div class="ui indicating progress" ref="progress">
@@ -51,6 +42,10 @@
         ---------------------------------------------------------------------*/
         self.errors = {}
 
+        self.one('mount', function() {
+            // Prepare and do the upload on file input change
+            $(self.refs.data_file.refs.file_input).on('change', self.prepare_upload(self.upload))
+        })
 
         /*---------------------------------------------------------------------
          Methods
@@ -58,15 +53,16 @@
         self.upload = function () {
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
-            var data = new FormData(self.refs.form)
+            var metadata = {
+                type: 'competition_bundle'
+            }
+            var data_file = self.refs.data_file.refs.file_input.files[0]
 
-            CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
+            CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     toastr.success("Competition uploaded successfully!")
                 })
                 .fail(function (response) {
-                    console.log("FAILED")
-                    console.log(response)
                     if (response) {
                         try {
                             var errors = JSON.parse(response.responseText)
