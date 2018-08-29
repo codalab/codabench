@@ -15,7 +15,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
-from datasets.utils import _make_url_sassy
+from utils.data import _make_url_sassy
 
 
 class DataViewSet(mixins.CreateModelMixin,
@@ -64,7 +64,9 @@ class DataViewSet(mixins.CreateModelMixin,
 
         # Make an empty placeholder so we can sign a URL allowing us to upload to it
         sassy_file_name = os.path.basename(new_dataset.request_sassy_file_name)
-        new_dataset.data_file.save(sassy_file_name, ContentFile(''))
+        # encode here helps GCS do the upload, complains
+        # ```TypeError: ('`data` must be bytes, received', <class 'str'>)``` otherwise
+        new_dataset.data_file.save(sassy_file_name, ContentFile(''.encode()))
         context = {
             "key": new_dataset.key,
             "sassy_url": _make_url_sassy(new_dataset.data_file.name, 'w'),

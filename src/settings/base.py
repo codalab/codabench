@@ -273,11 +273,22 @@ BUNDLE_AZURE_ACCOUNT_NAME = os.environ.get('BUNDLE_AZURE_ACCOUNT_NAME', AZURE_AC
 BUNDLE_AZURE_ACCOUNT_KEY = os.environ.get('BUNDLE_AZURE_ACCOUNT_KEY', AZURE_ACCOUNT_KEY)
 BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 
+# Google Cloud Storage
+GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
+GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
+GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
+
 # Helper booleans
 STORAGE_IS_AWS = DEFAULT_FILE_STORAGE == 'storages.backends.s3boto3.S3Boto3Storage'
-STORAGE_IS_GCS = DEFAULT_FILE_STORAGE == 'apps.web.storage.CodalabGoogleCloudStorage'
+STORAGE_IS_GCS = DEFAULT_FILE_STORAGE == 'storages.backends.gcloud.GoogleCloudStorage'
 STORAGE_IS_AZURE = DEFAULT_FILE_STORAGE == 'storages.backends.azure_storage.AzureStorage'
 STORAGE_IS_LOCAL = DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage'
+
+# Helpers to verify storage configuration
+if STORAGE_IS_GCS:
+    assert os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'), "Google Cloud Storage credentials are stored in a json " \
+                                                             "file which GOOGLE_APPLICATION_CREDENTIALS env var " \
+                                                             "should point to (edit in .env)"
 
 # Setup actual storage classes we use on the project
 StorageClass = get_storage_class(DEFAULT_FILE_STORAGE)
@@ -286,12 +297,12 @@ if STORAGE_IS_AWS:
     BundleStorage = StorageClass(bucket=AWS_STORAGE_PRIVATE_BUCKET_NAME)
     PublicStorage = StorageClass(bucket=AWS_STORAGE_BUCKET_NAME)
 elif STORAGE_IS_GCS:
-    raise NotImplementedError()
+    BundleStorage = StorageClass(bucket_name=GS_PRIVATE_BUCKET_NAME)
+    PublicStorage = StorageClass(bucket_name=GS_PUBLIC_BUCKET_NAME)
 elif STORAGE_IS_AZURE:
     BundleStorage = StorageClass(account_name=BUNDLE_AZURE_ACCOUNT_NAME,
                                  account_key=BUNDLE_AZURE_ACCOUNT_KEY,
                                  azure_container=BUNDLE_AZURE_CONTAINER)
-
     PublicStorage = StorageClass(account_name=AZURE_ACCOUNT_NAME,
                                  account_key=AZURE_ACCOUNT_KEY,
                                  azure_container=AZURE_CONTAINER)

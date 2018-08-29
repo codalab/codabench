@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 
 from datasets.models import Data
-from datasets.utils import _make_url_sassy
+from utils.data import _make_url_sassy
 
 
 class DataManagement(LoginRequiredMixin, TemplateView):
