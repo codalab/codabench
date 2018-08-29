@@ -121,13 +121,18 @@ CODALAB.api = {
             // We have an upload URL, so upload now..
             .then(function(result) {
                 dataset = result
-
                 return $.ajax({
                     type: 'PUT',
                     url: result.sassy_url,
                     data: data_file,
                     processData: false,
                     contentType: false,
+                    beforeSend: function(request) {
+                        if(STORAGE_TYPE === 'azure') {
+                            request.setRequestHeader('x-ms-blob-type', 'BlockBlob')
+                            request.setRequestHeader('x-ms-version', '2018-03-28')
+                        }
+                    },
                     xhr: function (xhr) {
                         var request = new window.XMLHttpRequest();
 

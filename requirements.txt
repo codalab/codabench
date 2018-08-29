@@ -21,18 +21,7 @@ dj-database-url==0.4.2
 psycopg2==2.7.3
 
 # Storage
-django-storages[google]==1.6.6
-
-#git+https://github.com/jschneier/django-storages.git@master
-#-e 'git+https://github.com/mikebz/django-storages.git#egg=upgrade_azure'
-#azure==2.0.0
-#azure-storage==0.34.3
-
-
-#azure-storage-blob==1.3.1
-#azure-storage<=0.20.0
-
-
+-e git+https://github.com/jschneier/django-storages.git#egg=django-storages[azure,google]
 boto3==1.7.84
 whitenoise==3.3.0
 

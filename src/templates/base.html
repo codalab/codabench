@@ -157,6 +157,9 @@
 <script src="{% static "js/jquery.form.serializer.js" %}"></script>
 
 <script>
+    {# From `common_settings` context processor #}
+    STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+
     // Load in URLs or other django generated goodies
     URLS = {
         assets: {

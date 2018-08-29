@@ -5,6 +5,8 @@ from datetime import timedelta
 
 from settings.base import BundleStorage
 
+from azure.storage.blob import BlobPermissions
+
 from django.conf import settings
 from django.utils.timezone import now
 from django.utils.deconstruct import deconstructible
@@ -31,7 +33,11 @@ class PathWrapper(object):
 
 
 def _make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
-    if settings.STORAGE_IS_AWS:
+    assert permission in ('r', 'w'), "SASSY urls only support read and write ('r' or 'w' permission)"
+
+    client_method = None  # defined based on storage backend
+
+    if settings.STORAGE_IS_S3:
         # Remove the beginning of the URL (before bucket name) so we just have the path to the file
         path = path.split(settings.AWS_STORAGE_PRIVATE_BUCKET_NAME)[-1]
 
@@ -49,8 +55,6 @@ def _make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='a
         elif permission == 'w':
             client_method = 'put_object'
             params["ContentType"] = content_type
-        else:
-            raise NotImplementedError()
 
         return BundleStorage.bucket.meta.client.generate_presigned_url(
             client_method,
@@ -62,8 +66,6 @@ def _make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='a
             client_method = 'GET'
         elif permission == 'w':
             client_method = 'PUT'
-        else:
-            raise NotImplementedError()
 
         bucket = BundleStorage.client.get_bucket(settings.GS_PRIVATE_BUCKET_NAME)
         return bucket.blob(path).generate_signed_url(
@@ -72,23 +74,20 @@ def _make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='a
             content_type=content_type,
         )
     elif settings.STORAGE_IS_AZURE:
-        #     sassy_url = make_blob_sas_url(
-        #         settings.BUNDLE_AZURE_ACCOUNT_NAME,
-        #         settings.BUNDLE_AZURE_ACCOUNT_KEY,
-        #         settings.BUNDLE_AZURE_CONTAINER,
-        #         path,
-        #         permission=permission,
-        #         duration=duration
-        #     )
-        #
-        #     # Ugly way to check if we didn't get the path, should work...
-        #     if '<Code>InvalidUri</Code>' not in sassy_url:
-        #         return sassy_url
-        #     else:
-        #         return ''
-        raise NotImplementedError()
-    elif settings.STORAGE_IS_LOCAL:
-        raise NotImplementedError()
+        if permission == 'r':
+            client_method = BlobPermissions.READ
+        elif permission == 'w':
+            client_method = BlobPermissions.WRITE
 
+        sas_token = BundleStorage.service.generate_blob_shared_access_signature(
+            BundleStorage.azure_container,
+            path,
+            client_method,
+            expiry=now() + timedelta(seconds=duration),
+        )
 
-
+        return BundleStorage.service.make_blob_url(
+            container_name=BundleStorage.azure_container,
+            blob_name=path,
+            sas_token=sas_token,
+        )
