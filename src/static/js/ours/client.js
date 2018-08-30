@@ -58,6 +58,9 @@ CODALAB.api = {
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
+    get_competition_creation_status: function (key) {
+        return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
+    },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
@@ -105,7 +108,7 @@ CODALAB.api = {
     /**
      * Creates a dataset
      * @param {object} metadata - name, description, type, data_file, is_public
-     * @param {object} file - the actual file object to use
+     * @param {object} data_file - the actual file object to use
      * @param {function} progress_update_callback
      */
     create_dataset: function (metadata, data_file, progress_update_callback) {

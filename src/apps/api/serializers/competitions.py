@@ -4,7 +4,7 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
-from competitions.models import Competition, Phase, Submission, Page
+from competitions.models import Competition, Phase, Submission, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
 
@@ -91,3 +91,13 @@ class CompetitionSerializer(WritableNestedModelSerializer):
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')
+
+
+class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompetitionCreationTaskStatus
+        fields = (
+            'status',
+            'details',
+            'resulting_competition',
+        )

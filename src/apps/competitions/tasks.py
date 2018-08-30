@@ -178,8 +178,11 @@ def unpack_competition(competition_dataset_pk):
                 context={"created_by": creator}
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            competition = serializer.save()
 
+            status.status = CompetitionCreationTaskStatus.FINISHED
+            status.resulting_competition = competition
+            status.save()
             print("Competition saved!")
 
 

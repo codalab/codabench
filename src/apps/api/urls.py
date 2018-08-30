@@ -8,6 +8,7 @@ from .views import competitions, datasets, profiles, leaderboards
 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
+router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
 router.register('phases', competitions.PhaseViewSet)
 router.register('submissions', competitions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
