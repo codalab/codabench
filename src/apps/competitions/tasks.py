@@ -84,35 +84,44 @@ def unpack_competition(competition_dataset_pk):
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
 
-            # Turn image into base64 version for easy uploading
-            # (Can maybe split this into a separate function)
-            image_path = os.path.join(temp_directory, competition_yaml.get('image'))
-            with open(image_path, "rb") as image:
-                image_json = json.dumps({
-                    "file_name": os.path.basename(competition_yaml.get('image')),
-                    # Converts to b64 then to string
-                    "data": base64.b64encode(image.read()).decode()
-                })
-
             # ---------------------------------------------------------------------
             # Initialize the competition dict
             competition = {
                 "title": competition_yaml.get('title'),
                 # NOTE! We use 'logo' instead of 'image' here....
-                "logo": image_json,
+                "logo": None,
                 "pages": [],
                 "phases": [],
                 "leaderboards": [],
             }
 
             # ---------------------------------------------------------------------
+            # Logo
+            # Turn image into base64 version for easy uploading
+            # (Can maybe split this into a separate function)
+            image_path = os.path.join(temp_directory, competition_yaml.get('image'))
+
+            if not os.path.exists(yaml_path):
+                raise CompetitionUnpackingException(f"Unable to find image: {competition_yaml.get('image')}")
+
+            with open(image_path, "rb") as image:
+                competition['logo'] = json.dumps({
+                    "file_name": os.path.basename(competition_yaml.get('image')),
+                    # Converts to b64 then to string
+                    "data": base64.b64encode(image.read()).decode()
+                })
+
+            # ---------------------------------------------------------------------
             # Pages
             for index, page in enumerate(competition_yaml.get('pages')):
-                competition['pages'].append({
-                    "title": page["title"],
-                    "content": open(os.path.join(temp_directory, page["file"])).read(),
-                    "index": index
-                })
+                try:
+                    competition['pages'].append({
+                        "title": page.get("title"),
+                        "content": open(os.path.join(temp_directory, page["file"])).read(),
+                        "index": index
+                    })
+                except FileNotFoundError:
+                    raise CompetitionUnpackingException(f"Unable to find page: {page['file']}")
 
             # ---------------------------------------------------------------------
             # Phases
@@ -157,7 +166,7 @@ def unpack_competition(competition_dataset_pk):
                         # Keys are length 32 or 36, so check if we can find a dataset matching this already
                         new_phase[file_type] = file_name
                     else:
-                        raise ValidationError(f"Cannot find dataset: {file_name} for phase \"{phase['name']}\"")
+                        raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
 
                 competition['phases'].append(new_phase)
 
