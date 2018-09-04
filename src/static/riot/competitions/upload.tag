@@ -10,12 +10,12 @@
                 </h1>
 
                 <!-- File selection state view -->
-                <form hide="{ listening_for_status }" class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+                <form hide="{ listening_for_status || resulting_competition || resulting_details }" class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                     <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
                 </form>
 
                 <!-- Upload progress state view -->
-                <div hide="{ listening_for_status }" class="ui indicating progress" ref="progress">
+                <div hide="{ listening_for_status || resulting_competition || resulting_details }" class="ui indicating progress" ref="progress">
                     <div class="bar">
                         <div class="progress">{ upload_progress }%</div>
                     </div>
@@ -35,18 +35,25 @@
 
                 <!-- Competition creation task status view -->
                 <div ref="task_status_display" class="coda-animated-slow task-status-display">
-                    LISTENING!<br>
-                    LISTENING!<br>
-                    LISTENING!<br>
-                    LISTENING!<br>
-                    LISTENING!<br>
+                    <div class="ui huge text centered inline loader { active: listening_for_status }">Unpacking...</div>
+
+                    <div class="ui success message" show="{ resulting_competition }">
+                        <div class="header">
+                            Competition created!
+                        </div>
+                        <p><a href="{ URLS.COMPETITION_DETAIL(resulting_competition) }">View</a> your new competition.</p>
+                    </div>
+
+                    <div class="ui negative message" show="{ !listening_for_status && !resulting_competition }">
+                        <div class="header">
+                            Creation failed
+                        </div>
+                        <p>{ resulting_details }</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <button onclick="{ status_listening_loop }">show</button>
-    <button onclick="{ end_listen_loop }">hide</button>
 
     <script>
         var self = this
@@ -57,6 +64,7 @@
         ---------------------------------------------------------------------*/
         self.errors = {}
         self.listening_for_status = false
+        self.resulting_competition = undefined
 
         self.one('mount', function() {
             // Prepare and do the upload on file input change
@@ -109,8 +117,6 @@
                     setTimeout(function() {
                         self.status_listening_loop(data.key)
                     }, 501)  // do this after the always() hide progress bar's 500ms wait
-
-                    toastr.success("Competition uploaded successfully!")
                 })
                 .fail(function (response) {
                     if (response) {
@@ -136,75 +142,46 @@
         }
 
         self.status_listening_loop = function(key) {
-
             // Show listen section nicely, changing max height does animation for us
             self.refs.task_status_display.style.maxHeight = '1000px'
-
-
-
-
-
-
-            // TODO: Slowly slide down the listening pane
-
-
-
-
-
-
-
-
             self.listening_for_status = true
             self.update()
 
+            // Every 2 seconds get status
             setTimeout(function() {
                 CODALAB.api.get_competition_creation_status(key)
                     .done(function(data){
                         var status = data.status.toLowerCase()
                         if(status === "finished" || status === "failed") {
-                            self.creation_task_finished(data.resulting_competition)
+                            self.resulting_details = data.details
+                            self.resulting_competition = data.resulting_competition
+                            self.listening_for_status = false
+                            self.update()
                         } else {
                             // Continue looping, we're not done yet!
                             self.status_listening_loop(key)
                         }
                     })
+                    //.always(function() {
+                    //    // Hide the task status display now
+                    //    self.refs.task_status_display.style.maxHeight = '0'
+                    //})
             }, 2000)
         }
-
-        self.end_listen_loop = function() {
-            self.refs.task_status_display.style.maxHeight = '0'
-        }
-
-        self.creation_task_finished = function() {
-            console.log("TASK FINISHED!!!")
-
-
-            // Show the "View your competition!" button
-            /*
-
-            self.listening_for_status = false
-            self.update()
-
-            // Show listen section nicely, changing max height does animation for us
-            self.refs.task_status_display.style.maxHeight = '0'
-            */
-
-        }
-
-        //self.check_status = function() {
-        //
-        //}
     </script>
 
     <style type="text/stylus">
         :scope
             padding 50px 0
 
-        .header
+        h1.header
             margin-bottom 35px !important
 
         .task-status-display
             max-height 0
             overflow hidden
+
+        .loader
+            padding-bottom 20px
     </style>
 </competition-upload>

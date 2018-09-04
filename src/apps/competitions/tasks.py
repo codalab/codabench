@@ -79,7 +79,7 @@ def unpack_competition(competition_dataset_pk):
 
             if not os.path.exists(yaml_path):
                 raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
-                                                    "to make sure competition.yaml is in the root directory.")
+                                                    "to make sure it is in the root directory.")
 
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
