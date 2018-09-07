@@ -28,11 +28,11 @@
             ],
             "phases": [
                 {
-                    "title": "Initial Testing",
+                    "title": "First Phase",
                     "number": 1,
                     "start": "2018-12-01T00:00:00Z",
                     "end": "2018-12-05T00:00:00Z",
-                    "description": "test",
+                    "description": "description here",
                     "input_data": null,
                     "reference_data": null,
                     "scoring_program": null,
@@ -41,7 +41,7 @@
                     "starting_kit": null
                 },
                 {
-                    "title": "Initial Secondary Testing",
+                    "title": "Second Phase",
                     "number": 2,
                     "start": "2018-12-01T00:00:00Z",
                     "end": "2018-12-05T00:00:00Z",
@@ -54,11 +54,11 @@
                     "starting_kit": null
                 },
                 {
-                    "title": "Initial Feedback",
+                    "title": "Final Phase",
                     "number": 3,
                     "start": "2018-12-06T00:00:00Z",
                     "end": "2018-12-08T00:00:00Z",
-                    "description": "test",
+                    "description": "another description",
                     "input_data": null,
                     "reference_data": null,
                     "scoring_program": null,
@@ -120,5 +120,6 @@
     <style type="text/stylus">
         :scope
             min-height 500px
+            width inherit
     </style>
 </comp-detail>
