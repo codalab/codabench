@@ -23,7 +23,6 @@
     <div class="ui middle aligned stackable grid container">
         <div class="row centered">
             <div class="twelve wide column">
-
                 <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
                     <div class="header">
                         Error(s) saving competition

@@ -2,9 +2,9 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="active item" data-tab="learn_the_details_tab">Learn The Details</div>
+            <div class="item" data-tab="learn_the_details_tab">Learn The Details</div>
             <div class="item" data-tab="phases_tab">Phases</div>
-            <div class="item" data-tab="participate_tab">Participate</div>
+            <div class="active item" data-tab="participate_tab">Participate</div>
             <div class="item" data-tab="results_tab">Results</div>
         </div>
         <div class="ui active tab" data-tab="learn_the_details_tab">
@@ -212,12 +212,9 @@
         </div>
 
         <!--participate tab-->
-        <div class="ui tab" data-tab="participate_tab">
+        <div class="participate-tab ui tab" data-tab="participate_tab">
             <!-- Tab Content !-->
-            <div class="ui ">
-                <p>Ask to participate? Make submissions etc</p>
-                <submission-management></submission-management>
-            </div>
+            <submission-management><!-- /submissions/submit.tag --></submission-management>
         </div>
 
         <!--results tab-->
@@ -226,62 +223,66 @@
             <div class="ui ">
                 <p>View results</p>
             </div>
+        </div>
 
-            <style type="text/stylus">
-                .comp-tabs
-                    margin-top 1em !important
+        <style type="text/stylus">
+            .comp-tabs
+                margin-top 1em !important
 
-                .ui.secondary.pointing.menu .active.item
-                    border-color rgba(42, 68, 88, .5)
-                    color rgb(42, 68, 88)
+            .ui.secondary.pointing.menu .active.item
+                border-color rgba(42, 68, 88, .5)
+                color rgb(42, 68, 88)
 
-                .ui.secondary.pointing.menu .active.item:hover
-                    border-color rgba(42, 68, 88, .5)
-                    color rgb(42, 68, 88)
+            .ui.secondary.pointing.menu .active.item:hover
+                border-color rgba(42, 68, 88, .5)
+                color rgb(42, 68, 88)
 
-                .details-menu
-                    width 100%
+            .details-menu
+                width 100%
 
-                .details-menu .active.item, .details-menu .item
-                    margin -2px auto!important
+            .details-menu .active.item, .details-menu .item
+                margin -2px auto !important
 
+            .participate-tab
+                margin 0 auto
 
-            </style>
-            <script>
+        </style>
+        <script>
+            $('.tabular.menu .item').tab(); // Activate tabs
+
+            var self = this
+            self.competition = opts.competition
+
+            // Handling tabs
+            self.tabs = ["learn_details", "phases", "participate", "results"]
+            self.active_tab = self.tabs[0]
+
+            // Dynamic based on which `tab` object is active
+            self.active_tab_active_subtab = {}
+            self.active_tab_subtabs = {}
+
+            // handling pages if we're on learn the details
+            self.active_page = self.competition.pages[0]
+
+            self.one("mount", function () {
+                // tabs
                 $('.tabular.menu .item').tab(); // Activate tabs
+                // $('.menu .item').tab()
+            })
 
-                var self = this
-                self.competition = opts.competition
+            self.set_active_tab = function (index) {
+                // On set active, we need to remove the current active_tab's `active` class, and add it to the new tab
+                self.active_tab = self.tabs[index]
+            }
 
-                // Handling tabs
-                self.tabs = ["learn_details", "phases", "participate", "results"]
-                self.active_tab = self.tabs[0]
-
-                // Dynamic based on which `tab` object is active
-                self.active_tab_active_subtab = {}
-                self.active_tab_subtabs = {}
-
-                // handling pages if we're on learn the details
-                self.active_page = self.competition.pages[0]
-
-                self.one("mount", function () {
-                    // tabs
-                    $('.tabular.menu .item').tab(); // Activate tabs
-                    // $('.menu .item').tab()
-                })
-
-                self.set_active_tab = function (index) {
-                    // On set active, we need to remove the current active_tab's `active` class, and add it to the new tab
-                    self.active_tab = self.tabs[index]
-                }
-
-                self.tab_string_to_index = function (string_tab_id) {
-                    for (i = 0; i < self.tabs.length; i++) {
-                        if (self.tabs[i] === string_tab_id) {
-                            return i
-                        }
+            self.tab_string_to_index = function (string_tab_id) {
+                for (i = 0; i < self.tabs.length; i++) {
+                    if (self.tabs[i] === string_tab_id) {
+                        return i
                     }
                 }
+            }
 
-            </script>
+        </script>
+
 </comp-tabs>

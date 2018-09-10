@@ -89,6 +89,12 @@
         .progressbar li.completed + li:after
             background-color #71a4be
 
+        .progressbar li.active
+            color #3ebe32
+
+        .progressbar li.active:before
+            border-color #3ebe327a
+            box-shadow 2px 2px 25px #3ebe32
 
     </style>
 </comp-detail-title>
