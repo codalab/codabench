@@ -6,7 +6,6 @@ import zipfile
 from dateutil import parser
 from django.core.files import File
 from django.utils.timezone import now
-from rest_framework.exceptions import ValidationError
 
 from tempfile import TemporaryDirectory
 
@@ -32,7 +31,6 @@ def score_submission(submission_pk, phase_pk):
     file_to_score = sub_to_score.zip_file
     print(scoring_program)
     print(file_to_score)
-
 
 
 class CompetitionUnpackingException(Exception):
@@ -151,6 +149,9 @@ def unpack_competition(competition_dataset_pk):
                         )
                         # This saves the file AND saves the model
                         new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+
+                        children_datasets.append(new_dataset)
+
                         new_phase[file_type] = new_dataset.key
                     elif len(file_name) in (32, 36):
                         # Keys are length 32 or 36, so check if we can find a dataset matching this already
@@ -184,8 +185,6 @@ def unpack_competition(competition_dataset_pk):
             status.save()
             print("Competition saved!")
 
-
-
             # TODO: If something fails delete baby datasets and such!!!!
     except CompetitionUnpackingException as e:
         status.details = str(e)
@@ -194,10 +193,3 @@ def unpack_competition(competition_dataset_pk):
 
         print("FAILED!")
         print(status.details)
-
-
-
-
-
-
-

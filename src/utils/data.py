@@ -3,7 +3,7 @@ import uuid
 
 from datetime import timedelta
 
-from settings.base import BundleStorage
+from utils.storage import BundleStorage
 
 from azure.storage.blob import BlobPermissions
 
@@ -32,7 +32,7 @@ class PathWrapper(object):
         )
 
 
-def _make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
+def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
     assert permission in ('r', 'w'), "SASSY urls only support read and write ('r' or 'w' permission)"
 
     client_method = None  # defined based on storage backend

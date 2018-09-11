@@ -19,16 +19,17 @@
 #    # - if [[ `grep -rnw src -e 'TODO'` ]]; then (exit -1); fi
 
 version: 2
+
 jobs:
   test:
     docker:
       - image: circleci/python:3.6-jessie-browsers
     steps:
       - checkout
-      - run:
-          command: pip install -r requirements.dev.txt
-      - run:
-          command: py.test
+      - run: pip install -r requirements.dev.txt
+      - run: py.test
+      - run: flake8 src/ --ignore E501
+
 workflows:
   version: 2
   build_and_test:

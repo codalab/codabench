@@ -1,9 +1,8 @@
 import os
 
 from django.http import Http404
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
-from uuid import UUID
 
 from django.core.files.base import ContentFile
 from django.db.models import Q
@@ -15,7 +14,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
-from utils.data import _make_url_sassy
+from utils.data import make_url_sassy
 
 
 class DataViewSet(mixins.CreateModelMixin,
@@ -69,7 +68,7 @@ class DataViewSet(mixins.CreateModelMixin,
         new_dataset.data_file.save(sassy_file_name, ContentFile(''.encode()))
         context = {
             "key": new_dataset.key,
-            "sassy_url": _make_url_sassy(new_dataset.data_file.name, 'w'),
+            "sassy_url": make_url_sassy(new_dataset.data_file.name, 'w'),
         }
         return Response(context, status=status.HTTP_201_CREATED, headers=headers)
 

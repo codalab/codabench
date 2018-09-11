@@ -2,7 +2,6 @@ import os
 import sys
 
 import dj_database_url
-from django.core.files.storage import get_storage_class
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -299,18 +298,3 @@ BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
-
-# Setup actual storage classes we use on the project
-StorageClass = get_storage_class(DEFAULT_FILE_STORAGE)
-
-if STORAGE_IS_S3:
-    BundleStorage = StorageClass(bucket=AWS_STORAGE_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket=AWS_STORAGE_BUCKET_NAME)
-elif STORAGE_IS_GCS:
-    BundleStorage = StorageClass(bucket_name=GS_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket_name=GS_PUBLIC_BUCKET_NAME)
-elif STORAGE_IS_AZURE:
-    BundleStorage = StorageClass(azure_container=BUNDLE_AZURE_CONTAINER)
-    PublicStorage = StorageClass(azure_container=AZURE_CONTAINER)
-else:
-    raise NotImplementedError()
