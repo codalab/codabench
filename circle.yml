@@ -1,19 +1,34 @@
-machine:
-  environment:
-    DB_HOST: localhost
-  python:
-    version: 3.6.1
+#machine:
+#  environment:
+#    DB_HOST: localhost
+#  python:
+#    version: 3.6.1
+#
+#dependencies:
+#  pre:
+#    - pip install -r requirements.dev.txt
+#
+#test:
+#  override:
+#    - python manage.py test
+#    - flake8 src/ --ignore E501
+#
+#    # Check templates and such for style= attributes
+#    - if [[ `grep -rnw src/templates/ -e 'style='` ]]; then (exit -1); fi
+#    - if [[ `grep -rnw src/static/riot -e 'style='` ]]; then (exit -1); fi
+#    # - if [[ `grep -rnw src -e 'TODO'` ]]; then (exit -1); fi
 
-dependencies:
-  pre:
-    - pip install -r requirements.dev.txt
-
-test:
-  override:
-    - python manage.py test
-    - flake8 src/ --ignore E501
-
-    # Check templates and such for style= attributes
-    - if [[ `grep -rnw src/templates/ -e 'style='` ]]; then (exit -1); fi
-    - if [[ `grep -rnw src/static/riot -e 'style='` ]]; then (exit -1); fi
-    # - if [[ `grep -rnw src -e 'TODO'` ]]; then (exit -1); fi
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/3.6-jessie-browsers
+    steps:
+      - checkout
+      - run: pip install requirements.dev.txt
+      - run: py.test
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test
