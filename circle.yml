@@ -22,7 +22,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/3.6-jessie-browsers
+      - image: circleci/python:3.6-jessie-browsers
     steps:
       - checkout
       - run: pip install requirements.dev.txt
