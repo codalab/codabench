@@ -50,15 +50,6 @@ class Data(models.Model):
     # TODO: add Model manager that automatically filters out upload_completed_successfully=False from queries
     # TODO: remove upload_completed_successfully=False after 3 days ???
 
-    # class Meta:
-    #     unique_together = ('name', 'created_by')
-
-    # def clean(self):
-    #     if self.name:
-    #         if Data.objects.filter(name=self.name, created_by=self.created_by).exists():
-    #             raise ValidationError("")
-    #     super().clean()
-
 
 class DataGroup(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
