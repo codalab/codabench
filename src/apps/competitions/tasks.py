@@ -53,16 +53,6 @@ def unpack_competition(competition_dataset_pk):
         status=CompetitionCreationTaskStatus.STARTING,
     )
 
-    # unpack zip to temp directory
-    # read the competition.yaml file
-    # validate YAML
-    #    - uhhhhhhhhhhhhhhhhhhhh
-    # for each dataset in each phase, upload them. -- DO NOT DO DUPLICATES! Be smaht about it
-    # create JSON pointing to the datasets properly
-    # send it to the serializer + save it
-    # return errors to user if any
-    # IF ERRORS DESTROY BABY DATASETS!
-
     try:
         with TemporaryDirectory() as temp_directory:
             # ---------------------------------------------------------------------
@@ -101,7 +91,7 @@ def unpack_competition(competition_dataset_pk):
             # (Can maybe split this into a separate function)
             image_path = os.path.join(temp_directory, competition_yaml.get('image'))
 
-            if not os.path.exists(yaml_path):
+            if not os.path.exists(image_path):
                 raise CompetitionUnpackingException(f"Unable to find image: {competition_yaml.get('image')}")
 
             with open(image_path, "rb") as image:
