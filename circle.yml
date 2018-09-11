@@ -26,10 +26,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Do I have to..
-          command: pip install requirements.dev.txt
+          command: pip install -r requirements.dev.txt
       - run:
-          name: ..do this?
           command: py.test
 workflows:
   version: 2
