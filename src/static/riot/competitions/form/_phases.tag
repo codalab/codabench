@@ -242,6 +242,7 @@
                         fields: {
                             title: 'name'
                         },
+                        cache: false,
                         maxResults: 4,
                         onSelect: function(result, response) {
                             // It's hard to store the dataset information (hidden fields suck), so let's just put it here temporarily

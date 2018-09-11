@@ -98,37 +98,37 @@
             </div>
             {% block top_div_extra_content %}{% endblock %}
         </div>
-        <div id="page_content" class="ui container grid">
-            <div class="row">
-                {% block content %}
-                {% endblock %}
-            </div>
+    </div>
+    <div id="page_content" class="ui container grid">
+        <div class="row">
+            {% block content %}
+            {% endblock %}
         </div>
-        <div class="ui inverted vertical footer segment">
-            <div class="ui container">
-                <div class="ui stackable inverted divided equal height stackable grid">
-                    <div class="three wide column">
-                        <h4 class="ui inverted header">About</h4>
-                        <div class="ui inverted link list">
-                            <a href="#" class="item">Sitemap</a>
-                            <a href="#" class="item">Contact Us</a>
-                            <a href="#" class="item">Religious Ceremonies</a>
-                            <a href="#" class="item">Gazebo Plans</a>
-                        </div>
+    </div>
+    <div class="ui inverted vertical footer segment">
+        <div class="ui container">
+            <div class="ui stackable inverted divided equal height stackable grid">
+                <div class="three wide column">
+                    <h4 class="ui inverted header">About</h4>
+                    <div class="ui inverted link list">
+                        <a href="#" class="item">Sitemap</a>
+                        <a href="#" class="item">Contact Us</a>
+                        <a href="#" class="item">Religious Ceremonies</a>
+                        <a href="#" class="item">Gazebo Plans</a>
                     </div>
-                    <div class="three wide column">
-                        <h4 class="ui inverted header">Services</h4>
-                        <div class="ui inverted link list">
-                            <a href="#" class="item">Banana Pre-Order</a>
-                            <a href="#" class="item">DNA FAQ</a>
-                            <a href="#" class="item">How To Access</a>
-                            <a href="#" class="item">Favorite X-Men</a>
-                        </div>
+                </div>
+                <div class="three wide column">
+                    <h4 class="ui inverted header">Services</h4>
+                    <div class="ui inverted link list">
+                        <a href="#" class="item">Banana Pre-Order</a>
+                        <a href="#" class="item">DNA FAQ</a>
+                        <a href="#" class="item">How To Access</a>
+                        <a href="#" class="item">Favorite X-Men</a>
                     </div>
-                    <div class="seven wide column">
-                        <h4 class="ui inverted header">Footer Header</h4>
-                        <p>Extra space for a call to action inside the footer that could help re-engage users.</p>
-                    </div>
+                </div>
+                <div class="seven wide column">
+                    <h4 class="ui inverted header">Footer Header</h4>
+                    <p>Extra space for a call to action inside the footer that could help re-engage users.</p>
                 </div>
             </div>
         </div>
@@ -150,12 +150,16 @@
 
 <!-- Ours -->
 <script src="{% static "generated/riot.js" %}"></script>
-<script src="{% static "js/ours/utils.js" %}"></script>
 <script src="{% static "js/ours/client.js" %}"></script>
 <script src="{% static "js/ours/init.js" %}"></script>
+<script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+<script src="{% static "js/ours/utils.js" %}"></script>
 <script src="{% static "js/jquery.form.serializer.js" %}"></script>
 
 <script>
+    {# From `common_settings` context processor #}
+    STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+
     // Load in URLs or other django generated goodies
     URLS = {
         assets: {
@@ -164,6 +168,7 @@
         API: "/api/",
 
         // Competitions
+        COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
         COMPETITION_ADD: "{% url "competitions:create" %}",
         COMPETITION_DETAIL: function (pk) {
             return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
@@ -174,7 +179,7 @@
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}",
-        DATASET_DOWNLOAD: function(key) {
+        DATASET_DOWNLOAD: function (key) {
             return "{% url "datasets:download" key=0 %}".replace(0, key)
         }
     }

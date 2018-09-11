@@ -2,45 +2,42 @@
 {% load static %}
 
 {% block content %}
-    <div class="ui middle aligned center aligned grid">
-        <div class="column">
-            <form class="ui large form" method="POST">
-                <div class="ui divider"></div>
-                <h2 class="ui blue header">
-                    Login
-                </h2>
-                {% csrf_token %}
-                <div class="ui stacked segment">
-                    <div class="ui field">
-                        <div class="ui left icon input">
-                            <i class="user icon"></i>
-                            <input type="text"
-                                   name="username"
-                                   placeholder="username"
-                                   id="id_username"
-                                   value="{{ form.username.value|default:""}}"
-                                   maxlength="{{ form.username.field.max_length }}"
-                                   required>
-                        </div>
+    <div class="sixteen wide mobile eight wide computer centered column">
+        <form class="ui large form" method="POST">
+            <h2 class="ui blue header">
+                Login
+            </h2>
+            {% csrf_token %}
+            <div class="ui stacked segment">
+                <div class="ui field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="text"
+                               name="username"
+                               placeholder="username"
+                               id="id_username"
+                               value="{{ form.username.value|default:""}}"
+                               maxlength="{{ form.username.field.max_length }}"
+                               required>
                     </div>
-                    <div class="ui field">
-                        <div class="ui left icon input">
-                            <i class="user icon"></i>
-                            <input type="password"
-                                   name="password"
-                                   placeholder="password"
-                                   id="id_password"
-                                   value="{{ form.password.value|default:""}}"
-                                   maxlength="{{ form.password.field.max_length }}"
-                                   required>
-                        </div>
-                    </div>
-                    <button class="ui blue submit button" type="submit">Login</button>
-                    <div class="ui divider"></div>
-                    <p>New to us? <a href="#">Sign Up</a></p>
                 </div>
-                <div class="ui error message"></div>
-            </form>
-        </div>
+                <div class="ui field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="password"
+                               name="password"
+                               placeholder="password"
+                               id="id_password"
+                               value="{{ form.password.value|default:""}}"
+                               maxlength="{{ form.password.field.max_length }}"
+                               required>
+                    </div>
+                </div>
+                <button class="ui blue submit button" type="submit">Login</button>
+                <div class="ui divider"></div>
+                <p>New to us? <a href="#">Sign Up</a></p>
+            </div>
+            <div class="ui error message"></div>
+        </form>
     </div>
 {% endblock %}

@@ -13,6 +13,10 @@ class CompetitionForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
 
 
+class CompetitionUpload(LoginRequiredMixin, TemplateView):
+    template_name = 'competitions/upload.html'
+
+
 class CompetitionDetail(LoginRequiredMixin, TemplateView, ContextMixin):
     template_name = 'competitions/detail.html'
 

@@ -1,5 +1,6 @@
 *.pyc
 __pycache__
+.pytest_cache/
 
 .env
 .envrc
@@ -9,6 +10,7 @@ staticfiles/
 uploads/
 venv/
 var/
+certs/
 
 src/static/output.css
 src/static/output.js
@@ -17,3 +19,4 @@ src/static/riot.tag
 src/static/generated/*
 
 db.sqlite3
+competitions_v2
