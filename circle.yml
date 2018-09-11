@@ -25,8 +25,10 @@ jobs:
       - image: circleci/python:3.6-jessie-browsers
     steps:
       - checkout
-      - run: pip install requirements.dev.txt
-      - run: py.test
+      - run:
+          command: pip install requirements.dev.txt
+      - run:
+          command: py.test
 workflows:
   version: 2
   build_and_test:
