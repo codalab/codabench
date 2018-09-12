@@ -149,11 +149,10 @@ DEBUG = os.environ.get('DEBUG', True)
 # =============================================================================
 # Database
 # =============================================================================
-DATABASES = {'default': {}}
-
-db_from_env = dj_database_url.config()
-if db_from_env:
-    DATABASES['default'].update(db_from_env)
+if os.environ.get("DATABASE_URL"):
+    DATABASES= {
+        'default': dj_database_url.config(conn_max_age=600)
+    }
 else:
     DATABASES = {
         'default': {
