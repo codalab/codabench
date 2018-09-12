@@ -150,6 +150,7 @@ DEBUG = os.environ.get('DEBUG', True)
 # Database
 # =============================================================================
 DATABASES = {
+    # This comes from DATABASE_URL in `docker-compose.yml` (or Heroku)
     'default': dj_database_url.config(conn_max_age=600)
 }
 
