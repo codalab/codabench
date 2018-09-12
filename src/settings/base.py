@@ -2,7 +2,6 @@ import os
 import sys
 
 import dj_database_url
-from django.core.files.storage import get_storage_class
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,6 +33,7 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
+    'storages',
 )
 OUR_APPS = (
     'competitions',
@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
+                'utils.context_processors.common_settings',
             ],
         },
     },
@@ -158,6 +159,10 @@ else:
         'default': {
             'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
             'NAME': os.environ.get('DB_NAME', 'db.sqlite3'),
+            'USER': os.environ.get('DB_USERNAME', ''),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'postgres'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
 
@@ -172,11 +177,26 @@ else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
 
+
+# =========================================================================
+# RabbitMQ
+# =========================================================================
+RABBITMQ_DEFAULT_USER = os.environ.get('RABBITMQ_DEFAULT_USER', 'guest')
+RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+
+
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
-# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
+
+if not BROKER_URL:
+    # BROKER_URL might be set but empty, make sure it's set!
+    BROKER_URL = 'pyamqp://{}:{}@{}:{}//'.format(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS, RABBITMQ_HOST,
+                                                 RABBITMQ_PORT)
 
 
 # =============================================================================
@@ -214,7 +234,28 @@ if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
 # =============================================================================
 # Storage
 # =============================================================================
-DEFAULT_FILE_STORAGE = os.environ.get('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage')
+STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
+DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
+
+STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
+STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'
+STORAGE_IS_AZURE = STORAGE_TYPE == 'azure'
+
+if STORAGE_IS_S3:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+elif STORAGE_IS_GCS:
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+elif STORAGE_IS_AZURE:
+    DEFAULT_FILE_STORAGE = "utils.storage.CodalabAzureStorage"
+else:
+    raise NotImplementedError("Must use STORAGE_TYPE of 's3', 'minio', 'gcs', or 'azure'")
+
+# Helpers to verify storage configuration
+if STORAGE_IS_GCS:
+    assert os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'), "Google Cloud Storage credentials are stored in a json " \
+                                                             "file which GOOGLE_APPLICATION_CREDENTIALS env var " \
+                                                             "should point to (edit in .env)"
+
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -236,7 +277,7 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_STORAGE_PRIVATE_BUCKET_NAME = os.environ.get('AWS_STORAGE_PRIVATE_BUCKET_NAME')
 AWS_S3_CALLING_FORMAT = os.environ.get('AWS_S3_CALLING_FORMAT', 'boto.s3.connection.OrdinaryCallingFormat')
-AWS_S3_HOST = os.environ.get('AWS_S3_HOST', 's3-us-west-2.amazonaws.com')
+AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
 AWS_QUERYSTRING_AUTH = os.environ.get(
     # This stops signature/auths from appearing in saved URLs
     'AWS_QUERYSTRING_AUTH',
@@ -253,25 +294,7 @@ BUNDLE_AZURE_ACCOUNT_NAME = os.environ.get('BUNDLE_AZURE_ACCOUNT_NAME', AZURE_AC
 BUNDLE_AZURE_ACCOUNT_KEY = os.environ.get('BUNDLE_AZURE_ACCOUNT_KEY', AZURE_ACCOUNT_KEY)
 BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 
-# Helper booleans
-STORAGE_IS_AWS = DEFAULT_FILE_STORAGE == 'storages.backends.s3boto.S3BotoStorage'
-STORAGE_IS_AZURE = DEFAULT_FILE_STORAGE == 'storages.backends.azure_storage.AzureStorage'
-STORAGE_IS_LOCAL = DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage'
-
-# Setup actual storage classes we use on the project
-StorageClass = get_storage_class(DEFAULT_FILE_STORAGE)
-
-if STORAGE_IS_AWS:
-    BundleStorage = StorageClass(bucket=AWS_STORAGE_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket=AWS_STORAGE_BUCKET_NAME)
-elif STORAGE_IS_AZURE:
-    BundleStorage = StorageClass(account_name=BUNDLE_AZURE_ACCOUNT_NAME,
-                                 account_key=BUNDLE_AZURE_ACCOUNT_KEY,
-                                 azure_container=BUNDLE_AZURE_CONTAINER)
-
-    PublicStorage = StorageClass(account_name=AZURE_ACCOUNT_NAME,
-                                 account_key=AZURE_ACCOUNT_KEY,
-                                 azure_container=AZURE_CONTAINER)
-else:
-    BundleStorage = StorageClass()
-    PublicStorage = StorageClass()
+# Google Cloud Storage
+GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
+GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
+GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket

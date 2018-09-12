@@ -6,7 +6,6 @@ services:
   django:
     build: .
     container_name: django
-    env_file: .env
     command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
@@ -19,7 +18,41 @@ services:
       - 80:80
     depends_on:
       - db
-      - celery
+      - rabbitmq
+      - minio
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
+
+  #-----------------------------------------------
+  # Minio local storage helper
+  #-----------------------------------------------
+  minio:
+    image: minio/minio
+    command: server /export
+    volumes:
+      - /tmp/codalab-competitions-v2-minio:/export
+      - ./docker/run_minio.sh:/app/run_minio.sh
+    ports:
+      - 9000:9000
+    env_file: .env
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add minio_docker http://minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+      /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      exit 0;
+      "
+
+
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #-----------------------------------------------
@@ -29,6 +62,12 @@ services:
       dockerfile: Dockerfile.builder
     volumes:
       - .:/app
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
+
   #-----------------------------------------------
   #   Database Service
   #-----------------------------------------------
@@ -43,25 +82,36 @@ services:
       - 5432:5432
     volumes:
       - ./var/postgres:/var/lib/postgresql/data
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Rabbitmq Service
   #-----------------------------------------------
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.6.6-management
     container_name: rabbit
     env_file: .env
     ports:
       - 15672:15672
       - 5672:5672
     volumes:
+      # To save rabbitmq state between container ups/downs
       - ./var/rabbitmq:/var/lib/rabbitmq/
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
   #-----------------------------------------------
   #   Celery Service
   #-----------------------------------------------
-  celery:
-    container_name: celery
-    command: bash -c "cd /app/src && celery -A comp_worker worker --loglevel=debug"
-    env_file: .env
+  site_worker:
+    # This auto-reloads
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A comp_worker worker"
+    working_dir: /app/src
     build:
       context: .
     depends_on:
@@ -72,17 +122,21 @@ services:
     env_file: .env
     volumes:
       - .:/app
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-  flower:
-    container_name: flower
-    env_file: .env
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
-    ports:
-      - 15555:5555
-    depends_on:
-      - celery
-      - rabbitmq
+  # flower:
+  #   container_name: flower
+  #   env_file: .env
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.flower
+  #   ports:
+  #     - 15555:5555
+  #   depends_on:
+  #     - celery
+  #     - rabbitmq

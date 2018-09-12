@@ -19,7 +19,7 @@
                     </ul>
                 </div>
 
-                <form class="ui form {error: errors}" ref="form" onsubmit="{ save }">
+                <form class="ui form coda-animated {error: errors}" ref="form" onsubmit="{ check_form }">
                     <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
                     <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
@@ -27,16 +27,16 @@
                         <select name="type" ref="type" class="ui dropdown">
                             <option value="">Type</option>
                             <option value="-">----</option>
-                            <option>Ingestion Program</option>
-                            <option>Input Data</option>
-                            <option>Public Data</option>
-                            <option>Reference Data</option>
-                            <option>Scoring Program</option>
-                            <option>Starting Kit</option>
+                            <option value="ingestion_program">Ingestion Program</option>
+                            <option value="input_data">Input Data</option>
+                            <option value="public_data">Public Data</option>
+                            <option value="reference_data">Reference Data</option>
+                            <option value="scoring_program">Scoring Program</option>
+                            <option value="starting_kit">Starting Kit</option>
                         </select>
                     </div>
 
-                    <input-file name="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+                    <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
 
                     <div class="field">
                         <div class="ui checkbox">
@@ -70,12 +70,12 @@
             <select class="ui dropdown" ref="type_filter" onchange="{ filter }">
                 <option value="">Type</option>
                 <option value="-">----</option>
-                <option>Ingestion Program</option>
-                <option>Input Data</option>
-                <option>Public Data</option>
-                <option>Reference Data</option>
-                <option>Scoring Program</option>
-                <option>Starting Kit</option>
+                <option value="ingestion_program">Ingestion Program</option>
+                <option value="input_data">Input Data</option>
+                <option value="public_data">Public Data</option>
+                <option value="reference_data">Reference Data</option>
+                <option value="scoring_program">Scoring Program</option>
+                <option value="starting_kit">Starting Kit</option>
             </select>
 
             <table class="ui celled compact table">
@@ -129,6 +129,7 @@
 
     <script>
         var self = this
+        self.mixin(ProgressBarMixin)
 
         /*---------------------------------------------------------------------
          Init
@@ -136,13 +137,9 @@
         self.errors = []
         self.datasets = []
 
-
-
         // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
-
-        console.log('WHAT')
 
         self.one("mount", function () {
             // Make semantic elements work
@@ -156,30 +153,19 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.show_progress_bar = function() {
-            // The transition delays are for timing the animations, so they're one after the other
-            self.refs.form.style.transitionDelay = '0s'
-            self.refs.form.style.maxHeight = 0
-            self.refs.form.style.overflow = 'hidden'
-
-            self.refs.progress.style.transitionDelay = '1s'
-            self.refs.progress.style.height = '24px'
-        }
-
-        self.hide_progress_bar = function() {
-            // The transition delays are for timing the animations, so they're one after the other
-            self.refs.progress.style.transitionDelay = '0s'
-            self.refs.progress.style.height = 0
-
-            self.refs.form.style.transitionDelay = '.1s'
-            self.refs.form.style.maxHeight = '1000px'
-            setTimeout(function() {
-                // Do this after transition has been totally completed
-                self.refs.form.style.overflow = 'visible'
-            }, 1000)
-        }
-
         self.filter = function () {
+
+
+
+
+            // TODO: This filter should call an API to get back results, not what's currently on the page!
+
+
+
+
+
+
+
             // Delay makes this batch filters and only send one out after 100ms of not
             // receiving a call to filter
             delay(function () {
@@ -235,17 +221,6 @@
             }
         }
 
-        self.file_upload_progress_handler = function (upload_progress) {
-            if(self.upload_progress === undefined) {
-                // First iteration of this upload, nice transitions
-                self.show_progress_bar()
-            }
-
-            self.upload_progress = upload_progress * 100;
-            $(self.refs.progress).progress({percent: self.upload_progress})
-            self.update();
-        }
-
         self.clear_form = function () {
             // Clear form
             $(':input', self.refs.form)
@@ -260,14 +235,14 @@
             self.update()
         }
 
-        self.save = function (event) {
+        self.check_form = function (event) {
             if (event) {
                 event.preventDefault()
             }
 
             // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
-            // best place to do it
-            self.upload_progress = undefined
+            // best place to do it -- also resets animations
+            self.file_upload_progress_handler(undefined)
 
             // Let's do some quick validation
             self.errors = {}
@@ -275,23 +250,33 @@
 
             var required_fields = ['name', 'type', 'data_file']
             required_fields.forEach(field => {
-                if(validate_data[field] === '') {
+                if (validate_data[field] === '') {
                     self.errors[field] = "This field is required"
                 }
             })
 
-            if(Object.keys(self.errors).length > 0) {
+            if (Object.keys(self.errors).length > 0) {
                 // display errors and drop out
                 self.update()
                 return
             }
 
+            // Call the progress bar wrapper and do the upload -- we want to check and display errors
+            // first before doing the actual upload
+            self.prepare_upload(self.upload)()
+        }
+
+        self.upload = function() {
             // Have to get the "FormData" to get the file in a special way
             // jquery likes to work with
-            var data = new FormData(self.refs.form)
+            var metadata = get_form_data(self.refs.form)
+            delete metadata.data_file  // dont send this with metadata
 
-            CODALAB.api.create_dataset(data, self.file_upload_progress_handler)
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+
+            CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
+                    console.log("UPLOAD SUCCESSFUL")
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()
@@ -307,16 +292,15 @@
                             })
 
                             self.update({errors: errors})
-                        } catch(e) {
+                        } catch (e) {
 
                         }
                     }
                     toastr.error("Creation failed, error occurred")
                 })
-                .always(function() {
+                .always(function () {
                     self.hide_progress_bar()
                 })
-
         }
     </script>
 
@@ -329,6 +313,7 @@
 
         }
 
+        /*
         .progress {
             -webkit-transition: all .1s ease-in-out;
             -moz-transition: all .1s ease-in-out;
@@ -342,7 +327,7 @@
         }
 
         form {
-            max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions */
+            max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions *//*
 
             -webkit-transition: all 1s ease-in-out;
             -moz-transition: all 1s ease-in-out;
@@ -352,7 +337,7 @@
 
         .progress .bar {
             height: 24px;
-        }
+        }*/
 
     </style>
 </data-management>
