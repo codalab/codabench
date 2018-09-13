@@ -166,6 +166,10 @@
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
+        STATIC: function (file_name) {
+            return "{% static '--' %}".replace('--', file_name)
+        },
+
 
         // Competitions
         COMPETITION_UPLOAD: "{% url "competitions:upload" %}",

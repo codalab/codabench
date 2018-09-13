@@ -2,9 +2,9 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="item" data-tab="learn_the_details_tab">Learn The Details</div>
+            <div class="active item" data-tab="learn_the_details_tab">Learn The Details</div>
             <div class="item" data-tab="phases_tab">Phases</div>
-            <div class="active item" data-tab="participate_tab">Participate</div>
+            <div class="item" data-tab="participate_tab">Participate</div>
             <div class="item" data-tab="results_tab">Results</div>
         </div>
         <div class="ui active tab" data-tab="learn_the_details_tab">
@@ -49,9 +49,11 @@
                                 finibus.
                                 Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
                             </p>
-                            <comp-run-info competition={competition}></comp-run-info>
-                            <comp-stats competition={competition}></comp-stats>
-                            <comp-tags competition={competition}></comp-tags>
+                            <div class="comp-data-containers">
+                                <comp-run-info competition={competition}></comp-run-info>
+                                <comp-stats competition={competition}></comp-stats>
+                                <comp-tags competition={competition}></comp-tags>
+                            </div>
                         </div>
 
                         <div class="ui tab" data-tab="_tab_terms">
@@ -142,17 +144,6 @@
                         <div class="ui active tab" data-tab="_tab_phase1">
                             <!-- Tab Content !-->
                             <div class="ui ">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
-                                consectetur
-                                elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus
-                                gravida
-                                ultrices, diam nunc vulputate urna, nec euismod purus urna non mi. Nunc
-                                vehicula
-                                quam vel tellus iaculis, eu fringilla eros consequat. Suspendisse
-                                malesuada
-                                lobortis
-                                velit, id tincidunt est dignissim in. Morbi elementum quis ipsum vitae
-                                lacinia.
                                 Sed
                                 imperdiet pellentesque rutrum. In commodo tempus mauris at accumsan.
                                 Vestibulum
@@ -162,11 +153,7 @@
                                 ligula bibendum est, id lobortis felis velit ut est. Sed quam risus,
                                 suscipit
                                 quis
-                                lacus id, fermentum sagittis massa. Morbi posuere orci arcu, id varius
-                                lorem
-                                hendrerit sed. In gravida elit eu justo molestie, nec pellentesque elit
-                                finibus.
-                                Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
+                                lacus id.
                             </div>
                         </div>
 
@@ -177,31 +164,12 @@
                                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
                                     porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
                                     lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
-                                    malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
-                                    a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
-                                    in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
-                                    dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
-                                    facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
-                                    pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
-                                    tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
-                                    gravida.
+                                    malesuada convallis.
                                 </p>
                                 <p>
                                     Aenean at iaculis leo, vel luctus diam. Quisque hendrerit orci sed
                                     bibendum mollis. Morbi diam leo, luctus eget suscipit ac, hendrerit sit
-                                    amet ex. Duis lectus erat, ornare quis justo ut, pulvinar consectetur
-                                    lacus. Duis molestie sem diam, vitae dapibus leo tristique vel.
-                                    Suspendisse rhoncus iaculis lacinia. Sed quis elit mauris. Phasellus
-                                    ornare posuere molestie. Aliquam vestibulum commodo enim a iaculis.
-                                </p>
-                                <p>
-                                    Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
-                                    penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-                                    Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
-                                    Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
-                                    diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
-                                    vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
-                                    consectetur in. Nunc at leo dolor.
+                                    amet ex.
                                 </p>
                             </div>
                         </div>
@@ -222,6 +190,8 @@
             <!-- Tab Content !-->
             <div class="ui ">
                 <p>View results</p>
+                <div id="sine-graph" style="width: 400px; height: 400px;">
+                </div>
             </div>
         </div>
 
