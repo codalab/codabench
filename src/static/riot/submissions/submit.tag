@@ -11,13 +11,61 @@
                     Submit Data to Phase One
                 </div>
                 <div class="content">
-                    <div class="phase-children">
-                        <button class="ui button child-btn">
-                            Dataset One
-                        </button>
-                        <button class="ui button child-btn">
-                            Dataset Two
-                        </button>
+                    <div class="submission-details-submit">
+                        <div class="submission-details">SUBMISSION DETAILS HERE</div>
+                        <div class="submit-data"><p>Extra details and form here</p>
+                            <button class="ui button">Submit</button>
+                        </div>
+                    </div>
+                    <div class="ui horizontal divider">Past Submission Data</div>
+                    <div class="submission-history">
+                        <table class="history-table">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>ID</th>
+                                <th>Score</th>
+                                <th>Filename</th>
+                                <th>Submission date</th>
+                                <th>Status</th>
+                                <th>Estimated Duration</th>
+                                <th>Cancel</th>
+                                <th>Detailed Results</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>1021</td>
+                                <td>144.21</td>
+                                <td>text.zip</td>
+                                <td>09/14/2018</td>
+                                <td>Complete</td>
+                                <td>00:10:20.1231</td>
+                                <td class="cancel-td">
+                                    <button class="ui tiny red button">Cancel</button>
+                                </td>
+                                <td class="results-td">
+                                    <button class="ui tiny blue button">Results</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>1021</td>
+                                <td>144.21</td>
+                                <td>text.zip</td>
+                                <td>09/14/2018</td>
+                                <td>Complete</td>
+                                <td>00:10:20.1231</td>
+                                <td class="cancel-td">
+                                    <button class="ui tiny button">Cancel</button>
+                                </td>
+                                <td class="results-td">
+                                    <button class="ui tiny button">Results</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="title">
@@ -25,20 +73,6 @@
                     Submit Data to Phase Two
                 </div>
                 <div class="content">
-                    <div class="phase-children">
-                        <button class="ui button child-btn">
-                            Dataset One
-                        </button>
-                        <button class="ui button child-btn">
-                            Dataset Two
-                        </button>
-                        <button class="ui button child-btn">
-                            Dataset Three
-                        </button>
-                        <button class="ui button child-btn">
-                            Dataset Four
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -378,8 +412,8 @@
             $('.phase-parent.accordion')
                 .accordion()
 
-            $('.submission-form.modal')
-                .modal('attach events', '.child-btn', 'show')
+            // $('.submission-form.modal')
+            //   .modal('attach events', '.child-btn', 'show')
         })
     </script>
 
@@ -425,15 +459,6 @@
             grid-template-areas: "submission-phases submission-phases" "submission-info submission-info" "submission-results submission-results";
         }
 
-        .phase-children {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .child-btn {
-            margin-top: 0.25em !important;
-        }
-
         .submission-info {
             grid-area: submission-info;
         }
@@ -447,6 +472,116 @@
             grid-area: submission-phases;
         }
 
+        .submission-details-submit {
+            display: grid;
+            grid-template-areas: "submission-details" "submit-data"
+        }
+
+        .submission-details {
+            grid-area: submission-details;
+        }
+
+        .submit-data {
+            grid-area: submit-data;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        td, th {
+            padding: 6px;
+            text-align: left;
+        }
+
+        tr:nth-of-type(even) {
+            background: rgba(42, 68, 88, 0.23);
+        }
+
+        th {
+            background-color: #2a4458;
+            color: #eee;
+            font-weight: bold;
+        }
+
+        @media only screen and (max-width: 760px),
+        (min-device-width: 759px) and (max-device-width: 1024px) {
+
+            /* Force table to not be like tables anymore */
+            .history-table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            /* Hide table headers (but not display: none;, for accessibility) */
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            td {
+                /* Behave  like a "row" */
+                border: none;
+                position: relative;
+                padding-left: 65%;
+            }
+
+            td:before {
+                /* Now like a table header */
+                position: absolute;
+                /* Top/left values mimic padding */
+                top: 6px;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                font-weight: bold;
+            }
+
+            /*
+            Label the data
+            */
+            td:nth-of-type(1):before {
+                content: "#";
+            }
+
+            td:nth-of-type(2):before {
+                content: "ID";
+            }
+
+            td:nth-of-type(3):before {
+                content: "Score";
+            }
+
+            td:nth-of-type(4):before {
+                content: "Filename";
+            }
+
+            td:nth-of-type(5):before {
+                content: "Submit date";
+            }
+
+            td:nth-of-type(6):before {
+                content: "Status";
+            }
+
+            td:nth-of-type(7):before {
+                content: "Est. duration";
+            }
+
+            td:nth-of-type(8):before {
+                content: "Cancel";
+                text-align: left;
+            }
+
+            td:nth-of-type(9):before {
+                content: "Results";
+                text-align: left;
+            }
+        }
+
         @media screen and (min-width: 600px) {
             .form-grid {
                 display: grid;
@@ -455,6 +590,11 @@
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: 1fr 1fr;
                 grid-template-areas: "submission-phases submission-phases" "submission-info submission-results";
+            }
+
+            .submission-details-submit {
+                display: grid;
+                grid-template-areas: "submission-details submit-data"
             }
 
             .submission-results {
