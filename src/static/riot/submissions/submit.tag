@@ -8,13 +8,27 @@
             <div class="phase-parent ui styled fluid accordion">
                 <div class="title">
                     <i class="dropdown icon"></i>
-                    Submit Data to Phase One
+                    Submit Data to { parent.parent.competition.phases[0].title }
                 </div>
-                <div class="content">
+                <div class="active content">
                     <div class="submission-details-submit">
-                        <div class="submission-details">SUBMISSION DETAILS HERE</div>
-                        <div class="submit-data"><p>Extra details and form here</p>
-                            <button class="ui button">Submit</button>
+                        <div class="submission-details">
+                            <ul>
+                                <li><strong>Server Time: </strong>{ new Date().toLocaleString() }</li>
+                                <li><strong>Phase Start: </strong>{ parent.parent.competition.phases[0].start }</li>
+                                <li><strong>Phase End: </strong>{ parent.parent.competition.phases[0].end }</li>
+                                <li><strong>Submissions per day: </strong>2 of 5</li>
+                                <li><strong>Submissions total: </strong>15 of 100</li>
+                            </ul>
+                        </div>
+                        <div class="submit-data">
+                            <div class="ui form">
+                                <div class="field">
+                                    <textarea rows="4"
+                                              placeholder="Optionally add additional information about this submission"></textarea>
+                                </div>
+                                <button class="ui button">Submit</button>
+                            </div>
                         </div>
                     </div>
                     <div class="ui horizontal divider">Past Submission Data</div>
@@ -43,25 +57,23 @@
                                 <td>Complete</td>
                                 <td>00:10:20.1231</td>
                                 <td class="cancel-td">
-                                    <button class="ui tiny red button">Cancel</button>
                                 </td>
                                 <td class="results-td">
                                     <button class="ui tiny blue button">Results</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>1</td>
-                                <td>1021</td>
-                                <td>144.21</td>
-                                <td>text.zip</td>
-                                <td>09/14/2018</td>
-                                <td>Complete</td>
+                                <td>2</td>
+                                <td>1024</td>
+                                <td>150.21</td>
+                                <td>text2.zip</td>
+                                <td>09/15/2018</td>
+                                <td>Pending</td>
                                 <td>00:10:20.1231</td>
                                 <td class="cancel-td">
-                                    <button class="ui tiny button">Cancel</button>
+                                    <button class="ui tiny red button">Cancel</button>
                                 </td>
                                 <td class="results-td">
-                                    <button class="ui tiny button">Results</button>
                                 </td>
                             </tr>
                             </tbody>
@@ -84,6 +96,8 @@
             Lorem ipsum dolor sit amet, consectetur adipisicing elit.
         </div>
 
+
+        <!-- Submission Results Tab -->
         <div class="submission-results">
             <div class="ui icon input">
                 <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
@@ -479,6 +493,17 @@
 
         .submission-details {
             grid-area: submission-details;
+            text-align: center;
+        }
+
+        .submission-details ul {
+            list-style: none;
+            text-align: left;
+            padding-left: 0;
+        }
+
+        .ui.statistic + .ui.statistic {
+            margin: 0.5em 0;
         }
 
         .submit-data {
@@ -486,24 +511,54 @@
         }
 
         .history-table {
-            width: 100%;
-            border-collapse: collapse;
+            min-width: 80%;
+            margin: 0 auto;
+            border-radius: 4px;
+            border: solid 2px #1d2e3c;
+            border-spacing: 0;
             font-size: 12px;
         }
 
         td, th {
-            padding: 6px;
+            padding-left: 30px;
+            padding-top: 2px;
+            text-align: center;
+        }
+
+        th:nth-of-type(1), td:nth-of-type(1),
+        th:nth-of-type(2), td:nth-of-type(2),
+        th:nth-of-type(3), td:nth-of-type(3),
+        th:nth-of-type(5), td:nth-of-type(5),
+        th:nth-of-type(7), td:nth-of-type(7) {
+            text-align: right;
+        }
+
+        th:nth-of-type(4), td:nth-of-type(4),
+        th:nth-of-type(6), td:nth-of-type(6) {
             text-align: left;
+        }
+
+        th:nth-of-type(8), td:nth-of-type(8),
+        th:nth-of-type(9), td:nth-of-type(9) {
+            text-align: center;
         }
 
         tr:nth-of-type(even) {
             background: rgba(42, 68, 88, 0.23);
         }
 
+        tr:nth-of-type(odd) {
+            background: rgba(42, 68, 88, 0.08);
+        }
+
         th {
             background-color: #2a4458;
             color: #eee;
             font-weight: bold;
+        }
+
+        .cancel-td, .results-td {
+            height: 35px;
         }
 
         @media only screen and (max-width: 760px),
@@ -526,23 +581,30 @@
                 border: none;
                 position: relative;
                 padding-left: 65%;
+                text-align: left;
+            }
+
+            td:nth-of-type(1), td:nth-of-type(2),
+            td:nth-of-type(3), td:nth-of-type(4),
+            td:nth-of-type(5), td:nth-of-type(6),
+            td:nth-of-type(7), td:nth-of-type(8),
+            td:nth-of-type(9) {
+                text-align: left;
             }
 
             td:before {
                 /* Now like a table header */
                 position: absolute;
                 /* Top/left values mimic padding */
-                top: 6px;
+                top: 2px;
                 left: 6px;
                 width: 45%;
+                text-align: left;
                 padding-right: 10px;
                 white-space: nowrap;
                 font-weight: bold;
             }
 
-            /*
-            Label the data
-            */
             td:nth-of-type(1):before {
                 content: "#";
             }
@@ -573,12 +635,10 @@
 
             td:nth-of-type(8):before {
                 content: "Cancel";
-                text-align: left;
             }
 
             td:nth-of-type(9):before {
-                content: "Results";
-                text-align: left;
+                content: "Detailed Results";
             }
         }
 

@@ -1,18 +1,18 @@
 <comp-detail-title>
 
     <div class="competition-content">
-
         <div class="competition-title"><strong>{competition.title}</strong></div>
         <div class="competition-description"><p>{competition.description}</p></div>
         <div class="competition-phases">
             <h2>Phases</h2>
             <ul class="progressbar">
 
-                <li each="{competition.phases}" class="phase-tile"><div>{title}</div> <div>{description}</div></li>
+                <li each="{competition.phases}" class="phase-tile">
+                    <div>{title}</div>
+                </li>
             </ul>
         </div>
     </div>
-
 
 
     <script>
@@ -93,7 +93,7 @@
             color #3ebe32
 
         .progressbar li.active:before
-            border-color #3ebe327a
+            border-color rgba(62, 190, 50, .77)
             box-shadow 2px 2px 25px #3ebe32
 
     </style>

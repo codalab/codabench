@@ -13,11 +13,11 @@
 
         Object.assign(self.competition, {
             "title": "Iris Data Challenge",
-            "description": "An iris data challenge brought to you by Chalearn to accelearate the growth of machine learning",
+            "description": "An iris data challenge brought to you by Chalearn to accelerate the growth of machine learning",
             "pages": [
                 {
                     "title": "Overview",
-                    "content": "This competition aims to mimick real ones",
+                    "content": "This competition aims to mimic real ones",
                     "index": 1
                 },
                 {

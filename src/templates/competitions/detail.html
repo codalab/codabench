@@ -1,4 +1,58 @@
 {% extends "base.html" %}
+
+{% block sticky_button %}
+    <div class="ui bound sticky sticky_submit">
+        <button class="ui button testbtn"><i class="upload icon"></i>Upload your submission</button>
+    </div>
+
+    <style>
+        .ui.sticky {
+            margin-left: 10px;
+            margin-top: 15px;
+        }
+
+        @media screen and (max-width: 700px) {
+            .ui.sticky, .ui.sticky button {
+                width: 100%;
+                margin-left: 0;
+                border-radius: 0;
+                opacity: 0.99;
+            }
+
+            .sticky_submit {
+                border: solid 1px rgba(13, 23, 52, 0.76);
+                box-shadow: 8px 3px 5px 3px rgba(46, 46, 58, 0.39);
+            }
+
+            .sticky_submit:active {
+                box-shadow: 2px 3px 5px -3px rgba(46, 46, 58, 0.39);
+                margin-left: 2px;
+                transition: ease 0.08s;
+            }
+
+        }
+    </style>
+
+{% endblock %}
+
 {% block content %}
     <comp-detail></comp-detail>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        $('.ui.sticky')
+            .sticky({
+                offset: 0,
+                setSize: true,
+                pushing: true,
+                context: '#page_content',
+                onStick: function() {
+                    $('#page_content').css('margin-top', '56px')
+                },
+                onUnstick: function() {
+                    $('#page_content').css('margin-top', '10px')
+                }
+            })
+    </script>
 {% endblock %}

@@ -99,6 +99,9 @@
             {% block top_div_extra_content %}{% endblock %}
         </div>
     </div>
+    {% block sticky_button %}
+
+    {% endblock %}
     <div id="page_content" class="ui container grid">
         <div class="row">
             {% block content %}
@@ -190,8 +193,10 @@
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
+{% block extra_js %}{% endblock %}
 
 {% block extra_body %}
+
 {% endblock %}
 
 </body>
