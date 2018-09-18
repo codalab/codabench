@@ -167,9 +167,8 @@
         },
         API: "/api/",
         STATIC: function (file_name) {
-            return "{% static '--' %}".replace('--', file_name)
+            return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
         },
-
 
         // Competitions
         COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
