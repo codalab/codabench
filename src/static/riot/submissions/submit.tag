@@ -5,168 +5,176 @@
 
     <div class="form-grid">
         <div class="submission-phases">
-            <div class="phase-parent ui styled fluid accordion">
+            <div class="phase-parent ui three item pointing menu">
+                <a class="active item" data-tab="first">
+                    { parent.parent.competition.phases[0].title }
+                </a>
+                <a class="item" data-tab="second">
+                    { parent.parent.competition.phases[1].title }
+                </a>
+                <a class="item" data-tab="third">
+                    { parent.parent.competition.phases[2].title }
+                </a>
+            </div>
+            <div class="ui segment active tab" data-tab="first">
                 <div class="title">
-                    <i class="dropdown icon"></i>
                     Submit Data to { parent.parent.competition.phases[0].title }
                 </div>
-                <div class="active content">
-                    <div class="submission-details-submit">
-                        <div class="submission-details">
-                            <ul>
-                                <li><strong>Server Time: </strong>{ new Date().toLocaleString() }</li>
-                                <li><strong>Phase Start: </strong>{ parent.parent.competition.phases[0].start }</li>
-                                <li><strong>Phase End: </strong>{ parent.parent.competition.phases[0].end }</li>
-                                <li><strong>Submissions per day: </strong>2 of 5</li>
-                                <li><strong>Submissions total: </strong>15 of 100</li>
-                            </ul>
-                        </div>
-                        <div class="submit-data">
-                            <div class="ui form">
-                                <div class="field">
+                <div class="submission-details-submit">
+                    <div class="submission-details">
+                        <ul>
+                            <li><strong>Server Time: </strong>{ new Date().toLocaleString() }</li>
+                            <li><strong>Phase Start: </strong>{ parent.parent.competition.phases[0].start }</li>
+                            <li><strong>Phase End: </strong>{ parent.parent.competition.phases[0].end }</li>
+                            <li><strong>Submissions per day: </strong>2 of 5</li>
+                            <li><strong>Submissions total: </strong>15 of 100</li>
+                        </ul>
+                    </div>
+                    <div class="submit-data">
+                        <div class="ui form">
+                            <div class="field">
                                     <textarea rows="4"
                                               placeholder="Optionally add additional information about this submission"></textarea>
-                                </div>
-                                <button class="ui button">Submit</button>
                             </div>
+                            <button class="ui button">Submit</button>
                         </div>
                     </div>
-                    <div class="ui horizontal divider">Past Submission Data</div>
-                    <div class="submission-history">
-                        <table class="history-table">
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>ID</th>
-                                <th>Score</th>
-                                <th>Filename</th>
-                                <th>Submission date</th>
-                                <th>Status</th>
-                                <th>Estimated Duration</th>
-                                <th>Cancel</th>
-                                <th>Detailed Results</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>1021</td>
-                                <td>144.21</td>
-                                <td>text.zip</td>
-                                <td>09/14/2018</td>
-                                <td>Complete</td>
-                                <td>00:10:20.1231</td>
-                                <td class="cancel-td">
-                                </td>
-                                <td class="results-td">
-                                    <button class="ui tiny blue button">Results</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>1024</td>
-                                <td>150.21</td>
-                                <td>text2.zip</td>
-                                <td>09/15/2018</td>
-                                <td>Pending</td>
-                                <td>00:10:20.1231</td>
-                                <td class="cancel-td">
-                                    <button class="ui tiny red button">Cancel</button>
-                                </td>
-                                <td class="results-td">
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
+                </div>
+                <div class="ui horizontal divider">Past Submission Data</div>
+                <div class="submission-history">
+                    <table class="history-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>ID</th>
+                            <th>Score</th>
+                            <th>Filename</th>
+                            <th>Submission date</th>
+                            <th>Status</th>
+                            <th>Estimated Duration</th>
+                            <th>Cancel</th>
+                            <th>Detailed Results</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>1021</td>
+                            <td>144.21</td>
+                            <td>text.zip</td>
+                            <td>09/14/2018</td>
+                            <td>Complete</td>
+                            <td>00:10:20.1231</td>
+                            <td class="cancel-td">
+                            </td>
+                            <td class="results-td">
+                                <button class="ui tiny blue button">Results</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>1024</td>
+                            <td>150.21</td>
+                            <td>text2.zip</td>
+                            <td>09/15/2018</td>
+                            <td>Pending</td>
+                            <td>00:10:20.1231</td>
+                            <td class="cancel-td">
+                                <button class="ui tiny red button">Cancel</button>
+                            </td>
+                            <td class="results-td">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="ui segment tab" data-tab="second">
+                asdf
+            </div>
+            <div class="ui segment tab" data-tab="third">
+                asdf
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="submission-info">
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+    </div>
+
+
+    <!-- Submission Results Tab -->
+    <div class="submission-results">
+        <div class="ui icon input">
+            <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
+            <i class="search icon"></i>
+        </div>
+        <!--<select class="ui dropdown" ref="type_filter" onchange="{ filter }">-->
+        <!--&lt;!&ndash;<option value="">Type</option>&ndash;&gt;-->
+        <!--<option value="-">&#45;&#45;&#45;&#45;</option>-->
+        <!--<option>Ingestion Program</option>-->
+        <!--<option>Input Data</option>-->
+        <!--<option>Public Data</option>-->
+        <!--<option>Reference Data</option>-->
+        <!--<option>Scoring Program</option>-->
+        <!--<option>Starting Kit</option>-->
+        <!--</select>-->
+
+        <table class="ui celled compact table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phase</th>
+                <th>File</th>
+                <!--<th width="175px">Type</th>-->
+                <th width="125px">Uploaded...</th>
+                <th width="50px">Public</th>
+                <th width="50px">Delete?</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="submission-row" each="{ submission, index in filtered_submissions }">
+                <td>{ submission.name }</td>
+                <td>{ submission.phase }</td>
+                <!--<td>{ submission.zip_file }</td>-->
+                <td><a href="{submission.zip_file}" class="ui small blue button">Download File</a></td>
+                <!--<td>{ submission.type }</td>-->
+                <td>{ timeSince(Date.parse(submission.created_when)) } ago</td>
+                <td class="center aligned">
+                    <i class="checkmark box icon green" show="{ submission.is_public }"></i>
+                </td>
+                <td class="center aligned">
+                    <button class="mini ui button red icon"
+                            onclick="{ delete_submission.bind(this, submission) }">
+                        <i class="icon delete"></i>
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <!-- Pagination that we may want later...
+            <tr>
+                <th colspan="3">
+                    <div class="ui right floated pagination menu">
+                        <a class="icon item">
+                            <i class="left chevron icon"></i>
+                        </a>
+                        <a class="item">1</a>
+                        <a class="item">2</a>
+                        <a class="item">3</a>
+                        <a class="item">4</a>
+                        <a class="icon item">
+                            <i class="right chevron icon"></i>
+                        </a>
                     </div>
-                </div>
-                <div class="title">
-                    <i class="dropdown icon"></i>
-                    Submit Data to Phase Two
-                </div>
-                <div class="content">
-                </div>
-
-            </div>
-
-
-        </div>
-
-        <div class="submission-info">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-        </div>
-
-
-        <!-- Submission Results Tab -->
-        <div class="submission-results">
-            <div class="ui icon input">
-                <input type="text" placeholder="Filter by name..." ref="search" onkeyup="{ filter }">
-                <i class="search icon"></i>
-            </div>
-            <!--<select class="ui dropdown" ref="type_filter" onchange="{ filter }">-->
-            <!--&lt;!&ndash;<option value="">Type</option>&ndash;&gt;-->
-            <!--<option value="-">&#45;&#45;&#45;&#45;</option>-->
-            <!--<option>Ingestion Program</option>-->
-            <!--<option>Input Data</option>-->
-            <!--<option>Public Data</option>-->
-            <!--<option>Reference Data</option>-->
-            <!--<option>Scoring Program</option>-->
-            <!--<option>Starting Kit</option>-->
-            <!--</select>-->
-
-            <table class="ui celled compact table">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Phase</th>
-                    <th>File</th>
-                    <!--<th width="175px">Type</th>-->
-                    <th width="125px">Uploaded...</th>
-                    <th width="50px">Public</th>
-                    <th width="50px">Delete?</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr class="submission-row" each="{ submission, index in filtered_submissions }">
-                    <td>{ submission.name }</td>
-                    <td>{ submission.phase }</td>
-                    <!--<td>{ submission.zip_file }</td>-->
-                    <td><a href="{submission.zip_file}" class="ui small blue button">Download File</a></td>
-                    <!--<td>{ submission.type }</td>-->
-                    <td>{ timeSince(Date.parse(submission.created_when)) } ago</td>
-                    <td class="center aligned">
-                        <i class="checkmark box icon green" show="{ submission.is_public }"></i>
-                    </td>
-                    <td class="center aligned">
-                        <button class="mini ui button red icon"
-                                onclick="{ delete_submission.bind(this, submission) }">
-                            <i class="icon delete"></i>
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-                <tfoot>
-                <!-- Pagination that we may want later...
-                <tr>
-                    <th colspan="3">
-                        <div class="ui right floated pagination menu">
-                            <a class="icon item">
-                                <i class="left chevron icon"></i>
-                            </a>
-                            <a class="item">1</a>
-                            <a class="item">2</a>
-                            <a class="item">3</a>
-                            <a class="item">4</a>
-                            <a class="icon item">
-                                <i class="right chevron icon"></i>
-                            </a>
-                        </div>
-                    </th>
-                </tr>
-                -->
-                </tfoot>
-            </table>
-        </div>
+                </th>
+            </tr>
+            -->
+            </tfoot>
+        </table>
+    </div>
     </div>
 
     <!-- Form Modal -->
@@ -425,7 +433,8 @@
         $(document).ready(function () {
             $('.phase-parent.accordion')
                 .accordion()
-
+            $('.phase-parent .item')
+                .tab()
             // $('.submission-form.modal')
             //   .modal('attach events', '.child-btn', 'show')
         })
@@ -434,10 +443,6 @@
     <style>
         .submission-row:hover {
             background-color: rgba(46, 91, 183, 0.05);
-        }
-
-        *, div {
-
         }
 
         .progress {
@@ -469,7 +474,7 @@
             width: 100%;
             margin-bottom: 2em;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr .5fr 1fr;
+            grid-template-rows: 1fr;
             grid-template-areas: "submission-phases submission-phases" "submission-info submission-info" "submission-results submission-results";
         }
 
@@ -500,10 +505,6 @@
             list-style: none;
             text-align: left;
             padding-left: 0;
-        }
-
-        .ui.statistic + .ui.statistic {
-            margin: 0.5em 0;
         }
 
         .submit-data {
@@ -648,7 +649,7 @@
                 margin-bottom: 1em;
                 width: 100%;
                 grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr 1fr;
+                grid-template-rows: 1fr;
                 grid-template-areas: "submission-phases submission-phases" "submission-info submission-results";
             }
 

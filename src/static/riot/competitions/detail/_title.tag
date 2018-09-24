@@ -3,10 +3,28 @@
     <div class="competition-content">
         <div class="competition-title"><strong>{competition.title}</strong></div>
         <div class="competition-description"><p>{competition.description}</p></div>
-        <div class="competition-phases">
-            <h2>Phases</h2>
-            <ul class="progressbar">
+        <div class="competition-details">
+            <div class="to-go ui fluid tiny menu">
+                <div class="time fluid item">
+                    <i class="bell icon"></i> 3 weeks, 1 day to go
+                </div>
+            </div>
+            <div class="use-stats ui two item tiny menu">
+                <div class="participants fluid item">
+                    <i class="icon users"></i>10 Participants
+                </div>
+                <div class="submissions fluid item">
+                    <i class="icon server"></i>60 Submissions
+                </div>
+            </div>
+            <button class="ui small button uploader">
+                <i class="upload icon"></i>Upload your submission
+            </button>
+        </div>
 
+
+        <div class="competition-phases">
+            <ul class="progressbar">
                 <li each="{competition.phases}" class="phase-tile">
                     <div>{title}</div>
                 </li>
@@ -25,12 +43,41 @@
             display grid
             grid-template-rows .25fr .5fr 1fr
             grid-template-columns 1fr 1fr
-            grid-template-areas "competition-title competition-title" "competition-description competition-description" "competition-phases competition-phases"
-
+            grid-template-areas "competition-title competition-title" "competition-description competition-description" "competition-details competition-details" "competition-phases competition-phases"
+        @media screen and (min-width 700px)
+            .competition-content
+                grid-template-areas "competition-title competition-details" "competition-description competition-details" "competition-description competition-details" "competition-phases competition-phases"
         .competition-title
             grid-area competition-title
             font-size 2em
             text-align center
+
+        .competition-details
+            grid-area competition-details
+            margin-top 2px
+            margin-bottom 5px
+            display grid
+            grid-template-columns 1fr 1fr
+            grid-gap 10px
+            grid-template-areas "to-go to-go" "use-stats use-stats" "uploader uploader"
+
+            .time.item
+                background-color #c7402d
+                color white
+                border-radius .28571429rem !important
+                justify-content center
+                width inherit
+
+            .to-go
+                grid-area to-go
+                margin-bottom 0
+
+            .use-stats
+                grid-area use-stats
+                margin 0
+
+            .uploader
+                grid-area uploader
 
         .competition-description
             grid-area competition-description
@@ -95,6 +142,22 @@
         .progressbar li.active:before
             border-color rgba(62, 190, 50, .77)
             box-shadow 2px 2px 25px #3ebe32
+
+        .uploader
+            width 100%
+
+        .uploader
+            margin 0 auto
+            border-radius 6px
+
+        .uploader
+            border solid 1px #00000061 !important
+            box-shadow 0 2px 0px -0.5px #00000061 !important
+            transition 0.11s ease-in-out !important
+
+        .uploader:active
+            box-shadow 2px 3px 5px -3px rgba(46, 46, 58, 0.39) !important
+            transform translateY(2px)
 
     </style>
 </comp-detail-title>
