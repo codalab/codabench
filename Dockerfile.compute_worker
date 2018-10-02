@@ -1,0 +1,4 @@
+FROM python:3.6
+ENV PYTHONUNBUFFERED 1
+ADD docker/compute_worker .
+RUN pip install -r compute_worker_requirements.txt

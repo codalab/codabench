@@ -18,7 +18,7 @@ services:
       - 80:80
     depends_on:
       - db
-      - rabbitmq
+      - rabbit
       - minio
     logging:
       options:
@@ -90,16 +90,16 @@ services:
   #-----------------------------------------------
   #   Rabbitmq Service
   #-----------------------------------------------
-  rabbitmq:
-    image: rabbitmq:3.6.6-management
+  rabbit:
+    image: rabbitmq:3.6-management
     container_name: rabbit
     env_file: .env
     ports:
       - 15672:15672
       - 5672:5672
     volumes:
-      # To save rabbitmq state between container ups/downs
-      - ./var/rabbitmq:/var/lib/rabbitmq/
+      # To save rabbit state between container ups/downs
+      - ./var/rabbit:/var/lib/rabbit/
     logging:
       options:
         max-size: "500k"
@@ -110,12 +110,12 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A comp_worker worker"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A site_worker worker "
     working_dir: /app/src
     build:
       context: .
     depends_on:
-      - rabbitmq
+      - rabbit
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
@@ -126,6 +126,19 @@ services:
       options:
         max-size: "500k"
         max-file: "10"
+
+#  compute_worker:
+#    command: celery -A compute_worker worker
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.compute_worker
+#    depends_on:
+#      - rabbit
+#    env_file: .env
+#    logging:
+#      options:
+#        max-size: "500k"
+#        max-file: "10"
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
@@ -139,4 +152,4 @@ services:
   #     - 15555:5555
   #   depends_on:
   #     - celery
-  #     - rabbitmq
+  #     - rabbit

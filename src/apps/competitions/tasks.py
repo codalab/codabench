@@ -3,6 +3,9 @@ import json
 import os
 import yaml
 import zipfile
+
+from celery import task
+from celery._state import app_or_default
 from dateutil import parser
 from django.core.files import File
 from django.utils.timezone import now
@@ -10,34 +13,41 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from comp_worker import app
-from competitions.models import Submission, Phase, CompetitionCreationTaskStatus
-
+from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
+from utils.data import make_url_sassy
 
 
-@app.task
-def score_submission_lazy(submission_pk):
-    sub_to_score = Submission.objects.get(pk=submission_pk)
-    sub_to_score.score = 1
-    sub_to_score.save()
+@task
+def run_submission(submission_pk):
+    print("I've been callllllllllled!")
+    submission = Submission.objects.get(pk=submission_pk)
 
+    run_arguments = {
+        "submission_data_file": make_url_sassy(submission.data.data_file.name),
+        "result": make_url_sassy(submission.result.data_file.name),
+        "api_key": submission.api_key,
+    }
 
-@app.task
-def score_submission(submission_pk, phase_pk):
-    sub_to_score = Submission.objects.get(pk=submission_pk)
-    scoring_phase = Phase.objects.get(pk=phase_pk)
-    scoring_program = scoring_phase.scoring_program
-    file_to_score = sub_to_score.zip_file
-    print(scoring_program)
-    print(file_to_score)
+    detail_output_names = [
+        "stdout",
+        "stderr",
+        "ingestion_stdout",
+        "ingestion_stderr",
+    ]
+
+    for detail_name in detail_output_names:
+        new_details = SubmissionDetails.objects.create(submission=submission, name="stdout")
+        run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
+
+    app_or_default().send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
 
 
 class CompetitionUnpackingException(Exception):
     pass
 
 
-@app.task
+@task
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by

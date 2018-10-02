@@ -194,6 +194,7 @@ RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
 
 if not BROKER_URL:
+    print("we here yo")
     # BROKER_URL might be set but empty, make sure it's set!
     BROKER_URL = 'pyamqp://{}:{}@{}:{}//'.format(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS, RABBITMQ_HOST,
                                                  RABBITMQ_PORT)

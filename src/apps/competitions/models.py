@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import models
 
 from utils.data import PathWrapper
-# from .tasks import score_submission
 
 
 class Competition(models.Model):
@@ -55,6 +54,12 @@ class Phase(models.Model):
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="starting_kits")
 
 
+class SubmissionDetails(models.Model):
+    name = models.CharField(max_length=50)
+    data_file = models.FileField(upload_to=PathWrapper('submission_details'))
+    submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
+
+
 class Submission(models.Model):
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -76,33 +81,40 @@ class Submission(models.Model):
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
+    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
+    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
+    api_key = models.UUIDField()
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
-    description = models.CharField(max_length=120, default="", null=True, blank=True)
-    score = models.IntegerField(default=None, null=True, blank=True)
+    score = models.DecimalField(max_digits=20, decimal_places=10, default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
-    zip_file = models.FileField(upload_to=PathWrapper('submissions'), null=True, blank=True)
     created_when = models.DateTimeField(auto_now_add=True)
     is_public = models.BooleanField(default=False)
 
     # uber experimental
-    track = models.IntegerField(default=1)
+    # track = models.IntegerField(default=1)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def __str__(self):
+        return f"{self.owner.username} {self.phase.competition.title}"
 
+    def save(self):
         super(Submission, self).save()
 
-        if not self.score:
-            # Import here to stop circular imports
-            from competitions import tasks
+        print("PRE delay")
+        from .tasks import run_submission
+        run_submission.apply_async((self.pk,))
+        print("POST delay")
 
-            if self.phase:
-                if self.phase.scoring_program:
-                    tasks.score_submission.delay(self.pk, self.phase.pk)
-            tasks.score_submission_lazy.delay(self.pk)
+        # if not self.score:
+        #     # Import here to stop circular imports
+        #     from competitions import tasks
+        #
+        #     if self.phase:
+        #         if self.phase.scoring_program:
+        #             tasks.score_submission.delay(self.pk, self.phase.pk)
+        #     tasks.score_submission_lazy.delay(self.pk)
 
 
 class CompetitionParticipant(models.Model):
