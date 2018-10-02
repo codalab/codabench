@@ -110,7 +110,7 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A site_worker worker "
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A site_worker worker --loglevel=DEBUG"
     working_dir: /app/src
     build:
       context: .
@@ -142,14 +142,20 @@ services:
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-  # flower:
-  #   container_name: flower
-  #   env_file: .env
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.flower
-  #   ports:
-  #     - 15555:5555
-  #   depends_on:
-  #     - celery
-  #     - rabbit
+  flower:
+    container_name: flower
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
+    environment:
+      # These aren't set in .env
+      - AMQP_USERNAME=${RABBITMQ_DEFAULT_USER}
+      - AMQP_PASSWORD=${RABBITMQ_DEFAULT_PASS}
+      - AMQP_HOST=rabbit
+      - AMQP_ADMIN_HOST=rabbit
+      - AMQP_PORT=${RABBITMQ_PORT}
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit
