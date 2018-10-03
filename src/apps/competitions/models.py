@@ -55,6 +55,12 @@ class Phase(models.Model):
 
 
 class SubmissionDetails(models.Model):
+    DETAILED_OUTPUT_NAMES = [
+        "stdout",
+        "stderr",
+        "ingestion_stdout",
+        "ingestion_stderr",
+    ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'))
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
@@ -77,7 +83,7 @@ class Submission(models.Model):
     )
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name='submission', on_delete=models.DO_NOTHING)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
@@ -97,15 +103,14 @@ class Submission(models.Model):
     # track = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"{self.owner.username} {self.phase.competition.title}"
+        return f"{self.phase.competition.title} submission by {self.owner.username}"
 
     def save(self):
         super(Submission, self).save()
 
-        print("PRE delay")
-        from .tasks import run_submission
-        run_submission.apply_async((self.pk,))
-        print("POST delay")
+        if self.status == Submission.NONE:
+            from .tasks import run_submission
+            run_submission.apply_async((self.pk,))
 
         # if not self.score:
         #     # Import here to stop circular imports

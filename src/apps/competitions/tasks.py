@@ -4,8 +4,9 @@ import os
 import yaml
 import zipfile
 
-from celery import task
-from celery._state import app_or_default
+from django.core.files.base import ContentFile
+
+from celery_config import app
 from dateutil import parser
 from django.core.files import File
 from django.utils.timezone import now
@@ -13,41 +14,42 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
+from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, SubmissionDetails
 from datasets.models import Data
 from utils.data import make_url_sassy
 
 
-@task
+@app.task
 def run_submission(submission_pk):
-    print("I've been callllllllllled!")
     submission = Submission.objects.get(pk=submission_pk)
+
+    submission.status = Submission.SUBMITTED
+    submission.save()
+
+    # Pre-generate file path by setting empty file here
+    submission.result.save('result.zip', ContentFile(''))
 
     run_arguments = {
         "submission_data_file": make_url_sassy(submission.data.data_file.name),
-        "result": make_url_sassy(submission.result.data_file.name),
+        "result": make_url_sassy(submission.result.name),
         "api_key": submission.api_key,
     }
 
-    detail_output_names = [
-        "stdout",
-        "stderr",
-        "ingestion_stdout",
-        "ingestion_stderr",
-    ]
-
-    for detail_name in detail_output_names:
+    for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
         new_details = SubmissionDetails.objects.create(submission=submission, name="stdout")
+        new_details.data_file.save(f'{detail_name}.txt', ContentFile(''))
         run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
 
-    app_or_default().send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
+    print("Task data:")
+    print(run_arguments)
+    # app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
 
 
 class CompetitionUnpackingException(Exception):
     pass
 
 
-@task
+@app.task
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by

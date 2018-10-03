@@ -110,7 +110,7 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A site_worker worker --loglevel=DEBUG"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -l info"
     working_dir: /app/src
     build:
       context: .
