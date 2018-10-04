@@ -1,6 +1,6 @@
 from celery import Celery
 
-app = Celery('competitions')
+app = Celery()
 
 from django.conf import settings  # noqa
 

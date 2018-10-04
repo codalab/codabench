@@ -1,4 +1,7 @@
 FROM python:3.6
+
+# This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
+
 ADD docker/compute_worker .
 RUN pip install -r compute_worker_requirements.txt

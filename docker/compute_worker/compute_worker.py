@@ -2,9 +2,8 @@ from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
 
 
-app = Celery('worker')
-app.config_from_object('celeryconfig')
-
+app = Celery()
+app.config_from_object('celery_config')
 
 
 @task(name="compute_worker_run")

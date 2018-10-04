@@ -110,7 +110,7 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -l info"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -Q site-worker -l info -n site-worker@%n"
     working_dir: /app/src
     build:
       context: .
@@ -127,18 +127,23 @@ services:
         max-size: "500k"
         max-file: "10"
 
-#  compute_worker:
-#    command: celery -A compute_worker worker
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.compute_worker
-#    depends_on:
-#      - rabbit
-#    env_file: .env
-#    logging:
-#      options:
-#        max-size: "500k"
-#        max-file: "10"
+  compute_worker:
+    command: celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n
+    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile.compute_worker
+    depends_on:
+      - rabbit
+    volumes:
+      - ./docker/compute_worker:/app
+    env_file: .env
+    environment:
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------

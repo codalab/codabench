@@ -19,7 +19,7 @@ from datasets.models import Data
 from utils.data import make_url_sassy
 
 
-@app.task
+@app.task(queue='site-worker')
 def run_submission(submission_pk):
     submission = Submission.objects.get(pk=submission_pk)
 
@@ -36,20 +36,20 @@ def run_submission(submission_pk):
     }
 
     for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
-        new_details = SubmissionDetails.objects.create(submission=submission, name="stdout")
+        new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
         new_details.data_file.save(f'{detail_name}.txt', ContentFile(''))
         run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
 
     print("Task data:")
     print(run_arguments)
-    # app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
+    app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
 
 
 class CompetitionUnpackingException(Exception):
     pass
 
 
-@app.task
+@app.task(queue='site-worker')
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
