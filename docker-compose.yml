@@ -134,6 +134,7 @@ services:
       context: .
       dockerfile: Dockerfile.compute_worker
     depends_on:
+      - django
       - rabbit
     volumes:
       - ./docker/compute_worker:/app

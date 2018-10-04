@@ -23,16 +23,16 @@ from utils.data import make_url_sassy
 def run_submission(submission_pk):
     submission = Submission.objects.get(pk=submission_pk)
 
-    submission.status = Submission.SUBMITTED
-    submission.save()
-
     # Pre-generate file path by setting empty file here
     submission.result.save('result.zip', ContentFile(''))
 
     run_arguments = {
+        # TODO! Remove this hardcoded api url...
+        "api_url": "http://django/api",
         "submission_data_file": make_url_sassy(submission.data.data_file.name),
         "result": make_url_sassy(submission.result.name),
-        "api_key": submission.api_key,
+        "secret": submission.secret,
+        "id": submission.pk,
     }
 
     for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
@@ -43,6 +43,9 @@ def run_submission(submission_pk):
     print("Task data:")
     print(run_arguments)
     app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
+
+    submission.status = Submission.SUBMITTED
+    submission.save()
 
 
 class CompetitionUnpackingException(Exception):

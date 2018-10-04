@@ -67,19 +67,20 @@ class SubmissionDetails(models.Model):
 
 
 class Submission(models.Model):
+    NONE = "None"
+    SUBMITTING = "Submitting"
+    SUBMITTED = "Submitted"
+    RUNNING = "Running"
     FINISHED = "Finished"
     FAILED = "Failed"
-    NONE = "None"
-    SUBMITTED = "Submitted"
-    SUBMITTING = "Submitting"
 
     STATUS_CHOICES = (
+        (NONE, "None"),
+        (SUBMITTING, "Submitting"),
+        (SUBMITTED, "Submitted"),
+        (RUNNING, "Running"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
-        (NONE, "None"),
-        # ....
-        (SUBMITTED, "Submitted"),
-        (SUBMITTING, "Submitting"),
     )
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
@@ -89,7 +90,7 @@ class Submission(models.Model):
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
     result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
-    api_key = models.UUIDField()
+    secret = models.UUIDField()
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
@@ -106,9 +107,16 @@ class Submission(models.Model):
         return f"{self.phase.competition.title} submission by {self.owner.username}"
 
     def save(self):
+        created = not self.pk
+
+        if created:
+            self.status = Submission.SUBMITTING
+
+        # Save first so we have a PK
         super(Submission, self).save()
 
-        if self.status == Submission.NONE:
+        # Allow submissions forced back to "None" to be retried
+        if created or self.status == Submission.NONE:
             from .tasks import run_submission
             run_submission.apply_async((self.pk,))
 

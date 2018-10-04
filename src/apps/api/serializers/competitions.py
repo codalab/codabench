@@ -61,7 +61,19 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'id',
             'created_when',
             'is_public',
+            'status',
+            'secret',
         )
+        extra_kwargs = {
+            "secret": {
+                "write_only": True
+            }
+        }
+
+    def update(self, instance, validated_data):
+        if instance.secret != validated_data.get('secret'):
+            raise PermissionError("Submission secret invalid")
+        return super().update(instance, validated_data)
 
 
 class CompetitionSerializer(WritableNestedModelSerializer):
