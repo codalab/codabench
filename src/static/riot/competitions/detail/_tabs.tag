@@ -2,7 +2,7 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="item" data-tab="learn_the_details_tab">Learn The Details</div>
+            <div class="item" data-tab="learn_the_details_tab">Details</div>
             <div class="item" data-tab="phases_tab">Phases</div>
             <div class="active item" data-tab="participate_tab">Participate</div>
             <div class="item" data-tab="results_tab">Results</div>
@@ -215,6 +215,9 @@
 
             .participate-tab
                 margin 0 auto
+                width 100%
+                @media screen and (min-width 768px)
+                    width 85%
 
         </style>
         <script>

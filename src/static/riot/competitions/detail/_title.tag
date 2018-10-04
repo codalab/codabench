@@ -1,37 +1,37 @@
 <comp-detail-title>
-
-    <div class="competition-content">
-        <div class="competition-title"><strong>{competition.title}</strong></div>
-        <div class="competition-description"><p>{competition.description}</p></div>
-        <div class="competition-details">
-            <div class="to-go ui fluid tiny menu">
-                <div class="time fluid item">
-                    <i class="bell icon"></i> 3 weeks, 1 day to go
+    <div class="ui segment">
+        <div class="competition-content">
+            <div class="competition-title"><strong>{competition.title}</strong></div>
+            <div class="competition-description"><p>{competition.description}</p></div>
+            <div class="competition-details">
+                <div class="to-go ui fluid tiny menu">
+                    <div class="time fluid item">
+                        <i class="bell icon"></i> 3 weeks, 1 day to go
+                    </div>
                 </div>
+                <div class="use-stats ui two item tiny menu">
+                    <div class="participants fluid item">
+                        <i class="icon users"></i>10 Participants
+                    </div>
+                    <div class="submissions fluid item">
+                        <i class="icon server"></i>60 Submissions
+                    </div>
+                </div>
+                <button class="ui small button uploader">
+                    <i class="upload icon"></i>Upload your submission
+                </button>
             </div>
-            <div class="use-stats ui two item tiny menu">
-                <div class="participants fluid item">
-                    <i class="icon users"></i>10 Participants
-                </div>
-                <div class="submissions fluid item">
-                    <i class="icon server"></i>60 Submissions
-                </div>
+
+
+            <div class="competition-phases">
+                <ul class="progressbar">
+                    <li each="{competition.phases}" class="phase-tile">
+                        <div>{title}</div>
+                    </li>
+                </ul>
             </div>
-            <button class="ui small button uploader">
-                <i class="upload icon"></i>Upload your submission
-            </button>
-        </div>
-
-
-        <div class="competition-phases">
-            <ul class="progressbar">
-                <li each="{competition.phases}" class="phase-tile">
-                    <div>{title}</div>
-                </li>
-            </ul>
         </div>
     </div>
-
 
     <script>
         var self = this
@@ -44,9 +44,11 @@
             grid-template-rows .25fr .5fr 1fr
             grid-template-columns 1fr 1fr
             grid-template-areas "competition-title competition-title" "competition-description competition-description" "competition-details competition-details" "competition-phases competition-phases"
+
         @media screen and (min-width 700px)
             .competition-content
                 grid-template-areas "competition-title competition-details" "competition-description competition-details" "competition-description competition-details" "competition-phases competition-phases"
+
         .competition-title
             grid-area competition-title
             font-size 2em
@@ -151,8 +153,8 @@
             border-radius 6px
 
         .uploader
-            border solid 1px #00000061 !important
-            box-shadow 0 2px 0px -0.5px #00000061 !important
+            border solid 1px rgba(0, 0, 0, .61) !important
+            box-shadow 0 2px 0px -0.5px rgba(0, 0, 0, .61) !important
             transition 0.11s ease-in-out !important
 
         .uploader:active
