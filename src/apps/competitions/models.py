@@ -44,6 +44,7 @@ class Phase(models.Model):
     end = models.DateTimeField(null=True, blank=True)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
+    execution_time_limit = models.PositiveIntegerField(default=60 * 10)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="input_datas")

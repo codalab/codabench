@@ -19,9 +19,10 @@ from datasets.models import Data
 from utils.data import make_url_sassy
 
 
-@app.task(queue='site-worker')
+@app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk):
-    submission = Submission.objects.get(pk=submission_pk)
+    submission = Submission.objects.select_related('phase', 'phase__competition').get(pk=submission_pk)
+    competition = submission.phase.competition
 
     # Pre-generate file path by setting empty file here
     submission.result.save('result.zip', ContentFile(''))
@@ -42,7 +43,12 @@ def run_submission(submission_pk):
 
     print("Task data:")
     print(run_arguments)
-    app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker')
+
+    # Pad timelimit so worker has time to cleanup
+    time_padding = 60 * 20  # 20 minutes
+    time_limit = submission.phase.execution_time_limit + time_padding
+
+    app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
 
     submission.status = Submission.SUBMITTED
     submission.save()
@@ -52,7 +58,7 @@ class CompetitionUnpackingException(Exception):
     pass
 
 
-@app.task(queue='site-worker')
+@app.task(queue='site-worker', soft_time_limit=60 * 10)
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
