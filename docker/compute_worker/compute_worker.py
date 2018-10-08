@@ -54,7 +54,10 @@ class Run:
     def start(self):
         print("We hit this! Now sleeping...")
         self.update_status(STATUS_RUNNING)
-        import time; time.sleep(100)
+
+        for _ in range(100):
+            import time; time.sleep(1)
+            print("Slept for a second...")
 
 # def _update_status(run_args, status):
 #     submission_id = run_args["id"]

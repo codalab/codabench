@@ -1,3 +1,4 @@
+from celery.worker.control import revoke
 from django.conf import settings
 from django.db import models
 
@@ -72,6 +73,7 @@ class Submission(models.Model):
     SUBMITTING = "Submitting"
     SUBMITTED = "Submitted"
     RUNNING = "Running"
+    CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
 
@@ -80,6 +82,7 @@ class Submission(models.Model):
         (SUBMITTING, "Submitting"),
         (SUBMITTED, "Submitted"),
         (RUNNING, "Running"),
+        (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
     )
@@ -92,6 +95,7 @@ class Submission(models.Model):
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
     result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
     secret = models.UUIDField()
+    task_id = models.UUIDField(null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
@@ -114,12 +118,14 @@ class Submission(models.Model):
             self.status = Submission.SUBMITTING
 
         # Save first so we have a PK
-        super(Submission, self).save()
+        super().save()
 
-        # Allow submissions forced back to "None" to be retried
-        if created or self.status == Submission.NONE:
-            from .tasks import run_submission
-            run_submission.apply_async((self.pk,))
+        # # Allow submissions forced back to "None" to be retried
+        # if created or self.status == Submission.NONE:
+        #     from .tasks import run_submission
+        #     task = run_submission.apply_async((self.pk,))
+        #     self.task_id = task.id
+        #     super().save()
 
         # if not self.score:
         #     # Import here to stop circular imports
@@ -129,6 +135,19 @@ class Submission(models.Model):
         #         if self.phase.scoring_program:
         #             tasks.score_submission.delay(self.pk, self.phase.pk)
         #     tasks.score_submission_lazy.delay(self.pk)
+
+    def start(self):
+        from .tasks import run_submission
+        task = run_submission.apply_async((self.pk,))
+        self.task_id = task.id
+        self.save()
+
+    def cancel(self):
+        self.status = Submission.CANCELLED
+        from celery_config import app
+        with app.connection(queue='compute-worker') as new_connection:
+            app.control.revoke(self.task_id, terminate=True, connection=new_connection)
+        self.save()
 
 
 class CompetitionParticipant(models.Model):
