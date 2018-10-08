@@ -6,13 +6,16 @@ services:
   django:
     build: .
     container_name: django
-    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
+#    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
+    command: bash -c "cd /app/src && /usr/local/bin/gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --reload"
+#    command: bash -c "cd /app/src && daphne -b 0.0.0.0 -p 80 asgi:application"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
     volumes:
       - .:/app
+      - /tmp/codalab-v2:/codalab_tmp
     ports:
       - 8000:8000
       - 80:80

@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = (
     'django_extensions',
     'django_filters',
     'storages',
+    'channels',
 )
 OUR_APPS = (
     'competitions',
@@ -226,6 +227,12 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
+
+
+# =============================================================================
+# Channels
+# =============================================================================
+ASGI_APPLICATION = "routing.application"
 
 
 # =============================================================================
