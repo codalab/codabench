@@ -1,10 +1,15 @@
+import glob
 import logging
 import os
 
 import requests
+import tempfile
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
 from subprocess import CalledProcessError, check_output
+from urllib.error import HTTPError
+from urllib.request import urlretrieve
+from zipfile import ZipFile
 
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -16,6 +21,7 @@ logger = logging.getLogger()
 STATUS_NONE = "None"
 STATUS_SUBMITTING = "Submitting"
 STATUS_SUBMITTED = "Submitted"
+STATUS_PREPARING = "Preparing"
 STATUS_RUNNING = "Running"
 STATUS_FINISHED = "Finished"
 STATUS_FAILED = "Failed"
@@ -23,6 +29,7 @@ AVAILABLE_STATUSES = (
     STATUS_NONE,
     STATUS_SUBMITTING,
     STATUS_SUBMITTED,
+    STATUS_PREPARING,
     STATUS_RUNNING,
     STATUS_FINISHED,
     STATUS_FAILED,
@@ -35,9 +42,11 @@ class SubmissionException(Exception):
 
 @task(name="compute_worker_run")
 def run_wrapper(run_args):
+    logger.info(f"Received run arguments: {run_args}")
     run = Run(run_args)
 
     try:
+        run.prepare()
         run.start()
     except SubmissionException as e:
         run.update_status(STATUS_FAILED, str(e))
@@ -47,10 +56,13 @@ def run_wrapper(run_args):
 
 class Run:
     def __init__(self, run_args):
+        self.root_dir = tempfile.mkdtemp(dir="/codalab_tmp")
         self.submission_id = run_args["id"]
         self.api_url = run_args["api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
+        self.input_data = run_args["input_data"]
+        self.reference_data = run_args["reference_data"]
 
     def update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
@@ -65,7 +77,7 @@ class Run:
         print(resp)
         print(resp.content)
 
-    def get_docker_image(self, image_name):
+    def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
         try:
             cmd = ['docker', 'pull', image_name]
@@ -75,11 +87,50 @@ class Run:
             logger.info("Docker pull for image: {} returned a non-zero exit code!")
             raise SubmissionException(f"Docker pull for {image_name} failed!")
 
-    def start(self):
-        print("We hit this! Now sleeping...")
-        self.update_status(STATUS_RUNNING)
+    def _get_bundle(self, url, destination):
+        bundle_file = tempfile.NamedTemporaryFile()
 
-        self.get_docker_image(self.docker_image)
+        try:
+            urlretrieve(url, bundle_file.name)
+        except HTTPError:
+            raise SubmissionException(f"Problem fetching {destination}")
+
+        with ZipFile(bundle_file.file, 'r') as z:
+            z.extractall(os.path.join(self.root_dir, destination))
+
+
+
+
+    def _dump_files(self):
+        for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
+            print(filename)
+
+
+
+
+    def prepare(self):
+        self.update_status(STATUS_PREPARING)
+
+        bundles = (
+            # (url to file, relative folder destination)
+            (self.input_data, 'input_data'),
+            (self.reference_data, 'reference_data'),
+        )
+
+        for url, path in bundles:
+            self._dump_files()
+            self._get_bundle(url, path)
+
+        self._dump_files()
+
+        self._get_docker_image(self.docker_image)
+
+    def start(self):
+        self.update_status(STATUS_RUNNING)
+        print("We hit this! Now sleeping...")
+
+
+
 
 
 

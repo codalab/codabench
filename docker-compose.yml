@@ -15,7 +15,6 @@ services:
     env_file: .env
     volumes:
       - .:/app
-      - /tmp/codalab-v2:/codalab_tmp
     ports:
       - 8000:8000
       - 80:80
@@ -131,7 +130,7 @@ services:
         max-file: "10"
 
   compute_worker:
-    command: bash -c "watchmedo auto-restart -p '/app/*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
     working_dir: /app
     build:
       context: .
@@ -141,6 +140,7 @@ services:
       - rabbit
     volumes:
       - ./docker/compute_worker:/app
+      - /tmp/codalab-v2:/codalab_tmp
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env

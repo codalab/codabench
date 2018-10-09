@@ -65,13 +65,14 @@ class SubmissionDetails(models.Model):
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'))
-    submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
+    submission = models.ForeignKey('Submission', on_delete=models.DO_NOTHING, related_name='details')
 
 
 class Submission(models.Model):
     NONE = "None"
     SUBMITTING = "Submitting"
     SUBMITTED = "Submitted"
+    PREPARING = "Preparing"
     RUNNING = "Running"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
@@ -81,6 +82,7 @@ class Submission(models.Model):
         (NONE, "None"),
         (SUBMITTING, "Submitting"),
         (SUBMITTED, "Submitted"),
+        (PREPARING, "Preparing"),
         (RUNNING, "Running"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
@@ -112,12 +114,17 @@ class Submission(models.Model):
     def __str__(self):
         return f"{self.phase.competition.title} submission by {self.owner.username}"
 
-    def save(self):
+    def delete(self, **kwargs):
+        # Also clean up details on delete
+        self.details.delete()
+        super().delete(**kwargs)
+
+    def save(self, **kwargs):
         created = not self.pk
         if created:
             self.status = Submission.SUBMITTING
 
-        super().save()
+        super().save(**kwargs)
 
     def start(self):
         from .tasks import run_submission

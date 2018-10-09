@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import os
 import yaml
 import zipfile
@@ -17,6 +18,9 @@ from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, SubmissionDetails
 from datasets.models import Data
 from utils.data import make_url_sassy
+
+
+logger = logging.getLogger()
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
