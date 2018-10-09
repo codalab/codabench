@@ -131,7 +131,7 @@ services:
         max-file: "10"
 
   compute_worker:
-    command: celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1
+    command: bash -c "watchmedo auto-restart -p '/app/*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
     working_dir: /app
     build:
       context: .
@@ -141,6 +141,8 @@ services:
       - rabbit
     volumes:
       - ./docker/compute_worker:/app
+      # Actual connection back to docker parent to run things
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     environment:
       - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//

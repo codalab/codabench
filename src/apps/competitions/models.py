@@ -90,6 +90,7 @@ class Submission(models.Model):
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
+    status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
@@ -113,40 +114,20 @@ class Submission(models.Model):
 
     def save(self):
         created = not self.pk
-
         if created:
             self.status = Submission.SUBMITTING
 
-        # Save first so we have a PK
         super().save()
-
-        # # Allow submissions forced back to "None" to be retried
-        # if created or self.status == Submission.NONE:
-        #     from .tasks import run_submission
-        #     task = run_submission.apply_async((self.pk,))
-        #     self.task_id = task.id
-        #     super().save()
-
-        # if not self.score:
-        #     # Import here to stop circular imports
-        #     from competitions import tasks
-        #
-        #     if self.phase:
-        #         if self.phase.scoring_program:
-        #             tasks.score_submission.delay(self.pk, self.phase.pk)
-        #     tasks.score_submission_lazy.delay(self.pk)
 
     def start(self):
         from .tasks import run_submission
-        task = run_submission.apply_async((self.pk,))
-        self.task_id = task.id
-        self.save()
+        run_submission.apply_async((self.pk,))
 
     def cancel(self):
-        self.status = Submission.CANCELLED
         from celery_config import app
-        with app.connection(queue='compute-worker') as new_connection:
-            app.control.revoke(self.task_id, terminate=True, connection=new_connection)
+        app.control.revoke(self.task_id, terminate=True)
+
+        self.status = Submission.CANCELLED
         self.save()
 
 

@@ -62,6 +62,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'created_when',
             'is_public',
             'status',
+            'status_details',
             'secret',
         )
         extra_kwargs = {

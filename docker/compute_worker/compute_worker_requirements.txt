@@ -1,2 +1,3 @@
 celery==4.2.1
 requests==2.18.4
+watchdog==0.8.3

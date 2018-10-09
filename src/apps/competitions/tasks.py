@@ -21,7 +21,17 @@ from utils.data import make_url_sassy
 
 @app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk):
-    submission = Submission.objects.select_related('phase', 'phase__competition').get(pk=submission_pk)
+    related_models = (
+        'phase',
+        'phase__competition',
+        'phase__input_data',
+        'phase__reference_data',
+        'phase__scoring_program',
+        'phase__ingestion_program',
+        'phase__public_data',
+        'phase__starting_kit',
+    )
+    submission = Submission.objects.select_related(*related_models).prefetch_related('details').get(pk=submission_pk)
     competition = submission.phase.competition
 
     # Pre-generate file path by setting empty file here
@@ -31,11 +41,24 @@ def run_submission(submission_pk):
         # TODO! Remove this hardcoded api url...
         "api_url": "http://django/api",
         "submission_data_file": make_url_sassy(submission.data.data_file.name),
-        "result": make_url_sassy(submission.result.name),
+        # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
+        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        "result": make_url_sassy(submission.result.name, permission='w'),
         "secret": submission.secret,
+        "docker_image": "python:3.7",
         "id": submission.pk,
     }
 
+    # Inputs like reference data/etc.
+    inputs = (
+        'input_data',
+        'reference_data',
+    )
+    for input in inputs:
+        if getattr(submission.phase, input) is not None:
+            run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
+
+    # Detail logs like stdout/etc.
     for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
         new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
         new_details.data_file.save(f'{detail_name}.txt', ContentFile(''))
@@ -48,8 +71,8 @@ def run_submission(submission_pk):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
-
+    task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
+    submission.task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
 
