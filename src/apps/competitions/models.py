@@ -1,3 +1,4 @@
+import uuid
 from celery.worker.control import revoke
 from django.conf import settings
 from django.db import models
@@ -97,7 +98,7 @@ class Submission(models.Model):
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
     result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
-    secret = models.UUIDField()
+    secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
 
     # Experimental
@@ -107,6 +108,8 @@ class Submission(models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(auto_now_add=True)
     is_public = models.BooleanField(default=False)
+
+    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
     # uber experimental
     # track = models.IntegerField(default=1)

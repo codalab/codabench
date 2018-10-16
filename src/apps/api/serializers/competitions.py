@@ -77,6 +77,22 @@ class SubmissionSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class SubmissionCreationSerializer(serializers.ModelSerializer):
+    data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+
+    class Meta:
+        model = Submission
+        fields = (
+            'data',
+            'phase',
+        )
+
+    # TODO: Validate the user is a participant in this competition.phase
+
+    def create(self, validated_data):
+        validated_data["owner"] = self.context['owner']
+        return super().create(validated_data)
+
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     logo = NamedBase64ImageField(required=True)

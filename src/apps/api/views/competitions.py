@@ -42,7 +42,6 @@ class PhaseViewSet(ModelViewSet):
 
 class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all()
-    serializer_class = serializers.SubmissionSerializer
     permission_classes = []
     # TODO! Security, who can access/delete/etc this?
 
@@ -54,6 +53,21 @@ class SubmissionViewSet(ModelViewSet):
                 raise PermissionDenied("Submission secrets do not match")
         except TypeError:
             raise ValidationError("Secret not a valid UUID")
+
+    def get_serializer_context(self):
+        # Have to do this because of docs sending blank requests (?)
+        if not self.request:
+            return {}
+
+        return {
+            "owner": self.request.user
+        }
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.SubmissionCreationSerializer
+        else:
+            return serializers.SubmissionSerializer
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
