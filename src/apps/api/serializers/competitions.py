@@ -91,7 +91,9 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["owner"] = self.context['owner']
-        return super().create(validated_data)
+        sub = super().create(validated_data)
+        sub.start()
+        return sub
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)

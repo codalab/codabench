@@ -235,6 +235,15 @@ if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
 # =============================================================================
 ASGI_APPLICATION = "routing.application"
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [('redis', 6379)],
+        },
+    },
+}
+
 
 # =============================================================================
 # Storage

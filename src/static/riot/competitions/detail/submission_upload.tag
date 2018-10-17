@@ -99,6 +99,19 @@ Output from scoring:
 
 
             $(self.refs.data_file.refs.file_input).on('change', self.prepare_upload(self.upload))
+
+
+
+
+            var url = new URL('/submission_output/', window.location.href);
+            url.protocol = url.protocol.replace('http', 'ws');
+            var ws = new ReconnectingWebSocket(url)
+            ws.onopen = function(event) {
+                console.debug("WebSocket opened:", event);
+            }
+            ws.onmessage = function(event) {
+                console.debug("WebSocket message received:", event);
+            }
         })
 
         self.clear_form = function() {
