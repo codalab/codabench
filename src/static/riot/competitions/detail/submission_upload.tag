@@ -89,6 +89,7 @@ Output from scoring:
         self.lines = []
 
         self.one('mount', function () {
+            /*
             var loop = function () {
                 self.lines.push('asdf')
                 self.update()
@@ -96,6 +97,7 @@ Output from scoring:
                 setTimeout(loop, 10000)
             }
             loop()
+             */
 
 
             $(self.refs.data_file.refs.file_input).on('change', self.prepare_upload(self.upload))
@@ -105,13 +107,22 @@ Output from scoring:
 
             var url = new URL('/submission_output/', window.location.href);
             url.protocol = url.protocol.replace('http', 'ws');
-            var ws = new ReconnectingWebSocket(url)
-            ws.onopen = function(event) {
-                console.debug("WebSocket opened:", event);
+            var options = {
+                automaticOpen: false
             }
-            ws.onmessage = function(event) {
-                console.debug("WebSocket message received:", event);
-            }
+            var ws = new ReconnectingWebSocket(url, null, options)
+            ws.addEventListener("open", function(event){
+                console.log("open event, again?")
+                console.log(event)
+            })
+            ws.addEventListener("message", function(event){
+                console.log("message event")
+                console.log(event)
+                self.lines.push(event.data)
+                self.update()
+                self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
+            })
+            ws.open()
         })
 
         self.clear_form = function() {
@@ -146,7 +157,7 @@ Output from scoring:
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": 14
+                        "phase": 54
                     })
                 })
                 .fail(function (response) {
@@ -183,7 +194,7 @@ Output from scoring:
             background: hsl(220, 80%, 90%)
 
         .submission-container, pre
-            height 60vh
+            height 50vh
 
         pre
             white-space pre-wrap

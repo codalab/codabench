@@ -44,12 +44,13 @@ def run_submission(submission_pk):
     run_arguments = {
         # TODO! Remove this hardcoded api url...
         "api_url": "http://django/api",
-        "submission_data_file": make_url_sassy(submission.data.data_file.name),
+        "submission_data": make_url_sassy(submission.data.data_file.name),
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
         # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
         "result": make_url_sassy(submission.result.name, permission='w'),
         "secret": submission.secret,
         "docker_image": "python:3.7",
+        "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
     }
 

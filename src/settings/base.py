@@ -3,7 +3,6 @@ import sys
 
 import dj_database_url
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Also add ../../apps to python path
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
@@ -140,12 +139,10 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 AUTH_USER_MODEL = 'profiles.User'
 SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 
-
 # =============================================================================
 # Debugging
 # =============================================================================
 DEBUG = os.environ.get('DEBUG', True)
-
 
 # =============================================================================
 # Database
@@ -167,7 +164,6 @@ else:
         }
     }
 
-
 # =============================================================================
 # SSL
 # =============================================================================
@@ -178,7 +174,6 @@ else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
 
-
 # =========================================================================
 # RabbitMQ
 # =========================================================================
@@ -187,7 +182,6 @@ RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
-
 
 # ============================================================================
 # Celery
@@ -220,7 +214,6 @@ OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
 }
 
-
 # =============================================================================
 # OAuth
 # =============================================================================
@@ -228,7 +221,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
-
 
 # =============================================================================
 # Channels
@@ -241,9 +233,18 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [('redis', 6379)],
         },
+        # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },
 }
-
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "asgi_redis.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("my_domain.com", 6379)],
+#         },
+#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
+#     },
+# }
 
 # =============================================================================
 # Storage

@@ -7,14 +7,15 @@ services:
     build: .
     container_name: django
 #    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
-#    command: bash -c "cd /app/src && /usr/local/bin/gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --reload"
-    command: bash -c "cd /app/src && daphne -b 0.0.0.0 -p 80 asgi:application"
+    command: bash -c "cd /app/src && /usr/local/bin/gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --reload"
+#    command: bash -c "cd /app/src && daphne -b 0.0.0.0 -p 80 asgi:application"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
     volumes:
       - .:/app
+      - /tmp/codalab-v2/django:/codalab_tmp
     ports:
       - 8000:8000
       - 80:80
@@ -22,6 +23,8 @@ services:
       - db
       - rabbit
       - minio
+    stdin_open: true
+    tty: true
     logging:
       options:
         max-size: "500k"
@@ -153,7 +156,7 @@ services:
       - rabbit
     volumes:
       - ./docker/compute_worker:/app
-      - /tmp/codalab-v2:/codalab_tmp
+      - /tmp/codalab-v2:/tmp/codalab-v2
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env

@@ -95,6 +95,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
         sub.start()
         return sub
 
+
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     logo = NamedBase64ImageField(required=True)
