@@ -40,6 +40,8 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
+COMPETITIONS_HOST = os.environ.get('COMPETITIONS_HOST', 'docker.for.mac.localhost')
+
 
 class SubmissionException(Exception):
     pass
@@ -201,7 +203,7 @@ class Run:
         self.update_status(STATUS_FINISHED)
 
     async def _run_cmd(self, docker_cmd):
-        async with websockets.connect('ws://docker.for.mac.localhost/submission_input/') as websocket:
+        async with websockets.connect(f'ws://{COMPETITIONS_HOST}/submission_input/') as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
                 stdout=asyncio.subprocess.PIPE,
