@@ -178,7 +178,7 @@
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": 54
+                        "phase": 1
                     })
                 })
                 .fail(function (response) {
