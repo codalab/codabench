@@ -14,11 +14,7 @@
 
         <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
 
-        <pre ref="submission_output">
-            <virtual each="{ line in lines }">
-                { line }
-            </virtual>
-        </pre>
+        <pre ref="submission_output"><virtual each="{ line in lines }">{ line }</virtual></pre>
     </div>
     <script>
         var self = this
