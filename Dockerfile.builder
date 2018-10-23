@@ -7,6 +7,6 @@ WORKDIR /app
 # Install packages
 ADD package.json .
 RUN npm install npm-watch -g
-RUN npm install .
+RUN npm install . -g
 
 CMD npm-watch
