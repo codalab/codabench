@@ -41,7 +41,7 @@ services:
       - /tmp/codalab-competitions-v2-minio:/export
       - ./docker/run_minio.sh:/app/run_minio.sh
     ports:
-      - 9000:9000
+      - $MINIO_PORT:9000
     env_file: .env
 
   createbuckets:
@@ -50,7 +50,7 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add minio_docker http://minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
       /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
