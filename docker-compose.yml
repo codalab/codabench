@@ -57,7 +57,6 @@ services:
       exit 0;
       "
 
-
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #-----------------------------------------------
