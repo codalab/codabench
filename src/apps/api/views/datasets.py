@@ -100,5 +100,4 @@ def upload_completed(request, key):
         from competitions.tasks import unpack_competition
         unpack_competition.apply_async((dataset.pk,))
 
-
     return Response({"key": dataset.key})

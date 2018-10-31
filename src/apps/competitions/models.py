@@ -1,5 +1,4 @@
 import uuid
-from celery.worker.control import revoke
 from django.conf import settings
 from django.db import models
 

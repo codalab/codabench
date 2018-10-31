@@ -1,6 +1,5 @@
 import aiofiles
 
-from channels.consumer import get_handler_name
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
@@ -67,7 +66,6 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add("submission_listening", self.channel_name)
         # await self.send(text_data="Opening test msg")
         # print("Tried to send text?")
-
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("submission_listening", self.channel_name)

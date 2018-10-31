@@ -15,7 +15,7 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, SubmissionDetails
+from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
 from utils.data import make_url_sassy
 
@@ -36,7 +36,6 @@ def run_submission(submission_pk):
         'phase__starting_kit',
     )
     submission = Submission.objects.select_related(*related_models).prefetch_related('details').get(pk=submission_pk)
-    competition = submission.phase.competition
 
     # Pre-generate file path by setting empty file here
     submission.result.save('result.zip', ContentFile(''))
