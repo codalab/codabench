@@ -13,6 +13,7 @@ from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
 from subprocess import CalledProcessError, check_output
 from urllib.error import HTTPError
+from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -39,8 +40,6 @@ AVAILABLE_STATUSES = (
     STATUS_FINISHED,
     STATUS_FAILED,
 )
-
-COMPETITIONS_HOST = os.environ.get('COMPETITIONS_HOST', 'docker.for.mac.localhost')
 
 
 class SubmissionException(Exception):
@@ -90,6 +89,10 @@ class Run:
         self.submission_data = run_args.get("submission_data", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
+
+        websocket_host = urlparse(self.api_url).netloc
+        websocket_scheme = 'ws' if websocket_host.scheme == 'http' else 'wss'
+        self.websocket_url = f"{websocket_scheme}://{websocket_host}"
 
     def update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
@@ -203,7 +206,7 @@ class Run:
         self.update_status(STATUS_FINISHED)
 
     async def _run_cmd(self, docker_cmd):
-        async with websockets.connect(f'ws://{COMPETITIONS_HOST}/submission_input/') as websocket:
+        async with websockets.connect(f'{self.websocket_url}submission_input/') as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
                 stdout=asyncio.subprocess.PIPE,
