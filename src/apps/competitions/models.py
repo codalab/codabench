@@ -1,8 +1,8 @@
+import uuid
 from django.conf import settings
 from django.db import models
 
 from utils.data import PathWrapper
-# from .tasks import score_submission
 
 
 class Competition(models.Model):
@@ -45,6 +45,7 @@ class Phase(models.Model):
     end = models.DateTimeField(null=True, blank=True)
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
+    execution_time_limit = models.PositiveIntegerField(default=60 * 10)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="input_datas")
@@ -55,54 +56,88 @@ class Phase(models.Model):
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="starting_kits")
 
 
+class SubmissionDetails(models.Model):
+    DETAILED_OUTPUT_NAMES = [
+        "stdout",
+        "stderr",
+        "ingestion_stdout",
+        "ingestion_stderr",
+    ]
+    name = models.CharField(max_length=50)
+    data_file = models.FileField(upload_to=PathWrapper('submission_details'))
+    submission = models.ForeignKey('Submission', on_delete=models.DO_NOTHING, related_name='details')
+
+
 class Submission(models.Model):
+    NONE = "None"
+    SUBMITTING = "Submitting"
+    SUBMITTED = "Submitted"
+    PREPARING = "Preparing"
+    RUNNING = "Running"
+    CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
-    NONE = "None"
-    SUBMITTED = "Submitted"
-    SUBMITTING = "Submitting"
 
     STATUS_CHOICES = (
+        (NONE, "None"),
+        (SUBMITTING, "Submitting"),
+        (SUBMITTED, "Submitted"),
+        (PREPARING, "Preparing"),
+        (RUNNING, "Running"),
+        (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),
-        (NONE, "None"),
-        # ....
-        (SUBMITTED, "Submitted"),
-        (SUBMITTING, "Submitting"),
     )
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name='submission', on_delete=models.DO_NOTHING)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
+    status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
+    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
+    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
+    secret = models.UUIDField(default=uuid.uuid4)
+    task_id = models.UUIDField(null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
-    description = models.CharField(max_length=120, default="", null=True, blank=True)
-    score = models.IntegerField(default=None, null=True, blank=True)
+    score = models.DecimalField(max_digits=20, decimal_places=10, default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
-    zip_file = models.FileField(upload_to=PathWrapper('submissions'), null=True, blank=True)
     created_when = models.DateTimeField(auto_now_add=True)
     is_public = models.BooleanField(default=False)
 
+    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
+
     # uber experimental
-    track = models.IntegerField(default=1)
+    # track = models.IntegerField(default=1)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def __str__(self):
+        return f"{self.phase.competition.title} submission by {self.owner.username}"
 
-        super(Submission, self).save()
+    def delete(self, **kwargs):
+        # Also clean up details on delete
+        self.details.delete()
+        super().delete(**kwargs)
 
-        if not self.score:
-            # Import here to stop circular imports
-            from competitions import tasks
+    def save(self, **kwargs):
+        created = not self.pk
+        if created:
+            self.status = Submission.SUBMITTING
 
-            if self.phase:
-                if self.phase.scoring_program:
-                    tasks.score_submission.delay(self.pk, self.phase.pk)
-            tasks.score_submission_lazy.delay(self.pk)
+        super().save(**kwargs)
+
+    def start(self):
+        from .tasks import run_submission
+        run_submission.apply_async((self.pk,))
+
+    def cancel(self):
+        from celery_config import app
+        app.control.revoke(self.task_id, terminate=True)
+
+        self.status = Submission.CANCELLED
+        self.save()
 
 
 class CompetitionParticipant(models.Model):

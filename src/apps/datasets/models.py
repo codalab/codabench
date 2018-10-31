@@ -18,6 +18,7 @@ class Data(models.Model):
     SCORING_PROGRAM = 'scoring_program'
     STARTING_KIT = 'starting_kit'
     COMPETITION_BUNDLE = 'competition_bundle'
+    SUBMISSION = 'submission'
 
     TYPES = (
         (INGESTION_PROGRAM, 'Ingestion Program',),
@@ -27,6 +28,7 @@ class Data(models.Model):
         (SCORING_PROGRAM, 'Scoring Program',),
         (STARTING_KIT, 'Starting Kit',),
         (COMPETITION_BUNDLE, 'Competition Bundle',),
+        (SUBMISSION, 'Submission',),
     )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)
@@ -49,6 +51,12 @@ class Data(models.Model):
 
     # TODO: add Model manager that automatically filters out upload_completed_successfully=False from queries
     # TODO: remove upload_completed_successfully=False after 3 days ???
+
+    def __str__(self):
+        description = f"{self.created_by.username} - {self.type}"
+        if self.name:
+            description += f" - {self.name}"
+        return description
 
 
 class DataGroup(models.Model):

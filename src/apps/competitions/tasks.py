@@ -1,8 +1,13 @@
 import base64
 import json
+import logging
 import os
 import yaml
 import zipfile
+
+from django.core.files.base import ContentFile
+
+from celery_config import app
 from dateutil import parser
 from django.core.files import File
 from django.utils.timezone import now
@@ -10,34 +15,77 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from comp_worker import app
-from competitions.models import Submission, Phase, CompetitionCreationTaskStatus
-
+from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
+from utils.data import make_url_sassy
 
 
-@app.task
-def score_submission_lazy(submission_pk):
-    sub_to_score = Submission.objects.get(pk=submission_pk)
-    sub_to_score.score = 1
-    sub_to_score.save()
+logger = logging.getLogger()
 
 
-@app.task
-def score_submission(submission_pk, phase_pk):
-    sub_to_score = Submission.objects.get(pk=submission_pk)
-    scoring_phase = Phase.objects.get(pk=phase_pk)
-    scoring_program = scoring_phase.scoring_program
-    file_to_score = sub_to_score.zip_file
-    print(scoring_program)
-    print(file_to_score)
+@app.task(queue='site-worker', soft_time_limit=60)
+def run_submission(submission_pk):
+    related_models = (
+        'phase',
+        'phase__competition',
+        'phase__input_data',
+        'phase__reference_data',
+        'phase__scoring_program',
+        'phase__ingestion_program',
+        'phase__public_data',
+        'phase__starting_kit',
+    )
+    submission = Submission.objects.select_related(*related_models).prefetch_related('details').get(pk=submission_pk)
+
+    # Pre-generate file path by setting empty file here
+    submission.result.save('result.zip', ContentFile(''))
+
+    run_arguments = {
+        # TODO! Remove this hardcoded api url...
+        "api_url": "http://django/api",
+        "submission_data": make_url_sassy(submission.data.data_file.name),
+        # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
+        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        "result": make_url_sassy(submission.result.name, permission='w'),
+        "secret": submission.secret,
+        "docker_image": "python:3.7",
+        "execution_time_limit": submission.phase.execution_time_limit,
+        "id": submission.pk,
+    }
+
+    # Inputs like reference data/etc.
+    inputs = (
+        'input_data',
+        'reference_data',
+    )
+    for input in inputs:
+        if getattr(submission.phase, input) is not None:
+            run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
+
+    # Detail logs like stdout/etc.
+    for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
+        new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
+        new_details.data_file.save(f'{detail_name}.txt', ContentFile(''))
+        run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
+
+    print("Task data:")
+    print(run_arguments)
+
+    # Pad timelimit so worker has time to cleanup
+    time_padding = 60 * 20  # 20 minutes
+    time_limit = submission.phase.execution_time_limit + time_padding
+
+    task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
+    submission.task_id = task.id
+    submission.status = Submission.SUBMITTED
+    submission.save()
 
 
 class CompetitionUnpackingException(Exception):
     pass
 
 
-@app.task
+@app.task(queue='site-worker', soft_time_limit=60 * 10)
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by

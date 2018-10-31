@@ -75,25 +75,28 @@ CODALAB.api = {
     delete_submission: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + id + "/")
     },
-    create_submission: function (form_data, progress_update_callback) {
-        // NOTE: this function takes a special "form_data" not like the normal
-        // dictionary other methods take
-
-
-        /*
-            Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
-
-            Local storage:
-                * POST to server
-
-            Remote storage:
-                * POST to server
-                * Server returns SAS URL
-                * PUT to SAS URL
-                * POST to mark upload as done, so un-finished uploads can be pruned later
-
-        */
-        return _upload_ajax(URLS.API + "submissions/", form_data, progress_update_callback)
+    // create_submission: function (form_data, progress_update_callback) {
+    //     // NOTE: this function takes a special "form_data" not like the normal
+    //     // dictionary other methods take
+    //
+    //
+    //     /*
+    //         Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
+    //
+    //         Local storage:
+    //             * POST to server
+    //
+    //         Remote storage:
+    //             * POST to server
+    //             * Server returns SAS URL
+    //             * PUT to SAS URL
+    //             * POST to mark upload as done, so un-finished uploads can be pruned later
+    //
+    //     */
+    //     return _upload_ajax(URLS.API + "submissions/", form_data, progress_update_callback)
+    // },
+    create_submission: function(submission_metadata) {
+        return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
     },
 
     /*---------------------------------------------------------------------

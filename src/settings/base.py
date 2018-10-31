@@ -3,7 +3,6 @@ import sys
 
 import dj_database_url
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Also add ../../apps to python path
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
@@ -34,6 +33,7 @@ THIRD_PARTY_APPS = (
     'django_extensions',
     'django_filters',
     'storages',
+    'channels',
 )
 OUR_APPS = (
     'competitions',
@@ -139,12 +139,10 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 AUTH_USER_MODEL = 'profiles.User'
 SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 
-
 # =============================================================================
 # Debugging
 # =============================================================================
 DEBUG = os.environ.get('DEBUG', True)
-
 
 # =============================================================================
 # Database
@@ -157,15 +155,14 @@ if db_from_env:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
-            'NAME': os.environ.get('DB_NAME', 'db.sqlite3'),
-            'USER': os.environ.get('DB_USERNAME', ''),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'postgres'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USERNAME', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('DB_HOST', 'db'),
+            'PORT': 5432
         }
     }
-
 
 # =============================================================================
 # SSL
@@ -177,7 +174,6 @@ else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
 
-
 # =========================================================================
 # RabbitMQ
 # =========================================================================
@@ -187,17 +183,14 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 
-
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
-
-if not BROKER_URL:
-    # BROKER_URL might be set but empty, make sure it's set!
-    BROKER_URL = 'pyamqp://{}:{}@{}:{}//'.format(RABBITMQ_DEFAULT_USER, RABBITMQ_DEFAULT_PASS, RABBITMQ_HOST,
-                                                 RABBITMQ_PORT)
-
+CELERY_BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
+if not CELERY_BROKER_URL:
+    CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ('json',)
 
 # =============================================================================
 # DRF
@@ -221,7 +214,6 @@ OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
 }
 
-
 # =============================================================================
 # OAuth
 # =============================================================================
@@ -230,6 +222,29 @@ CORS_ORIGIN_ALLOW_ALL = True
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
 
+# =============================================================================
+# Channels
+# =============================================================================
+ASGI_APPLICATION = "routing.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [('redis', 6379)],
+        },
+        # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
+    },
+}
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "asgi_redis.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("my_domain.com", 6379)],
+#         },
+#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
+#     },
+# }
 
 # =============================================================================
 # Storage

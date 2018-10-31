@@ -6,20 +6,25 @@ services:
   django:
     build: .
     container_name: django
-    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
+#    command: bash -c "cd /app/src && /usr/local/bin/gunicorn wsgi:application -w 2 -k gevent -b :8000 -b :80 --reload"
+    command: bash -c "cd /app/src && /usr/local/bin/gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --reload"
+#    command: bash -c "cd /app/src && daphne -b 0.0.0.0 -p 80 asgi:application"
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
     volumes:
       - .:/app
+      - /tmp/codalab-v2/django:/codalab_tmp
     ports:
       - 8000:8000
       - 80:80
     depends_on:
       - db
-      - rabbitmq
+      - rabbit
       - minio
+    stdin_open: true
+    tty: true
     logging:
       options:
         max-size: "500k"
@@ -36,22 +41,22 @@ services:
       - /tmp/codalab-competitions-v2-minio:/export
       - ./docker/run_minio.sh:/app/run_minio.sh
     ports:
-      - 9000:9000
+      - $MINIO_PORT:9000
     env_file: .env
 
   createbuckets:
     image: minio/mc
     depends_on:
       - minio
+    env_file: .env
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add minio_docker http://minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
       /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
       exit 0;
       "
-
 
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
@@ -90,16 +95,29 @@ services:
   #-----------------------------------------------
   #   Rabbitmq Service
   #-----------------------------------------------
-  rabbitmq:
-    image: rabbitmq:3.6.6-management
+  rabbit:
+    image: rabbitmq:3.6-management
     container_name: rabbit
     env_file: .env
     ports:
       - 15672:15672
       - 5672:5672
     volumes:
-      # To save rabbitmq state between container ups/downs
-      - ./var/rabbitmq:/var/lib/rabbitmq/
+      # To save rabbit state between container ups/downs
+      - ./var/rabbit:/var/lib/rabbit/
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
+
+  #-----------------------------------------------
+  #   Redis
+  #-----------------------------------------------
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - 6379:6379
     logging:
       options:
         max-size: "500k"
@@ -110,12 +128,12 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A comp_worker worker"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -Q site-worker -Ofast -Ofair -l info -n site-worker@%n"
     working_dir: /app/src
     build:
       context: .
     depends_on:
-      - rabbitmq
+      - rabbit
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=settings.base
@@ -126,17 +144,45 @@ services:
       options:
         max-size: "500k"
         max-file: "10"
+
+  compute_worker:
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
+    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile.compute_worker
+    depends_on:
+      - django
+      - rabbit
+    volumes:
+      - ./docker/compute_worker:/app
+      - /tmp/codalab-v2:/tmp/codalab-v2
+      # Actual connection back to docker parent to run things
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
+    environment:
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+    logging:
+      options:
+        max-size: "500k"
+        max-file: "10"
   #-----------------------------------------------
   #   Flower Service
   #-----------------------------------------------
-  # flower:
-  #   container_name: flower
-  #   env_file: .env
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.flower
-  #   ports:
-  #     - 15555:5555
-  #   depends_on:
-  #     - celery
-  #     - rabbitmq
+  flower:
+    container_name: flower
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
+    environment:
+      # These aren't set in .env
+      - AMQP_USERNAME=${RABBITMQ_DEFAULT_USER}
+      - AMQP_PASSWORD=${RABBITMQ_DEFAULT_PASS}
+      - AMQP_HOST=rabbit
+      - AMQP_ADMIN_HOST=rabbit
+      - AMQP_PORT=${RABBITMQ_PORT}
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbit

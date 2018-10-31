@@ -149,12 +149,14 @@
 <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 
 <!-- Ours -->
-<script src="{% static "generated/riot.js" %}"></script>
 <script src="{% static "js/ours/client.js" %}"></script>
 <script src="{% static "js/ours/init.js" %}"></script>
 <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
 <script src="{% static "js/ours/utils.js" %}"></script>
 <script src="{% static "js/jquery.form.serializer.js" %}"></script>
+<script src="{% static "js/Chart.bundle.js" %}"></script>
+<script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
+<script src="{% static "generated/riot.js" %}"></script>
 
 <script>
     {# From `common_settings` context processor #}
@@ -166,6 +168,9 @@
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
+
+        // Websockets
+        //WS_SUBMISSION_LISTEN: ""
 
         // Competitions
         COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
