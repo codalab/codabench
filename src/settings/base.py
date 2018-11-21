@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
+    'drf_yasg',
 )
 OUR_APPS = (
     'competitions',

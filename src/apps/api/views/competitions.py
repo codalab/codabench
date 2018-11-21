@@ -64,7 +64,7 @@ class SubmissionViewSet(ModelViewSet):
         }
 
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        if self.request and self.request.method == 'POST':
             return serializers.SubmissionCreationSerializer
         else:
             return serializers.SubmissionSerializer
