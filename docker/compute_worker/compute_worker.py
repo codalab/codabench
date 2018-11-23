@@ -90,9 +90,10 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
-        websocket_host = urlparse(self.api_url).netloc
-        websocket_scheme = 'ws' if websocket_host.scheme == 'http' else 'wss'
-        self.websocket_url = f"{websocket_scheme}://{websocket_host}"
+        api_url_parsed = urlparse(self.api_url)
+        websocket_host = api_url_parsed.netloc
+        websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
+        self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
     def update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
@@ -206,6 +207,7 @@ class Run:
         self.update_status(STATUS_FINISHED)
 
     async def _run_cmd(self, docker_cmd):
+        logger.info(f"Connecting to {self.websocket_url}submission_input/")
         async with websockets.connect(f'{self.websocket_url}submission_input/') as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,

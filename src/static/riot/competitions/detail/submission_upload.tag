@@ -4,6 +4,10 @@
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+
+            <select class="ui dropdown" ref="phase">
+                <option each="{ phase in opts.phases }" value="{ phase.id }">Phase: { phase.name }</option>
+            </select>
         </form>
 
         <div class="ui indicating progress" ref="progress">
@@ -26,6 +30,8 @@
         self.lines = []
 
         self.one('mount', function () {
+            $('.dropdown', self.root).dropdown()
+
             // Graphing
             var config = {
                 type: 'line',
@@ -174,7 +180,7 @@
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": 1
+                        "phase": self.refs.phase.value
                     })
                 })
                 .fail(function (response) {
