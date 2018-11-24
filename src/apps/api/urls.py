@@ -31,6 +31,7 @@ urlpatterns = [
     # url('^query/', search.query),
     path('my_profile/', profiles.GetMyProfile.as_view()),
     path('datasets/completed/<uuid:key>/', datasets.upload_completed),
+    path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

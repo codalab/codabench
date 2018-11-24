@@ -1,4 +1,6 @@
 import time
+
+import json
 import websockets
 
 import asyncio
@@ -54,6 +56,7 @@ def run_wrapper(run_args):
     try:
         run.prepare()
         run.start()
+        run.submit_scores()
     except SubmissionException as e:
         run.update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -107,6 +110,23 @@ class Run:
         })
         # print(resp)
         # print(resp.content)
+
+    def submit_scores(self):
+        # POST to some endpoint:
+        # {
+        #     "correct": 1.0
+        # }
+        scores_file = os.path.join(self.root_dir, "scores.json")
+        scores = json.loads(open(scores_file, 'r').read())
+
+        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
+        logger.info(f"Submitting these scores to {url}: {scores}")
+        resp = requests.post(url, json={
+            "secret": self.secret,
+            "scores": scores,
+        })
+        print(resp)
+        print(str(resp.content))
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -207,6 +227,8 @@ class Run:
         self.update_status(STATUS_FINISHED)
 
     async def _run_cmd(self, docker_cmd):
+        """This runs a command and asynchronously writes the data to both a storage file
+        and a socket"""
         logger.info(f"Connecting to {self.websocket_url}submission_input/")
         async with websockets.connect(f'{self.websocket_url}submission_input/') as websocket:
             proc = await asyncio.create_subprocess_exec(

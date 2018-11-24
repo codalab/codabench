@@ -48,3 +48,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
         sub = super().create(validated_data)
         sub.start()
         return sub
+
+
+# class SubmissionScores(serializers.Serializer):
+

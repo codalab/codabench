@@ -1,11 +1,16 @@
+import json
 import uuid
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer
 from competitions.models import Submission
+from leaderboards.models import SubmissionScore, Column
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -43,3 +48,32 @@ class SubmissionViewSet(ModelViewSet):
 
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+@permission_classes((AllowAny, ))
+def upload_submission_scores(request, submission_pk):
+    submission = get_object_or_404(Submission, pk=submission_pk)
+
+    data = json.loads(request.body)
+    print(request.body)
+
+    try:
+        if uuid.UUID(data.get("secret")) != submission.secret:
+            raise PermissionDenied("Submission secrets do not match")
+    except TypeError:
+        raise ValidationError("Secret not a valid UUID")
+
+    # {
+    #     "correct": 1.0
+    # }
+
+
+    for column_key, score in data["scores"].items():
+        SubmissionScore.objects.create(
+            submission=submission,
+            score=score,
+            column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key)
+        )
+
+    return Response()
