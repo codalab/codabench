@@ -24,7 +24,7 @@ logger = logging.getLogger()
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk):
+def run_submission(submission_pk, is_scoring=False):
     related_models = (
         'phase',
         'phase__competition',
@@ -37,21 +37,30 @@ def run_submission(submission_pk):
     )
     submission = Submission.objects.select_related(*related_models).prefetch_related('details').get(pk=submission_pk)
 
-    # Pre-generate file path by setting empty file here
-    submission.result.save('result.zip', ContentFile(''))
-
     run_arguments = {
         # TODO! Remove this hardcoded api url...
         "api_url": "http://django/api",
-        "submission_data": make_url_sassy(submission.data.data_file.name),
+        # "program_data": make_url_sassy(submission.data.data_file.name),
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
         # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
-        "result": make_url_sassy(submission.result.name, permission='w'),
         "secret": submission.secret,
         "docker_image": "python:3.7",
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
+        "is_scoring": is_scoring,
     }
+
+    if not is_scoring:
+        # Pre-generate file path by setting empty file here
+        submission.result.save('result.zip', ContentFile(''))
+        # Run the submission
+        run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
+        run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
+    else:
+        # Run the scoring_program
+        run_arguments["program_data"] = make_url_sassy(submission.phase.scoring_program.data_file.name)
+        run_arguments["result"] = make_url_sassy(submission.result.name)
+        # run_arguments["ingestion_program"] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
 
     # Inputs like reference data/etc.
     inputs = (

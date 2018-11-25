@@ -1,6 +1,7 @@
 import time
 
 import json
+import uuid
 import websockets
 
 import asyncio
@@ -9,10 +10,12 @@ import logging
 import os
 
 import requests
-import subprocess
 import tempfile
+import yaml
+import zipfile
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
+from shutil import make_archive
 from subprocess import CalledProcessError, check_output
 from urllib.error import HTTPError
 from urllib.parse import urlparse
@@ -31,6 +34,7 @@ STATUS_SUBMITTING = "Submitting"
 STATUS_SUBMITTED = "Submitted"
 STATUS_PREPARING = "Preparing"
 STATUS_RUNNING = "Running"
+STATUS_SCORING = "Scoring"
 STATUS_FINISHED = "Finished"
 STATUS_FAILED = "Failed"
 AVAILABLE_STATUSES = (
@@ -39,6 +43,7 @@ AVAILABLE_STATUSES = (
     STATUS_SUBMITTED,
     STATUS_PREPARING,
     STATUS_RUNNING,
+    STATUS_SCORING,
     STATUS_FINISHED,
     STATUS_FAILED,
 )
@@ -56,40 +61,29 @@ def run_wrapper(run_args):
     try:
         run.prepare()
         run.start()
-        run.submit_scores()
+        if run.is_scoring:
+            run.submit_scores()
     except SubmissionException as e:
-        run.update_status(STATUS_FAILED, str(e))
+        run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
-        run.update_status(STATUS_FAILED, "Soft time limit exceeded!")
-
-
-
-# class Logger(object):
-#     def __init__(self, output_file, output_url):
-#         # self.output_file = open("logfile.log", "a")
-#         self.output_socket
-#
-#     def write(self, message):
-#         # self.output_file.write(message)
-#
-#     def flush(self):
-#         # this flush method is needed for python 3 compatibility.
-#         # this handles the flush command by doing nothing.
-#         # you might want to specify some extra behavior here.
-#         pass
-
+        run._update_status(STATUS_FAILED, "Soft time limit exceeded!")
+    finally:
+        run.clean_up()
 
 
 class Run:
     def __init__(self, run_args):
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.output_dir = os.path.join(self.root_dir, "output")
+        self.is_scoring = run_args["is_scoring"]
         self.submission_id = run_args["id"]
         self.api_url = run_args["api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
+        self.result = run_args["result"]
         self.execution_time_limit = run_args["execution_time_limit"]
 
-        self.submission_data = run_args.get("submission_data", None)
+        self.program_data = run_args.get("program_data", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
@@ -98,35 +92,18 @@ class Run:
         websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
-    def update_status(self, status, extra_information=None):
+    def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
         url = f"{self.api_url}/submissions/{self.submission_id}/"
-        logger.info(f"Status = '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
+        logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
         resp = requests.patch(url, {
             "secret": self.secret,
             "status": status,
             "status_details": extra_information,
         })
-        # print(resp)
-        # print(resp.content)
-
-    def submit_scores(self):
-        # POST to some endpoint:
-        # {
-        #     "correct": 1.0
-        # }
-        scores_file = os.path.join(self.root_dir, "scores.json")
-        scores = json.loads(open(scores_file, 'r').read())
-
-        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
-        logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = requests.post(url, json={
-            "secret": self.secret,
-            "scores": scores,
-        })
-        print(resp)
-        print(str(resp.content))
+        # logger.info(resp)
+        # logger.info(resp.content)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -150,83 +127,7 @@ class Run:
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
 
-    def _dump_files(self):
-        for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
-            print(filename)
-
-    def prepare(self):
-        self.update_status(STATUS_PREPARING)
-
-        bundles = (
-            # (url to file, relative folder destination)
-            (self.submission_data, 'submission'),
-            (self.input_data, 'input_data'),
-            (self.reference_data, 'reference_data'),
-        )
-
-        for url, path in bundles:
-            self._dump_files()
-            if url is not None:
-                self._get_bundle(url, path)
-
-        self._dump_files()
-
-        self._get_docker_image(self.docker_image)
-
-    def start(self):
-        self.update_status(STATUS_RUNNING)
-        print("We hit this! Now sleeping...")
-
-        stdout_file = os.path.join(self.root_dir, "stdout.txt")
-        stderr_file = os.path.join(self.root_dir, "stderr.txt")
-        stdout = open(stdout_file, "a+")
-        stderr = open(stderr_file, "a+")
-
-        docker_cmd = (
-            'docker',
-            'run',
-            # Remove it after run
-            '--rm',
-            # Try the new timeout feature
-            '--stop-timeout={}'.format(self.execution_time_limit),
-            # Don't allow subprocesses to raise privileges
-            '--security-opt=no-new-privileges',
-            # Set the right volume
-            '-v', '{0}:/app'.format(self.root_dir),
-            # Start in the right directory
-            '-w', '/app',
-            # Don't buffer python output, so we don't lose any
-            '-e', 'PYTHONUNBUFFERED=1',
-            # Note that hidden data dir is excluded here!
-            # Set the right image
-            self.docker_image,
-
-            'python', 'submission/submission.py',
-        )
-
-        logger.info(f"Running program = {' '.join(docker_cmd)}")
-
-        exit_code = None
-
-        # asyncio.get_event_loop().run_until_complete(
-        #     self._run_cmd(docker_cmd)
-        # )
-
-        asyncio.get_event_loop().run_until_complete(self._run_cmd(docker_cmd))
-
-
-        logger.info(f"Program finished with exit code = {exit_code}")
-
-        # Unpack submission and data into some directory
-        # Download docker image
-        # ** When running SCORING PROGRAM ** pass by volume the codalab.py library file so submissions/organizers can use it
-        # Normal things pass all run_args as env vars to submission
-        # Upload submission results
-        # Upload submission stdout/etc.
-
-        self.update_status(STATUS_FINISHED)
-
-    async def _run_cmd(self, docker_cmd):
+    async def _run_docker_cmd(self, docker_cmd):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket"""
         logger.info(f"Connecting to {self.websocket_url}submission_input/")
@@ -245,63 +146,154 @@ class Run:
                 else:
                     break
 
-
             stdout, stderr = await proc.communicate()
 
-            print(f'[exited with {proc.returncode}]')
+            logger.info(f'[exited with {proc.returncode}]')
             if stdout:
-                print(f'[stdout]\n{stdout.decode()}')
+                logger.info(f'[stdout]\n{stdout.decode()}')
             if stderr:
-                print(f'[stderr]\n{stderr.decode()}')
+                logger.info(f'[stderr]\n{stderr.decode()}')
 
-            # for _ in range(10):
-            #     time.sleep(1)
-            #     print("Sending hello world stuff")
-            #
+    def _run_program_directory(self, program_dir):
+        # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
-            # process = subprocess.Popen(docker_cmd, stdout=stdout, stderr=stderr)
-            #
-            # # While either program is running and hasn't exited, continue polling
-            # while (process and exit_code == None):
-            #     time.sleep(1)
-            #
-            #     if process and exit_code is None:
-            #         exit_code = process.poll()
+        # If the directory doesn't even exist, move on
+        if not os.path.exists(program_dir):
+            logger.info(f"{program_dir} not found, no program to execute")
+            return
+
+        try:
+            with open(os.path.join(program_dir, "metadata.yaml"), 'r') as metadata_file:
+                metadata = yaml.load(metadata_file.read())
+                command = metadata.get("command")
+                if not command:
+                    raise SubmissionException("Program directory missing 'command' in metadata")
+        except FileNotFoundError:
+            raise SubmissionException("Program directory missing 'metadata.yaml'")
+
+        stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
+        stderr = open(os.path.join(program_dir, "stderr.txt"), "a+")
+
+        docker_cmd = [
+            'docker',
+            'run',
+            # Remove it after run
+            '--rm',
+            # Try the new timeout feature
+            '--stop-timeout={}'.format(self.execution_time_limit),
+            # Don't allow subprocesses to raise privileges
+            '--security-opt=no-new-privileges',
+            # Set the right volume
+            '-v', f'{program_dir}:/app',
+            '-v', f'{self.output_dir}:/app/output',  # May not be necessary? basically just creates the dir?
+            # Start in the right directory
+            '-w', '/app',
+            # Don't buffer python output, so we don't lose any
+            '-e', 'PYTHONUNBUFFERED=1',
+            # Note that hidden data dir is excluded here!
+            # Set the right image
+            self.docker_image,
+            # 'python', 'submission/submission.py',
+        ]
+        docker_cmd += command.split(' ')
+
+        logger.info(f"Running program = {' '.join(docker_cmd)}")
+
+        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd))
+
+        logger.info(f"Program finished")
+
+    def _put_dir(self, url, directory):
+        logger.info("Putting dir %s in %s" % (directory, url))
+
+        zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
+        resp = requests.put(
+            url,
+            data=open(zip_path, 'rb'),
+            headers={
+                'Content-Length': str(os.path.getsize(zip_path)),
+                'Content-Type': 'application/zip',
+            #     'x-ms-blob-type': 'BlockBlob',
+            #     'x-ms-version': '2018-03-28',
+            }
+        )
+        logger.info("*** PUT RESPONSE: ***")
+        logger.info(resp)
+        logger.info(resp.content)
+
+    def prepare(self):
+        self._update_status(STATUS_PREPARING)
+
+        # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
+        # sub folder.
+        bundles = [
+            # (url to file, relative folder destination)
+            (self.program_data, 'program'),
+            # (self.ingestion_program_data, 'ingestion_program'),
+            (self.input_data, 'input_data'),
+            (self.reference_data, 'reference_data'),
+        ]
+
+        if self.is_scoring:
+            # Send along submission result so scoring_program can get access
+            bundles += [(self.result, os.path.join('program', 'input'))]
+
+        for url, path in bundles:
+            if url is not None:
+                self._get_bundle(url, path)
+
+        # For logging purposes let's dump file names
+        for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
+            logger.info(filename)
+
+        # Before the run starts we want to download docker images, they may take a while to download
+        # and to do this during the run would subtract from the participants time.
+        self._get_docker_image(self.docker_image)
+
+    def start(self):
+        if not self.is_scoring:
+            self._update_status(STATUS_RUNNING)
+
+        program_dir = os.path.join(self.root_dir, "program")
+        ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
+
+        self._run_program_directory(program_dir)
+        self._run_program_directory(ingestion_program_dir)
+
+        # Unpack submission and data into some directory
+        # Download docker image
+        # ** When running SCORING PROGRAM ** pass by volume the codalab.py library file so submissions/organizers can use it
+        # Normal things pass all run_args as env vars to submission
+        # Upload submission results
+        # Upload submission stdout/etc.
+
+        if self.is_scoring:
+            self._update_status(STATUS_FINISHED)
+        else:
+            self._update_status(STATUS_SCORING)
+
+    def submit_scores(self):
+        # POST to some endpoint:
+        # {
+        #     "correct": 1.0
+        # }
+        scores_file = os.path.join(self.output_dir, "scores.json")
+        scores = json.load(open(scores_file, 'r'))
+
+        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
+        logger.info(f"Submitting these scores to {url}: {scores}")
+        resp = requests.post(url, json={
+            "secret": self.secret,
+            "scores": scores,
+        })
+        logger.info(resp)
+        logger.info(str(resp.content))
+
+    def clean_up(self):
+        if not self.is_scoring:
+            # Save output of submission
+            self._put_dir(self.result, self.output_dir)
 
 
-
-
-# class SocketEchoStreamReader(asyncio.StreamReader):
-#     async def
-
-
-
-# def _update_status(run_args, status):
-#     submission_id = run_args["id"]
-#     api_url = run_args["api_url"]
-#     secret = run_args["secret"]
-#     url = f"{api_url}/submissions/{submission_id}/"
-#     print(f"Sending '{status}' update for submission={submission_id}")
-#     resp = requests.patch(url, {"secret": secret, "status": status})
-#     print(resp)
-#     print(resp.content)
-#
-#
-# def run(run_args):
-#     print("We hit this!")
-#     print(run_args)
-#     _update_status(run_args, STATUS_RUNNING)
-
-
-
-
-
-
-
-
-
-
-
-
-    pass
-
+        logger.info("We're not cleaning up yet... TODO: cleanup!")
+        pass

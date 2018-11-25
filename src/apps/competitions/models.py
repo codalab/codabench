@@ -74,6 +74,7 @@ class Submission(models.Model):
     SUBMITTED = "Submitted"
     PREPARING = "Preparing"
     RUNNING = "Running"
+    SCORING = "Scoring"
     CANCELLED = "Cancelled"
     FINISHED = "Finished"
     FAILED = "Failed"
@@ -84,6 +85,7 @@ class Submission(models.Model):
         (SUBMITTED, "Submitted"),
         (PREPARING, "Preparing"),
         (RUNNING, "Running"),
+        (SCORING, "Scoring"),
         (CANCELLED, "Cancelled"),
         (FINISHED, "Finished"),
         (FAILED, "Failed"),

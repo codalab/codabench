@@ -28,6 +28,14 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
             raise PermissionError("Submission secret invalid")
+
+        print("Updated to...")
+        print(validated_data)
+
+        if validated_data["status"] == Submission.SCORING:
+            # Start scoring because we're "SCORING" status now from compute worker
+            from competitions.tasks import run_submission
+            run_submission(instance.pk, is_scoring=True)
         return super().update(instance, validated_data)
 
 
