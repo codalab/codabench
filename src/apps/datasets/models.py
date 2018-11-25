@@ -52,11 +52,13 @@ class Data(models.Model):
     # TODO: add Model manager that automatically filters out upload_completed_successfully=False from queries
     # TODO: remove upload_completed_successfully=False after 3 days ???
 
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = f"{self.created_by.username} - {self.type}"
+        return super().save(*args, **kwargs)
+
     def __str__(self):
-        description = f"{self.created_by.username} - {self.type}"
-        if self.name:
-            description += f" - {self.name}"
-        return description
+        return self.name or ''
 
 
 class DataGroup(models.Model):

@@ -7,7 +7,7 @@
         <submission-upload phases="{ competition.phases }"></submission-upload>
     </div>
     <div class="ui bottom attached tab segment" data-tab="leaderboard">
-        <leaderboards leaderboards="{ competition.leaderboards }"></leaderboards>
+        <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }"></leaderboards>
     </div>
 
     <script>

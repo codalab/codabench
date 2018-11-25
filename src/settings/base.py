@@ -314,3 +314,17 @@ BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
+
+
+# =============================================================================
+# Debug
+# =============================================================================
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ) + MIDDLEWARE  # we want Debug Middleware at the top
+    # tricks to have debug toolbar when developing with docker
+    import socket
+    ip = socket.gethostbyname(socket.gethostname())
+    INTERNAL_IPS = ['127.0.0.1', ip[:-1]]

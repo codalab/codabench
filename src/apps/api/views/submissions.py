@@ -40,6 +40,12 @@ class SubmissionViewSet(ModelViewSet):
         else:
             return SubmissionSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.method == 'GET':
+            qs = qs.select_related('phase', 'participant').prefetch_related('scores', 'scores__column')
+        return qs
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 

@@ -72,3 +72,7 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
                         raise serializers.ValidationError(f"Bad value for index, should be an integer but received: {index}.")
 
         return columns
+
+
+# class ScoresSerializer(serializers.Serializer):
+#

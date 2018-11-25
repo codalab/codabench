@@ -24,6 +24,23 @@
     </table>
     <script>
         var self = this
+
+        self.one("mount", function () {
+            // Get the actual data
+            self.update_leaderboards()
+        })
+
+        self.update_leaderboards = function () {
+            CODALAB.api.get_leaderboards(self.opts.competition_pk)
+                .done(function (data) {
+                    self.competition = data
+                    CODALAB.events.trigger('competition_loaded', self.competition)
+                    self.update()
+                })
+                .fail(function (response) {
+                    toastr.error("Could not find competition")
+                })
+        }
     </script>
     <style type="text/stylus">
         .ui.inverted.table

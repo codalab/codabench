@@ -1,10 +1,24 @@
-from rest_framework import serializers
+from rest_framework import serializers, fields
 
 from competitions.models import Submission
 from datasets.models import Data
+from leaderboards.models import SubmissionScore
+
+
+class SubmissionScoreSerializer(serializers.ModelSerializer):
+    index = fields.IntegerField(source='column.index', read_only=True)
+
+    class Meta:
+        model = SubmissionScore
+        fields = (
+            'index',
+            'score',
+        )
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
+    scores = SubmissionScoreSerializer(many=True)
+
     class Meta:
         model = Submission
         fields = (
@@ -18,6 +32,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'status',
             'status_details',
             'secret',
+            'scores',
         )
         extra_kwargs = {
             "secret": {

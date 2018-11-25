@@ -116,7 +116,7 @@ class Submission(models.Model):
     # track = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"{self.phase.competition.title} submission by {self.owner.username}"
+        return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
     def delete(self, **kwargs):
         # Also clean up details on delete
