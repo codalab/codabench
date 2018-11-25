@@ -1,6 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, DetailView
-from django.views.generic.base import ContextMixin
 
 from .models import Competition
 

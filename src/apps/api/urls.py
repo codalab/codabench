@@ -18,13 +18,13 @@ router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="Codalab Competitions API",
-      default_version='v1',
-   ),
-   validators=['flex', 'ssv'],
-   public=True,
-   permission_classes=(AllowAny,),
+    openapi.Info(
+        title="Codalab Competitions API",
+        default_version='v1',
+    ),
+    validators=['flex', 'ssv'],
+    public=True,
+    permission_classes=(AllowAny,),
 )
 
 urlpatterns = [

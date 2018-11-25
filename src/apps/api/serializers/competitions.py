@@ -4,7 +4,7 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
-from competitions.models import Competition, Phase, Submission, Page, CompetitionCreationTaskStatus
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
 

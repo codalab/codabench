@@ -70,11 +70,6 @@ def upload_submission_scores(request, submission_pk):
     except TypeError:
         raise ValidationError("Secret not a valid UUID")
 
-    # {
-    #     "correct": 1.0
-    # }
-
-
     for column_key, score in data["scores"].items():
         SubmissionScore.objects.create(
             submission=submission,
