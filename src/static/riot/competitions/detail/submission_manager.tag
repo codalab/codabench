@@ -39,11 +39,6 @@
 
     <style type="text/stylus">
         //:scope
-        //    display block
-        //    width 100%
         //    height 100%
-
-        .ui.inverted.table
-            background #44586b
     </style>
 </submission-manager>
