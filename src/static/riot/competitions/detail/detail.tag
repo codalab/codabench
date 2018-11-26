@@ -4,6 +4,7 @@
         <a class="item" data-tab="leaderboard">Leaderboards</a>
     </div>
     <div class="ui bottom attached active tab segment" data-tab="submissions">
+        <submission-manager competition_pk="{ competition.id }"></submission-manager>
         <submission-upload phases="{ competition.phases }"></submission-upload>
     </div>
     <div class="ui bottom attached tab segment" data-tab="leaderboard">

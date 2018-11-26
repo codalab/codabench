@@ -323,8 +323,16 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
+        'querycount.middleware.QueryCountMiddleware',
     ) + MIDDLEWARE  # we want Debug Middleware at the top
     # tricks to have debug toolbar when developing with docker
     import socket
     ip = socket.gethostbyname(socket.gethostname())
     INTERNAL_IPS = ['127.0.0.1', ip[:-1]]
+
+    QUERYCOUNT = {
+        'IGNORE_REQUEST_PATTERNS': [
+            r'^/admin/',
+            r'^/static/',
+        ]
+    }

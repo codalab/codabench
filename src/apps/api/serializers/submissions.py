@@ -1,3 +1,4 @@
+from os.path import basename
 from rest_framework import serializers, fields
 
 from competitions.models import Submission
@@ -18,12 +19,14 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
+    filename = fields.SerializerMethodField()
 
     class Meta:
         model = Submission
         fields = (
             'phase',
             'name',
+            'filename',
             'description',
             'pk',
             'id',
@@ -39,6 +42,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
                 "write_only": True
             }
         }
+
+    def get_filename(self, instance):
+        return basename(instance.data.data_file.name)
 
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):

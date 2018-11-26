@@ -41,9 +41,15 @@ class SubmissionViewSet(ModelViewSet):
             return SubmissionSerializer
 
     def get_queryset(self):
+        # On GETs lets optimize the query to reduce DB calls
         qs = super().get_queryset()
         if self.request.method == 'GET':
-            qs = qs.select_related('phase', 'participant').prefetch_related('scores', 'scores__column')
+            qs = qs.select_related('phase', 'participant')
+            qs = qs.prefetch_related(
+                'scores',
+                'scores__column',
+                'data'
+            )
         return qs
 
     def destroy(self, request, *args, **kwargs):

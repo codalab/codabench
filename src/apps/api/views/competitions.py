@@ -17,6 +17,17 @@ class CompetitionViewSet(ModelViewSet):
         if mine:
             qs = qs.filter(created_by=self.request.user)
 
+        # On GETs lets optimize the query to reduce DB calls
+        if self.request.method == 'GET':
+            qs = qs.select_related('created_by')
+            qs = qs.prefetch_related(
+                'phases',
+                'pages',
+                'leaderboards',
+                'leaderboards__columns',
+                'collaborators',
+            )
+
         return qs
 
     def get_serializer_context(self):
