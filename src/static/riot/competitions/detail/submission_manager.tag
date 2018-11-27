@@ -15,7 +15,7 @@
             <td>{ submission.filename }</td>
             <td class="right aligned">{ submission.status }</td>
             <td class="center aligned">
-                <i class="add_to_leaderboard check square large icon disabled" onclick="{ add_to_leaderboard }"></i>
+                <i class="add_to_leaderboard check square large icon { disabled: !submission.leaderboard }" onclick="{ add_to_leaderboard }"></i>
             </td>
         </tr>
         </tbody>

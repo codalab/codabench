@@ -18,14 +18,19 @@ class LeaderboardViewSet(ModelViewSet):
 @permission_classes((IsAuthenticated, ))
 def add_submission_to_leaderboard(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
-    leaderboard = submission.phase.competition.leaderboards.all()[0]
 
-    print(f"Adding {submission} to {leaderboard}")
+    # toggle submission on or off, if it was already on leaderboard
+    if not submission.leaderboard:
+        print(f"Adding {submission} to {submission.leaderboard}")
+        submission.leaderboard = submission.phase.competition.leaderboards.all()[0]
+    else:
+        print(f"Removing {submission} from {submission.leaderboard}")
+        submission.leaderboard = None
 
-    # TODO: Make sure submissions per leaderboard are unique!
-    leaderboard.submissions.add(submission)
+    submission.save()
 
-    print("Uhhhhhhhhh")
+
+
     #
     # try:
     #     if uuid.UUID(data.get("secret")) != submission.secret:

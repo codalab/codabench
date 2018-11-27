@@ -101,6 +101,7 @@ class Submission(models.Model):
     result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
+    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
@@ -114,6 +115,9 @@ class Submission(models.Model):
 
     # uber experimental
     # track = models.IntegerField(default=1)
+
+    class Meta:
+        unique_together = ('owner', 'leaderboard')
 
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"

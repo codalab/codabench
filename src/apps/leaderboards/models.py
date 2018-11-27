@@ -9,7 +9,7 @@ class Leaderboard(models.Model):
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
 
-    submissions = models.ManyToManyField('competitions.Submission')
+    # submissions = models.ManyToManyField('competitions.Submission')
 
 
 class Column(models.Model):

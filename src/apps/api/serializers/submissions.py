@@ -36,6 +36,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'status_details',
             'secret',
             'scores',
+            'leaderboard',
         )
         extra_kwargs = {
             "secret": {
