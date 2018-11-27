@@ -5,7 +5,8 @@
         <tr>
             <th>#</th>
             <th>File name</th>
-            <th class="right aligned">Status</th>
+            <th class="right aligned" width="50px">Status</th>
+            <th class="right aligned" width="50px">Leaderboard?</th>
         </tr>
         </thead>
         <tbody>
@@ -13,6 +14,9 @@
             <td>1</td>
             <td>{ submission.filename }</td>
             <td class="right aligned">{ submission.status }</td>
+            <td class="center aligned">
+                <i class="add_to_leaderboard check square large icon disabled" onclick="{ add_to_leaderboard }"></i>
+            </td>
         </tr>
         </tbody>
     </table>
@@ -35,10 +39,28 @@
                     toastr.error("Could not find competition")
                 })
         }
+
+        self.add_to_leaderboard = function() {
+            console.log(this.submission)
+            CODALAB.api.add_submission_to_leaderboard(this.submission.id)
+                .done(function (data) {
+                })
+                .fail(function (response) {
+                    toastr.error("Could not find competition")
+                })
+        }
     </script>
 
     <style type="text/stylus">
         //:scope
         //    height 100%
+
+        .add_to_leaderboard
+            cursor pointer
+            &:hover
+                opacity 1 !important
+            &.selected
+                opacity 1 !important
+                color #40f940
     </style>
 </submission-manager>

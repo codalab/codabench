@@ -14,6 +14,9 @@
     <script>
         var self = this
 
+        // Stops page load errors... although we shouldn't be using/referencing empty `competitions` object?
+        self.competition = {}
+
         self.one("mount", function () {
             // Setup tabs
             $('.menu .item', self.root).tab()

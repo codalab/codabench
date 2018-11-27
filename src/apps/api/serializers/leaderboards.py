@@ -1,5 +1,7 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
+
+from api.serializers.submissions import SubmissionSerializer
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
@@ -74,5 +76,11 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
         return columns
 
 
-# class ScoresSerializer(serializers.Serializer):
-#
+class LeaderboardEntriesSerializer(serializers.Serializer):
+    submissions = SubmissionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Leaderboard
+        fields = (
+            'submissions',
+        )

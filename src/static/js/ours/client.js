@@ -100,6 +100,16 @@ CODALAB.api = {
     },
 
     /*---------------------------------------------------------------------
+         Leaderboards
+    ---------------------------------------------------------------------*/
+    add_submission_to_leaderboard: function(submission_pk) {
+        return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
+    },
+    get_leaderboard: function(leaderboard_pk) {
+        return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
+    },
+
+    /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/
     get_datasets: function (query, type) {

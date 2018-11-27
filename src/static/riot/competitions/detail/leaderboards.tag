@@ -9,38 +9,38 @@
         <tr>
             <th>#</th>
             <th each="{ column in leaderboard.columns }">{ column.title }</th>
-            <th class="right aligned">Status</th>
         </tr>
         </thead>
         <tbody>
-        <tr>
+        <tr each="{ submission in leaderboard.submissions }">
             <td class="collapsing">
-                1
+                #
             </td>
-            <td>1.0</td>
-            <td class="right aligned collapsing">Submitting</td>
+            <td each="{ score_column in submission.scores }">{ score_column.score }</td>
         </tr>
         </tbody>
     </table>
     <script>
         var self = this
 
-        self.one("mount", function () {
+        self.one("updated", function () {
             // Get the actual data
             self.update_leaderboards()
         })
 
         self.update_leaderboards = function () {
-            CODALAB.api.get_leaderboards(self.opts.competition_pk)
-                .done(function (data) {
-                    self.competition = data
-                    CODALAB.events.trigger('competition_loaded', self.competition)
-                    self.update()
-                })
-                .fail(function (response) {
-                    toastr.error("Could not find competition")
-                })
+            self.opts.leaderboards.forEach(function(leaderboard){
+                CODALAB.api.get_leaderboard(leaderboard.id)
+                    .done(function (data) {
+                        leaderboard.submissions = data.submissions
+                        self.update()
+                    })
+                    .fail(function (response) {
+                        toastr.error("Could not find competition")
+                    })
+            })
         }
+
     </script>
     <style type="text/stylus">
         .ui.inverted.table

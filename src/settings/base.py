@@ -294,6 +294,7 @@ AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_STORAGE_PRIVATE_BUCKET_NAME = os.environ.get('AWS_STORAGE_PRIVATE_BUCKET_NAME')
 AWS_S3_CALLING_FORMAT = os.environ.get('AWS_S3_CALLING_FORMAT', 'boto.s3.connection.OrdinaryCallingFormat')
 AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
+AWS_DEFAULT_ACL = None  # Uses buckets security access policies
 AWS_QUERYSTRING_AUTH = os.environ.get(
     # This stops signature/auths from appearing in saved URLs
     'AWS_QUERYSTRING_AUTH',
