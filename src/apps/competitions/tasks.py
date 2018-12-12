@@ -52,7 +52,7 @@ def run_submission(submission_pk, is_scoring=False):
 
     if not is_scoring:
         # Pre-generate file path by setting empty file here
-        submission.result.save('result.zip', ContentFile(''))
+        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
         # Run the submission
         run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
         run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
@@ -74,7 +74,7 @@ def run_submission(submission_pk, is_scoring=False):
     # Detail logs like stdout/etc.
     for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
         new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
-        new_details.data_file.save(f'{detail_name}.txt', ContentFile(''))
+        new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
         run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
 
     print("Task data:")

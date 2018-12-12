@@ -19,7 +19,7 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
-    filename = fields.SerializerMethodField()
+    filename = fields.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -34,18 +34,51 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'is_public',
             'status',
             'status_details',
-            'secret',
             'scores',
             'leaderboard',
         )
         extra_kwargs = {
-            "secret": {
-                "write_only": True
-            }
+            "phase": {"read_only": True},
+            "scores": {"read_only": True},
+            "leaderboard": {"read_only": True},
         }
 
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
+
+
+class SubmissionCreationSerializer(serializers.ModelSerializer):
+    data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    filename = fields.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Submission
+        fields = (
+            'id',
+            'data',
+            'phase',
+            'status',
+            'status_details',
+            'filename',
+            'description',
+            'secret',
+        )
+        extra_kwargs = {
+            'secret': {"write_only": True},
+            'description': {"read_only": True},
+            # 'status': {"read_only": True},
+        }
+
+    def get_filename(self, instance):
+        return basename(instance.data.data_file.name)
+
+    # TODO: Validate the user is a participant in this competition.phase
+
+    def create(self, validated_data):
+        validated_data["owner"] = self.context['owner']
+        sub = super().create(validated_data)
+        sub.start()
+        return sub
 
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
@@ -59,22 +92,3 @@ class SubmissionSerializer(serializers.ModelSerializer):
             from competitions.tasks import run_submission
             run_submission(instance.pk, is_scoring=True)
         return super().update(instance, validated_data)
-
-
-class SubmissionCreationSerializer(serializers.ModelSerializer):
-    data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-
-    class Meta:
-        model = Submission
-        fields = (
-            'data',
-            'phase',
-        )
-
-    # TODO: Validate the user is a participant in this competition.phase
-
-    def create(self, validated_data):
-        validated_data["owner"] = self.context['owner']
-        sub = super().create(validated_data)
-        sub.start()
-        return sub

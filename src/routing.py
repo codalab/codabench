@@ -8,7 +8,7 @@ application = ProtocolTypeRouter({
     # (http->django views is added by default)
 
     "websocket": URLRouter([
-        path("submission_input/", consumers.SubmissionIOConsumer),
+        path("submission_input/<int:submission_id>/", consumers.SubmissionIOConsumer),
         path("submission_output/", consumers.SubmissionOutputConsumer),
         # path(r".*", consumers.SubmissionOutputConsumer),
     ]),

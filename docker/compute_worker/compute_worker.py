@@ -130,8 +130,18 @@ class Run:
     async def _run_docker_cmd(self, docker_cmd):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket"""
-        logger.info(f"Connecting to {self.websocket_url}submission_input/")
-        async with websockets.connect(f'{self.websocket_url}submission_input/') as websocket:
+        url = f'{self.websocket_url}submission_input/{self.submission_id}/'
+        logger.info(f"Connecting to {url}")
+
+
+        # We should send headers with the secret.
+        #     * ``extra_headers`` sets additional HTTP request headers – it can be a
+        #       :class:`~websockets.http.Headers` instance, a
+        #       :class:`~collections.abc.Mapping`, or an iterable of ``(name, value)``
+        #       pairs
+
+
+        async with websockets.connect(url) as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -213,8 +223,10 @@ class Run:
             headers={
                 'Content-Length': str(os.path.getsize(zip_path)),
                 'Content-Type': 'application/zip',
-            #     'x-ms-blob-type': 'BlockBlob',
-            #     'x-ms-version': '2018-03-28',
+
+                # For Azure only, should turn on/off based on storage...
+                'x-ms-blob-type': 'BlockBlob',
+                'x-ms-version': '2018-03-28',
             }
         )
         logger.info("*** PUT RESPONSE: ***")

@@ -24,13 +24,15 @@
     <script>
         var self = this
 
-        self.one("mount", function () {
+        self.selected_phase = undefined
+
+        /*self.one("mount", function () {
             // Get the actual data
             self.update_submissions()
-        })
+        })*/
 
         self.update_submissions = function () {
-            CODALAB.api.get_submissions(self.opts.competition_pk)
+            CODALAB.api.get_submissions(self.selected_phase.id)
                 .done(function (data) {
                     self.submissions = data
                     self.update()
@@ -49,6 +51,17 @@
                     toastr.error("Could not find competition")
                 })
         }
+
+        CODALAB.events.on('phase_selected', function(selected_phase) {
+            console.log("phase_selected")
+            console.log(selected_phase)
+            self.selected_phase = selected_phase
+            self.update_submissions()
+        })
+        CODALAB.events.on('new_submission_created', function(new_submission_data) {
+            self.submissions.unshift(new_submission_data)
+            self.update()
+        })
     </script>
 
     <style type="text/stylus">

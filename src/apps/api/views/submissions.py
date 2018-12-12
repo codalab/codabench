@@ -1,8 +1,10 @@
 import json
 import uuid
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -14,8 +16,11 @@ from leaderboards.models import SubmissionScore, Column
 
 
 class SubmissionViewSet(ModelViewSet):
-    queryset = Submission.objects.all()
+    queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    filter_fields = ('phase',)
+    search_fields = ('name', 'description',)
     # TODO! Security, who can access/delete/etc this?
 
     def check_object_permissions(self, request, obj):
@@ -35,7 +40,7 @@ class SubmissionViewSet(ModelViewSet):
         }
 
     def get_serializer_class(self):
-        if self.request and self.request.method == 'POST':
+        if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             return SubmissionCreationSerializer
         else:
             return SubmissionSerializer

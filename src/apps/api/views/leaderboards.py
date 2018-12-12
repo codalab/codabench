@@ -13,6 +13,15 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.method == 'GET':
+            qs = qs.prefetch_related(
+                'submissions',
+                'submissions__scores',
+            )
+        return qs
+
 
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
@@ -28,21 +37,5 @@ def add_submission_to_leaderboard(request, submission_pk):
         submission.leaderboard = None
 
     submission.save()
-
-
-
-    #
-    # try:
-    #     if uuid.UUID(data.get("secret")) != submission.secret:
-    #         raise PermissionDenied("Submission secrets do not match")
-    # except TypeError:
-    #     raise ValidationError("Secret not a valid UUID")
-    #
-    # for column_key, score in data["scores"].items():
-    #     SubmissionScore.objects.create(
-    #         submission=submission,
-    #         score=score,
-    #         column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key)
-    #     )
 
     return Response()
