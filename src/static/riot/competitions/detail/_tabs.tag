@@ -2,12 +2,12 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="item" data-tab="learn_the_details_tab">Details</div>
+            <div class="active item" data-tab="learn_the_details_tab">Details</div>
             <div class="item" data-tab="phases_tab">Phases</div>
-            <div class="active item" data-tab="participate_tab">Participate</div>
+            <div class="item" data-tab="participate_tab">Participate</div>
             <div class="item" data-tab="results_tab">Results</div>
         </div>
-        <div class="ui tab" data-tab="learn_the_details_tab">
+        <div class="ui active tab" data-tab="learn_the_details_tab">
             <div class="ui grid">
                 <div class="row">
                     <div class="sixteen wide column">
@@ -180,7 +180,7 @@
         </div>
 
         <!--participate tab-->
-        <div class="participate-tab ui active tab" data-tab="participate_tab">
+        <div class="participate-tab ui tab" data-tab="participate_tab">
             <!-- Tab Content !-->
             <submission-management><!-- /submissions/submit.tag --></submission-management>
         </div>

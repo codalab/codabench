@@ -46,6 +46,21 @@ class Phase(models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
 
+    PREVIOUS = "Previous"
+    CURRENT = "Current"
+    NEXT = "Next"
+    FINAL = "Final"
+
+    STATUS_CHOICES = (
+        (PREVIOUS, "Previous"),
+        (CURRENT, "Current"),
+        (NEXT, "Next"),
+        (FINAL, "Final"),
+    )
+
+    status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
+
+
     # These related names are all garbage. Had to do it this way just to prevent clashes...
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="input_datas")
     reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="reference_datas")

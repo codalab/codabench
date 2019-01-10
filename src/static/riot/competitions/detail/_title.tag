@@ -1,8 +1,98 @@
 <comp-detail-title>
     <div class="ui segment">
         <div class="competition-content">
+            <div class="competition-info">
+                <img class="competition-logo" height="200" width="200" alt="Competition Logo"
+                     src="https://via.placeholder.com/200">
+                <button class="ui small green button uploader">
+                    <i class="upload icon"></i>Upload your submission
+                </button>
+            </div>
+            <div class="competition-details">
+                <div class="competition-title"><strong>{competition.title}</strong>
+                    <div class="sub-participant-wrap">
+                        <div class=" competition-participants teal ui label">
+                            <div class="detail">{competition.submissions | 'x'}</div>
+                            Submissions
+                        </div>
+                        <div class="competition-submissions red ui label">
+                            <div class="detail">{competition.participants | 'x'}</div>
+                            Participants
+                        </div>
+                    </div>
+                </div>
+                <div class="competition-creator">Organized by: {competition.created_by}</div>
+                <div class="competition-phasewrap">
+                    <div each="{competition.phases}" class="card competition-phase">
+                        <div class="content">
+                            <div class="phase-status {status}"><strong>{status} Phase</strong></div>
+                            <div class="phase-title">{title}</div>
+                            <div class="phase-end">{end}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var self = this
+        self.competition = opts.competition
+    </script>
+
+    <style type="text/stylus">
+        .competition-content
+            display inline-flex
+            width 100%
+
+        .sub-participant-wrap
+            float right
+            right 33px
+            position absolute
+
+        .uploader
+            width 200px
+            margin-top 35px !important
+
+        .competition-info
+            width 200px
+
+        .competition-title
+            font-size 36px
+            padding 20px
+
+        .competition-creator
+            font-size 18px
+            padding 5px 20px
+
+        .competition-details
+            display block
+
+        .competition-phasewrap
+            margin 20px 0 0 20px
+            display inline-flex
+            background-color gainsboro
+
+        .competition-phase
+            padding 50px 70px
+
+        .phase-status
+            font-size 1.2em
+            margin-bottom 5px
+
+        .phase-status.Current
+            color #476692
+
+    </style>
+</comp-detail-title>
+
+<!-- <comp-detail-title>
+    <div class="ui segment">
+        <div class="competition-content">
             <div class="competition-title"><strong>{competition.title}</strong></div>
-            <div class="competition-description"><p>{competition.description}</p></div>
+            <div class="competition-description">
+                <img alt="Competition Logo" src="https://via.placeholder.com/150">
+            </div>
             <div class="competition-details">
                 <div class="to-go ui fluid tiny menu">
                     <div class="time fluid item">
@@ -162,5 +252,4 @@
             transform translateY(2px)
 
     </style>
-</comp-detail-title>
-
+</comp-detail-title> -->

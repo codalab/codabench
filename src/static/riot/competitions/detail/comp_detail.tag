@@ -13,6 +13,7 @@
 
         Object.assign(self.competition, {
             "title": "Iris Data Challenge",
+            "created_by": "Competition Creator #12",
             "description": "An iris data challenge brought to you by Chalearn to accelerate the growth of machine learning",
             "pages": [
                 {
@@ -28,7 +29,8 @@
             ],
             "phases": [
                 {
-                    "title": "First Phase",
+                    "title": "Navigating Simple Mazes",
+                    "status": "Previous",
                     "number": 1,
                     "start": "2018-12-01T00:00:00Z",
                     "end": "2018-12-05T00:00:00Z",
@@ -41,7 +43,8 @@
                     "starting_kit": null
                 },
                 {
-                    "title": "Second Phase",
+                    "title": "Navigating Complex Mazes",
+                    "status": "Current",
                     "number": 2,
                     "start": "2018-12-01T00:00:00Z",
                     "end": "2018-12-05T00:00:00Z",
@@ -54,7 +57,8 @@
                     "starting_kit": null
                 },
                 {
-                    "title": "Final Phase",
+                    "title": "Vehicle Navigation",
+                    "status": "Final",
                     "number": 3,
                     "start": "2018-12-06T00:00:00Z",
                     "end": "2018-12-08T00:00:00Z",
