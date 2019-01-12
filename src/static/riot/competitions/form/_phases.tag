@@ -47,9 +47,15 @@
             <div class="ui top pointing secondary menu">
                 <a class="active item" data-tab="phase_details">Phase details</a>
                 <a class="item" data-tab="phase_datasets">Datasets</a>
+                <a class="item" data-tab="phase_task">Task</a>
             </div>
 
             <form class="ui form" ref="form">
+
+                <!-- #####################
+                     ##  Phase Details  ##
+                     ##################### -->
+
                 <div class="ui bottom active tab" data-tab="phase_details">
                     <div class="field required">
                         <label>Name</label>
@@ -80,6 +86,10 @@
                     </div>
 
                 </div>
+
+                <!-- #####################
+                     ##  Phase Datasets ##
+                     ##################### -->
 
                 <div class="ui bottom tab" data-tab="phase_datasets">
                     <div class="field required">
@@ -167,6 +177,34 @@
 
                 </div>
 
+                <!-- #####################
+                     ##   Phase Tasks   ##
+                     ##################### -->
+                <!-- TODO multi task select use select2 -->
+                <div class="ui bottom tab" data-tab="phase_task">
+                    <div class="field required">
+                        <a href="{ URLS.TASK_MANAGEMENT }" class="ui fluid large primary button" target="_blank">
+                            <!-- TODO:// make this href link to the correct page -->
+                            <i class="icon sign out"></i> Manage Tasks
+                        </a>
+                    </div>
+
+                    <div class="field required">
+                        <label>
+                            Task
+                            <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <div class="ui fluid left icon labeled input search" data-search-type="Task" data-name="task">
+                            <!-- This is going to be broken until creating a Task data type and integrating it in to the search function -->
+                            <i class="search icon"></i>
+                            <!--<input type="hidden" name="scoring_program">-->
+                            <input type="text" class="prompt">
+                            <div class="results"></div>
+                        </div>
+                    </div>
+
+                </div>
+
 
             </form>
         </div>
@@ -224,7 +262,7 @@
                 $(item)
                     .search({
                         apiSettings: {
-                            url: URLS.API + 'datasets/?q=${query}&type=' + (item.dataset.searchType || ""),
+                            url: URLS.API + 'datasets/?q=${query}&type=' + (item.dataset.name || ""),
                             onResponse: function (data) {
                                 // Put results in array to use maxResults setting
                                 var data_in_array = []

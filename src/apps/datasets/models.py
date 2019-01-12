@@ -19,6 +19,7 @@ class Data(models.Model):
     STARTING_KIT = 'starting_kit'
     COMPETITION_BUNDLE = 'competition_bundle'
     SUBMISSION = 'submission'
+    SOLUTION = 'solution'
 
     TYPES = (
         (INGESTION_PROGRAM, 'Ingestion Program',),
@@ -29,6 +30,7 @@ class Data(models.Model):
         (STARTING_KIT, 'Starting Kit',),
         (COMPETITION_BUNDLE, 'Competition Bundle',),
         (SUBMISSION, 'Submission',),
+        (SOLUTION, 'Solution',),
     )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(auto_now_add=True)

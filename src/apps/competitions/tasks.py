@@ -15,8 +15,10 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
+from api.serializers.tasks import TaskSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
+from tasks.models import Task, Solution
 from utils.data import make_url_sassy
 
 
@@ -182,39 +184,87 @@ def unpack_competition(competition_dataset_pk):
             for index, phase_data in enumerate(competition_yaml.get('phases')):
                 new_phase = {
                     "index": index,
-                    "name": phase_data['name'],
+                    "name": phase_data.get('name'),
                     "description": phase_data.get('description') if 'description' in phase_data else None,
                     "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
                 }
+                tasks = phase_data.get('tasks')
+                if tasks:
+                    new_phase["tasks"] = []
+                    new_phase["is_task_and_solution"] = True
+                    for task in tasks:
+                        if type(task) is dict:
+                            print('This is a dict')
+                            # handle as dictionary like normal
+                            new_task = {
+                                'name': task['name'],
+                                'description': task['description'] if 'description' in task else None,
+                                'created_by': creator.id,
+                            }
+                            # TODO this is where we will process modules eventually. For now just data sources
+                            file_types = ['reference_data', 'scoring_program']
+                            for file_type in file_types:
+                                file_name = task.get(file_type)
+                                if not file_name:
+                                    continue
 
-                for file_type in file_types:
-                    # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
-                    file_name = phase_data.get(file_type)
+                                file_path = os.path.join(temp_directory, file_name)
+                                if os.path.exists(file_path):
+                                    new_dataset = Data(
+                                        created_by=creator,
+                                        type=file_type,
+                                        name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+                                        was_created_by_competition=True,
+                                    )
+                                    new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+                                    new_task[file_type] = new_dataset.key
+                                elif len(file_name) in (32, 36):
+                                    # UUID are 32 or 36 characters long
+                                    new_task[file_type] = file_name
+                                else:
+                                    raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{new_task["name"]}"')
+                            new_phase["tasks"].append(new_task)
+                        elif type(task) is str:
+                            # lookup as UUID
+                            print("I am a string")
+                            new_phase["tasks"].append(task)
+                        else:
+                            print(f"\nERROR invalid task structure: \n\n type: {type(task)},\n task: {task}")
 
-                    if not file_name:
-                        continue
+                else:
+                    for file_type in file_types:
+                        # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
+                        file_name = phase_data.get(file_type)
 
-                    file_path = os.path.join(temp_directory, file_name)
-                    if os.path.exists(file_path):
-                        # We have a file, not UUID, needs to be uploaded
-                        new_dataset = Data(
-                            created_by=creator,
-                            type=file_type,
-                            name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
-                            was_created_by_competition=True,
-                        )
-                        # This saves the file AND saves the model
-                        new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+                        if not file_name:
+                            continue
 
-                        children_datasets.append(new_dataset)
+                        file_path = os.path.join(temp_directory, file_name)
+                        if os.path.exists(file_path):
+                            # We have a file, not UUID, needs to be uploaded
+                            new_dataset = Data(
+                                created_by=creator,
+                                type=file_type,
+                                name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+                                was_created_by_competition=True,
+                            )
+                            # This saves the file AND saves the model
+                            new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
 
-                        new_phase[file_type] = new_dataset.key
-                    elif len(file_name) in (32, 36):
-                        # Keys are length 32 or 36, so check if we can find a dataset matching this already
-                        new_phase[file_type] = file_name
-                    else:
-                        raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
+                            children_datasets.append(new_dataset)
+
+                            new_phase[file_type] = new_dataset.key
+                        elif len(file_name) in (32, 36):
+
+                            # verify as UUID?
+
+                            # TODO UUIDs can't have '.'s acceptable form of validating file vs uuid?
+
+                            # Keys are length 32 or 36, so check if we can find a dataset matching this already
+                            new_phase[file_type] = file_name
+                        else:
+                            raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
 
                 competition['phases'].append(new_phase)
 

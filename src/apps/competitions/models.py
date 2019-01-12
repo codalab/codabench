@@ -48,12 +48,17 @@ class Phase(models.Model):
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...
-    input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="input_datas")
-    reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="reference_datas")
-    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="scoring_programs")
-    ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="ingestion_programs")
-    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="public_datas")
-    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="starting_kits")
+    input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_input_datas")
+    reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_reference_datas")
+    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_scoring_programs")
+    ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_ingestion_programs")
+    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_datas")
+    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kits")
+    tasks = models.ManyToManyField('tasks.Task',  null=True, blank=True, related_name="phases")
+    #task = models.ForeignKey('tasks.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_phases")
+    #solution = models.ForeignKey('tasks.Solution', on_delete=models.SET_NULL, null=True, blank=True, related_name="phases")
+
+    is_task_and_solution = models.BooleanField(default=False)
 
 
 class SubmissionDetails(models.Model):

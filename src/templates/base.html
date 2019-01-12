@@ -186,7 +186,11 @@
         DATASET_MANAGEMENT: "{% url "datasets:management" %}",
         DATASET_DOWNLOAD: function (key) {
             return "{% url "datasets:download" key=0 %}".replace(0, key)
-        }
+        },
+
+        // Tasks
+        // TODO:// update this URL when the task management view gets moved to the right place
+        TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
     }
 
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
