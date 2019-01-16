@@ -54,8 +54,10 @@ class Phase(models.Model):
     ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_ingestion_programs")
     public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_datas")
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kits")
-    tasks = models.ManyToManyField('tasks.Task',  null=True, blank=True, related_name="phases")
 
+    # Task and Solution fields
+    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
+    solutions = models.ManyToManyField('tasks.Solution', blank=True, related_name="phases")
     is_task_and_solution = models.BooleanField(default=False)
 
     def __str__(self):

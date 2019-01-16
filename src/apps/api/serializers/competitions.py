@@ -8,7 +8,7 @@ from api.serializers.tasks import TaskSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
-from tasks.models import Task
+from tasks.models import Task, Solution
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -19,6 +19,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
     public_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     starting_kit = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    solutions = serializers.SlugRelatedField(queryset=Solution.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
 
     class Meta:
         model = Phase
@@ -37,6 +38,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'starting_kit',
 
             'tasks',
+            'solutions',
             'is_task_and_solution',
         )
 

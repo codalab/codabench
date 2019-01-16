@@ -10,7 +10,6 @@ class TaskSerializer(WritableNestedModelSerializer):
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    # solutions = serializers.SlugRelatedField(queryset=Solution.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
 
     class Meta:
         model = Task
@@ -28,7 +27,6 @@ class TaskSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
             'ingestion_program',
-            # 'solutions',
         ]
 
 
@@ -41,4 +39,16 @@ class TaskSerializerSimple(serializers.ModelSerializer):
             'id',
             'key',
             'text',
+        ]
+
+
+class SolutionSerializer(WritableNestedModelSerializer):
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+
+    class Meta:
+        model = Solution
+        fields = [
+            'tasks',
+            'data',
         ]
