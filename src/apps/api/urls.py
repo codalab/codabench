@@ -5,7 +5,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
-from .views import competitions, datasets, profiles, leaderboards, submissions
+from .views import competitions, datasets, profiles, leaderboards, submissions, tasks
 
 
 router = SimpleRouter()
@@ -16,6 +16,8 @@ router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
+router.register('tasks', tasks.TaskViewSet)
+router.register('tasksearch', tasks.TaskViewSetSimple)
 
 schema_view = get_schema_view(
     openapi.Info(

@@ -221,16 +221,36 @@ def unpack_competition(competition_dataset_pk):
                                     new_task[file_type] = new_dataset.key
                                 elif len(file_name) in (32, 36):
                                     # UUID are 32 or 36 characters long
+                                    # TODO send error message if invalid UUID or invalid filename
+                                        # if filename is 32 or 36 chars long but isn't present,
+                                        # it processes like UUID and then breaks but doesn't inform user.
                                     new_task[file_type] = file_name
                                 else:
                                     raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{new_task["name"]}"')
-                            new_phase["tasks"].append(new_task)
+                            serializer = TaskSerializer(
+                                data=new_task,
+                            )
+                            serializer.is_valid(raise_exception=True)
+                            new_task = serializer.save()
+                            # TODO: figure out how to include task index here?
+                            new_phase["tasks"].append(new_task.key)
                         elif type(task) is str:
                             # lookup as UUID
                             print("I am a string")
                             new_phase["tasks"].append(task)
                         else:
                             print(f"\nERROR invalid task structure: \n\n type: {type(task)},\n task: {task}")
+                    solutions = phase_data.get('solutions')
+                    if solutions:
+                        for solution in solutions:
+                            file_name = solution.get('path')
+                            file_path = os.path.join(temp_directory, file_name)
+                            if os.path.exists(file_path):
+                                # create dataset.Data of type solution
+                                pass
+                            elif len(file_name) in (32, 36):
+                                # if UUID do what?
+                                pass
 
                 else:
                     for file_type in file_types:
@@ -258,8 +278,6 @@ def unpack_competition(competition_dataset_pk):
                         elif len(file_name) in (32, 36):
 
                             # verify as UUID?
-
-                            # TODO UUIDs can't have '.'s acceptable form of validating file vs uuid?
 
                             # Keys are length 32 or 36, so check if we can find a dataset matching this already
                             new_phase[file_type] = file_name

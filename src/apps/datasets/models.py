@@ -43,7 +43,7 @@ class Data(models.Model):
         null=True,
         blank=True
     )
-    key = models.UUIDField(default=uuid.uuid4, blank=True)
+    key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
 

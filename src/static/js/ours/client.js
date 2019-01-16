@@ -30,10 +30,14 @@ var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
 
 CODALAB.api = {
     request: function (method, url, data) {
+        if(method.toLowerCase() !== "get") {
+            data = JSON.stringify(data)
+        }
+
         return $.ajax({
             type: method,
             url: url,
-            data: JSON.stringify(data),
+            data: data,
             contentType: "application/json",
             dataType: 'json'
         })
@@ -169,5 +173,16 @@ CODALAB.api = {
             .then(function() {
                 return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
             })
+    },
+
+    /*---------------------------------------------------------------------
+         Tasks
+    ---------------------------------------------------------------------*/
+    get_tasks: function (filters) {
+        return CODALAB.api.request('GET', URLS.API + 'tasks/', filters)
+    },
+
+    delete_task: function(id) {
+        return CODALAB.api.request('DELETE', URLS.API + 'tasks/' + id + '/')
     },
 }

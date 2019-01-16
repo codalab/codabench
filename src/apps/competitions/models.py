@@ -55,11 +55,11 @@ class Phase(models.Model):
     public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_datas")
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kits")
     tasks = models.ManyToManyField('tasks.Task',  null=True, blank=True, related_name="phases")
-    #task = models.ForeignKey('tasks.Task', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_phases")
-    #solution = models.ForeignKey('tasks.Solution', on_delete=models.SET_NULL, null=True, blank=True, related_name="phases")
 
     is_task_and_solution = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"phase - {self.name} - For comp: {self.competition.title} - ({self.id})"
 
 class SubmissionDetails(models.Model):
     DETAILED_OUTPUT_NAMES = [
