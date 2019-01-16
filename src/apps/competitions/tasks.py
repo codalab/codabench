@@ -294,15 +294,13 @@ def unpack_competition(competition_dataset_pk):
 #     yaml.add_representer(OrderedDict, represent_dictionary_order)
 
 
-# Using a custom Dumper class to prevent changing the global state
-class CustomDumper(yaml.Dumper):
-    # Super neat hack to preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385
-    def represent_dict_preserve_order(self, data):
-        return self.represent_dict(data.items())
-
-CustomDumper.add_representer(dict, CustomDumper.represent_dict_preserve_order)
-
-
+# # Using a custom Dumper class to prevent changing the global state
+# class CustomDumper(yaml.Dumper):
+#     # Super neat hack to preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385
+#     def represent_dict_preserve_order(self, data):
+#         return self.represent_dict(data.items())
+#
+# CustomDumper.add_representer(dict, CustomDumper.represent_dict_preserve_order)
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def create_competition_dump(competition_pk):
