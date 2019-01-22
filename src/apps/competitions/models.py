@@ -49,6 +49,11 @@ class Phase(models.Model):
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
 
+    # has_max_submissions = models.BooleanField(default=False)
+    # max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
+    # max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
+
+
     # These related names are all garbage. Had to do it this way just to prevent clashes...
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_input_datas")
     reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_reference_datas")
