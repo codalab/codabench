@@ -42,12 +42,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'is_task_and_solution',
         )
 
-    def get_tasks(self, object):
-        if type(object) is dict:
-            return TaskSerializer(object)
-        else:
-            return serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
-
 
 class PageSerializer(WritableNestedModelSerializer):
     # *NOTE* The competition property has to be replicated at the end of the file
@@ -77,7 +71,10 @@ class CompetitionSerializer(WritableNestedModelSerializer):
         fields = (
             'id',
             'title',
+            'published',
+            'secret_key',
             'created_by',
+            'created_when',
             'logo',
             'pages',
             'phases',

@@ -1,4 +1,7 @@
+from rest_framework.decorators import api_view, action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, PhaseSerializer, CompetitionCreationTaskStatusSerializer
@@ -38,6 +41,20 @@ class CompetitionViewSet(ModelViewSet):
         return {
             "created_by": self.request.user
         }
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user != self.get_object().created_by:
+            raise PermissionDenied("You cannot delete competitions that you didn't create")
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=('POST',))
+    def toggle_publish(self, request, pk):
+        competition = self.get_object()
+        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+            raise PermissionDenied("You don't have access to publish this competition")
+        competition.published = not competition.published
+        competition.save()
+        return Response('done')
 
 
 class PhaseViewSet(ModelViewSet):

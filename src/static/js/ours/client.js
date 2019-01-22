@@ -68,6 +68,13 @@ CODALAB.api = {
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
+    delete_competition: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}competitions/${pk}/`)
+    },
+
+    toggle_competition_publish: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/toggle_publish/`)
+    },
 
     /*---------------------------------------------------------------------
          Submissions

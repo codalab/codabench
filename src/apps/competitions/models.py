@@ -11,6 +11,8 @@ class Competition(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
     created_when = models.DateTimeField(auto_now_add=True)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
+    published = models.BooleanField(default=False)
+    secret_key = models.UUIDField(default=uuid.uuid4, unique=True)
 
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)

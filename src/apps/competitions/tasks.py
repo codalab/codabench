@@ -15,10 +15,10 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from api.serializers.tasks import TaskSerializer, SolutionSerializer
+from api.serializers.tasks import TaskSerializer, SolutionSerializer, IngestionModuleSerializer, ScoringModuleSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
-from tasks.models import Task, Solution
+from tasks.models import Task, Solution, IngestionModule, ScoringModule
 from utils.data import make_url_sassy
 
 
@@ -95,6 +95,30 @@ def run_submission(submission_pk, is_scoring=False):
 class CompetitionUnpackingException(Exception):
     pass
 
+
+def get_data_key(obj, file_type, temp_directory, creator):
+    file_name = obj.get(file_type)
+    if not file_name:
+        return
+
+    file_path = os.path.join(temp_directory, file_name)
+    if os.path.exists(file_path):
+        new_dataset = Data(
+            created_by=creator,
+            type=file_type,
+            name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+            was_created_by_competition=True,
+        )
+        new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+        return new_dataset.key
+    elif len(file_name) in (32, 36):
+        # UUID are 32 or 36 characters long
+        # TODO send error message if invalid UUID or invalid filename
+        # if filename is 32 or 36 chars long but isn't present,
+        # it processes like UUID and then breaks but doesn't inform user.
+        return file_name
+    else:
+        raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def unpack_competition(competition_dataset_pk):
@@ -186,48 +210,66 @@ def unpack_competition(competition_dataset_pk):
 
                     if index in competition['tasks']:
                         raise CompetitionUnpackingException(f'ERROR: Duplicate task indexes. Index: {index}')
+
+                    if 'key' in task:
+                        # just add the {index: key} to competition tasks
+                        competition['tasks'][index] = task['key']
                     else:
-                        if 'key' in task:
-                            # just add the {index: key} to competition tasks
-                            competition['tasks'][index] = task['key']
-                        else:
-                            # must create task object so we can add {index: key} to competition tasks
-                            new_task = {
-                                'name': task['name'],
-                                'description': task['description'] if 'description' in task else None,
-                                'created_by': creator.id,
-                            }
-                            # TODO this is where we will process modules eventually. For now just data sources
+                        # must create task object so we can add {index: key} to competition tasks
+                        new_task = {
+                            'name': task['name'],
+                            'description': task['description'] if 'description' in task else None,
+                            'created_by': creator.id,
+                        }
+                        ingestion_module = task.get('ingestion_module')
+                        if ingestion_module:
+                            if 'key' in ingestion_module:
+                                new_task['ingestion_module'] = ingestion_module['key']
+                            else:
+                                new_ingestion_module = {
+                                    'name': ingestion_module['name'],
+                                    'description': ingestion_module['description'] if 'description' in ingestion_module else None,
+                                    'created_by': creator.id,
+                                    'only_during_scoring': ingestion_module['only_during_scoring'] if 'only_during_scoring' in ingestion_module else None,
+                                }
+                                for file_type in ['ingestion_program', 'input_data']:
+                                    new_ingestion_module[file_type] = get_data_key(
+                                        obj=ingestion_module,
+                                        file_type=file_type,
+                                        temp_directory=temp_directory,
+                                        creator=creator)
+                                serializer = IngestionModuleSerializer(data=new_ingestion_module)
+                                serializer.is_valid(raise_exception=True)
+                                new_ingestion_module = serializer.save()
+                                new_task['ingestion_module'] = new_ingestion_module.key
 
-                            for file_type in ['reference_data', 'scoring_program']:
-                                file_name = task.get(file_type)
-                                if not file_name:
-                                    continue
-
-                                file_path = os.path.join(temp_directory, file_name)
-                                if os.path.exists(file_path):
-                                    new_dataset = Data(
-                                        created_by=creator,
-                                        type=file_type,
-                                        name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
-                                        was_created_by_competition=True,
+                        scoring_module = task.get('scoring_module')
+                        if scoring_module:
+                            if 'key' in scoring_module:
+                                new_task['scoring_module'] = scoring_module['key']
+                            else:
+                                new_scoring_module = {
+                                    'name': scoring_module['name'],
+                                    'description': scoring_module['description'] if 'description' in scoring_module else None,
+                                    'created_by': creator.id,
+                                }
+                                for file_type in ['reference_data', 'scoring_program']:
+                                    new_scoring_module[file_type] = get_data_key(
+                                        obj=scoring_module,
+                                        file_type=file_type,
+                                        temp_directory=temp_directory,
+                                        creator=creator
                                     )
-                                    new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
-                                    new_task[file_type] = new_dataset.key
-                                elif len(file_name) in (32, 36):
-                                    # UUID are 32 or 36 characters long
-                                    # TODO send error message if invalid UUID or invalid filename
-                                    # if filename is 32 or 36 chars long but isn't present,
-                                    # it processes like UUID and then breaks but doesn't inform user.
-                                    new_task[file_type] = file_name
-                                else:
-                                    raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{new_task["name"]}"')
-                            serializer = TaskSerializer(
-                                data=new_task,
-                            )
-                            serializer.is_valid(raise_exception=True)
-                            new_task = serializer.save()
-                            competition["tasks"][index] = new_task.key
+                                serializer = ScoringModuleSerializer(data=new_scoring_module)
+                                serializer.is_valid(raise_exception=True)
+                                new_scoring_module = serializer.save()
+                                new_task['scoring_module'] = new_scoring_module.key
+                        serializer = TaskSerializer(
+                            data=new_task,
+                        )
+                        serializer.is_valid(raise_exception=True)
+                        new_task = serializer.save()
+                        competition["tasks"][index] = new_task.key
 
             # ---------------------------------------------------------------------
             # Solutions
@@ -245,14 +287,13 @@ def unpack_competition(competition_dataset_pk):
                     if not task_keys:
                         raise CompetitionUnpackingException(f"ERROR: Solution: {solution['key']} missing task index pointers")
 
-                    if index in competition_yaml['solutions']:
+                    if index in competition['solutions']:
                         raise CompetitionUnpackingException(f"ERROR: Duplicate indexes. Index: {index}")
 
                     if 'key' in solution:
                         # add {index: {'key': key, 'tasks': task_index}} to competition solutions
-                        task_list = Task.objects.filter(key__in=task_keys)
-                        for task in task_list:
-                            Solution.objects.get(key=solution['key']).tasks.add(task)
+                        # TODO:// raise an exception if solution matching key doesn't exist
+                        Solution.objects.get(key=solution['key']).tasks.add(*Task.objects.filter(key__in=task_keys))
 
                         competition['solutions'][index] = solution['key']
 
@@ -275,9 +316,10 @@ def unpack_competition(competition_dataset_pk):
                                 'data': new_solution_data.key,
                                 'tasks': task_keys,
                             }
-                            new_solution = SolutionSerializer(data=new_solution)
-                            new_solution.is_valid(raise_exception=True)
-                            new_solution.save()
+                            serializer = SolutionSerializer(data=new_solution)
+                            serializer.is_valid(raise_exception=True)
+                            new_solution = serializer.save()
+                            competition['solutions'][index] = new_solution.key
                         else:
                             pass
                             # TODO: add processing for using a key to data for a solution?
@@ -304,6 +346,7 @@ def unpack_competition(competition_dataset_pk):
                 }
                 tasks = phase_data.get('tasks')
                 if tasks:
+                    new_phase['is_task_and_solution'] = True
                     new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
                     solutions = phase_data.get('solutions')
