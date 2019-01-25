@@ -1,16 +1,19 @@
+from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from api.serializers.competitions import CompetitionSerializer, PhaseSerializer, CompetitionCreationTaskStatusSerializer
+from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
+    CompetitionCreationTaskStatusSerializer
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
+
+User = get_user_model()
 
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
-    serializer_class = CompetitionSerializer
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -19,6 +22,12 @@ class CompetitionViewSet(ModelViewSet):
 
         if mine:
             qs = qs.filter(created_by=self.request.user)
+
+        participating_in = self.request.query_params.get('participating_in', None)
+
+        if participating_in:
+            qs = qs.filter(id__in=User.objects.get(id=self.request.user.id).submission.all().values('phase__competition'))
+
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
@@ -32,6 +41,12 @@ class CompetitionViewSet(ModelViewSet):
             )
 
         return qs
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CompetitionSerializerSimple
+        else:
+            return CompetitionSerializer
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)

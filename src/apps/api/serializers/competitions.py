@@ -36,6 +36,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'ingestion_program',
             'public_data',
             'starting_kit',
+            'status',
 
             # 'has_max_submissions',
             # 'max_submissions_per_day',
@@ -97,6 +98,18 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
+
+
+class CompetitionSerializerSimple(serializers.ModelSerializer):
+
+    class Meta:
+        model = Competition
+        fields = (
+            'id',
+            'title',
+            'created_when',
+            'published'
+        )
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')

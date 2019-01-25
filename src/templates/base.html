@@ -100,6 +100,9 @@
             {% block top_div_extra_content %}{% endblock %}
         </div>
     </div>
+    {% block sticky_button %}
+
+    {% endblock %}
     <div id="page_content" class="ui container grid">
         <div class="row">
             {% block content %}
@@ -163,14 +166,22 @@
 <script>
     {# From `common_settings` context processor #}
     STORAGE_TYPE = "{{ STORAGE_TYPE }}"
-
+    CODALAB.state.user = {
+        id: '{{ request.user.id }}',
+        name: '{{ request.user.name }}',
+        username: '{{ request.user.username }}',
+        email: '{{ request.user.email }}',
+        bio: '{{ request.user.bio }}',
+    }
     // Load in URLs or other django generated goodies
     URLS = {
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
-
+        STATIC: function (file_name) {
+            return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+        },
         // Websockets
         //WS_SUBMISSION_LISTEN: ""
 
@@ -182,6 +193,10 @@
         },
         COMPETITION_EDIT: function (pk) {
             return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
+        },
+        SECRET_KEY_URL: function(pk, secret_key) {
+            var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+            return `{{ request.get_host }}${url}?secret_key=${secret_key}`
         },
 
         // Datasets
@@ -198,7 +213,8 @@
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
-
+{% block extra_js %}
+{% endblock %}
 {% block extra_body %}
 {% endblock %}
 

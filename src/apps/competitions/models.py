@@ -41,6 +41,19 @@ class CompetitionCreationTaskStatus(models.Model):
 
 
 class Phase(models.Model):
+    PREVIOUS = "Previous"
+    CURRENT = "Current"
+    NEXT = "Next"
+    FINAL = "Final"
+
+    STATUS_CHOICES = (
+        (PREVIOUS, "Previous"),
+        (CURRENT, "Current"),
+        (NEXT, "Next"),
+        (FINAL, "Final"),
+    )
+
+    status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
@@ -161,9 +174,23 @@ class Submission(models.Model):
 
 
 class CompetitionParticipant(models.Model):
+    UNKNOWN = 'unknown'
+    DENIED = 'denied'
+    APPROVED = 'approved'
+    PENDING = 'pending'
+
+    STATUS_CHOICES = (
+        (UNKNOWN, 'unknown'),
+        (DENIED, 'denied'),
+        (APPROVED, 'approved'),
+        (PENDING, 'pending'),
+    )
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False, blank=False, related_name='participant',
                                 on_delete=models.DO_NOTHING)
     competition = models.OneToOneField(Competition, related_name='participants', on_delete=models.CASCADE)
+    status = models.CharField(max_length=128, choices=STATUS_CHOICES, null=False, blank=False, default=UNKNOWN)
+    # TODO:// is this the right logic for status?
+    reason = models.CharField(max_length=100, null=True, blank=True)
 
 
 class Page(models.Model):

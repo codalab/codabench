@@ -1,4 +1,7 @@
 <competition-detail>
+    <comp-detail-title class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-title>
+    <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
+    <!--
     <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
         <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
     </select>
@@ -14,7 +17,7 @@
     <div class="ui bottom attached tab segment" data-tab="leaderboard">
         <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }"></leaderboards>
     </div>
-
+    -->
     <script>
         var self = this
 
@@ -48,6 +51,9 @@
         }
     </script>
     <style type="text/stylus">
+        .comp-detail-paragraph-text
+            font-size 16px !important
+            line-height 20px !important
         :scope
             display block
             width 100%
