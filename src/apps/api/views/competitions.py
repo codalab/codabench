@@ -7,9 +7,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
-
-User = get_user_model()
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -26,11 +24,10 @@ class CompetitionViewSet(ModelViewSet):
         participating_in = self.request.query_params.get('participating_in', None)
 
         if participating_in:
-            qs = qs.filter(id__in=User.objects.get(id=self.request.user.id).submission.all().values('phase__competition'))
-
+            qs = qs.filter(participants__user=self.request.user, participants__status="approved")
 
         # On GETs lets optimize the query to reduce DB calls
-        if self.request.method == 'GET':
+        if self.request.method == 'GET' and self.action != 'list':
             qs = qs.select_related('created_by')
             qs = qs.prefetch_related(
                 'phases',
@@ -39,6 +36,8 @@ class CompetitionViewSet(ModelViewSet):
                 'leaderboards__columns',
                 'collaborators',
             )
+
+        qs = qs.order_by('created_when')
 
         return qs
 
@@ -69,7 +68,7 @@ class CompetitionViewSet(ModelViewSet):
             raise PermissionDenied("You don't have access to publish this competition")
         competition.published = not competition.published
         competition.save()
-        return Response('done')
+        return Response({"published": competition.published})
 
 
 class PhaseViewSet(ModelViewSet):

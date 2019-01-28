@@ -343,12 +343,12 @@ def unpack_competition(competition_dataset_pk):
                     "description": phase_data.get('description') if 'description' in phase_data else None,
                     "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
-                    # 'max_submissions_per_day': phase_data.get('max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
-                    # 'max_submissions': phase_data.get('max_submissions') if 'max_submissions' in phase_data else None,
+                    'max_submissions_per_day': phase_data.get('max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
+                    'max_submissions_per_phase': phase_data.get('max_submissions') if 'max_submissions' in phase_data else None,
                 }
 
-                # if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
-                #     new_phase['has_max_submissions'] = True
+                if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
+                    new_phase['has_max_submissions'] = True
 
                 tasks = phase_data.get('tasks')
                 if tasks:

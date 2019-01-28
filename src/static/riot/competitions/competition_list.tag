@@ -8,7 +8,7 @@
                         <a class="item" data-tab="participating">Competitions I'm In</a>
                     </div>
                     <div class="ui active tab" data-tab="running">
-                        <table class="ui celled compact table">
+                        <table class="ui celled compact table participation">
                             <thead>
                             <tr>
                                 <th>Name</th>
@@ -19,15 +19,15 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr each="{ competition in running_competitions }">
+                            <tr each="{ competition in running_competitions }" no-reorder>
                                 <td><a href="{ URLS.COMPETITION_DETAIL(competition.id) }">{ competition.title }</a></td>
                                 <td>{ timeSince(Date.parse(competition.created_when)) } ago</td>
                                 <td class="center aligned">
-                                    <button class="mini ui button green icon" show="{ !competition.published }" onclick="{ publish_competition.bind(this, competition) }">
+                                    <!--<button class="mini ui button green icon" show="{ !competition.published }" onclick="{ publish_competition.bind(this, competition) }">
                                         <i class="icon external alternate"></i>
-                                    </button>
-                                    <button class="mini ui button grey icon" show="{ competition.published }" onclick="{ unpublish_competition.bind(this, competition) }">
-                                        <i class="icon file alternate"></i>
+                                    </button>-->
+                                    <button class="mini ui button published icon { grey: !competition.published, green: competition.published }" onclick="{ toggle_competition_publish.bind(this, competition) }">
+                                        <i class="icon file"></i>
                                     </button>
                                 </td>
                                 <td class="center aligned">
@@ -73,34 +73,34 @@
 
         self.one("mount", function () {
             self.update_competitions()
-            self.get_participating_in_competitions()
             $('.tabular.menu .item').tab();
         })
 
-        self.update_competitions = function () {
+        self.update_competitions = function() {
+            self.get_participating_in_competitions()
             self.get_running_competitions()
         }
 
+        self.get_competitions_wrapper = function (query_params) {
+            return CODALAB.api.get_competitions(query_params)
+                .fail(function (response) {
+                    toastr.error("Could not load competition list")
+                })
+        }
 
         self.get_participating_in_competitions = function () {
-            CODALAB.api.get_competitions("?participating_in=true")
-                .done(function (data) {
+            self.get_competitions_wrapper({participating_in: true})
+                .done(function(data){
                     self.participating_competitions = data
                     self.update()
-                })
-                .fail(function(response) {
-                    toastr.error("could not load competition list")
                 })
         }
 
         self.get_running_competitions = function () {
-            CODALAB.api.get_competitions("?mine=true")
-                .done(function (data) {
+            self.get_competitions_wrapper({mine: true})
+                .done(function(data){
                     self.running_competitions = data
                     self.update()
-                })
-                .fail(function (response) {
-                    toastr.error("Could not load competition list")
                 })
         }
 
@@ -117,21 +117,24 @@
             }
         }
 
-        self.publish_competition = function (competition) {
+        self.toggle_competition_publish = function (competition) {
             CODALAB.api.toggle_competition_publish(competition.id)
-                .done(function () {
-                    toastr.success('Competition has been publish successfully')
-                    self.update_competitions()
-                })
-        }
-        self.unpublish_competition = function (competition) {
-            CODALAB.api.toggle_competition_publish(competition.id)
-                .done(function () {
-                    toastr.success('Competition has been unpublish successfully')
-                    self.update_competitions()
+                .done(function (data) {
+                    var published_state = data.published ? "published" : "unpublished"
+                    toastr.success(`Competition has been ${published_state} successfully`)
+                    self.get_running_competitions()
                 })
         }
 
 
     </script>
+    <style type="text/stylus">
+        .table.participation
+            .published.icon.grey
+                opacity 0.65
+                transition 0.25s all ease-in-out
+                &:hover
+                    background-color #21ba45
+
+    </style>
 </competition-list>

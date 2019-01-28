@@ -45,10 +45,10 @@
                 })
         }
 
-        self.phase_selected = function(event, data) {
+        //self.phase_selected = function(event, data) {
             // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz
-            CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
-        }
+        //    CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
+        //}
     </script>
     <style type="text/stylus">
         .comp-detail-paragraph-text

@@ -114,60 +114,7 @@
         </div>
 
         <!--phases tab-->
-
-        <div class="ui tab" data-tab="phases_tab">
-            <div class="ui relaxed grid">
-                <div class="row">
-                    <div class="four wide column">
-
-
-                        <!--<p>Show pages here</p>-->
-                        <div class="ui side green vertical tabular menu">
-                            <div class="active item" data-tab="_tab_phase1">Phase 1</div>
-                            <div class="item" data-tab="_tab_phase2">Phase 2</div>
-                        </div>
-                    </div>
-
-                    <div class="twelve wide column">
-                        <div class="ui active tab" data-tab="_tab_phase1">
-                            <!-- Tab Content !-->
-                           <div class="ui ">
-                                Sed
-                                imperdiet pellentesque rutrum. In commodo tempus mauris at accumsan.
-                                Vestibulum
-                                hendrerit sodales enim eu auctor. Phasellus consectetur, mi eget blandit
-                                luctus,
-                                sem
-                                ligula bibendum est, id lobortis felis velit ut est. Sed quam risus,
-                                suscipit
-                                quis
-                                lacus id.
-                            </div>
-                        </div>
-
-                        <div class="ui tab" data-tab="_tab_phase2">
-                            <!-- Tab Content -->
-                            <div class="ui ">
-                                <p>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
-                                    porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
-                                    lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
-                                    malesuada convallis.
-                                </p>
-                                <p>
-                                    Aenean at iaculis leo, vel luctus diam. Quisque hendrerit orci sed
-                                    bibendum mollis. Morbi diam leo, luctus eget suscipit ac, hendrerit sit
-                                    amet ex.
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--
-        <div class="ui tab" data-tab="phases_tab">
+        <div class="phases-tab ui tab" data-tab="phases_tab">
             <div class="ui relaxed grid">
                 <div class="row">
                     <div class="four wide column">
@@ -189,10 +136,13 @@
                 </div>
             </div>
         </div>
-        -->
+
         <!--participate tab-->
         <div class="submission-tab ui active tab" data-tab="participate_tab">
             <!-- Tab Content !-->
+            <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
+                <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
+            </select>
             <div>
                 <submission-upload phases="{ competition.phases }"></submission-upload>
             </div>
@@ -240,6 +190,12 @@
                 @media screen and (min-width 768px)
                     width 85%
 
+            .phases-tab
+                margin 0 auto
+                width 100%
+                @media screen and (min-width 768px)
+                    width 85%
+
         </style>
         <script>
             $('.tabular.menu .item').tab(); // Activate tabs
@@ -250,6 +206,8 @@
 
             CODALAB.events.on('competition_loaded', function (competition) {
                 self.competition = competition
+                self.update()
+                $('.tabular.menu .item').tab();
             })
             //self.competition = opts.competition
 
@@ -283,6 +241,10 @@
                         return i
                     }
                 }
+            }
+            self.phase_selected = function(event, data) {
+                // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz
+                CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
             }
 
         </script>

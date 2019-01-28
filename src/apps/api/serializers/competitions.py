@@ -38,9 +38,9 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'starting_kit',
             'status',
 
-            # 'has_max_submissions',
-            # 'max_submissions_per_day',
-            # 'max_submissions',
+            'has_max_submissions',
+            'max_submissions_per_day',
+            'max_submissions_per_person',
 
             'tasks',
             'solutions',

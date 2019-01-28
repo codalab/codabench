@@ -1,5 +1,6 @@
 import json
 import uuid
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -11,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer
-from competitions.models import Submission
+from competitions.models import Submission, Phase
 from leaderboards.models import SubmissionScore, Column
 
 
@@ -89,3 +90,17 @@ def upload_submission_scores(request, submission_pk):
         )
 
     return Response()
+
+
+@api_view(('GET',))
+def can_make_submission(request, phase_id):
+    # TODO: Check that user is in competition
+
+    phase = get_object_or_404(Phase, id=phase_id)
+
+    can_make_submission, reason_why_not = phase.can_user_make_submissions(request.user)
+
+    return Response({
+        "can": can_make_submission,
+        "reason": reason_why_not,
+    })
