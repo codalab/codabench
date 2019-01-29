@@ -2,7 +2,9 @@ import base64
 import json
 import logging
 import os
-import yaml
+from datetime import timezone
+
+import oyaml as yaml
 import zipfile
 
 from io import StringIO, BytesIO
@@ -27,15 +29,16 @@ from utils.storage import BundleStorage
 
 logger = logging.getLogger()
 
+# TODO: Double check fields; computation, computation_indexes, etc will be implemented in the future
 COMPETITION_FIELDS = [
     "title"
 ]
 
 PHASE_FIELDS = [
-    "index"
-    "name"
-    "description"
-    "start"
+    "index",
+    "name",
+    "description",
+    "start",
     "end"
 ]
 PHASE_FILES = [
@@ -51,18 +54,18 @@ PAGE_FIELDS = [
     # "index"
 ]
 LEADERBOARD_FIELDS = [
-    'primary_index',
+    # 'primary_index',
     'title',
     'key'
 ]
 
 COLUMN_FIELDS = [
-    'computation',
-    'computation_indexes',
+    # 'computation',
+    # 'computation_indexes',
     'title',
     'key',
-    'sorting',
     'index',
+    'sorting'
 ]
 
 
@@ -218,7 +221,7 @@ def unpack_competition(competition_dataset_pk):
                     "index": index,
                     "name": phase_data['name'],
                     "description": phase_data.get('description') if 'description' in phase_data else None,
-                    "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
+                    "start": parser.parse(str(phase_data.get('start'))) if 'start' in phase_data else None,
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
                 }
 
@@ -286,28 +289,8 @@ def unpack_competition(competition_dataset_pk):
         print(status.details)
 
 
-# def represent_dictionary_order(self, dict_data):
-#     return self.represent_mapping('tag:yaml.org,2002:map', dict_data.items())
-#
-#
-# def setup_yaml():
-#     yaml.add_representer(OrderedDict, represent_dictionary_order)
-
-
-# # Using a custom Dumper class to prevent changing the global state
-# class CustomDumper(yaml.Dumper):
-#     # Super neat hack to preserve the mapping key order. See https://stackoverflow.com/a/52621703/1497385
-#     def represent_dict_preserve_order(self, data):
-#         return self.represent_dict(data.items())
-#
-# CustomDumper.add_representer(dict, CustomDumper.represent_dict_preserve_order)
-
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def create_competition_dump(competition_pk):
-    # The following line helps dump this in a nice format
-    # setup_yaml()
-    # yaml_data = OrderedDict()
-
     yaml_data = {}
 
     try:
@@ -335,20 +318,16 @@ def create_competition_dump(competition_pk):
                 logger.warning(
                     f"Competition {comp.pk} has no file associated with the logo, even though the logo field is set."
                 )
-        # if BundleStorage.exists(comp.logo.name):
-        #     logger.info("WE HAVE A LOGO!")
-        #     yaml_data['image'] = 'logo.png'
-        #     zip_file.writestr(yaml_data['image'], comp.logo.read())
 
         # -------- Competition Pages -------
         yaml_data['pages'] = []
         for page in comp.pages.all():
             temp_page_data = {}
-            page_file_name = f"{slugify(page.title)}-{page.pk}.md"
-            temp_page_data['file'] = page_file_name
             for field in PAGE_FIELDS:
                 if hasattr(page, field):
                     temp_page_data[field] = getattr(page, field, "")
+            page_file_name = f"{slugify(page.title)}-{page.pk}.md"
+            temp_page_data['file'] = page_file_name
             yaml_data['pages'].append(temp_page_data)
             zip_file.writestr(temp_page_data['file'], page.content)
 
@@ -358,14 +337,24 @@ def create_competition_dump(competition_pk):
             temp_phase_data = {}
             for field in PHASE_FIELDS:
                 if hasattr(phase, field):
-                    temp_phase_data[field] = getattr(phase, field, "")
+                    if field == 'start' or field == 'end':
+                        temp_date = str(getattr(phase, field).strftime("%m-%d-%Y"))
+                        temp_phase_data[field] = temp_date
+                    else:
+                        temp_phase_data[field] = getattr(phase, field, "")
             for file_type in PHASE_FILES:
                 if hasattr(phase, file_type):
                     temp_dataset = getattr(phase, file_type)
                     if temp_dataset:
                         if temp_dataset.data_file:
-                            temp_phase_data[file_type] = f"{file_type}-{phase.pk}.zip"
-                            zip_file.writestr(temp_phase_data[file_type], temp_dataset.data_file.read())
+                            try:
+                                temp_phase_data[file_type] = f"{file_type}-{phase.pk}.zip"
+                                zip_file.writestr(temp_phase_data[file_type], temp_dataset.data_file.read())
+                            except OSError:
+                                logger.error(
+                                    f"The file field is set, but no actual"
+                                    f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
+                                )
                         else:
                             logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
             yaml_data['phases'].append(temp_phase_data)
@@ -375,12 +364,11 @@ def create_competition_dump(competition_pk):
         yaml_data['leaderboards'] = []
 
         for leaderboard in comp.leaderboards.all():
-            ldb_data = {
-                'columns': []
-            }
+            ldb_data = {}
             for field in LEADERBOARD_FIELDS:
                 if hasattr(leaderboard, field):
                     ldb_data[field] = getattr(leaderboard, field, "")
+            ldb_data['columns'] = []
             for column in leaderboard.columns.all():
                 col_data = {}
                 for field in COLUMN_FIELDS:
@@ -391,18 +379,8 @@ def create_competition_dump(competition_pk):
 
         # ------- Finalize --------
         logger.info(f"YAML data to be written is: {yaml_data}")
-        # comp_yaml_my_dump = yaml.safe_dump(yaml_data, default_flow_style=False, allow_unicode=True, encoding="utf-8")
 
-        # reversed_dict_keys = sorted(yaml_data.keys(), reverse=True)
-        # reversed_dict_keys = reversed(list(yaml_data.keys()))
-        # new_yaml_data = {k: yaml_data[k] for k in reversed_dict_keys}
-
-        # logger.info(f"Data is: {yaml_data}")
-
-        # yaml.dump(component_dict, Dumper=CustomDumper)
-        # yaml.add_representer(dict, lambda self, data: yaml.representer.SafeRepresenter.represent_dict(self, data.items()))
-
-        comp_yaml = yaml.safe_dump(yaml_data, default_flow_style=True)
+        comp_yaml = yaml.safe_dump(yaml_data, default_flow_style=False, allow_unicode=True, encoding="utf-8")
 
         logger.info(f"YAML output: {comp_yaml}")
 
@@ -419,7 +397,7 @@ def create_competition_dump(competition_pk):
 
         temp_dataset_bundle = Data.objects.create(
             created_by=comp.created_by,
-            name=f"Competition {comp.pk} Bundle #{bundle_count}",
+            name=f"{comp.title} Dump #{bundle_count} Created {comp.created_when.date()}",
             type='competition_bundle',
             description='Automatically created competition dump',
             # 'data_file'=,

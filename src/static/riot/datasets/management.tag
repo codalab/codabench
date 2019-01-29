@@ -24,7 +24,7 @@
                     <input-text name="description" ref="description" error="{errors.description}" placeholder="Description"></input-text>
 
                     <div class="field {error: errors.type}">
-                        <select name="type" ref="type" class="ui dropdown">
+                        <select id="type_of_data" name="type" ref="type" class="ui dropdown">
                             <option value="">Type</option>
                             <option value="-">----</option>
                             <option value="ingestion_program">Ingestion Program</option>
@@ -33,7 +33,22 @@
                             <option value="reference_data">Reference Data</option>
                             <option value="scoring_program">Scoring Program</option>
                             <option value="starting_kit">Starting Kit</option>
+                            <option value="competition_bundle">Competition Bundle</option>
                         </select>
+                    </div>
+
+                    <div show="{is_type_competition_bundle}" class="field {error: errors.type}">
+                        <select name="competition" ref="competition" class="ui dropdown" onselect="{check_data_type}">
+                            <option value="">Competition to Dump</option>
+                            <option value="-">-----</option>
+                            <option each="{comp in competitions}" value="{comp.id}">{comp.title}-{comp.id}</option>
+                        </select>
+                    </div>
+
+                    <div align="center" show="{is_type_competition_bundle}" class="field {error: errors.type}" onclick="{create_dump}">
+                        <a class="ui yellow button" type="">
+                            <i class="add circle icon"></i> Create Competition Dump
+                        </a>
                     </div>
 
                     <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
@@ -76,6 +91,7 @@
                 <option value="reference_data">Reference Data</option>
                 <option value="scoring_program">Scoring Program</option>
                 <option value="starting_kit">Starting Kit</option>
+                <option value="competition_bundle">Competition Bundle</option>
             </select>
 
             <table class="ui celled compact table">
@@ -136,10 +152,12 @@
         ---------------------------------------------------------------------*/
         self.errors = []
         self.datasets = []
+        self.competitions = []
 
         // Clone of original list of datasets, but filtered to only what we want to see
         self.filtered_datasets = self.datasets.slice(0)
         self.upload_progress = undefined
+        self.is_type_competition_bundle = false
 
         self.one("mount", function () {
             // Make semantic elements work
@@ -148,6 +166,11 @@
 
             // init
             self.update_datasets()
+            self.update_competitions()
+            $('#type_of_data').on("change", function() {
+                console.log("WHAT THE FWAFWAF")
+                self.check_data_type()
+            })
         })
 
         /*---------------------------------------------------------------------
@@ -191,6 +214,47 @@
 
                 self.update()
             }, 100)
+        }
+
+        self.update_competitions = function () {
+            CODALAB.api.get_competitions("?mine=true")
+                .done(function (data) {
+                    self.update({competitions: data})
+                })
+                .fail(function (response) {
+                    toastr.error("Could not load competition list....")
+                })
+        }
+
+        self.check_data_type = function () {
+            console.log("This got called")
+            if (self.refs.type.value === 'competition_bundle' ) {
+                self.update({is_type_competition_bundle: true})
+                self.update()
+                self.update_competitions()
+            } else {
+                self.update({is_type_competition_bundle: false})
+            }
+        }
+
+        self.create_dump = function () {
+            console.log(self.refs.competition.value)
+            if (self.refs.competition.value === '') {
+                alert("Please make sure you have selected a competition")
+                return
+            }
+            CODALAB.api.create_dump(self.refs.competition.value)
+                .done(function (data) {
+                    toastr.success(data.status + " Please wait one second for the table to refresh, then refresh the page if it does not appear.")
+                    self.clear_form()
+                    window.setTimeout(function () {
+                        self.update_datasets()
+                    }, 1000)
+                })
+                .fail(function (response) {
+                    toastr.error("Error trying to create competition dump. See console for details.")
+                    console.log(response)
+                })
         }
 
         self.update_datasets = function () {
