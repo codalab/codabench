@@ -34,17 +34,8 @@ class DataViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         filters = Q(is_public=True) | Q(created_by=self.request.user)
 
-        # query = self.request.query_params.get('q', None)
-        # # Check if they are searching for a UUID
-        # if query is not None and len(query) > 15:
-        #     try:
-        #         filters |= Q(key=UUID(query))
-        #     except ValueError:
-        #         # Not a valid uuid, ignore
-        #         pass
         qs = Data.objects.filter(filters)
 
-        # qs = qs.exclude(type=Data.COMPETITION_BUNDLE)
         qs = qs.exclude(type=Data.COMPETITION_BUNDLE, name=None)
 
         return qs
