@@ -1,5 +1,4 @@
-from django.contrib.auth import get_user_model
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
@@ -7,7 +6,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -49,6 +48,7 @@ class CompetitionViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)
+        # TODO: what is this doing? do we still need it?
         if not self.request:
             return {}
 

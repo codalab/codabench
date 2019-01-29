@@ -25,6 +25,9 @@ class TaskSerializer(WritableNestedModelSerializer):
             'scoring_module',
         ]
 
+# TODO:// Simple serializer exists solely for Select2. Has a whole separate view and URL for using it. can this be done
+#   with a get_serializer_call() method instead?
+
 
 class TaskSerializerSimple(serializers.ModelSerializer):
     text = serializers.CharField(source='name')

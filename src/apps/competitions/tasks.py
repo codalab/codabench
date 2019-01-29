@@ -18,7 +18,7 @@ from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer, IngestionModuleSerializer, ScoringModuleSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
-from tasks.models import Task, Solution, IngestionModule, ScoringModule
+from tasks.models import Task, Solution
 from utils.data import make_url_sassy
 
 
@@ -119,6 +119,7 @@ def get_data_key(obj, file_type, temp_directory, creator):
         return file_name
     else:
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
+
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def unpack_competition(competition_dataset_pk):
