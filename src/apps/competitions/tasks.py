@@ -2,12 +2,11 @@ import base64
 import json
 import logging
 import os
-from datetime import timezone
 
 import oyaml as yaml
 import zipfile
 
-from io import StringIO, BytesIO
+from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
@@ -25,7 +24,6 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
     CompetitionDump
 from datasets.models import Data
 from utils.data import make_url_sassy
-from utils.storage import BundleStorage
 
 logger = logging.getLogger()
 
