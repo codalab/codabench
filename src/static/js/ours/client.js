@@ -1,6 +1,7 @@
 var CODALAB = {}
 
 CODALAB.URLS = []  // Set in base.html
+CODALAB.state = {} // Set in base.html
 CODALAB.events = riot.observable()
 
 // Private function, shouldn't be directly used
@@ -30,10 +31,14 @@ var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
 
 CODALAB.api = {
     request: function (method, url, data) {
+        if(method.toLowerCase() !== "get") {
+            data = JSON.stringify(data)
+        }
+
         return $.ajax({
             type: method,
             url: url,
-            data: JSON.stringify(data),
+            data: data,
             contentType: "application/json",
             dataType: 'json'
         })
@@ -51,9 +56,7 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
     },
     get_competitions: function (query) {
-        // To not pass "undefined" in URL...
-        query = query || ''
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
+        return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
@@ -64,10 +67,20 @@ CODALAB.api = {
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
+    delete_competition: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}competitions/${pk}/`)
+    },
+
+    toggle_competition_publish: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/toggle_publish/`)
+    },
 
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/
+    can_make_submissions: function (phase_id) {
+        return CODALAB.api.request('GET', `${URLS.API}can_make_submission/${phase_id}`)
+    },
     get_submissions: function (phase_pk) {
         // return CODALAB.api.request('GET', URLS.API + `submissions/?q=${query || ''}&type=${type || ''}`)
         return CODALAB.api.request('GET', `${URLS.API}submissions/?phase=${phase_pk}`)
@@ -169,5 +182,16 @@ CODALAB.api = {
             .then(function() {
                 return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
             })
+    },
+
+    /*---------------------------------------------------------------------
+         Tasks
+    ---------------------------------------------------------------------*/
+    get_tasks: function (filters) {
+        return CODALAB.api.request('GET', URLS.API + 'tasks/', filters)
+    },
+
+    delete_task: function(id) {
+        return CODALAB.api.request('DELETE', URLS.API + 'tasks/' + id + '/')
     },
 }

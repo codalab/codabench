@@ -103,7 +103,7 @@
 
 
             // File upload handler
-            $(self.refs.data_file.refs.file_input).on('change', self.prepare_upload(self.upload))
+            $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
 
 
             // Submission stream handler
@@ -171,16 +171,21 @@
             self.update()
         }
 
+        self.check_can_upload = function () {
+            CODALAB.api.can_make_submissions(self.selected_phase.id)
+                .done(function (data) {
+                    if (data.can) {
+                        self.prepare_upload(self.upload())
+                    } else {
+                        toastr.error(data.reason)
+                    }
+                })
+                .fail(function (data) {
+                    toastr.error('Could not verify your ability to make a submission')
+                })
+        }
+
         self.upload = function () {
-
-
-
-
-
-
-            // TODO: First check that we can even make a submission, are we past the max?
-
-
             var data_file_metadata = {
                 type: 'submission'
             }

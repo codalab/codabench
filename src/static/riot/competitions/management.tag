@@ -19,13 +19,14 @@
             </a>
         </div>
     </div>
-
-    <competition-list competitions="{ competitions }"></competition-list>
+    <div class="ui divider"></div>
+    <!-- <competition-list competitions="{ competitions }"></competition-list> -->
+    <competition-list></competition-list>
 
     <script>
         var self = this
 
-        self.one("mount", function() {
+        /*self.one("mount", function() {
             CODALAB.api.get_competitions("?mine=true")
                 .done(function(data){
                     self.update({competitions: data})
@@ -33,7 +34,7 @@
                 .fail(function(response){
                     toastr.error("Could not load competition list....")
                 })
-        })
+        })*/
     </script>
 
     <style>

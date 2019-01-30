@@ -42,6 +42,7 @@ OUR_APPS = (
     'pages',
     'profiles',
     'leaderboards',
+    'tasks',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -93,6 +94,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(
 
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
+# FIXME: change these addresses to something more relevant
 DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 
@@ -336,4 +338,8 @@ if DEBUG:
             r'^/admin/',
             r'^/static/',
         ]
+    }
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True
     }

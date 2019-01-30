@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.serializers.leaderboards import LeaderboardSerializer, LeaderboardEntriesSerializer
+from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from competitions.models import Submission
 from leaderboards.models import Leaderboard
 

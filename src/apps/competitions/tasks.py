@@ -15,8 +15,10 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
+from api.serializers.tasks import TaskSerializer, SolutionSerializer, IngestionModuleSerializer, ScoringModuleSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails
 from datasets.models import Data
+from tasks.models import Task, Solution
 from utils.data import make_url_sassy
 
 
@@ -94,6 +96,31 @@ class CompetitionUnpackingException(Exception):
     pass
 
 
+def get_data_key(obj, file_type, temp_directory, creator):
+    file_name = obj.get(file_type)
+    if not file_name:
+        return
+
+    file_path = os.path.join(temp_directory, file_name)
+    if os.path.exists(file_path):
+        new_dataset = Data(
+            created_by=creator,
+            type=file_type,
+            name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+            was_created_by_competition=True,
+        )
+        new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+        return new_dataset.key
+    elif len(file_name) in (32, 36):
+        # UUID are 32 or 36 characters long
+        # TODO send error message if invalid UUID or invalid filename
+        # if filename is 32 or 36 chars long but isn't present,
+        # it processes like UUID and then breaks but doesn't inform user.
+        return file_name
+    else:
+        raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
+
+
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
@@ -138,6 +165,9 @@ def unpack_competition(competition_dataset_pk):
                 "pages": [],
                 "phases": [],
                 "leaderboards": [],
+                # Hold these here and pop them off before saving comp so that phases can reference the as needed
+                "tasks": {},
+                "solutions": {},
             }
 
             # ---------------------------------------------------------------------
@@ -169,6 +199,134 @@ def unpack_competition(competition_dataset_pk):
                     raise CompetitionUnpackingException(f"Unable to find page: {page['file']}")
 
             # ---------------------------------------------------------------------
+            # Tasks
+            tasks = competition_yaml.get('tasks')
+            if tasks:
+                for task in tasks:
+                    if 'index' not in task:
+                        # TODO this may be duplicate code from the yaml validator that may eventually exist?
+                        raise CompetitionUnpackingException(f'ERROR: No index for task: {task["name"] if "name" in task else task["key"]}')
+
+                    index = task['index']
+
+                    if index in competition['tasks']:
+                        raise CompetitionUnpackingException(f'ERROR: Duplicate task indexes. Index: {index}')
+
+                    if 'key' in task:
+                        # just add the {index: key} to competition tasks
+                        competition['tasks'][index] = task['key']
+                    else:
+                        # must create task object so we can add {index: key} to competition tasks
+                        new_task = {
+                            'name': task['name'],
+                            'description': task['description'] if 'description' in task else None,
+                            'created_by': creator.id,
+                        }
+                        ingestion_module = task.get('ingestion_module')
+                        if ingestion_module:
+                            if 'key' in ingestion_module:
+                                new_task['ingestion_module'] = ingestion_module['key']
+                            else:
+                                new_ingestion_module = {
+                                    'name': ingestion_module['name'],
+                                    'description': ingestion_module['description'] if 'description' in ingestion_module else None,
+                                    'created_by': creator.id,
+                                    'only_during_scoring': ingestion_module['only_during_scoring'] if 'only_during_scoring' in ingestion_module else None,
+                                }
+                                for file_type in ['ingestion_program', 'input_data']:
+                                    new_ingestion_module[file_type] = get_data_key(
+                                        obj=ingestion_module,
+                                        file_type=file_type,
+                                        temp_directory=temp_directory,
+                                        creator=creator)
+                                serializer = IngestionModuleSerializer(data=new_ingestion_module)
+                                serializer.is_valid(raise_exception=True)
+                                new_ingestion_module = serializer.save()
+                                new_task['ingestion_module'] = new_ingestion_module.key
+
+                        scoring_module = task.get('scoring_module')
+                        if scoring_module:
+                            if 'key' in scoring_module:
+                                new_task['scoring_module'] = scoring_module['key']
+                            else:
+                                new_scoring_module = {
+                                    'name': scoring_module['name'],
+                                    'description': scoring_module['description'] if 'description' in scoring_module else None,
+                                    'created_by': creator.id,
+                                }
+                                for file_type in ['reference_data', 'scoring_program']:
+                                    new_scoring_module[file_type] = get_data_key(
+                                        obj=scoring_module,
+                                        file_type=file_type,
+                                        temp_directory=temp_directory,
+                                        creator=creator
+                                    )
+                                serializer = ScoringModuleSerializer(data=new_scoring_module)
+                                serializer.is_valid(raise_exception=True)
+                                new_scoring_module = serializer.save()
+                                new_task['scoring_module'] = new_scoring_module.key
+                        serializer = TaskSerializer(
+                            data=new_task,
+                        )
+                        serializer.is_valid(raise_exception=True)
+                        new_task = serializer.save()
+                        competition["tasks"][index] = new_task.key
+
+            # ---------------------------------------------------------------------
+            # Solutions
+            solutions = competition_yaml.get('solutions')
+            if solutions:
+                for solution in solutions:
+                    if 'index' not in solution:
+                        raise CompetitionUnpackingException(f"ERROR: No index for solution: {solution['name'] if 'name' in solution else solution['key']}")
+
+                    index = solution['index']
+                    task_keys = [competition['tasks'][task_index] for task_index in solution.get('tasks')]
+
+                    # TODO: Pretty sure some of this will be done by yaml validator?
+
+                    if not task_keys:
+                        raise CompetitionUnpackingException(f"ERROR: Solution: {solution['key']} missing task index pointers")
+
+                    if index in competition['solutions']:
+                        raise CompetitionUnpackingException(f"ERROR: Duplicate indexes. Index: {index}")
+
+                    if 'key' in solution:
+                        # add {index: {'key': key, 'tasks': task_index}} to competition solutions
+                        # TODO:// raise an exception if solution matching key doesn't exist
+                        Solution.objects.get(key=solution['key']).tasks.add(*Task.objects.filter(key__in=task_keys))
+
+                        competition['solutions'][index] = solution['key']
+
+                    else:
+                        # create solution object and then add {index: {'key': key, 'tasks': task_indexes}} to competition solutions
+                        name = solution['name'] if 'name' in solution else f"solution @ {now().strftime('%m-%d-%Y %H:%M')}"
+                        description = solution['description'] if 'description' in solution else None
+                        file_name = solution['path']
+                        file_path = os.path.join(temp_directory, file_name)
+                        if os.path.exists(file_path):
+                            new_solution_data = Data(
+                                created_by=creator,
+                                type='solution',
+                                name=name,
+                                description=description,
+                                was_created_by_competition=True,
+                            )
+                            new_solution_data.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+                            new_solution = {
+                                'data': new_solution_data.key,
+                                'tasks': task_keys,
+                            }
+                            serializer = SolutionSerializer(data=new_solution)
+                            serializer.is_valid(raise_exception=True)
+                            new_solution = serializer.save()
+                            competition['solutions'][index] = new_solution.key
+                        else:
+                            pass
+                            # TODO: add processing for using a key to data for a solution?
+                            # new_task[file_type] = new_dataset.key
+
+            # ---------------------------------------------------------------------
             # Phases
             file_types = [
                 "input_data",
@@ -182,39 +340,57 @@ def unpack_competition(competition_dataset_pk):
             for index, phase_data in enumerate(competition_yaml.get('phases')):
                 new_phase = {
                     "index": index,
-                    "name": phase_data['name'],
+                    "name": phase_data.get('name'),
                     "description": phase_data.get('description') if 'description' in phase_data else None,
                     "start": parser.parse(phase_data.get('start')) if 'start' in phase_data else None,
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
+                    'max_submissions_per_day': phase_data.get('max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
+                    'max_submissions_per_phase': phase_data.get('max_submissions') if 'max_submissions' in phase_data else None,
                 }
 
-                for file_type in file_types:
-                    # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
-                    file_name = phase_data.get(file_type)
+                if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
+                    new_phase['has_max_submissions'] = True
 
-                    if not file_name:
-                        continue
+                tasks = phase_data.get('tasks')
+                if tasks:
+                    new_phase['is_task_and_solution'] = True
+                    new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
-                    file_path = os.path.join(temp_directory, file_name)
-                    if os.path.exists(file_path):
-                        # We have a file, not UUID, needs to be uploaded
-                        new_dataset = Data(
-                            created_by=creator,
-                            type=file_type,
-                            name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
-                            was_created_by_competition=True,
-                        )
-                        # This saves the file AND saves the model
-                        new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+                    solutions = phase_data.get('solutions')
+                    if solutions:
+                        new_phase['solutions'] = [competition['solutions'][index] for index in solutions]
 
-                        children_datasets.append(new_dataset)
+                else:
+                    for file_type in file_types:
+                        # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
+                        file_name = phase_data.get(file_type)
 
-                        new_phase[file_type] = new_dataset.key
-                    elif len(file_name) in (32, 36):
-                        # Keys are length 32 or 36, so check if we can find a dataset matching this already
-                        new_phase[file_type] = file_name
-                    else:
-                        raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
+                        if not file_name:
+                            continue
+
+                        file_path = os.path.join(temp_directory, file_name)
+                        if os.path.exists(file_path):
+                            # We have a file, not UUID, needs to be uploaded
+                            new_dataset = Data(
+                                created_by=creator,
+                                type=file_type,
+                                name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
+                                was_created_by_competition=True,
+                            )
+                            # This saves the file AND saves the model
+                            new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
+
+                            children_datasets.append(new_dataset)
+
+                            new_phase[file_type] = new_dataset.key
+                        elif len(file_name) in (32, 36):
+
+                            # verify as UUID?
+
+                            # Keys are length 32 or 36, so check if we can find a dataset matching this already
+                            new_phase[file_type] = file_name
+                        else:
+                            raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
 
                 competition['phases'].append(new_phase)
 

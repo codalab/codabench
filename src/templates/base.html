@@ -10,6 +10,7 @@
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- Vendor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
@@ -99,6 +100,9 @@
             {% block top_div_extra_content %}{% endblock %}
         </div>
     </div>
+    {% block sticky_button %}
+
+    {% endblock %}
     <div id="page_content" class="ui container grid">
         <div class="row">
             {% block content %}
@@ -140,13 +144,14 @@
 
 <!-- Vendor -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
         integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="{% static "js/calendar.min.js" %}"></script>
 <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 
 <!-- Ours -->
 <script src="{% static "js/ours/client.js" %}"></script>
@@ -161,14 +166,22 @@
 <script>
     {# From `common_settings` context processor #}
     STORAGE_TYPE = "{{ STORAGE_TYPE }}"
-
+    CODALAB.state.user = {
+        id: '{{ request.user.id }}',
+        name: '{{ request.user.name }}',
+        username: '{{ request.user.username }}',
+        email: '{{ request.user.email }}',
+        bio: '{{ request.user.bio }}',
+    }
     // Load in URLs or other django generated goodies
     URLS = {
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
-
+        STATIC: function (file_name) {
+            return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+        },
         // Websockets
         //WS_SUBMISSION_LISTEN: ""
 
@@ -181,18 +194,27 @@
         COMPETITION_EDIT: function (pk) {
             return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
         },
+        SECRET_KEY_URL: function(pk, secret_key) {
+            var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+            return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+        },
 
         // Datasets
         DATASET_MANAGEMENT: "{% url "datasets:management" %}",
         DATASET_DOWNLOAD: function (key) {
             return "{% url "datasets:download" key=0 %}".replace(0, key)
-        }
+        },
+
+        // Tasks
+        // TODO:// update this URL when the task management view gets moved to the right place
+        TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
     }
 
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
-
+{% block extra_js %}
+{% endblock %}
 {% block extra_body %}
 {% endblock %}
 
