@@ -290,14 +290,11 @@ def unpack_competition(competition_dataset_pk):
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def create_competition_dump(competition_pk):
     yaml_data = {}
-
     try:
         # -------- SetUp -------
 
         logger.info(f"Finding competition {competition_pk}")
-
         comp = Competition.objects.get(pk=competition_pk)
-
         zip_buffer = BytesIO()
         zip_name = f"{comp.title}-{comp.created_when.isoformat()}.zip"
         zip_file = zipfile.ZipFile(zip_buffer, "w")
@@ -330,6 +327,7 @@ def create_competition_dump(competition_pk):
             zip_file.writestr(temp_page_data['file'], page.content)
 
         # -------- Competition Phases -------
+
         yaml_data['phases'] = []
         for phase in comp.phases.all():
             temp_phase_data = {}
@@ -360,7 +358,6 @@ def create_competition_dump(competition_pk):
         # -------- Leaderboards -------
 
         yaml_data['leaderboards'] = []
-
         for leaderboard in comp.leaderboards.all():
             ldb_data = {}
             for field in LEADERBOARD_FIELDS:
@@ -377,22 +374,14 @@ def create_competition_dump(competition_pk):
 
         # ------- Finalize --------
         logger.info(f"YAML data to be written is: {yaml_data}")
-
         comp_yaml = yaml.safe_dump(yaml_data, default_flow_style=False, allow_unicode=True, encoding="utf-8")
-
         logger.info(f"YAML output: {comp_yaml}")
-
         zip_file.writestr("competition.yaml", comp_yaml)
         zip_file.close()
-
         logger.info("Creating ZIP file")
-
         competition_dump_file = ContentFile(zip_buffer.getvalue())
-
         logger.info("Creating new Data object with type competition_bundle")
-
         bundle_count = CompetitionDump.objects.count() + 1
-
         temp_dataset_bundle = Data.objects.create(
             created_by=comp.created_by,
             name=f"{comp.title} Dump #{bundle_count} Created {comp.created_when.date()}",
@@ -400,21 +389,15 @@ def create_competition_dump(competition_pk):
             description='Automatically created competition dump',
             # 'data_file'=,
         )
-
         logger.info("Saving zip to Competition Bundle")
-
         temp_dataset_bundle.data_file.save(zip_name, competition_dump_file)
-
         logger.info("Creating new CompetitionDump object")
-
         temp_comp_dump = CompetitionDump.objects.create(
             dataset=temp_dataset_bundle,
             status="Finished",
             details="Competition Bundle {0} for Competition {1}".format(temp_dataset_bundle.pk, comp.pk),
             competition=comp
         )
-
         logger.info(f"Finished creating competition dump: {temp_comp_dump.pk} for competition: {comp.pk}")
-
     except ObjectDoesNotExist:
         logger.info("Could not find competition with pk {} to create a competition dump".format(competition_pk))
