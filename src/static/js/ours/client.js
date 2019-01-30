@@ -108,6 +108,9 @@ CODALAB.api = {
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     },
+    create_dump: function(competition_id) {
+        return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
+    },
     /**
      * Creates a dataset
      * @param {object} metadata - name, description, type, data_file, is_public
