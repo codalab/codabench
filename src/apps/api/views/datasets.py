@@ -104,13 +104,11 @@ def create_competition_dump(request, competition_id):
         if not request.user == comp.created_by:
             return Response({"error": "Denied. You do not have access"}, status=status.HTTP_403_FORBIDDEN)
         from competitions.tasks import create_competition_dump
-        next_pk = Data.objects.last().pk + 1
         create_competition_dump.delay(competition_id)
         return Response(
             {
-                "status": "Success. Competition dump is being created.",
-                "id": next_pk
+                "status": "Success. Competition dump is being created."
             },
             status=status.HTTP_202_ACCEPTED)
     except ObjectDoesNotExist:
-        return Response({"error": "Competition not found!"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Competition not found!"}, status=status.HTTP_403_FORBIDDEN)

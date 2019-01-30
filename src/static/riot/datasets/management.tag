@@ -38,7 +38,7 @@
                     </div>
 
                     <div show="{is_type_competition_bundle}" class="field {error: errors.type}">
-                        <select name="competition" ref="competition" class="ui dropdown" onselect="{check_data_type}">
+                        <select name="competition" ref="competition" class="ui dropdown">
                             <option value="">Competition to Dump</option>
                             <option value="-">-----</option>
                             <option each="{comp in competitions}" value="{comp.id}">{comp.title}-{comp.id}</option>
@@ -167,8 +167,9 @@
             // init
             self.update_datasets()
             self.update_competitions()
+
+            // Special handler because of semantic UI dropdowns, can't put onchange on select
             $('#type_of_data').on("change", function() {
-                console.log("WHAT THE FWAFWAF")
                 self.check_data_type()
             })
         })
@@ -227,7 +228,6 @@
         }
 
         self.check_data_type = function () {
-            console.log("This got called")
             if (self.refs.type.value === 'competition_bundle' ) {
                 self.update({is_type_competition_bundle: true})
                 self.update()
@@ -238,7 +238,6 @@
         }
 
         self.create_dump = function () {
-            console.log(self.refs.competition.value)
             if (self.refs.competition.value === '') {
                 alert("Please make sure you have selected a competition")
                 return
@@ -252,8 +251,7 @@
                     }, 1000)
                 })
                 .fail(function (response) {
-                    toastr.error("Error trying to create competition dump. See console for details.")
-                    console.log(response)
+                    toastr.error("Error trying to create competition dump.")
                 })
         }
 
