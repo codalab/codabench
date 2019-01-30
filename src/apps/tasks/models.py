@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils.timezone import now
 
 
 class TaskDescriptionMixin(models.Model):
@@ -9,7 +10,7 @@ class TaskDescriptionMixin(models.Model):
     description = models.TextField(null=True, blank=True)
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=now)
 
     class Meta:
         abstract = True
