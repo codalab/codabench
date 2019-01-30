@@ -32,7 +32,7 @@ psycopg2==2.7.3
 # Storage
 #-e git+https://github.com/jschneier/django-storages.git#egg=django-storages[azure,google]
 django-storages[azure,google]==1.7.1
-boto3==1.9.62
+boto3==1.9.68
 whitenoise==3.3.0
 
 # Api

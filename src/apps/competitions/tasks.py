@@ -165,7 +165,7 @@ def get_data_key(obj, file_type, temp_directory, creator):
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
 
 
-@app.task(queue='site-worker', soft_time_limit=60 * 10)
+@app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
