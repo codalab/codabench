@@ -35,6 +35,7 @@ urlpatterns = [
     path('datasets/completed/<uuid:key>/', datasets.upload_completed),
     path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
     path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard),
+    path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

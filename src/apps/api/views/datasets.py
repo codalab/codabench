@@ -1,5 +1,6 @@
 import os
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
@@ -14,6 +15,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
+from competitions.models import Competition
 from utils.data import make_url_sassy
 
 
@@ -32,17 +34,9 @@ class DataViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         filters = Q(is_public=True) | Q(created_by=self.request.user)
 
-        # query = self.request.query_params.get('q', None)
-        # # Check if they are searching for a UUID
-        # if query is not None and len(query) > 15:
-        #     try:
-        #         filters |= Q(key=UUID(query))
-        #     except ValueError:
-        #         # Not a valid uuid, ignore
-        #         pass
         qs = Data.objects.filter(filters)
 
-        qs = qs.exclude(type=Data.COMPETITION_BUNDLE)
+        qs = qs.exclude(type=Data.COMPETITION_BUNDLE, name=None)
 
         return qs
 
@@ -106,3 +100,20 @@ def upload_completed(request, key):
         unpack_competition.apply_async((dataset.pk,))
 
     return Response({"key": dataset.key})
+
+
+@api_view(['POST'])
+def create_competition_dump(request, competition_id):
+    try:
+        comp = Competition.objects.get(pk=competition_id)
+        if not request.user == comp.created_by:
+            return Response({"error": "Denied. You do not have access"}, status=status.HTTP_403_FORBIDDEN)
+        from competitions.tasks import create_competition_dump
+        create_competition_dump.delay(competition_id)
+        return Response(
+            {
+                "status": "Success. Competition dump is being created."
+            },
+            status=status.HTTP_202_ACCEPTED)
+    except ObjectDoesNotExist:
+        return Response({"error": "Competition not found!"}, status=status.HTTP_403_FORBIDDEN)

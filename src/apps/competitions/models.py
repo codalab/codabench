@@ -229,6 +229,29 @@ class Page(models.Model):
     index = models.PositiveIntegerField()
 
 
+class CompetitionDump(models.Model):
+    STARTING = "Starting"
+    FINISHED = "Finished"
+    FAILED = "Failed"
+
+    STATUS_CHOICES = (
+        (STARTING, "None"),
+        (FINISHED, "Finished"),
+        (FAILED, "Failed"),
+    )
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='dumps')
+    dataset = models.ForeignKey('datasets.Data', on_delete=models.CASCADE, related_name="competition_dump_file")
+    status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
+    details = models.TextField(null=True, blank=True)
+
+    # The resulting competition is only made on success
+    # resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"Comp dump created by {self.dataset.created_by} - {self.status}"
+
+
 # class Leaderboard(models.Model):
 #     pass
 #
