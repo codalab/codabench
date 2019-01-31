@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import uuid
 
 
 class Migration(migrations.Migration):
@@ -22,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='competition',
             name='secret_key',
-            field=models.UUIDField(default=uuid.uuid4, unique=True),
+            field=models.UUIDField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='competitionparticipant',
