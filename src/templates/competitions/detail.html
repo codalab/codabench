@@ -1,7 +1,4 @@
 {% extends "base.html" %}
 {% block content %}
-    <!--<comp-detail></comp-detail>-->
-
-
-    <submission-upload></submission-upload>
+    <competition-detail competition_pk="{{ object.pk }}"></competition-detail>
 {% endblock %}

@@ -11,7 +11,7 @@ pillow==5.0.0
 celery==4.2.1
 gunicorn==19.9.0
 flower==0.9.2
-uvicorn==0.3.13
+uvicorn==0.3.22
 #daphne==2.2.2
 pyyaml==3.13
 watchdog==0.8.3
@@ -21,6 +21,10 @@ websockets==6.0
 aiofiles==0.4.0
 oyaml==0.7
 
+# Heroku staging debug tools
+django-debug-toolbar==1.11
+django-querycount==0.7.0
+
 # Database
 dj-database-url==0.4.2
 psycopg2==2.7.3
@@ -28,7 +32,7 @@ psycopg2==2.7.3
 # Storage
 #-e git+https://github.com/jschneier/django-storages.git#egg=django-storages[azure,google]
 django-storages[azure,google]==1.7.1
-boto3==1.7.84
+boto3==1.9.68
 whitenoise==3.3.0
 
 # Api
@@ -38,3 +42,6 @@ markdown==2.6.11
 pygments==2.2.0
 drf-writable-nested==0.4.1
 django-filter==2.0.0
+drf-yasg[validation]==1.11.0
+flex==6.12.0
+Click==7.0

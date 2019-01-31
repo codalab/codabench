@@ -35,10 +35,10 @@ services:
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2018-12-06T01-27-43Z
     command: server /export
     volumes:
-      - /tmp/codalab-competitions-v2-minio:/export
+      - ./var/minio:/export
       - ./docker/run_minio.sh:/app/run_minio.sh
     ports:
       - $MINIO_PORT:9000
@@ -77,7 +77,7 @@ services:
   #   Database Service
   #-----------------------------------------------
   db:
-    image: postgres
+    image: postgres:10.6-alpine
     container_name: db
     env_file: .env
     environment:

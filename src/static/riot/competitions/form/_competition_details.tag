@@ -16,6 +16,7 @@
 
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
             <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
+            <label show="{ uploaded_logo }">Uploaded Logo: <a href="{ uploaded_logo }">{ uploaded_logo_name }</a></label>
             <div class="ui left action file input">
                 <button class="ui icon button" onclick="document.getElementById('form_file_logo').click()">
                     <i class="attach icon"></i>
@@ -154,8 +155,8 @@
 
             self.refs.title.value = competition.title
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
-            self.refs.logo.refs.file_input_display.value = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
-
+            self.uploaded_logo_name = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
+            self.uploaded_logo = competition.logo
             self.form_updated()
         })
     </script>

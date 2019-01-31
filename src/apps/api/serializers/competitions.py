@@ -4,9 +4,10 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
-from competitions.models import Competition, Phase, Submission, Page, CompetitionCreationTaskStatus
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
+from tasks.models import Task, Solution
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -16,6 +17,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     public_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     starting_kit = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    solutions = serializers.SlugRelatedField(queryset=Solution.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
 
     class Meta:
         model = Phase
@@ -32,6 +35,15 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'ingestion_program',
             'public_data',
             'starting_kit',
+            'status',
+
+            'has_max_submissions',
+            'max_submissions_per_day',
+            'max_submissions_per_person',
+
+            'tasks',
+            'solutions',
+            'is_task_and_solution',
         )
 
 
@@ -50,52 +62,6 @@ class PageSerializer(WritableNestedModelSerializer):
         )
 
 
-class SubmissionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Submission
-        fields = (
-            'phase',
-            'name',
-            'description',
-            'pk',
-            'id',
-            'created_when',
-            'is_public',
-            'status',
-            'status_details',
-            'secret',
-        )
-        extra_kwargs = {
-            "secret": {
-                "write_only": True
-            }
-        }
-
-    def update(self, instance, validated_data):
-        if instance.secret != validated_data.get('secret'):
-            raise PermissionError("Submission secret invalid")
-        return super().update(instance, validated_data)
-
-
-class SubmissionCreationSerializer(serializers.ModelSerializer):
-    data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-
-    class Meta:
-        model = Submission
-        fields = (
-            'data',
-            'phase',
-        )
-
-    # TODO: Validate the user is a participant in this competition.phase
-
-    def create(self, validated_data):
-        validated_data["owner"] = self.context['owner']
-        sub = super().create(validated_data)
-        sub.start()
-        return sub
-
-
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     logo = NamedBase64ImageField(required=True)
@@ -109,7 +75,10 @@ class CompetitionSerializer(WritableNestedModelSerializer):
         fields = (
             'id',
             'title',
+            'published',
+            'secret_key',
             'created_by',
+            'created_when',
             'logo',
             'pages',
             'phases',
@@ -128,6 +97,18 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
+
+
+class CompetitionSerializerSimple(serializers.ModelSerializer):
+
+    class Meta:
+        model = Competition
+        fields = (
+            'id',
+            'title',
+            'created_when',
+            'published'
+        )
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')
