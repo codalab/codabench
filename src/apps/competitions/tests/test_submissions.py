@@ -1,9 +1,8 @@
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from competitions.models import Competition, Phase, Submission
+from competitions.models import Submission
 from django.utils.timezone import now
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
 
