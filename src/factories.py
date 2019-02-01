@@ -1,5 +1,8 @@
+import random
+
 import factory
 from django.utils.timezone import now
+from factory import post_generation
 from factory.django import DjangoModelFactory
 
 from competitions.models import Competition, Phase, Submission
@@ -10,11 +13,17 @@ from profiles.models import User
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
+        django_get_or_create = ('username',)
 
-    # TODO: change this to use create_user()?
     username = factory.Faker('user_name')
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = factory.PostGenerationMethodCall('set_password', 'admin')
+
+    @post_generation
+    def super_user(self, created, extracted, **kwargs):
+        if extracted:
+            self.is_superuser = True
+            self.is_staff = True
 
 
 class CompetitionFactory(DjangoModelFactory):
@@ -23,6 +32,7 @@ class CompetitionFactory(DjangoModelFactory):
 
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
+    published = factory.LazyAttribute(lambda n: random.choice([True, False]))
 
 
 class PhaseFactory(DjangoModelFactory):
@@ -58,11 +68,3 @@ class SubmissionFactory(DjangoModelFactory):
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
     )
-
-
-def create_competition_with_phases(user=None, number_of_phases=3):
-    user = UserFactory() if user is None else user
-    competition = CompetitionFactory(created_by=user)
-    for i in range(number_of_phases):
-        PhaseFactory(competition=competition, index=i)
-    return competition
