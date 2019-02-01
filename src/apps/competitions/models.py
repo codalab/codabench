@@ -10,7 +10,7 @@ class Competition(models.Model):
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
@@ -142,7 +142,7 @@ class Submission(models.Model):
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
-    status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=NONE, null=False, blank=False)
+    status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=SUBMITTING, null=False, blank=False)
     status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
@@ -157,7 +157,7 @@ class Submission(models.Model):
     score = models.DecimalField(max_digits=20, decimal_places=10, default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
 
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
@@ -179,8 +179,6 @@ class Submission(models.Model):
     def save(self, **kwargs):
         created = not self.pk
         if created:
-            self.status = Submission.SUBMITTING
-
             can_make_submission, reason_why_not = self.phase.can_user_make_submissions(self.owner)
             if not can_make_submission:
                 raise PermissionError(reason_why_not)

@@ -1,61 +1,22 @@
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from competitions.models import Competition, Phase, Submission
-from datasets.models import Data
+from competitions.models import Submission
 from django.utils.timezone import now
-
-User = get_user_model()
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
 
 
 class SubmissionsTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create(
-            username='tester'
-        )
-        self.user.set_password('testing')
-        self.user.save()
-        self.competition = Competition.objects.create(
-            title='Test Competition',
-            created_by=self.user,
-        )
-        self.phase = Phase.objects.create(
-            competition=self.competition,
-            index=0,
-            start=now(),
-            name='Test Phase',
-        )
+        self.user = UserFactory(username='test')
+        self.competition = CompetitionFactory(created_by=self.user)
+        self.phase = PhaseFactory(competition=self.competition)
 
-    def make_submission(self, user=None, phase=None, data=None, submission_status=None, submission_date=None, submission_name=None):
-        user = self.user if user is None else user
-        phase = self.phase if phase is None else phase
-        submission_date = now() if submission_date is None else submission_date
-
-        data = data if data is not None else Data.objects.create(
-            created_by=user,
-            created_when=submission_date,
-            type='submission',
-            name=f'submission @ {submission_date.strftime("%m-%d-%Y %H:%M")}'
-        )
-
-        submission = Submission.objects.create(
-            owner=user,
-            phase=phase,
-            data=data,
-            created_when=submission_date,
-            name=submission_name,
-        )
-        if submission_status:
-            submission.status = submission_status
-            submission.save()
-
-        if submission_date:
-            submission.created_when = submission_date
-            submission.save()
-
-        return submission
+    def make_submission(self, **kwargs):
+        kwargs.setdefault('owner', self.user)
+        kwargs.setdefault('phase', self.phase)
+        SubmissionFactory(**kwargs)
 
     def set_max_submissions(self, phase=None, per_person=None, per_day=None):
         phase = self.phase if phase is None else phase
@@ -84,7 +45,7 @@ class SubmissionsTests(TestCase):
 
     def test_failed_submissions_not_counted_towards_max(self):
         self.set_max_submissions(per_person=1, per_day=1)
-        self.make_submission(submission_status="Failed")
+        self.make_submission(status="Failed")
         try:
             self.make_submission()
         except PermissionError:
@@ -93,7 +54,7 @@ class SubmissionsTests(TestCase):
     def test_max_per_day_not_counting_previous_days_submissions(self):
         self.set_max_submissions(per_day=1)
         yesterday = now() - timedelta(days=1)
-        self.make_submission(submission_date=yesterday)
+        self.make_submission(created_when=yesterday)
         try:
             self.make_submission()
         except PermissionError:
@@ -101,8 +62,8 @@ class SubmissionsTests(TestCase):
 
     def test_max_submissions_not_counting_other_user_submissions(self):
         self.set_max_submissions(per_person=1, per_day=1)
-        other_user = User.objects.create(username='test2')
-        self.make_submission(user=other_user)
+        other_user = UserFactory()
+        self.make_submission(owner=other_user)
         try:
             self.make_submission()
         except PermissionError:
@@ -112,7 +73,7 @@ class SubmissionsTests(TestCase):
         self.set_max_submissions(per_person=1)
         self.make_submission()
         try:
-            self.make_submission(submission_name='Find Me')
+            self.make_submission(name='Find Me')
         except PermissionError:
             try:
                 Submission.objects.get(name='Find Me')

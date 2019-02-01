@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils.timezone import now
 
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
@@ -33,7 +34,7 @@ class Data(models.Model):
         (SOLUTION, 'Solution',),
     )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=now)
     name = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=64, choices=TYPES)
     description = models.TextField(null=True, blank=True)
@@ -65,6 +66,6 @@ class Data(models.Model):
 
 class DataGroup(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=now)
     name = models.CharField(max_length=255)
     datas = models.ManyToManyField(Data, related_name="groups")
