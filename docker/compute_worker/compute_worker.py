@@ -73,8 +73,11 @@ def run_wrapper(run_args):
 
 class Run:
     def __init__(self, run_args):
+        # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.output_dir = os.path.join(self.root_dir, "output")
+
+        # Details for submission
         self.is_scoring = run_args["is_scoring"]
         self.submission_id = run_args["id"]
         self.api_url = run_args["api_url"]
@@ -87,6 +90,7 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
+        # Socket connection to stream output of submission
         api_url_parsed = urlparse(self.api_url)
         websocket_host = api_url_parsed.netloc
         websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
@@ -181,8 +185,9 @@ class Run:
         except FileNotFoundError:
             raise SubmissionException("Program directory missing 'metadata.yaml'")
 
-        stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
-        stderr = open(os.path.join(program_dir, "stderr.txt"), "a+")
+        # I believe these are unused now,
+        # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
+        # stderr = open(os.path.join(program_dir, "stderr.txt"), "a+")
 
         docker_cmd = [
             'docker',
@@ -209,6 +214,7 @@ class Run:
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
+        # This runs the docker command and asychronously passes data
         asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd))
 
         logger.info(f"Program finished")
