@@ -62,7 +62,9 @@ def run_wrapper(run_args):
         run.prepare()
         run.start()
         if run.is_scoring:
-            run.submit_scores()
+            run.push_scores()
+        else:
+            run.push_result()
     except SubmissionException as e:
         run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -83,7 +85,7 @@ class Run:
         self.api_url = run_args["api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
-        self.result = run_args["result"]
+        self.result = run_args["result"]  # TODO, rename this to result_url
         self.execution_time_limit = run_args["execution_time_limit"]
 
         self.program_data = run_args.get("program_data", None)
@@ -290,7 +292,7 @@ class Run:
         else:
             self._update_status(STATUS_SCORING)
 
-    def submit_scores(self):
+    def push_scores(self):
         # POST to some endpoint:
         # {
         #     "correct": 1.0
@@ -307,10 +309,10 @@ class Run:
         logger.info(resp)
         logger.info(str(resp.content))
 
+    def push_result(self):
+        self._put_dir(self.result, self.output_dir)
+
     def clean_up(self):
-        if not self.is_scoring:
-            # Save output of submission
-            self._put_dir(self.result, self.output_dir)
 
 
         logger.info("We're not cleaning up yet... TODO: cleanup!")
