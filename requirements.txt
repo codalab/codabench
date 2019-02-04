@@ -20,6 +20,7 @@ bpython==0.17.1
 websockets==6.0
 aiofiles==0.4.0
 oyaml==0.7
+factory_boy==2.11.1
 
 # Heroku staging debug tools
 django-debug-toolbar==1.11

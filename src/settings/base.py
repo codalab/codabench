@@ -43,6 +43,7 @@ OUR_APPS = (
     'profiles',
     'leaderboards',
     'tasks',
+    'commands',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
