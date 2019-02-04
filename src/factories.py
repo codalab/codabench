@@ -77,4 +77,3 @@ class CompetitionParticipantFactory(DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     competition = factory.SubFactory(CompetitionFactory)
     status = factory.LazyAttribute(lambda n: random.choice(['unknown', 'denied', 'approved', 'pending']))
-
