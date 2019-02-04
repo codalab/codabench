@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from factory import post_generation
 from factory.django import DjangoModelFactory
 
-from competitions.models import Competition, Phase, Submission
+from competitions.models import Competition, Phase, Submission, CompetitionParticipant
 from datasets.models import Data
 from profiles.models import User
 
@@ -68,3 +68,13 @@ class SubmissionFactory(DjangoModelFactory):
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
     )
+
+
+class CompetitionParticipantFactory(DjangoModelFactory):
+    class Meta:
+        model = CompetitionParticipant
+
+    user = factory.SubFactory(UserFactory)
+    competition = factory.SubFactory(CompetitionFactory)
+    status = factory.LazyAttribute(lambda n: random.choice(['unknown', 'denied', 'approved', 'pending']))
+
