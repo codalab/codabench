@@ -330,9 +330,14 @@ if DEBUG:
         'querycount.middleware.QueryCountMiddleware',
     ) + MIDDLEWARE  # we want Debug Middleware at the top
     # tricks to have debug toolbar when developing with docker
+
+    INTERNAL_IPS = ['127.0.0.1']
+
     import socket
-    ip = socket.gethostbyname(socket.gethostname())
-    INTERNAL_IPS = ['127.0.0.1', ip[:-1]]
+    try:
+        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
+    except socket.gaierror:
+        pass
 
     QUERYCOUNT = {
         'IGNORE_REQUEST_PATTERNS': [
