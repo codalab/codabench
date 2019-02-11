@@ -100,6 +100,8 @@ def run_submission(submission_pk, is_scoring=False):
         # Pre-generate file path by setting empty file here
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
         # Run the submission
+        print(submission)
+        print(submission.data)
         run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
         run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
     else:

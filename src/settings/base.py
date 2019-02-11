@@ -327,7 +327,7 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = (
         'debug_toolbar.middleware.DebugToolbarMiddleware',
-        'querycount.middleware.QueryCountMiddleware',
+        #'querycount.middleware.QueryCountMiddleware',
     ) + MIDDLEWARE  # we want Debug Middleware at the top
     # tricks to have debug toolbar when developing with docker
 

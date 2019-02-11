@@ -17,7 +17,6 @@ class UserFactory(DjangoModelFactory):
 
     username = factory.Faker('user_name')
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
-    # password = factory.PostGenerationMethodCall('set_password', 'admin')
     password = "test"
 
     @classmethod

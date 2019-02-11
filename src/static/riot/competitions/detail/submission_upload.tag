@@ -14,8 +14,8 @@
 
         <button onclick="">Show modal</button>
 
-        <div class="ui modal">
-            <i class="close icon"></i>
+        <div id="output-modal" class="ui modal">
+            <i id="close-modal" class="close icon"></i>
             <div class="header">Output</div>
             <div class="content">
                 <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
