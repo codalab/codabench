@@ -35,21 +35,11 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
-        # options = Options()
-        # options.add_argument('--headless')
-        # cls.selenium = WebDriver(options=options)
-
         cls.host = socket.gethostbyname(socket.gethostname())
-
-        d = DesiredCapabilities.FIREFOX
-        d['loggingPrefs'] = {'browser': 'ALL'}
-
         cls.selenium = webdriver.Remote(
             command_executor='http://selenium:4444/wd/hub',
-            desired_capabilities=d,
+            desired_capabilities=DesiredCapabilities.FIREFOX,
         )
-
         # Wait 10 seconds for elements to appear, always
         cls.selenium.implicitly_wait(10)
 

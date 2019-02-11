@@ -132,6 +132,12 @@ def run_submission(submission_pk, is_scoring=False):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
+
+
+
+    # mock app.send_task here, do all of the things compute worker does to signify submission completed/scored or
+    # whatever you'd like to test (or need to make the test work) -- leaderboards?
+
     task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
     submission.task_id = task.id
     submission.status = Submission.SUBMITTED
