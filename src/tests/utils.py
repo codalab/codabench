@@ -6,11 +6,8 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
-from selenium.webdriver.chrome.options import Options
 from time import sleep
-
-from selenium.webdriver.chrome.webdriver import WebDriver
-# from selenium.webdriver.firefox.webdriver import WebDriver
+from utils.storage import BundleStorage, PublicStorage
 
 
 class CodalabTestHelpersMixin(object):
@@ -48,6 +45,10 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
         cls.selenium.quit()
         super().tearDownClass()
 
+    @staticmethod
+    def wait(seconds):
+        return sleep(seconds)
+
     def setUp(self):
         super().setUp()
         self.selenium.set_window_size(800, 600)
@@ -66,17 +67,27 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
         assert circle_dir, "Could not find CIRCLE_ARTIFACTS environment variable!"
         self.screenshot(os.path.join(circle_dir, name))
 
-    def assertCurrentUrl(self, url):
-        assert self.selenium.current_url == f"{self.live_server_url}{url}"
-
     def execute_script(self, script):
         return self.selenium.execute_script(script)
 
-    @staticmethod
-    def sleep(seconds):
-        return sleep(seconds)
+    # ===========================================================
+    # Assertion Helpers
+    # ===========================================================
+    def assertCurrentUrl(self, url):
+        assert self.selenium.current_url == f"{self.live_server_url}{url}"
 
-    # not supported in firefox
-    # def print_log(self):
-    #     for entry in self.selenium.get_log('browser'):
-    #         print(entry)
+    def assertElementExists(self, selector):
+        assert self.find(selector).is_displayed()
+
+    @staticmethod
+    def assertStorageItemExists(item_name):
+        assert BundleStorage.exists(item_name) or PublicStorage.exists(item_name)
+
+    # ===========================================================
+    # Cleanup Helpers
+    # ===========================================================
+    @staticmethod
+    def removeFromStorage(*args):
+        for item in args:
+            PublicStorage.delete(item)
+            BundleStorage.delete(item)

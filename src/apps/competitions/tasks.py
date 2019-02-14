@@ -20,7 +20,7 @@ from django.utils.timezone import now
 from tempfile import TemporaryDirectory
 
 from api.serializers.competitions import CompetitionSerializer
-from api.serializers.tasks import TaskSerializer, SolutionSerializer, IngestionModuleSerializer, ScoringModuleSerializer
+from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump
 from datasets.models import Data
@@ -256,7 +256,6 @@ def unpack_competition(competition_dataset_pk):
             if tasks:
                 for task in tasks:
                     if 'index' not in task:
-                        # TODO this may be duplicate code from the yaml validator that may eventually exist?
                         raise CompetitionUnpackingException(f'ERROR: No index for task: {task["name"] if "name" in task else task["key"]}')
 
                     index = task['index']
@@ -273,50 +272,14 @@ def unpack_competition(competition_dataset_pk):
                             'name': task['name'],
                             'description': task['description'] if 'description' in task else None,
                             'created_by': creator.id,
+                            'ingestion_only_during_scoring': task['ingestion_only_during_scoring'] if 'ingestion_only_during_scoring' in task else None,
                         }
-                        ingestion_module = task.get('ingestion_module')
-                        if ingestion_module:
-                            if 'key' in ingestion_module:
-                                new_task['ingestion_module'] = ingestion_module['key']
-                            else:
-                                new_ingestion_module = {
-                                    'name': ingestion_module['name'],
-                                    'description': ingestion_module['description'] if 'description' in ingestion_module else None,
-                                    'created_by': creator.id,
-                                    'only_during_scoring': ingestion_module['only_during_scoring'] if 'only_during_scoring' in ingestion_module else None,
-                                }
-                                for file_type in ['ingestion_program', 'input_data']:
-                                    new_ingestion_module[file_type] = get_data_key(
-                                        obj=ingestion_module,
-                                        file_type=file_type,
-                                        temp_directory=temp_directory,
-                                        creator=creator)
-                                serializer = IngestionModuleSerializer(data=new_ingestion_module)
-                                serializer.is_valid(raise_exception=True)
-                                new_ingestion_module = serializer.save()
-                                new_task['ingestion_module'] = new_ingestion_module.key
-
-                        scoring_module = task.get('scoring_module')
-                        if scoring_module:
-                            if 'key' in scoring_module:
-                                new_task['scoring_module'] = scoring_module['key']
-                            else:
-                                new_scoring_module = {
-                                    'name': scoring_module['name'],
-                                    'description': scoring_module['description'] if 'description' in scoring_module else None,
-                                    'created_by': creator.id,
-                                }
-                                for file_type in ['reference_data', 'scoring_program']:
-                                    new_scoring_module[file_type] = get_data_key(
-                                        obj=scoring_module,
-                                        file_type=file_type,
-                                        temp_directory=temp_directory,
-                                        creator=creator
-                                    )
-                                serializer = ScoringModuleSerializer(data=new_scoring_module)
-                                serializer.is_valid(raise_exception=True)
-                                new_scoring_module = serializer.save()
-                                new_task['scoring_module'] = new_scoring_module.key
+                        for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
+                            new_task[file_type] = get_data_key(
+                                obj=task,
+                                file_type=file_type,
+                                temp_directory=temp_directory,
+                                creator=creator)
                         serializer = TaskSerializer(
                             data=new_task,
                         )
