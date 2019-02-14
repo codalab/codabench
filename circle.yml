@@ -11,6 +11,8 @@ jobs:
     docker:
       - image: circleci/python:3.6-jessie-browsers
     steps:
+      - checkout
+
       # Directory for any test reports
       - run: mkdir test-reports
 
@@ -25,8 +27,8 @@ jobs:
             java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log
           background: true
 
-      # Get code, setup environment
-      - checkout
+      # setup environment
+
       - run: sudo pip install -r requirements.dev.txt
 
       # Tests
