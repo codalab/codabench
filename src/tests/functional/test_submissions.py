@@ -10,7 +10,7 @@ class TestSubmissions(SeleniumTestCase):
         self.user = UserFactory(password='test')
         self.competition = CompetitionFactory(created_by=self.user, published=True)
         self.phase = PhaseFactory(competition=self.competition)
-        CompetitionParticipantFactory(user=self.user, competition=self.compettition, status='approved')
+        CompetitionParticipantFactory(user=self.user, competition=self.competition, status='approved')
 
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
