@@ -100,8 +100,6 @@ def run_submission(submission_pk, is_scoring=False):
         # Pre-generate file path by setting empty file here
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
         # Run the submission
-        print(submission)
-        print(submission.data)
         run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
         run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
     else:
@@ -131,12 +129,6 @@ def run_submission(submission_pk, is_scoring=False):
     # Pad timelimit so worker has time to cleanup
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
-
-
-
-
-    # mock app.send_task here, do all of the things compute worker does to signify submission completed/scored or
-    # whatever you'd like to test (or need to make the test work) -- leaderboards?
 
     task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
     submission.task_id = task.id
