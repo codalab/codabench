@@ -11,6 +11,9 @@ jobs:
     docker:
       - image: circleci/python:3.6-jessie-browsers
     steps:
+      # Directory for any test reports
+      - run: mkdir test-reports
+
       # Selenium setup
       - run:
           name: Download Selenium
