@@ -73,14 +73,14 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     # ===========================================================
     # Assertion Helpers
     # ===========================================================
-    def assertCurrentUrl(self, url):
+    def assert_current_url(self, url):
         assert self.selenium.current_url == f"{self.live_server_url}{url}"
 
-    def assertElementExists(self, selector):
+    def assert_element_is_visible(self, selector):
         assert self.find(selector).is_displayed()
 
     @staticmethod
-    def assertStorageItemExists(*args):
+    def assert_storage_items_exist(*args):
         for item_name in args:
             assert BundleStorage.exists(item_name) or PublicStorage.exists(item_name)
 
@@ -88,7 +88,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     # Cleanup Helpers
     # ===========================================================
     @staticmethod
-    def removeFromStorage(*args):
+    def remove_items_from_storage(*args):
         for item in args:
             PublicStorage.delete(item)
             BundleStorage.delete(item)

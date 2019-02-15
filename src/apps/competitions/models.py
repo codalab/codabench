@@ -18,6 +18,10 @@ class Competition(models.Model):
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)
 
+    @property
+    def bundle_dataset(self):
+        return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
 
 class CompetitionCreationTaskStatus(models.Model):
     STARTING = "Starting"

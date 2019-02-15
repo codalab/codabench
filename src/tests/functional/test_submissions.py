@@ -18,8 +18,6 @@ class TestSubmissions(SeleniumTestCase):
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
         self.get(reverse('competitions:detail', kwargs={'pk': self.competition.id}))
-
-        # Before clicking this button, mock app.send_task SO IT ISN'T ACTUALLY CALLED!
         with mock.patch('competitions.tasks.app.send_task') as celery_app:
             class Task:
                 def __init__(self):
@@ -29,9 +27,8 @@ class TestSubmissions(SeleniumTestCase):
             self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/submission.zip')
             self.wait(10)
             assert celery_app.called
-            assert 'queue' in celery_app.call_args[1]
             assert celery_app.call_args[1]['queue'] == 'compute-worker'
-        self.assertElementExists('#output-modal')
+        self.assert_element_is_visible('#output-modal')
         self.execute_script("$('#output-modal').modal('hide')")
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission.zip'
         submission = self.user.submission.first()
@@ -41,5 +38,5 @@ class TestSubmissions(SeleniumTestCase):
         ]
         for detail in submission.details.all():
             created_files.append(detail.data_file.name)
-        self.assertStorageItemExists(*created_files)
-        self.removeFromStorage(*created_files)
+        self.assert_storage_items_exist(*created_files)
+        self.remove_items_from_storage(*created_files)
