@@ -64,8 +64,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
         self.selenium.get_screenshot_as_file(name)
 
     def circleci_screenshot(self, name="screenshot.png"):
-        circle_dir = os.environ.get('CIRCLE_ARTIFACTS')
-        assert circle_dir, "Could not find CIRCLE_ARTIFACTS environment variable!"
+        circle_dir = os.environ.get('CIRCLE_ARTIFACTS', "artifacts/")
         self.screenshot(os.path.join(circle_dir, name))
 
     def execute_script(self, script):
