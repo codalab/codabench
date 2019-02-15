@@ -80,8 +80,9 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
         assert self.find(selector).is_displayed()
 
     @staticmethod
-    def assertStorageItemExists(item_name):
-        assert BundleStorage.exists(item_name) or PublicStorage.exists(item_name)
+    def assertStorageItemExists(*args):
+        for item_name in args:
+            assert BundleStorage.exists(item_name) or PublicStorage.exists(item_name)
 
     # ===========================================================
     # Cleanup Helpers
