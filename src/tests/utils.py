@@ -2,6 +2,7 @@ import os
 import socket
 
 import pytest
+from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium import webdriver
@@ -34,7 +35,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
         super().setUpClass()
         cls.host = socket.gethostbyname(socket.gethostname())
         cls.selenium = webdriver.Remote(
-            command_executor='http://selenium:4444/wd/hub',
+            command_executor=f'http://{settings.SELENIUM_HOSTNAME}:4444/wd/hub',
             desired_capabilities=DesiredCapabilities.FIREFOX,
         )
         # Wait 10 seconds for elements to appear, always

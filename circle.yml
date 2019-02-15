@@ -16,7 +16,7 @@ jobs:
       # Directory for any test reports
       - run: mkdir test-reports
 
-      # Selenium setup
+      # Setup env, background tasks, cache
       - run:
           name: Download Selenium
           command: |
@@ -26,9 +26,6 @@ jobs:
           command: |
             java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log
           background: true
-
-      # setup environment
-
       - run: sudo pip install -r requirements.dev.txt
 
       # Tests
