@@ -88,7 +88,7 @@ def run_submission(submission_pk, is_scoring=False):
         "api_url": "http://django/api",
         # "program_data": make_url_sassy(submission.data.data_file.name),
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
-        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
         "secret": submission.secret,
         "docker_image": "python:3.7",
         "execution_time_limit": submission.phase.execution_time_limit,

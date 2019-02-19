@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.timezone import now
 
 from utils.data import PathWrapper
+from utils.storage import BundleStorage
 
 
 class Competition(models.Model):
@@ -117,7 +118,7 @@ class SubmissionDetails(models.Model):
         "ingestion_stderr",
     ]
     name = models.CharField(max_length=50)
-    data_file = models.FileField(upload_to=PathWrapper('submission_details'))
+    data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
 
 
@@ -151,7 +152,7 @@ class Submission(models.Model):
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
-    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
+    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True, storage=BundleStorage)
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)

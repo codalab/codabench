@@ -82,6 +82,10 @@ class Run:
     """
 
     def __init__(self, run_args):
+        self.ingestion_stderr = run_args['ingestion_stderr']
+        self.ingestion_stdout = run_args['ingestion_stdout']
+        self.stderr = run_args['stderr']
+        self.stdout = run_args['stdout']
         # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -96,6 +100,7 @@ class Run:
         self.execution_time_limit = run_args["execution_time_limit"]
 
         self.program_data = run_args.get("program_data", None)
+        self.ingestion_program_data = run_args.get("ingestion_program", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
@@ -140,7 +145,7 @@ class Run:
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
 
-    async def _run_docker_cmd(self, docker_cmd):
+    async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket"""
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
@@ -153,7 +158,6 @@ class Run:
         #       :class:`~collections.abc.Mapping`, or an iterable of ``(name, value)``
         #       pairs
 
-
         async with websockets.connect(url) as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
@@ -161,23 +165,38 @@ class Run:
                 stderr=asyncio.subprocess.PIPE
             )
 
+            stdout = b''
+            stderr = b''
+
             while True:
-                data = await proc.stdout.readline()
-                if data:
-                    print("DATA!!!! " + str(data))
-                    await websocket.send(data.decode())
-                else:
+                more_stdout = await proc.stdout.readline()
+                if more_stdout:
+                    stdout += more_stdout
+                    print("DATA!!!! " + str(more_stdout))
+                    await websocket.send(more_stdout.decode())
+
+                more_stderr = await proc.stderr.readline()
+                if more_stderr:
+                    stderr += more_stderr
+                    print("ERR DATA!!!! " + str(more_stderr))
+                    await websocket.send(more_stderr.decode())  # maybe mark somehow so it's RED on frontend
+
+                if not more_stdout and not more_stderr:
                     break
 
-            stdout, stderr = await proc.communicate()
+            stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
+            stderr_location = self.stderr if kind == 'program' else self.ingestion_stderr
 
             logger.info(f'[exited with {proc.returncode}]')
             if stdout:
                 logger.info(f'[stdout]\n{stdout.decode()}')
+                self._put_file(stdout_location, raw_data=stdout)
             if stderr:
                 logger.info(f'[stderr]\n{stderr.decode()}')
+                self._put_file(stderr_location, raw_data=stderr)
 
-    def _run_program_directory(self, program_dir):
+
+    def _run_program_directory(self, program_dir, kind):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
         # If the directory doesn't even exist, move on
@@ -192,7 +211,7 @@ class Run:
                 if not command:
                     raise SubmissionException("Program directory missing 'command' in metadata")
         except FileNotFoundError:
-            raise SubmissionException("Program directory missing 'metadata.yaml'")
+            raise SubmissionException(f"Program directory: {program_dir} missing 'metadata.yaml'")
 
         # I believe these are unused now,
         # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
@@ -224,7 +243,7 @@ class Run:
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
         # This runs the docker command and asychronously passes data
-        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd))
+        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
 
         logger.info(f"Program finished")
 
@@ -232,21 +251,40 @@ class Run:
         logger.info("Putting dir %s in %s" % (directory, url))
 
         zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
+        self._put_file(url, file=zip_path)
+
+    def _put_file(self, url, file=None, raw_data=None):
+
+
+        if file and raw_data:
+            raise Exception("Cannot put both a file and raw_data")
+
+        headers = {
+            'Content-Type': 'application/zip',
+
+            # For Azure only, should turn on/off based on storage...
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-version': '2018-03-28',
+        }
+
+        if file:
+            logger.info("Putting file %s in %s" % (file, url))
+            data = open(file, 'rb')
+            headers['Content-Length'] = str(os.path.getsize(file))
+        elif raw_data:
+            logger.info("Putting raw data %s in %s" % (raw_data, url))
+            data = raw_data
+        else:
+            raise Exception('Must provide data, both file and raw_data cannot be empty')
+
         resp = requests.put(
             url,
-            data=open(zip_path, 'rb'),
-            headers={
-                'Content-Length': str(os.path.getsize(zip_path)),
-                'Content-Type': 'application/zip',
-
-                # For Azure only, should turn on/off based on storage...
-                'x-ms-blob-type': 'BlockBlob',
-                'x-ms-version': '2018-03-28',
-            }
+            data=data,
+            headers=headers,
         )
         logger.info("*** PUT RESPONSE: ***")
-        logger.info(resp)
-        logger.info(resp.content)
+        logger.info(f'response: {resp}')
+        logger.info(f'content: {resp.content}')
 
     def prepare(self):
         self._update_status(STATUS_PREPARING)
@@ -256,7 +294,7 @@ class Run:
         bundles = [
             # (url to file, relative folder destination)
             (self.program_data, 'program'),
-            # (self.ingestion_program_data, 'ingestion_program'),
+            (self.ingestion_program_data, 'ingestion_program'),
             (self.input_data, 'input_data'),
             (self.reference_data, 'reference_data'),
         ]
@@ -284,8 +322,8 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        self._run_program_directory(program_dir)
-        self._run_program_directory(ingestion_program_dir)
+        self._run_program_directory(program_dir, kind='program')
+        self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory
         # Download docker image
