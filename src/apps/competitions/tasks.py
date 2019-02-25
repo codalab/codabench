@@ -118,8 +118,13 @@ def run_submission(submission_pk, is_scoring=False):
             run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
 
     # Detail logs like stdout/etc.
-    for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
-        new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
+    if not is_scoring:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
+    else:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+
+    for detail_name in detail_names:
+        new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name, is_scoring=is_scoring)
         new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
         run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
 

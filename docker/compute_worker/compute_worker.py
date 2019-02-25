@@ -82,10 +82,6 @@ class Run:
     """
 
     def __init__(self, run_args):
-        self.ingestion_stderr = run_args['ingestion_stderr']
-        self.ingestion_stdout = run_args['ingestion_stdout']
-        self.stderr = run_args['stderr']
-        self.stdout = run_args['stdout']
         # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -98,6 +94,8 @@ class Run:
         self.secret = run_args["secret"]
         self.result = run_args["result"]  # TODO, rename this to result_url
         self.execution_time_limit = run_args["execution_time_limit"]
+        # stdout and stderr
+        self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
 
         self.program_data = run_args.get("program_data", None)
         self.ingestion_program_data = run_args.get("ingestion_program", None)
@@ -109,6 +107,23 @@ class Run:
         websocket_host = api_url_parsed.netloc
         websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
+
+    def _get_stdout_stderr_file_names(self, run_args):
+        if not self.is_scoring:
+            DETAILED_OUTPUT_NAMES = [
+                "prediction_stdout",
+                "prediction_stderr",
+                "prediction_ingestion_stdout",
+                "prediction_ingestion_stderr",
+            ]
+        else:
+            DETAILED_OUTPUT_NAMES = [
+                "scoring_stdout",
+                "scoring_stderr",
+                "scoring_ingestion_stdout",
+                "scoring_ingestion_stderr",
+            ]
+        return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:

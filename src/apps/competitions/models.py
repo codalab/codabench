@@ -111,15 +111,22 @@ class Phase(models.Model):
 
 
 class SubmissionDetails(models.Model):
-    DETAILED_OUTPUT_NAMES = [
-        "stdout",
-        "stderr",
-        "ingestion_stdout",
-        "ingestion_stderr",
+    DETAILED_OUTPUT_NAMES_PREDICTION = [
+        "prediction_stdout",
+        "prediction_stderr",
+        "prediction_ingestion_stdout",
+        "prediction_ingestion_stderr",
+    ]
+    DETAILED_OUTPUT_NAMES_SCORING = [
+        "scoring_stdout",
+        "scoring_stderr",
+        "scoring_ingestion_stdout",
+        "scoring_ingestion_stderr",
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
+    is_scoring = models.BooleanField(default=False)
 
 
 class Submission(models.Model):
