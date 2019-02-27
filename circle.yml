@@ -24,7 +24,7 @@ jobs:
       - run: npm install stylus riot -g
       - run: npm run build-stylus
       - run: npm run build-riot
-      - run: python manage.py collectstatic --noinput
+
       - run:
           name: Download Selenium
           command: |
@@ -39,6 +39,7 @@ jobs:
           key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
           paths:
             - ~/.cache/pip
+      - run: python manage.py collectstatic --noinput
 
       # Tests
       - run: mkdir artifacts/
