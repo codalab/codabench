@@ -28,7 +28,7 @@ jobs:
       - run: cp .env_sample .env
       - run: docker-compose run -d minio
       - run:
-          command: docker-compose run -d createbuckets
+          command: docker-compose run createbuckets
           background: true
       - run:
           name: Download Selenium
