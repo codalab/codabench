@@ -18,7 +18,8 @@ jobs:
       - run: mkdir test-reports
 
       # Setup env, background tasks, cache
-      - run: sudo apt-get update && sudo apt-get install nodejs-legacy
+      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+      - run: nvm install 6.14.4 
       - run: sudo npm install stylus riot -g
       - run: npm run build-stylus
       - run: npm run build-riot
