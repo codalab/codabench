@@ -26,7 +26,10 @@ jobs:
       - run: npm run build-stylus
       - run: npm run build-riot
       - run: cp .env_sample .env
-      - run: docker-compose run -d createbuckets
+      - run: docker-compose run -d minio
+      - run:
+          command: docker-compose run -d createbuckets
+          background: true
       - run:
           name: Download Selenium
           command: |
