@@ -20,8 +20,8 @@ class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('phase',)
-    search_fields = ('name', 'description',)
+    filter_fields = ('phase__competition', 'phase', 'status')
+    search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     # TODO! Security, who can access/delete/etc this?
 
     def check_object_permissions(self, request, obj):

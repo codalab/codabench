@@ -20,6 +20,7 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
     filename = fields.SerializerMethodField(read_only=True)
+    owner = fields.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -36,6 +37,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'status_details',
             'scores',
             'leaderboard',
+            'owner',
         )
         extra_kwargs = {
             "phase": {"read_only": True},
@@ -45,6 +47,10 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
+
+    @staticmethod
+    def get_owner(instance):
+        return str(instance.owner)
 
 
 class SubmissionCreationSerializer(serializers.ModelSerializer):

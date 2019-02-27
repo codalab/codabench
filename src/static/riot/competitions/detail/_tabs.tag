@@ -6,6 +6,7 @@
             <div class="item" data-tab="phases_tab">Phases</div>
             <div class="active item" data-tab="participate_tab">Submissions</div>
             <div class="item" data-tab="results_tab">Leader Boards</div>
+            <div class="item" data-tab="admin_tab">Admin</div> <!-- TODO make this only show if user is comp creator or collaborator or super?-->
         </div>
         <div class="ui tab" data-tab="learn_the_details_tab">
             <div class="ui grid">
@@ -159,6 +160,26 @@
                               leaderboards="{ competition.leaderboards }"></leaderboards>
             </div>
         </div>
+        <div class="admin-tab ui tab" data-tab="admin_tab">
+            <div class="ui side green tabular secondary menu">
+                <div class="active item" data-tab="_tab_submission_management">
+                    Submission Management
+                </div>
+                <div class="item" data-tab="_tab_participant_management">
+                    Participant Management
+                </div>
+            </div>
+            <div class="ui active tab" data-tab="_tab_submission_management">
+                <div class="ui">
+                    <submission-manager admin="true" competition="{ competition }"></submission-manager>
+                </div>
+            </div>
+            <div class="ui tab" data-tab="_tab_participant_management">
+                <div class="ui">
+                    <h3>Stuff for managing participants</h3>
+                </div>
+            </div>
+        </div>
     </div>
         <style type="text/stylus">
             .comp-tabs
@@ -191,6 +212,12 @@
                     width 85%
 
             .phases-tab
+                margin 0 auto
+                width 100%
+                @media screen and (min-width 768px)
+                    width 85%
+
+            .admin-tab
                 margin 0 auto
                 width 100%
                 @media screen and (min-width 768px)

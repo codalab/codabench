@@ -81,9 +81,9 @@ CODALAB.api = {
     can_make_submissions: function (phase_id) {
         return CODALAB.api.request('GET', `${URLS.API}can_make_submission/${phase_id}`)
     },
-    get_submissions: function (phase_pk) {
+    get_submissions: function (filters) {
         // return CODALAB.api.request('GET', URLS.API + `submissions/?q=${query || ''}&type=${type || ''}`)
-        return CODALAB.api.request('GET', `${URLS.API}submissions/?phase=${phase_pk}`)
+        return CODALAB.api.request('GET', `${URLS.API}submissions/`, filters)
     },
     delete_submission: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + id + "/")
