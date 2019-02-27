@@ -18,6 +18,10 @@ jobs:
       - run: mkdir test-reports
 
       # Setup env, background tasks, cache
+      - run: npm install npm-watch stylus riot -g
+      - run: npm run build-stylus
+      - run: npm run build-riot
+      - run: python manage.py collectstatic --noinput
       - run:
           name: Download Selenium
           command: |
