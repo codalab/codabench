@@ -18,7 +18,8 @@ jobs:
       - run: mkdir test-reports
 
       # Setup env, background tasks, cache
-      - run: npm install stylus riot -g
+      - run: sudo apt-get update && sudo apt-get install nodejs-legacy
+      - run: sudo npm install stylus riot -g
       - run: npm run build-stylus
       - run: npm run build-riot
       - run: python manage.py collectstatic --noinput
