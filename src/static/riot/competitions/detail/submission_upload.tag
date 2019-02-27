@@ -122,7 +122,8 @@
                 console.log(event)
 
                 try {
-                    var data = JSON.parse(event.data);
+                    var event_data = event.data.split(';')[1]
+                    var data = JSON.parse(event_data);
 
                     if(data.type === "error_rate_update") {
                         self.add_graph_data_point(data.error_rate)
