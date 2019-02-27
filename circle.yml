@@ -33,6 +33,7 @@ jobs:
             - ~/.cache/pip
 
       # Tests
+      - run: ./manage.py collectstatic
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
       - run: py.test -m e2e
