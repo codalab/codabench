@@ -8,7 +8,8 @@ version: 2
 
 jobs:
   test:
-    pre: ./manage.py collectstatic
+    environment:
+      BASH_ENV: "~/.nvm/nvm.sh"
     docker:
       - image: circleci/python:3.6-jessie-browsers
     steps:
@@ -19,7 +20,7 @@ jobs:
 
       # Setup env, background tasks, cache
       - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-      - run: sh ~/.nvm/nvm.sh && nvm install 6.14.4
+      - run: nvm install 6.14.4
       - run: npm install stylus riot -g
       - run: npm run build-stylus build-riot
       - run: python manage.py collectstatic --noinput
