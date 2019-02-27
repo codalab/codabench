@@ -14,8 +14,8 @@ jobs:
       - image: circleci/python:3.6-jessie-browsers
 
     pre:
-      # Make our environment take all .env variables
-      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> $BASH_ENV
+      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
+      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> ~/.nvm/nvm.sh
 
     steps:
       - checkout
