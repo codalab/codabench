@@ -12,6 +12,7 @@ class TestCompetitions(SeleniumTestCase):
 
     def test_task_solution_competition_upload(self):
         self.get(reverse('competitions:upload'))
+        self.circleci_screenshot(name='uploading_task.png')
         self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/task_competition.zip')
         self.wait(10)  # TODO: is there a better way to wait for comp to finish processing?
         self.assert_element_is_visible('div .ui.success.message')
