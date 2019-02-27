@@ -8,6 +8,7 @@ version: 2
 
 jobs:
   test:
+    pre: ./manage.py collectstatic
     docker:
       - image: circleci/python:3.6-jessie-browsers
     steps:
@@ -33,7 +34,6 @@ jobs:
             - ~/.cache/pip
 
       # Tests
-      - run: ./manage.py collectstatic
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
       - run: py.test -m e2e
