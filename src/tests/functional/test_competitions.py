@@ -14,7 +14,7 @@ class TestCompetitions(SeleniumTestCase):
         self.get(reverse('competitions:upload'))
         self.circleci_screenshot(name='uploading_task.png')
         self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/task_competition.zip')
-        self.wait(30)
+        self.wait(10)
         # TODO: find a better way to wait for competition to finish uploading. This is what fails on CircleCI
         self.assert_element_is_visible('div .ui.success.message')
         comp = self.user.competitions.first()
@@ -35,7 +35,7 @@ class TestCompetitions(SeleniumTestCase):
     def test_legacy_competition_upload(self):
         self.get(reverse('competitions:upload'))
         self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/legacy_competition.zip')
-        self.wait(30)
+        self.wait(10)
         # TODO: find a better way to wait for competition to finish uploading. This is what fails on CircleCI
         self.assert_element_is_visible('div .ui.success.message')
         comp = self.user.competitions.first()
