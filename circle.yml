@@ -12,23 +12,21 @@ jobs:
       BASH_ENV: "~/.nvm/nvm.sh"
     docker:
       - image: circleci/python:3.6-jessie-browsers
-        environment:
-          # Minio local storage Django settings (mocks an S3 endpoint)
-          AWS_ACCESS_KEY_ID: testkey
-          AWS_SECRET_ACCESS_KEY: testsecret
-          AWS_STORAGE_BUCKET_NAME: public
-          AWS_STORAGE_PRIVATE_BUCKET_NAME: private
-          # NOTE! port 9000 here should match $MINIO_PORT
-          AWS_S3_ENDPOINT_URL: http://docker.for.mac.localhost:9000/
-          AWS_QUERYSTRING_AUTH: False
-      - image: minio/minio:latest
-        environment:
-          # Minio local storage example
-          MINIO_ACCESS_KEY: testkey
-          MINIO_SECRET_KEY: testsecret
-          # NOTE! if you change this port, change it in AWS_S3_ENDPOINT_URL as well
-          MINIO_PORT: 9000
+        env_file: .env
+      - image: minio/minio:RELEASE.2018-12-06T01-27-43Z
+        env_file: .env
         command: server /export
+        ports: $MINIO_PORT:9000
+      - image: minio/mc
+        env_file: .env
+        entrypoint: >
+          /bin/sh -c "
+          /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+          /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+          /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+          /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+          exit 0;
+          "
     steps:
       - checkout
 
