@@ -16,7 +16,7 @@ jobs:
       # Directory for any test reports
       - run: mkdir test-reports
 
-      # Selenium setup
+      # Setup env, background tasks, cache
       - run:
           name: Download Selenium
           command: |
@@ -24,15 +24,19 @@ jobs:
       - run:
           name: Start Selenium
           command: |
-            java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log
+            java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log -enablePassThrough false
           background: true
-
-      # setup environment
-
       - run: sudo pip install -r requirements.dev.txt
+      - save_cache:
+          key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+          paths:
+            - ~/.cache/pip
 
       # Tests
+      - run: mkdir artifacts/
       - run: py.test
+      - store_artifacts:  # like screenshots
+          path: artifacts/
       - run: flake8 src/ --ignore E501
 
 workflows:

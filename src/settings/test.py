@@ -16,3 +16,5 @@ DATABASES['default'] = {  # noqa: F405
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: False
 }
+
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
