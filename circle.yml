@@ -12,6 +12,12 @@ jobs:
       BASH_ENV: "~/.nvm/nvm.sh"
     docker:
       - image: circleci/python:3.6-jessie-browsers
+        environment:
+          MINIO_PORT: 9000
+          MINIO_ACCESS_KEY: testkey
+          MINIO_SECRET_KEY: testsecret
+          AWS_STORAGE_BUCKET_NAME: public
+          AWS_STORAGE_PRIVATE_BUCKET_NAME: private
     steps:
       - checkout
       - setup_remote_docker
@@ -25,7 +31,7 @@ jobs:
       - run: npm install stylus riot -g
       - run: npm run build-stylus
       - run: npm run build-riot
-      - run: docker-compose up -d
+      - run: docker-compose run minio
 
       - run:
           name: Download Selenium
