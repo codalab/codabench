@@ -45,8 +45,9 @@ jobs:
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
       - run: cp .env_sample .env
-      - run: docker-compose run -d minio
-#      - run: docker-compose run createbuckets
+#      - run: docker-compose run -d minio
+      # This also makes minio, apparently??
+      - run: docker-compose run createbuckets
 
       - run:
           name: Download Selenium
