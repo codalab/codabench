@@ -29,9 +29,6 @@ jobs:
 
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: ls -aln ~/.nvm
-      - run: ls -aln ../.nvm
-
       - run: echo "set -o allexport; source .env_sample; set +o allexport" >> ../.nvm/nvm.sh
 
       - run: cp .env_sample .env
@@ -56,7 +53,7 @@ jobs:
       # Tests
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
-      - run: py.test -m e2e
+      - run: AWS_S3_ENDPOINT_URL=localhost py.test -m e2e
       - store_artifacts:  # like screenshots
           path: artifacts/
       - run: flake8 src/ --ignore E501
