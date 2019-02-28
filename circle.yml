@@ -29,8 +29,10 @@ jobs:
 
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: touch $BASH_ENV
       - run: ls -aln ~
+      - run: mkdir ~/.nvm
+      - run: touch $BASH_ENV
+
       - run: echo "set -o allexport; source .env_sample; set +o allexport" >> $BASH_ENV
 
       - run: cp .env_sample .env
