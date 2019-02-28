@@ -21,7 +21,7 @@ jobs:
       - run: mkdir test-reports
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> ~/.nvm/nvm.sh
+      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> $BASH_ENV
 
       # Setup env, background tasks, cache
       - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
