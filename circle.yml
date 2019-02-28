@@ -57,7 +57,7 @@ jobs:
       # Tests
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
-      - run: docker-compose exec django py.test -m e2e
+      - run: docker-compose run django py.test -m e2e
       - store_artifacts:  # like screenshots
           path: artifacts/
       - run: flake8 src/ --ignore E501
