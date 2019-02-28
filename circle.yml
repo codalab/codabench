@@ -50,7 +50,7 @@ jobs:
 
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
       - run: cp .env_sample .env
-      - run: pip install docker-compose
+      - run: sudo pip install docker-compose
 
       # Tests
       - run: mkdir artifacts/
