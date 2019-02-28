@@ -29,9 +29,11 @@ jobs:
 
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
+      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
+      - run: cp .env_sample .env
+      - run: docker-compose run -d minio
+      - run: docker-compose run createbuckets
 
-#      - run: docker-compose run -d minio
-#      - run: docker-compose run createbuckets
       - run:
           name: Download Selenium
           command: |
@@ -41,22 +43,21 @@ jobs:
           command: |
             java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log -enablePassThrough false
           background: true
+
       - run: sudo pip install -r requirements.dev.txt
       - save_cache:
           key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
           paths:
             - ~/.cache/pip
+
       - run: python manage.py collectstatic --noinput
 
-      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
-      - run: cp .env_sample .env
-      - run: sudo pip install docker-compose
+
 
       # Tests
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
-#      - run: py.test -m e2e
-      - run: sh run_selenium_tests.sh
+      - run: py.test -m e2e
       - store_artifacts:  # like screenshots
           path: artifacts/
       - run: flake8 src/ --ignore E501
