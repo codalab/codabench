@@ -30,7 +30,7 @@ jobs:
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: ls -aln ~/.nvm
-      - run: ls -aln /project/.nvm
+      - run: ls -aln .nvm
 
       - run: echo "set -o allexport; source .env_sample; set +o allexport" >> .nvm/nvm.sh
 
