@@ -30,8 +30,9 @@ jobs:
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: ls -aln ~/.nvm
+      - run: ls -aln /project/.nvm
 
-      - run: sudo echo "set -o allexport; source .env_sample; set +o allexport" >> /project/.nvm/nvm.sh
+      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> .nvm/nvm.sh
 
       - run: cp .env_sample .env
       - run: docker-compose run -d minio
