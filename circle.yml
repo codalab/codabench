@@ -13,16 +13,15 @@ jobs:
     docker:
       - image: circleci/python:3.6-jessie-browsers
 
-    pre:
-      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> ~/.nvm/nvm.sh
-
     steps:
       - checkout
       - setup_remote_docker
 
       # Directory for any test reports
       - run: mkdir test-reports
+
+      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
+      - run: echo "set -o allexport; source .env_sample; set +o allexport" >> ~/.nvm/nvm.sh
 
       # Setup env, background tasks, cache
       - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
