@@ -10,6 +10,20 @@ jobs:
   test:
     environment:
       BASH_ENV: ~/.nvm/nvm.sh
+      MINIO_ACCESS_KEY: testkey
+      MINIO_SECRET_KEY: testsecret
+      # NOTE! if you change this port, change it in AWS_S3_ENDPOINT_URL as well
+      MINIO_PORT: 9000
+
+      # Minio local storage Django settings (mocks an S3 endpoint)
+      AWS_ACCESS_KEY_ID: testkey
+      AWS_SECRET_ACCESS_KEY: testsecret
+      AWS_STORAGE_BUCKET_NAME: public
+      AWS_STORAGE_PRIVATE_BUCKET_NAME: private
+      # NOTE! port 9000 here should match $MINIO_PORT
+      AWS_S3_ENDPOINT_URL: http://localhost:9000/
+      AWS_QUERYSTRING_AUTH: False
+
     docker:
       - image: circleci/python:3.6-jessie-browsers
 
@@ -31,7 +45,7 @@ jobs:
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
       - run: cp .env_sample .env
-      - run: docker-compose run -d minio
+      - run: docker-compose run -d minio 
       - run: docker-compose run createbuckets
 
       - run:
@@ -57,7 +71,7 @@ jobs:
       # Tests
       - run: mkdir artifacts/
       - run: py.test -m "not e2e"
-      - run: docker-compose run django py.test -m e2e
+      - run: py.test -m e2e
       - store_artifacts:  # like screenshots
           path: artifacts/
       - run: flake8 src/ --ignore E501
