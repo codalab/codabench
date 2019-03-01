@@ -26,17 +26,6 @@ jobs:
 
     docker:
       - image: circleci/python:3.6-jessie-browsers
-#      - image: minio/minio:RELEASE.2018-12-06T01-27-43Z
-#        name: minio
-#      - image: minio/mc:RELEASE.2019-02-06T20-26-56Z
-#        entrypoint: |
-#          /bin/sh -c "
-#          /usr/bin/mc config host add minio_docker http://minio:9000 testkey testsecret;
-#          /usr/bin/mc mb minio_docker/public;
-#          /usr/bin/mc mb minio_docker/private;
-#          /usr/bin/mc policy download minio_docker/public;
-#          exit 0;
-#          "
 
     steps:
       - checkout
@@ -78,10 +67,10 @@ jobs:
       - run: wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc
       - run: |
           /bin/sh -c "
-            ./mc config host add minio_docker $AWS_S3_ENDPOINT_URL testkey testsecret;
-            ./mc mb minio_docker/public;
-            ./mc mb minio_docker/private;
-            ./mc policy download minio_docker/public;
+            ./mc config host add minio_docker $AWS_S3_ENDPOINT_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+            ./mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+            ./mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+            ./mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
             exit 0;
           "
 
