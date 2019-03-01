@@ -30,10 +30,10 @@ jobs:
         name: minio
       - image: minio/mc
         entrypoint: |
-          /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
-          /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
-          /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
-          /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+          /usr/bin/mc config host add minio_docker http://minio:9000 testkey testsecret;
+          /usr/bin/mc mb minio_docker/public;
+          /usr/bin/mc mb minio_docker/private;
+          /usr/bin/mc policy download minio_docker/public;
           exit 0;
 
     steps:
