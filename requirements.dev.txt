@@ -5,3 +5,4 @@ flake8==3.4.1
 pytest==3.7.2
 pytest-django==3.4.2
 pytest-pythonpath==0.7.3
+selenium==3.141.0

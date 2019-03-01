@@ -8,4 +8,6 @@ ADD requirements.dev.txt .
 ADD requirements.txt .
 RUN pip install -r requirements.dev.txt
 
+# INSTALL CHROMEDRIVER HERE?
+
 WORKDIR /app

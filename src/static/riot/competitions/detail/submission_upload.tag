@@ -14,8 +14,8 @@
 
         <button onclick="">Show modal</button>
 
-        <div class="ui modal">
-            <i class="close icon"></i>
+        <div id="output-modal" class="ui modal">
+            <i id="close-modal" class="close icon"></i>
             <div class="header">Output</div>
             <div class="content">
                 <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
@@ -122,7 +122,8 @@
                 console.log(event)
 
                 try {
-                    var data = JSON.parse(event.data);
+                    var event_data = event.data.split(';')[1]
+                    var data = JSON.parse(event_data);
 
                     if(data.type === "error_rate_update") {
                         self.add_graph_data_point(data.error_rate)

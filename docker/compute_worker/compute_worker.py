@@ -74,6 +74,13 @@ def run_wrapper(run_args):
 
 
 class Run:
+    """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
+    to.  Currently, the run_args are:
+
+
+
+    """
+
     def __init__(self, run_args):
         # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
