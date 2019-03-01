@@ -210,7 +210,12 @@ REST_FRAMEWORK = {
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',
         '%B %d, %Y',
-    )
+    ),
+    # # specifying the renderers
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
 }
 
 # OAuth Toolkit

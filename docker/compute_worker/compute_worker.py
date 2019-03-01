@@ -63,6 +63,9 @@ def run_wrapper(run_args):
         run.start()
         if run.is_scoring:
             run.push_scores()
+            # TODO: Also output push result at some point, so SCORING STEPS have output as well?
+            #   run.push_result()
+            #   when this is changed, make sure to include files in submission manager download section
         else:
             run.push_result()
     except SubmissionException as e:

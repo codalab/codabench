@@ -88,6 +88,12 @@ CODALAB.api = {
     delete_submission: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + id + "/")
     },
+    cancel_submission: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
+    },
+    re_run_submission: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/re_run_submission/`)
+    },
     // create_submission: function (form_data, progress_update_callback) {
     //     // NOTE: this function takes a special "form_data" not like the normal
     //     // dictionary other methods take
@@ -110,6 +116,9 @@ CODALAB.api = {
     // },
     create_submission: function(submission_metadata) {
         return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
+    },
+    get_submission_files: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_logs/`)
     },
 
     /*---------------------------------------------------------------------

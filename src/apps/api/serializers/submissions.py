@@ -1,9 +1,10 @@
 from os.path import basename
 from rest_framework import serializers, fields
 
-from competitions.models import Submission
+from competitions.models import Submission, SubmissionDetails
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
+from utils.data import make_url_sassy
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
@@ -98,3 +99,47 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             from competitions.tasks import run_submission
             run_submission(instance.pk, is_scoring=True)
         return super().update(instance, validated_data)
+
+
+class SubmissionDetailSerializer(serializers.ModelSerializer):
+    data_file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubmissionDetails
+        fields = (
+            'name',
+            'data_file',
+        )
+
+    @staticmethod
+    def get_data_file(instance):
+        return make_url_sassy(instance.data_file.name)
+
+
+class SubmissionFilesSerializer(serializers.ModelSerializer):
+    logs = serializers.SerializerMethodField()
+    data_file = serializers.SerializerMethodField()
+    result = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Submission
+        fields = (
+            'logs',
+            'data_file',
+            'result',
+        )
+
+    @staticmethod
+    def get_logs(instance):
+        return SubmissionDetailSerializer(instance.details.all(), many=True).data
+
+    @staticmethod
+    def get_data_file(instance):
+        return make_url_sassy(instance.data.data_file.name)
+
+    @staticmethod
+    def get_result(instance):
+        return make_url_sassy(instance.result.name)
+
+
+

@@ -148,7 +148,7 @@
                 <submission-upload phases="{ competition.phases }"></submission-upload>
             </div>
             <div>
-                <submission-manager></submission-manager>
+                <submission-manager competition="{ competition }"></submission-manager>
             </div>
         </div>
 
