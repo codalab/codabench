@@ -21,7 +21,7 @@ jobs:
       AWS_STORAGE_BUCKET_NAME: public
       AWS_STORAGE_PRIVATE_BUCKET_NAME: private
       # NOTE! port 9000 here should match $MINIO_PORT
-      AWS_S3_ENDPOINT_URL: http://minio:9000/
+      AWS_S3_ENDPOINT_URL: http://localhost:9000/
       AWS_QUERYSTRING_AUTH: False
 
     docker:
@@ -54,7 +54,7 @@ jobs:
 
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: sed -i 's/docker.for.mac.localhost/minio/g' .env_sample
+      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
       - run: cp .env_sample .env
 
       - run:
@@ -78,7 +78,7 @@ jobs:
       - run: wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc
       - run: |
           /bin/sh -c "
-            ./mc config host add minio_docker http://minio:9000 testkey testsecret;
+            ./mc config host add minio_docker $AWS_S3_ENDPOINT_URL testkey testsecret;
             ./mc mb minio_docker/public;
             ./mc mb minio_docker/private;
             ./mc policy download minio_docker/public;
