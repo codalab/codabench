@@ -63,16 +63,16 @@ jobs:
             curl -O http://selenium-release.storage.googleapis.com/3.5/selenium-server-standalone-3.5.3.jar
       - run:
           name: Start Selenium
-          command: |
-            java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log -enablePassThrough false
+          command: java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log -enablePassThrough false
           background: true
 
+      - run: |
+          wget https://dl.minio.io/server/minio/release/linux-amd64/minio
+          chmod +x minio
+          mkdir -p data/
       - run:
           name: Minio
-          command: |
-            wget https://dl.minio.io/server/minio/release/linux-amd64/minio
-            chmod +x minio
-            ./minio server /data
+          command: ./minio server data/
           background: true
 
       - run: wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc
