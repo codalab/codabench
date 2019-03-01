@@ -30,11 +30,13 @@ jobs:
         name: minio
       - image: minio/mc:RELEASE.2019-02-06T20-26-56Z
         entrypoint: |
+          /bin/sh -c "
           /usr/bin/mc config host add minio_docker http://minio:9000 testkey testsecret;
           /usr/bin/mc mb minio_docker/public;
           /usr/bin/mc mb minio_docker/private;
           /usr/bin/mc policy download minio_docker/public;
           exit 0;
+          "
 
     steps:
       - checkout
