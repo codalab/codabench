@@ -100,9 +100,10 @@ def run_submission(submission_pk, is_scoring=False):
     if submission.phase.is_task_and_solution:
         for task in submission.phase.tasks.all():
             if task.ingestion_program:
-                if not task.ingestion_program.only_during_scoring or is_scoring:
+                if not task.ingestion_only_during_scoring or is_scoring:
                     run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                    run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
+                    if task.input_data:
+                        run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
 
             if is_scoring:
                 run_arguments['program_data'] = make_url_sassy(task.scoring_module.scoring_program.data_file.name)

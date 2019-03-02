@@ -1,6 +1,7 @@
 import time
 
 import json
+import shutil
 import uuid
 import websockets
 
@@ -95,6 +96,7 @@ class Run:
         self.result = run_args["result"]  # TODO, rename this to result_url
         self.execution_time_limit = run_args["execution_time_limit"]
 
+        self.ingestion_program_data = run_args.get("ingestion_program", None)
         self.program_data = run_args.get("program_data", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
@@ -177,7 +179,7 @@ class Run:
             if stderr:
                 logger.info(f'[stderr]\n{stderr.decode()}')
 
-    def _run_program_directory(self, program_dir):
+    def _run_program_directory(self, program_dir, can_be_output=False):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
         # If the directory doesn't even exist, move on
@@ -192,7 +194,12 @@ class Run:
                 if not command:
                     raise SubmissionException("Program directory missing 'command' in metadata")
         except FileNotFoundError:
-            raise SubmissionException("Program directory missing 'metadata.yaml'")
+            if can_be_output:
+                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                            "program so move it to output")
+                shutil.move(program_dir, self.output_dir)
+            else:
+                raise SubmissionException("Program directory missing 'metadata.yaml'")
 
         # I believe these are unused now,
         # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
@@ -214,6 +221,7 @@ class Run:
             '-w', '/app',
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
+            '-e', f'OUTPUT_DIR={self.output_dir}',
             # Note that hidden data dir is excluded here!
             # Set the right image
             self.docker_image,
@@ -256,7 +264,7 @@ class Run:
         bundles = [
             # (url to file, relative folder destination)
             (self.program_data, 'program'),
-            # (self.ingestion_program_data, 'ingestion_program'),
+            (self.ingestion_program_data, 'ingestion_program'),
             (self.input_data, 'input_data'),
             (self.reference_data, 'reference_data'),
         ]
@@ -284,7 +292,7 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        self._run_program_directory(program_dir)
+        self._run_program_directory(program_dir, can_be_output=True)
         self._run_program_directory(ingestion_program_dir)
 
         # Unpack submission and data into some directory
