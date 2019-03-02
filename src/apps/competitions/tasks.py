@@ -11,6 +11,7 @@ from io import BytesIO
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
+from rest_framework.exceptions import ValidationError
 
 from celery_config import app
 from dateutil import parser
@@ -98,10 +99,10 @@ def run_submission(submission_pk, is_scoring=False):
 
     if submission.phase.is_task_and_solution:
         for task in submission.phase.tasks.all():
-            if task.ingestion_module:
-                if not task.ingestion_module.only_during_scoring or is_scoring:
-                    run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_module.ingestion_program.data_file.name)
-                    run_arguments['input_data'] = make_url_sassy(task.ingestion_module.input_data.datafile.name)
+            if task.ingestion_program:
+                if not task.ingestion_program.only_during_scoring or is_scoring:
+                    run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+                    run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
 
             if is_scoring:
                 run_arguments['program_data'] = make_url_sassy(task.scoring_module.scoring_program.data_file.name)
@@ -272,9 +273,14 @@ def unpack_competition(competition_dataset_pk):
             # Pages
             for index, page in enumerate(competition_yaml.get('pages')):
                 try:
+                    page_content = open(os.path.join(temp_directory, page["file"])).read()
+
+                    if not page_content:
+                        raise CompetitionUnpackingException(f"Page '{page['file']}' is empty, it must contain content.")
+
                     competition['pages'].append({
                         "title": page.get("title"),
-                        "content": open(os.path.join(temp_directory, page["file"])).read(),
+                        "content": page_content,
                         "index": index
                     })
                 except FileNotFoundError:
@@ -455,7 +461,12 @@ def unpack_competition(competition_dataset_pk):
                 # takes the request.user
                 context={"created_by": creator}
             )
-            serializer.is_valid(raise_exception=True)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except ValidationError as e:
+                # TODO Convert this error to something nice? Output's something like this currently:
+                # "{'pages': [{'content': [ErrorDetail(string='This field may not be blank.', code='blank')]}]}"
+                raise CompetitionUnpackingException(str(e))
             competition = serializer.save()
 
             status.status = CompetitionCreationTaskStatus.FINISHED
@@ -465,6 +476,8 @@ def unpack_competition(competition_dataset_pk):
 
             # TODO: If something fails delete baby datasets and such!!!!
     except CompetitionUnpackingException as e:
+        # We can return these exception details because we're generating the exception -- it
+        # should not contain anything private
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
         status.save()
