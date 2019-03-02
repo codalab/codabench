@@ -100,16 +100,17 @@ def run_submission(submission_pk, is_scoring=False):
     if submission.phase.is_task_and_solution:
         for task in submission.phase.tasks.all():
             if task.ingestion_program:
-                if not task.ingestion_only_during_scoring or is_scoring:
+                if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
                     run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                    if task.input_data:
-                        run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
+                    # if task.input_data:
+                    #     run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
 
+            # TODO: Too much DRY violation in here. A lot of repeated logic
             if is_scoring:
-                run_arguments['program_data'] = make_url_sassy(task.scoring_module.scoring_program.data_file.name)
-                run_arguments['result'] = make_url_sassy(submission.result.name, permission='w')
-                if task.scoring_module.reference_data:
-                    run_arguments['reference_data'] = make_url_sassy(task.scoring_module.reference_data.data_file.name)
+                run_arguments['program_data'] = make_url_sassy(task.scoring_program.data_file.name)
+                run_arguments['result'] = make_url_sassy(submission.result.name)
+                if task.reference_data:
+                    run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
             else:
                 # Pre-generate file path by setting empty file here
                 submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
