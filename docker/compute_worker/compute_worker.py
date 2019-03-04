@@ -168,10 +168,10 @@ class Run:
                 if data:
                     print("DATA!!!! " + str(data))
                     # TODO: Sometimes we hit InvalidState here, are we flushign buffer properly before ending stuff?
-                    try:
-                        await websocket.send(data.decode())
-                    except websockets.exceptions.InvalidState:
-                        break
+                    # try:
+                    await websocket.send(data.decode())
+                    # except websockets.exceptions.InvalidState:
+                    #     break
                 else:
                     break
 
