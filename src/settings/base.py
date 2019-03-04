@@ -210,7 +210,7 @@ REST_FRAMEWORK = {
     'DATETIME_INPUT_FORMATS': (
         'iso-8601',
         '%B %d, %Y',
-    ),
+    )
 }
 
 # OAuth Toolkit

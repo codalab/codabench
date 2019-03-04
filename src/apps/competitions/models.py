@@ -211,10 +211,10 @@ class Submission(models.Model):
 
     def cancel(self):
         from celery_config import app
-        app.control.revoke(self.task_id, terminate=True)
-        # TODO: Should you be able to cancel a submission that has already finished?
-        self.status = Submission.CANCELLED
-        self.save()
+        if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
+            app.control.revoke(self.task_id, terminate=True)
+            self.status = Submission.CANCELLED
+            self.save()
 
 
 class CompetitionParticipant(models.Model):

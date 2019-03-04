@@ -273,7 +273,6 @@ class Run:
 
     def _put_file(self, url, file=None, raw_data=None):
 
-
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
 

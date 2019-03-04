@@ -223,8 +223,6 @@
             &.selected
                 opacity 1 !important
                 color #40f940
-        .hidden
-            display: none !important
 
         .clickable
             &:hover
