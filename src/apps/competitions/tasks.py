@@ -4,6 +4,7 @@ import logging
 import os
 
 import oyaml as yaml
+import shutil
 import zipfile
 
 from io import BytesIO
@@ -194,6 +195,7 @@ def get_data_key(obj, file_type, temp_directory, creator):
             name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
             was_created_by_competition=True,
         )
+        file_path = _zip_if_directory(file_path)
         new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
         return new_dataset.key
     elif len(file_name) in (32, 36):
@@ -204,6 +206,23 @@ def get_data_key(obj, file_type, temp_directory, creator):
         return file_name
     else:
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
+
+
+
+def _zip_if_directory(path):
+    """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
+    file"""
+    logger.info(f"Checking if path is directory: {path}")
+    if os.path.isdir(path):
+        base_path = os.path.dirname(os.path.dirname(path))  # gets parent directory
+        folder_name = os.path.basename(path.strip("/"))
+        logger.info(f"Zipping it up because it is directory, saving it to: {folder_name}.zip")
+        new_path = shutil.make_archive(os.path.join(base_path, folder_name), 'zip', path)
+        logger.info("New zip file path = " + new_path)
+        return new_path
+    else:
+        return path
+
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
@@ -365,6 +384,7 @@ def unpack_competition(competition_dataset_pk):
                                 description=description,
                                 was_created_by_competition=True,
                             )
+                            file_path = _zip_if_directory(file_path)
                             new_solution_data.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
                             new_solution = {
                                 'data': new_solution_data.key,
@@ -430,6 +450,7 @@ def unpack_competition(competition_dataset_pk):
                                 name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
                                 was_created_by_competition=True,
                             )
+                            file_path = _zip_if_directory(file_path)
                             # This saves the file AND saves the model
                             new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
 
