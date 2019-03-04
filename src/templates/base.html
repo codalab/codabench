@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js" integrity="sha256-7/yoZS3548fXSRXqc/xYzjsmuW3sFKzuvOCHd06Pmps=" crossorigin="anonymous"></script>
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -172,6 +173,8 @@
         username: '{{ request.user.username }}',
         email: '{{ request.user.email }}',
         bio: '{{ request.user.bio }}',
+        is_staff: '{{ request.user.is_staff }}',
+        is_superuser: '{{ request.user.is_superuser }}',
     }
     // Load in URLs or other django generated goodies
     URLS = {

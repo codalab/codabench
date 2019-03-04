@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div class="competition-creator">Organized by: {competition.created_by}</div>
-                <div class="competition-secret-key" show="{ competition.show_secret_key }">
+                <div class="competition-secret-key" if="{ competition.show_secret_key }">
                     <span style="color: #DB2828;">Secret url:</span>
                         https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }
                 </div>

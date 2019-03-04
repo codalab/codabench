@@ -77,10 +77,20 @@ class SubmissionViewSet(ModelViewSet):
         # The CSV renderer will only include these fields in context["header"]
         context["header"] = (
             'owner',
+            'created_when',
+            'status',
+            'score',
+            'appear_on_leaderboards',
+            'phase',
         )
         # Human names for the fields
         context["labels"] = {
             'owner': 'Owner',
+            'created_when': 'Created When',
+            'status': 'Status',
+            'score': 'Score',
+            'appear_on_leaderboards': 'Appears on Leaderboard',
+            'phase': 'Phase',
         }
         return context
 
@@ -92,9 +102,11 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('GET',))
     def re_run_submission(self, request, pk):
-        # TODO: Some kind of permission check?
-        instance = self.get_object()
-        instance.re_run()
+        submission = self.get_object()
+        competition = submission.phase.competition
+        if not request.user.is_superuser and request.user != competition.created_by and request.user not in competition.collaborators.all():
+            raise PermissionDenied('You do not have permission to re-run submissions')
+        submission.re_run()
         return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))

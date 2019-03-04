@@ -74,6 +74,9 @@ CODALAB.api = {
     toggle_competition_publish: function (pk) {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/toggle_publish/`)
     },
+    re_run_phase_submissions: function (phase_pk) {
+        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/rerun_submissions/`)
+    },
 
     /*---------------------------------------------------------------------
          Submissions
@@ -93,6 +96,10 @@ CODALAB.api = {
     },
     re_run_submission: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/re_run_submission/`)
+    },
+    get_submission_csv_URL: function (filters) {
+        filters.format = "csv"
+        return `${URLS.API}submissions/?${$.param(filters)}`
     },
     // create_submission: function (form_data, progress_update_callback) {
     //     // NOTE: this function takes a special "form_data" not like the normal
@@ -130,7 +137,12 @@ CODALAB.api = {
     get_leaderboard: function(leaderboard_pk) {
         return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
     },
-
+    get_leaderboard_details: function(leaderboard_pk) {
+        return CODALAB.api.request('GET', `${URLS.API}get_leaderboard_details/${leaderboard_pk}`)
+    },
+    update_submission_score: function(pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
+    },
     /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/

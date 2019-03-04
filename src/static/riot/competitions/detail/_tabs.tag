@@ -6,7 +6,7 @@
             <div class="item" data-tab="phases_tab">Phases</div>
             <div class="active item" data-tab="participate_tab">Submissions</div>
             <div class="item" data-tab="results_tab">Leader Boards</div>
-            <div class="item" data-tab="admin_tab">Admin</div> <!-- TODO make this only show if user is comp creator or collaborator or super?-->
+            <div class="item" data-tab="admin_tab" if="{competition.is_admin}">Admin</div>
         </div>
         <div class="ui tab" data-tab="learn_the_details_tab">
             <div class="ui grid">
@@ -160,7 +160,7 @@
                               leaderboards="{ competition.leaderboards }"></leaderboards>
             </div>
         </div>
-        <div class="admin-tab ui tab" data-tab="admin_tab">
+        <div if="{competition.is_admin}" class="admin-tab ui tab" data-tab="admin_tab">
             <div class="ui side green tabular secondary menu">
                 <div class="active item" data-tab="_tab_submission_management">
                     Submission Management
@@ -233,6 +233,11 @@
 
             CODALAB.events.on('competition_loaded', function (competition) {
                 self.competition = competition
+                self.competition.is_admin = (CODALAB.state.user.username === competition.created_by ||
+                    competition.collaborators.includes(parseInt(CODALAB.state.user.id)) ||
+                    CODALAB.state.user.is_superuser === 'True' ||
+                    CODALAB.state.user.is_staff === 'True'
+                )
                 self.update()
                 $('.tabular.menu .item').tab();
             })

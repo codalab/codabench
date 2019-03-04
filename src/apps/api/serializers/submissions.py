@@ -13,6 +13,7 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmissionScore
         fields = (
+            'id',
             'index',
             'score',
         )
@@ -120,6 +121,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     logs = serializers.SerializerMethodField()
     data_file = serializers.SerializerMethodField()
     result = serializers.SerializerMethodField()
+    leaderboards = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -127,6 +129,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'logs',
             'data_file',
             'result',
+            'leaderboards'
         )
 
     @staticmethod
@@ -140,6 +143,10 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_result(instance):
         return make_url_sassy(instance.result.name)
+
+    @staticmethod
+    def get_leaderboards(instance):
+        return instance.scores.all().values_list('column__leaderboard')
 
 
 

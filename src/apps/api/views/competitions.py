@@ -76,6 +76,15 @@ class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
 
+    @action(detail=True)
+    def rerun_submissions(self, request, pk):
+        phase = self.get_object()
+        if request.user != phase.competition.created_by and request.user not in phase.competition.collaborators.all() and not request.user.is_superuser:
+            raise PermissionDenied('You do not have permission to re-run submissions')
+        for submission in phase.submissions.all():
+            submission.re_run()
+        return Response({})
+
 
 class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
     queryset = CompetitionCreationTaskStatus.objects.all()
