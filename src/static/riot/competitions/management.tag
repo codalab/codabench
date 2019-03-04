@@ -1,25 +1,15 @@
 <competition-management>
-    <h1>Competition Management</h1>
-
-    <h3>Todo:</h3>
-    <ol>
-        <li><s>Actually filter this list by who owns it</s></li>
-        <li>Create</li>
-        <li>Edit</li>
-        <li>Delete</li>
-    </ol>
-
-    <div class="ui right aligned grid">
+    <div class="ui grid">
         <div class="sixteen wide column">
-            <a class="ui green button" href="{ URLS.COMPETITION_UPLOAD }">
+            <h1 style="display: inline-block;">Competition Management</h1>
+            <a class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>
-            <a class="ui green button" href="{ URLS.COMPETITION_ADD }">
+            <a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
                 <i class="add square icon"></i> Create
             </a>
         </div>
     </div>
-    <div class="ui divider"></div>
     <!-- <competition-list competitions="{ competitions }"></competition-list> -->
     <competition-list></competition-list>
 

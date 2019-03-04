@@ -8,31 +8,86 @@ version: 2
 
 jobs:
   test:
+    environment:
+      BASH_ENV: ~/.nvm/nvm.sh
+      MINIO_ACCESS_KEY: testkey
+      MINIO_SECRET_KEY: testsecret
+      # NOTE! if you change this port, change it in AWS_S3_ENDPOINT_URL as well
+      MINIO_PORT: 9000
+
+      # Minio local storage Django settings (mocks an S3 endpoint)
+      AWS_ACCESS_KEY_ID: testkey
+      AWS_SECRET_ACCESS_KEY: testsecret
+      AWS_STORAGE_BUCKET_NAME: public
+      AWS_STORAGE_PRIVATE_BUCKET_NAME: private
+      # NOTE! port 9000 here should match $MINIO_PORT
+      AWS_S3_ENDPOINT_URL: http://localhost:9000/
+      AWS_QUERYSTRING_AUTH: False
+
     docker:
       - image: circleci/python:3.6-jessie-browsers
+
     steps:
       - checkout
+      - setup_remote_docker
 
       # Directory for any test reports
       - run: mkdir test-reports
 
-      # Selenium setup
+      # Setup env, background tasks, cache
+      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+      - run: nvm install 6.14.4
+      - run: npm install stylus riot -g
+      - run: npm run build-stylus
+      - run: npm run build-riot
+
+
+      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
+      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
+      - run: cp .env_sample .env
+
       - run:
           name: Download Selenium
           command: |
             curl -O http://selenium-release.storage.googleapis.com/3.5/selenium-server-standalone-3.5.3.jar
       - run:
           name: Start Selenium
-          command: |
-            java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log
+          command: java -jar selenium-server-standalone-3.5.3.jar -log test-reports/selenium.log -enablePassThrough false
           background: true
 
-      # setup environment
+      - run: |
+          wget https://dl.minio.io/server/minio/release/linux-amd64/minio
+          chmod +x minio
+          mkdir -p data/
+      - run:
+          name: Minio
+          command: ./minio server data/
+          background: true
+
+      - run: wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc
+      - run: |
+          /bin/sh -c "
+            ./mc config host add minio_docker $AWS_S3_ENDPOINT_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+            ./mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+            ./mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+            ./mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+            exit 0;
+          "
 
       - run: sudo pip install -r requirements.dev.txt
+      - save_cache:
+          key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
+          paths:
+            - ~/.cache/pip
+
+      - run: python manage.py collectstatic --noinput
 
       # Tests
-      - run: py.test
+      - run: mkdir artifacts/
+      - run: py.test -m "not e2e"
+      - run: py.test -m e2e
+      - store_artifacts:  # like screenshots
+          path: artifacts/
       - run: flake8 src/ --ignore E501
 
 workflows:
