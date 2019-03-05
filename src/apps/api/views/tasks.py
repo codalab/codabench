@@ -14,11 +14,13 @@ from tasks.models import Task
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
+    filter_fields = ('created_by', 'is_public')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name', 'description',)
 
     def get_queryset(self):
-        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user))
+        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user)).prefetch_related('solutions', 'solutions__data')
+
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)
