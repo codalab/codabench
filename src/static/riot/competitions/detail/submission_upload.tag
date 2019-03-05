@@ -12,9 +12,7 @@
             </div>
         </div>
 
-        <button onclick="">Show modal</button>
-
-        <div id="output-modal" class="ui modal">
+        <div id="output-modal" class="ui modal" ref="modal">
             <i id="close-modal" class="close icon"></i>
             <div class="header">Output</div>
             <div class="content">
@@ -118,9 +116,6 @@
                 console.log(event)
             })
             ws.addEventListener("message", function (event) {
-                console.log("message event")
-                console.log(event)
-
                 try {
                     var event_data = event.data.split(';')[1]
                     var data = JSON.parse(event_data);
@@ -194,7 +189,9 @@
 
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
-                    $('.ui.modal', self.root).modal('show')
+                    $(self.refs.modal).modal('show')
+                    self.lines = {}
+
                     // Init chart AFTER modal is shown
                     self.chart = new Chart(self.refs.chart, self.graph_config)
 
@@ -254,9 +251,6 @@
             height 100%
 
         code
-            background: hsl(220, 80%, 90%)
-
-        .submission-container
-            min-height 50vh
+            background hsl(220, 80%, 90%)
     </style>
 </submission-upload>
