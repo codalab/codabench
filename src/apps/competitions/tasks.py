@@ -208,7 +208,6 @@ def get_data_key(obj, file_type, temp_directory, creator):
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
 
 
-
 def _zip_if_directory(path):
     """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
     file"""
@@ -222,7 +221,6 @@ def _zip_if_directory(path):
         return new_path
     else:
         return path
-
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout

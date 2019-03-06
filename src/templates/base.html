@@ -64,6 +64,7 @@
                                 <div class="header">Your management</div>
                                 <a class="item" href="{% url "competitions:management" %}">Competitions</a>
                                 <a class="item" href="#">Teams</a>
+                                <a class="item" href="{% url "tasks:task_management" %}">Tasks</a>
                                 <a class="item" href="{% url "datasets:management" %}">Datasets</a>
                                 {% if request.user.is_staff %}
                                     <div class="ui divider"></div>
@@ -206,8 +207,10 @@
         },
 
         // Tasks
-        // TODO:// update this URL when the task management view gets moved to the right place
         TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+        TASK_DETAIL: function(pk) {
+            return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+        }
     }
 
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
