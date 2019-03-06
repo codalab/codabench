@@ -46,6 +46,7 @@
             console.log(this.submission)
             CODALAB.api.add_submission_to_leaderboard(this.submission.id)
                 .done(function (data) {
+                    self.update_submissions()
                 })
                 .fail(function (response) {
                     toastr.error("Could not find competition")
