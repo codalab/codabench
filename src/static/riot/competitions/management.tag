@@ -5,9 +5,9 @@
             <a class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>
-            <a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
+            <!--<a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
                 <i class="add square icon"></i> Create
-            </a>
+            </a>-->
         </div>
     </div>
     <!-- <competition-list competitions="{ competitions }"></competition-list> -->
