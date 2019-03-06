@@ -26,7 +26,32 @@ class SolutionSerializer(WritableNestedModelSerializer):
 
 
 class TaskSerializer(WritableNestedModelSerializer):
-    created_by = serializers.SerializerMethodField(read_only=True)
+    input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+
+    class Meta:
+        model = Task
+        fields = [
+            'id',
+            'name',
+            'description',
+            'key',
+            'created_by',
+            'created_when',
+            'is_public',
+
+            # Data pieces
+            'input_data',
+            'ingestion_program',
+            'reference_data',
+            'scoring_program',
+        ]
+
+
+class TaskDetailSerializer(WritableNestedModelSerializer):
+    created_by = serializers.SerializerMethodField(read_only=True, required=False)
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')

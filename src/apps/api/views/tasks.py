@@ -22,6 +22,13 @@ class TaskViewSet(ModelViewSet):
         return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user)).prefetch_related('solutions', 'solutions__data')
 
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.TaskDetailSerializer
+        else:
+            return serializers.TaskSerializer
+
+
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)
         # TODO: what is this doing? do we still need it?
