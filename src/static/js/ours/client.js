@@ -196,7 +196,10 @@ CODALAB.api = {
     get_task: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}tasks/${pk}/`)
     },
-    delete_task: function(id) {
+    delete_task: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + 'tasks/' + id + '/')
+    },
+    update_task: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
     },
 }

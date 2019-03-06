@@ -32,6 +32,12 @@ class TaskViewSet(ModelViewSet):
             "created_by": self.request.user
         }
 
+    def update(self, request, *args, **kwargs):
+        task = self.get_object()
+        if request.user != task.created_by and not request.user.is_superuser:
+            raise PermissionDenied("Cannot update a task that is not yours")
+        return super().update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user != instance.created_by:
