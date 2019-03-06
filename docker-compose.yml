@@ -51,7 +51,7 @@ services:
     env_file: .env
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc config host add minio_docker $AWS_S3_ENDPOINT_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
       /usr/bin/mc policy download minio_docker/$AWS_STORAGE_BUCKET_NAME;
