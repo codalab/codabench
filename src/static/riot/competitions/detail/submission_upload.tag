@@ -17,7 +17,8 @@
             <div class="header">Output</div>
             <div class="content">
                 <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
-                <pre class="submission_output" ref="submission_output"><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                <!-- We have to have this on a gross line so Pre formatting stays nice -->
+                <pre class="submission_output" ref="submission_output"><virtual if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
             </div>
         </div>
     </div>
@@ -182,6 +183,8 @@
         }
 
         self.upload = function () {
+            $(self.refs.modal).modal('show')
+
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -189,7 +192,6 @@
 
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
-                    $(self.refs.modal).modal('show')
                     self.lines = {}
 
                     // Init chart AFTER modal is shown
