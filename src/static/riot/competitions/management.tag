@@ -5,26 +5,16 @@
             <a class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>
-            <!--<a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
+            <a class="ui right floated green button" href="{ URLS.COMPETITION_ADD }">
                 <i class="add square icon"></i> Create
-            </a>-->
+            </a>
         </div>
     </div>
-    <!-- <competition-list competitions="{ competitions }"></competition-list> -->
     <competition-list></competition-list>
 
     <script>
         var self = this
 
-        /*self.one("mount", function() {
-            CODALAB.api.get_competitions("?mine=true")
-                .done(function(data){
-                    self.update({competitions: data})
-                })
-                .fail(function(response){
-                    toastr.error("Could not load competition list....")
-                })
-        })*/
     </script>
 
     <style>
