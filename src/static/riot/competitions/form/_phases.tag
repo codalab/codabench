@@ -46,8 +46,8 @@
         <div class="content">
             <div class="ui top pointing secondary menu">
                 <a class="active item" data-tab="phase_details">Phase details</a>
-                <a class="item" data-tab="phase_datasets" if="{ current_phase_style == 'dataset' }">Datasets</a>
-                <a class="item" data-tab="phase_task" if="{ current_phase_style == 'task' }">Tasks</a>
+                <a class="item" data-tab="phase_datasets" show="{ current_phase_style == 'dataset' }">Datasets</a>
+                <a class="item" data-tab="phase_task" show="{ current_phase_style == 'task' }">Tasks</a>
             </div>
 
             <form class="ui form" ref="form">
