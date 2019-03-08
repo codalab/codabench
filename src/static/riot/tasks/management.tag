@@ -149,31 +149,13 @@
         self.search_my_tasks = function () {
             var filter = self.refs.search_mine.value
 
-            if (filter !== "" && filter.length < 3) {
-
-            } else {
-                delay(function () {
-                    var filters = {
-                        search: filter
-                    }
-                    self.update_my_tasks(filters)
-                }, 100)
-            }
+            delay(() => self.update_my_tasks({search: filter}), 100)
         }
 
         self.search_public_tasks = function () {
             var filter = self.refs.search_public.value
 
-            if (filter !== "" && filter.length < 3) {
-
-            } else {
-                delay(function () {
-                    var filters = {
-                        search: filter
-                    }
-                    self.update_public_tasks(filters)
-                }, 100)
-            }
+            delay(() => self.update_public_tasks({search: filter}), 100)
         }
 
 
