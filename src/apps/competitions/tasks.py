@@ -34,12 +34,22 @@ COMPETITION_FIELDS = [
     "title"
 ]
 
+TASK_FIELDS = [
+    'name',
+    'description',
+    # 'key',
+]
+SOLUTION_FIELDS = [
+    'tasks'
+]
+
 PHASE_FIELDS = [
-    "index",
-    "name",
-    "description",
-    "start",
-    "end"
+    'name',
+    'description',
+    'start',
+    'end',
+    # 'tasks',
+    # 'solutions',
 ]
 PHASE_FILES = [
     "input_data",
@@ -51,17 +61,13 @@ PHASE_FILES = [
 ]
 PAGE_FIELDS = [
     "title"
-    # "index"
 ]
 LEADERBOARD_FIELDS = [
-    # 'primary_index',
     'title',
     'key'
 ]
 
 COLUMN_FIELDS = [
-    # 'computation',
-    # 'computation_indexes',
     'title',
     'key',
     'index',
@@ -100,7 +106,8 @@ def run_submission(submission_pk, is_scoring=False):
         for task in submission.phase.tasks.all():
             if task.ingestion_module:
                 if not task.ingestion_module.only_during_scoring or is_scoring:
-                    run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_module.ingestion_program.data_file.name)
+                    run_arguments['ingestion_program'] = make_url_sassy(
+                        task.ingestion_module.ingestion_program.data_file.name)
                     run_arguments['input_data'] = make_url_sassy(task.ingestion_module.input_data.datafile.name)
 
             if is_scoring:
@@ -168,7 +175,8 @@ def run_submission(submission_pk, is_scoring=False):
         time_padding = 60 * 20  # 20 minutes
         time_limit = submission.phase.execution_time_limit + time_padding
 
-        task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
+        task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker',
+                             soft_time_limit=time_limit)
         submission.task_id = task.id
         submission.status = Submission.SUBMITTED
         submission.save()
@@ -286,7 +294,8 @@ def unpack_competition(competition_dataset_pk):
             if tasks:
                 for task in tasks:
                     if 'index' not in task:
-                        raise CompetitionUnpackingException(f'ERROR: No index for task: {task["name"] if "name" in task else task["key"]}')
+                        raise CompetitionUnpackingException(
+                            f'ERROR: No index for task: {task["name"] if "name" in task else task["key"]}')
 
                     index = task['index']
 
@@ -302,7 +311,8 @@ def unpack_competition(competition_dataset_pk):
                             'name': task['name'],
                             'description': task['description'] if 'description' in task else None,
                             'created_by': creator.id,
-                            'ingestion_only_during_scoring': task['ingestion_only_during_scoring'] if 'ingestion_only_during_scoring' in task else None,
+                            'ingestion_only_during_scoring': task[
+                                'ingestion_only_during_scoring'] if 'ingestion_only_during_scoring' in task else None,
                         }
                         for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
                             new_task[file_type] = get_data_key(
@@ -323,7 +333,8 @@ def unpack_competition(competition_dataset_pk):
             if solutions:
                 for solution in solutions:
                     if 'index' not in solution:
-                        raise CompetitionUnpackingException(f"ERROR: No index for solution: {solution['name'] if 'name' in solution else solution['key']}")
+                        raise CompetitionUnpackingException(
+                            f"ERROR: No index for solution: {solution['name'] if 'name' in solution else solution['key']}")
 
                     index = solution['index']
                     task_keys = [competition['tasks'][task_index] for task_index in solution.get('tasks')]
@@ -331,7 +342,8 @@ def unpack_competition(competition_dataset_pk):
                     # TODO: Pretty sure some of this will be done by yaml validator?
 
                     if not task_keys:
-                        raise CompetitionUnpackingException(f"ERROR: Solution: {solution['key']} missing task index pointers")
+                        raise CompetitionUnpackingException(
+                            f"ERROR: Solution: {solution['key']} missing task index pointers")
 
                     if index in competition['solutions']:
                         raise CompetitionUnpackingException(f"ERROR: Duplicate indexes. Index: {index}")
@@ -345,7 +357,8 @@ def unpack_competition(competition_dataset_pk):
 
                     else:
                         # create solution object and then add {index: {'key': key, 'tasks': task_indexes}} to competition solutions
-                        name = solution['name'] if 'name' in solution else f"solution @ {now().strftime('%m-%d-%Y %H:%M')}"
+                        name = solution[
+                            'name'] if 'name' in solution else f"solution @ {now().strftime('%m-%d-%Y %H:%M')}"
                         description = solution['description'] if 'description' in solution else None
                         file_name = solution['path']
                         file_path = os.path.join(temp_directory, file_name)
@@ -373,14 +386,14 @@ def unpack_competition(competition_dataset_pk):
 
             # ---------------------------------------------------------------------
             # Phases
-            file_types = [
-                "input_data",
-                "reference_data",
-                "scoring_program",
-                "ingestion_program",
-                "public_data",
-                "starting_kit",
-            ]
+            # file_types = [
+            #     "input_data",
+            #     "reference_data",
+            #     "scoring_program",
+            #     "ingestion_program",
+            #     "public_data",
+            #     "starting_kit",
+            # ]
 
             for index, phase_data in enumerate(competition_yaml.get('phases')):
                 new_phase = {
@@ -389,8 +402,10 @@ def unpack_competition(competition_dataset_pk):
                     "description": phase_data.get('description') if 'description' in phase_data else None,
                     "start": parser.parse(str(phase_data.get('start'))) if 'start' in phase_data else None,
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
-                    'max_submissions_per_day': phase_data.get('max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
-                    'max_submissions_per_phase': phase_data.get('max_submissions') if 'max_submissions' in phase_data else None,
+                    'max_submissions_per_day': phase_data.get(
+                        'max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
+                    'max_submissions_per_phase': phase_data.get(
+                        'max_submissions') if 'max_submissions' in phase_data else None,
                 }
 
                 if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
@@ -403,10 +418,11 @@ def unpack_competition(competition_dataset_pk):
 
                     solutions = phase_data.get('solutions')
                     if solutions:
+                        # import pdb; pdb.set_trace()
                         new_phase['solutions'] = [competition['solutions'][index] for index in solutions]
 
                 else:
-                    for file_type in file_types:
+                    for file_type in PHASE_FILES:
                         # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
                         file_name = phase_data.get(file_type)
 
@@ -435,7 +451,8 @@ def unpack_competition(competition_dataset_pk):
                             # Keys are length 32 or 36, so check if we can find a dataset matching this already
                             new_phase[file_type] = file_name
                         else:
-                            raise CompetitionUnpackingException(f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
+                            raise CompetitionUnpackingException(
+                                f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
 
                 competition['phases'].append(new_phase)
 
@@ -474,7 +491,7 @@ def unpack_competition(competition_dataset_pk):
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
-def create_competition_dump(competition_pk):
+def create_competition_dump(competition_pk, keys_instead_of_files=True):
     yaml_data = {}
     try:
         # -------- SetUp -------
@@ -512,6 +529,75 @@ def create_competition_dump(competition_pk):
             yaml_data['pages'].append(temp_page_data)
             zip_file.writestr(temp_page_data['file'], page.content)
 
+        # -------- Competition Tasks/Solutions -------
+
+        yaml_data['tasks'] = []
+        yaml_data['solutions'] = []
+
+        task_solution_pairs = {}
+        tasks = [task for phase in comp.phases.all() for task in phase.tasks.all()]
+
+        # Go through all tasks
+        for index, task in enumerate(tasks):
+
+            task_solution_pairs[task.id] = {
+                'index': index,
+                'solutions': []
+            }
+
+            temp_task_data = {
+                'index': index
+            }
+            for field in TASK_FIELDS:
+                if hasattr(task, field):
+                    temp_task_data[field] = getattr(task, field, "")
+            temp_task_data['key'] = str(task.key)
+            for file_type in PHASE_FILES:
+                if hasattr(task, file_type):
+                    temp_dataset = getattr(task, file_type)
+                    if temp_dataset:
+                        if temp_dataset.data_file:
+                            try:
+                                temp_task_data[file_type] = f"{file_type}-{task.pk}.zip"
+                                zip_file.writestr(temp_task_data[file_type], temp_dataset.data_file.read())
+                            except OSError:
+                                logger.error(
+                                    f"The file field is set, but no actual"
+                                    f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
+                                )
+                        else:
+                            logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
+            # Now for all of our solutions for the tasks, write those too
+            for index_two, solution in enumerate(task.solutions.all()):
+                task_solution_pairs[task.id]['solutions'].append(index_two)
+
+                temp_solution_data = {
+                    'index': index_two
+                }
+                for field in SOLUTION_FIELDS:
+                    if hasattr(solution, field):
+                        temp_solution_data[field] = getattr(solution, field, "")
+                temp_solution_data['key'] = str(solution.key)
+                if solution.data:
+                    temp_dataset = getattr(solution, 'data')
+                    if temp_dataset:
+                        if temp_dataset.data_file:
+                            try:
+                                temp_solution_data['path'] = f"solution-{solution.pk}.zip"
+                                zip_file.writestr(temp_solution_data['path'], temp_dataset.data_file.read())
+                            except OSError:
+                                logger.error(
+                                    f"The file field is set, but no actual"
+                                    f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
+                                )
+                        else:
+                            logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
+                # TODO: Make sure logic here is right. Needs to be outputted as a list, but what others can we tie to?
+                temp_solution_data['tasks'] = [index]
+                yaml_data['solutions'].append(temp_solution_data)
+            # End for loop for solutions; Append tasks data
+            yaml_data['tasks'].append(temp_task_data)
+
         # -------- Competition Phases -------
 
         yaml_data['phases'] = []
@@ -524,21 +610,12 @@ def create_competition_dump(competition_pk):
                         temp_phase_data[field] = temp_date
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
-            for file_type in PHASE_FILES:
-                if hasattr(phase, file_type):
-                    temp_dataset = getattr(phase, file_type)
-                    if temp_dataset:
-                        if temp_dataset.data_file:
-                            try:
-                                temp_phase_data[file_type] = f"{file_type}-{phase.pk}.zip"
-                                zip_file.writestr(temp_phase_data[file_type], temp_dataset.data_file.read())
-                            except OSError:
-                                logger.error(
-                                    f"The file field is set, but no actual"
-                                    f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
-                                )
-                        else:
-                            logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
+            task_indexes = [task_solution_pairs[task.id]['index'] for task in phase.tasks.all()]
+            temp_phase_data['tasks'] = task_indexes
+            temp_phase_solutions = []
+            for task in phase.tasks.all():
+                temp_phase_solutions += task_solution_pairs[task.id]['solutions']
+            temp_phase_data['solutions'] = temp_phase_solutions
             yaml_data['phases'].append(temp_phase_data)
 
         # -------- Leaderboards -------
