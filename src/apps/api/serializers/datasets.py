@@ -20,6 +20,7 @@ class DataSerializer(serializers.ModelSerializer):
             'is_public',
             'key',
             'request_sassy_file_name',
+            'was_created_by_competition'
         )
         extra_kwargs = {
             "id": {"read_only": True},
