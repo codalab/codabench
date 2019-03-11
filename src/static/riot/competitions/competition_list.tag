@@ -55,7 +55,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr each="{ competition in participating_competitions }">
+                            <tr each="{ competition in participating_competitions }" style="height: 42px;">
                                 <td><a href="{ URLS.COMPETITION_DETAIL(competition.id) }">{ competition.title }</a></td>
                                 <td>{ timeSince(Date.parse(competition.created_when)) } ago</td>
                             </tr>

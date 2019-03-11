@@ -28,6 +28,9 @@ class LeaderboardViewSet(ModelViewSet):
 def add_submission_to_leaderboard(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
 
+    # Removing any existing submissions on leaderboard
+    submission.phase.submissions.filter(owner=request.user).exclude(leaderboard=None).update(leaderboard=None)
+
     # toggle submission on or off, if it was already on leaderboard
     if not submission.leaderboard:
         print(f"Adding {submission} to {submission.leaderboard}")
@@ -38,4 +41,4 @@ def add_submission_to_leaderboard(request, submission_pk):
 
     submission.save()
 
-    return Response()
+    return Response({})
