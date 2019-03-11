@@ -113,6 +113,7 @@ class Run:
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
     def _get_stdout_stderr_file_names(self, run_args):
+        # run_args should be the run_args argument passed to __init__ from the run_wrapper.
         if not self.is_scoring:
             DETAILED_OUTPUT_NAMES = [
                 "prediction_stdout",
@@ -203,8 +204,7 @@ class Run:
                 if not more_stdout and not more_stderr:
                     break
 
-            stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
-            stderr_location = self.stderr if kind == 'program' else self.ingestion_stderr
+            stdout_location, stderr_location = (self.stdout, self.stderr) if kind == 'program' else (self.ingestion_stdout, self.ingestion_stderr)
 
             logger.info(f'[exited with {proc.returncode}]')
             if stdout:
@@ -298,7 +298,7 @@ class Run:
             logger.info("Putting raw data %s in %s" % (raw_data, url))
             data = raw_data
         else:
-            raise Exception('Must provide data, both file and raw_data cannot be empty')
+            raise SubmissionException('Must provide data, both file and raw_data cannot be empty')
 
         resp = requests.put(
             url,

@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,11 +28,6 @@ class SubmissionScoreViewSet(ModelViewSet):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
 
-
-@api_view(['GET'])
-def get_leaderboard_details(request, leaderboard_pk):
-    leaderboard = Leaderboard.objects.get(id=leaderboard_pk)
-    return Response(LeaderboardSerializer(leaderboard).data)
 
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))

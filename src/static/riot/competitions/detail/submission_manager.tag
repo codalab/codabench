@@ -1,6 +1,6 @@
 <submission-manager>
     <h1>Submission manager</h1>
-    <div if="{ opts.admin }" style="padding-bottom: 20px;">
+    <div if="{ opts.admin }" class="admin-buttons">
         <a class="ui green button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
         </a>
@@ -47,13 +47,13 @@
         </tr>
         </thead>
         <tbody>
-        <tr each="{ submission in submissions }" onclick="{ show_modal.bind(this, submission) }" class="clickable">
-            <td>1</td> <!-- TODO how is this number supposed to increment? -->
+        <tr each="{ submission, index in submissions }" onclick="{ show_modal.bind(this, submission) }" class="clickable">
+            <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
             <td class="right aligned">{ submission.status }</td>
-            <td if="{ opts.admin }" class="center aligned" style="width: 150px">
+            <td if="{ opts.admin }" class="center aligned action-column">
                 <button class="mini ui button inverted basic blue icon"
                         onclick="{ rerun_submission.bind(this, submission) }">
                     <i class="icon redo"></i>
@@ -78,7 +78,9 @@
     </table>
 
     <div class="ui large modal" ref="modal">
-        <submission-modal></submission-modal>
+        <div class="content">
+            <submission-modal></submission-modal>
+        </div>
     </div>
     <script>
         var self = this
@@ -88,8 +90,6 @@
 
         self.on("mount", function () {
             $('.ui .dropdown').dropdown();
-            // Get the actual data
-            //self.update_submissions()
         })
 
         self.update_submissions = function (filters) {
@@ -120,7 +120,6 @@
         }
 
         self.add_to_leaderboard = function(submission) {
-            console.log(submission)
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
@@ -133,7 +132,7 @@
         self.rerun_phase = function (phase) {
             CODALAB.api.re_run_phase_submissions(phase.id)
                 .done(function (response) {
-                    toastr.success('Rerunning submissions')
+                    toastr.success(`Rerunning ${response.count} submissions`)
                     self.update_submissions()
                 })
         }
@@ -162,7 +161,7 @@
 
         self.rerun_submission = function (submission) {
             CODALAB.api.re_run_submission(submission.id)
-                .done(function (respose) {
+                .done(function (response) {
                     toastr.success('Submission queued')
                     self.update_submissions()
                 })
@@ -198,15 +197,15 @@
         }
 
         CODALAB.events.on('phase_selected', function(selected_phase) {
-            console.log("phase_selected")
-            console.log(selected_phase)
             self.selected_phase = selected_phase
             self.update_submissions()
         })
+
         CODALAB.events.on('new_submission_created', function(new_submission_data) {
             self.submissions.unshift(new_submission_data)
             self.update()
         })
+
         CODALAB.events.on('score_updated', () => {
             $(self.refs.modal).modal('hide')
             self.update_submissions()
@@ -216,6 +215,11 @@
     <style type="text/stylus">
         //:scope
         //    height 100%
+        .admin-buttons
+            padding-bottom: 20px;
+
+        .action-column
+            width: 150px
 
         .add_to_leaderboard
             cursor pointer

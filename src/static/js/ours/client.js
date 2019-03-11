@@ -137,9 +137,6 @@ CODALAB.api = {
     get_leaderboard: function(leaderboard_pk) {
         return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
     },
-    get_leaderboard_details: function(leaderboard_pk) {
-        return CODALAB.api.request('GET', `${URLS.API}get_leaderboard_details/${leaderboard_pk}`)
-    },
     update_submission_score: function(pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
     },

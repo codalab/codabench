@@ -1,6 +1,7 @@
 from os.path import basename
 from rest_framework import serializers, fields
 
+from api.serializers import leaderboards
 from competitions.models import Submission, SubmissionDetails
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
@@ -146,7 +147,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_leaderboards(instance):
-        return instance.scores.all().values_list('column__leaderboard')
+        return [leaderboards.LeaderboardSerializer(score.column.leaderboard).data for score in instance.scores.all().select_related('column__leaderboard')]
+        # return instance.scores.all().values_list('column__leaderboard')
 
 
 
