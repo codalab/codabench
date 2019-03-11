@@ -210,7 +210,7 @@
             var tabs = $('.menu .item', self.root)
             tabs.tab()
             tabs.tab('change tab', 'downloads')
-            CODALAB.api.get_submission_files(submission.id)
+            CODALAB.api.get_submission_details(submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
                     self.submission.result = data.result

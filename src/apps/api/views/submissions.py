@@ -110,7 +110,7 @@ class SubmissionViewSet(ModelViewSet):
         return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))
-    def get_logs(self, request, pk):
+    def get_details(self, request, pk):
         submission = super().get_object()
         data = SubmissionFilesSerializer(submission).data
         return Response(data, status=status.HTTP_200_OK)

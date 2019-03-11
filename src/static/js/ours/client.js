@@ -124,8 +124,8 @@ CODALAB.api = {
     create_submission: function(submission_metadata) {
         return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
     },
-    get_submission_files: function (id) {
-        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_logs/`)
+    get_submission_details: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_details/`)
     },
 
     /*---------------------------------------------------------------------
