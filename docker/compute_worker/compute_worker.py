@@ -1,6 +1,7 @@
 import time
 
 import json
+import shutil
 import uuid
 import websockets
 
@@ -158,7 +159,7 @@ class Run:
         try:
             urlretrieve(url, bundle_file.name)
         except HTTPError:
-            raise SubmissionException(f"Problem fetching {destination}")
+            raise SubmissionException(f"Problem fetching {url} to put in {destination}")
 
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
@@ -213,8 +214,7 @@ class Run:
                 logger.info(f'[stderr]\n{stderr.decode()}')
                 self._put_file(stderr_location, raw_data=stderr)
 
-
-    def _run_program_directory(self, program_dir, kind):
+    def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
         # If the directory doesn't even exist, move on
@@ -229,7 +229,13 @@ class Run:
                 if not command:
                     raise SubmissionException("Program directory missing 'command' in metadata")
         except FileNotFoundError:
-            raise SubmissionException(f"Program directory: {program_dir} missing 'metadata.yaml'")
+            if can_be_output:
+                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                            "program so move it to output")
+                shutil.move(program_dir, self.output_dir)
+                return
+            else:
+                raise SubmissionException("Program directory missing 'metadata.yaml'")
 
         # I believe these are unused now,
         # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
@@ -246,7 +252,7 @@ class Run:
             '--security-opt=no-new-privileges',
             # Set the right volume
             '-v', f'{program_dir}:/app',
-            '-v', f'{self.output_dir}:/app/output',  # May not be necessary? basically just creates the dir?
+            '-v', f'{self.output_dir}:/app/output',
             # Start in the right directory
             '-w', '/app',
             # Don't buffer python output, so we don't lose any
@@ -339,7 +345,7 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        self._run_program_directory(program_dir, kind='program')
+        self._run_program_directory(program_dir, kind='program', can_be_output=True)
         self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory
@@ -359,8 +365,11 @@ class Run:
         # {
         #     "correct": 1.0
         # }
-        scores_file = os.path.join(self.output_dir, "scores.json")
-        scores = json.load(open(scores_file, 'r'))
+        try:
+            scores_file = os.path.join(self.output_dir, "scores.json")
+            scores = json.load(open(scores_file, 'r'))
+        except FileNotFoundError:
+            raise SubmissionException("Could not find scores.json, did the scoring program output it?")
 
         url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
         logger.info(f"Submitting these scores to {url}: {scores}")
