@@ -149,6 +149,3 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     def get_leaderboards(instance):
         return [leaderboards.LeaderboardSerializer(score.column.leaderboard).data for score in instance.scores.all().select_related('column__leaderboard')]
         # return instance.scores.all().values_list('column__leaderboard')
-
-
-
