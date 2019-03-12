@@ -90,7 +90,7 @@ def run_submission(submission_pk, is_scoring=False):
         "api_url": "http://django/api",
         # "program_data": make_url_sassy(submission.data.data_file.name),
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
-        "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
         "secret": submission.secret,
         "docker_image": "python:3.7",
         "execution_time_limit": submission.phase.execution_time_limit,
@@ -152,6 +152,9 @@ def run_submission(submission_pk, is_scoring=False):
             # run_arguments["ingestion_program"] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
             detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
 
+        # TODO: when is an ingestion program supposed to run when not task/solution style phase?
+        if submission.phase.ingestion_program:
+            run_arguments['ingestion_program'] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
         # Inputs like reference data/etc.
         inputs = (
             'input_data',

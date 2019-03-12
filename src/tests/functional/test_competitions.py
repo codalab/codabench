@@ -14,9 +14,11 @@ class TestCompetitions(SeleniumTestCase):
         self.get(reverse('competitions:upload'))
         self.circleci_screenshot(name='uploading_task.png')
         self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/task_competition.zip')
-        self.wait(10)
-        # TODO: find a better way to wait for competition to finish uploading. This is what fails on CircleCI
-        self.assert_element_is_visible('div .ui.success.message')
+        time = 0
+        while time < 10 and not self.element_is_visible('div .ui.success.message'):
+            self.wait(.5)
+            time += .5
+        assert self.element_is_visible('div .ui.success.message')
         comp = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": comp.id})
         self.find(f'a[href="{comp_url}"]').click()
@@ -35,9 +37,11 @@ class TestCompetitions(SeleniumTestCase):
     def test_legacy_competition_upload(self):
         self.get(reverse('competitions:upload'))
         self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/legacy_competition.zip')
-        self.wait(10)
-        # TODO: find a better way to wait for competition to finish uploading. This is what fails on CircleCI
-        self.assert_element_is_visible('div .ui.success.message')
+        time = 0
+        while time < 10 and not self.element_is_visible('div .ui.success.message'):
+            self.wait(.5)
+            time += .5
+        assert self.element_is_visible('div .ui.success.message')
         comp = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": comp.id})
         self.find(f'a[href="{comp_url}"]').click()

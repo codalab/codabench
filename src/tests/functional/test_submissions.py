@@ -24,10 +24,12 @@ class TestSubmissions(SeleniumTestCase):
                     self.id = uuid.uuid4()
             task = Task()
             celery_app.return_value = task
-            self.circleci_screenshot("attempting to set submission file name.png")
+            self.circleci_screenshot("set_submission_file_name.png")
             self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/submission.zip')
-            self.wait(10)
-            # TODO: find a better way to wait for competition to finish uploading. This is what fails on CircleCI
+            time = 0
+            while time < 10 and not celery_app.called:
+                self.wait(.5)
+                time += .5
             assert celery_app.called
             assert celery_app.call_args[1]['queue'] == 'compute-worker'
         self.assert_element_is_visible('#output-modal')
