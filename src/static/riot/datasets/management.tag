@@ -31,22 +31,35 @@
                     <th>Name</th>
                     <th width="175px">Type</th>
                     <th width="125px">Uploaded...</th>
-                    <th width="125px">Key</th>
+                    <th width="300px">Key</th>
+                    <th width="50px">Used By:</th>
                     <th width="50px">Public</th>
                     <th width="50px">Delete?</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr each="{ dataset, index in filtered_datasets }" class="dataset-row {warning: dataset.was_created_by_competition}">
+                <tr each="{ dataset, index in filtered_datasets }" class="dataset-row {warning: dataset.was_created_by_competition} {error: !dataset.in_use.value}">
                     <td><a href="{ URLS.DATASET_DOWNLOAD(dataset.key) }">{ dataset.name }</a></td>
                     <td>{ dataset.type }</td>
                     <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
-                    <td>{ dataset.key } ago</td>
+                    <!--<td>{ dataset.key }</td>-->
+                    <td>
+                        <div class="ui form">
+                            <div class="field">
+                                <input disabled type="text" value="{dataset.key}">
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="ui relaxed list">
+                            <li class="item" each="{competition in dataset.in_use.competitions}">ID: {competition}</li>
+                        </div>
+                    </td>
                     <td class="center aligned">
                         <i class="checkmark box icon green" show="{ dataset.is_public }"></i>
                     </td>
                     <td class="center aligned">
-                        <button class="mini ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                        <button class="micro ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
                             <i class="icon delete"></i>
                         </button>
                     </td>
@@ -403,6 +416,17 @@
             // jquery likes to work with
             var metadata = get_form_data(self.refs.form)
             delete metadata.data_file  // dont send this with metadata
+
+
+            console.log("@@@@@@@@")
+            console.log(metadata)
+
+            if (metadata.is_public === 'on') {
+                var public_confirm = confirm("Creating a public dataset means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
+                if (!public_confirm) {
+                    return
+                }
+            }
 
             var data_file = self.refs.data_file.refs.file_input.files[0]
 

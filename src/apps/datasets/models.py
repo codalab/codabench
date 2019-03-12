@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.timezone import now
 
 from utils.data import PathWrapper
@@ -59,6 +60,24 @@ class Data(models.Model):
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
+
+    @property
+    def in_use(self):
+        from tasks.models import Task
+        tasks = Task.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(scoring_program=self)).prefetch_related('phases')
+        phases_from_tasks = [phase for task in tasks for phase in task.phases.all()]
+        from competitions.models import Phase
+        phases = Phase.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(scoring_program=self)).prefetch_related('competition')
+        print(tasks)
+        print(phases_from_tasks)
+        print(phases)
+        task_competitions = [phase.competition.pk for phase in phases_from_tasks if phase.competition]
+        phase_competitions = [phase.competition.pk for phase in phases if phase.competition]
+        competition_set = list(set(task_competitions + phase_competitions))
+        is_used = bool(competition_set)
+        return {'value': is_used,
+                'competitions': competition_set}
+
 
     def __str__(self):
         return self.name or ''
