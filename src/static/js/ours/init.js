@@ -17,13 +17,17 @@ $(document).ready(function () {
             }
         })
 
+    // Make base template dropdown not change text on selection
+    $("#user_dropdown").dropdown({
+        action: 'hide'
+    })
 
-    // create sidebar and attach to menu open
-    $('.ui.sidebar').sidebar('attach events', '.toc.item')
-
-    // dropdowns (nice non-select ones!)
-    $(".ui.dropdown").dropdown()
-
+    // Sidebar helpers
+    $('.ui.thin.sidebar')
+        .sidebar({
+            transition: 'overlay'
+        })
+        .sidebar('attach events', '#hamburger_button');
 
     /*-----------------------------------------------------------------------------
      Riotjs

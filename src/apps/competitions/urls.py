@@ -10,4 +10,5 @@ urlpatterns = [
     path('<int:pk>/', views.CompetitionDetail.as_view(), name="detail"),
     path('create/', views.CompetitionForm.as_view(), name="create"),
     path('edit/<int:pk>/', views.CompetitionForm.as_view(), name="edit"),
+    path('upload/', views.CompetitionUpload.as_view(), name="upload"),
 ]

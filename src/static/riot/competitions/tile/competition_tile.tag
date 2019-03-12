@@ -63,7 +63,7 @@
             margin-bottom 35px !important
 
         .main-wrapper
-            border-left 5px solid lightgreen
+            border-left 5px solid #c7402d
             border-top-left-radius 6px !important
             border-bottom-left-radius 6px !important
 
@@ -71,7 +71,12 @@
             font-size 14px !important
 
         .comp-tile-full-height
-            min-height 100% !important
+            border-top-right-radius 3px
+
+        .ui.grid>.row>.blue.column
+            background-color #4a6778!important
+
+
     </style>
 </competition-tile>
 

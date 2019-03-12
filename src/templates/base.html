@@ -8,95 +8,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Codalab Competitions</title>
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
-    <!-- JQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <!-- Riot -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
-    <!-- Semantic -->
+
+    <!-- Vendor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
-            integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
-    <!-- Simple markdown editor -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-    <!-- Datepicker -->
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
-    <script src="{% static "js/calendar.min.js" %}"></script>
-    <!-- Riot tags -->
-    <script src="{% static "generated/riot.js" %}"></script>
     {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
-    <!-- Our JS -->
-    <script src="{% static "js/ours/utils.js" %}"></script>
-    <script src="{% static "js/ours/client.js" %}"></script>
-    <script src="{% static "js/ours/init.js" %}"></script>
-    <script src="{% static "js/jquery.form.serializer.js" %}"></script>
-    <!-- Compiled stylus -->
-    <link rel="stylesheet" href="{% static "generated/output.css" %}">
-    <!-- ParticlesJS -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <!-- Toastr -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <!-- Ours -->
+    <link rel="stylesheet" href="{% static "generated/output.css" %}">
+
     {% block extra_head %}
     {% endblock %}
 </head>
 <body>
-<!-- Following Menu -->
-<div class="ui large top fixed hidden menu">
+<!-- Sidebar Menu -->
+<div class="ui thin sidebar left inverted vertical overlay menu">
     <div class="ui container">
         <a href="{% url "pages:home" %}" class="item">Competitions</a>
         <a class="item">Chagle</a>
         <a class="item">Chalab</a>
         <a class="item">Chagrade</a>
-        <div class="right menu">
-            {% if user.is_authenticated %}
-                <div class="item"><a class="ui inverted button" href="{% url "logout" %}">Logout</a></div>
-            {% else %}
-                <div class="item"><a class="ui inverted button" href="{% url "login" %}">Login</a></div>
-                <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
-            {% endif %}
-        </div>
     </div>
 </div>
-<!-- Sidebar Menu -->
-<div class="ui vertical inverted sidebar menu">
-    <a href="{% url "pages:home" %}" class="item">Competitions</a>
-    <a class="item">Chagle</a>
-    <a class="item">Chalab</a>
-    <a class="item">Chagrade</a>
-    {% if user.is_authenticated %}
-        <a href="/accounts/logout" class="item">Logout</a>
-    {% else %}
-        <a href="/accounts/login" class="item">Login</a>
-        <a href="{% url "profiles:signup" %}" class="item">Sign-up</a>
-    {% endif %}
-</div>
-<!-- Page Contents -->
-<div class="pusher">
-    <div id="header" class="ui inverted vertical center aligned segment masthead
+
+<div class=pusher>
+    <div id="hamburger_button">
+        <div class="ui icon button">
+            <i class="bars icon"></i>
+        </div>
+    </div>
+    <!-- Page Contents -->
+    <div class="pusher">
+        <div id="header" class="ui inverted vertical center aligned segment masthead
         {% block top_div_extra_class %}{% endblock %}">
-        <div id="bg"></div>
-        <div class="ui container">
-            <div class="ui large secondary inverted menu">
-                <a class="toc item">
-                    <i class="sidebar icon"></i>
-                </a>
-                <a href="{% url "pages:home" %}" class="item">Competitions</a>
-                <a class="item">Chagle</a>
-                <a class="item">Chalab</a>
-                <a class="item">Chagrade</a>
-                <div class="right item">
+            <div id="bg"></div>
+            <div class="ui container">
+                <div id="topleft_menu" class="ui secondary inverted menu">
+                    <span class="left item">
+                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
+                    <a class="tl item">Chagle</a>
+                    <a class="tl item">Chalab</a>
+                    <a class="tl item">Chagrade</a>
+                    </span>
                     {% if user.is_authenticated %}
-                        <div class="ui inline dropdown">
+                        <div id="user_dropdown" class="ui dropdown item">
                             <div class="text">
                                 <i class="icon user outline"></i>
-                                {{ request.user.name }}
+                                {{ request.user.username }}
                             </div>
                             <i class="dropdown icon"></i>
-                            <div class="menu fix-right-bleed">
+                            <div class="menu">
                                 <div class="header">Your management</div>
                                 <a class="item" href="{% url "competitions:management" %}">Competitions</a>
                                 <a class="item" href="#">Teams</a>
+                                <a class="item" href="{% url "tasks:task_management" %}">Tasks</a>
                                 <a class="item" href="{% url "datasets:management" %}">Datasets</a>
                                 {% if request.user.is_staff %}
                                     <div class="ui divider"></div>
@@ -123,15 +91,20 @@
                             </div>
                         </div>
                     {% else %}
-                        <a href="/accounts/login" class="ui inverted button">Login</a>
-                        <a href="{% url "profiles:signup" %}" class="ui inverted button">Sign-up</a>
+                        <div class="right item">
+                            <a id="style_button" href="/accounts/login" class="ui button">Login</a>
+                            <a id="style_button" href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
+                        </div>
                     {% endif %}
                 </div>
             </div>
+            {% block top_div_extra_content %}{% endblock %}
         </div>
-        {% block top_div_extra_content %}{% endblock %}
     </div>
-    <div class="ui container grid">
+    {% block sticky_button %}
+
+    {% endblock %}
+    <div id="page_content" class="ui container grid">
         <div class="row">
             {% block content %}
             {% endblock %}
@@ -169,15 +142,52 @@
 
 {# Admin only user switching #}
 <user_switch></user_switch>
+
+<!-- Vendor -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
+        integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="{% static "js/calendar.min.js" %}"></script>
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+
+<!-- Ours -->
+<script src="{% static "js/ours/client.js" %}"></script>
+<script src="{% static "js/ours/init.js" %}"></script>
+<script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+<script src="{% static "js/ours/utils.js" %}"></script>
+<script src="{% static "js/jquery.form.serializer.js" %}"></script>
+<script src="{% static "js/Chart.bundle.js" %}"></script>
+<script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
+<script src="{% static "generated/riot.js" %}"></script>
+
 <script>
+    {# From `common_settings` context processor #}
+    STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+    CODALAB.state.user = {
+        id: '{{ request.user.id }}',
+        name: '{{ request.user.name }}',
+        username: '{{ request.user.username }}',
+        email: '{{ request.user.email }}',
+        bio: '{{ request.user.bio }}',
+    }
     // Load in URLs or other django generated goodies
     URLS = {
         assets: {
             header_particles: "{% static "particles/header.json" %}"
         },
         API: "/api/",
+        STATIC: function (file_name) {
+            return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+        },
+        // Websockets
+        //WS_SUBMISSION_LISTEN: ""
 
         // Competitions
+        COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
         COMPETITION_ADD: "{% url "competitions:create" %}",
         COMPETITION_DETAIL: function (pk) {
             return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
@@ -185,14 +195,29 @@
         COMPETITION_EDIT: function (pk) {
             return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
         },
+        SECRET_KEY_URL: function(pk, secret_key) {
+            var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+            return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+        },
 
         // Datasets
-        DATASET_MANAGEMENT: "{% url "datasets:management" %}"
+        DATASET_MANAGEMENT: "{% url "datasets:management" %}",
+        DATASET_DOWNLOAD: function (key) {
+            return "{% url "datasets:download" key=0 %}".replace(0, key)
+        },
+
+        // Tasks
+        TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+        TASK_DETAIL: function(pk) {
+            return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+        }
     }
 
-    CSRF_TOKEN = "{% csrf_token %}"
+    // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
+    CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
-
+{% block extra_js %}
+{% endblock %}
 {% block extra_body %}
 {% endblock %}
 

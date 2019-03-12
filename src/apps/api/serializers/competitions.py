@@ -4,9 +4,10 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
-from competitions.models import Competition, Phase, Submission, Page
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
+from tasks.models import Task, Solution
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -16,6 +17,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     public_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     starting_kit = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    solutions = serializers.SlugRelatedField(queryset=Solution.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
 
     class Meta:
         model = Phase
@@ -32,6 +35,15 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'ingestion_program',
             'public_data',
             'starting_kit',
+            'status',
+
+            'has_max_submissions',
+            'max_submissions_per_day',
+            'max_submissions_per_person',
+
+            'tasks',
+            'solutions',
+            'is_task_and_solution',
         )
 
 
@@ -50,12 +62,6 @@ class PageSerializer(WritableNestedModelSerializer):
         )
 
 
-class SubmissionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Submission
-        fields = ('phase', 'name', 'description', 'pk', 'id', 'created_when', 'is_public', 'zip_file')
-
-
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     logo = NamedBase64ImageField(required=True)
@@ -69,7 +75,10 @@ class CompetitionSerializer(WritableNestedModelSerializer):
         fields = (
             'id',
             'title',
+            'published',
+            'secret_key',
             'created_by',
+            'created_when',
             'logo',
             'pages',
             'phases',
@@ -90,4 +99,26 @@ class CompetitionSerializer(WritableNestedModelSerializer):
         return super().create(validated_data)
 
 
+class CompetitionSerializerSimple(serializers.ModelSerializer):
+
+    class Meta:
+        model = Competition
+        fields = (
+            'id',
+            'title',
+            'created_when',
+            'published'
+        )
+
+
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')
+
+
+class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompetitionCreationTaskStatus
+        fields = (
+            'status',
+            'details',
+            'resulting_competition',
+        )

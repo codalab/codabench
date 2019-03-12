@@ -9,6 +9,8 @@ class Leaderboard(models.Model):
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
 
+    # submissions = models.ManyToManyField('competitions.Submission')
+
 
 class Column(models.Model):
     COMPUTATIONS = (
@@ -32,10 +34,10 @@ class Column(models.Model):
         unique_together = ('leaderboard', 'key')
 
 
-class SubmissionResult(models.Model):
-    submission = models.ForeignKey('competitions.Submission', on_delete=models.CASCADE, related_name="results")
+class SubmissionScore(models.Model):
+    submission = models.ForeignKey('competitions.Submission', on_delete=models.CASCADE, related_name="scores")
     column = models.ForeignKey(Column, on_delete=models.CASCADE)
-    result = models.DecimalField(max_digits=20, decimal_places=10)
+    score = models.DecimalField(max_digits=20, decimal_places=10)
 
 
 # from django.conf import settings

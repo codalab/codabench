@@ -1,5 +1,6 @@
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
+from django.utils.timezone import now
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -22,7 +23,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.CharField(max_length=200, unique=True, null=True, blank=True)
 
     # Utility Attributes
-    date_joined = models.DateTimeField(auto_now_add=True)
+    date_joined = models.DateTimeField(default=now)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 

@@ -1,5 +1,6 @@
 *.pyc
 __pycache__
+.pytest_cache/
 
 .env
 .envrc
@@ -8,9 +9,13 @@ node_modules/
 staticfiles/
 uploads/
 venv/
+var/
+certs/
 
 src/static/output.css
 src/static/output.js
 src/static/riot.js
 src/static/riot.tag
 src/static/generated/*
+
+db.sqlite3

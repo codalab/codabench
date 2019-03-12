@@ -1,39 +1,44 @@
-var CODALAB = {
-    URLS: []  // Set in base.html
-}
+var CODALAB = {}
 
+CODALAB.URLS = []  // Set in base.html
+CODALAB.state = {} // Set in base.html
 CODALAB.events = riot.observable()
 
+// Private function, shouldn't be directly used
 var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
     return $.ajax({
-            type: 'POST',
-            url: URLS.API + endpoint,
-            data: form_data,
-            processData: false,
-            contentType: false,
-            xhr: function (xhr) {
-                var request = new window.XMLHttpRequest();
+        type: 'PUT',
+        url: endpoint,
+        data: form_data,
+        processData: false,
+        contentType: false,
+        xhr: function (xhr) {
+            var request = new window.XMLHttpRequest();
 
-                // Upload progress
-                request.upload.addEventListener("progress", function (event) {
-                    if (event.lengthComputable) {
-                        var percent_complete = event.loaded / event.total;
-                        if (progress_update_callback) {
-                            progress_update_callback(percent_complete);
-                        }
+            // Upload progress
+            request.upload.addEventListener("progress", function (event) {
+                if (event.lengthComputable) {
+                    var percent_complete = event.loaded / event.total;
+                    if (progress_update_callback) {
+                        progress_update_callback(percent_complete * 100);
                     }
-                }, false);
-                return request;
-            }
-        })
+                }
+            }, false);
+            return request;
+        }
+    })
 }
 
 CODALAB.api = {
     request: function (method, url, data) {
+        if(method.toLowerCase() !== "get") {
+            data = JSON.stringify(data)
+        }
+
         return $.ajax({
             type: method,
             url: url,
-            data: JSON.stringify(data),
+            data: data,
             contentType: "application/json",
             dataType: 'json'
         })
@@ -51,46 +56,70 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
     },
     get_competitions: function (query) {
-        // To not pass "undefined" in URL...
-        query = query || ''
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + query)
+        return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
+    get_competition_creation_status: function (key) {
+        return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
+    },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
+    },
+    delete_competition: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}competitions/${pk}/`)
+    },
+
+    toggle_competition_publish: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/toggle_publish/`)
     },
 
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/
-    get_submissions: function (query, type) {
+    can_make_submissions: function (phase_id) {
+        return CODALAB.api.request('GET', `${URLS.API}can_make_submission/${phase_id}`)
+    },
+    get_submissions: function (phase_pk) {
         // return CODALAB.api.request('GET', URLS.API + `submissions/?q=${query || ''}&type=${type || ''}`)
-        return CODALAB.api.request('GET', URLS.API + `submissions/`)
+        return CODALAB.api.request('GET', `${URLS.API}submissions/?phase=${phase_pk}`)
     },
     delete_submission: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "submissions/" + id + "/")
     },
-    create_submission: function (form_data, progress_update_callback) {
-        // NOTE: this function takes a special "form_data" not like the normal
-        // dictionary other methods take
+    // create_submission: function (form_data, progress_update_callback) {
+    //     // NOTE: this function takes a special "form_data" not like the normal
+    //     // dictionary other methods take
+    //
+    //
+    //     /*
+    //         Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
+    //
+    //         Local storage:
+    //             * POST to server
+    //
+    //         Remote storage:
+    //             * POST to server
+    //             * Server returns SAS URL
+    //             * PUT to SAS URL
+    //             * POST to mark upload as done, so un-finished uploads can be pruned later
+    //
+    //     */
+    //     return _upload_ajax(URLS.API + "submissions/", form_data, progress_update_callback)
+    // },
+    create_submission: function(submission_metadata) {
+        return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
+    },
 
-
-        /*
-            Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
-
-            Local storage:
-                * POST to server
-
-            Remote storage:
-                * POST to server
-                * Server returns SAS URL
-                * PUT to SAS URL
-                * POST to mark upload as done, so un-finished uploads can be pruned later
-
-        */
-        return _upload_ajax("submissions/", form_data, progress_update_callback)
+    /*---------------------------------------------------------------------
+         Leaderboards
+    ---------------------------------------------------------------------*/
+    add_submission_to_leaderboard: function(submission_pk) {
+        return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
+    },
+    get_leaderboard: function(leaderboard_pk) {
+        return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
     },
 
     /*---------------------------------------------------------------------
@@ -102,88 +131,75 @@ CODALAB.api = {
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
     },
-    create_dataset: function (form_data, progress_update_callback) {
-        // NOTE: this function takes a special "form_data" not like the normal
-        // dictionary other methods take
+    create_dump: function(competition_id) {
+        return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
+    },
+    /**
+     * Creates a dataset
+     * @param {object} metadata - name, description, type, data_file, is_public
+     * @param {object} data_file - the actual file object to use
+     * @param {function} progress_update_callback
+     */
+    create_dataset: function (metadata, data_file, progress_update_callback) {
+        // TODO: CHECK WHAT KIND OF STORAGE WE ARE! ???
 
+        // Pass the requested file name for the SAS url
+        metadata.request_sassy_file_name = data_file.name
 
-        /*
-            Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
+        // This will be set on successful dataset creation, then used to complete the dataset upload
+        var dataset = {}
 
-            Local storage:
-                * POST to server
-
-            Remote storage:
-                * POST to server
-                * Server returns SAS URL
-                * PUT to SAS URL
-                * POST to mark upload as done, so un-finished uploads can be pruned later
-
-        */
-        return _upload_ajax("datasets/", form_data, progress_update_callback)
-
-        /*IFC.api.get_upload_url(file, destination)
-            .success(function (data) {
-                var form = new FormData();
-                var url = data['form_action'];
-
-                // Remove our URL before making upload request form data
-                delete data['form_action'];
-
-                Object.keys(data).forEach(function (key) {
-                    form.append(key, data[key])
-                });
-                form.append('file', file);
-
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: form,
+        return CODALAB.api.request('POST', URLS.API + "datasets/", metadata)
+            // We have an upload URL, so upload now..
+            .then(function(result) {
+                dataset = result
+                return $.ajax({
+                    type: 'PUT',
+                    url: result.sassy_url,
+                    data: data_file,
                     processData: false,
                     contentType: false,
+                    beforeSend: function(request) {
+                        if(STORAGE_TYPE === 'azure') {
+                            request.setRequestHeader('x-ms-blob-type', 'BlockBlob')
+                            request.setRequestHeader('x-ms-version', '2018-03-28')
+                        }
+                    },
                     xhr: function (xhr) {
-                        var xhr = new window.XMLHttpRequest();
+                        var request = new window.XMLHttpRequest();
+
                         // Upload progress
-                        xhr.upload.addEventListener("progress", function (event) {
+                        request.upload.addEventListener("progress", function (event) {
                             if (event.lengthComputable) {
                                 var percent_complete = event.loaded / event.total;
                                 if (progress_update_callback) {
-                                    progress_update_callback(percent_complete);
+                                    progress_update_callback(percent_complete * 100);
                                 }
                             }
                         }, false);
-                        return xhr;
+                        return request;
                     }
                 })
-                    .success(function (data) {
-                        data = xml_to_json(data);
-                        success_callback(data);
-                    })
-                    .error(function () {
-                        toastr.error("Could not upload to S3.");
-                    });
             })
-            .error(function () {
-                toastr.error("Could not get URL for uploading.");
-            });*/
+            // Now we should complete the upload by telling Codalab! (so competition unpacking and such can start)
+            .then(function() {
+                return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
+            })
     },
-    /* We will use the following functions when we implement remote storage */
-    get_upload_url: function (file, destination) {
-        /*var form = new FormData();
 
-        form.append('name', file.name);
-        form.append('type', file.type);
-        form.append('dest', destination);
-
-        return $.ajax({
-            type: 'POST',
-            url: URL.pages.s3_direct,
-            data: form,
-            processData: false,
-            contentType: false
-        });*/
+    /*---------------------------------------------------------------------
+         Tasks
+    ---------------------------------------------------------------------*/
+    get_tasks: function (filters) {
+        return CODALAB.api.request('GET', URLS.API + 'tasks/', filters)
     },
-    mark_dataset_upload_complete: function (id) {
-
-    }
+    get_task: function (pk) {
+        return CODALAB.api.request('GET', `${URLS.API}tasks/${pk}/`)
+    },
+    delete_task: function (id) {
+        return CODALAB.api.request('DELETE', URLS.API + 'tasks/' + id + '/')
+    },
+    update_task: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
+    },
 }

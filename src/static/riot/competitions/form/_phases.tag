@@ -46,11 +46,32 @@
         <div class="content">
             <div class="ui top pointing secondary menu">
                 <a class="active item" data-tab="phase_details">Phase details</a>
-                <a class="item" data-tab="phase_datasets">Datasets</a>
+                <a class="item" data-tab="phase_datasets" show="{ current_phase_style == 'dataset' }">Datasets</a>
+                <a class="item" data-tab="phase_task" show="{ current_phase_style == 'task' }">Tasks</a>
             </div>
 
             <form class="ui form" ref="form">
+
+                <!-- #####################
+                     ##  Phase Details  ##
+                     ##################### -->
+
                 <div class="ui bottom active tab" data-tab="phase_details">
+
+                    <div class="inline fields">
+                        <div class="field">
+                            <div class="ui radio checkbox">
+                                <input ref="radio_dataset" type="radio" name="phase_style" value="dataset" onchange="{ is_task_and_solution_toggle }"/>
+                                <label>Dataset</label>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui radio checkbox">
+                                <input ref="radio_task" type="radio" name="phase_style" value="task" onchange="{ is_task_and_solution_toggle }"/>
+                                <label>Task/Solution</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="field required">
                         <label>Name</label>
                         <input name="name">
@@ -80,6 +101,10 @@
                     </div>
 
                 </div>
+
+                <!-- #####################
+                     ##  Phase Datasets ##
+                     ##################### -->
 
                 <div class="ui bottom tab" data-tab="phase_datasets">
                     <div class="field required">
@@ -167,12 +192,36 @@
 
                 </div>
 
+                <!-- #####################
+                     ##   Phase Tasks   ##
+                     ##################### -->
+                <!-- TODO multi task select use select2 -->
+                <div class="ui bottom tab" data-tab="phase_task" id="phase_task">
+                    <div class="field required">
+                        <a href="{ URLS.TASK_MANAGEMENT }" class="ui fluid large primary button" target="_blank">
+                            <i class="icon sign out"></i> Manage Tasks
+                        </a>
+                    </div>
 
+                    <div class="field required">
+                        <label>
+                            Task
+                            <span data-tooltip="Something useful to know...!" data-inverted="" data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
+                        <!-- <div class="ui fluid left icon labeled input" data-search-type="Task" data-name="task">
+                            <i class="search icon"></i>
+                            <input type="text" class="prompt" ref="task_search" onkeyup="{ search_tasks }">
+                            <div class="results"></div> -->
+                        <select name="tasks" class="select-two" style="width: 100%" multiple="multiple"></select>
+                    </div>
+                </div>
+
+
+                <div class="actions">
+                    <div class="ui button" onclick="{ close_modal }">Cancel</div>
+                    <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
+                </div>
             </form>
-        </div>
-        <div class="actions">
-            <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
     </div>
 
@@ -214,6 +263,31 @@
                 forceSync: true
             })
 
+            // Select 2
+            $('.select-two').select2({
+                ajax: {
+                    url: URLS.API + 'tasksearch/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term,
+                        }
+                    },
+                    processResults: function (data) {
+                        console.log(data)
+                        return {
+                            results: data
+                        }
+                    },
+                },
+                closeOnSelect: false,
+            })
+
+            // TODO: Use this when editing the phase to populate the tasks field with the already selected values
+            // https://select2.org/programmatic-control/add-select-clear-items
+            // can't use .val() to preselect values. must use .then(function (data)
+
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
@@ -224,7 +298,7 @@
                 $(item)
                     .search({
                         apiSettings: {
-                            url: URLS.API + 'datasets/?q=${query}&type=' + (item.dataset.searchType || ""),
+                            url: URLS.API + 'datasets/?search={query}&type=' + (item.dataset.name || ""),
                             onResponse: function (data) {
                                 // Put results in array to use maxResults setting
                                 var data_in_array = []
@@ -242,8 +316,9 @@
                         fields: {
                             title: 'name'
                         },
+                        cache: false,
                         maxResults: 4,
-                        onSelect: function(result, response) {
+                        onSelect: function (result, response) {
                             // It's hard to store the dataset information (hidden fields suck), so let's just put it here temporarily
                             // and grab it back on save
                             self.form_datasets[item.dataset.name] = result
@@ -265,6 +340,12 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.is_task_and_solution_toggle = function (event) {
+            self.current_phase_style = event.target.value
+            self.phases[self.selected_phase_index].phase_style == event.target.value
+            self.update()
+        }
+
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
 
@@ -310,6 +391,7 @@
             } else {
                 // Make sure each phase has the proper details
                 self.phases.forEach(function (phase) {
+                    // TODO: change form validation to account for presence of task instead of scoring program
                     if (!phase.name || !phase.start || !phase.description || !phase.scoring_program) {
                         is_valid = false
                     }
@@ -351,16 +433,18 @@
             var data = get_form_data(self.refs.form)
             console.log(data)
             // All of these must be present
+            // TODO: Fix this to account for tasks
             self.form_is_valid = !!data.name && !!data.start && !!data.description && !!self.form_datasets.scoring_program
-
-            console.log("form is valid: " + self.form_is_valid)
         }
 
         self.clear_form = function () {
             self.selected_phase_index = undefined
             self.form_datasets = {}
 
-            $(':input', self.refs.form).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
+            $(':input', self.refs.form)
+                .not('[type="file"]')
+                .not('button')
+                .not('[readonly]').each(function (i, field) {
                 $(field).val('')
             })
 
@@ -378,13 +462,27 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
 
+            phase.phase_style =  phase.phase_style || 'dataset'
+
             set_form_data(phase, self.refs.form)
 
+            // quick fix for busted radio buttons for dataset/task
+            self.refs.radio_dataset.value = 'dataset'
+            self.refs.radio_task.value = 'task'
+
+            if(phase.phase_style == 'dataset') {
+                self.refs.radio_dataset.checked = true
+            } else {
+                self.refs.radio_task.checked = true
+            }
+
+            self.current_phase_style = phase.phase_style
+
+            // Setting selected files
             self.file_fields.forEach(function(file_field_name){
                 if(!!phase[file_field_name]) {
                     //phase[file_field_name] = phase[file_field_name].key
                     $(`.input.search[data-name="${file_field_name}"] input`).val(phase[file_field_name].name)
-                    console.log("FOUND IT " + phase[file_field_name].name)
                 }
             })
 
@@ -425,12 +523,12 @@
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
-        CODALAB.events.on('competition_loaded', function(competition){
+        CODALAB.events.on('competition_loaded', function (competition) {
             self.phases = competition.phases
             self.form_updated()
         })
     </script>
-    <style>
+    <style scoped>
         .ui[class*="left icon"].input > i.icon {
             opacity: .15;
         }

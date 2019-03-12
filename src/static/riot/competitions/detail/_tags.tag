@@ -18,6 +18,9 @@
     </div>
     <script>
         var self = this
-        self.competition = opts.competition
+        self.competition = {}
+        CODALAB.events.on('competition_loaded', function(competition) {
+            self.competition = competition
+        })
     </script>
 </comp-tags>

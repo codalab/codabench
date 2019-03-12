@@ -150,8 +150,8 @@
 
         self.one("mount", function () {
             // Make semantic elements work
-            $(".ui.dropdown").dropdown()
-            $(".ui.checkbox").checkbox()
+            $(".ui.dropdown", self.root).dropdown()
+            $(".ui.checkbox", self.root).checkbox()
 
             // init
             self.update_submissions()

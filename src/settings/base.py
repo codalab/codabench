@@ -2,8 +2,6 @@ import os
 import sys
 
 import dj_database_url
-from django.core.files.storage import get_storage_class
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Also add ../../apps to python path
@@ -34,6 +32,9 @@ THIRD_PARTY_APPS = (
     'social_django',
     'django_extensions',
     'django_filters',
+    'storages',
+    'channels',
+    'drf_yasg',
 )
 OUR_APPS = (
     'competitions',
@@ -41,6 +42,8 @@ OUR_APPS = (
     'pages',
     'profiles',
     'leaderboards',
+    'tasks',
+    'commands',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -76,6 +79,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
+                'utils.context_processors.common_settings',
             ],
         },
     },
@@ -91,6 +95,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(
 
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
+# FIXME: change these addresses to something more relevant
 DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 
@@ -124,29 +129,30 @@ SOCIAL_AUTH_CHAHUB_BASE_URL = os.environ.get('SOCIAL_AUTH_CHAHUB_BASE_URL', 'htt
 AUTH_USER_MODEL = 'profiles.User'
 SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 
-
 # =============================================================================
 # Debugging
 # =============================================================================
 DEBUG = os.environ.get('DEBUG', True)
 
-
 # =============================================================================
 # Database
 # =============================================================================
+DATABASES = {'default': {}}
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('DB_NAME', 'postgres'),
-        'USER': os.environ.get('DB_USERNAME', 'postgres'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': 5432
-    }
-}
 db_from_env = dj_database_url.config()
-DATABASES['default'].update(db_from_env)
-
+if db_from_env:
+    DATABASES['default'].update(db_from_env)
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USERNAME', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('DB_HOST', 'db'),
+            'PORT': 5432
+        }
+    }
 
 # =============================================================================
 # SSL
@@ -158,12 +164,23 @@ else:
     # Allows us to use with django-oauth-toolkit on localhost sans https
     SESSION_COOKIE_SECURE = False
 
+# =========================================================================
+# RabbitMQ
+# =========================================================================
+RABBITMQ_DEFAULT_USER = os.environ.get('RABBITMQ_DEFAULT_USER', 'guest')
+RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
+RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL", 'amqp://admin:admin@rabbitmq:5672/comps')
-# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-
+CELERY_BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
+if not CELERY_BROKER_URL:
+    CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ('json',)
 
 # =============================================================================
 # DRF
@@ -187,7 +204,6 @@ OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
 }
 
-
 # =============================================================================
 # OAuth
 # =============================================================================
@@ -196,11 +212,55 @@ CORS_ORIGIN_ALLOW_ALL = True
 if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
 
+# =============================================================================
+# Channels
+# =============================================================================
+ASGI_APPLICATION = "routing.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [('redis', 6379)],
+        },
+        # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
+    },
+}
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "asgi_redis.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("my_domain.com", 6379)],
+#         },
+#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
+#     },
+# }
 
 # =============================================================================
 # Storage
 # =============================================================================
-DEFAULT_FILE_STORAGE = os.environ.get('DEFAULT_FILE_STORAGE', 'django.core.files.storage.FileSystemStorage')
+STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
+DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
+
+STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
+STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'
+STORAGE_IS_AZURE = STORAGE_TYPE == 'azure'
+
+if STORAGE_IS_S3:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+elif STORAGE_IS_GCS:
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+elif STORAGE_IS_AZURE:
+    DEFAULT_FILE_STORAGE = "utils.storage.CodalabAzureStorage"
+else:
+    raise NotImplementedError("Must use STORAGE_TYPE of 's3', 'minio', 'gcs', or 'azure'")
+
+# Helpers to verify storage configuration
+if STORAGE_IS_GCS:
+    assert os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'), "Google Cloud Storage credentials are stored in a json " \
+                                                             "file which GOOGLE_APPLICATION_CREDENTIALS env var " \
+                                                             "should point to (edit in .env)"
+
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -222,7 +282,8 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_STORAGE_PRIVATE_BUCKET_NAME = os.environ.get('AWS_STORAGE_PRIVATE_BUCKET_NAME')
 AWS_S3_CALLING_FORMAT = os.environ.get('AWS_S3_CALLING_FORMAT', 'boto.s3.connection.OrdinaryCallingFormat')
-AWS_S3_HOST = os.environ.get('AWS_S3_HOST', 's3-us-west-2.amazonaws.com')
+AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
+AWS_DEFAULT_ACL = None  # Uses buckets security access policies
 AWS_QUERYSTRING_AUTH = os.environ.get(
     # This stops signature/auths from appearing in saved URLs
     'AWS_QUERYSTRING_AUTH',
@@ -239,25 +300,38 @@ BUNDLE_AZURE_ACCOUNT_NAME = os.environ.get('BUNDLE_AZURE_ACCOUNT_NAME', AZURE_AC
 BUNDLE_AZURE_ACCOUNT_KEY = os.environ.get('BUNDLE_AZURE_ACCOUNT_KEY', AZURE_ACCOUNT_KEY)
 BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 
-# Helper booleans
-STORAGE_IS_AWS = DEFAULT_FILE_STORAGE == 'storages.backends.s3boto.S3BotoStorage'
-STORAGE_IS_AZURE = DEFAULT_FILE_STORAGE == 'storages.backends.azure_storage.AzureStorage'
-STORAGE_IS_LOCAL = DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage'
+# Google Cloud Storage
+GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
+GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
+GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
-# Setup actual storage classes we use on the project
-StorageClass = get_storage_class(DEFAULT_FILE_STORAGE)
 
-if STORAGE_IS_AWS:
-    BundleStorage = StorageClass(bucket=AWS_STORAGE_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket=AWS_STORAGE_BUCKET_NAME)
-elif STORAGE_IS_AZURE:
-    BundleStorage = StorageClass(account_name=BUNDLE_AZURE_ACCOUNT_NAME,
-                                 account_key=BUNDLE_AZURE_ACCOUNT_KEY,
-                                 azure_container=BUNDLE_AZURE_CONTAINER)
+# =============================================================================
+# Debug
+# =============================================================================
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        'querycount.middleware.QueryCountMiddleware',
+    ) + MIDDLEWARE  # we want Debug Middleware at the top
+    # tricks to have debug toolbar when developing with docker
 
-    PublicStorage = StorageClass(account_name=AZURE_ACCOUNT_NAME,
-                                 account_key=AZURE_ACCOUNT_KEY,
-                                 azure_container=AZURE_CONTAINER)
-else:
-    BundleStorage = StorageClass()
-    PublicStorage = StorageClass()
+    INTERNAL_IPS = ['127.0.0.1']
+
+    import socket
+    try:
+        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
+    except socket.gaierror:
+        pass
+
+    QUERYCOUNT = {
+        'IGNORE_REQUEST_PATTERNS': [
+            r'^/admin/',
+            r'^/static/',
+        ]
+    }
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True
+    }

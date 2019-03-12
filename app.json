@@ -4,7 +4,8 @@
     "postdeploy": "bin/init_staging"
   },
   "env": {
-    "USE_SSL": "True"
+    "USE_SSL": "True",
+    "GUNICORN_CMD_ARGS": "--workers=3"
   },
   "formation": {
   },

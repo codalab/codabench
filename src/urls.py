@@ -11,6 +11,7 @@ urlpatterns = [
     path('competitions/', include('competitions.urls', namespace='competitions')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
+    path('tasks/', include('tasks.urls', namespace='tasks')),
 
     # Third party
     path('api/', include('api.urls')),
@@ -24,6 +25,11 @@ urlpatterns = [
 
 
 if settings.DEBUG:
+    # Static files for local dev, so we don't have to collectstatic and such
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_URL)
-    if settings.STORAGE_IS_LOCAL:
-        urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    # Django debug toolbar
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
