@@ -204,7 +204,8 @@ class Run:
                 if not more_stdout and not more_stderr:
                     break
 
-            stdout_location, stderr_location = (self.stdout, self.stderr) if kind == 'program' else (self.ingestion_stdout, self.ingestion_stderr)
+            stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
+            stderr_location = self.stderr if kind == 'program' else self.ingestion_stderr
 
             logger.info(f'[exited with {proc.returncode}]')
             if stdout:
