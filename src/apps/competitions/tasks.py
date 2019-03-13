@@ -103,8 +103,8 @@ def run_submission(submission_pk, is_scoring=False):
             if task.ingestion_program:
                 if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
                     run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                    # if task.input_data:
-                    #     run_arguments['input_data'] = make_url_sassy(task.input_data.datafile.name)
+                    if task.input_data:
+                        run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
             # TODO: Too much DRY violation in here. A lot of repeated logic
             if is_scoring:
@@ -119,7 +119,13 @@ def run_submission(submission_pk, is_scoring=False):
                 run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
                 run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
 
-            for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
+            # TODO: Again DRYing me out, man!
+            if is_scoring:
+                detailed_output_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+            else:
+                detailed_output_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
+
+            for detail_name in detailed_output_names:
                 new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
                 new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
                 run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
