@@ -238,10 +238,6 @@ class Run:
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml'")
 
-        # I believe these are unused now,
-        # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
-        # stderr = open(os.path.join(program_dir, "stderr.txt"), "a+")
-
         docker_cmd = [
             'docker',
             'run',
@@ -258,11 +254,17 @@ class Run:
             '-w', '/app',
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
-            # Note that hidden data dir is excluded here!
-            # Set the right image
-            self.docker_image,
-            # 'python', 'submission/submission.py',
         ]
+
+        # TODO: Should pass in reference data if scoring, or something?
+
+        if kind == 'ingestion' and self.input_data:
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+
+        # Set the image name (i.e. "codalab/codalab-legacy") for the container
+        docker_cmd += [self.docker_image]
+
+        # Append the actual program to run
         docker_cmd += command.split(' ')
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
