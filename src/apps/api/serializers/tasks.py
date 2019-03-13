@@ -20,8 +20,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'file_path',
         ]
 
-    @staticmethod
-    def get_file_path(solution):
+    def get_file_path(self, solution):
         return make_url_sassy(solution.data.data_file.name)
 
 
@@ -51,7 +50,7 @@ class TaskSerializer(WritableNestedModelSerializer):
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
-    created_by = serializers.SerializerMethodField(read_only=True, required=False)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
@@ -79,12 +78,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'solutions',
         ]
 
-    @staticmethod
-    def get_created_by(task):
-        return str(task.created_by)
-
-    @staticmethod
-    def get_files(task):
+    def get_files(self, task):
         files = []
         file_types = [
             ('input_data', task.input_data),

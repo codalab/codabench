@@ -25,8 +25,8 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
     filename = fields.SerializerMethodField(read_only=True)
-    owner = fields.SerializerMethodField()
-    phase_name = fields.SerializerMethodField()
+    owner = fields.CharField(source='owner.username')
+    phase_name = fields.CharField(source='phase.name')
 
     class Meta:
         model = Submission
@@ -54,14 +54,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
-
-    @staticmethod
-    def get_owner(instance):
-        return str(instance.owner)
-
-    @staticmethod
-    def get_phase_name(instance):
-        return instance.phase.name
 
 
 class SubmissionCreationSerializer(serializers.ModelSerializer):
@@ -121,8 +113,7 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
             'data_file',
         )
 
-    @staticmethod
-    def get_data_file(instance):
+    def get_data_file(self, instance):
         return make_url_sassy(instance.data_file.name)
 
 
@@ -141,19 +132,15 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'leaderboards'
         )
 
-    @staticmethod
-    def get_logs(instance):
+    def get_logs(self, instance):
         return SubmissionDetailSerializer(instance.details.all(), many=True).data
 
-    @staticmethod
-    def get_data_file(instance):
+    def get_data_file(self, instance):
         return make_url_sassy(instance.data.data_file.name)
 
-    @staticmethod
-    def get_result(instance):
+    def get_result(self, instance):
         return make_url_sassy(instance.result.name)
 
-    @staticmethod
-    def get_leaderboards(instance):
+    def get_leaderboards(self, instance):
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))
         return [leaderboards.LeaderboardSerializer(lb).data for lb in boards]
