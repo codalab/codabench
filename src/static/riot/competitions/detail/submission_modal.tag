@@ -142,20 +142,21 @@
     <div class="ui tab" data-tab="admin" if="{submission.admin}">
         <div class="ui centered grid">
             <div class="ui fourteen wide column">
-                <div each="{leaderboard in leaderboards}">
-                    <h3>{leaderboard.title}</h3>
-                    <form id="score_update_form">
+                <form id="score_update_form">
+                    <div each="{leaderboard in leaderboards}" class="leaderboard">
+                        <h3>{leaderboard.title}</h3>
+
                         <table class="ui table">
                             <thead>
                             <tr>
-                                <th each="{column in columns}">
+                                <th each="{column in leaderboard.columns}">
                                     {column.title}
                                 </th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
-                                <td each="{column in columns}">
+                                <td each="{column in leaderboard.columns}">
                                     <input type="number" name="{ column.score_id }"
                                            disabled="{ !!column.computation }"
                                            value="{ column.score }" step="any">
@@ -163,11 +164,12 @@
                             </tr>
                             </tbody>
                         </table>
-                        <button class="ui blue button" onclick="{ update_scores }">
-                            Submit
-                        </button>
-                    </form>
-                </div>
+
+                    </div>
+                    <button class="ui blue button" onclick="{ update_scores }">
+                        Submit
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -193,7 +195,7 @@
         self.get_score_details = function (column) {
             try {
                 let score = _.filter(self.submission.scores, (score) => {
-                    return score.index === column.index
+                    return score.column_key === column.key
                 })[0]
                 return [score.score, score.id]
             } catch {
@@ -203,9 +205,10 @@
 
         CODALAB.events.on('submission_clicked', function (submission) {
             // reset logs and leaderboards for new submission to write to
+            self.logs = {}
             self.leaderboards = []
             self.submission = submission
-            self.columns = []
+            // self.columns = []
             self.update()
             var tabs = $('.menu .item', self.root)
             tabs.tab()
@@ -224,15 +227,11 @@
                     })
                     if (self.submission.admin) {
                         _.forEach(data.leaderboards, (leaderboard) => {
-                            _.forEach(leaderboard.columns, (column) => {
-                                let col = {
-                                    title: column.title,
-                                    computation: column.computation,
-                                }
+                            _.map(leaderboard.columns, (column) => {
                                 let [score, score_id] = self.get_score_details(column)
-                                col.score = score
-                                col.score_id = score_id
-                                self.columns.push(col)
+                                column.score = score
+                                column.score_id = score_id
+                                return column
                             })
                         })
                     }
@@ -243,11 +242,12 @@
 
     </script>
 
-    <style>
-        .log {
+    <style type="text/stylus">
+        .log
             height: 415px;
             max-height: 415px;
             overflow: auto;
-        }
+        .leaderboard
+            padding-bottom 10px;
     </style>
 </submission-modal>

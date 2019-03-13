@@ -215,6 +215,8 @@ class Submission(models.Model):
             app.control.revoke(self.task_id, terminate=True)
             self.status = Submission.CANCELLED
             self.save()
+            return True
+        return False
 
 
 class CompetitionParticipant(models.Model):

@@ -83,7 +83,9 @@ class PhaseViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to re-run submissions')
         for submission in phase.submissions.all():
             submission.re_run()
-        return Response({"count": phase.submissions.count()})
+        rerun_count = phase.submission.count() / 2
+        # Divide by 2 since we just re_ran everything by duplicating the submission, doubling the count
+        return Response({"count": rerun_count})
 
 
 class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):

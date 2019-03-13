@@ -4,7 +4,7 @@
         <a class="ui green button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
         </a>
-        <div class="ui dropdown blue button">
+        <div class="ui dropdown blue button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
@@ -37,7 +37,7 @@
     <table class="ui celled selectable inverted table">
         <thead>
         <tr>
-            <th>#</th>
+            <th class="index-column">#</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
@@ -47,7 +47,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr each="{ submission, index in submissions }" onclick="{ show_modal.bind(this, submission) }" class="clickable">
+        <tr each="{ submission, index in submissions }" onclick="{ show_modal.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
@@ -89,7 +89,10 @@
 
 
         self.on("mount", function () {
-            $('.ui .dropdown').dropdown();
+            $(self.refs.search).dropdown();
+            $(self.refs.status).dropdown();
+            $(self.refs.phase).dropdown();
+            $(self.refs.rerun_button).dropdown();
         })
 
         self.update_submissions = function (filters) {
@@ -137,26 +140,28 @@
                 })
         }
         self.filter = function () {
-            var filters = {}
-            var search = self.refs.search.value
-            if (search.length >= 3 || search === '') {
-                filters['search'] = search
-            }
-            var status = self.refs.status.value
-            if (status && status !== ' ') {
-                filters['status'] = status
-            }
-            if (!opts.admin) {
-                filters['phase'] = self.selected_phase.id
-            } else {
-                var phase = self.refs.phase.value
-                if (phase && phase !== ' ') {
-                    filters['phase'] = phase
-                } else {
-                    filters['phase__competition'] = opts.competition.id
+            delay(() => {
+                var filters = {}
+                var search = self.refs.search.value
+                if (search) {
+                    filters['search'] = search
                 }
-            }
-            self.update_submissions(filters)
+                var status = self.refs.status.value
+                if (status !== ' ') {
+                    filters['status'] = status
+                }
+                if (!opts.admin) {
+                    filters['phase'] = self.selected_phase.id
+                } else {
+                    var phase = self.refs.phase.value
+                    if (phase && phase !== ' ') {
+                        filters['phase'] = phase
+                    } else {
+                        filters['phase__competition'] = opts.competition.id
+                    }
+                }
+                self.update_submissions(filters)
+            }, 100)
         }
 
         self.rerun_submission = function (submission) {
@@ -171,8 +176,12 @@
         self.cancel_submission = function (submission) {
             CODALAB.api.cancel_submission(submission.id)
                 .done(function (response) {
-                    toastr.success('Submission cancelled')
-                    self.update_submissions()
+                    if (response === true) {
+                        toastr.success('Submission cancelled')
+                        self.update_submissions()
+                    } else {
+                        toastr.error('Could not cancel submission')
+                    }
                 })
             event.stopPropagation()
         }
@@ -229,8 +238,12 @@
                 opacity 1 !important
                 color #40f940
 
-        .clickable
+        .index-column
+            width: 40px
+
+        .submission_row
             &:hover
                 cursor: pointer
+            height: 52px
     </style>
 </submission-manager>

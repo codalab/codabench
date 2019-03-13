@@ -81,7 +81,7 @@ class SubmissionViewSet(ModelViewSet):
             'status',
             'score',
             'appear_on_leaderboards',
-            'phase',
+            'phase_name',
         )
         # Human names for the fields
         context["labels"] = {
@@ -90,15 +90,15 @@ class SubmissionViewSet(ModelViewSet):
             'status': 'Status',
             'score': 'Score',
             'appear_on_leaderboards': 'Appears on Leaderboard',
-            'phase': 'Phase',
+            'phase_name': 'Phase',
         }
         return context
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
         instance = self.get_object()
-        instance.cancel()
-        return Response({}, status=status.HTTP_200_OK)
+        canceled = instance.cancel()
+        return Response({'canceled': canceled}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=('GET',))
     def re_run_submission(self, request, pk):

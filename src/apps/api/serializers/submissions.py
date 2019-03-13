@@ -10,6 +10,7 @@ from utils.data import make_url_sassy
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
     index = fields.IntegerField(source='column.index', read_only=True)
+    column_key = fields.CharField(source='column.key', read_only=True)
 
     class Meta:
         model = SubmissionScore
@@ -17,6 +18,7 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
             'id',
             'index',
             'score',
+            'column_key',
         )
 
 
@@ -24,11 +26,13 @@ class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
     filename = fields.SerializerMethodField(read_only=True)
     owner = fields.SerializerMethodField()
+    phase_name = fields.SerializerMethodField()
 
     class Meta:
         model = Submission
         fields = (
             'phase',
+            'phase_name',
             'name',
             'filename',
             'description',
@@ -54,6 +58,10 @@ class SubmissionSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_owner(instance):
         return str(instance.owner)
+
+    @staticmethod
+    def get_phase_name(instance):
+        return instance.phase.name
 
 
 class SubmissionCreationSerializer(serializers.ModelSerializer):
@@ -147,5 +155,5 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_leaderboards(instance):
-        return [leaderboards.LeaderboardSerializer(score.column.leaderboard).data for score in instance.scores.all().select_related('column__leaderboard')]
-        # return instance.scores.all().values_list('column__leaderboard')
+        boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))
+        return [leaderboards.LeaderboardSerializer(lb).data for lb in boards]
