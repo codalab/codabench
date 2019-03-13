@@ -50,7 +50,7 @@ class TaskSerializer(WritableNestedModelSerializer):
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
-    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    created_by = serializers.CharField(source='created_by.username', read_only=True, required=False)
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
