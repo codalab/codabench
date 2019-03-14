@@ -61,7 +61,3 @@ class SubmissionScoresTest(TestCase):
         with pytest.raises(PermissionError):
             self.change_score(new_score)
         assert self.submission.scores.first().score != new_score
-
-
-
-

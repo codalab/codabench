@@ -103,11 +103,11 @@ class SubmissionManagerTests(TestCase):
         assert subs[0].phase == subs[1].phase
         assert subs[0].data == subs[1].data
 
-    # def test_cancel_submission_sets_status(self):
-    #     sub = self.make_submission()
-    #     assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
-    #     assert sub.status == 'Cancelled'
-    #
+    def test_cancel_submission_sets_status(self):
+        sub = self.make_submission()
+        assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
+        assert sub.status == 'Cancelled'
+
     def test_cancel_does_nothing_if_status_is_cancelled_failed_or_finished(self):
         sub = self.make_submission()
         for status in ['Failed', 'Cancelled', 'Finished']:

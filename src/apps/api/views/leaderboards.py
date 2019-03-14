@@ -37,7 +37,6 @@ class SubmissionScoreViewSet(ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
-
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 def add_submission_to_leaderboard(request, submission_pk):
