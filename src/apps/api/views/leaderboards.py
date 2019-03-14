@@ -28,6 +28,15 @@ class SubmissionScoreViewSet(ModelViewSet):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        comp = instance.submission.phase.competition
+        admin_users = [comp.created_by] + list(comp.collaborators.all())
+        if request.user not in admin_users and not request.user.is_superuser:
+            raise PermissionError('You do not have permission to update test scores')
+        return super().update(request, *args, **kwargs)
+
+
 
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))

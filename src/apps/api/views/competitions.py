@@ -76,14 +76,15 @@ class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
 
-    @action(detail=True)
+    @action(detail=True, url_name='rerun_submissions')
     def rerun_submissions(self, request, pk):
         phase = self.get_object()
-        if request.user != phase.competition.created_by and request.user not in phase.competition.collaborators.all() and not request.user.is_superuser:
+        comp = phase.competition
+        if request.user not in [comp.created_by] + list(comp.collaborators.all()) and not request.user.is_superuser:
             raise PermissionDenied('You do not have permission to re-run submissions')
         for submission in phase.submissions.all():
             submission.re_run()
-        rerun_count = phase.submission.count() / 2
+        rerun_count = phase.submissions.count() / 2
         # Divide by 2 since we just re_ran everything by duplicating the submission, doubling the count
         return Response({"count": rerun_count})
 

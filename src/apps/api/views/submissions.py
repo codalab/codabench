@@ -94,26 +94,31 @@ class SubmissionViewSet(ModelViewSet):
         }
         return context
 
-    @action(detail=True, methods=('GET',))
-    def cancel_submission(self, request, pk):
-        instance = self.get_object()
-        canceled = instance.cancel()
-        return Response({'canceled': canceled}, status=status.HTTP_200_OK)
+    def has_admin_permission(self, user, submission):
+        competition = submission.phase.competition
+        return user.is_superuser or user in [competition.created_by] + list(competition.collaborators.all())
 
     @action(detail=True, methods=('GET',))
+    def cancel_submission(self, request, pk):
+        submission = self.get_object()
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied(f'You do not have permission to cancel submissions')
+        canceled = submission.cancel()
+        return Response({'canceled': canceled})
+
+    @action(detail=True, methods=('GET',), url_name='re_run_submission')
     def re_run_submission(self, request, pk):
         submission = self.get_object()
-        competition = submission.phase.competition
-        if not request.user.is_superuser and request.user != competition.created_by and request.user not in competition.collaborators.all():
+        if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
         submission.re_run()
-        return Response({}, status=status.HTTP_200_OK)
+        return Response({})
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
         data = SubmissionFilesSerializer(submission).data
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data)
 
 
 @api_view(['POST'])
