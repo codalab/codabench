@@ -108,9 +108,9 @@ class SubmissionManagerTests(TestCase):
     #     assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
     #     assert sub.status == 'Cancelled'
     #
-    # def test_cancel_does_nothing_if_status_is_cancelled_failed_or_finished(self):
-    #     sub = self.make_submission()
-    #     for status in ['Failed', 'Cancelled', 'Finished']:
-    #         sub.status = status
-    #         assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
-    #         assert sub.status == status, 'Status was changed and should not have been'
+    def test_cancel_does_nothing_if_status_is_cancelled_failed_or_finished(self):
+        sub = self.make_submission()
+        for status in ['Failed', 'Cancelled', 'Finished']:
+            sub.status = status
+            assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
+            assert sub.status == status, 'Status was changed and should not have been'
