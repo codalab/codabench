@@ -71,6 +71,28 @@ COLUMN_FIELDS = [
 ]
 
 
+def send(submission, run_args):
+    print("Task data:")
+    print(run_args)
+
+    # Pad timelimit so worker has time to cleanup
+    time_padding = 60 * 20  # 20 minutes
+    time_limit = submission.phase.execution_time_limit + time_padding
+
+    task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
+                         soft_time_limit=time_limit)
+    submission.task_id = task.id
+    submission.status = Submission.SUBMITTED
+    submission.save()
+
+
+def create_detailed_output_file(detail_name, submission):
+    # Detail logs like stdout/etc.
+    new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
+    new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
+    return make_url_sassy(new_details.data_file.name, permission="w")
+
+
 @app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk, is_scoring=False):
     related_models = (
@@ -98,6 +120,10 @@ def run_submission(submission_pk, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
+    # TODO: refactor all this later for multiple tasks per phase. This will further reduce gross DRY stuff
+    if not is_scoring:
+        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+
     if submission.phase.is_task_and_solution:
         for task in submission.phase.tasks.all():
             if task.ingestion_program:
@@ -106,57 +132,28 @@ def run_submission(submission_pk, is_scoring=False):
                     if task.input_data:
                         run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
-            # TODO: Too much DRY violation in here. A lot of repeated logic
-            if is_scoring:
-                run_arguments['program_data'] = make_url_sassy(task.scoring_program.data_file.name)
-                run_arguments['result'] = make_url_sassy(submission.result.name)
-                if task.reference_data:
-                    run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
-            else:
-                # Pre-generate file path by setting empty file here
-                submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-                # Run the submission
-                run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
-                run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
+            if is_scoring and task.reference_data:
+                run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
-            # TODO: Again DRYing me out, man!
-            if is_scoring:
-                detailed_output_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
-            else:
-                detailed_output_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
-
-            for detail_name in detailed_output_names:
-                new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
-                new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
-                run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
-
-            print("Task data:")
-            print(run_arguments)
-
-            # Pad timelimit so worker has time to cleanup
-            time_padding = 60 * 20  # 20 minutes
-            time_limit = submission.phase.execution_time_limit + time_padding
-
-            task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker',
-                                 soft_time_limit=time_limit)
-            submission.task_id = task.id
-            submission.status = Submission.SUBMITTED
-            submission.save()
-
+            run_arguments['program_data'] = make_url_sassy(
+                path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+            )
+            run_arguments['result'] = make_url_sassy(
+                path=submission.result.name,
+                permission='w' if not is_scoring else 'r'
+            )
+            detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+            for detail_name in detail_names:
+                run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
+            send(submission, run_arguments)
     else:
-        if not is_scoring:
-            # Pre-generate file path by setting empty file here
-            submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-            # Run the submission
-            run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
-            run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
-            detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
-        else:
-            # Run the scoring_program
-            run_arguments["program_data"] = make_url_sassy(submission.phase.scoring_program.data_file.name)
-            run_arguments["result"] = make_url_sassy(submission.result.name)
-            # run_arguments["ingestion_program"] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
-            detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+        run_arguments["program_data"] = make_url_sassy(
+            path=submission.data.data_file.name if not is_scoring else submission.phase.scoring_program.data_file.name
+        )
+        run_arguments["result"] = make_url_sassy(
+            path=submission.result.name,
+            permission='w' if not is_scoring else 'r'
+        )
 
         # TODO: when is an ingestion program supposed to run when not task/solution style phase?
         if submission.phase.ingestion_program:
@@ -170,23 +167,11 @@ def run_submission(submission_pk, is_scoring=False):
             if getattr(submission.phase, input) is not None:
                 run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
 
-        # Detail logs like stdout/etc.
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
         for detail_name in detail_names:
-            new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
-            new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
-            run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
+            run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
 
-        print("Task data:")
-        print(run_arguments)
-
-        # Pad timelimit so worker has time to cleanup
-        time_padding = 60 * 20  # 20 minutes
-        time_limit = submission.phase.execution_time_limit + time_padding
-
-        task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker', soft_time_limit=time_limit)
-        submission.task_id = task.id
-        submission.status = Submission.SUBMITTED
-        submission.save()
+        send(submission, run_arguments)
 
 
 class CompetitionUnpackingException(Exception):

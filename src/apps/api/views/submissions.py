@@ -79,8 +79,6 @@ class SubmissionViewSet(ModelViewSet):
             'owner',
             'created_when',
             'status',
-            'score',
-            'appear_on_leaderboards',
             'phase_name',
         )
         # Human names for the fields
@@ -88,8 +86,6 @@ class SubmissionViewSet(ModelViewSet):
             'owner': 'Owner',
             'created_when': 'Created When',
             'status': 'Status',
-            'score': 'Score',
-            'appear_on_leaderboards': 'Appears on Leaderboard',
             'phase_name': 'Phase',
         }
         return context
@@ -106,7 +102,7 @@ class SubmissionViewSet(ModelViewSet):
         canceled = submission.cancel()
         return Response({'canceled': canceled})
 
-    @action(detail=True, methods=('GET',), url_name='re_run_submission')
+    @action(detail=True, methods=('GET',))
     def re_run_submission(self, request, pk):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
