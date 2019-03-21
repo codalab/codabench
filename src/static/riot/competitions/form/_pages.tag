@@ -28,13 +28,11 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages[0].title }</h1>
-                <p>(This is the first page people will see upon visiting your competition!)</p>
+                <h1>{ pages[0] ? pages[0].title : null }</h1>
+                <div class="ui segment">
+                    <raw content="{ pages[0] ? pages[0].formatted_content : null }"></raw>
+                </div>
             </div>
-
-            <br><br>
-
-            <img src="https://semantic-ui.com/images/wireframe/paragraph.png">
         </div>
     </div>
 
@@ -71,7 +69,6 @@
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
         self.pages = [
-            {title: "Welcome!", content: "welcome msg"}
         ]
 
         self.one("mount", function () {
@@ -194,8 +191,22 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
-            self.pages = competition.pages
+            self.pages = _.map(competition.pages, (page) => {
+                page.formatted_content = marked(page.content)
+                return page
+            })
+
             self.form_updated()
         })
     </script>
 </competition-pages>
+
+<raw>
+
+    <script>
+        self = this
+        CODALAB.events.on('competition_loaded', function(competition){
+            self.root.innerHTML = opts.content
+        })
+    </script>
+</raw>
