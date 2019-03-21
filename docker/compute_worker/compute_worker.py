@@ -258,8 +258,14 @@ class Run:
 
         # TODO: Should pass in reference data if scoring, or something?
 
+        # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
         if kind == 'ingestion' and self.input_data:
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+
+        if self.is_scoring:
+            # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
+            # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
