@@ -188,20 +188,19 @@ class Run:
             stdout = b''
             stderr = b''
 
+            watchers = [
+                (stdout, proc.stdout),
+                (stderr, proc.stderr)
+            ]
+
             while True:
-                more_stdout = await proc.stdout.readline()
-                if more_stdout:
-                    stdout += more_stdout
-                    print("DATA!!!! " + str(more_stdout))
-                    await websocket.send(more_stdout.decode())
-
-                more_stderr = await proc.stderr.readline()
-                if more_stderr:
-                    stderr += more_stderr
-                    print("ERR DATA!!!! " + str(more_stderr))
-                    await websocket.send(more_stderr.decode())  # maybe mark somehow so it's RED on frontend
-
-                if not more_stdout and not more_stderr:
+                for out, stream in watchers:
+                    out = await stream.readline()
+                    if out:
+                        out += out
+                        print("DATA!!!! " + str(out))
+                        await websocket.send(out.decode())
+                if not any(w[1] for w in watchers):
                     break
 
             stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
