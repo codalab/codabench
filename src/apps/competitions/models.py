@@ -8,9 +8,6 @@ from utils.storage import BundleStorage
 
 import markdown
 import bleach
-import html5lib
-from html5lib.filters import sanitizer
-
 
 class Competition(models.Model):
     title = models.CharField(max_length=256)
