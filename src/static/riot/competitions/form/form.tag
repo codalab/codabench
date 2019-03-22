@@ -96,7 +96,7 @@
             <button class="ui primary button" onclick="{ save }">
                 TEST Save
             </button>
-            <button class="ui button">
+            <button class="ui button" onclick="{ discard }">
                 Discard
             </button>
         </div>
@@ -152,83 +152,13 @@
             return true
         }
 
+        self.discard = function () {
+            if (confirm('Are you sure you want to discard your changes?')) {
+                window.location.href = window.URLS.COMPETITION_MANAGEMENT
+            }
+        }
+
         self.save = function () {
-
-
-
-
-            /*Object.assign(self.competition, {
-                "title": "asdf",
-                "pages": [
-                    {
-                        "title": "test",
-                        "content": "test",
-                        "index": 1
-                    }
-                ],
-                "phases": [
-                    {
-                        "number": 1,
-                        "start": "2018-12-01T00:00:00Z",
-                        "end": "2018-12-05T00:00:00Z",
-                        "description": "test",
-                        "input_data": null,
-                        "reference_data": null,
-                        "scoring_program": null,
-                        "ingestion_program": null,
-                        "public_data": null,
-                        "starting_kit": null
-                    }
-                ],
-                "leaderboards": [
-                    {
-                        "primary_index": 0,
-                        "title": "test",
-                        "key": "RESULTS",
-                        "columns": [
-                            {
-                                "computation": null,
-                                "computation_indexes": null,
-                                "title": "test",
-                                "key": "SCORE_1",
-                                "sorting": "desc",
-                                "index": 0
-                            }, {
-                                "computation": "avg",
-                                "computation_indexes": ["0"],
-                                "title": "test",
-                                "key": "SCORE_2",
-                                "sorting": "desc",
-                                "index": 1
-                            }
-                        ]
-                    },{
-                        "primary_index": 0,
-                        "title": "test",
-                        "key": "RESULTS",
-                        "columns": [
-                            {
-                                "computation": null,
-                                "computation_indexes": null,
-                                "title": "test",
-                                "key": "SCORE_1",
-                                "sorting": "desc",
-                                "index": 0
-                            }, {
-                                "computation": "avg",
-                                "computation_indexes": ["0"],
-                                "title": "test",
-                                "key": "SCORE_2",
-                                "sorting": "desc",
-                                "index": 1
-                            }
-                        ]
-                    }
-                ],
-                "collaborators": []
-            })*/
-
-
             console.log("MAIN FORM SAVING")
 
             console.log("competition data:")

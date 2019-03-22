@@ -51,6 +51,7 @@ class PageSerializer(WritableNestedModelSerializer):
     # *NOTE* The competition property has to be replicated at the end of the file
     # after the CompetitionSerializer class is declared
     # competition = CompetitionSerializer(many=True)
+    processed = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
@@ -59,7 +60,11 @@ class PageSerializer(WritableNestedModelSerializer):
             'title',
             'content',
             'index',
+            'processed',
         )
+
+    def get_processed(self, page):
+        return page.processed_markdown()
 
 
 class CompetitionSerializer(WritableNestedModelSerializer):

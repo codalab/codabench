@@ -146,7 +146,6 @@
 
 <!-- Vendor -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.6.1/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
@@ -192,6 +191,7 @@
         //WS_SUBMISSION_LISTEN: ""
 
         // Competitions
+        COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
         COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
         COMPETITION_ADD: "{% url "competitions:create" %}",
         COMPETITION_DETAIL: function (pk) {
@@ -220,9 +220,6 @@
 
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
-    marked.setOptions({
-        sanitize: true,
-    })
 </script>
 {% block extra_js %}
 {% endblock %}

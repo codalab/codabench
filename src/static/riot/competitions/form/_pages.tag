@@ -30,7 +30,7 @@
             <div class="ui text centered fluid">
                 <h1>{ pages[0] ? pages[0].title : null }</h1>
                 <div class="ui segment">
-                    <raw content="{ pages[0] ? pages[0].formatted_content : null }"></raw>
+                    <raw content="{ pages[0] ? pages[0].processed : null }"></raw>
                 </div>
             </div>
         </div>
@@ -191,10 +191,7 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
-            self.pages = _.map(competition.pages, (page) => {
-                page.formatted_content = marked(page.content)
-                return page
-            })
+            self.pages = competition.pages
 
             self.form_updated()
         })
