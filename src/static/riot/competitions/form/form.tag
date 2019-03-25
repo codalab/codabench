@@ -90,13 +90,16 @@
         </div>
 
         <div class="row centered">
-            <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
-                Save
+            <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save_and_publish }">
+                Save and Publish
             </button>
-            <button class="ui primary button" onclick="{ save }">
+            <button class="ui primary button" onclick="{ save_and_publish }">
                 TEST Save
             </button>
-            <button class="ui button" onclick="{ discard }">
+            <button class="ui grey button" onclick="{ save_as_draft }">
+                Save as Draft
+            </button>
+            <button class="ui basic red button" onclick="{ discard }">
                 Discard
             </button>
         </div>
@@ -158,29 +161,21 @@
             }
         }
 
-        self.save = function () {
-            console.log("MAIN FORM SAVING")
-
-            console.log("competition data:")
-            console.log(self.competition)
-
-            var api_endpoint = undefined
-
-            if (!self.opts.competition_id) {
-                // CREATE competition
-                api_endpoint = CODALAB.api.create_competition
-            } else {
-                // UPDATE competition
-                api_endpoint = CODALAB.api.update_competition
-            }
+        self._save = function (publish) {
+            var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             // Send competition_id for either create or update, won't hurt anything but is
             // useless for creation
             api_endpoint(self.competition, self.opts.competition_id)
-                .done(function () {
-                    toastr.success("Competition successfully created!")
+                .done(function (response) {
                     self.errors = {}
                     self.update()
+                    if (publish) {
+                        toastr.success("Competition published!")
+                        window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
+                    } else {
+                        toastr.success("Competition saved!")
+                    }
                 })
                 .fail(function (response) {
                     if (response) {
@@ -208,6 +203,16 @@
                     toastr.error("Creation failed, error occurred")
                 })
 
+        }
+
+        self.save_and_publish = () => {
+            self.competition.published = true
+            self._save(self.competition.published)
+        }
+
+        self.save_as_draft = () => {
+            self.competition.published = false
+            self._save(self.competition.published)
         }
 
         /*---------------------------------------------------------------------

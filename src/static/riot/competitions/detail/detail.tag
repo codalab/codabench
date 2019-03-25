@@ -1,5 +1,7 @@
 <competition-detail>
     <comp-detail-title class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-title>
+    <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit</a>
+    <!--TODO: fix location and permissions of this edit once we have an admin tab from sub manager-->
     <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
     <script>
         var self = this

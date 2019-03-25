@@ -46,8 +46,8 @@
         <div class="content">
             <div class="ui top pointing secondary menu">
                 <a class="active item" data-tab="phase_details">Phase details</a>
-                <a class="item" data-tab="phase_datasets" show="{ current_phase_style == 'dataset' }">Datasets</a>
-                <a class="item" data-tab="phase_task" show="{ current_phase_style == 'task' }">Tasks</a>
+                <a class="item" data-tab="phase_datasets">Datasets</a>
+                <a class="item" data-tab="phase_task">Tasks</a>
             </div>
 
             <form class="ui form" ref="form">
@@ -57,21 +57,6 @@
                      ##################### -->
 
                 <div class="ui bottom active tab" data-tab="phase_details">
-
-                    <div class="inline fields">
-                        <div class="field">
-                            <div class="ui radio checkbox">
-                                <input ref="radio_dataset" type="radio" name="phase_style" value="dataset" onchange="{ is_task_and_solution_toggle }"/>
-                                <label>Dataset</label>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="ui radio checkbox">
-                                <input ref="radio_task" type="radio" name="phase_style" value="task" onchange="{ is_task_and_solution_toggle }"/>
-                                <label>Task/Solution</label>
-                            </div>
-                        </div>
-                    </div>
                     <div class="field required">
                         <label>Name</label>
                         <input name="name">
@@ -347,7 +332,7 @@
         ---------------------------------------------------------------------*/
         self.is_task_and_solution_toggle = function (event) {
             self.current_phase_style = event.target.value
-            self.phases[self.selected_phase_index].phase_style == event.target.value
+            self.phases[self.selected_phase_index].phase_style = event.target.value
             self.update()
         }
 

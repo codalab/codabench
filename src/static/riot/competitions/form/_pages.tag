@@ -29,8 +29,11 @@
         <div class="eleven wide column">
             <div class="ui text centered fluid">
                 <h1>{ pages[0] ? pages[0].title : null }</h1>
-                <div class="ui segment">
-                    <raw content="{ pages[0] ? pages[0].processed : null }"></raw>
+                <div class="ui segment" show="{pages[0]}">
+                    <!--<page-content></page-content>-->
+                    <div ref="page_content">
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -155,7 +158,7 @@
                     page.index = index
                     return page
                 })
-
+                self.refs.page_content.innerHTML = marked(indexed_pages[0].content)
                 CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
             }
         }
@@ -198,12 +201,13 @@
     </script>
 </competition-pages>
 
-<raw>
-
+<page-content>
     <script>
         self = this
-        CODALAB.events.on('competition_loaded', function(competition){
-            self.root.innerHTML = opts.content
+        CODALAB.events.on('competition_data_update', (data) => {
+            if (data.pages) {
+                self.root.innerHTML = marked(data.pages[0].content)
+            }
         })
     </script>
-</raw>
+</page-content>
