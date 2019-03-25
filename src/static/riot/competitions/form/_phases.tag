@@ -257,10 +257,15 @@
 
         self.one("mount", function () {
             // awesome markdown editor
-            self.simple_markdown_editor = new SimpleMDE({
+            self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.description,
                 autoRefresh: true,
-                forceSync: true
+                forceSync: true,
+                renderingConfig: {
+                    markedOptions: {
+                        sanitize: true,
+                    }
+                }
             })
 
             // Select 2

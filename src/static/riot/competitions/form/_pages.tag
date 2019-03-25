@@ -76,9 +76,14 @@
 
         self.one("mount", function () {
             // awesome markdown editor
-            self.simple_markdown_editor = new SimpleMDE({
+            self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.content,
-                autoRefresh: true
+                autoRefresh: true,
+                renderingConfig: {
+                    markedOptions: {
+                        sanitize: true,
+                    }
+                }
             })
 
             // Modal callback to draw markdown on show
@@ -189,7 +194,9 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
-            self.pages = competition.pages
+            self.pages = competition.pages.map((page) => {
+                return self.simple_markdown_editor.markdown()
+            })
             self.form_updated()
         })
     </script>
