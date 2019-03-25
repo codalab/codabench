@@ -194,9 +194,7 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
-            self.pages = competition.pages.map((page) => {
-                return self.simple_markdown_editor.markdown()
-            })
+            self.pages = competition.pages
             self.form_updated()
         })
     </script>
