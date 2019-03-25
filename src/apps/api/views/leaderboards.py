@@ -40,7 +40,7 @@ class SubmissionScoreViewSet(ModelViewSet):
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 def add_submission_to_leaderboard(request, submission_pk):
-    # TODO: rebuilt this to look somewhere else for what leaderboard to post to?
+    # TODO: rebuild this to look somewhere else for what leaderboard to post to?
     submission = get_object_or_404(Submission, pk=submission_pk)
 
     # Removing any existing submissions on leaderboard

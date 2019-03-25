@@ -75,12 +75,6 @@ class SubmissionViewSet(ModelViewSet):
         """We override this to pass some context to the CSV renderer"""
         context = super().get_renderer_context()
         # The CSV renderer will only include these fields in context["header"]
-        context["header"] = (
-            'owner',
-            'created_when',
-            'status',
-            'phase_name',
-        )
         # Human names for the fields
         context["labels"] = {
             'owner': 'Owner',
@@ -88,6 +82,7 @@ class SubmissionViewSet(ModelViewSet):
             'status': 'Status',
             'phase_name': 'Phase',
         }
+        context["header"] = [k for k in context["labels"].keys()]
         return context
 
     def has_admin_permission(self, user, submission):
