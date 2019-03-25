@@ -86,7 +86,6 @@ class PhaseViewSet(ModelViewSet):
         for submission in submissions:
             submission.re_run()
         rerun_count = len(submissions)
-        # Divide by 2 since we just re_ran everything by duplicating the submission, doubling the count
         return Response({"count": rerun_count})
 
 
