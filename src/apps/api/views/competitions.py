@@ -82,9 +82,10 @@ class PhaseViewSet(ModelViewSet):
         comp = phase.competition
         if request.user not in [comp.created_by] + list(comp.collaborators.all()) and not request.user.is_superuser:
             raise PermissionDenied('You do not have permission to re-run submissions')
-        for submission in phase.submissions.all():
+        submissions = phase.submissions.all()
+        for submission in submissions:
             submission.re_run()
-        rerun_count = phase.submissions.count() / 2
+        rerun_count = len(submissions)
         # Divide by 2 since we just re_ran everything by duplicating the submission, doubling the count
         return Response({"count": rerun_count})
 

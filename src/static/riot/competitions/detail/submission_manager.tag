@@ -176,7 +176,7 @@
         self.cancel_submission = function (submission) {
             CODALAB.api.cancel_submission(submission.id)
                 .done(function (response) {
-                    if (response === true) {
+                    if (response.canceled === true) {
                         toastr.success('Submission cancelled')
                         self.update_submissions()
                     } else {
