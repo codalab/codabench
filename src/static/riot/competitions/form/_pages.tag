@@ -28,9 +28,8 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages[0] ? pages[0].title : null }</h1>
-                <div class="ui segment" show="{pages[0]}">
-                    <!--<page-content></page-content>-->
+                <h1>{ pages && pages[0] ? pages[0].title : null }</h1>
+                <div class="ui segment" show="{pages && pages[0]}">
                     <div ref="page_content">
 
                     </div>
@@ -71,8 +70,6 @@
         ---------------------------------------------------------------------*/
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
-        self.pages = [
-        ]
 
         self.one("mount", function () {
             // awesome markdown editor
@@ -158,7 +155,7 @@
                     page.index = index
                     return page
                 })
-                self.refs.page_content.innerHTML = marked(indexed_pages[0].content)
+                self.refs.page_content.innerHTML = self.simple_markdown_editor.markdown(indexed_pages[0].content)
                 CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
             }
         }
@@ -200,14 +197,3 @@
         })
     </script>
 </competition-pages>
-
-<page-content>
-    <script>
-        self = this
-        CODALAB.events.on('competition_data_update', (data) => {
-            if (data.pages) {
-                self.root.innerHTML = marked(data.pages[0].content)
-            }
-        })
-    </script>
-</page-content>
