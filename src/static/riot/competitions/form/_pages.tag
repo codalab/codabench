@@ -29,7 +29,7 @@
         <div class="eleven wide column">
             <div class="ui text centered fluid">
                 <h1>{ pages && pages[0] ? pages[0].title : null }</h1>
-                <div class="ui segment" show="{pages && pages[0]}">
+                <div class="ui segment page-content" show="{pages && pages[0]}">
                     <div ref="page_content">
 
                     </div>
@@ -192,8 +192,12 @@
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
             self.pages = competition.pages
-
             self.form_updated()
         })
     </script>
+    <style type="text/stylus">
+        .page-content
+            max-height: 500px;
+            overflow: auto;
+    </style>
 </competition-pages>

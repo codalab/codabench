@@ -330,7 +330,7 @@
 
         self.one("mount", function () {
             //$(".tooltip").popup()
-            $(".dropdown").dropdown()
+            $(".dropdown", self.root).dropdown()
 
 
             // *NOTE* Assigning columns this way gets it out of "opts" and makes it namespace properly!
@@ -349,7 +349,7 @@
         self.add_column = function () {
             self.columns.push({title: "Score2", key: ''})
             self.update()
-            $(".dropdown").dropdown("refresh")
+            $(".dropdown", self.root).dropdown("refresh")
 
             // Automatically start editing the last column we added
             self.edit_column_name(self.columns.length - 1)

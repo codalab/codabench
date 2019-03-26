@@ -43,7 +43,7 @@
                             -->
 
 
-                <div class="ui top pointing secondary menu">
+                <div class="ui top pointing five item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
@@ -92,9 +92,6 @@
         <div class="row centered">
             <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save_and_publish }">
                 Save and Publish
-            </button>
-            <button class="ui primary button" onclick="{ save_and_publish }">
-                TEST Save
             </button>
             <button class="ui grey button" onclick="{ save_as_draft }">
                 Save as Draft
@@ -221,11 +218,6 @@
         CODALAB.events.on('competition_data_update', function (data) {
             Object.assign(self.competition, data)
             self.update()
-
-            console.log("new data:")
-            console.log(data)
-            console.log("updated competition data")
-            console.log(self.competition)
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
             console.log(name + " is_valid -> " + is_valid)
