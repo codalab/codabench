@@ -76,8 +76,8 @@ class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     def assert_current_url(self, url):
         assert self.selenium.current_url == f"{self.live_server_url}{url}"
 
-    def assert_element_is_visible(self, selector):
-        assert self.find(selector).is_displayed()
+    def element_is_visible(self, selector):
+        return self.find(selector).is_displayed()
 
     @staticmethod
     def assert_storage_items_exist(*args):

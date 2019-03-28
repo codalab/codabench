@@ -64,6 +64,9 @@ def run_wrapper(run_args):
         run.start()
         if run.is_scoring:
             run.push_scores()
+            # TODO: Also output push result at some point, so SCORING STEPS have output as well?
+            #   run.push_result()
+            #   when this is changed, make sure to include files in submission manager download section
         else:
             run.push_result()
     except SubmissionException as e:
@@ -95,9 +98,11 @@ class Run:
         self.secret = run_args["secret"]
         self.result = run_args["result"]  # TODO, rename this to result_url
         self.execution_time_limit = run_args["execution_time_limit"]
+        # stdout and stderr
+        self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
 
-        self.ingestion_program_data = run_args.get("ingestion_program", None)
         self.program_data = run_args.get("program_data", None)
+        self.ingestion_program_data = run_args.get("ingestion_program", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
@@ -106,6 +111,24 @@ class Run:
         websocket_host = api_url_parsed.netloc
         websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
+
+    def _get_stdout_stderr_file_names(self, run_args):
+        # run_args should be the run_args argument passed to __init__ from the run_wrapper.
+        if not self.is_scoring:
+            DETAILED_OUTPUT_NAMES = [
+                "prediction_stdout",
+                "prediction_stderr",
+                "prediction_ingestion_stdout",
+                "prediction_ingestion_stderr",
+            ]
+        else:
+            DETAILED_OUTPUT_NAMES = [
+                "scoring_stdout",
+                "scoring_stderr",
+                "scoring_ingestion_stdout",
+                "scoring_ingestion_stderr",
+            ]
+        return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
@@ -142,7 +165,7 @@ class Run:
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
 
-    async def _run_docker_cmd(self, docker_cmd):
+    async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket"""
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
@@ -155,7 +178,6 @@ class Run:
         #       :class:`~collections.abc.Mapping`, or an iterable of ``(name, value)``
         #       pairs
 
-
         async with websockets.connect(url) as websocket:
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
@@ -163,27 +185,36 @@ class Run:
                 stderr=asyncio.subprocess.PIPE
             )
 
+            stdout = b''
+            stderr = b''
+
+            watchers = [
+                (stdout, proc.stdout),
+                (stderr, proc.stderr)
+            ]
+
             while True:
-                data = await proc.stdout.readline()
-                if data:
-                    print("DATA!!!! " + str(data))
-                    # TODO: Sometimes we hit InvalidState here, are we flushign buffer properly before ending stuff?
-                    # try:
-                    await websocket.send(data.decode())
-                    # except websockets.exceptions.InvalidState:
-                    #     break
-                else:
+                for out, stream in watchers:
+                    out = await stream.readline()
+                    if out:
+                        out += out
+                        print("DATA!!!! " + str(out))
+                        await websocket.send(out.decode())
+                if not any(w[1] for w in watchers):
                     break
 
-            stdout, stderr = await proc.communicate()
+            stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
+            stderr_location = self.stderr if kind == 'program' else self.ingestion_stderr
 
             logger.info(f'[exited with {proc.returncode}]')
             if stdout:
                 logger.info(f'[stdout]\n{stdout.decode()}')
+                self._put_file(stdout_location, raw_data=stdout)
             if stderr:
                 logger.info(f'[stderr]\n{stderr.decode()}')
+                self._put_file(stderr_location, raw_data=stderr)
 
-    def _run_program_directory(self, program_dir, can_be_output=False):
+    def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
         # If the directory doesn't even exist, move on
@@ -206,10 +237,6 @@ class Run:
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml'")
 
-        # I believe these are unused now,
-        # stdout = open(os.path.join(program_dir, "stdout.txt"), "a+")
-        # stderr = open(os.path.join(program_dir, "stderr.txt"), "a+")
-
         docker_cmd = [
             'docker',
             'run',
@@ -226,17 +253,29 @@ class Run:
             '-w', '/app',
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
-            # Note that hidden data dir is excluded here!
-            # Set the right image
-            self.docker_image,
-            # 'python', 'submission/submission.py',
         ]
+
+        # TODO: Should pass in reference data if scoring, or something?
+
+        # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
+        if kind == 'ingestion' and self.input_data:
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+
+        if self.is_scoring:
+            # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
+            # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
+
+        # Set the image name (i.e. "codalab/codalab-legacy") for the container
+        docker_cmd += [self.docker_image]
+
+        # Append the actual program to run
         docker_cmd += command.split(' ')
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
         # This runs the docker command and asychronously passes data
-        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd))
+        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
 
         logger.info(f"Program finished")
 
@@ -244,21 +283,39 @@ class Run:
         logger.info("Putting dir %s in %s" % (directory, url))
 
         zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
+        self._put_file(url, file=zip_path)
+
+    def _put_file(self, url, file=None, raw_data=None):
+
+        if file and raw_data:
+            raise Exception("Cannot put both a file and raw_data")
+
+        headers = {
+            'Content-Type': 'application/zip',
+
+            # For Azure only, should turn on/off based on storage...
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-version': '2018-03-28',
+        }
+
+        if file:
+            logger.info("Putting file %s in %s" % (file, url))
+            data = open(file, 'rb')
+            headers['Content-Length'] = str(os.path.getsize(file))
+        elif raw_data:
+            logger.info("Putting raw data %s in %s" % (raw_data, url))
+            data = raw_data
+        else:
+            raise SubmissionException('Must provide data, both file and raw_data cannot be empty')
+
         resp = requests.put(
             url,
-            data=open(zip_path, 'rb'),
-            headers={
-                'Content-Length': str(os.path.getsize(zip_path)),
-                'Content-Type': 'application/zip',
-
-                # For Azure only, should turn on/off based on storage...
-                'x-ms-blob-type': 'BlockBlob',
-                'x-ms-version': '2018-03-28',
-            }
+            data=data,
+            headers=headers,
         )
         logger.info("*** PUT RESPONSE: ***")
-        logger.info(resp)
-        logger.info(resp.content)
+        logger.info(f'response: {resp}')
+        logger.info(f'content: {resp.content}')
 
     def prepare(self):
         self._update_status(STATUS_PREPARING)
@@ -296,8 +353,8 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        self._run_program_directory(program_dir, can_be_output=True)
-        self._run_program_directory(ingestion_program_dir)
+        self._run_program_directory(program_dir, kind='program', can_be_output=True)
+        self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory
         # Download docker image

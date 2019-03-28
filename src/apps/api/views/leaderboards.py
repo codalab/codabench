@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
+from api.serializers.submissions import SubmissionScoreSerializer
 from competitions.models import Submission
-from leaderboards.models import Leaderboard
+from leaderboards.models import Leaderboard, SubmissionScore
 
 
 class LeaderboardViewSet(ModelViewSet):
@@ -23,9 +24,23 @@ class LeaderboardViewSet(ModelViewSet):
         return qs
 
 
+class SubmissionScoreViewSet(ModelViewSet):
+    queryset = SubmissionScore.objects.all()
+    serializer_class = SubmissionScoreSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        comp = instance.submission.phase.competition
+        admin_users = [comp.created_by] + list(comp.collaborators.all())
+        if request.user not in admin_users and not request.user.is_superuser:
+            raise PermissionError('You do not have permission to update test scores')
+        return super().update(request, *args, **kwargs)
+
+
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 def add_submission_to_leaderboard(request, submission_pk):
+    # TODO: rebuild this to look somewhere else for what leaderboard to post to?
     submission = get_object_or_404(Submission, pk=submission_pk)
 
     # Removing any existing submissions on leaderboard

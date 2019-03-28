@@ -7,7 +7,7 @@ from django.utils.timezone import now
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
 
 
-class SubmissionsTests(TestCase):
+class MaxSubmissionsTests(TestCase):
     def setUp(self):
         self.user = UserFactory(username='test')
         self.competition = CompetitionFactory(created_by=self.user)
@@ -80,3 +80,38 @@ class SubmissionsTests(TestCase):
                 assert False, "Submission should not have been created"
             except Submission.DoesNotExist:
                 pass
+
+
+class SubmissionManagerTests(TestCase):
+    def setUp(self):
+        self.user = UserFactory(username='test')
+        self.competition = CompetitionFactory(created_by=self.user)
+        self.phase = PhaseFactory(competition=self.competition)
+
+    def make_submission(self, **kwargs):
+        kwargs.setdefault('owner', self.user)
+        kwargs.setdefault('phase', self.phase)
+        return SubmissionFactory(**kwargs)
+
+    def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
+        sub = self.make_submission()
+        assert Submission.objects.all().count() == 1
+        sub.re_run()
+        assert Submission.objects.all().count() == 2
+        subs = Submission.objects.all()
+        assert subs[0].owner == subs[1].owner
+        assert subs[0].phase == subs[1].phase
+        assert subs[0].data == subs[1].data
+
+    # TODO: Figure out why this test causes CircleCI to freeze
+    # def test_cancel_submission_sets_status(self):
+    #     sub = self.make_submission()
+    #     assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
+    #     assert sub.status == 'Cancelled'
+
+    def test_cancel_does_nothing_if_status_is_cancelled_failed_or_finished(self):
+        sub = self.make_submission()
+        for status in ['Failed', 'Cancelled', 'Finished']:
+            sub.status = status
+            assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
+            assert sub.status == status, 'Status was changed and should not have been'

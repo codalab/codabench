@@ -11,11 +11,12 @@ from .views import competitions, datasets, profiles, leaderboards, submissions, 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
-router.register('phases', competitions.PhaseViewSet)
+router.register('phases', competitions.PhaseViewSet, 'phases')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
+router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submission_scores')
 router.register('tasks', tasks.TaskViewSet)
 router.register('tasksearch', tasks.TaskViewSetSimple)
 

@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.timezone import now
 
 from utils.data import PathWrapper
+from utils.storage import BundleStorage
 
 
 class Competition(models.Model):
@@ -110,15 +111,22 @@ class Phase(models.Model):
 
 
 class SubmissionDetails(models.Model):
-    DETAILED_OUTPUT_NAMES = [
-        "stdout",
-        "stderr",
-        "ingestion_stdout",
-        "ingestion_stderr",
+    DETAILED_OUTPUT_NAMES_PREDICTION = [
+        "prediction_stdout",
+        "prediction_stderr",
+        "prediction_ingestion_stdout",
+        "prediction_ingestion_stderr",
+    ]
+    DETAILED_OUTPUT_NAMES_SCORING = [
+        "scoring_stdout",
+        "scoring_stderr",
+        "scoring_ingestion_stdout",
+        "scoring_ingestion_stderr",
     ]
     name = models.CharField(max_length=50)
-    data_file = models.FileField(upload_to=PathWrapper('submission_details'))
+    data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
+    is_scoring = models.BooleanField(default=False)
 
 
 class Submission(models.Model):
@@ -151,7 +159,10 @@ class Submission(models.Model):
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
-    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
+
+    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True, storage=BundleStorage)
+    # Add "scoring_result" ???
+
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)
@@ -177,12 +188,12 @@ class Submission(models.Model):
 
     def delete(self, **kwargs):
         # Also clean up details on delete
-        self.details.delete()
+        self.details.all().delete()
         super().delete(**kwargs)
 
-    def save(self, **kwargs):
+    def save(self, ignore_submission_limit=False, **kwargs):
         created = not self.pk
-        if created:
+        if created and not ignore_submission_limit:
             can_make_submission, reason_why_not = self.phase.can_user_make_submissions(self.owner)
             if not can_make_submission:
                 raise PermissionError(reason_why_not)
@@ -193,12 +204,19 @@ class Submission(models.Model):
         from .tasks import run_submission
         run_submission.apply_async((self.pk,))
 
+    def re_run(self):
+        sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
+        sub.save(ignore_submission_limit=True)
+        sub.start()
+
     def cancel(self):
         from celery_config import app
-        app.control.revoke(self.task_id, terminate=True)
-
-        self.status = Submission.CANCELLED
-        self.save()
+        if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
+            app.control.revoke(self.task_id, terminate=True)
+            self.status = Submission.CANCELLED
+            self.save()
+            return True
+        return False
 
 
 class CompetitionParticipant(models.Model):
