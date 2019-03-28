@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
 
 
@@ -43,6 +43,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        elif self.request.method == 'GET':
+            return CompetitionDetailSerializer
         else:
             return CompetitionSerializer
 

@@ -28,8 +28,8 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages && pages[0] ? pages[0].title : null }</h1>
-                <div class="ui segment page-content" show="{pages && pages[0]}">
+                <h1>{ pages[0] ? pages[0].title : null }</h1>
+                <div class="ui segment page-content" show="{pages[0]}">
                     <div ref="page_content">
 
                     </div>
@@ -70,6 +70,7 @@
         ---------------------------------------------------------------------*/
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
+        self.pages = []
 
         self.one("mount", function () {
             // awesome markdown editor

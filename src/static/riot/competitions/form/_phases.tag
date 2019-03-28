@@ -38,7 +38,7 @@
             </div>
         </div>
     </div>
-    <div class="ui large union first modal" ref="modal">
+    <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
             Edit phase
@@ -106,7 +106,10 @@
                     </div>
                     <div class="ui toggle checkbox field">
                         <input type="checkbox" name="is_task_and_solution" ref="task_solution_toggle" onchange="{is_task_and_solution_toggle}">
-                        <label>Task and Solution</label>
+                        <label>Task and Solution
+                        <span data-tooltip="Toggle between a Dataset or Task and Solution style phase" data-inverted=""
+                              data-position="bottom center"><i class="grey help icon circle"></i></span>
+                        </label>
                     </div>
 
                     <div show="{!is_task_solution}">
@@ -114,9 +117,9 @@
                             <div class="field {required: file_field === 'scoring_program'}"
                                  each="{file_field in ['scoring_program', 'ingestion_program', 'starting_kit']}">
                                 <label>
-                                    {file_field}
+                                    {_.startCase(file_field)}
                                     <span data-tooltip="Something useful to know...!" data-inverted=""
-                                          data-position="bottom center"><i class="help icon circle"></i></span>
+                                          data-position="bottom center"><i class=" grey help icon circle"></i></span>
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
@@ -129,9 +132,9 @@
                         <div class="three fields" data-no-js>
                             <div class="field" each="{file_field in ['reference_data', 'input_data', 'public_data']}">
                                 <label>
-                                    {file_field}
+                                    {_.startCase(file_field)}
                                     <span data-tooltip="Something useful to know...!" data-inverted=""
-                                          data-position="bottom center"><i class="help icon circle"></i></span>
+                                          data-position="bottom center"><i class="grey help icon circle"></i></span>
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
@@ -149,7 +152,7 @@
                                 <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                                       data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <select class="ui search selection dropdown" ref="multiselect" multiple="">
+                            <select name="tasks" class="ui search selection dropdown" ref="multiselect" multiple="">
                             </select>
                         </div>
                     </div>
@@ -158,20 +161,7 @@
         </div>
         <div class="actions">
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <!--<div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>-->
-            <div class="ui button primary" onclick="{ save }">Save</div>
-        </div>
-    </div>
-
-    <div class="ui union second large modal">
-        <div class="header">
-            Test
-        </div>
-        <div class="content">
-            Test
-        </div>
-        <div class="actions">
-            <div class="ui red button">Close</div>
+            <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
     </div>
 
@@ -191,14 +181,7 @@
         ]
         self.has_initialized_calendars = false
         self.form_is_valid = false
-        self.phases = [
-            /*{
-                name: "Test",
-                start: "1/1/1",
-                description: "asdfasdf",
-                scoring_program: "a"
-            }*/
-        ]
+        self.phases = []
         self.selected_phase_index = undefined
         self.is_task_solution = false
 
@@ -220,14 +203,14 @@
             });
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
-                fields: {name: 'text', value: 'key'},
+                fields: {value: 'key'},
                 apiSettings: {
                     url: `${URLS.API}tasksearch/?search={query}`,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data)}
                     },
-                    delay: 100,
                 },
+                onChange: self.form_updated,
             })
 
             // Form change events
@@ -290,15 +273,8 @@
             self.update()
         }
 
-        self.show_second_modal = () => {
-            $('.second.modal')
-                .modal('setting', 'closable', false)
-                .modal('show');
-        }
-
         self.show_modal = function () {
             $(self.refs.modal)
-                .modal('setting', 'closable', false)
                 .modal('show')
 
             // Focus on the phase tab when opening modal, not dataset tab
@@ -343,9 +319,10 @@
             } else {
                 // Make sure each phase has the proper details
                 self.phases.forEach(function (phase) {
-                    // TODO: change form validation to account for presence of task instead of scoring program
-                    if (!phase.name || !phase.start || !phase.description || !phase.scoring_program) {
+                    if (!phase.name || !phase.start || !phase.description) {
                         is_valid = false
+                    } else {
+                        is_valid = phase.is_task_and_solution ? phase.tasks.length > 0 : !!phase.scoring_program
                     }
                 })
             }
@@ -366,11 +343,13 @@
                     }
 
                     // Get just the key from each file field
-                    self.file_fields.forEach(function (file_field_name) {
-                        if (!!phase[file_field_name] && !!phase[file_field_name].key) {
-                            phase[file_field_name] = phase[file_field_name].key
-                        }
-                    })
+                    if (!self.is_task_solution) {
+                        self.file_fields.forEach(function (file_field_name) {
+                            if (!!phase[file_field_name] && !!phase[file_field_name].key) {
+                                phase[file_field_name] = phase[file_field_name].key
+                            }
+                        })
+                    }
                 })
 
                 CODALAB.events.trigger('competition_data_update', {phases: phases_copy})
@@ -383,9 +362,10 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            // All of these must be present
-            // TODO: Fix this to account for tasks
-            self.form_is_valid = !!data.name && !!data.start && !!data.description && !!self.form_datasets.scoring_program
+            data.is_task_and_solution = self.refs.task_solution_toggle.checked
+
+            let valid_files = data.is_task_and_solution ? data.tasks.length > 0 : self.form_datasets.scoring_program
+            self.form_is_valid = !!data.name && !!data.start && !!data.description && valid_files
         }
 
         self.clear_form = function () {
@@ -413,9 +393,9 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
 
-            phase.phase_style =  phase.phase_style || 'dataset'
-
             set_form_data(phase, self.refs.form)
+            self.is_task_solution = phase.is_task_and_solution
+            $(self.refs.task_solution_toggle).prop("checked", self.is_task_solution)
 
             // Setting selected files
             self.file_fields.forEach(function (file_field_name) {
@@ -444,8 +424,7 @@
 
         self.save = function () {
             var data = get_form_data(self.refs.form)
-            data.is_task_solution = self.refs.task_solution_toggle.checked
-
+            data.is_task_and_solution = self.refs.task_solution_toggle.checked
             // insert all 6 programs into data
             Object.assign(data, self.form_datasets)
 
