@@ -6,8 +6,6 @@ from django.utils.timezone import now
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
-import markdown
-import bleach
 
 class Competition(models.Model):
     title = models.CharField(max_length=256)
@@ -249,12 +247,6 @@ class Page(models.Model):
     title = models.TextField(max_length=255)
     content = models.TextField()
     index = models.PositiveIntegerField()
-
-    def processed_markdown(self):
-        html = markdown.markdown(self.content)
-        allowed_tags = bleach.ALLOWED_TAGS + ['p', 'br']
-        clean_html = bleach.clean(html, tags=allowed_tags, strip=True)
-        return clean_html
 
 
 class CompetitionDump(models.Model):
