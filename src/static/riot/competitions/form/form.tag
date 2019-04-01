@@ -97,7 +97,7 @@
                 Save as Draft
             </button>
             <button class="ui basic red button" onclick="{ discard }">
-                Discard
+                Discard Changes
             </button>
         </div>
     </div>
@@ -123,7 +123,16 @@
             $('.menu .item', self.root).tab()
 
             if (!!self.opts.competition_id) {
-                CODALAB.api.get_competition(self.opts.competition_id)
+                self.update_competition_data(self.opts.competition_id)
+            }
+        })
+
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+
+        self.update_competition_data = (id) => {
+            CODALAB.api.get_competition(id)
                     .done(function (data) {
                         self.competition = data
                         CODALAB.events.trigger('competition_loaded', self.competition)
@@ -132,12 +141,9 @@
                     .fail(function (response) {
                         toastr.error("Could not find competition");
                     });
-            }
-        })
+            self.update()
+        }
 
-        /*---------------------------------------------------------------------
-         Methods
-        ---------------------------------------------------------------------*/
         self.are_all_sections_valid = function () {
             for (var section in self.sections) {
                 if (section === 'collaborators') {
@@ -159,6 +165,14 @@
         }
 
         self._save = function (publish) {
+            // convert serializer task data to just keys if we didn't edit phases
+            self.competition.phases = _.map(self.competition.phases, phase => {
+                if (phase.tasks && typeof(phase.tasks[0]) === "object") {
+                    phase.tasks = _.map(phase.tasks, task => task.value)
+                }
+                return phase
+            })
+
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             // Send competition_id for either create or update, won't hurt anything but is
@@ -172,6 +186,7 @@
                         window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
                     } else {
                         toastr.success("Competition saved!")
+                        self.update_competition_data(response.id)
                     }
                 })
                 .fail(function (response) {
@@ -220,7 +235,7 @@
             self.update()
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
-            console.log(name + " is_valid -> " + is_valid)
+            // console.log(name + " is_valid -> " + is_valid)
             self.sections[name].valid = is_valid
             self.update()
         })

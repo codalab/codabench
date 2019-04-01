@@ -162,14 +162,24 @@
         </div>
         <div if="{competition.is_admin}" class="admin-tab ui tab" data-tab="admin_tab">
             <div class="ui side green tabular secondary menu">
-                <div class="active item" data-tab="_tab_submission_management">
+                <div class="active item" data-tab="_tab_competition_management">
+                    Competition Management
+                </div>
+                <div class="item" data-tab="_tab_submission_management">
                     Submission Management
                 </div>
                 <div class="item" data-tab="_tab_participant_management">
                     Participant Management
                 </div>
             </div>
-            <div class="ui active tab" data-tab="_tab_submission_management">
+            <div class="ui active tab" data-tab="_tab_competition_management">
+                <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
+                <button class="ui button published icon { grey: !competition.published, green: competition.published }"
+                        onclick="{ toggle_competition_publish.bind(this, competition) }">
+                    <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
+                </button>
+            </div>
+            <div class="ui tab" data-tab="_tab_submission_management">
                 <div class="ui">
                     <submission-manager admin="true" competition="{ competition }"></submission-manager>
                 </div>
@@ -273,6 +283,18 @@
                         return i
                     }
                 }
+            }
+            self.toggle_competition_publish = function (competition) {
+                CODALAB.api.toggle_competition_publish(competition.id)
+                    .done(function (data) {
+                        var published_state = data.published ? "published" : "unpublished"
+                        toastr.success(`Competition has been ${published_state} successfully`)
+                        self.update()
+                        CODALAB.api.get_competition(self.competition.id)
+                            .done((competition) => {
+                                CODALAB.events.trigger('competition_loaded', competition)
+                            })
+                    })
             }
             self.phase_selected = function(event, data) {
                 // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz

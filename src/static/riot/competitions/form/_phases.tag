@@ -152,7 +152,7 @@
                                 <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                                       data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <select name="tasks" class="ui search selection dropdown" ref="multiselect" multiple="">
+                            <select name="tasks" class="ui search selection dropdown" ref="multiselect" multiple="multiple">
                             </select>
                         </div>
                     </div>
@@ -203,7 +203,6 @@
             });
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
-                fields: {value: 'key'},
                 apiSettings: {
                     url: `${URLS.API}tasksearch/?search={query}`,
                     onResponse: (data) => {
@@ -253,9 +252,6 @@
             })
 
             // Modal callback to draw markdown on EDIT show
-            $('.union.modal').modal({
-                allowMultiple: true
-            })
             $(self.refs.modal).modal({
                 onShow: function () {
                     setTimeout(function () {
@@ -270,6 +266,7 @@
         ---------------------------------------------------------------------*/
         self.is_task_and_solution_toggle = function (event) {
             self.is_task_solution = event.target.checked
+            self.form_check_is_valid()
             self.update()
         }
 
@@ -371,6 +368,9 @@
         self.clear_form = function () {
             self.selected_phase_index = undefined
             self.form_datasets = {}
+            $(self.refs.task_solution_toggle).prop('checked', false)
+            $(self.refs.multiselect).dropdown('clear')
+            self.is_task_solution = false
 
             $(':input', self.refs.form)
                 .not('[type="file"]')
@@ -402,13 +402,22 @@
                 if (!!phase[file_field_name]) {
                     //phase[file_field_name] = phase[file_field_name].key
                     $(`.input.search[data-name="${file_field_name}"] input`).val(phase[file_field_name].name)
+                    self.form_datasets[file_field_name] = phase[file_field_name]
                 }
             })
 
-            // stupid simplemde special case
+            // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description)
 
+            // Setting Tasks
+            $(self.refs.multiselect)
+                .dropdown('change values', _.map(phase.tasks, task => {
+                    return {name: task.name, value: task.value, selected: true}
+                }))
+
             self.show_modal()
+            self.form_check_is_valid()
+            self.update()
         }
 
         self.delete_phase = function (index) {
@@ -425,17 +434,23 @@
         self.save = function () {
             var data = get_form_data(self.refs.form)
             data.is_task_and_solution = self.refs.task_solution_toggle.checked
-            // insert all 6 programs into data
-            Object.assign(data, self.form_datasets)
+            if (!data.is_task_and_solution) {
+                data.tasks = []
+                Object.assign(data, self.form_datasets)
+            } else {
+                _.forEach(self.file_fields, file_field_name => {
+                    data[file_field_name] = null
+                })
+            }
 
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
 
             } else {
                 // We have a selected phase, do an update instead of a create
+                data.id = self.phases[self.selected_phase_index].id
                 self.phases[self.selected_phase_index] = data
             }
-            self.clear_form()
             self.close_modal()
         }
 

@@ -50,6 +50,12 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = TaskSerializerSimple(many=True)
+    input_data = DataSerializer()
+    reference_data = DataSerializer()
+    scoring_program = DataSerializer()
+    ingestion_program = DataSerializer()
+    public_data = DataSerializer()
+    starting_kit = DataSerializer()
 
     class Meta:
         model = Phase
