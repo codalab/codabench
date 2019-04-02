@@ -8,6 +8,8 @@
             <div class="title { active: leaderboard.is_active }">
                 <h1>
                     <span class="trigger"><i class="dropdown icon"></i> { leaderboard.title }</span>
+                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
+                    <span class="key"> Key: { leaderboard.key }</span>
                     <div class="ui right floated buttons">
                         <div class="ui negative button" onclick="{ delete_leaderboard.bind(this, index) }">
                             <i class="delete icon"></i>
@@ -18,12 +20,10 @@
                             Edit
                         </div>
                     </div>
-
-                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
                 </h1>
             </div>
             <div class="content { active: leaderboard.is_active }">
-                <competition-leaderboard-form-table columns="{ leaderboard.columns }"></competition-leaderboard-form-table>
+                <competition-leaderboard-form-table columns="{ leaderboard.columns }" primary_index="{ leaderboard.primary_index }" leaderboard_index="{index}"></competition-leaderboard-form-table>
             </div>
         </virtual>
     </div>
@@ -75,6 +75,14 @@
             //{name: "Another leaderboard", columns: []}
         ]
         self.selected_leaderboard_index = undefined
+
+        self.on('mount', () => {
+            $('.ui.accordion', self.root).accordion({
+                selector: {
+                    trigger: '.title .trigger'
+                }
+            })
+        })
 
         /*---------------------------------------------------------------------
          Methods
@@ -191,6 +199,10 @@
         .modal-button {
             margin-bottom: 20px !important;
         }
+        .key {
+            font-size: 18px;
+            font-style: italic;
+        }
     </style>
 </competition-leaderboards-form>
 
@@ -235,7 +247,7 @@
             <tr class="ui aligned right">
                 <td>Primary Column?</td>
                 <td each="{ column, index in columns }" class="center aligned">
-                    <input type="radio" name="primary" checked="{ column.is_primary }" onchange="{ set_primary.bind(this, index) }">
+                    <input type="radio" name="primary" checked="{ index === primary_index }" onchange="{ set_primary.bind(this, index) }">
                 </td>
                 <td></td> <!-- Empty cell so it cuts off nicely at the end of rows -->
             </tr>
@@ -252,16 +264,16 @@
                 <td each="{ column, index in columns }" class="center aligned">
                     <div class="ui field">
                         <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, index) }">
-                            <option selected>
+                            <option selected="{!column.computation}">
                                 ------
                             </option>
-                            <option>Average</option>
+                            <option value="avg" selected="{column.computation === 'avg'}">Average</option>
                         </select>
                     </div>
                     <div class="ui field" show="{ column.computation }">
                         <label>Apply to:</label>
-                        <select class="ui fluid small multiselect" multiple="">
-                            <option each="{ inner_column, inner_index in columns }" show="{ index != inner_index }"> { inner_column.title }</option>
+                        <select class="ui fluid small multiselect dropdown" multiple="" ref="computation_indexes" onchange="{update_computation_indexes.bind(this, index)}">
+                            <option each="{ inner_column, inner_index in columns }" if="{ index != inner_index }" selected="{_.indexOf(column.computation_indexes, inner_index.toString()) != -1}" value="{ inner_index }"> { inner_column.title }</option>
                         </select>
                     </div>
                 </td>
@@ -290,7 +302,7 @@
                 </td>
                 <td each="{ c, index in columns }" class="center aligned">
                     <div class="ui fluid input">
-                        <input type="text" placeholder="Key" onkeyup="{ edit_key.bind(this, index) }">
+                        <input type="text" placeholder="Key" value="{c.key}" onkeyup="{ edit_key.bind(this, index) }">
                     </div>
                 </td>
                 <td></td>
@@ -299,8 +311,8 @@
             <tr>
                 <td></td>
                 <td each="{ c, index in columns }" class="center aligned">
-                    <button type="button" class="ui button mini red icon remove" onclick="{ remove_column.bind(this, index) }">
-                        <i class="icon delete"></i>
+                    <button type="button" class="ui basic icon button mini red remove" onclick="{ remove_column.bind(this, index) }">
+                        <i class="icon trash alternate outline"></i>Remove
                     </button>
                 </td>
                 <td></td>
@@ -319,7 +331,6 @@
             </tfoot>
         </table>
     </form>
-
     <script>
         var self = this
 
@@ -335,12 +346,15 @@
 
             // *NOTE* Assigning columns this way gets it out of "opts" and makes it namespace properly!
             self.columns = self.opts.columns
+            self.primary_index = self.opts.primary_index
+            self.selected_leaderboard = self.opts.leaderboard_index
         })
 
         self.on("update", function () {
             // Force refresh of dropdown on update, otherwise they don't show new elements and
             // don't reflect new names
             //$(".dropdown").dropdown("refresh")
+            $(".dropdown", self.root).dropdown()
         })
 
         /*---------------------------------------------------------------------
@@ -354,6 +368,10 @@
             // Automatically start editing the last column we added
             self.edit_column_name(self.columns.length - 1)
         }
+        self.update_computation_indexes = index => {
+            self.columns[index].computation_indexes = $(self.refs.computation_indexes).val()
+            self.parent.form_updated()
+        }
 
         self.edit_column_name = function (index) {
             self.columns[index].editing = true
@@ -366,7 +384,14 @@
         }
 
         self.edit_column_type = function (index, event) {
-            self.columns[index].computation = event.target.value
+            let value = event.target.value
+            if (!value) {
+                self.columns[index].computation_indexes = null
+                self.columns[index].computation = null
+            } else {
+                self.columns[index].computation = value
+            }
+
             self.parent.form_updated()
         }
 
@@ -395,12 +420,7 @@
         }
 
         self.set_primary = function (index) {
-            // remove is_primary for everyone else
-            self.columns.forEach(function (column) {
-                delete column.is_primary
-            })
-
-            self.columns[index].is_primary = true
+            self.parent.leaderboards[self.selected_leaderboard].primary_index = index
             self.parent.form_updated()
         }
 
@@ -433,16 +453,10 @@
         :scope {
             display: block;
             padding: 20px 0;
-            overflow-x: scroll;
+            overflow-x: auto;
         }
 
-        .multiselect {
-            width: 100%;
-            margin-top: 5px;
-            padding: 5px;
-            border: 1px solid rgba(34, 36, 38, .15);
-            border-radius: .28571429rem;
-        }
+
 
         .chevron.icon {
             color: rgba(34, 36, 38, .25);
@@ -476,12 +490,10 @@
             opacity: .45;
         }
 
-        .button.remove {
-            opacity: 0.25;
-        }
-
-        .button.remove:hover {
-            opacity: 1;
+        .ui.basic.red.button.remove:hover {
+            color: white !important;
+            background-color: #db2828 !important;
+            box-shadow: 0 0 0 1px #db2828 inset!important;
         }
 
         /* Special class just to color the label for "Key" required asterisk! */

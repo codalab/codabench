@@ -96,7 +96,7 @@
             <button class="ui grey button" onclick="{ save_as_draft }">
                 Save as Draft
             </button>
-            <button class="ui basic red button" onclick="{ discard }">
+            <button class="ui basic red button discard" onclick="{ discard }">
                 Discard Changes
             </button>
         </div>
@@ -240,4 +240,9 @@
             self.update()
         })
     </script>
+    <style type="text/stylus">
+        .ui.basic.red.button.discard:hover
+            background-color: #db2828 !important
+            color: white !important
+    </style>
 </competition-form>
