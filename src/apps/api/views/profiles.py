@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions
-from rest_framework.response import Response
 
 from api.serializers.profiles import MyProfileSerializer
 

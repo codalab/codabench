@@ -113,7 +113,7 @@
                     self.errors = `${self.new_collab.name} is already a collaborator`
                 }
             } else {
-                self.errors = ['Username field cannot be blank']
+                self.errors = 'Username field cannot be blank'
             }
             self.update()
         }
