@@ -14,3 +14,14 @@ class MyProfileSerializer(ModelSerializer):
             'email',
             'bio'
         )
+
+
+class CollaboratorSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'name',
+            'username',
+            'email',
+        )

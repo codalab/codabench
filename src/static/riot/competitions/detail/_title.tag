@@ -47,7 +47,7 @@
         self.competition = {}
 
         CODALAB.events.on('competition_loaded', function(competition) {
-            competition.show_secret_key = (CODALAB.state.user.username === competition.created_by || competition.collaborators.includes(parseInt(CODALAB.state.user.id)))
+            competition.show_secret_key = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
         })
 

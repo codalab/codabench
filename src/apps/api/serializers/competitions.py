@@ -4,6 +4,7 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
+from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskSerializerSimple
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
@@ -141,7 +142,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     pages = PageSerializer(many=True)
     phases = PhaseDetailSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
-    collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+    collaborators = CollaboratorSerializer(many=True)
 
     class Meta:
         model = Competition

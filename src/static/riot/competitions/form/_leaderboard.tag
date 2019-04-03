@@ -3,7 +3,7 @@
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <div class="ui fluid styled accordion">
+    <div class="ui fluid styled accordion" if="{!!leaderboards}">
         <virtual each="{ leaderboard, index in leaderboards }">
             <div class="title { active: leaderboard.is_active }">
                 <h1>
@@ -70,10 +70,7 @@
         /*---------------------------------------------------------------------
          Initializing
         ---------------------------------------------------------------------*/
-        self.leaderboards = [
-            //{name: "Leaderboard", columns: [{name: "Score", is_primary: true}]},
-            //{name: "Another leaderboard", columns: []}
-        ]
+        self.leaderboards = []
         self.selected_leaderboard_index = undefined
 
         self.on('mount', () => {

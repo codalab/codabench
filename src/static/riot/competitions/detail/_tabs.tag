@@ -243,11 +243,7 @@
 
             CODALAB.events.on('competition_loaded', function (competition) {
                 self.competition = competition
-                self.competition.is_admin = (CODALAB.state.user.username === competition.created_by ||
-                    competition.collaborators.includes(parseInt(CODALAB.state.user.id)) ||
-                    CODALAB.state.user.is_superuser === 'True' ||
-                    CODALAB.state.user.is_staff === 'True'
-                )
+                self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
                 self.update()
                 $('.tabular.menu .item').tab();
             })
