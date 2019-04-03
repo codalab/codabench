@@ -1,8 +1,8 @@
 <submission-modal>
-    <div class="ui {three: submission.admin}{two: !submission.admin} item small green secondary pointing menu">
-        <div class="active item" data-tab="downloads">Downloads</div>
-        <div class="item" data-tab="logs">Logs</div>
-        <div class="item" data-tab="admin" if="{submission.admin}">Admin</div>
+    <div class="ui large green pointing menu">
+        <div class="active item" data-tab="downloads">DOWNLOADS</div>
+        <div class="item" data-tab="logs">LOGS</div>
+        <div class="item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active" data-tab="downloads">
         <div class="ui relaxed centered grid">
@@ -25,7 +25,7 @@
         </div>
     </div>
     <div class="ui tab" data-tab="logs" style="height: 500px;">
-        <div class="ui two item small green menu">
+        <div class="ui small green tabular menu">
             <div class="active item" data-tab="prediction">Prediction</div>
             <div class="item" data-tab="scoring">Scoring</div>
         </div>
