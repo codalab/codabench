@@ -9,7 +9,7 @@
             <thead>
             <tr>
                 <th>Collaborator Name</th>
-                <th style="width: 150px !important;">Actions</th>
+                <th class="action-column">Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -126,4 +126,8 @@
             self.update()
         })
     </script>
+    <style type="text/stylus">
+        .action-column
+            width: 150px !important
+    </style>
 </competition-collaborators>
