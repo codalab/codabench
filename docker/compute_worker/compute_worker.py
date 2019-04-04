@@ -200,21 +200,21 @@ class Run:
                 },
             }
 
-            while any(logs[key]["continue"] for key in logs.keys()):
-                for key in logs.keys():
-                    out = await logs[key]["stream"].readline()
+            while any(v["continue"] for v in logs.values()):
+                for value in logs.values():
+                    out = await value["stream"].readline()
                     if out:
-                        logs[key]["data"] += out
+                        value["data"] += out
                         print("DATA!!!! " + str(out))
                         await websocket.send(out.decode())
                     else:
-                        logs[key]["continue"] = False
+                        value["continue"] = False
 
             logger.info(f'[exited with {proc.returncode}]')
-            for key in logs.keys():
-                if logs[key]["data"]:
-                    logger.info(f'[{key}]\n{logs[key]["data"]}')
-                    self._put_file(logs[key]["location"], raw_data=logs[key]["data"])
+            for key, value in logs.items():
+                if value["data"]:
+                    logger.info(f'[{key}]\n{value["data"]}')
+                    self._put_file(value["location"], raw_data=value["data"])
 
     def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
