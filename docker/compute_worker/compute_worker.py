@@ -185,34 +185,36 @@ class Run:
                 stderr=asyncio.subprocess.PIPE
             )
 
-            stdout = b''
-            stderr = b''
+            logs = {
+                "stdout": {
+                    "data": b'',
+                    "stream": proc.stdout,
+                    "continue": True,
+                    "location": self.stdout if kind == 'program' else self.ingestion_stdout
+                },
+                "stderr": {
+                    "data": b'',
+                    "stream": proc.stderr,
+                    "continue": True,
+                    "location": self.stderr if kind == 'program' else self.ingestion_stderr
+                },
+            }
 
-            watchers = [
-                (stdout, proc.stdout),
-                (stderr, proc.stderr)
-            ]
-
-            while True:
-                for out, stream in watchers:
-                    out = await stream.readline()
+            while any(v["continue"] for v in logs.values()):
+                for value in logs.values():
+                    out = await value["stream"].readline()
                     if out:
-                        out += out
+                        value["data"] += out
                         print("DATA!!!! " + str(out))
                         await websocket.send(out.decode())
-                if not any(w[1] for w in watchers):
-                    break
-
-            stdout_location = self.stdout if kind == 'program' else self.ingestion_stdout
-            stderr_location = self.stderr if kind == 'program' else self.ingestion_stderr
+                    else:
+                        value["continue"] = False
 
             logger.info(f'[exited with {proc.returncode}]')
-            if stdout:
-                logger.info(f'[stdout]\n{stdout.decode()}')
-                self._put_file(stdout_location, raw_data=stdout)
-            if stderr:
-                logger.info(f'[stderr]\n{stderr.decode()}')
-                self._put_file(stderr_location, raw_data=stderr)
+            for key, value in logs.items():
+                if value["data"]:
+                    logger.info(f'[{key}]\n{value["data"]}')
+                    self._put_file(value["location"], raw_data=value["data"])
 
     def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # TODO: read Docker image from metadatas??? ** do it in prepare??? **
