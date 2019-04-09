@@ -212,16 +212,10 @@
                 <th class="right aligned" width="175px">
 
                 </th>
-                <!--<th>
-                    <button class="ui tiny blue icon button" onclick="{ add_column }">
-                        <i class="add square icon"></i> Add column
-                    </button>
-                </th>-->
                 <th each="{ column, index in columns }" class="center aligned" width="175px">
                     <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
 
                     <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, index) }">
-                    <!--<span onclick="{ column.editing = true }">-->
                         <i class="counterclockwise rotated icon pencil small"></i> { column.title }
                     </span>
 
@@ -230,12 +224,6 @@
                     </div>
 
                     <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
-                    <!--<select>
-                        <option selected>
-                            ------
-                        </option>
-                        <option></option>
-                    </select>-->
                 </th>
                 <th></th>
             </tr>
@@ -270,7 +258,7 @@
                     <div class="ui field" show="{ column.computation }">
                         <label>Apply to:</label>
                         <select class="ui fluid small multiselect dropdown" multiple="" ref="computation_indexes" onchange="{update_computation_indexes.bind(this, index)}">
-                            <option each="{ inner_column, inner_index in columns }" if="{ index != inner_index }" selected="{_.indexOf(column.computation_indexes, inner_index.toString()) != -1}" value="{ inner_index }"> { inner_column.title }</option>
+                            <option each="{ inner_column, inner_index in columns }" if="{ index != inner_index && !inner_column.editing }" selected="{_.indexOf(column.computation_indexes, inner_index.toString()) != -1}" value="{ inner_index }"> { inner_column.title }</option>
                         </select>
                     </div>
                 </td>
@@ -350,8 +338,11 @@
         self.on("update", function () {
             // Force refresh of dropdown on update, otherwise they don't show new elements and
             // don't reflect new names
-            //$(".dropdown").dropdown("refresh")
-            $(".dropdown", self.root).dropdown()
+            let $dropdown = $(".dropdown", self.root)
+            $dropdown.dropdown("refresh")
+            setTimeout(() => {
+                $dropdown.dropdown()
+            }, 5)
         })
 
         /*---------------------------------------------------------------------
@@ -360,7 +351,6 @@
         self.add_column = function () {
             self.columns.push({title: "Score2", key: ''})
             self.update()
-            $(".dropdown", self.root).dropdown("refresh")
 
             // Automatically start editing the last column we added
             self.edit_column_name(self.columns.length - 1)
