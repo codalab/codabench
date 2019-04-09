@@ -537,12 +537,17 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         task_solution_pairs = {}
         tasks = [task for phase in comp.phases.all() for task in phase.tasks.all()]
 
+        index_two = 0
+
         # Go through all tasks
         for index, task in enumerate(tasks):
 
             task_solution_pairs[task.id] = {
                 'index': index,
-                'solutions': []
+                'solutions': {
+                    'ids': [],
+                    'indexes': []
+                }
             }
 
             temp_task_data = {
@@ -568,8 +573,21 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                         else:
                             logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
             # Now for all of our solutions for the tasks, write those too
-            for index_two, solution in enumerate(task.solutions.all()):
-                task_solution_pairs[task.id]['solutions'].append(index_two)
+            for solution in task.solutions.all():
+            # for index_two, solution in enumerate(task.solutions.all()):
+            #     temp_index = index_two
+                # IF OUR SOLUTION WAS ALREADY ADDED
+                if solution.id in task_solution_pairs[task.id]['solutions']['ids']:
+                    for solution_data in yaml_data['solutions']:
+                        if solution_data['key'] == solution.key:
+                            solution_data['tasks'].append(task.id)
+                            break
+                    break
+                # Else if our index is already taken
+                elif index_two in task_solution_pairs[task.id]['solutions']['indexes']:
+                    index_two += 1
+                task_solution_pairs[task.id]['solutions']['indexes'].append(index_two)
+                task_solution_pairs[task.id]['solutions']['ids'].append(solution.id)
 
                 temp_solution_data = {
                     'index': index_two
@@ -595,6 +613,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 # TODO: Make sure logic here is right. Needs to be outputted as a list, but what others can we tie to?
                 temp_solution_data['tasks'] = [index]
                 yaml_data['solutions'].append(temp_solution_data)
+                index_two += 1
             # End for loop for solutions; Append tasks data
             yaml_data['tasks'].append(temp_task_data)
 
@@ -614,7 +633,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
             temp_phase_data['tasks'] = task_indexes
             temp_phase_solutions = []
             for task in phase.tasks.all():
-                temp_phase_solutions += task_solution_pairs[task.id]['solutions']
+                temp_phase_solutions += task_solution_pairs[task.id]['solutions']['indexes']
             temp_phase_data['solutions'] = temp_phase_solutions
             yaml_data['phases'].append(temp_phase_data)
 
