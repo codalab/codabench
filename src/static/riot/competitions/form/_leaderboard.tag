@@ -8,8 +8,8 @@
             <div class="title { active: leaderboard.is_active }">
                 <h1>
                     <span class="trigger"><i class="dropdown icon"></i> { leaderboard.title }</span>
-                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
                     <span class="key"> Key: { leaderboard.key }</span>
+                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
                     <div class="ui right floated buttons">
                         <div class="ui negative button" onclick="{ delete_leaderboard.bind(this, index) }">
                             <i class="delete icon"></i>
@@ -197,7 +197,7 @@
             margin-bottom: 20px !important;
         }
         .key {
-            font-size: 18px;
+            font-size: 16px;
             font-style: italic;
         }
     </style>
@@ -291,7 +291,7 @@
             <tr class="ui aligned right">
                 <td>
                     <span>
-                        Key <span class="required">*</span>
+                        Column Key <span class="required">*</span>
                         <span data-tooltip="This is the key you will use to assign scoring columns, along with leaderboard key, in your scoring program" data-inverted="" data-position="right center">
                             <i class="help icon circle"></i>
                         </span>

@@ -11,31 +11,27 @@
         </div>
     </div>
 
-    <div class="ui top vertical centered segment grid">
-
-        <div class="ten wide column">
-
-            <div class="ui one cards">
-                <a each="{phase, index in phases}" class="green card">
-                    <div class="content">
-                        <sorting-chevrons data="{ phases }" index="{ index }"></sorting-chevrons>
-                        <div class="header">{ phase.name }</div>
-                        <div class="description">
-                            { phase.description }
-                        </div>
+    <div class="ui centered">
+        <div class="ui one cards">
+            <a each="{phase, index in phases}" class="green card no-pointer">
+                <div class="content">
+                    <sorting-chevrons data="{ phases }" index="{ index }" class="hover"></sorting-chevrons>
+                    <div class="header">{ phase.name }</div>
+                    <div class="description">
+                        { phase.description }
                     </div>
-                    <div class="extra content">
+                </div>
+                <div class="extra content">
                         <span class="left floated like hover" onclick="{ edit.bind(this, index) }">
                             <i class="edit icon"></i>
                             Edit
                         </span>
-                        <span class="right floated star hover-red" onclick="{ delete_phase.bind(this, index) }">
+                    <span class="right floated star hover-red" onclick="{ delete_phase.bind(this, index) }">
                             <i class="delete icon"></i>
                             Delete
                         </span>
-                    </div>
-                </a>
-            </div>
+                </div>
+            </a>
         </div>
     </div>
     <div class="ui large modal" ref="modal">
@@ -471,13 +467,19 @@
         .modal-button {
             margin-bottom: 20px !important;
         }
+        .no-pointer:hover {
+            cursor: auto !important;
+        }
 
         .hover:hover {
             color: #262626;
+            cursor: pointer;
+
         }
 
         .hover-red:hover {
             color: #DB2828;
+            cursor: pointer;
         }
     </style>
 </competition-phases>
