@@ -77,11 +77,7 @@
             self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.content,
                 autoRefresh: true,
-                renderingConfig: {
-                    markedOptions: {
-                        sanitize: true,
-                    }
-                }
+                hideIcons: ["preview", "side-by-side", "fullscreen"]
             })
 
             // Modal callback to draw markdown on show
@@ -156,7 +152,7 @@
                     page.index = index
                     return page
                 })
-                self.refs.page_content.innerHTML = self.simple_markdown_editor.markdown(indexed_pages[0].content)
+                self.refs.page_content.innerHTML = sanitize_HTML(self.simple_markdown_editor.markdown(indexed_pages[0].content))
                 CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
             }
         }

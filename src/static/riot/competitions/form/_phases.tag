@@ -17,9 +17,6 @@
                 <div class="content">
                     <sorting-chevrons data="{ phases }" index="{ index }" class="hover"></sorting-chevrons>
                     <div class="header">{ phase.name }</div>
-                    <div class="description">
-                        { phase.description }
-                    </div>
                 </div>
                 <div class="extra content">
                         <span class="left floated like hover" onclick="{ edit.bind(this, index) }">
@@ -102,7 +99,7 @@
                     </div>
                     <div class="ui toggle checkbox field">
                         <input type="checkbox" name="is_task_and_solution" ref="task_solution_toggle" onchange="{is_task_and_solution_toggle}">
-                        <label>Task and Solution
+                        <label>Task and Solution Style
                         <span data-tooltip="Toggle between a Dataset or Task and Solution style phase" data-inverted=""
                               data-position="bottom center"><i class="grey help icon circle"></i></span>
                         </label>
@@ -188,15 +185,10 @@
         self.one("mount", function () {
             // awesome markdown editor
             self.simple_markdown_editor = new EasyMDE({
-                element: self.refs.description,
+                element: self.refs.content,
                 autoRefresh: true,
-                forceSync: true,
-                renderingConfig: {
-                    markedOptions: {
-                        sanitize: true,
-                    }
-                }
-            });
+                hideIcons: ["preview", "side-by-side", "fullscreen"]
+            })
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {

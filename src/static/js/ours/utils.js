@@ -117,6 +117,12 @@ function set_form_data(data, base_element) {
     })
 }
 
+function sanitize_HTML(input, extra_settings) {
+    extra_settings = extra_settings || {}
+    return DOMPurify.sanitize(input, extra_settings)
+}
+
+
 function getBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()
