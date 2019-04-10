@@ -15,7 +15,7 @@
         <div class="ui one cards">
             <a each="{phase, index in phases}" class="green card no-pointer">
                 <div class="content">
-                    <sorting-chevrons data="{ phases }" index="{ index }" class="hover"></sorting-chevrons>
+                    <sorting-chevrons data="{ phases }" index="{ index }" class="hover" onupdate="{form_updated}"></sorting-chevrons>
                     <div class="header">{ phase.name }</div>
                 </div>
                 <div class="extra content">
@@ -187,6 +187,7 @@
             self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.content,
                 autoRefresh: true,
+                forceSync: true,
                 hideIcons: ["preview", "side-by-side", "fullscreen"]
             })
             // semantic multiselect

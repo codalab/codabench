@@ -146,6 +146,7 @@
         }
 
         self.form_updated = function () {
+            console.log(self.leaderboards)
             var is_valid = true
 
             // Make sure we have at least 1 leaderboard
@@ -166,6 +167,14 @@
                         if (column.key === '' || column.key === undefined) {
                             is_valid = false
                         }
+                        if (column.computation) {
+                            if (!column.computation_indexes) {
+                                is_valid = false
+                            } else if (column.computation_indexes.length === 0) {
+                                is_valid = false
+                            }
+                        }
+
                     })
                 })
             }
@@ -257,7 +266,7 @@
                     </div>
                     <div class="ui field" show="{ column.computation }">
                         <label>Apply to:</label>
-                        <select class="ui fluid small multiselect dropdown" multiple="" ref="computation_indexes" onchange="{update_computation_indexes.bind(this, index)}">
+                        <select class="ui fluid small multiselect dropdown" multiple="" id="computation_indexes_{index}" onchange="{update_computation_indexes.bind(this, index)}">
                             <option each="{ inner_column, inner_index in columns }" if="{ index != inner_index && !inner_column.editing }" selected="{_.indexOf(column.computation_indexes, inner_index.toString()) != -1}" value="{ inner_index }"> { inner_column.title }</option>
                         </select>
                     </div>
@@ -356,7 +365,7 @@
             self.edit_column_name(self.columns.length - 1)
         }
         self.update_computation_indexes = index => {
-            self.columns[index].computation_indexes = $(self.refs.computation_indexes).val()
+            self.columns[index].computation_indexes = $(`#computation_indexes_${index}`).val()
             self.parent.form_updated()
         }
 

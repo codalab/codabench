@@ -54,7 +54,7 @@
             </div>
         </div>
         <div class="actions">
-            <div class="ui button cancel">Cancel</div>
+            <div class="ui button cancel" onclick="{ close_modal }">Cancel</div>
             <div class="ui button primary" onclick="{ add_collaborator }">Add</div>
         </div>
     </div>
@@ -97,6 +97,12 @@
                 self.update()
             }
         }
+
+        self.close_modal = () => {
+            $(self.refs.modal).modal('hide')
+            $(self.refs.email).val('')
+            self.errors = null
+        }
         self.add_collaborator = () => {
             if (self.new_collab) {
                 if (self.new_collab.id === CODALAB.state.user.id) {
@@ -106,9 +112,7 @@
                 } else if (_.filter(self.collabs, collab => collab.id === self.new_collab.id).length === 0) {
                     self.collabs.push(self.new_collab)
                     self.new_collab = {}
-                    $(self.refs.modal).modal('hide')
-                    $(self.refs.email).val('')
-                    self.errors = null
+                    self.close_modal()
                 } else {
                     self.errors = `${self.new_collab.name} is already a collaborator`
                 }
