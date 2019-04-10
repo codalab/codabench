@@ -23,5 +23,4 @@ class CollaboratorSerializer(ModelSerializer):
             'id',
             'name',
             'username',
-            'email',
         )

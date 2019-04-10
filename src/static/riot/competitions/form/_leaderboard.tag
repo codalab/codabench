@@ -3,7 +3,7 @@
         <i class="add circle icon"></i> Add leaderboard
     </button>
 
-    <div class="ui fluid styled accordion" if="{!!leaderboards}">
+    <div class="ui fluid styled accordion" show="{leaderboards.length !== 0}">
         <virtual each="{ leaderboard, index in leaderboards }">
             <div class="title { active: leaderboard.is_active }">
                 <h1>
@@ -146,7 +146,6 @@
         }
 
         self.form_updated = function () {
-            console.log(self.leaderboards)
             var is_valid = true
 
             // Make sure we have at least 1 leaderboard

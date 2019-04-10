@@ -14,9 +14,9 @@
             </thead>
             <tbody>
             <tr each="{collab, index in collabs}">
-                <td>{collab.name}</td>
+                <td>{collab.name || collab.username}</td>
                 <td class="center aligned">
-                    <button class="ui button red" onclick="{ remove_collaborator.bind(this, index, collab.name) }">Remove</button>
+                    <button class="ui button red" onclick="{ remove_collaborator.bind(this, index, (collab.name || collab.username)) }">Remove</button>
                 </td>
             </tr>
             </tbody>

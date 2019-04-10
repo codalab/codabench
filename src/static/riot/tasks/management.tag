@@ -1,5 +1,5 @@
 <task-management>
-    <div class="ui huge tabular menu">
+    <div class="ui tabular menu">
         <div class="active item" data-tab="my_tasks">My Tasks</div>
         <div class="item" data-tab="public_tasks">Public Tasks</div>
     </div>
@@ -235,7 +235,6 @@
             let data = get_form_data($(self.refs.form))
             _.assign(data, self.form_datasets)
             data.created_by = CODALAB.state.user.id
-            console.log(data)
             CODALAB.api.create_task(data)
                 .done((response) => {
                     toastr.success('Task Created')

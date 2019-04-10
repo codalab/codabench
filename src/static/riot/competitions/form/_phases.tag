@@ -185,7 +185,7 @@
         self.one("mount", function () {
             // awesome markdown editor
             self.simple_markdown_editor = new EasyMDE({
-                element: self.refs.content,
+                element: self.refs.description,
                 autoRefresh: true,
                 forceSync: true,
                 hideIcons: ["preview", "side-by-side", "fullscreen"]
@@ -260,8 +260,7 @@
         }
 
         self.show_modal = function () {
-            $(self.refs.modal)
-                .modal('show')
+            $(self.refs.modal).modal('show')
 
             // Focus on the phase tab when opening modal, not dataset tab
             $('.menu .item').tab('change tab', 'phase_details')
@@ -467,7 +466,6 @@
         .hover:hover {
             color: #262626;
             cursor: pointer;
-
         }
 
         .hover-red:hover {

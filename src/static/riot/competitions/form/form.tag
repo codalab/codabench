@@ -93,7 +93,7 @@
             <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save_and_publish }">
                 Save and Publish
             </button>
-            <button class="ui grey button" onclick="{ save_as_draft }">
+            <button class="ui grey button { disabled: !are_all_sections_valid() }" onclick="{ save_as_draft }">
                 Save as Draft
             </button>
             <button class="ui basic red button discard" onclick="{ discard }">
@@ -236,7 +236,6 @@
             self.update()
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
-            // console.log(name + " is_valid -> " + is_valid)
             self.sections[name].valid = is_valid
             self.update()
         })
