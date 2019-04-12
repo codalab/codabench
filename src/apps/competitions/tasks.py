@@ -4,6 +4,7 @@ import logging
 import os
 
 import oyaml as yaml
+import shutil
 import zipfile
 
 from io import BytesIO
@@ -11,6 +12,7 @@ from io import BytesIO
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
+from rest_framework.exceptions import ValidationError
 
 from celery_config import app
 from dateutil import parser
@@ -75,6 +77,28 @@ COLUMN_FIELDS = [
 ]
 
 
+def send(submission, run_args):
+    print("Task data:")
+    print(run_args)
+
+    # Pad timelimit so worker has time to cleanup
+    time_padding = 60 * 20  # 20 minutes
+    time_limit = submission.phase.execution_time_limit + time_padding
+
+    task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
+                         soft_time_limit=time_limit)
+    submission.task_id = task.id
+    submission.status = Submission.SUBMITTED
+    submission.save()
+
+
+def create_detailed_output_file(detail_name, submission):
+    # Detail logs like stdout/etc.
+    new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
+    new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
+    return make_url_sassy(new_details.data_file.name, permission="w")
+
+
 @app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk, is_scoring=False):
     related_models = (
@@ -102,57 +126,44 @@ def run_submission(submission_pk, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
+    # TODO: refactor all this later for multiple tasks per phase. This will further reduce gross DRY stuff
+    if not is_scoring:
+        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+
     if submission.phase.is_task_and_solution:
         for task in submission.phase.tasks.all():
-            if task.ingestion_module:
-                if not task.ingestion_module.only_during_scoring or is_scoring:
-                    run_arguments['ingestion_program'] = make_url_sassy(
-                        task.ingestion_module.ingestion_program.data_file.name)
-                    run_arguments['input_data'] = make_url_sassy(task.ingestion_module.input_data.datafile.name)
+            if task.ingestion_program:
+                if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
+                    run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+                    if task.input_data:
+                        run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
-            if is_scoring:
-                run_arguments['program_data'] = make_url_sassy(task.scoring_module.scoring_program.data_file.name)
-                run_arguments['result'] = make_url_sassy(submission.result.name, permission='w')
-                if task.scoring_module.reference_data:
-                    run_arguments['reference_data'] = make_url_sassy(task.scoring_module.reference_data.data_file.name)
-            else:
-                # Pre-generate file path by setting empty file here
-                submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-                # Run the submission
-                run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
-                run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
+            if is_scoring and task.reference_data:
+                run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
-            for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
-                new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
-                new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
-                run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
-
-            print("Task data:")
-            print(run_arguments)
-
-            # Pad timelimit so worker has time to cleanup
-            time_padding = 60 * 20  # 20 minutes
-            time_limit = submission.phase.execution_time_limit + time_padding
-
-            task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker',
-                                 soft_time_limit=time_limit)
-            submission.task_id = task.id
-            submission.status = Submission.SUBMITTED
-            submission.save()
-
+            run_arguments['program_data'] = make_url_sassy(
+                path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+            )
+            run_arguments['result'] = make_url_sassy(
+                path=submission.result.name,
+                permission='w' if not is_scoring else 'r'
+            )
+            detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+            for detail_name in detail_names:
+                run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
+            send(submission, run_arguments)
     else:
-        if not is_scoring:
-            # Pre-generate file path by setting empty file here
-            submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-            # Run the submission
-            run_arguments["program_data"] = make_url_sassy(submission.data.data_file.name)
-            run_arguments["result"] = make_url_sassy(submission.result.name, permission='w')
-        else:
-            # Run the scoring_program
-            run_arguments["program_data"] = make_url_sassy(submission.phase.scoring_program.data_file.name)
-            run_arguments["result"] = make_url_sassy(submission.result.name)
-            # run_arguments["ingestion_program"] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
+        run_arguments["program_data"] = make_url_sassy(
+            path=submission.data.data_file.name if not is_scoring else submission.phase.scoring_program.data_file.name
+        )
+        run_arguments["result"] = make_url_sassy(
+            path=submission.result.name,
+            permission='w' if not is_scoring else 'r'
+        )
 
+        # TODO: when is an ingestion program supposed to run when not task/solution style phase?
+        if submission.phase.ingestion_program:
+            run_arguments['ingestion_program'] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
         # Inputs like reference data/etc.
         inputs = (
             'input_data',
@@ -162,24 +173,11 @@ def run_submission(submission_pk, is_scoring=False):
             if getattr(submission.phase, input) is not None:
                 run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
 
-        # Detail logs like stdout/etc.
-        for detail_name in SubmissionDetails.DETAILED_OUTPUT_NAMES:
-            new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
-            new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
-            run_arguments[detail_name] = make_url_sassy(new_details.data_file.name, permission="w")
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+        for detail_name in detail_names:
+            run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
 
-        print("Task data:")
-        print(run_arguments)
-
-        # Pad timelimit so worker has time to cleanup
-        time_padding = 60 * 20  # 20 minutes
-        time_limit = submission.phase.execution_time_limit + time_padding
-
-        task = app.send_task('compute_worker_run', args=(run_arguments,), queue='compute-worker',
-                             soft_time_limit=time_limit)
-        submission.task_id = task.id
-        submission.status = Submission.SUBMITTED
-        submission.save()
+        send(submission, run_arguments)
 
 
 class CompetitionUnpackingException(Exception):
@@ -199,6 +197,7 @@ def get_data_key(obj, file_type, temp_directory, creator):
             name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
             was_created_by_competition=True,
         )
+        file_path = _zip_if_directory(file_path)
         new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
         return new_dataset.key
     elif len(file_name) in (32, 36):
@@ -209,6 +208,21 @@ def get_data_key(obj, file_type, temp_directory, creator):
         return file_name
     else:
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
+
+
+def _zip_if_directory(path):
+    """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
+    file"""
+    logger.info(f"Checking if path is directory: {path}")
+    if os.path.isdir(path):
+        base_path = os.path.dirname(os.path.dirname(path))  # gets parent directory
+        folder_name = os.path.basename(path.strip("/"))
+        logger.info(f"Zipping it up because it is directory, saving it to: {folder_name}.zip")
+        new_path = shutil.make_archive(os.path.join(base_path, folder_name), 'zip', path)
+        logger.info("New zip file path = " + new_path)
+        return new_path
+    else:
+        return path
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
@@ -280,9 +294,14 @@ def unpack_competition(competition_dataset_pk):
             # Pages
             for index, page in enumerate(competition_yaml.get('pages')):
                 try:
+                    page_content = open(os.path.join(temp_directory, page["file"])).read()
+
+                    if not page_content:
+                        raise CompetitionUnpackingException(f"Page '{page['file']}' is empty, it must contain content.")
+
                     competition['pages'].append({
                         "title": page.get("title"),
-                        "content": open(os.path.join(temp_directory, page["file"])).read(),
+                        "content": page_content,
                         "index": index
                     })
                 except FileNotFoundError:
@@ -370,6 +389,7 @@ def unpack_competition(competition_dataset_pk):
                                 description=description,
                                 was_created_by_competition=True,
                             )
+                            file_path = _zip_if_directory(file_path)
                             new_solution_data.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
                             new_solution = {
                                 'data': new_solution_data.key,
@@ -438,6 +458,7 @@ def unpack_competition(competition_dataset_pk):
                                 name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
                                 was_created_by_competition=True,
                             )
+                            file_path = _zip_if_directory(file_path)
                             # This saves the file AND saves the model
                             new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
 
@@ -472,7 +493,12 @@ def unpack_competition(competition_dataset_pk):
                 # takes the request.user
                 context={"created_by": creator}
             )
-            serializer.is_valid(raise_exception=True)
+            try:
+                serializer.is_valid(raise_exception=True)
+            except ValidationError as e:
+                # TODO Convert this error to something nice? Output's something like this currently:
+                # "{'pages': [{'content': [ErrorDetail(string='This field may not be blank.', code='blank')]}]}"
+                raise CompetitionUnpackingException(str(e))
             competition = serializer.save()
 
             status.status = CompetitionCreationTaskStatus.FINISHED
@@ -482,6 +508,8 @@ def unpack_competition(competition_dataset_pk):
 
             # TODO: If something fails delete baby datasets and such!!!!
     except CompetitionUnpackingException as e:
+        # We can return these exception details because we're generating the exception -- it
+        # should not contain anything private
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
         status.save()

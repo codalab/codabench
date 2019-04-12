@@ -46,8 +46,8 @@
         <div class="content">
             <div class="ui top pointing secondary menu">
                 <a class="active item" data-tab="phase_details">Phase details</a>
-                <a class="item" data-tab="phase_datasets">Datasets</a>
-                <a class="item" data-tab="phase_task">Tasks</a>
+                <a class="item" data-tab="phase_datasets" show="{ current_phase_style == 'dataset' }">Datasets</a>
+                <a class="item" data-tab="phase_task" show="{ current_phase_style == 'task' }">Tasks</a>
             </div>
 
             <form class="ui form" ref="form">
@@ -61,13 +61,13 @@
                     <div class="inline fields">
                         <div class="field">
                             <div class="ui radio checkbox">
-                                <input class="no-clear" type="radio" name="phase_style" value="dataset" id="d"/>
+                                <input ref="radio_dataset" type="radio" name="phase_style" value="dataset" onchange="{ is_task_and_solution_toggle }"/>
                                 <label>Dataset</label>
                             </div>
                         </div>
                         <div class="field">
                             <div class="ui radio checkbox">
-                                <input class="no-clear" type="radio" name="phase_style" value="task" id="t"/>
+                                <input ref="radio_task" type="radio" name="phase_style" value="task" onchange="{ is_task_and_solution_toggle }"/>
                                 <label>Task/Solution</label>
                             </div>
                         </div>
@@ -257,10 +257,15 @@
 
         self.one("mount", function () {
             // awesome markdown editor
-            self.simple_markdown_editor = new SimpleMDE({
+            self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.description,
                 autoRefresh: true,
-                forceSync: true
+                forceSync: true,
+                renderingConfig: {
+                    markedOptions: {
+                        sanitize: true,
+                    }
+                }
             })
 
             // Select 2
@@ -340,12 +345,10 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.radio_clicked = function (event) {
-            if (event.value === 'task') {
-
-            } else {
-
-            }
+        self.is_task_and_solution_toggle = function (event) {
+            self.current_phase_style = event.target.value
+            self.phases[self.selected_phase_index].phase_style == event.target.value
+            self.update()
         }
 
         self.show_modal = function () {
@@ -443,8 +446,11 @@
             self.selected_phase_index = undefined
             self.form_datasets = {}
 
-            $(':input', self.refs.form).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
-                $(field).not('.no-clear').val('')
+            $(':input', self.refs.form)
+                .not('[type="file"]')
+                .not('button')
+                .not('[readonly]').each(function (i, field) {
+                $(field).val('')
             })
 
             self.simple_markdown_editor.value('')
@@ -461,13 +467,27 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
 
+            phase.phase_style =  phase.phase_style || 'dataset'
+
             set_form_data(phase, self.refs.form)
 
+            // quick fix for busted radio buttons for dataset/task
+            self.refs.radio_dataset.value = 'dataset'
+            self.refs.radio_task.value = 'task'
+
+            if(phase.phase_style == 'dataset') {
+                self.refs.radio_dataset.checked = true
+            } else {
+                self.refs.radio_task.checked = true
+            }
+
+            self.current_phase_style = phase.phase_style
+
+            // Setting selected files
             self.file_fields.forEach(function(file_field_name){
                 if(!!phase[file_field_name]) {
                     //phase[file_field_name] = phase[file_field_name].key
                     $(`.input.search[data-name="${file_field_name}"] input`).val(phase[file_field_name].name)
-                    console.log("FOUND IT " + phase[file_field_name].name)
                 }
             })
 
