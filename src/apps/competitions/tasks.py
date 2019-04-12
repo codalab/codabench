@@ -602,8 +602,8 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                             logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
             # Now for all of our solutions for the tasks, write those too
             for solution in task.solutions.all():
-            # for index_two, solution in enumerate(task.solutions.all()):
-            #     temp_index = index_two
+                # for index_two, solution in enumerate(task.solutions.all()):
+                #     temp_index = index_two
                 # IF OUR SOLUTION WAS ALREADY ADDED
                 if solution.id in task_solution_pairs[task.id]['solutions']['ids']:
                     for solution_data in yaml_data['solutions']:
