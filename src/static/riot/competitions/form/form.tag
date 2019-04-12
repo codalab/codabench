@@ -242,7 +242,7 @@
     </script>
     <style type="text/stylus">
         .ui.basic.red.button.discard:hover
-            background-color: #db2828 !important
-            color: white !important
+            background-color #db2828 !important
+            color white !important
     </style>
 </competition-form>
