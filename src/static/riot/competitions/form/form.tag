@@ -172,7 +172,7 @@
                 }
                 return phase
             })
-            self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id)
+            self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
 
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 

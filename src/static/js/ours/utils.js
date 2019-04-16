@@ -119,6 +119,18 @@ function set_form_data(data, base_element) {
 
 function sanitize_HTML(input, extra_settings) {
     extra_settings = extra_settings || {}
+    if (extra_settings.FORBID_TAGS && _.indexOf('style') === -1) {
+        extra_settings.FORBID_TAGS.push('style')
+    } else {
+        extra_settings.FORBID_TAGS = ['style']
+    }
+
+    if (extra_settings.FORBID_ATTR && _.indexOf('style') === -1) {
+        extra_settings.FORBID_ATTR.push('style')
+    } else {
+        extra_settings.FORBID_ATTR = ['style']
+    }
+
     return DOMPurify.sanitize(input, extra_settings)
 }
 

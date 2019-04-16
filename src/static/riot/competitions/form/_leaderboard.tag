@@ -346,10 +346,10 @@
         self.on("update", function () {
             // Force refresh of dropdown on update, otherwise they don't show new elements and
             // don't reflect new names
-            let dropdown = $(".dropdown", self.root)
-            dropdown.dropdown("refresh")
+            let leaderboard_dropdown = $(".dropdown", self.root)
+            leaderboard_dropdown.dropdown("refresh")
             setTimeout(() => {
-                dropdown.dropdown()
+                leaderboard_dropdown.dropdown()
             }, 5)
         })
 

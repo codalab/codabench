@@ -175,6 +175,7 @@
         self.has_initialized_calendars = false
         self.form_is_valid = false
         self.phases = []
+        self.phase_tasks = []
         self.selected_phase_index = undefined
         self.is_task_solution = false
 
@@ -198,7 +199,8 @@
                         return {success: true, results: _.values(data)}
                     },
                 },
-                onChange: self.form_updated,
+                onAdd: self.task_added,
+                onRemove: self.task_removed,
             })
 
             // Form change events
@@ -253,6 +255,25 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.task_added = (key, text, item) => {
+            let index = _.findIndex(self.phase_tasks, (task) => {
+                return task.value === key
+            })
+            if (index === -1) {
+                let task = {name: text, value: key, selected: true}
+                self.phase_tasks.push(task)
+            }
+            self.form_updated()
+        }
+
+        self.task_removed = (key, text, item) => {
+            let index = _.findIndex(self.phase_tasks, (task) => {
+                return task.value === key
+            })
+            self.phase_tasks.splice(index, 1)
+            self.form_updated()
+        }
+
         self.is_task_and_solution_toggle = function (event) {
             self.is_task_solution = event.target.checked
             self.form_check_is_valid()
@@ -291,7 +312,7 @@
 
         self.close_modal = function () {
             $(self.refs.modal).modal('hide')
-            self.clear_form()
+            setTimeout(self.clear_form, 200)
         }
 
         self.form_updated = function () {
@@ -349,12 +370,13 @@
             var data = get_form_data(self.refs.form)
             data.is_task_and_solution = self.refs.task_solution_toggle.checked
 
-            let valid_files = data.is_task_and_solution ? data.tasks.length > 0 : self.form_datasets.scoring_program
+            let valid_files = data.is_task_and_solution ? self.phase_tasks.length > 0 : self.form_datasets.scoring_program
             self.form_is_valid = !!data.name && !!data.start && !!data.description && valid_files
         }
 
         self.clear_form = function () {
             self.selected_phase_index = undefined
+            self.phase_tasks = []
             self.form_datasets = {}
             $(self.refs.task_solution_toggle).prop('checked', false)
             $(self.refs.multiselect).dropdown('clear')
@@ -380,6 +402,7 @@
         self.edit = function (index) {
             self.selected_phase_index = index
             var phase = self.phases[index]
+            self.phase_tasks = phase.tasks
 
             set_form_data(phase, self.refs.form)
             self.is_task_solution = phase.is_task_and_solution
@@ -427,6 +450,7 @@
                 data.tasks = []
                 Object.assign(data, self.form_datasets)
             } else {
+                data.tasks = self.phase_tasks
                 _.forEach(self.file_fields, file_field_name => {
                     data[file_field_name] = null
                 })
