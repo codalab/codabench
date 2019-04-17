@@ -116,7 +116,7 @@
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt">
+                                    <input type="text" class="prompt" onchange="{file_changed}">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -131,7 +131,7 @@
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt">
+                                    <input type="text" class="prompt" onchange="{file_changed}">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -258,6 +258,16 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.file_changed = (event) => {
+            let file_type = event.item.file_field
+            let file_name = event.target.value
+            if (self.form_datasets[file_type]) {
+                if (self.form_datasets[file_type] !== file_name) {
+                    delete self.form_datasets[file_type]
+                }
+            }
+            self.form_updated()
+        }
         self.task_added = (key, text, item) => {
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
