@@ -409,14 +409,6 @@ def unpack_competition(competition_dataset_pk):
 
             # ---------------------------------------------------------------------
             # Phases
-            # file_types = [
-            #     "input_data",
-            #     "reference_data",
-            #     "scoring_program",
-            #     "ingestion_program",
-            #     "public_data",
-            #     "starting_kit",
-            # ]
 
             for index, phase_data in enumerate(competition_yaml.get('phases')):
                 new_phase = {
@@ -441,7 +433,6 @@ def unpack_competition(competition_dataset_pk):
 
                     solutions = phase_data.get('solutions')
                     if solutions:
-                        # import pdb; pdb.set_trace()
                         new_phase['solutions'] = [competition['solutions'][index] for index in solutions]
 
                 else:
