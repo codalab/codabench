@@ -248,6 +248,9 @@
                     setTimeout(function () {
                         self.simple_markdown_editor.codemirror.refresh()
                     }.bind(self.simple_markdown_editor), 10)
+                },
+                onHidden: () => {
+                    self.clear_form()
                 }
             })
         })
@@ -312,7 +315,6 @@
 
         self.close_modal = function () {
             $(self.refs.modal).modal('hide')
-            setTimeout(self.clear_form, 200)
         }
 
         self.form_updated = function () {
