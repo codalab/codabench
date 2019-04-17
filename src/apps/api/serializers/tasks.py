@@ -99,12 +99,11 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
 
 
 class TaskSerializerSimple(serializers.ModelSerializer):
-    text = serializers.CharField(source='name')
+    value = serializers.CharField(source='key')
 
     class Meta:
         model = Task
         fields = [
-            'id',
-            'key',
-            'text',
+            'value',
+            'name',
         ]

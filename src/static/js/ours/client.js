@@ -220,4 +220,14 @@ CODALAB.api = {
     update_task: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
     },
+    create_task: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}tasks/`, data)
+    },
+
+    /*---------------------------------------------------------------------
+         Users
+    ---------------------------------------------------------------------*/
+    user_lookup: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}user_lookup/`, filters)
+    }
 }

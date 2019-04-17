@@ -28,13 +28,13 @@
 
         <div class="eleven wide column">
             <div class="ui text centered fluid">
-                <h1>{ pages[0].title }</h1>
-                <p>(This is the first page people will see upon visiting your competition!)</p>
+                <h1>{ pages[0] ? pages[0].title : null }</h1>
+                <div class="ui segment page-content" show="{pages[0]}">
+                    <div ref="page_content">
+
+                    </div>
+                </div>
             </div>
-
-            <br><br>
-
-            <img src="https://semantic-ui.com/images/wireframe/paragraph.png">
         </div>
     </div>
 
@@ -70,20 +70,14 @@
         ---------------------------------------------------------------------*/
         self.simple_markdown_editor = undefined
         self.selected_page_index = undefined
-        self.pages = [
-            {title: "Welcome!", content: "welcome msg"}
-        ]
+        self.pages = []
 
         self.one("mount", function () {
             // awesome markdown editor
             self.simple_markdown_editor = new EasyMDE({
                 element: self.refs.content,
                 autoRefresh: true,
-                renderingConfig: {
-                    markedOptions: {
-                        sanitize: true,
-                    }
-                }
+                hideIcons: ["preview", "side-by-side", "fullscreen"]
             })
 
             // Modal callback to draw markdown on show
@@ -158,7 +152,7 @@
                     page.index = index
                     return page
                 })
-
+                self.refs.page_content.innerHTML = sanitize_HTML(self.simple_markdown_editor.markdown(indexed_pages[0].content))
                 CODALAB.events.trigger('competition_data_update', {pages: indexed_pages})
             }
         }
@@ -198,4 +192,9 @@
             self.form_updated()
         })
     </script>
+    <style type="text/stylus">
+        .page-content
+            max-height: 500px;
+            overflow: auto;
+    </style>
 </competition-pages>
