@@ -42,6 +42,8 @@ TASK_FIELDS = [
     # 'key',
 ]
 SOLUTION_FIELDS = [
+    # 'name',
+    # 'description',
     'tasks'
 ]
 
@@ -65,6 +67,7 @@ PAGE_FIELDS = [
     "title"
 ]
 LEADERBOARD_FIELDS = [
+    # 'index',
     'title',
     'key'
 ]
@@ -653,7 +656,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
             for field in PHASE_FIELDS:
                 if hasattr(phase, field):
                     if field == 'start' or field == 'end':
-                        temp_date = str(getattr(phase, field).strftime("%m-%d-%Y"))
+                        temp_date = getattr(phase, field)
+                        if not temp_date:
+                            continue
+                        temp_date = temp_date.strftime("%m-%d-%Y")
                         temp_phase_data[field] = temp_date
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
