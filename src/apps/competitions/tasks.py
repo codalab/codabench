@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import os
+import re
 
 import oyaml as yaml
 import shutil
@@ -39,21 +40,25 @@ COMPETITION_FIELDS = [
 TASK_FIELDS = [
     'name',
     'description',
-    # 'key',
+    'key',
+    'is_public',
 ]
 SOLUTION_FIELDS = [
-    # 'name',
-    # 'description',
-    'tasks'
+    'name',
+    'description',
+    'tasks',
+    'key',
 ]
 
 PHASE_FIELDS = [
+    'index',
     'name',
     'description',
     'start',
     'end',
-    # 'tasks',
-    # 'solutions',
+    'max_submissions_per_day',
+    'max_submissions_per_person',
+    'execution_time_limit',
 ]
 PHASE_FILES = [
     "input_data",
@@ -67,16 +72,23 @@ PAGE_FIELDS = [
     "title"
 ]
 LEADERBOARD_FIELDS = [
-    # 'index',
     'title',
-    'key'
+    'key',
+
+    # For later
+    # 'force_submission_to_leaderboard',
+    # 'force_best_submission_to_leaderboard',
+    # 'disallow_leaderboard_modifying',
 ]
 
 COLUMN_FIELDS = [
     'title',
     'key',
     'index',
-    'sorting'
+    'sorting',
+    'computation',
+    'computation_indexes',
+    'decimal_count',
 ]
 
 
@@ -389,7 +401,6 @@ def unpack_competition(competition_dataset_pk):
                                 created_by=creator,
                                 type='solution',
                                 name=name,
-                                description=description,
                                 was_created_by_competition=True,
                             )
                             file_path = _zip_if_directory(file_path)
@@ -397,6 +408,8 @@ def unpack_competition(competition_dataset_pk):
                             new_solution = {
                                 'data': new_solution_data.key,
                                 'tasks': task_keys,
+                                'name': name,
+                                'description': description,
                             }
                             serializer = SolutionSerializer(data=new_solution)
                             serializer.is_valid(raise_exception=True)
@@ -419,8 +432,10 @@ def unpack_competition(competition_dataset_pk):
                     "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
                     'max_submissions_per_day': phase_data.get(
                         'max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
-                    'max_submissions_per_phase': phase_data.get(
+                    'max_submissions_per_person': phase_data.get(
                         'max_submissions') if 'max_submissions' in phase_data else None,
+                    'execution_time_limit': phase_data.get(
+                        'execution_time_limit_ms') if 'execution_time_limit_ms' in phase_data else None,
                 }
 
                 if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
@@ -531,7 +546,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         if comp.logo:
             logger.info("Checking logo")
             try:
-                yaml_data['image'] = 'logo.png'
+                yaml_data['image'] = re.sub(r'.*/', '', comp.logo.name)
                 zip_file.writestr(yaml_data['image'], comp.logo.read())
                 logger.info(f"Logo found for competition {comp.pk}")
             except OSError:
@@ -576,9 +591,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 'index': index
             }
             for field in TASK_FIELDS:
-                if hasattr(task, field):
-                    temp_task_data[field] = getattr(task, field, "")
-            temp_task_data['key'] = str(task.key)
+                data = getattr(task, field, "")
+                if field == 'key':
+                    data = str(data)
+                temp_task_data[field] = data
             for file_type in PHASE_FILES:
                 if hasattr(task, file_type):
                     temp_dataset = getattr(task, file_type)
@@ -616,8 +632,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 }
                 for field in SOLUTION_FIELDS:
                     if hasattr(solution, field):
-                        temp_solution_data[field] = getattr(solution, field, "")
-                temp_solution_data['key'] = str(solution.key)
+                        data = getattr(solution, field, "")
+                        if field == 'key':
+                            data = str(data)
+                        temp_solution_data[field] = data
                 if solution.data:
                     temp_dataset = getattr(solution, 'data')
                     if temp_dataset:
@@ -652,6 +670,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                             continue
                         temp_date = temp_date.strftime("%m-%d-%Y")
                         temp_phase_data[field] = temp_date
+                    elif field == 'max_submissions_per_person':
+                        temp_phase_data['max_submissions'] = getattr(phase, field)
+                    elif field == 'execution_time_limit':
+                        temp_phase_data['execution_time_limit_ms'] = getattr(phase, field)
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
             task_indexes = [task_solution_pairs[task.id]['index'] for task in phase.tasks.all()]
@@ -665,8 +687,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         # -------- Leaderboards -------
 
         yaml_data['leaderboards'] = []
-        for leaderboard in comp.leaderboards.all():
-            ldb_data = {}
+        for index, leaderboard in enumerate(comp.leaderboards.all()):
+            ldb_data = {
+                'index': index
+            }
             for field in LEADERBOARD_FIELDS:
                 if hasattr(leaderboard, field):
                     ldb_data[field] = getattr(leaderboard, field, "")

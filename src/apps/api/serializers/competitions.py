@@ -38,6 +38,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'public_data',
             'starting_kit',
             'status',
+            'execution_time_limit',
 
             'has_max_submissions',
             'max_submissions_per_day',
