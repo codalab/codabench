@@ -3,13 +3,15 @@ from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
 
+from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 
 
-class Competition(models.Model):
+class Competition(ChaHubSaveMixin, models.Model):
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="competitions")
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
@@ -21,6 +23,40 @@ class Competition(models.Model):
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
+    def get_chahub_endpoint(self):
+        return "competitions/"
+
+    def get_chahub_data(self):
+        data = {
+            'created_by': self.created_by.username,
+            'creator_id': self.created_by.pk,
+            # 'user',
+            'created_when': self.created_when.isoformat(),
+            # 'start': ,
+            'title': self.title,
+            'url': 'https://www.google.com/',
+            # 'description',
+            # 'end',
+            # 'prize',
+            # 'producer': int(settings.CHAHUB_PRODUCER_ID),
+            'remote_id': self.pk,
+            'logo_url': self.logo.url,
+            'logo': self.logo.url,
+            # 'logo',
+            # 'url',
+            # 'admins',
+            # 'participant_count',
+            # 'html_text',
+            # 'current_phase_deadline',
+            # 'is_active',
+            'published': True
+        }
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -72,12 +108,18 @@ class Phase(models.Model):
     max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
 
     # These related names are all garbage. Had to do it this way just to prevent clashes...
-    input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_input_datas")
-    reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_reference_datas")
-    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_scoring_programs")
-    ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_ingestion_programs")
-    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_datas")
-    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kits")
+    input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="phase_input_datas")
+    reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name="phase_reference_datas")
+    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                        related_name="phase_scoring_programs")
+    ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                          related_name="phase_ingestion_programs")
+    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="phase_public_datas")
+    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name="phase_starting_kits")
 
     # Task and Solution fields
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
@@ -154,7 +196,8 @@ class Submission(models.Model):
     result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True)
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
-    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)
+    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
+                                    null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)

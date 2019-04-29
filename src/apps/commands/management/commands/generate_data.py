@@ -10,7 +10,13 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         # Optional argument
         parser.add_argument(
-            '-s'
+            '-n',
+            '--no-admin',
+            type=bool,
+            help='Whether to create an admin'
+                 'This defaults to true')
+        parser.add_argument(
+            '-s',
             '--size',
             type=int,
             help='Determines the size of data to be created, i.e. 5 users, each with 5 comps with 5 phases with 5 submissions.'
@@ -18,7 +24,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         size = kwargs['size'] if 'size' in kwargs else 5
-        users = [UserFactory(username='admin', super_user=True) if i == 0 else UserFactory() for i in range(size)]
+        no_admin = kwargs['no-admin'] if 'no-admin' in kwargs else True
+        if no_admin:
+            users = [UserFactory() if i == 0 else UserFactory() for i in range(size)]
+        else:
+            users = [UserFactory(username='admin', super_user=True) if i == 0 else UserFactory() for i in range(size)]
         for user in users:
             for _ in range(size):
                 comp = CompetitionFactory(created_by=user)

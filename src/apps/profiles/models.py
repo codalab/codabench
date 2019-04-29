@@ -1,9 +1,23 @@
+import json
+import datetime
+
+from django.conf import settings
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
+from django.forms import model_to_dict
 from django.utils.timezone import now
 
+from apps.chahub.models import ChaHubSaveMixin
 
-class User(AbstractBaseUser, PermissionsMixin):
+
+PROFILE_DATA_BLACKLIST = [
+    'password',
+    'groups',
+    'user_permissions'
+]
+
+
+class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
     EMAIL_FIELD = 'email'
@@ -38,3 +52,34 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.name if self.name else self.username
+
+    def get_chahub_endpoint(self):
+        return "profiles/"
+
+    def clean_chahub_data(self, temp_data):
+        data = temp_data
+        for key in list(data):
+            if key == 'details':
+                data['details'] = self.clean_chahub_data(data['details'])
+            if not data[key] or data[key] == '':
+                data.pop(key, None)
+            if key in PROFILE_DATA_BLACKLIST:
+                data.pop(key, None)
+            if isinstance(data.get(key), datetime.datetime):
+                data[key] = data[key].isoformat()
+        return data
+
+    def get_chahub_data(self):
+        data = {
+            'email': self.email,
+            'username': self.username,
+            'remote_id': self.pk,
+            'details': model_to_dict(self),
+            'producer': settings.CHAHUB_PRODUCER_ID
+        }
+        data = self.clean_chahub_data(data)
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True
