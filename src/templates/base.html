@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -23,117 +24,33 @@
     {% endblock %}
 </head>
 <body>
-<!-- Sidebar Menu -->
-<div class="ui thin sidebar left inverted vertical overlay menu">
-    <div class="ui container">
-        <a href="{% url "pages:home" %}" class="item">Competitions</a>
-        <a class="item">Chagle</a>
-        <a class="item">Chalab</a>
-        <a class="item">Chagrade</a>
-    </div>
+
+<div class="navbar-placeholder"></div>
+<div id="bg" class="ui top fixed menu nav-bar">
+    <canvas class="particles-js-canvas-el">
+        <div class="right floated ui button">asdf</div>
+    </canvas>
+    <a href="{% url "pages:home" %}" class="item"><img class="image"
+                                                       src="{% static 'img/codalab-logo-futuraLT-light2.png' %}"></a>
+    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
+    <a class="tl item">Chagle</a>
+    <a class="tl item">Chalab</a>
+    <a class="tl item">Chagrade</a>
+    {% if user.is_authenticated %}
+        <div class="button-container">
+            <button class="right floated ui button">Logout</button>
+            <button class="right floated ui button">Profile</button>
+        </div>
+    {% else %}
+        <div class="button-container">
+            <button class="right floated ui button">Login</button>
+        </div>
+    {% endif %}
+
 </div>
 
-<div class=pusher>
-    <div id="hamburger_button">
-        <div class="ui icon button">
-            <i class="bars icon"></i>
-        </div>
-    </div>
-    <!-- Page Contents -->
-    <div class="pusher">
-        <div id="header" class="ui inverted vertical center aligned segment masthead
-        {% block top_div_extra_class %}{% endblock %}">
-            <div id="bg"></div>
-            <div class="ui container">
-                <div id="topleft_menu" class="ui secondary inverted menu">
-                    <span class="left item">
-                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
-                    <a class="tl item">Chagle</a>
-                    <a class="tl item">Chalab</a>
-                    <a class="tl item">Chagrade</a>
-                    </span>
-                    {% if user.is_authenticated %}
-                        <div id="user_dropdown" class="ui dropdown item">
-                            <div class="text">
-                                <i class="icon user outline"></i>
-                                {{ request.user.username }}
-                            </div>
-                            <i class="dropdown icon"></i>
-                            <div class="menu">
-                                <div class="header">Your management</div>
-                                <a class="item" href="{% url "competitions:management" %}">Competitions</a>
-                                <a class="item" href="#">Teams</a>
-                                <a class="item" href="{% url "datasets:management" %}">Datasets</a>
-                                {% if request.user.is_staff %}
-                                    <div class="ui divider"></div>
-                                    <div class="header">Admin management</div>
-                                    <a class="item" href="#">Customize Codalab</a>
-                                    <a class="item" href="#">Monitors</a>
-                                    <a class="item" href="#">Analytics</a>
-                                    <a class="item" href="#">Health</a>
-                                    <a class="item" href="#">Users</a>
-                                    <a class="item" href="#">Submissions</a>
-                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
-                                        User</a>
-                                {% endif %}
-                                <div class="ui divider"></div>
-                                <div class="header">You</div>
-                                <a class="item" href="#">
-                                    <i class="icon user"></i>
-                                    Edit profile
-                                </a>
-                                <a class="item" href="/accounts/logout/">
-                                    <i class="icon sign out"></i>
-                                    Logout
-                                </a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="right item">
-                            <a id="style_button" href="/accounts/login" class="ui button">Login</a>
-                            <a id="style_button" href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% block top_div_extra_content %}{% endblock %}
-        </div>
-    </div>
-    <div id="page_content" class="ui container grid">
-        <div class="row">
-            {% block content %}
-            {% endblock %}
-        </div>
-    </div>
-    <div class="ui inverted vertical footer segment">
-        <div class="ui container">
-            <div class="ui stackable inverted divided equal height stackable grid">
-                <div class="three wide column">
-                    <h4 class="ui inverted header">About</h4>
-                    <div class="ui inverted link list">
-                        <a href="#" class="item">Sitemap</a>
-                        <a href="#" class="item">Contact Us</a>
-                        <a href="#" class="item">Religious Ceremonies</a>
-                        <a href="#" class="item">Gazebo Plans</a>
-                    </div>
-                </div>
-                <div class="three wide column">
-                    <h4 class="ui inverted header">Services</h4>
-                    <div class="ui inverted link list">
-                        <a href="#" class="item">Banana Pre-Order</a>
-                        <a href="#" class="item">DNA FAQ</a>
-                        <a href="#" class="item">How To Access</a>
-                        <a href="#" class="item">Favorite X-Men</a>
-                    </div>
-                </div>
-                <div class="seven wide column">
-                    <h4 class="ui inverted header">Footer Header</h4>
-                    <p>Extra space for a call to action inside the footer that could help re-engage users.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% block content %}
+{% endblock %}
 
 {# Admin only user switching #}
 <user_switch></user_switch>
@@ -189,6 +106,8 @@
         }
     }
 
+    USER_AUTHENTICATED = "{{ user.is_authenticated }}" === "True"
+
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>
@@ -197,4 +116,15 @@
 {% endblock %}
 
 </body>
+<footer class="ui footer segment">
+    <div class="ui horizontal link list">
+        <a class="item" href="https://github.com/codalab/competitions-v2/issues">
+            <i class="github icon"></i>
+            Join us on Github for contact & Bug Reports.
+        </a>
+        <a class="item">
+            Work In Progress - Version 0.1
+        </a>
+    </div>
+</footer>
 </html>

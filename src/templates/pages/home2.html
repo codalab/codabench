@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+
+{% block top_div_extra_class %}jumbotron{% endblock %}
+
+{% block top_div_extra_content %}
+    <div class="ui text container">
+        <img id="jumbo_logo" src="{% static "img/codalab-logo-futuraLT-light2.png" %}">
+        <h2>Accelerating reproducible computational research.</h2>
+        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i
+            class="left arrow icon"></i> Compete</a>
+        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i
+            class="right arrow icon"></i></a>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}
+
+{% block extra_body %}
+    <script>
+        // Prevent buttons from stacking in mobile view
+        $(window).resize(function () {
+            if ($(window).width() < 390) {
+                return $('.pages')
+                    .removeClass('huge')
+                    .addClass('large');
+            }
+            $('.pages')
+                .removeClass('large')
+                .addClass('huge');
+        }).trigger('resize');
+    </script>
+{% endblock %}
