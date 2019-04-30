@@ -5,11 +5,11 @@
 
 {% block content %}
     <div class="home-wrap">
-        {% if not user.is_authenticated %}
+        {% if user.is_authenticated %}
             <div class="vert-wrap">
                 <div class="segment-container ui segment">
                     <div class="ui header">
-                        Welcome to Codalab
+                        Popular Competitions
                     </div>
                     <div class="container-content">
                         <p>Enter an existing competition to solve challenging data problems, or host your own.</p>
@@ -19,14 +19,17 @@
 
                 <div class="segment-container ui segment">
                     <div class="ui header">
-                        Worksheets
+                        Featured Competitions
                     </div>
                     <div class="container-content">
-                        <iframe width="400" height="225" src="https://www.youtube.com/embed/WwFGfgf3-5s" frameborder="0"
-                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                        <p>Run reproducible experiments and create executable papers using worksheets.</p>
-                        <button class="ui large blue chahub button">Worksheets</button>
+                        {% for competition in featured_competitions %}
+                        <div class="blah">{{ competition.title }}</div>
+                        {% endfor %}
+{#                        <iframe width="400" height="225" src="https://www.youtube.com/embed/WwFGfgf3-5s" frameborder="0"#}
+{#                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"#}
+{#                                allowfullscreen></iframe>#}
+{#                        <p>Run reproducible experiments and create executable papers using worksheets.</p>#}
+{#                        <button class="ui large blue chahub button">Worksheets</button>#}
                     </div>
                 </div>
             </div>
@@ -339,6 +342,7 @@
             </div>
         </div>
     </div>
+
 
 {% endblock %}
 
