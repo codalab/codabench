@@ -434,10 +434,9 @@ def unpack_competition(competition_dataset_pk):
                         'max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
                     'max_submissions_per_person': phase_data.get(
                         'max_submissions') if 'max_submissions' in phase_data else None,
-                    'execution_time_limit': phase_data.get(
-                        'execution_time_limit_ms') if 'execution_time_limit_ms' in phase_data else None,
                 }
-
+                if 'execution_time_limit_ms' in phase_data:
+                    new_phase['execution_time_limit'] = phase_data.get('execution_time_limit_ms')
                 if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
                     new_phase['has_max_submissions'] = True
 
@@ -683,6 +682,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 temp_phase_solutions += task_solution_pairs[task.id]['solutions']['indexes']
             temp_phase_data['solutions'] = temp_phase_solutions
             yaml_data['phases'].append(temp_phase_data)
+        yaml_data['phases'] = sorted(yaml_data['phases'], key=lambda phase: phase['index'])
 
         # -------- Leaderboards -------
 
