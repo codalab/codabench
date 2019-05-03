@@ -34,6 +34,7 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
+    'drf_yasg',
 )
 OUR_APPS = (
     'competitions',
@@ -41,6 +42,8 @@ OUR_APPS = (
     'pages',
     'profiles',
     'leaderboards',
+    'tasks',
+    'commands',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -92,6 +95,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(
 
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
+# FIXME: change these addresses to something more relevant
 DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
 
@@ -293,6 +297,7 @@ AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_STORAGE_PRIVATE_BUCKET_NAME = os.environ.get('AWS_STORAGE_PRIVATE_BUCKET_NAME')
 AWS_S3_CALLING_FORMAT = os.environ.get('AWS_S3_CALLING_FORMAT', 'boto.s3.connection.OrdinaryCallingFormat')
 AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
+AWS_DEFAULT_ACL = None  # Uses buckets security access policies
 AWS_QUERYSTRING_AUTH = os.environ.get(
     # This stops signature/auths from appearing in saved URLs
     'AWS_QUERYSTRING_AUTH',
@@ -313,3 +318,34 @@ BUNDLE_AZURE_CONTAINER = os.environ.get('BUNDLE_AZURE_CONTAINER', 'bundles')
 GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
+
+
+# =============================================================================
+# Debug
+# =============================================================================
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE = (
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+        'querycount.middleware.QueryCountMiddleware',
+    ) + MIDDLEWARE  # we want Debug Middleware at the top
+    # tricks to have debug toolbar when developing with docker
+
+    INTERNAL_IPS = ['127.0.0.1']
+
+    import socket
+    try:
+        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
+    except socket.gaierror:
+        pass
+
+    QUERYCOUNT = {
+        'IGNORE_REQUEST_PATTERNS': [
+            r'^/admin/',
+            r'^/static/',
+        ]
+    }
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True
+    }

@@ -10,12 +10,13 @@
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- Vendor -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -25,106 +26,234 @@
 </head>
 <body>
 
-<div class="navbar-placeholder"></div>
-<div id="bg" class="ui top fixed menu nav-bar">
-    <canvas class="particles-js-canvas-el">
-        <div class="right floated ui button">asdf</div>
-    </canvas>
-    <a href="{% url "pages:home" %}" class="item"><img class="image"
-                                                       src="{% static 'img/codalab-logo-futuraLT-light2.png' %}"></a>
-    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
-    <a class="tl item">Chagle</a>
-    <a class="tl item">Chalab</a>
-    <a class="tl item">Chagrade</a>
-    {% if user.is_authenticated %}
-        <div class="button-container">
-            <button class="right floated ui button">Logout</button>
-            <button class="right floated ui button">Profile</button>
+
+{#<div class="navbar-placeholder"></div>#}
+{#<div id="bg" class="ui top fixed menu nav-bar">#}
+{#    <canvas class="particles-js-canvas-el">#}
+{#        <div class="right floated ui button">asdf</div>#}
+{#    </canvas>#}
+{#    <a href="{% url "pages:home" %}" class="item"><img class="image"#}
+{#                                                       src="{% static 'img/codalab-logo-futuraLT-light2.png' %}"></a>#}
+{#    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>#}
+{#    <a class="tl item">Chagle</a>#}
+{#    <a class="tl item">Chalab</a>#}
+{#    <a class="tl item">Chagrade</a>#}
+{#    {% if user.is_authenticated %}#}
+{#        <div class="button-container">#}
+{#            <button class="right floated ui button">Logout</button>#}
+{#            <button class="right floated ui button">Profile</button>#}
+{#        </div>#}
+{#    {% else %}#}
+{#        <div class="button-container">#}
+{#        <button class="right floated ui button">Login</button>#}
+{#    {% endif %}#}
+<div class="pusher">
+    <div id="hamburger_button">
+        <div class="ui icon button">
+            <i class="bars icon"></i>
         </div>
-    {% else %}
-        <div class="button-container">
-            <button class="right floated ui button">Login</button>
+    </div>
+    <!-- Page Contents -->
+    <div class="pusher">
+        <div id="particles-js" class="ui inverted vertical center aligned segment masthead
+        {% block top_div_extra_class %}{% endblock %}">
+            <div id="bg"></div>
+            <div class="ui container">
+                <div id="topleft_menu" class="ui secondary inverted menu">
+                    <span class="left item">
+                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
+                    <a class="tl item">Chagle</a>
+                    <a class="tl item">Chalab</a>
+                    <a class="tl item">Chagrade</a>
+                    </span>
+                    {% if user.is_authenticated %}
+                        <div id="user_dropdown" class="ui dropdown item">
+                            <div class="text">
+                                <i class="icon user outline"></i>
+                                {{ request.user.username }}
+                            </div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                <div class="header">Your management</div>
+                                <a class="item" href="{% url "competitions:management" %}">Competitions</a>
+                                <a class="item" href="#">Teams</a>
+                                <a class="item" href="{% url "tasks:task_management" %}">Tasks</a>
+                                <a class="item" href="{% url "datasets:management" %}">Datasets</a>
+                                {% if request.user.is_staff %}
+                                    <div class="ui divider"></div>
+                                    <div class="header">Admin management</div>
+                                    <a class="item" href="#">Customize Codalab</a>
+                                    <a class="item" href="#">Monitors</a>
+                                    <a class="item" href="#">Analytics</a>
+                                    <a class="item" href="#">Health</a>
+                                    <a class="item" href="#">Users</a>
+                                    <a class="item" href="#">Submissions</a>
+                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
+                                        User</a>
+                                {% endif %}
+                                <div class="ui divider"></div>
+                                <div class="header">You</div>
+                                <a class="item" href="#">
+                                    <i class="icon user"></i>
+                                    Edit profile
+                                </a>
+                                <a class="item" href="/accounts/logout/">
+                                    <i class="icon sign out"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="right item">
+                            <a id="style_button" href="/accounts/login" class="ui button">Login</a>
+                            <a id="style_button" href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% block top_div_extra_content %}{% endblock %}
         </div>
-    {% endif %}
+    </div>
+    {% block sticky_button %}
 
-</div>
+    {% endblock %}
+    <div id="page_content" class="ui container grid">
+        <div class="row">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+    <div class="ui inverted vertical footer segment">
+        <div class="ui container">
+            <div class="ui stackable inverted divided equal height stackable grid">
+                <div class="three wide column">
+                    <h4 class="ui inverted header">About</h4>
+                    <div class="ui inverted link list">
+                        <a href="#" class="item">Sitemap</a>
+                        <a href="#" class="item">Contact Us</a>
+                        <a href="#" class="item">Religious Ceremonies</a>
+                        <a href="#" class="item">Gazebo Plans</a>
+                    </div>
+                </div>
+                <div class="three wide column">
+                    <h4 class="ui inverted header">Services</h4>
+                    <div class="ui inverted link list">
+                        <a href="#" class="item">Banana Pre-Order</a>
+                        <a href="#" class="item">DNA FAQ</a>
+                        <a href="#" class="item">How To Access</a>
+                        <a href="#" class="item">Favorite X-Men</a>
+                    </div>
+                </div>
+                <div class="seven wide column">
+                    <h4 class="ui inverted header">Footer Header</h4>
+                    <p>Extra space for a call to action inside the footer that could help re-engage users.</p>
+                </div>
+            </div>
+            {#        </div>#}
+            {#    {% endif %}#}
 
-{% block content %}
-{% endblock %}
+        </div>
+        {##}
+        {#{% block content %}#}
+        {#{% endblock %}#}
 
-{# Admin only user switching #}
-<user_switch></user_switch>
+        {# Admin only user switching #}
+        <user_switch></user_switch>
 
-<!-- Vendor -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.6.1/riot+compiler.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
-        integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="{% static "js/calendar.min.js" %}"></script>
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+        <!-- Vendor -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"
+                integrity="sha256-7/yoZS3548fXSRXqc/xYzjsmuW3sFKzuvOCHd06Pmps=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+        <script src="{% static "js/calendar.min.js" %}"></script>
+        <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/1.0.10/purify.min.js"></script>
 
-<!-- Ours -->
-<script src="{% static "js/ours/client.js" %}"></script>
-<script src="{% static "js/ours/init.js" %}"></script>
-<script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
-<script src="{% static "js/ours/utils.js" %}"></script>
-<script src="{% static "js/jquery.form.serializer.js" %}"></script>
-<script src="{% static "js/Chart.bundle.js" %}"></script>
-<script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
-<script src="{% static "generated/riot.js" %}"></script>
+        <!-- Ours -->
+        <script src="{% static "js/ours/client.js" %}"></script>
+        <script src="{% static "js/ours/init.js" %}"></script>
+        <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+        <script src="{% static "js/ours/utils.js" %}"></script>
+        <script src="{% static "js/jquery.form.serializer.js" %}"></script>
+        <script src="{% static "js/Chart.bundle.js" %}"></script>
+        <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
+        <script src="{% static "generated/riot.js" %}"></script>
 
-<script>
-    {# From `common_settings` context processor #}
-    STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        <script>
+            {# From `common_settings` context processor #}
+            STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+            CODALAB.state.user = {
+                id: {{ request.user.id }},
+                name: '{{ request.user.name }}',
+                username: '{{ request.user.username }}',
+                email: '{{ request.user.email }}',
+                bio: '{{ request.user.bio }}',
+                // converts python bools to js bools
+                is_staff: '{{ request.user.is_staff }}' === "True",
+                is_superuser: '{{ request.user.is_superuser }}' === "True",
+                has_competition_admin_privileges: competition => {
+                    let user = CODALAB.state.user
+                    if (user.is_superuser || user.is_staff) {
+                        return true
+                    }
+                    let collabs = _.map(competition.collaborators, collab => collab.username)
+                    return user.username === competition.created_by || collabs.includes(user.username)
+                }
+            }
+            // Load in URLs or other django generated goodies
+            URLS = {
+                assets: {
+                    header_particles: "{% static "particles/header.json" %}"
+                },
+                API: "/api/",
+                STATIC: function (file_name) {
+                    return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+                },
+                // Websockets
+                //WS_SUBMISSION_LISTEN: ""
 
-    // Load in URLs or other django generated goodies
-    URLS = {
-        assets: {
-            header_particles: "{% static "particles/header.json" %}"
-        },
-        API: "/api/",
+                // Competitions
+                COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
+                COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
+                COMPETITION_ADD: "{% url "competitions:create" %}",
+                COMPETITION_DETAIL: function (pk) {
+                    return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+                },
+                COMPETITION_EDIT: function (pk) {
+                    return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
+                },
+                SECRET_KEY_URL: function (pk, secret_key) {
+                    var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+                    return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+                },
 
-        // Websockets
-        //WS_SUBMISSION_LISTEN: ""
+                // Datasets
+                DATASET_MANAGEMENT: "{% url "datasets:management" %}",
+                DATASET_DOWNLOAD: function (key) {
+                    return "{% url "datasets:download" key=0 %}".replace(0, key)
+                },
 
-        // Competitions
-        COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
-        COMPETITION_ADD: "{% url "competitions:create" %}",
-        COMPETITION_DETAIL: function (pk) {
-            return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
-        },
-        COMPETITION_EDIT: function (pk) {
-            return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
-        },
+                // Tasks
+                TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+                TASK_DETAIL: function (pk) {
+                    return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+                }
+            }
 
-        // Datasets
-        DATASET_MANAGEMENT: "{% url "datasets:management" %}",
-        DATASET_DOWNLOAD: function (key) {
-            return "{% url "datasets:download" key=0 %}".replace(0, key)
-        }
-    }
+            USER_AUTHENTICATED = "{{ user.is_authenticated }}" === "True"
 
-    USER_AUTHENTICATED = "{{ user.is_authenticated }}" === "True"
+            // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
+            CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
-    // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
-    CSRF_TOKEN = $('{% csrf_token %}').attr('value')
-</script>
-
-{% block extra_body %}
-{% endblock %}
+            {#particlesJS("particles-js", {% static "particles/header.json" %})#}
+        </script>
+        {% block extra_js %}
+        {% endblock %}
+        {% block extra_body %}
+        {% endblock %}
 
 </body>
-<footer class="ui footer segment">
-    <div class="ui horizontal link list">
-        <a class="item" href="https://github.com/codalab/competitions-v2/issues">
-            <i class="github icon"></i>
-            Join us on Github for contact & Bug Reports.
-        </a>
-        <a class="item">
-            Work In Progress - Version 0.1
-        </a>
-    </div>
-</footer>
 </html>

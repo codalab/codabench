@@ -8,6 +8,9 @@ body
   background-color $backgroundlight
   color $textcolordark !important
 
+#page_content
+  margin 3em
+
 .segment-container
   padding 0 !important
 
@@ -22,9 +25,9 @@ body
   border-top-right-radius 3px !important
   border-bottom solid 1px #dcdcdc !important
 
-.particles-js-canvas-el
-  position absolute
-  z-index -1
+#particles-js, #bg, .masthead
+  background-color $backgrounddark
+  height 50px
 
 .navbar-placeholder
   height 70px
@@ -64,9 +67,24 @@ body
   flex-wrap wrap
   min-height 600px
   justify-content space-evenly
+  width 100%
 
   .segment-container
-    margin 3em -4em !important
+    margin 3em 0 !important
+
+  .column-wrap
+    width 96.5%
+    display flex
+    margin -4rem 0 0
+
+  .vert-wrap
+    margin-right 3em
+
+    .segment-container
+      width 100%
+
+  .login-container
+    margin-left 1.5em
 
 .chahub.button
   background-color $backgrounddark !important
@@ -166,13 +184,14 @@ body
     height 45px
 
 #action-container
-  margin 0 7.5em !important
+  margin 0 1.5em !important
 
   .container-content
     display flex
 
 #about-container
-  margin 2em 2.5em !important
+  margin 3em !important
+  max-width 96.5%
 
   p
     text-align justify !important
@@ -192,6 +211,8 @@ body
 .logged-in
   display flex
   justify-content space-between
+  width 100%
+  margin -3em 0 0 0 !important
 
   .segment-container
     margin 3em 1.5em !important

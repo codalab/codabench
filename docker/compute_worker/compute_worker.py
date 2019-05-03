@@ -1,4 +1,8 @@
 import time
+
+import json
+import shutil
+import uuid
 import websockets
 
 import asyncio
@@ -7,10 +11,12 @@ import logging
 import os
 
 import requests
-import subprocess
 import tempfile
+import yaml
+import zipfile
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
+from shutil import make_archive
 from subprocess import CalledProcessError, check_output
 from urllib.error import HTTPError
 from urllib.parse import urlparse
@@ -29,6 +35,7 @@ STATUS_SUBMITTING = "Submitting"
 STATUS_SUBMITTED = "Submitted"
 STATUS_PREPARING = "Preparing"
 STATUS_RUNNING = "Running"
+STATUS_SCORING = "Scoring"
 STATUS_FINISHED = "Finished"
 STATUS_FAILED = "Failed"
 AVAILABLE_STATUSES = (
@@ -37,6 +44,7 @@ AVAILABLE_STATUSES = (
     STATUS_SUBMITTED,
     STATUS_PREPARING,
     STATUS_RUNNING,
+    STATUS_SCORING,
     STATUS_FINISHED,
     STATUS_FAILED,
 )
@@ -54,58 +62,86 @@ def run_wrapper(run_args):
     try:
         run.prepare()
         run.start()
+        if run.is_scoring:
+            run.push_scores()
+            # TODO: Also output push result at some point, so SCORING STEPS have output as well?
+            #   run.push_result()
+            #   when this is changed, make sure to include files in submission manager download section
+        else:
+            run.push_result()
     except SubmissionException as e:
-        run.update_status(STATUS_FAILED, str(e))
+        run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
-        run.update_status(STATUS_FAILED, "Soft time limit exceeded!")
-
-
-
-# class Logger(object):
-#     def __init__(self, output_file, output_url):
-#         # self.output_file = open("logfile.log", "a")
-#         self.output_socket
-#
-#     def write(self, message):
-#         # self.output_file.write(message)
-#
-#     def flush(self):
-#         # this flush method is needed for python 3 compatibility.
-#         # this handles the flush command by doing nothing.
-#         # you might want to specify some extra behavior here.
-#         pass
-
+        run._update_status(STATUS_FAILED, "Soft time limit exceeded!")
+    finally:
+        run.clean_up()
 
 
 class Run:
+    """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
+    to.  Currently, the run_args are:
+
+
+
+    """
+
     def __init__(self, run_args):
+        # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.output_dir = os.path.join(self.root_dir, "output")
+
+        # Details for submission
+        self.is_scoring = run_args["is_scoring"]
         self.submission_id = run_args["id"]
         self.api_url = run_args["api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
+        self.result = run_args["result"]  # TODO, rename this to result_url
         self.execution_time_limit = run_args["execution_time_limit"]
+        # stdout and stderr
+        self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
 
-        self.submission_data = run_args.get("submission_data", None)
+        self.program_data = run_args.get("program_data", None)
+        self.ingestion_program_data = run_args.get("ingestion_program", None)
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
-        websocket_host = urlparse(self.api_url).netloc
-        websocket_scheme = 'ws' if websocket_host.scheme == 'http' else 'wss'
-        self.websocket_url = f"{websocket_scheme}://{websocket_host}"
+        # Socket connection to stream output of submission
+        api_url_parsed = urlparse(self.api_url)
+        websocket_host = api_url_parsed.netloc
+        websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
+        self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
-    def update_status(self, status, extra_information=None):
+    def _get_stdout_stderr_file_names(self, run_args):
+        # run_args should be the run_args argument passed to __init__ from the run_wrapper.
+        if not self.is_scoring:
+            DETAILED_OUTPUT_NAMES = [
+                "prediction_stdout",
+                "prediction_stderr",
+                "prediction_ingestion_stdout",
+                "prediction_ingestion_stderr",
+            ]
+        else:
+            DETAILED_OUTPUT_NAMES = [
+                "scoring_stdout",
+                "scoring_stderr",
+                "scoring_ingestion_stdout",
+                "scoring_ingestion_stderr",
+            ]
+        return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
+
+    def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
         url = f"{self.api_url}/submissions/{self.submission_id}/"
-        logger.info(f"Status = '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
+        logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
         resp = requests.patch(url, {
             "secret": self.secret,
             "status": status,
             "status_details": extra_information,
         })
-        # print(resp)
-        # print(resp.content)
+        # logger.info(resp)
+        # logger.info(resp.content)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -124,44 +160,86 @@ class Run:
         try:
             urlretrieve(url, bundle_file.name)
         except HTTPError:
-            raise SubmissionException(f"Problem fetching {destination}")
+            raise SubmissionException(f"Problem fetching {url} to put in {destination}")
 
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
 
-    def _dump_files(self):
-        for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
-            print(filename)
+    async def _run_docker_cmd(self, docker_cmd, kind):
+        """This runs a command and asynchronously writes the data to both a storage file
+        and a socket"""
+        url = f'{self.websocket_url}submission_input/{self.submission_id}/'
+        logger.info(f"Connecting to {url}")
 
-    def prepare(self):
-        self.update_status(STATUS_PREPARING)
 
-        bundles = (
-            # (url to file, relative folder destination)
-            (self.submission_data, 'submission'),
-            (self.input_data, 'input_data'),
-            (self.reference_data, 'reference_data'),
-        )
+        # We should send headers with the secret.
+        #     * ``extra_headers`` sets additional HTTP request headers – it can be a
+        #       :class:`~websockets.http.Headers` instance, a
+        #       :class:`~collections.abc.Mapping`, or an iterable of ``(name, value)``
+        #       pairs
 
-        for url, path in bundles:
-            self._dump_files()
-            if url is not None:
-                self._get_bundle(url, path)
+        async with websockets.connect(url) as websocket:
+            proc = await asyncio.create_subprocess_exec(
+                *docker_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
-        self._dump_files()
+            logs = {
+                "stdout": {
+                    "data": b'',
+                    "stream": proc.stdout,
+                    "continue": True,
+                    "location": self.stdout if kind == 'program' else self.ingestion_stdout
+                },
+                "stderr": {
+                    "data": b'',
+                    "stream": proc.stderr,
+                    "continue": True,
+                    "location": self.stderr if kind == 'program' else self.ingestion_stderr
+                },
+            }
 
-        self._get_docker_image(self.docker_image)
+            while any(v["continue"] for v in logs.values()):
+                for value in logs.values():
+                    out = await value["stream"].readline()
+                    if out:
+                        value["data"] += out
+                        print("DATA!!!! " + str(out))
+                        await websocket.send(out.decode())
+                    else:
+                        value["continue"] = False
 
-    def start(self):
-        self.update_status(STATUS_RUNNING)
-        print("We hit this! Now sleeping...")
+            logger.info(f'[exited with {proc.returncode}]')
+            for key, value in logs.items():
+                if value["data"]:
+                    logger.info(f'[{key}]\n{value["data"]}')
+                    self._put_file(value["location"], raw_data=value["data"])
 
-        stdout_file = os.path.join(self.root_dir, "stdout.txt")
-        stderr_file = os.path.join(self.root_dir, "stderr.txt")
-        stdout = open(stdout_file, "a+")
-        stderr = open(stderr_file, "a+")
+    def _run_program_directory(self, program_dir, kind, can_be_output=False):
+        # TODO: read Docker image from metadatas??? ** do it in prepare??? **
 
-        docker_cmd = (
+        # If the directory doesn't even exist, move on
+        if not os.path.exists(program_dir):
+            logger.info(f"{program_dir} not found, no program to execute")
+            return
+
+        try:
+            with open(os.path.join(program_dir, "metadata.yaml"), 'r') as metadata_file:
+                metadata = yaml.load(metadata_file.read())
+                command = metadata.get("command")
+                if not command:
+                    raise SubmissionException("Program directory missing 'command' in metadata")
+        except FileNotFoundError:
+            if can_be_output:
+                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                            "program so move it to output")
+                shutil.move(program_dir, self.output_dir)
+                return
+            else:
+                raise SubmissionException("Program directory missing 'metadata.yaml'")
+
+        docker_cmd = [
             'docker',
             'run',
             # Remove it after run
@@ -171,30 +249,114 @@ class Run:
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
             # Set the right volume
-            '-v', '{0}:/app'.format(self.root_dir),
+            '-v', f'{program_dir}:/app',
+            '-v', f'{self.output_dir}:/app/output',
             # Start in the right directory
             '-w', '/app',
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
-            # Note that hidden data dir is excluded here!
-            # Set the right image
-            self.docker_image,
+        ]
 
-            'python', 'submission/submission.py',
-        )
+        # TODO: Should pass in reference data if scoring, or something?
+
+        # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
+        if kind == 'ingestion' and self.input_data:
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+
+        if self.is_scoring:
+            # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
+            # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
+
+        # Set the image name (i.e. "codalab/codalab-legacy") for the container
+        docker_cmd += [self.docker_image]
+
+        # Append the actual program to run
+        docker_cmd += command.split(' ')
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
-        exit_code = None
+        # This runs the docker command and asychronously passes data
+        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
 
-        # asyncio.get_event_loop().run_until_complete(
-        #     self._run_cmd(docker_cmd)
-        # )
+        logger.info(f"Program finished")
 
-        asyncio.get_event_loop().run_until_complete(self._run_cmd(docker_cmd))
+    def _put_dir(self, url, directory):
+        logger.info("Putting dir %s in %s" % (directory, url))
 
+        zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
+        self._put_file(url, file=zip_path)
 
-        logger.info(f"Program finished with exit code = {exit_code}")
+    def _put_file(self, url, file=None, raw_data=None):
+
+        if file and raw_data:
+            raise Exception("Cannot put both a file and raw_data")
+
+        headers = {
+            'Content-Type': 'application/zip',
+
+            # For Azure only, should turn on/off based on storage...
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-version': '2018-03-28',
+        }
+
+        if file:
+            logger.info("Putting file %s in %s" % (file, url))
+            data = open(file, 'rb')
+            headers['Content-Length'] = str(os.path.getsize(file))
+        elif raw_data:
+            logger.info("Putting raw data %s in %s" % (raw_data, url))
+            data = raw_data
+        else:
+            raise SubmissionException('Must provide data, both file and raw_data cannot be empty')
+
+        resp = requests.put(
+            url,
+            data=data,
+            headers=headers,
+        )
+        logger.info("*** PUT RESPONSE: ***")
+        logger.info(f'response: {resp}')
+        logger.info(f'content: {resp.content}')
+
+    def prepare(self):
+        self._update_status(STATUS_PREPARING)
+
+        # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
+        # sub folder.
+        bundles = [
+            # (url to file, relative folder destination)
+            (self.program_data, 'program'),
+            (self.ingestion_program_data, 'ingestion_program'),
+            (self.input_data, 'input_data'),
+            (self.reference_data, 'reference_data'),
+        ]
+
+        if self.is_scoring:
+            # Send along submission result so scoring_program can get access
+            bundles += [(self.result, os.path.join('program', 'input'))]
+
+        for url, path in bundles:
+            if url is not None:
+                self._get_bundle(url, path)
+
+        # For logging purposes let's dump file names
+        for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
+            logger.info(filename)
+
+        # Before the run starts we want to download docker images, they may take a while to download
+        # and to do this during the run would subtract from the participants time.
+        self._get_docker_image(self.docker_image)
+
+    def start(self):
+        if not self.is_scoring:
+            self._update_status(STATUS_RUNNING)
+
+        program_dir = os.path.join(self.root_dir, "program")
+        ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
+
+        self._run_program_directory(program_dir, kind='program', can_be_output=True)
+        self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory
         # Download docker image
@@ -203,81 +365,36 @@ class Run:
         # Upload submission results
         # Upload submission stdout/etc.
 
-        self.update_status(STATUS_FINISHED)
+        if self.is_scoring:
+            self._update_status(STATUS_FINISHED)
+        else:
+            self._update_status(STATUS_SCORING)
 
-    async def _run_cmd(self, docker_cmd):
-        async with websockets.connect(f'{self.websocket_url}submission_input/') as websocket:
-            proc = await asyncio.create_subprocess_exec(
-                *docker_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+    def push_scores(self):
+        # POST to some endpoint:
+        # {
+        #     "correct": 1.0
+        # }
+        try:
+            scores_file = os.path.join(self.output_dir, "scores.json")
+            scores = json.load(open(scores_file, 'r'))
+        except FileNotFoundError:
+            raise SubmissionException("Could not find scores.json, did the scoring program output it?")
 
-            while True:
-                data = await proc.stdout.readline()
-                if data:
-                    print("DATA!!!! " + str(data))
-                    await websocket.send(data.decode())
-                else:
-                    break
+        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
+        logger.info(f"Submitting these scores to {url}: {scores}")
+        resp = requests.post(url, json={
+            "secret": self.secret,
+            "scores": scores,
+        })
+        logger.info(resp)
+        logger.info(str(resp.content))
 
+    def push_result(self):
+        self._put_dir(self.result, self.output_dir)
 
-            stdout, stderr = await proc.communicate()
-
-            print(f'[exited with {proc.returncode}]')
-            if stdout:
-                print(f'[stdout]\n{stdout.decode()}')
-            if stderr:
-                print(f'[stderr]\n{stderr.decode()}')
-
-            # for _ in range(10):
-            #     time.sleep(1)
-            #     print("Sending hello world stuff")
-            #
-
-            # process = subprocess.Popen(docker_cmd, stdout=stdout, stderr=stderr)
-            #
-            # # While either program is running and hasn't exited, continue polling
-            # while (process and exit_code == None):
-            #     time.sleep(1)
-            #
-            #     if process and exit_code is None:
-            #         exit_code = process.poll()
+    def clean_up(self):
 
 
-
-
-# class SocketEchoStreamReader(asyncio.StreamReader):
-#     async def
-
-
-
-# def _update_status(run_args, status):
-#     submission_id = run_args["id"]
-#     api_url = run_args["api_url"]
-#     secret = run_args["secret"]
-#     url = f"{api_url}/submissions/{submission_id}/"
-#     print(f"Sending '{status}' update for submission={submission_id}")
-#     resp = requests.patch(url, {"secret": secret, "status": status})
-#     print(resp)
-#     print(resp.content)
-#
-#
-# def run(run_args):
-#     print("We hit this!")
-#     print(run_args)
-#     _update_status(run_args, STATUS_RUNNING)
-
-
-
-
-
-
-
-
-
-
-
-
-    pass
-
+        logger.info("We're not cleaning up yet... TODO: cleanup!")
+        pass

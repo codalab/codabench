@@ -5,7 +5,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
     #
-    # async def connect(self):
+    async def connect(self):
+        # Check submission secret perms here?
+        await self.accept()
+
     #     print("joinin group")
     #     await self.channel_layer.group_add(
     #         "submission_listening",
@@ -33,7 +36,10 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         # Maybe we can just write to a submission_<secret>.txt file
         # However, we need to limit
 
-        submission_id = 50
+        print("@@@@@@@@@@@@@@@@")
+        print(self.scope)
+
+        submission_id = self.scope['url_route']['kwargs']['submission_id']
         submission_output_path = f"/codalab_tmp/{submission_id}.txt"
         print(f"opening {submission_output_path}")
         async with aiofiles.open(submission_output_path, 'a+') as f:
@@ -47,6 +53,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send("submission_listening", {
             'type': 'submission.message',
             'text': text_data,
+            'submission_id': submission_id,
         })
 
         # TODO! Refuse to write to file after 10MB has been received ???
@@ -75,7 +82,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
     #     pass
 
     async def submission_message(self, event):
-        await self.send(event['text'])
+        await self.send(f"{event['submission_id']};{event['text']}")
 #
 #
 # class SubmissionOutputConsumer(AsyncConsumer):

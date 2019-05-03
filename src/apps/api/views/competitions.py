@@ -1,18 +1,16 @@
-import uuid
-
-from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from api.serializers import competitions as serializers
-from competitions.models import Competition, Phase, Submission, CompetitionCreationTaskStatus
+from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
 
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
-    serializer_class = serializers.CompetitionSerializer
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -22,10 +20,37 @@ class CompetitionViewSet(ModelViewSet):
         if mine:
             qs = qs.filter(created_by=self.request.user)
 
+        participating_in = self.request.query_params.get('participating_in', None)
+
+        if participating_in:
+            qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+
+        # On GETs lets optimize the query to reduce DB calls
+        if self.request.method == 'GET' and self.action != 'list':
+            qs = qs.select_related('created_by')
+            qs = qs.prefetch_related(
+                'phases',
+                'pages',
+                'leaderboards',
+                'leaderboards__columns',
+                'collaborators',
+            )
+
+        qs = qs.order_by('created_when')
+
         return qs
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CompetitionSerializerSimple
+        elif self.request.method == 'GET':
+            return CompetitionDetailSerializer
+        else:
+            return CompetitionSerializer
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)
+        # TODO: what is this doing? do we still need it?
         if not self.request:
             return {}
 
@@ -33,53 +58,40 @@ class CompetitionViewSet(ModelViewSet):
             "created_by": self.request.user
         }
 
+    def destroy(self, request, *args, **kwargs):
+        if request.user != self.get_object().created_by:
+            raise PermissionDenied("You cannot delete competitions that you didn't create")
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=('POST',))
+    def toggle_publish(self, request, pk):
+        competition = self.get_object()
+        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+            raise PermissionDenied("You don't have access to publish this competition")
+        competition.published = not competition.published
+        competition.save()
+        return Response({"published": competition.published})
+
 
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
-    serializer_class = serializers.PhaseSerializer
+    serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
 
-
-class SubmissionViewSet(ModelViewSet):
-    queryset = Submission.objects.all()
-    permission_classes = []
-    # TODO! Security, who can access/delete/etc this?
-
-    def check_object_permissions(self, request, obj):
-        print(request.data.get('secret'))
-        print(obj.secret)
-        try:
-            if uuid.UUID(request.data.get('secret')) != obj.secret:
-                raise PermissionDenied("Submission secrets do not match")
-        except TypeError:
-            raise ValidationError("Secret not a valid UUID")
-
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        if not self.request:
-            return {}
-
-        return {
-            "owner": self.request.user
-        }
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return serializers.SubmissionCreationSerializer
-        else:
-            return serializers.SubmissionSerializer
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-
-        if request.user != instance.owner:
-            raise PermissionDenied("Cannot interact with submission you did not make")
-
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    @action(detail=True, url_name='rerun_submissions')
+    def rerun_submissions(self, request, pk):
+        phase = self.get_object()
+        comp = phase.competition
+        if request.user not in [comp.created_by] + list(comp.collaborators.all()) and not request.user.is_superuser:
+            raise PermissionDenied('You do not have permission to re-run submissions')
+        submissions = phase.submissions.all()
+        for submission in submissions:
+            submission.re_run()
+        rerun_count = len(submissions)
+        return Response({"count": rerun_count})
 
 
 class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
     queryset = CompetitionCreationTaskStatus.objects.all()
-    serializer_class = serializers.CompetitionCreationTaskStatusSerializer
+    serializer_class = CompetitionCreationTaskStatusSerializer
     lookup_field = 'dataset__key'

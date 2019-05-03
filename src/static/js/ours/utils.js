@@ -117,6 +117,15 @@ function set_form_data(data, base_element) {
     })
 }
 
+function sanitize_HTML(input, extra_settings) {
+    extra_settings = extra_settings || {}
+    extra_settings.FORBID_TAGS = _.union(extra_settings.FORBID_TAGS, ['style'])
+    extra_settings.FORBID_ATTR = _.union(extra_settings.FORBID_ATTR, ['style'])
+
+    return DOMPurify.sanitize(input, extra_settings)
+}
+
+
 function getBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()

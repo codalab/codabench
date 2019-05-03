@@ -5,14 +5,88 @@
 
 {% block content %}
     <div class="home-wrap">
-        {% if user.is_authenticated %}
-            <div class="vert-wrap">
+        {% if not user.is_authenticated %}
+            <div class="column-wrap">
+                <div class="vert-wrap">
+                    <div class="segment-container ui segment">
+                        <div class="ui header">
+                            Popular Competitions
+                        </div>
+                        <div class="container-content">
+                            <p>Enter an existing competition to solve challenging data problems, or host your own.</p>
+                            <button class="ui large blue chahub button">Competitions</button>
+                        </div>
+                    </div>
+
+                    <div class="segment-container ui segment">
+                        <div class="ui header">
+                            Featured Competitions
+                        </div>
+                        <div class="container-content">
+                        </div>
+                    </div>
+                </div>
+                <div class="segment-container ui segment login-container">
+                    <div class="ui header">
+                        Start your journey
+                    </div>
+                    <div class="container-content">
+                        <p style="max-width: 400px;">
+                            Sign in below or create a new account
+                            if this is your first time visiting.
+                        </p>
+                        <div>
+                            <form id="login_form" class="form" method="post" action="">
+                                {% csrf_token %}
+                                <p>
+                        <span class="focus_input"><i class="user icon"></i>
+                        <input class="input_coloring" type="text" name="email" placeholder="Email" autofocus=""
+                               maxlength="254"
+                               required id="id_email"
+                               data-op-id="0"></span>
+                                </p>
+                                <p><span class="focus_input"><i class="lock icon"></i>
+                        <input class="input_coloring" type="password" placeholder="Password" name="password" required
+                               id="id_password"
+                               data-op-id="1">
+                    </span>
+                                </p>
+                                <div>
+                                    <input placeholder="Remember Me" id="remember_me" type="checkbox" name="remember_me"
+                                           value="true">
+                                    <span class="remember_label">Stay Signed In</span>
+                                </div>
+                                <button class="ui button">{% trans 'Log in' %}</button>
+                                <input type="hidden" name="next" value="{{ next }}"/>
+                            </form>
+                            <p><a href="">{% trans "Reset your password" %}</a></p>
+                            <p><a href="">{% trans "Create an account" %}</a></p>
+                            <div id="outline">
+                                <button class="ui facebook button">
+                                    <i class="facebook icon"></i>
+                                    Sign in with Facebook!
+                                </button>
+                                <button class="ui twitter button">
+                                    <i class="twitter icon"></i>
+                                    Sign in with Twitter!
+                                </button>
+                                <button class="ui blue chahub button">
+                                    <i class="sync icon"></i>
+                                    Sign in with Chahub!
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="vert-wrap logged-in">
                 <div class="segment-container ui segment">
                     <div class="ui header">
                         Popular Competitions
                     </div>
                     <div class="container-content">
-                        <p>Enter an existing competition to solve challenging data problems, or host your own.</p>
+                        <p>Competitions here...</p>
                         <button class="ui large blue chahub button">Competitions</button>
                     </div>
                 </div>
@@ -22,91 +96,7 @@
                         Featured Competitions
                     </div>
                     <div class="container-content">
-                        {% for competition in featured_competitions %}
-                        <div class="blah">{{ competition.title }}</div>
-                        {% endfor %}
-{#                        <iframe width="400" height="225" src="https://www.youtube.com/embed/WwFGfgf3-5s" frameborder="0"#}
-{#                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"#}
-{#                                allowfullscreen></iframe>#}
-{#                        <p>Run reproducible experiments and create executable papers using worksheets.</p>#}
-{#                        <button class="ui large blue chahub button">Worksheets</button>#}
-                    </div>
-                </div>
-            </div>
-            <div class="segment-container ui segment">
-                <div class="ui header">
-                    Start your journey
-                </div>
-                <div class="container-content">
-                    <p style="max-width: 400px;">
-                        Sign in below or create a new account
-                        if this is your first time visiting.
-                    </p>
-                    <div>
-                        <form id="login_form" class="form" method="post" action="">
-                            {% csrf_token %}
-                            <p>
-                        <span class="focus_input"><i class="user icon"></i>
-                        <input class="input_coloring" type="text" name="email" placeholder="Email" autofocus=""
-                               maxlength="254"
-                               required id="id_email"
-                               data-op-id="0"></span>
-                            </p>
-                            <p><span class="focus_input"><i class="lock icon"></i>
-                        <input class="input_coloring" type="password" placeholder="Password" name="password" required
-                               id="id_password"
-                               data-op-id="1">
-                    </span>
-                            </p>
-                            <div>
-                                <input placeholder="Remember Me" id="remember_me" type="checkbox" name="remember_me"
-                                       value="true">
-                                <span class="remember_label">Stay Signed In</span>
-                            </div>
-                            <button class="ui button">{% trans 'Log in' %}</button>
-                            <input type="hidden" name="next" value="{{ next }}"/>
-                        </form>
-                        <p><a href="">{% trans "Reset your password" %}</a></p>
-                        <p><a href="">{% trans "Create an account" %}</a></p>
-                        <div id="outline">
-                            <button class="ui facebook button">
-                                <i class="facebook icon"></i>
-                                Sign in with Facebook!
-                            </button>
-                            <button class="ui twitter button">
-                                <i class="twitter icon"></i>
-                                Sign in with Twitter!
-                            </button>
-                            <button class="ui blue chahub button">
-                                <i class="sync icon"></i>
-                                Sign in with Chahub!
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="vert-wrap logged-in">
-                <div class="segment-container ui segment">
-                    <div class="ui header">
-                        Welcome to Codalab
-                    </div>
-                    <div class="container-content">
-                        <p>Enter an existing competition to solve challenging data problems, or host your own.</p>
-                        <button class="ui large blue chahub button">Competitions</button>
-                    </div>
-                </div>
-
-                <div class="segment-container ui segment">
-                    <div class="ui header">
-                        Worksheets
-                    </div>
-                    <div class="container-content">
-                        <iframe width="400" height="225" src="https://www.youtube.com/embed/WwFGfgf3-5s" frameborder="0"
-                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                        <p>Run reproducible experiments and create executable papers using worksheets.</p>
-                        <button class="ui large blue chahub button">Worksheets</button>
+                        <p>Competitions here...</p>
                     </div>
                 </div>
             </div>
@@ -133,8 +123,8 @@
                         Organize
                     </h3>
                     <div>
-                        <p>Organize a competition on Chalab. We recommend reading the <a href="#">competitions
-                            roadmap</a> before you start, and then giving it a go!</p>
+                        <p>Organize a competition on Chalab. Start with the <a href="#">competitions
+                            roadmap</a>, and then giving it a try!</p>
                         <button class="ui blue chahub button">Wizard</button>
                     </div>
                 </div>
