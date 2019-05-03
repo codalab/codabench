@@ -6,7 +6,7 @@ import os
 import requests
 
 from django.conf import settings
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, transaction
 from django.utils import timezone
 
 from apps.chahub.utils import send_to_chahub

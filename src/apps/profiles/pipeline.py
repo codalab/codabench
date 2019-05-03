@@ -5,7 +5,7 @@ def user_details(user, **kwargs):
     backend = kwargs.get('backend')
 
     if user:
-        if backend and backend.name == 'codalab':
+        if backend and backend.name == 'chahub':
             # user.save()  # Probably not necessary? was here to stop NoneType exception
             pass
         else:
@@ -24,6 +24,4 @@ def user_details(user, **kwargs):
                 if not getattr(user, attr):
                     setattr(user, attr, response[attr])
 
-            # Set the ID github returns to UID on user.
-            user.github_uid = response['id']
             user.save()

@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from django.conf import settings
@@ -5,11 +6,12 @@ from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
 
+from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
 
-class Data(models.Model):
+class Data(ChaHubSaveMixin, models.Model):
     """Data models are unqiue based on name + created_by. If no name is given, then there is no uniqueness to enforce"""
 
     # It's useful to have these defaults map to the YAML names for these, like `scoring_program`
@@ -34,7 +36,7 @@ class Data(models.Model):
         (SUBMISSION, 'Submission',),
         (SOLUTION, 'Solution',),
     )
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_when = models.DateTimeField(default=now)
     name = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=64, choices=TYPES)
@@ -64,10 +66,12 @@ class Data(models.Model):
     @property
     def in_use(self):
         from tasks.models import Task
-        tasks = Task.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(scoring_program=self)).prefetch_related('phases')
+        tasks = Task.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(
+            scoring_program=self)).prefetch_related('phases')
         phases_from_tasks = [phase for task in tasks for phase in task.phases.all()]
         from competitions.models import Phase
-        phases = Phase.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(scoring_program=self)).prefetch_related('competition')
+        phases = Phase.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(
+            scoring_program=self)).prefetch_related('competition')
         print(tasks)
         print(phases_from_tasks)
         print(phases)
@@ -78,13 +82,51 @@ class Data(models.Model):
         return {'value': is_used,
                 'competitions': competition_set}
 
-
     def __str__(self):
         return self.name or ''
 
+    def get_chahub_endpoint(self):
+        return "datasets/"
+
+    def clean_chahub_data(self, temp_data):
+        data = temp_data
+        for key in list(data):
+            if not data[key] or data[key] == '':
+                data.pop(key, None)
+            if isinstance(data.get(key), datetime.datetime):
+                data[key] = data[key].isoformat()
+            if isinstance(data.get(key), uuid.UUID):
+                data[key] = str(data[key])
+        return data
+
+    def get_chahub_data(self):
+        print("SENDING A DATASETS WHOOOOOOOOO WWEEEEEEEEEEE")
+        data = {
+            'creator_id': self.created_by.id,
+            'remote_id': self.pk,
+            # 'producer': settings.CHAHUB_PRODUCER_ID,
+            # 'user',
+            'created_by': str(self.created_by.username),
+            'created_when': self.created_when,
+            'name': self.name,
+            'type': self.type,
+            'description': self.description,
+            'key': self.key,
+            'is_public': self.is_public
+        }
+        chahub_id = self.created_by.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        data = self.clean_chahub_data(data)
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True
+
 
 class DataGroup(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_when = models.DateTimeField(default=now)
     name = models.CharField(max_length=255)
     datas = models.ManyToManyField(Data, related_name="groups")

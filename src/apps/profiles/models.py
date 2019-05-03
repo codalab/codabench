@@ -53,6 +53,13 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name if self.name else self.username
 
+    @property
+    def chahub_uid(self):
+        associations = self.social_auth.filter(provider='chahub')
+        if associations.count() > 0:
+            return associations.first().uid
+        return None
+
     def get_chahub_endpoint(self):
         return "profiles/"
 
@@ -75,8 +82,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             'username': self.username,
             'remote_id': self.pk,
             'details': model_to_dict(self),
-            'producer': settings.CHAHUB_PRODUCER_ID
+            # 'producer': settings.CHAHUB_PRODUCER_ID
         }
+        chahub_id = self.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
         data = self.clean_chahub_data(data)
         return [data]
 

@@ -31,27 +31,18 @@ class Competition(ChaHubSaveMixin, models.Model):
         data = {
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
-            # 'user',
             'created_when': self.created_when.isoformat(),
-            # 'start': ,
             'title': self.title,
             'url': 'https://www.google.com/',
-            # 'description',
-            # 'end',
-            # 'prize',
-            # 'producer': int(settings.CHAHUB_PRODUCER_ID),
+            'producer': settings.CHAHUB_PRODUCER_ID,
             'remote_id': self.pk,
-            'logo_url': self.logo.url,
-            'logo': self.logo.url,
-            # 'logo',
-            # 'url',
-            # 'admins',
-            # 'participant_count',
-            # 'html_text',
-            # 'current_phase_deadline',
-            # 'is_active',
+            'logo_url': self.logo.url if self.logo else '',
+            'logo': self.logo.url if self.logo else '',
             'published': True
         }
+        chahub_id = self.created_by.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
         return [data]
 
     def get_chahub_is_valid(self):
