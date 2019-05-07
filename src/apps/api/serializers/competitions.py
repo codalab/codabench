@@ -162,6 +162,9 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField(read_only=True)
+    logo = NamedBase64ImageField(required=True)
+    phases = PhaseSerializer(many=True)
 
     class Meta:
         model = Competition
@@ -169,8 +172,14 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'id',
             'title',
             'created_when',
-            'published'
+            'published',
+            'logo',
+            'phases',
+            'created_by'
         )
+
+    def get_created_by(self, object):
+        return str(object.created_by)
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')

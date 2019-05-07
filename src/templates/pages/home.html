@@ -3,9 +3,42 @@
 {% load staticfiles %}
 {% load i18n %}
 
+{% block top_div_extra_class %}jumbotron{% endblock %}
+
+{% block top_div_extra_content %}
+
+    <div class="ui text container">
+        {#            <h1 class="ui inverted header">#}
+        {#                Codalab Competitions#}
+        {#            </h1>#}
+        <img id="jumbo_logo" src="{% static "img/codalab-logo-futuraLT-light2.png" %}">
+        <h2>Accelerating reproducible computational research.</h2>
+        {#            <div class="ui huge primary button">Get Started <i class="right arrow icon"></i></div>#}
+
+        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i
+                class="left arrow icon"></i> Compete</a>
+        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i
+                class="right arrow icon"></i></a>
+    </div>
+
+    {#            <div class="ui middle aligned stackable grid container">#}
+    {#                <div class="row">#}
+    {#                    <div class="fourteen wide column centered">#}
+    {#                        <div class="ui fluid category search">#}
+    {#                            <div class="ui fluid icon input">#}
+    {#                                <input class="prompt" type="text" placeholder="Search machine learning...">#}
+    {#                                <i class="search icon"></i>#}
+    {#                            </div>#}
+    {#                            <div class="results fluid"></div>#}
+    {#                        </div>#}
+    {#                    </div>#}
+    {#                </div>#}
+    {#            </div>#}
+{% endblock %}
+
 {% block content %}
     <div class="home-wrap">
-        {% if not user.is_authenticated %}
+        {% if user.is_authenticated %}
             <div class="column-wrap">
                 <div class="vert-wrap">
                     <div class="segment-container ui segment">
@@ -13,8 +46,7 @@
                             Popular Competitions
                         </div>
                         <div class="container-content">
-                            <p>Enter an existing competition to solve challenging data problems, or host your own.</p>
-                            <button class="ui large blue chahub button">Competitions</button>
+                            <popular-competitions></popular-competitions>
                         </div>
                     </div>
 
@@ -23,6 +55,7 @@
                             Featured Competitions
                         </div>
                         <div class="container-content">
+                            <featured-competitions></featured-competitions>
                         </div>
                     </div>
                 </div>
@@ -39,17 +72,17 @@
                             <form id="login_form" class="form" method="post" action="">
                                 {% csrf_token %}
                                 <p>
-                        <span class="focus_input"><i class="user icon"></i>
-                        <input class="input_coloring" type="text" name="email" placeholder="Email" autofocus=""
-                               maxlength="254"
-                               required id="id_email"
-                               data-op-id="0"></span>
+                                    <span class="focus_input"><i class="user icon"></i>
+                                        <input class="input_coloring" type="text" name="email" placeholder="Email"
+                                               autofocus=""
+                                               maxlength="254" required id="id_email" data-op-id="0">
+                                    </span>
                                 </p>
-                                <p><span class="focus_input"><i class="lock icon"></i>
-                        <input class="input_coloring" type="password" placeholder="Password" name="password" required
-                               id="id_password"
-                               data-op-id="1">
-                    </span>
+                                <p>
+                                    <span class="focus_input"><i class="lock icon"></i>
+                                        <input class="input_coloring" type="password" placeholder="Password"
+                                               name="password" required id="id_password" data-op-id="1">
+                                    </span>
                                 </p>
                                 <div>
                                     <input placeholder="Remember Me" id="remember_me" type="checkbox" name="remember_me"
@@ -86,8 +119,7 @@
                         Popular Competitions
                     </div>
                     <div class="container-content">
-                        <p>Competitions here...</p>
-                        <button class="ui large blue chahub button">Competitions</button>
+                        <popular-competitions></popular-competitions>
                     </div>
                 </div>
 
@@ -96,7 +128,7 @@
                         Featured Competitions
                     </div>
                     <div class="container-content">
-                        <p>Competitions here...</p>
+                        <featured-competitions></featured-competitions>
                     </div>
                 </div>
             </div>
@@ -332,9 +364,21 @@
             </div>
         </div>
     </div>
-
-
 {% endblock %}
 
+
 {% block extra_body %}
+    <script>
+        // Prevent buttons from stacking in mobile view
+        $(window).resize(function () {
+            if ($(window).width() < 390) {
+                return $('.pages')
+                    .removeClass('huge')
+                    .addClass('large');
+            }
+            $('.pages')
+                .removeClass('large')
+                .addClass('huge');
+        }).trigger('resize');
+    </script>
 {% endblock %}

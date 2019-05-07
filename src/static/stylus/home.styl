@@ -9,7 +9,7 @@ body
   color $textcolordark !important
 
 #page_content
-  margin 3em
+  margin 0.5em
 
 .segment-container
   padding 0 !important
@@ -27,7 +27,6 @@ body
 
 #particles-js, #bg, .masthead
   background-color $backgrounddark
-  height 50px
 
 .navbar-placeholder
   height 70px
@@ -79,9 +78,13 @@ body
 
   .vert-wrap
     margin-right 3em
+    max-width 770px
 
     .segment-container
       width 100%
+
+    .container-content
+      padding 1em
 
   .login-container
     margin-left 1.5em
@@ -210,16 +213,16 @@ body
 
 .logged-in
   display flex
-  justify-content space-between
+  justify-content center
   width 100%
+  max-width 100% !important
   margin -3em 0 0 0 !important
 
   .segment-container
     margin 3em 1.5em !important
 
     .container-content
-      padding 2.5em
-      height 90.6%
+      padding 1em
       display flex
       flex-direction column
       justify-content flex-end

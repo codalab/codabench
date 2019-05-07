@@ -35,7 +35,12 @@
                 </div>
                 <button class="ui blue submit button" type="submit">Login</button>
                 <div class="ui divider"></div>
-                <p>New to us? <a href="#">Sign Up</a></p>
+                <p>New to us? <a href="#">Sign Up</a></p>\
+                <p>
+                    Don't have a Chahub account? Create on at <a href="chahub.org">Chahub.org</a> and then <a
+                        class="item" href="{% url "social:begin" "chahub" %}">Sign-In</a>
+
+                </p>
             </div>
             <div class="ui error message"></div>
         </form>

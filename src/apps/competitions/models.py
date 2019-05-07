@@ -15,6 +15,7 @@ class Competition(models.Model):
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    description = models.TextField(default='', null=True, blank=True)
 
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)
@@ -22,6 +23,31 @@ class Competition(models.Model):
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
+    def get_chahub_endpoint(self):
+        return "competitions/"
+
+    def get_chahub_data(self):
+        data = {
+            'created_by': self.created_by.username,
+            'creator_id': self.created_by.pk,
+            'created_when': self.created_when.isoformat(),
+            'title': self.title,
+            'url': 'https://www.google.com/',
+            'producer': settings.CHAHUB_PRODUCER_ID,
+            'remote_id': self.pk,
+            'logo_url': self.logo.url if self.logo else '',
+            'logo': self.logo.url if self.logo else '',
+            'published': True
+        }
+        chahub_id = self.created_by.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True
 
 
 class CompetitionCreationTaskStatus(models.Model):

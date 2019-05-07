@@ -38,3 +38,44 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.name if self.name else self.username
+
+    @property
+    def chahub_uid(self):
+        associations = self.social_auth.filter(provider='chahub')
+        if associations.count() > 0:
+            return associations.first().uid
+        return None
+
+    def get_chahub_endpoint(self):
+        return "profiles/"
+
+    def clean_chahub_data(self, temp_data):
+        data = temp_data
+        for key in list(data):
+            if key == 'details':
+                data['details'] = self.clean_chahub_data(data['details'])
+            if not data[key] or data[key] == '':
+                data.pop(key, None)
+            if key in PROFILE_DATA_BLACKLIST:
+                data.pop(key, None)
+            if isinstance(data.get(key), datetime.datetime):
+                data[key] = data[key].isoformat()
+        return data
+
+    def get_chahub_data(self):
+        data = {
+            'email': self.email,
+            'username': self.username,
+            'remote_id': self.pk,
+            'details': model_to_dict(self),
+            # 'producer': settings.CHAHUB_PRODUCER_ID
+        }
+        chahub_id = self.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        data = self.clean_chahub_data(data)
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True

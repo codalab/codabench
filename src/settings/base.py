@@ -109,7 +109,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'utils.oauth_backends.CodalabOAuth2',
+    'utils.oauth_backends.ChahubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -131,8 +131,9 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # Codalab Example settings
-# SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'asdfasdfasfd')
-# SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'asdfasdfasfdasdfasdf')
+SOCIAL_AUTH_CHAHUB_BASE_URL = os.environ.get('SOCIAL_AUTH_CHAHUB_BASE_URL', 'asdfasdfasfd')
+SOCIAL_AUTH_CHAHUB_KEY = os.environ.get('SOCIAL_AUTH_CHAHUB_KEY', 'asdfasdfasfd')
+SOCIAL_AUTH_CHAHUB_SECRET = os.environ.get('SOCIAL_AUTH_CHAHUB_SECRET', 'asdfasdfasfdasdfasdf')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
