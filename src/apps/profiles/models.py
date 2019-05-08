@@ -1,9 +1,23 @@
+import json
+import datetime
+
+from django.conf import settings
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
+from django.forms import model_to_dict
 from django.utils.timezone import now
 
+from apps.chahub.models import ChaHubSaveMixin
 
-class User(AbstractBaseUser, PermissionsMixin):
+
+PROFILE_DATA_BLACKLIST = [
+    'password',
+    'groups',
+    'user_permissions'
+]
+
+
+class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
     EMAIL_FIELD = 'email'

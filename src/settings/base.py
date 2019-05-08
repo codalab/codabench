@@ -37,6 +37,7 @@ THIRD_PARTY_APPS = (
     'drf_yasg',
 )
 OUR_APPS = (
+    'chahub',
     'competitions',
     'datasets',
     'pages',
@@ -350,3 +351,7 @@ if DEBUG:
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": lambda request: True
     }
+
+CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL', 'http://chahub.org/api/v1/')
+CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
+CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')

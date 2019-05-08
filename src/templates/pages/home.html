@@ -38,7 +38,7 @@
 
 {% block content %}
     <div class="home-wrap">
-        {% if user.is_authenticated %}
+        {% if not user.is_authenticated %}
             <div class="column-wrap">
                 <div class="vert-wrap">
                     <div class="segment-container ui segment">

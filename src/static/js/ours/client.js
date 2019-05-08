@@ -143,8 +143,8 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/
-    get_datasets: function (query, type) {
-        return CODALAB.api.request('GET', URLS.API + `datasets/?q=${query || ''}&type=${type || ''}`)
+    get_datasets: function (query, type, page) {
+        return CODALAB.api.request('GET', URLS.API + `datasets/?q=${query || ''}&page=${page || 1}&type=${type || ''}`)
     },
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
