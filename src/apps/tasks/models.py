@@ -25,6 +25,8 @@ class Task(models.Model):
 
 
 class Solution(models.Model):
+    name = models.CharField(max_length=256)
+    description = models.TextField(null=True, blank=True)
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     tasks = models.ManyToManyField(Task, related_name="solutions")
     data = models.ForeignKey('datasets.Data', null=True, blank=True, on_delete=models.SET_NULL)

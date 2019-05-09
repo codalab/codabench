@@ -14,6 +14,8 @@ class SolutionSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Solution
         fields = [
+            'name',
+            'description',
             'key',
             'tasks',
             'data',
