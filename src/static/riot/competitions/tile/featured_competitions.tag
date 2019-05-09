@@ -11,8 +11,8 @@
             self.get_featured_competitions()
         }
 
-        self.get_competitions_wrapper = function (query_params) {
-            return CODALAB.api.get_competitions(query_params)
+        self.get_competitions_wrapper = function (data) {
+            return CODALAB.api.get_featured_competitions(data)
                 .fail(function (response) {
                     toastr.error("Could not load competition list")
                 })
@@ -22,9 +22,9 @@
             self.get_competitions_wrapper()
                 .done(function (data) {
                     self.featured_competitions = data
-                    console.log(self.featured_competitions.slice(0,5))
                     self.update()
                 })
         }
+
     </script>
 </featured-competitions>

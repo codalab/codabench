@@ -9,76 +9,40 @@
                     {title}
                 </h4>
                 <p class="comp-description">
-                    {phases.description}
-                    Yo we got a description my dudes! Test this bad boi out
+                    {description}
                 </p>
                 <p class="organizer">
-                    <em>Organized by: <strong>A person!</strong></em>
+                    <em>Organized by: <strong>{created_by}</strong></em>
                 </p>
             </div>
             <div class="comp-stats">
-                Dec 12, 2018
+                {pretty_date(created_when)}
                 <div class="ui divider"></div>
-                <strong>1293</strong> Participants
+                <strong>{participant_count}</strong> Participants
             </div>
         </div>
     </a>
 
-
-    <!-- <div class="ui grid">
-        <div class="ui middle aligned attached message stretched row main-wrapper">
-            <div class="four wide column">
-                <div class="ui square bordered small image">
-                    <img src="https://i.imgur.com/n2XUSxU.png">
-                    <img src="{ logo }">
-                </div>
-            </div>
-            <div class="nine wide column">
-                <div class="ui row">
-                    <div class="twelve wide column">
-                        <h1 class="ui large header">
-                            {title}
-                        </h1>
-                        <p class="comp-tile-paragraph">
-                            A competition description
-                            {description}
-                        </p>
-                    </div>
-                    <div class="four wide right justify left align column">
-                        <div align="right" class="content">
-                            <i>Organized by: <b>Someone</b></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="ui row">
-                    <div class="sixteen wide column">
-                        <div class="content">
-                        </div>
-                    </div>
-                </div>
-                <div class="ui row">
-                    <div class="sixteen wide column">
-                        <div class="content">
-                            Tags: <b>Beginner</b>, <b>AutoML</b>
-                            <br>
-                            Admins: <b>tthomas63</b>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="three wide blue column center aligned comp-tile-full-height">
-                <i>Comp deadline:</i>
-                <i>August 14 2018</i>
-                <div class="ui divider"></div>
-                <i>Phase deadline:</i>
-                <i>April 14 2018</i>
-                <div class="ui divider"></div>
-                <i>17 participants</i>
-            </div>
-        </div>
-    </div>-->
-
     <script>
+        self.pretty_date = function (date_string) {
+            if (!!date_string) {
+                return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL)
+            } else {
+                return ''
+            }
+        }
+
+        $(document).ready(function () {
+            $('.comp-description').each(function (f) {
+                var newstr = $(this).text().substring(0, 90);
+                if(newstr.length < 90) {
+                    $(this).text(newstr);
+                } else {
+                    $(this).text(newstr + '...')
+                }
+            })
+        })
+
 
     </script>
 
@@ -96,9 +60,10 @@
             display inline-grid
             grid-template-columns 0.1fr 3fr 1.3fr
             min-width 425px
-            background-color #f4f4f4
+            background-color #fff
             transition all 75ms ease-in-out
             color #909090
+            width 100%
 
         .tile-wrapper:hover
             box-shadow 0 3px 4px -1px #9c9c9c
@@ -136,6 +101,7 @@
             color #e8e8e8
             padding 10px
             text-align center
+            font-size 12px
 
         .organizer
             font-size 13px
@@ -143,27 +109,6 @@
             margin 0.35em
     </style>
 
-    <!--<style type="text/stylus">
-        :scope
-            display block
-            margin-bottom 35px !important
-
-        .main-wrapper
-            border-left 5px solid #c7402d
-            border-top-left-radius 6px !important
-            border-bottom-left-radius 6px !important
-
-        .comp-tile-paragraph
-            font-size 14px !important
-
-        .comp-tile-full-height
-            border-top-right-radius 3px
-
-        .ui.grid > .row > .blue.column
-            background-color #4a6778 !important
-
-
-    </style> -->
 </competition-tile>
 
 <competition-card>

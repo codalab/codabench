@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -9,6 +10,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
+from competitions.utils import get_popular_competitions, get_featured_competitions
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -40,7 +42,7 @@ class CompetitionViewSet(ModelViewSet):
             )
 
         qs = qs.order_by('created_when')
-
+        qs = qs.annotate(participant_count=Count('participants'))
         return qs
 
     def get_serializer_class(self):
@@ -76,9 +78,26 @@ class CompetitionViewSet(ModelViewSet):
         return Response({"published": competition.published})
 
 
+@api_view(['GET'])
+@permission_classes((AllowAny, ))
+def popular_competitions(request):
+    popular_comps = get_popular_competitions()
+    serializer = CompetitionSerializerSimple(popular_comps, many=True)
+    return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes((AllowAny, ))
+def featured_competitions(request):
+    featured_comps = get_featured_competitions()
+    serializer = CompetitionSerializerSimple(featured_comps, many=True)
+    return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
+
     # TODO! Security, who can access/delete/etc this?
 
     @action(detail=True, url_name='rerun_submissions')

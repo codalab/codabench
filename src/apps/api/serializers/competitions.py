@@ -165,6 +165,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.SerializerMethodField(read_only=True)
     logo = NamedBase64ImageField(required=True)
     phases = PhaseSerializer(many=True)
+    participant_count = serializers.IntegerField()
 
     class Meta:
         model = Competition
@@ -175,7 +176,9 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'published',
             'logo',
             'phases',
-            'created_by'
+            'created_by',
+            'description',
+            'participant_count'
         )
 
     def get_created_by(self, object):
@@ -193,3 +196,20 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
             'details',
             'resulting_competition',
         )
+
+
+class ProducerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Competition
+        fields = [
+            'id',
+            'name',
+            'contact',
+            'url',
+            'competition_count',
+            'dataset_count',
+            'participant_count',
+            'submission_count',
+            'user_count',
+            'organizer_count'
+        ]

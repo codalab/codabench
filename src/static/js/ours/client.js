@@ -77,6 +77,12 @@ CODALAB.api = {
     re_run_phase_submissions: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/rerun_submissions/`)
     },
+    get_featured_competitions: function (data) {
+        return CODALAB.api.request('GET', URLS.API + "featured_competitions/", data)
+    },
+    get_popular_competitions: function (data) {
+        return CODALAB.api.request('GET', URLS.API + "popular_competitions/", data)
+    },
 
     /*---------------------------------------------------------------------
          Submissions
