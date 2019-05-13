@@ -9,7 +9,7 @@
         })
 
         self.get_competitions_wrapper = function (query_params) {
-            return CODALAB.api.get_popular_competitions(query_params)
+            return CODALAB.api.get_front_page_competitions(query_params)
                 .fail(function (response) {
                     toastr.error("Could not load competition list")
                 })
@@ -22,7 +22,7 @@
         self.get_popular_competitions = function () {
             self.get_competitions_wrapper()
                 .done(function (data) {
-                    self.popular_competitions = data
+                    self.popular_competitions = data["popular_comps"]
                     self.update()
                 })
         }

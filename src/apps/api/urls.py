@@ -5,7 +5,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
-from api.views.competitions import popular_competitions, featured_competitions
+from api.views.competitions import front_page_competitions
 from .views import competitions, datasets, profiles, leaderboards, submissions, tasks
 
 
@@ -52,7 +52,5 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission),
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(router.urls)),
-    url('popular_competitions/', popular_competitions, name='popular_competitions'),
-    url('featured_competitions/', featured_competitions, name='featured_competitions'),
-
+    url('front_page_competitions/', front_page_competitions, name='front_page_competitions'),
 ]

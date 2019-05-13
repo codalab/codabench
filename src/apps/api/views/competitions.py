@@ -79,19 +79,16 @@ class CompetitionViewSet(ModelViewSet):
 
 
 @api_view(['GET'])
-@permission_classes((AllowAny, ))
-def popular_competitions(request):
+@permission_classes((AllowAny,))
+def front_page_competitions(request):
     popular_comps = get_popular_competitions()
-    serializer = CompetitionSerializerSimple(popular_comps, many=True)
-    return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes((AllowAny, ))
-def featured_competitions(request):
-    featured_comps = get_featured_competitions()
-    serializer = CompetitionSerializerSimple(featured_comps, many=True)
-    return Response(data=serializer.data, status=status.HTTP_200_OK)
+    featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+    popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
+    featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+    return Response(data={
+        "popular_comps": popular_comps_serializer.data,
+        "featured_comps": featured_comps_serializer.data
+    }, status=status.HTTP_200_OK)
 
 
 class PhaseViewSet(ModelViewSet):

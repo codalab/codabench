@@ -28,20 +28,22 @@ def get_popular_competitions(limit=3):
     return competitions[:limit]
 
 
-def get_featured_competitions(limit=3):
+def get_featured_competitions(limit=3, excluded_competitions=None):
     '''
     Function to return featured competitions if they are still open.
 
     :param limit: Amount of competitions to return. Default is 3
+    :param excluded_competitions: list of popular competitions to prevent displaying duplicates
     :rtype: list
     :return: list of featured competitions
     '''
     featured_competitions = []
+
     competitions = Competition.objects.filter(published=True) \
         .annotate(participant_count=Count('participants'))
-    popular_competitions = get_popular_competitions()
-    popular_competitions_pk = [c.pk for c in popular_competitions]
-    competitions = competitions.exclude(pk__in=popular_competitions_pk)
+
+    if excluded_competitions:
+        competitions = competitions.exclude(pk__in=[c.pk for c in excluded_competitions])
 
     if len(competitions) < 3:
         return competitions
