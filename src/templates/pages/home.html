@@ -10,10 +10,10 @@
     <div class="ui text container">
         <img id="jumbo_logo" src="{% static "img/codalab-logo-futuraLT-light2.png" %}">
         <h2>Accelerating reproducible computational research.</h2>
-{#        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i#}
-{#                class="left arrow icon"></i> Compete</a>#}
-{#        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i#}
-{#                class="right arrow icon"></i></a>#}
+        {#        <a id="style_button" href="{% url "pages:search" %}" class="pages ui huge button"><i#}
+        {#                class="left arrow icon"></i> Compete</a>#}
+        {#        <a id="style_button" href="{% url "pages:organize" %}" class="pages ui huge button">Organize <i#}
+        {#                class="right arrow icon"></i></a>#}
     </div>
 
 {% endblock %}
@@ -51,44 +51,33 @@
                             if this is your first time visiting.
                         </p>
                         <div>
-                            <form id="login_form" class="form" method="post" action="">
+                            <form id="login_form" class="form" method="post" action="/accounts/login/">
                                 {% csrf_token %}
-                                <p>
+                                <p class="login-input">
                                     <span class="focus_input"><i class="user icon"></i>
-                                        <input class="input_coloring" type="text" name="email" placeholder="Email"
+                                        <input class="input_coloring" type="text" name="username" placeholder="Username"
                                                autofocus=""
                                                maxlength="254" required id="id_email" data-op-id="0">
                                     </span>
                                 </p>
-                                <p>
+                                <p class="login-input">
                                     <span class="focus_input"><i class="lock icon"></i>
                                         <input class="input_coloring" type="password" placeholder="Password"
                                                name="password" required id="id_password" data-op-id="1">
                                     </span>
                                 </p>
-                                <div>
-                                    <input placeholder="Remember Me" id="remember_me" type="checkbox" name="remember_me"
-                                           value="true">
-                                    <span class="remember_label">Stay Signed In</span>
-                                </div>
-                                <button class="ui button">{% trans 'Log in' %}</button>
-                                <input type="hidden" name="next" value="{{ next }}"/>
+                                <br>
+                                <button type="submit" class="ui button">{% trans 'Log in' %}</button>
                             </form>
-                            <p><a href="">{% trans "Reset your password" %}</a></p>
-                            <p><a href="">{% trans "Create an account" %}</a></p>
+                            <p><a href="/accounts/password_reset/">{% trans "Reset your password" %}</a></p>
+                            <p><a href="/profiles/signup">{% trans "Create an account" %}</a></p>
                             <div id="outline">
-                                <button class="ui facebook button">
-                                    <i class="facebook icon"></i>
-                                    Sign in with Facebook!
-                                </button>
-                                <button class="ui twitter button">
-                                    <i class="twitter icon"></i>
-                                    Sign in with Twitter!
-                                </button>
-                                <button class="ui blue chahub button">
-                                    <i class="sync icon"></i>
-                                    Sign in with Chahub!
-                                </button>
+                                <a>
+                                    <button class="ui blue chahub button">
+                                        <i class="sync icon"></i>
+                                        Sign Up with Chahub
+                                    </button>
+                                </a>
                             </div>
                         </div>
                     </div>
