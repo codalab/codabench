@@ -1,4 +1,10 @@
 <featured-competitions>
+    <div class="loader-container">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
     <competition-tile each="{featured_competitions}"></competition-tile>
     <script>
         var self = this

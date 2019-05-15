@@ -1,6 +1,11 @@
 <popular-competitions>
+    <div class="loader-container">
+        <div class="lds-ripple">
+            <div></div>
+            <div></div>
+        </div>
+    </div>
     <competition-tile each="{popular_competitions}"></competition-tile>
-
     <script>
         var self = this
 
@@ -12,6 +17,9 @@
             return CODALAB.api.get_front_page_competitions(query_params)
                 .fail(function (response) {
                     toastr.error("Could not load competition list")
+                })
+                .done(function (response) {
+                    $('.loader-container').hide()
                 })
         }
 
