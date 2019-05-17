@@ -99,7 +99,6 @@ class Data(ChaHubSaveMixin, models.Model):
         return data
 
     def get_chahub_data(self):
-        print("SENDING A DATASETS WHOOOOOOOOO WWEEEEEEEEEEE")
         data = {
             'creator_id': self.created_by.id,
             'remote_id': self.pk,

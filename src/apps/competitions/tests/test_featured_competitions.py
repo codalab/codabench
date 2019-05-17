@@ -34,46 +34,17 @@ class FeaturedCompetitionsTests(TestCase):
         self.competition6 = CompetitionFactory(published=True)
         self.competition7 = CompetitionFactory(published=True)
 
-        # Competition One Participants
-        CompetitionParticipantFactory(user=self.user1, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user4, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user5, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user6, competition=self.competition1)
-        CompetitionParticipantFactory(user=self.user7, competition=self.competition1)
+        def create_participants(competition, participant_count):
+            for user in User.objects.all()[:participant_count]:
+                CompetitionParticipantFactory(user=user, competition=competition)
 
-        # Competition Two Participants
-        CompetitionParticipantFactory(user=self.user1, competition=self.competition2)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition2)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition2)
-        CompetitionParticipantFactory(user=self.user4, competition=self.competition2)
-        CompetitionParticipantFactory(user=self.user5, competition=self.competition2)
-
-        # Competition Three Participants
-        CompetitionParticipantFactory(user=self.user4, competition=self.competition3)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition3)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition3)
-
-        # Competition Four Participants
-        CompetitionParticipantFactory(user=self.user4, competition=self.competition4)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition4)
-
-        # Competition Five Participants
-        CompetitionParticipantFactory(user=self.user1, competition=self.competition5)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition5)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition5)
-
-        # Competition Six Participants
-        CompetitionParticipantFactory(user=self.user1, competition=self.competition6)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition6)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition6)
-        CompetitionParticipantFactory(user=self.user4, competition=self.competition6)
-
-        # Competition Seven Participants
-        CompetitionParticipantFactory(user=self.user1, competition=self.competition7)
-        CompetitionParticipantFactory(user=self.user2, competition=self.competition7)
-        CompetitionParticipantFactory(user=self.user3, competition=self.competition7)
+        create_participants(self.competition1, 7)
+        create_participants(self.competition2, 5)
+        create_participants(self.competition3, 3)
+        create_participants(self.competition4, 2)
+        create_participants(self.competition5, 3)
+        create_participants(self.competition6, 4)
+        create_participants(self.competition7, 3)
 
     def test_front_page_competitions(self):
         popular_list = get_popular_competitions()
