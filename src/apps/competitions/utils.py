@@ -1,9 +1,7 @@
 '''
 This file contains utilities for competitions
 '''
-import datetime
-
-from random import randint
+import random
 
 from django.db.models import Count
 
@@ -37,7 +35,6 @@ def get_featured_competitions(limit=3, excluded_competitions=None):
     :rtype: list
     :return: list of featured competitions
     '''
-    featured_competitions = []
 
     competitions = Competition.objects.filter(published=True) \
         .annotate(participant_count=Count('participants'))
@@ -48,9 +45,4 @@ def get_featured_competitions(limit=3, excluded_competitions=None):
     if len(competitions) < limit:
         return competitions
     else:
-        while len(featured_competitions) < limit:
-            competition = competitions[randint(0, competitions.count() - 1)]
-            if competition not in featured_competitions:
-                featured_competitions.append(competition)
-
-    return featured_competitions[:limit]
+        return random.sample(list(competitions), limit)

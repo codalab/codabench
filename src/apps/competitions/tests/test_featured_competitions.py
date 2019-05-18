@@ -19,20 +19,16 @@ class FeaturedCompetitionsTests(TestCase):
         """
 
         self.user1 = UserFactory()
-        self.user2 = UserFactory()
-        self.user3 = UserFactory()
-        self.user4 = UserFactory()
-        self.user5 = UserFactory()
-        self.user6 = UserFactory()
-        self.user7 = UserFactory()
+        for _ in range(6):
+            UserFactory()
 
-        self.competition1 = CompetitionFactory(published=True)
-        self.competition2 = CompetitionFactory(published=True)
-        self.competition3 = CompetitionFactory(published=True)
-        self.competition4 = CompetitionFactory(published=True)
-        self.competition5 = CompetitionFactory(published=True)
-        self.competition6 = CompetitionFactory(published=True)
-        self.competition7 = CompetitionFactory(published=True)
+        self.competition1 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition2 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition3 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition4 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition5 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition6 = CompetitionFactory(created_by=self.user1, published=True)
+        self.competition7 = CompetitionFactory(created_by=self.user1, published=True)
 
         def create_participants(competition, participant_count):
             for user in User.objects.all()[:participant_count]:

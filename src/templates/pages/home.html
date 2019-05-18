@@ -22,25 +22,7 @@
     <div class="home-wrap">
         {% if not user.is_authenticated %}
             <div class="column-wrap">
-                <div class="vert-wrap">
-                    <div class="segment-container ui segment">
-                        <div class="ui header">
-                            Popular Competitions
-                        </div>
-                        <div class="container-content">
-                            <popular-competitions></popular-competitions>
-                        </div>
-                    </div>
-
-                    <div class="segment-container ui segment">
-                        <div class="ui header">
-                            Featured Competitions
-                        </div>
-                        <div class="container-content">
-                            <featured-competitions></featured-competitions>
-                        </div>
-                    </div>
-                </div>
+                <front-page-competitions></front-page-competitions>
                 <div class="segment-container ui segment login-container">
                     <div class="ui header">
                         Start your journey
@@ -86,25 +68,7 @@
                 </div>
             </div>
         {% else %}
-            <div class="vert-wrap logged-in">
-                <div class="segment-container ui segment">
-                    <div class="ui header">
-                        Popular Competitions
-                    </div>
-                    <div class="container-content">
-                        <popular-competitions></popular-competitions>
-                    </div>
-                </div>
-                <div class="segment-container ui segment">
-                    <div class="ui header">
-                        Featured Competitions
-                    </div>
-                    <div class="container-content">
-
-                        <featured-competitions></featured-competitions>
-                    </div>
-                </div>
-            </div>
+            <front-page-competitions></front-page-competitions>
         {% endif %}
         <div id="action-container" class="segment-container ui segment full-width">
             <div class="ui header">

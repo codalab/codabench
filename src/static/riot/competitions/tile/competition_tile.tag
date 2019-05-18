@@ -1,5 +1,5 @@
 <competition-tile>
-    <a class="link-no-deco" href="https://google.com">
+    <a class="link-no-deco" href="./competitions/{id}">
         <div class="tile-wrapper">
             <div class="ui square tiny bordered image img-wrapper">
                 <img src="{logo}">
@@ -24,6 +24,8 @@
     </a>
 
     <script>
+        var self = this
+
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL)
@@ -32,10 +34,10 @@
             }
         }
 
-        $(document).ready(function () {
+        self.on('mount', () => {
             $('.comp-description').each(function (f) {
                 var newstr = $(this).text().substring(0, 90);
-                if(newstr.length < 90) {
+                if (newstr.length < 90) {
                     $(this).text(newstr);
                 } else {
                     $(this).text(newstr + '...')

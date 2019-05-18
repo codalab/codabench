@@ -70,9 +70,6 @@ class Data(ChaHubSaveMixin, models.Model):
         phases_from_tasks = [phase for task in tasks for phase in task.phases.all()]
         from competitions.models import Phase
         phases = Phase.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(scoring_program=self)).prefetch_related('competition')
-        print(tasks)
-        print(phases_from_tasks)
-        print(phases)
         task_competitions = [phase.competition.pk for phase in phases_from_tasks if phase.competition]
         phase_competitions = [phase.competition.pk for phase in phases if phase.competition]
         competition_set = list(set(task_competitions + phase_competitions))
