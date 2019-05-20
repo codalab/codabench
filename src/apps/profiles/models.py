@@ -82,7 +82,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             'username': self.username,
             'remote_id': self.pk,
             'details': model_to_dict(self),
-            # 'producer': settings.CHAHUB_PRODUCER_ID
         }
         chahub_id = self.chahub_uid
         if chahub_id:

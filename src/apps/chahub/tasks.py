@@ -20,6 +20,7 @@ def send_users_to_chahub():
     try:
         logger.info("Sending profile data to Chahub")
         resp = send_to_chahub('profiles/', user_data_list, update=False)
+        logger.info("Response Status Code: {}".format(resp.status_code))
     except requests.ConnectionError:
         logger.info("There was a problem reaching Chahub, it is currently offline. Re-trying in 5 minutes.")
         send_users_to_chahub.apply_async(eta=timezone.now() + timedelta(minutes=5))
