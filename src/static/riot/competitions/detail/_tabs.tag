@@ -2,41 +2,29 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="item" data-tab="learn_the_details_tab">Details</div>
+            <div class="item" data-tab="details_tab">Details</div>
             <div class="item" data-tab="phases_tab">Phases</div>
             <div class="active item" data-tab="participate_tab">Submissions</div>
             <div class="item" data-tab="results_tab">Leader Boards</div>
             <div class="item" data-tab="admin_tab" if="{competition.is_admin}">Admin</div>
         </div>
-        <div class="ui tab" data-tab="learn_the_details_tab">
+        <div class="ui tab" data-tab="details_tab">
             <div class="ui grid">
                 <div class="row">
                     <div class="sixteen wide column">
                         <div class="ui side green tabular secondary menu">
-                            <div class="active item" data-tab="_tab_overview">Overview</div>
-                            <div class="item" data-tab="_tab_terms">Terms And Conditions</div>
-                            <div class="item" data-tab="_tab_faq">FAQ</div>
+                            <div each="{page, index in competition.pages}" class="item {active: index === 0}" data-tab="page_{index}">
+                                {page.title}
+                            </div>
+                            <div class="item" data-tab="_tags_placeholder">Cool tags (placeholders)</div>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="sixteen wide column">
-                        <div class="ui active tab" data-tab="_tab_overview">
-                            <!-- Tab Content !-->
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse consectetur
-                                elit est, quis consequat sapien elementum a. Etiam tempor, lorem cursus gravida
-                                ultrices, diam nunc vulputate urna, nec euismod purus urna non mi. Nunc vehicula
-                                quam vel tellus iaculis, eu fringilla eros consequat. Suspendisse malesuada lobortis
-                                velit, id tincidunt est dignissim in. Morbi elementum quis ipsum vitae lacinia.
-                                Sed imperdiet pellentesque rutrum. In commodo tempus mauris at accumsan.
-                                Vestibulum hendrerit sodales enim eu auctor. Phasellus consectetur, mi eget blandit
-                                luctus,
-                                sem ligula bibendum est, id lobortis felis velit ut est. Sed quam risus,
-                                suscipit quis lacus id, fermentum sagittis massa. Morbi posuere orci arcu, id varius
-                                lorem hendrerit sed. In gravida elit eu justo molestie, nec pellentesque elit
-                                finibus. Aliquam ante mi, pharetra vel nisi quis, sollicitudin condimentum ipsum.
-                            </p>
+                        <div each="{page, index in competition.pages}" class="ui tab {active: index === 0}" data-tab="page_{index}" id="page_{index}">
+                        </div>
+                        <div class="ui tab" data-tab="_tags_placeholder">
                             <div class="comp-data-containers">
                                 <comp-run-info competition={competition}></comp-run-info>
                                 <comp-stats competition={competition}></comp-stats>
@@ -45,70 +33,9 @@
                         </div>
 
                         <div class="ui tab" data-tab="_tab_terms">
-                            <!-- Tab Content !-->
                             <div class="ui">
-                                <p>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
-                                    porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
-                                    lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
-                                    malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
-                                    a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
-                                    in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
-                                    dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
-                                    facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
-                                    pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
-                                    tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
-                                    gravida.
-                                </p>
-                                <p>
-                                    Aenean at iaculis leo, vel luctus diam. Quisque hendrerit orci sed
-                                    bibendum mollis. Morbi diam leo, luctus eget suscipit ac, hendrerit sit
-                                    amet ex. Duis lectus erat, ornare quis justo ut, pulvinar consectetur
-                                    lacus. Duis molestie sem diam, vitae dapibus leo tristique vel.
-                                    Suspendisse rhoncus iaculis lacinia. Sed quis elit mauris. Phasellus
-                                    ornare posuere molestie. Aliquam vestibulum commodo enim a iaculis.
-                                </p>
-                                <p>
-                                    Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
-                                    penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-                                    Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
-                                    Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
-                                    diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
-                                    vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
-                                    consectetur in. Nunc at leo dolor.
-                                </p>
                             </div>
                         </div>
-
-                        <div class="ui tab" data-tab="_tab_faq">
-                            <!-- Tab Content !-->
-                            <div class="ui ">
-                                <p>
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam hendrerit
-                                    porttitor ligula, in aliquam ligula imperdiet nec. Suspendisse et mattis
-                                    lorem. Morbi dapibus consectetur purus et faucibus. Nam sed mi ut felis
-                                    malesuada convallis. Nulla facilisi. Nunc elit eros, viverra non semper
-                                    a, pretium molestie ligula. Curabitur tellus libero, semper id convallis
-                                    in, ultrices in augue. Donec congue euismod tellus, ac dignissim magna
-                                    dignissim ut. Etiam elit sapien, interdum vestibulum posuere et,
-                                    facilisis at neque. Praesent id sagittis leo, ut placerat turpis. Mauris
-                                    pellentesque ac tellus id tristique. Nulla commodo urna malesuada tellus
-                                    tincidunt cursus. In at nisi lectus. Nunc ornare sit amet diam at
-                                    gravida.
-                                </p>
-
-                                <p>
-                                    Vestibulum in ultricies sapien, eu lacinia ante. Orci varius natoque
-                                    penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-                                    Phasellus malesuada ipsum sed orci varius, et finibus felis lobortis.
-                                    Aliquam commodo turpis ut augue volutpat pulvinar. Etiam vel mollis
-                                    diam. Sed eu elit imperdiet, aliquam leo sit amet, pulvinar elit. Fusce
-                                    vitae elementum odio. Curabitur tristique aliquam nisi, ut rhoncus ipsum
-                                    consectetur in. Nunc at leo dolor.
-                                </p>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -175,7 +102,7 @@
             <div class="ui active tab" data-tab="_tab_competition_management">
                 <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
                 <button class="ui button published icon { grey: !competition.published, green: competition.published }"
-                        onclick="{ toggle_competition_publish.bind(this, competition) }">
+                        onclick="{ toggle_competition_publish }">
                     <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
                 </button>
             </div>
@@ -246,47 +173,23 @@
                 self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
                 self.update()
                 $('.tabular.menu .item').tab();
+                _.forEach(competition.pages, (page, index) => {
+                    $(`#page_${index}`)[0].innerHTML = sanitize_HTML(EasyMDE.prototype.markdown(page.content))
+                })
             })
-            //self.competition = opts.competition
-
-            // Handling tabs
-            self.tabs = ["learn_details", "phases", "participate", "results"]
-            self.active_tab = self.tabs[0]
-
-            // Dynamic based on which `tab` object is active
-            self.active_tab_active_subtab = {}
-            self.active_tab_subtabs = {}
-
-            // handling pages if we're on learn the details
-            if (self.competition.pages) {
-                self.active_page = self.competition.pages[0]
-            }
 
             self.one("mount", function () {
-                // tabs
-                $('.tabular.menu .item').tab(); // Activate tabs
-                // $('.menu .item').tab()
+
             })
 
-            self.set_active_tab = function (index) {
-                // On set active, we need to remove the current active_tab's `active` class, and add it to the new tab
-                self.active_tab = self.tabs[index]
-            }
-
-            self.tab_string_to_index = function (string_tab_id) {
-                for (i = 0; i < self.tabs.length; i++) {
-                    if (self.tabs[i] === string_tab_id) {
-                        return i
-                    }
-                }
-            }
-            self.toggle_competition_publish = function (competition) {
-                CODALAB.api.toggle_competition_publish(competition.id)
+            self.toggle_competition_publish = function () {
+                let comp_id = self.competition.id
+                CODALAB.api.toggle_competition_publish(comp_id)
                     .done(function (data) {
                         var published_state = data.published ? "published" : "unpublished"
                         toastr.success(`Competition has been ${published_state} successfully`)
                         self.update()
-                        CODALAB.api.get_competition(self.competition.id)
+                        CODALAB.api.get_competition(comp_id)
                             .done((competition) => {
                                 CODALAB.events.trigger('competition_loaded', competition)
                             })
