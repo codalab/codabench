@@ -4,6 +4,8 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField, SlugWriteDictReadField
 from api.serializers.datasets import DataSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
+from api.serializers.profiles import CollaboratorSerializer
+from api.serializers.tasks import TaskSerializerSimple
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
 from datasets.models import Data
 from profiles.models import User
@@ -36,6 +38,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'public_data',
             'starting_kit',
             'status',
+            'execution_time_limit',
 
             'has_max_submissions',
             'max_submissions_per_day',
@@ -44,6 +47,41 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'tasks',
             'solutions',
             'is_task_and_solution',
+        )
+
+
+class PhaseDetailSerializer(serializers.ModelSerializer):
+    tasks = TaskSerializerSimple(many=True)
+    input_data = DataSerializer()
+    reference_data = DataSerializer()
+    scoring_program = DataSerializer()
+    ingestion_program = DataSerializer()
+    public_data = DataSerializer()
+    starting_kit = DataSerializer()
+
+    class Meta:
+        model = Phase
+        fields = (
+            'id',
+            'index',
+            'start',
+            'end',
+            'name',
+            'description',
+            'input_data',
+            'reference_data',
+            'scoring_program',
+            'ingestion_program',
+            'public_data',
+            'starting_kit',
+            'status',
+
+            'has_max_submissions',
+            'max_submissions_per_day',
+            'max_submissions_per_person',
+
+            'tasks',
+            'is_task_and_solution'
         )
 
 
@@ -97,6 +135,31 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
+
+
+class CompetitionDetailSerializer(serializers.ModelSerializer):
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    logo = NamedBase64ImageField(required=True)
+    pages = PageSerializer(many=True)
+    phases = PhaseDetailSerializer(many=True)
+    leaderboards = LeaderboardSerializer(many=True)
+    collaborators = CollaboratorSerializer(many=True)
+
+    class Meta:
+        model = Competition
+        fields = (
+            'id',
+            'title',
+            'published',
+            'secret_key',
+            'created_by',
+            'created_when',
+            'logo',
+            'pages',
+            'phases',
+            'leaderboards',
+            'collaborators',
+        )
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):

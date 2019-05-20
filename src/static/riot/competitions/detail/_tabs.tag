@@ -6,6 +6,7 @@
             <div class="item" data-tab="phases_tab">Phases</div>
             <div class="active item" data-tab="participate_tab">Submissions</div>
             <div class="item" data-tab="results_tab">Leader Boards</div>
+            <div class="item" data-tab="admin_tab" if="{competition.is_admin}">Admin</div>
         </div>
         <div class="ui tab" data-tab="learn_the_details_tab">
             <div class="ui grid">
@@ -147,7 +148,7 @@
                 <submission-upload phases="{ competition.phases }"></submission-upload>
             </div>
             <div>
-                <submission-manager></submission-manager>
+                <submission-manager competition="{ competition }"></submission-manager>
             </div>
         </div>
 
@@ -157,6 +158,36 @@
             <div>
                 <leaderboards competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }"></leaderboards>
+            </div>
+        </div>
+        <div if="{competition.is_admin}" class="admin-tab ui tab" data-tab="admin_tab">
+            <div class="ui side green tabular secondary menu">
+                <div class="active item" data-tab="_tab_competition_management">
+                    Competition Management
+                </div>
+                <div class="item" data-tab="_tab_submission_management">
+                    Submission Management
+                </div>
+                <div class="item" data-tab="_tab_participant_management">
+                    Participant Management
+                </div>
+            </div>
+            <div class="ui active tab" data-tab="_tab_competition_management">
+                <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
+                <button class="ui button published icon { grey: !competition.published, green: competition.published }"
+                        onclick="{ toggle_competition_publish.bind(this, competition) }">
+                    <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
+                </button>
+            </div>
+            <div class="ui tab" data-tab="_tab_submission_management">
+                <div class="ui">
+                    <submission-manager admin="true" competition="{ competition }"></submission-manager>
+                </div>
+            </div>
+            <div class="ui tab" data-tab="_tab_participant_management">
+                <div class="ui">
+                    <h3>Stuff for managing participants</h3>
+                </div>
             </div>
         </div>
     </div>
@@ -196,6 +227,12 @@
                 @media screen and (min-width 768px)
                     width 85%
 
+            .admin-tab
+                margin 0 auto
+                width 100%
+                @media screen and (min-width 768px)
+                    width 85%
+
         </style>
         <script>
             $('.tabular.menu .item').tab(); // Activate tabs
@@ -206,6 +243,7 @@
 
             CODALAB.events.on('competition_loaded', function (competition) {
                 self.competition = competition
+                self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
                 self.update()
                 $('.tabular.menu .item').tab();
             })
@@ -241,6 +279,18 @@
                         return i
                     }
                 }
+            }
+            self.toggle_competition_publish = function (competition) {
+                CODALAB.api.toggle_competition_publish(competition.id)
+                    .done(function (data) {
+                        var published_state = data.published ? "published" : "unpublished"
+                        toastr.success(`Competition has been ${published_state} successfully`)
+                        self.update()
+                        CODALAB.api.get_competition(self.competition.id)
+                            .done((competition) => {
+                                CODALAB.events.trigger('competition_loaded', competition)
+                            })
+                    })
             }
             self.phase_selected = function(event, data) {
                 // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz

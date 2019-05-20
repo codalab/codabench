@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
 
 
@@ -43,6 +43,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        elif self.request.method == 'GET':
+            return CompetitionDetailSerializer
         else:
             return CompetitionSerializer
 
@@ -75,6 +77,18 @@ class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
+
+    @action(detail=True, url_name='rerun_submissions')
+    def rerun_submissions(self, request, pk):
+        phase = self.get_object()
+        comp = phase.competition
+        if request.user not in [comp.created_by] + list(comp.collaborators.all()) and not request.user.is_superuser:
+            raise PermissionDenied('You do not have permission to re-run submissions')
+        submissions = phase.submissions.all()
+        for submission in submissions:
+            submission.re_run()
+        rerun_count = len(submissions)
+        return Response({"count": rerun_count})
 
 
 class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):

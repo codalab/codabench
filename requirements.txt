@@ -12,6 +12,9 @@ celery==4.2.1
 gunicorn==19.9.0
 # flower==0.9.2
 flower==0.9.2
+# Tornado here is just to fix a flower problem..
+tornado>=4.2.0,<6.0.0
+urllib3<1.25,>=1.21.1
 uvicorn==0.3.22
 #daphne==2.2.2
 pyyaml==3.13
@@ -40,6 +43,7 @@ whitenoise==3.3.0
 # Api
 coreapi==2.3.3
 djangorestframework==3.8.2
+djangorestframework-csv==2.1.0
 markdown==2.6.11
 pygments==2.2.0
 drf-writable-nested==0.4.1

@@ -7,6 +7,7 @@ from factory.django import DjangoModelFactory
 
 from competitions.models import Competition, Phase, Submission, CompetitionParticipant
 from datasets.models import Data
+from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User
 
 
@@ -84,3 +85,31 @@ class CompetitionParticipantFactory(DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     competition = factory.SubFactory(CompetitionFactory)
     status = factory.LazyAttribute(lambda n: random.choice(['unknown', 'denied', 'approved', 'pending']))
+
+
+class LeaderboardFactory(DjangoModelFactory):
+    class Meta:
+        model = Leaderboard
+
+    competition = factory.SubFactory(CompetitionFactory)
+    key = factory.Faker('word')
+
+
+class ColumnFactory(DjangoModelFactory):
+    class Meta:
+        model = Column
+
+    title = factory.Faker('word')
+    key = factory.Faker('word')
+    index = factory.Sequence(lambda n: n)
+    leaderboard = factory.SubFactory(LeaderboardFactory)
+    sorting = factory.LazyAttribute(lambda n: random.choice(['asc', 'desc']))
+
+
+class SubmissionScoreFactory(DjangoModelFactory):
+    class Meta:
+        model = SubmissionScore
+
+    submission = factory.SubFactory(SubmissionFactory)
+    column = factory.SubFactory(ColumnFactory)
+    score = factory.LazyAttribute(lambda n: random.choice(range(1, 11)) / 10)

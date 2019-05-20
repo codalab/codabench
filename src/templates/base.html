@@ -10,12 +10,12 @@
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- Vendor -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     {#    <script src="{% static "riot.tag" %}" type="riot/tag"></script>#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -64,6 +64,7 @@
                                 <div class="header">Your management</div>
                                 <a class="item" href="{% url "competitions:management" %}">Competitions</a>
                                 <a class="item" href="#">Teams</a>
+                                <a class="item" href="{% url "tasks:task_management" %}">Tasks</a>
                                 <a class="item" href="{% url "datasets:management" %}">Datasets</a>
                                 {% if request.user.is_staff %}
                                     <div class="ui divider"></div>
@@ -143,15 +144,15 @@
 <user_switch></user_switch>
 
 <!-- Vendor -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js" integrity="sha256-7/yoZS3548fXSRXqc/xYzjsmuW3sFKzuvOCHd06Pmps=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
-        integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="{% static "js/calendar.min.js" %}"></script>
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/1.0.10/purify.min.js"></script>
 
 <!-- Ours -->
 <script src="{% static "js/ours/client.js" %}"></script>
@@ -167,11 +168,22 @@
     {# From `common_settings` context processor #}
     STORAGE_TYPE = "{{ STORAGE_TYPE }}"
     CODALAB.state.user = {
-        id: '{{ request.user.id }}',
+        id: {{ request.user.id }},
         name: '{{ request.user.name }}',
         username: '{{ request.user.username }}',
         email: '{{ request.user.email }}',
         bio: '{{ request.user.bio }}',
+        // converts python bools to js bools
+        is_staff: '{{ request.user.is_staff }}' === "True",
+        is_superuser: '{{ request.user.is_superuser }}' === "True",
+        has_competition_admin_privileges: competition => {
+            let user = CODALAB.state.user
+            if (user.is_superuser || user.is_staff) {
+                return true
+            }
+            let collabs = _.map(competition.collaborators, collab => collab.username)
+            return user.username === competition.created_by || collabs.includes(user.username)
+        }
     }
     // Load in URLs or other django generated goodies
     URLS = {
@@ -186,6 +198,7 @@
         //WS_SUBMISSION_LISTEN: ""
 
         // Competitions
+        COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
         COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
         COMPETITION_ADD: "{% url "competitions:create" %}",
         COMPETITION_DETAIL: function (pk) {
@@ -206,10 +219,11 @@
         },
 
         // Tasks
-        // TODO:// update this URL when the task management view gets moved to the right place
         TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+        TASK_DETAIL: function(pk) {
+            return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+        }
     }
-
     // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
     CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 </script>

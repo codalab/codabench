@@ -43,7 +43,7 @@
                             -->
 
 
-                <div class="ui top pointing secondary menu">
+                <div class="ui top pointing five item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
@@ -90,14 +90,14 @@
         </div>
 
         <div class="row centered">
-            <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
-                Save
+            <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save_and_publish }">
+                Save and Publish
             </button>
-            <button class="ui primary button" onclick="{ save }">
-                TEST Save
+            <button class="ui grey button { disabled: !are_all_sections_valid() }" onclick="{ save_as_draft }">
+                Save as Draft
             </button>
-            <button class="ui button">
-                Discard
+            <button class="ui basic red button discard" onclick="{ discard }">
+                Discard Changes
             </button>
         </div>
     </div>
@@ -123,7 +123,16 @@
             $('.menu .item', self.root).tab()
 
             if (!!self.opts.competition_id) {
-                CODALAB.api.get_competition(self.opts.competition_id)
+                self.update_competition_data(self.opts.competition_id)
+            }
+        })
+
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+
+        self.update_competition_data = (id) => {
+            CODALAB.api.get_competition(id)
                     .done(function (data) {
                         self.competition = data
                         CODALAB.events.trigger('competition_loaded', self.competition)
@@ -132,12 +141,9 @@
                     .fail(function (response) {
                         toastr.error("Could not find competition");
                     });
-            }
-        })
+            self.update()
+        }
 
-        /*---------------------------------------------------------------------
-         Methods
-        ---------------------------------------------------------------------*/
         self.are_all_sections_valid = function () {
             for (var section in self.sections) {
                 if (section === 'collaborators') {
@@ -152,105 +158,37 @@
             return true
         }
 
-        self.save = function () {
-
-
-
-
-            /*Object.assign(self.competition, {
-                "title": "asdf",
-                "pages": [
-                    {
-                        "title": "test",
-                        "content": "test",
-                        "index": 1
-                    }
-                ],
-                "phases": [
-                    {
-                        "number": 1,
-                        "start": "2018-12-01T00:00:00Z",
-                        "end": "2018-12-05T00:00:00Z",
-                        "description": "test",
-                        "input_data": null,
-                        "reference_data": null,
-                        "scoring_program": null,
-                        "ingestion_program": null,
-                        "public_data": null,
-                        "starting_kit": null
-                    }
-                ],
-                "leaderboards": [
-                    {
-                        "primary_index": 0,
-                        "title": "test",
-                        "key": "RESULTS",
-                        "columns": [
-                            {
-                                "computation": null,
-                                "computation_indexes": null,
-                                "title": "test",
-                                "key": "SCORE_1",
-                                "sorting": "desc",
-                                "index": 0
-                            }, {
-                                "computation": "avg",
-                                "computation_indexes": ["0"],
-                                "title": "test",
-                                "key": "SCORE_2",
-                                "sorting": "desc",
-                                "index": 1
-                            }
-                        ]
-                    },{
-                        "primary_index": 0,
-                        "title": "test",
-                        "key": "RESULTS",
-                        "columns": [
-                            {
-                                "computation": null,
-                                "computation_indexes": null,
-                                "title": "test",
-                                "key": "SCORE_1",
-                                "sorting": "desc",
-                                "index": 0
-                            }, {
-                                "computation": "avg",
-                                "computation_indexes": ["0"],
-                                "title": "test",
-                                "key": "SCORE_2",
-                                "sorting": "desc",
-                                "index": 1
-                            }
-                        ]
-                    }
-                ],
-                "collaborators": []
-            })*/
-
-
-            console.log("MAIN FORM SAVING")
-
-            console.log("competition data:")
-            console.log(self.competition)
-
-            var api_endpoint = undefined
-
-            if (!self.opts.competition_id) {
-                // CREATE competition
-                api_endpoint = CODALAB.api.create_competition
-            } else {
-                // UPDATE competition
-                api_endpoint = CODALAB.api.update_competition
+        self.discard = function () {
+            if (confirm('Are you sure you want to discard your changes?')) {
+                window.location.href = window.URLS.COMPETITION_MANAGEMENT
             }
+        }
+
+        self._save = function (publish) {
+            // convert serializer task data to just keys if we didn't edit phases
+            self.competition.phases = _.map(self.competition.phases, phase => {
+                if (phase.tasks && typeof(phase.tasks[0]) === "object") {
+                    phase.tasks = _.map(phase.tasks, task => task.value)
+                }
+                return phase
+            })
+            self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
+
+            var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             // Send competition_id for either create or update, won't hurt anything but is
             // useless for creation
             api_endpoint(self.competition, self.opts.competition_id)
-                .done(function () {
-                    toastr.success("Competition successfully created!")
+                .done(function (response) {
                     self.errors = {}
                     self.update()
+                    if (publish) {
+                        toastr.success("Competition published!")
+                        window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
+                    } else {
+                        toastr.success("Competition saved!")
+                        self.update_competition_data(response.id)
+                    }
                 })
                 .fail(function (response) {
                     if (response) {
@@ -280,22 +218,31 @@
 
         }
 
+        self.save_and_publish = () => {
+            self.competition.published = true
+            self._save(self.competition.published)
+        }
+
+        self.save_as_draft = () => {
+            self.competition.published = false
+            self._save(self.competition.published)
+        }
+
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_data_update', function (data) {
             Object.assign(self.competition, data)
             self.update()
-
-            console.log("new data:")
-            console.log(data)
-            console.log("updated competition data")
-            console.log(self.competition)
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
-            console.log(name + " is_valid -> " + is_valid)
             self.sections[name].valid = is_valid
             self.update()
         })
     </script>
+    <style type="text/stylus">
+        .ui.basic.red.button.discard:hover
+            background-color #db2828 !important
+            color white !important
+    </style>
 </competition-form>

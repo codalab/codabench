@@ -12,14 +12,13 @@
             </div>
         </div>
 
-        <button onclick="">Show modal</button>
-
-        <div id="output-modal" class="ui modal">
+        <div id="output-modal" class="ui modal" ref="modal">
             <i id="close-modal" class="close icon"></i>
             <div class="header">Output</div>
             <div class="content">
                 <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
-                <pre class="submission_output" ref="submission_output"><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                <!-- We have to have this on a gross line so Pre formatting stays nice -->
+                <pre class="submission_output" ref="submission_output"><virtual if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
             </div>
         </div>
     </div>
@@ -118,9 +117,6 @@
                 console.log(event)
             })
             ws.addEventListener("message", function (event) {
-                console.log("message event")
-                console.log(event)
-
                 try {
                     var event_data = event.data.split(';')[1]
                     var data = JSON.parse(event_data);
@@ -187,6 +183,8 @@
         }
 
         self.upload = function () {
+            $(self.refs.modal).modal('show')
+
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -194,7 +192,8 @@
 
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
-                    $('.ui.modal', self.root).modal('show')
+                    self.lines = {}
+
                     // Init chart AFTER modal is shown
                     self.chart = new Chart(self.refs.chart, self.graph_config)
 
@@ -254,9 +253,6 @@
             height 100%
 
         code
-            background: hsl(220, 80%, 90%)
-
-        .submission-container
-            min-height 50vh
+            background hsl(220, 80%, 90%)
     </style>
 </submission-upload>

@@ -14,11 +14,18 @@ from tasks.models import Task
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
+    filter_fields = ('created_by', 'is_public')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name', 'description',)
 
     def get_queryset(self):
-        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user))
+        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user)).prefetch_related('solutions', 'solutions__data')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.TaskDetailSerializer
+        else:
+            return serializers.TaskSerializer
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)
@@ -29,6 +36,12 @@ class TaskViewSet(ModelViewSet):
         return {
             "created_by": self.request.user
         }
+
+    def update(self, request, *args, **kwargs):
+        task = self.get_object()
+        if request.user != task.created_by and not request.user.is_superuser:
+            raise PermissionDenied("Cannot update a task that is not yours")
+        return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

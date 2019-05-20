@@ -11,11 +11,12 @@ from .views import competitions, datasets, profiles, leaderboards, submissions, 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
-router.register('phases', competitions.PhaseViewSet)
+router.register('phases', competitions.PhaseViewSet, 'phases')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
+router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submission_scores')
 router.register('tasks', tasks.TaskViewSet)
 router.register('tasksearch', tasks.TaskViewSetSimple)
 
@@ -36,6 +37,7 @@ urlpatterns = [
     path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
     path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard),
     path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
+    path('user_lookup/', profiles.user_lookup),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

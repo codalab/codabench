@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div class="competition-creator">Organized by: {competition.created_by}</div>
-                <div class="competition-secret-key" show="{ competition.show_secret_key }">
+                <div class="competition-secret-key" if="{ competition.show_secret_key }">
                     <span style="color: #DB2828;">Secret url:</span>
                         https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }
                 </div>
@@ -47,7 +47,7 @@
         self.competition = {}
 
         CODALAB.events.on('competition_loaded', function(competition) {
-            competition.show_secret_key = (CODALAB.state.user.username === competition.created_by || competition.collaborators.includes(parseInt(CODALAB.state.user.id)))
+            competition.show_secret_key = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
         })
 

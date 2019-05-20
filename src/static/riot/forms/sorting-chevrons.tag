@@ -1,6 +1,12 @@
 <sorting-chevrons>
-    <i class="right floated chevron down icon" show="{ opts.index + 1 < opts.data.length }" onclick="{ move_down.bind(this, opts.index) }"></i>
-    <i class="right floated chevron up icon" show="{ opts.index > 0 }" onclick="{ move_up.bind(this, opts.index) }"></i>
+    <span class="right floated">
+        <i class="chevron down icon" show="{ opts.index + 1 < opts.data.length }"
+            onclick="{ move_down.bind(this, opts.index) }"></i>
+    </span>
+
+    <span class="right floated">
+        <i class="chevron up icon" show="{ opts.index > 0 }" onclick="{ move_up.bind(this, opts.index) }"></i>
+    </span>
 
     <script>
         var self = this
