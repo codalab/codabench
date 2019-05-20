@@ -184,13 +184,12 @@
             })
 
             self.toggle_competition_publish = function () {
-                let comp_id = self.competition.id
-                CODALAB.api.toggle_competition_publish(comp_id)
+                CODALAB.api.toggle_competition_publish(self.competition.id)
                     .done(function (data) {
                         var published_state = data.published ? "published" : "unpublished"
                         toastr.success(`Competition has been ${published_state} successfully`)
                         self.update()
-                        CODALAB.api.get_competition(comp_id)
+                        CODALAB.api.get_competition(self.competition.id)
                             .done((competition) => {
                                 CODALAB.events.trigger('competition_loaded', competition)
                             })

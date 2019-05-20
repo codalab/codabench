@@ -119,6 +119,7 @@ function set_form_data(data, base_element) {
 
 function sanitize_HTML(input, extra_settings) {
     extra_settings = extra_settings || {}
+    input = input || ''
     extra_settings.FORBID_TAGS = _.union(extra_settings.FORBID_TAGS, ['style'])
     extra_settings.FORBID_ATTR = _.union(extra_settings.FORBID_ATTR, ['style'])
 
@@ -127,6 +128,7 @@ function sanitize_HTML(input, extra_settings) {
 
 function render_markdown(input, extra_settings) {
     extra_settings = extra_settings || {}
+    input = input || ''
     return sanitize_HTML(EasyMDE.prototype.markdown(input), extra_settings)
 }
 
