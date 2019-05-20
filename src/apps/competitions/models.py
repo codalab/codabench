@@ -85,6 +85,9 @@ class Phase(models.Model):
     solutions = models.ManyToManyField('tasks.Solution', blank=True, related_name="phases")
     is_task_and_solution = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('index',)
+
     def __str__(self):
         return f"phase - {self.name} - For comp: {self.competition.title} - ({self.id})"
 
