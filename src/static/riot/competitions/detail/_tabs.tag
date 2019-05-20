@@ -54,10 +54,8 @@
                     </div>
                     <div class="twelve wide column">
                         <div each="{ phase, i in competition.phases }" class="ui {active: i == 0} tab" data-tab="_tab_phase{phase.index}">
-                            <div class="ui">
-                                <p>
-                                    { phase.description }
-                                </p>
+                            <div class="ui" id="phase_{i}">
+
                             </div>
                         </div>
                     </div>
@@ -174,7 +172,10 @@
                 self.update()
                 $('.tabular.menu .item').tab();
                 _.forEach(competition.pages, (page, index) => {
-                    $(`#page_${index}`)[0].innerHTML = sanitize_HTML(EasyMDE.prototype.markdown(page.content))
+                    $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+                })
+                _.forEach(competition.phases, (phase, index) => {
+                    $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
                 })
             })
 

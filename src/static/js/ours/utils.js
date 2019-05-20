@@ -125,6 +125,10 @@ function sanitize_HTML(input, extra_settings) {
     return DOMPurify.sanitize(input, extra_settings)
 }
 
+function render_markdown(input, extra_settings) {
+    extra_settings = extra_settings || {}
+    return sanitize_HTML(EasyMDE.prototype.markdown(input), extra_settings)
+}
 
 function getBase64(file) {
     return new Promise((resolve, reject) => {
