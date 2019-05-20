@@ -171,6 +171,14 @@
             username: '{{ request.user.username }}',
             email: '{{ request.user.email }}',
             bio: '{{ request.user.bio }}',
+            is_staff: '{{ request.user.is_staff }}' === "True",
+            is_superuser: '{{ request.user.is_superuser }}' === "True",
+            has_competition_admin_privileges: competition => {
+                let user = CODALAB.state.user
+                if (user.is_superuser || user.is_staff) {
+                    return true
+                }
+            }
         }
         // Load in URLs or other django generated goodies
         URLS = {
@@ -185,6 +193,7 @@
             //WS_SUBMISSION_LISTEN: ""
 
             // Competitions
+            COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
             COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
             COMPETITION_ADD: "{% url "competitions:create" %}",
             COMPETITION_DETAIL: function (pk) {
@@ -207,12 +216,17 @@
             // Tasks
             // TODO:// update this URL when the task management view gets moved to the right place
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+            TASK_DETAIL: function (pk) {
+                return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+            }
         }
 
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
         USER_LOGGED_IN = "{{ user.is_authenticated }}" === "True"
+        USER_IS_STAFF = "{{ user.is_staff }}" === "True"
+        USER_IS_SUPERUSER = "{{ user.is_superuser }}" === "True"
     </script>
     {% block extra_js %}
     {% endblock %}

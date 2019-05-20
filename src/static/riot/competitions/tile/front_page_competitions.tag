@@ -6,7 +6,9 @@
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
-                    <div class="lds-ripple">
+                    <div class="lds-ring">
+                        <div></div>
+                        <div></div>
                         <div></div>
                         <div></div>
                     </div>
@@ -21,7 +23,9 @@
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
-                    <div class="lds-ripple">
+                    <div class="lds-ring">
+                        <div></div>
+                        <div></div>
                         <div></div>
                         <div></div>
                     </div>
@@ -38,7 +42,9 @@
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
-                    <div class="lds-ripple">
+                    <div class="lds-ring">
+                        <div></div>
+                        <div></div>
                         <div></div>
                         <div></div>
                     </div>
@@ -52,7 +58,9 @@
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
-                    <div class="lds-ripple">
+                    <div class="lds-ring">
+                        <div></div>
+                        <div></div>
                         <div></div>
                         <div></div>
                     </div>
