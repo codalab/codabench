@@ -1,8 +1,20 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
+from django.contrib.auth import views as auth_views
 
 from .forms import SignUpForm
 
+
+class LoginView(auth_views.LoginView):
+    def get_context_data(self, *args, **kwargs):
+        context = super(LoginView, self).get_context_data(*args, **kwargs)
+        # "http://localhost:8888/profiles/signup?next=http://localhost/social/login/chahub"
+        context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
+        return context
+
+class LogoutView(auth_views.LogoutView):
+    pass
 
 def sign_up(request):
     if request.method == 'POST':
