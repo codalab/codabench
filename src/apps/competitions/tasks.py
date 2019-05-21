@@ -230,7 +230,7 @@ def unpack_competition(competition_dataset_pk):
 
     # Children datasets are those that are created specifically for this "parent" competition.
     # They will be deleted if the competition creation fails
-    children_datasets = []
+    # children_datasets = []
 
     status = CompetitionCreationTaskStatus.objects.create(
         dataset=competition_dataset,
