@@ -72,18 +72,7 @@ class Phase(models.Model):
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
 
-    # These related names are all garbage. Had to do it this way just to prevent clashes...
-    input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_input_datas")
-    reference_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_reference_datas")
-    scoring_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_scoring_programs")
-    ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_ingestion_programs")
-    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_datas")
-    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kits")
-
-    # Task and Solution fields
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
-    solutions = models.ManyToManyField('tasks.Solution', blank=True, related_name="phases")
-    is_task_and_solution = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('index',)
