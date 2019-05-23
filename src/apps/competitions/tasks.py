@@ -128,7 +128,8 @@ def run_submission(submission_pk, is_scoring=False):
         'phase__tasks__scoring_program',
         'phase__tasks__ingestion_program',
     )
-    submission = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models).get(pk=submission_pk)
+    qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
+    submission = qs.get(pk=submission_pk)
 
     run_arguments = {
         # TODO! Remove this hardcoded api url...
@@ -230,7 +231,7 @@ def unpack_competition(competition_dataset_pk):
 
     # Children datasets are those that are created specifically for this "parent" competition.
     # They will be deleted if the competition creation fails
-    # children_datasets = []
+    # TODO: children_datasets = []
 
     status = CompetitionCreationTaskStatus.objects.create(
         dataset=competition_dataset,
@@ -375,7 +376,7 @@ def unpack_competition(competition_dataset_pk):
 
                     else:
                         # create solution object and then add {index: {'key': key, 'tasks': task_indexes}} to competition solutions
-                        name = solution.get('name') or f"solution @ {now().strftime('%m-%d-%Y %H:%M')}"
+                        name = solution.get('name') or f"solution @ {now():%m-%d-%Y %H:%M}"
                         description = solution.get('description')
                         file_name = solution['path']
                         file_path = os.path.join(temp_directory, file_name)
