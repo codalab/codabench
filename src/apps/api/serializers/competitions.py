@@ -121,6 +121,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     phases = PhaseDetailSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = CollaboratorSerializer(many=True)
+    participant_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Competition
@@ -136,6 +137,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'phases',
             'leaderboards',
             'collaborators',
+            'participant_status',
+            'registration_required'
         )
 
 

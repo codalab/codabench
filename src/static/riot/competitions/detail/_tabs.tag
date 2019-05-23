@@ -66,14 +66,20 @@
         <!--participate tab-->
         <div class="submission-tab ui active tab" data-tab="participate_tab">
             <!-- Tab Content !-->
-            <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
-                <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
-            </select>
-            <div>
-                <submission-upload phases="{ competition.phases }"></submission-upload>
+            <div if="{competition.participant_status === 'approved'}">
+                <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
+                    <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
+                </select>
+                <div>
+                    <submission-upload phases="{ competition.phases }"></submission-upload>
+                </div>
+                <div>
+                    <submission-manager competition="{ competition }"></submission-manager>
+                </div>
             </div>
-            <div>
-                <submission-manager competition="{ competition }"></submission-manager>
+            <div if="{competition.participant_status !== 'approved'}">
+
+                <registration></registration>
             </div>
         </div>
 
