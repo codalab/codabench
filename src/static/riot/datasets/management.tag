@@ -417,10 +417,6 @@
             var metadata = get_form_data(self.refs.form)
             delete metadata.data_file  // dont send this with metadata
 
-
-            console.log("@@@@@@@@")
-            console.log(metadata)
-
             if (metadata.is_public === 'on') {
                 var public_confirm = confirm("Creating a public dataset means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
                 if (!public_confirm) {

@@ -72,9 +72,6 @@ class Data(ChaHubSaveMixin, models.Model):
         from competitions.models import Phase
         phases = Phase.objects.filter(Q(ingestion_program=self) | Q(input_data=self) | Q(reference_data=self) | Q(
             scoring_program=self)).prefetch_related('competition')
-        print(tasks)
-        print(phases_from_tasks)
-        print(phases)
         task_competitions = [phase.competition.pk for phase in phases_from_tasks if phase.competition]
         phase_competitions = [phase.competition.pk for phase in phases if phase.competition]
         competition_set = list(set(task_competitions + phase_competitions))
@@ -100,12 +97,9 @@ class Data(ChaHubSaveMixin, models.Model):
         return data
 
     def get_chahub_data(self):
-        print("SENDING A DATASETS WHOOOOOOOOO WWEEEEEEEEEEE")
         data = {
             'creator_id': self.created_by.id,
             'remote_id': self.pk,
-            # 'producer': settings.CHAHUB_PRODUCER_ID,
-            # 'user',
             'created_by': str(self.created_by.username),
             'created_when': self.created_when,
             'name': self.name,

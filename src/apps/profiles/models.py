@@ -32,6 +32,9 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     company = models.CharField(max_length=100, null=True, blank=True)
     bio = models.CharField(max_length=300, null=True, blank=True)
 
+    # Todo: See if we should just make this into a Postgres JSON field.
+    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True, on_delete=models.CASCADE)
+
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
     email = models.CharField(max_length=200, unique=True, null=True, blank=True)
@@ -92,3 +95,32 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def get_chahub_is_valid(self):
         # By default, always push
         return True
+
+class GithubUserInfo(models.Model):
+    # Required Info
+    uid = models.CharField(max_length=30, unique=True)
+
+    # Misc/Avatar/Profile
+    login = models.CharField(max_length=100, null=True, blank=True)  # username
+    avatar_url = models.URLField(max_length=100, null=True, blank=True)
+    gravatar_id = models.CharField(max_length=100, null=True, blank=True)
+    html_url = models.URLField(max_length=100, null=True, blank=True)  # Profile URL
+    name = models.CharField(max_length=100, null=True, blank=True)
+    company = models.CharField(max_length=100, null=True, blank=True)
+    bio = models.TextField(max_length=2000, null=True, blank=True)
+    location = models.CharField(max_length=120, null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+
+    # API Info
+    node_id = models.CharField(unique=True, max_length=50, default='')
+    url = models.URLField(max_length=100, null=True, blank=True)  # Base API URL
+    followers_url = models.URLField(max_length=100, null=True, blank=True)
+    following_url = models.URLField(max_length=100, null=True, blank=True)
+    gists_url = models.URLField(max_length=100, null=True, blank=True)
+    starred_url = models.URLField(max_length=100, null=True, blank=True)
+    subscriptions_url = models.URLField(max_length=100, null=True, blank=True)
+    organizations_url = models.URLField(max_length=100, null=True, blank=True)
+    repos_url = models.URLField(max_length=100, null=True, blank=True)
+    events_url = models.URLField(max_length=100, null=True, blank=True)
+    received_events_url = models.URLField(max_length=100, null=True, blank=True)
