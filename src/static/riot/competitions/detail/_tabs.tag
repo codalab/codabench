@@ -176,22 +176,22 @@
         <!-- Submissions tab-->
         <div class="submission-tab ui tab" data-tab="participate-tab">
             <!-- Tab Content !-->
-            <!-- <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
-                <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
-            </select> -->
-
-            <div class="ui button-container">
-                <div class="ui inline button {active: selected_phase_index == phase.id}"
-                     each="{ phase in competition.phases }"
-                     onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
+            <div if="{competition.participant_status === 'approved'}">
+                <div class="ui button-container">
+                    <div class="ui inline button {active: selected_phase_index == phase.id}"
+                         each="{ phase in competition.phases }"
+                         onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
+                    </div>
+                </div>
+                <div>
+                    <submission-upload phases="{ competition.phases }"></submission-upload>
+                </div>
+                <div>
+                    <submission-manager competition="{ competition }"></submission-manager>
                 </div>
             </div>
-
-            <div>
-                <submission-upload phases="{ competition.phases }"></submission-upload>
-            </div>
-            <div>
-                <submission-manager competition="{ competition }"></submission-manager>
+            <div if="{competition.participant_status !== 'approved'}">
+                <registration></registration>
             </div>
         </div>
 

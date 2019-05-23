@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Subquery, OuterRef, Count, Q
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -43,6 +43,11 @@ class CompetitionViewSet(ModelViewSet):
                 'leaderboards__columns',
                 'collaborators',
             )
+            sub_query = CompetitionParticipant.objects.filter(
+                competition=OuterRef('pk'),
+                user=self.request.user
+            ).values_list('status')[:1]
+            qs = qs.annotate(participant_status=Subquery(sub_query))
 
         qs = qs.order_by('created_when')
 
@@ -79,6 +84,20 @@ class CompetitionViewSet(ModelViewSet):
         competition.published = not competition.published
         competition.save()
         return Response({"published": competition.published})
+
+    @action(detail=True, methods=('POST',))
+    def register(self, request, pk):
+        competition = self.get_object()
+        participant = CompetitionParticipant.objects.create(competition=competition, user=request.user)
+        if competition.registration_auto_approve:
+            participant.status = 'approved'
+
+        else:
+            # TODO: whatever logic for emailing admin to get approval
+            participant.status = 'pending'
+
+        participant.save()
+        return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=('GET',))
     def get_files(self, request, pk):
