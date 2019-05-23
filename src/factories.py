@@ -9,6 +9,7 @@ from competitions.models import Competition, Phase, Submission, CompetitionParti
 from datasets.models import Data
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User
+from tasks.models import Task
 
 
 class UserFactory(DjangoModelFactory):
@@ -43,6 +44,22 @@ class CompetitionFactory(DjangoModelFactory):
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
 
 
+class DataFactory(DjangoModelFactory):
+    class Meta:
+        model = Data
+
+    created_by = factory.SubFactory(UserFactory)
+    created_when = factory.LazyFunction(now)
+    name = factory.LazyAttribute(lambda o: f"{o.type} @ {o.created_when}")
+
+
+class TaskFactory(DjangoModelFactory):
+    class Meta:
+        model = Task
+    name = factory.Sequence(lambda n: f'Task {n}')
+    created_by = factory.SubFactory(UserFactory)
+
+
 class PhaseFactory(DjangoModelFactory):
     class Meta:
         model = Phase
@@ -52,14 +69,16 @@ class PhaseFactory(DjangoModelFactory):
     name = factory.Sequence(lambda n: f'Phase {n}')
     index = factory.Sequence(lambda n: n)
 
+    @factory.post_generation
+    def tasks(self, created, extracted, **kwargs):
+        if not created:
+            return
 
-class DataFactory(DjangoModelFactory):
-    class Meta:
-        model = Data
-
-    created_by = factory.SubFactory(UserFactory)
-    created_when = factory.LazyFunction(now)
-    name = factory.LazyAttribute(lambda o: f"{o.type} @ {o.created_when}")
+        if extracted:
+            for task in extracted:
+                self.tasks.add(task)
+        else:
+            self.tasks.add(TaskFactory.create())
 
 
 class SubmissionFactory(DjangoModelFactory):

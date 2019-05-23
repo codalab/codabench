@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import logging
 import os
@@ -116,17 +117,19 @@ def create_detailed_output_file(detail_name, submission):
 
 @app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk, is_scoring=False):
-    related_models = (
+    select_models = (
         'phase',
         'phase__competition',
-        'phase__input_data',
-        'phase__reference_data',
-        'phase__scoring_program',
-        'phase__ingestion_program',
-        'phase__public_data',
-        'phase__starting_kit',
     )
-    submission = Submission.objects.select_related(*related_models).prefetch_related('details').get(pk=submission_pk)
+    prefetch_models = (
+        'details',
+        'phase__tasks__input_data',
+        'phase__tasks__reference_data',
+        'phase__tasks__scoring_program',
+        'phase__tasks__ingestion_program',
+    )
+    qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
+    submission = qs.get(pk=submission_pk)
 
     run_arguments = {
         # TODO! Remove this hardcoded api url...
@@ -145,53 +148,26 @@ def run_submission(submission_pk, is_scoring=False):
     if not is_scoring:
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
 
-    if submission.phase.is_task_and_solution:
-        for task in submission.phase.tasks.all():
-            if task.ingestion_program:
-                if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-                    run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                    if task.input_data:
-                        run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
+    for task in submission.phase.tasks.all():
+        if task.ingestion_program:
+            if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
+                run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+                if task.input_data:
+                    run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
-            if is_scoring and task.reference_data:
-                run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
+        if is_scoring and task.reference_data:
+            run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
-            run_arguments['program_data'] = make_url_sassy(
-                path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
-            )
-            run_arguments['result'] = make_url_sassy(
-                path=submission.result.name,
-                permission='w' if not is_scoring else 'r'
-            )
-            detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
-            for detail_name in detail_names:
-                run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
-            send(submission, run_arguments)
-    else:
-        run_arguments["program_data"] = make_url_sassy(
-            path=submission.data.data_file.name if not is_scoring else submission.phase.scoring_program.data_file.name
+        run_arguments['program_data'] = make_url_sassy(
+            path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
         )
-        run_arguments["result"] = make_url_sassy(
+        run_arguments['result'] = make_url_sassy(
             path=submission.result.name,
             permission='w' if not is_scoring else 'r'
         )
-
-        # TODO: when is an ingestion program supposed to run when not task/solution style phase?
-        if submission.phase.ingestion_program:
-            run_arguments['ingestion_program'] = make_url_sassy(submission.phase.ingestion_program.data_file.name)
-        # Inputs like reference data/etc.
-        inputs = (
-            'input_data',
-            'reference_data',
-        )
-        for input in inputs:
-            if getattr(submission.phase, input) is not None:
-                run_arguments[input] = make_url_sassy(getattr(submission.phase, input).data_file.name)
-
         detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
         for detail_name in detail_names:
             run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
-
         send(submission, run_arguments)
 
 
@@ -217,12 +193,20 @@ def get_data_key(obj, file_type, temp_directory, creator):
         return new_dataset.key
     elif len(file_name) in (32, 36):
         # UUID are 32 or 36 characters long
-        # TODO send error message if invalid UUID or invalid filename
-        # if filename is 32 or 36 chars long but isn't present,
-        # it processes like UUID and then breaks but doesn't inform user.
+        if not Data.objects.filter(key=file_name).exists():
+            raise CompetitionUnpackingException(f'Cannot find {file_type} with key: "{file_name}" for task: "{obj["name"]}"')
         return file_name
     else:
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
+
+
+def _get_datetime(field):
+    if not field:
+        return None
+    elif isinstance(field, datetime.datetime):
+        return field
+    else:
+        return parser.parse(field)
 
 
 def _zip_if_directory(path):
@@ -247,7 +231,7 @@ def unpack_competition(competition_dataset_pk):
 
     # Children datasets are those that are created specifically for this "parent" competition.
     # They will be deleted if the competition creation fails
-    children_datasets = []
+    # TODO: children_datasets = []
 
     status = CompetitionCreationTaskStatus.objects.create(
         dataset=competition_dataset,
@@ -284,7 +268,7 @@ def unpack_competition(competition_dataset_pk):
                 "pages": [],
                 "phases": [],
                 "leaderboards": [],
-                # Hold these here and pop them off before saving comp so that phases can reference the as needed
+                # Holding place for phases to reference. Ignored by competition serializer.
                 "tasks": {},
                 "solutions": {},
             }
@@ -342,11 +326,10 @@ def unpack_competition(competition_dataset_pk):
                     else:
                         # must create task object so we can add {index: key} to competition tasks
                         new_task = {
-                            'name': task['name'],
-                            'description': task['description'] if 'description' in task else None,
+                            'name': task.get('name'),
+                            'description': task.get('description'),
                             'created_by': creator.id,
-                            'ingestion_only_during_scoring': task[
-                                'ingestion_only_during_scoring'] if 'ingestion_only_during_scoring' in task else None,
+                            'ingestion_only_during_scoring': task.get('ingestion_only_during_scoring')
                         }
                         for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
                             new_task[file_type] = get_data_key(
@@ -384,16 +367,17 @@ def unpack_competition(competition_dataset_pk):
 
                     if 'key' in solution:
                         # add {index: {'key': key, 'tasks': task_index}} to competition solutions
-                        # TODO:// raise an exception if solution matching key doesn't exist
-                        Solution.objects.get(key=solution['key']).tasks.add(*Task.objects.filter(key__in=task_keys))
+                        solution = Solution.objects.filter(key=solution['key']).first()
+                        if not solution:
+                            raise CompetitionUnpackingException(f'Could not find solution with key: "{solution["key"]}"')
+                        solution.tasks.add(*Task.objects.filter(key__in=task_keys))
 
                         competition['solutions'][index] = solution['key']
 
                     else:
                         # create solution object and then add {index: {'key': key, 'tasks': task_indexes}} to competition solutions
-                        name = solution[
-                            'name'] if 'name' in solution else f"solution @ {now().strftime('%m-%d-%Y %H:%M')}"
-                        description = solution['description'] if 'description' in solution else None
+                        name = solution.get('name') or f"solution @ {now():%m-%d-%Y %H:%M}"
+                        description = solution.get('description')
                         file_name = solution['path']
                         file_path = os.path.join(temp_directory, file_name)
                         if os.path.exists(file_path):
@@ -423,65 +407,29 @@ def unpack_competition(competition_dataset_pk):
             # ---------------------------------------------------------------------
             # Phases
 
-            for index, phase_data in enumerate(competition_yaml.get('phases')):
+            for index, phase_data in enumerate(sorted(competition_yaml.get('phases'), key=lambda x: x.get('index') or 0)):
+                # This normalizes indexes to be 0 indexed but respects the ordering of phase indexes from the yaml if present
                 new_phase = {
                     "index": index,
                     "name": phase_data.get('name'),
-                    "description": phase_data.get('description') if 'description' in phase_data else None,
-                    "start": parser.parse(str(phase_data.get('start'))) if 'start' in phase_data else None,
-                    "end": parser.parse(phase_data.get('end')) if 'end' in phase_data else None,
-                    'max_submissions_per_day': phase_data.get(
-                        'max_submissions_per_day') if 'max_submissions_per_day' in phase_data else None,
-                    'max_submissions_per_person': phase_data.get(
-                        'max_submissions') if 'max_submissions' in phase_data else None,
+                    "description": phase_data.get('description'),
+                    "start": _get_datetime(phase_data.get('start')),
+                    "end": _get_datetime(phase_data.get('end')),
+                    'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
+                    'max_submissions_per_person': phase_data.get('max_submissions'),
                 }
-                if 'execution_time_limit_ms' in phase_data:
-                    new_phase['execution_time_limit'] = phase_data.get('execution_time_limit_ms')
-                if 'max_submissions_per_day' in phase_data or 'max_submissions' in phase_data:
+                execution_time_limit = phase_data.get('execution_time_limit_ms')
+                if execution_time_limit:
+                    new_phase['execution_time_limit'] = execution_time_limit
+
+                if new_phase['max_submissions_per_day'] or 'max_submissions' in phase_data:
                     new_phase['has_max_submissions'] = True
 
                 tasks = phase_data.get('tasks')
-                if tasks:
-                    new_phase['is_task_and_solution'] = True
-                    new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
+                if not tasks:
+                    raise CompetitionUnpackingException(f'Phases must contain at least one task to be valid')
 
-                    solutions = phase_data.get('solutions')
-                    if solutions:
-                        new_phase['solutions'] = [competition['solutions'][index] for index in solutions]
-
-                else:
-                    for file_type in PHASE_FILES:
-                        # File names can be existing dataset keys OR they can be actual files uploaded with the bundle
-                        file_name = phase_data.get(file_type)
-
-                        if not file_name:
-                            continue
-
-                        file_path = os.path.join(temp_directory, file_name)
-                        if os.path.exists(file_path):
-                            # We have a file, not UUID, needs to be uploaded
-                            new_dataset = Data(
-                                created_by=creator,
-                                type=file_type,
-                                name=f"{file_type} @ {now().strftime('%m-%d-%Y %H:%M')}",
-                                was_created_by_competition=True,
-                            )
-                            file_path = _zip_if_directory(file_path)
-                            # This saves the file AND saves the model
-                            new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
-
-                            children_datasets.append(new_dataset)
-
-                            new_phase[file_type] = new_dataset.key
-                        elif len(file_name) in (32, 36):
-
-                            # verify as UUID?
-
-                            # Keys are length 32 or 36, so check if we can find a dataset matching this already
-                            new_phase[file_type] = file_name
-                        else:
-                            raise CompetitionUnpackingException(
-                                f"Cannot find dataset: \"{file_name}\" for phase \"{new_phase['name']}\"")
+                new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
                 competition['phases'].append(new_phase)
 

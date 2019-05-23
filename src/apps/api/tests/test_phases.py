@@ -41,7 +41,7 @@ class ReRunPhaseSubmissionTests(TestCase):
         self.client.login(username='collab', password='test')
         self.assert_rerun_succeeds()
 
-    def test_normal_user_can_re_run_whole_phase(self):
+    def test_normal_user_cannot_re_run_whole_phase(self):
         self.client.login(username='norm', password='test')
         resp = self.client.get(reverse('phases-rerun_submissions', kwargs={'pk': self.phase.id}))
         assert resp.status_code == 403, 'Did not raise permission denied and should have'
