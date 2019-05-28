@@ -82,7 +82,7 @@ class ChaHubSaveMixin(models.Model):
             return None
 
         # Make sure we're not sending these in tests
-        if settings.CHAHUB_API_URL:
+        if settings.CHAHUB_API_KEY:
             is_valid = self.get_chahub_is_valid()
 
             logger.info("ChaHub :: {}={} is_valid = {}".format(self.__class__.__name__, self.pk, is_valid))
