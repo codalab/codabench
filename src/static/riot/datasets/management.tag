@@ -248,9 +248,6 @@
                 var type = self.refs.type_filter.value
                 var auto_created = self.refs.auto_created.checked
 
-                console.log("@@@@@@@@@")
-                console.log(auto_created)
-
                 if (auto_created) {
                     self.filtered_datasets = self.filtered_datasets.filter(function (dataset) {
                         return true
