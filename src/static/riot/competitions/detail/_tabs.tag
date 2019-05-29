@@ -141,7 +141,7 @@
             </div>
             <div class="ui tab" data-tab="_tab_participant_management">
                 <div class="ui">
-                    <h3>Stuff for managing participants</h3>
+                    <participant-manager competition_id="{competition.id}"></participant-manager>
                 </div>
             </div>
         </div>

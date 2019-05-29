@@ -1,14 +1,17 @@
 from django.db.models import Subquery, OuterRef, Count, Q
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+from utils.email import codalab_send_mail
 
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
@@ -88,12 +91,15 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=True, methods=('POST',))
     def register(self, request, pk):
         competition = self.get_object()
-        participant = CompetitionParticipant.objects.create(competition=competition, user=request.user)
+        user = request.user
+        participant = CompetitionParticipant.objects.create(competition=competition, user=user)
         if competition.registration_auto_approve:
             participant.status = 'approved'
-
         else:
-            # TODO: whatever logic for emailing admin to get approval
+            to = [competition.created_by.email] + [collab.email for collab in competition.collaborators.all()]
+            subject = f'Registration request for {competition.title}'
+            message = f'{user.username} has requested permission to join your competition: {competition.title}.'
+            codalab_send_mail(subject=subject, message=message, recipient_list=to)
             participant.status = 'pending'
 
         participant.save()
@@ -183,3 +189,16 @@ class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
     queryset = CompetitionCreationTaskStatus.objects.all()
     serializer_class = CompetitionCreationTaskStatusSerializer
     lookup_field = 'dataset__key'
+
+
+class CompetitionParticipantViewSet(ModelViewSet):
+    queryset = CompetitionParticipant.objects.all()
+    serializer_class = CompetitionParticipantSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    filter_fields = ('user__username', 'user__email', 'status',)
+    search_fields = ('user__username', 'user__email',)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.select_related('user').order_by('user__username')
+        return qs

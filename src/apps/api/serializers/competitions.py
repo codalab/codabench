@@ -5,7 +5,7 @@ from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskSerializerSimple
-from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from profiles.models import User
 from tasks.models import Task
 
@@ -163,4 +163,18 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
             'status',
             'details',
             'resulting_competition',
+        )
+
+
+class CompetitionParticipantSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    email = serializers.CharField(source='user.email')
+
+    class Meta:
+        model = CompetitionParticipant
+        fields = (
+            'id',
+            'username',
+            'email',
+            'status',
         )

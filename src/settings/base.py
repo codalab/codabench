@@ -100,9 +100,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(
 
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
-# FIXME: change these addresses to something more relevant
-DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
-SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
+DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@blank.com>'
+SERVER_EMAIL = 'Do Not Reply <donotreply@blank.com>'
 
 LOGIN_REDIRECT_URL = '/'
 

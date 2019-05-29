@@ -245,6 +245,16 @@ CODALAB.api = {
     user_lookup: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}user_lookup/`, filters)
     },
+    /*---------------------------------------------------------------------
+         Participants
+    ---------------------------------------------------------------------*/
+    get_participants: filters => {
+        return CODALAB.api.request('GET', `${URLS.API}participants/`, filters)
+    },
+    update_status: (pk, data) => {
+        return CODALAB.api.request('PATCH', `${URLS.API}participants/${pk}/`, data)
+    }
+    },
 
     /*---------------------------------------------------------------------
          Analytics
