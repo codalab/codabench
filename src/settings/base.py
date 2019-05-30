@@ -40,6 +40,7 @@ THIRD_PARTY_APPS = (
 )
 OUR_APPS = (
     'chahub',
+    'analytics',
     'competitions',
     'datasets',
     'pages',
