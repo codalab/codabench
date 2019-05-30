@@ -12,17 +12,32 @@ def analytics_detail(request):
     if not request.user.is_staff:
         return Response(status=404)
 
+    print('query_params', request.query_params)
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+
     monthly_total_users_joined = {}
-    for date in User.objects.all().datetimes('date_joined', 'month'):
+    for date in User.objects.all().filter(date_joined__range=[start_date, end_date]).datetimes('date_joined', 'month'):
         if date.year not in monthly_total_users_joined:
             monthly_total_users_joined[date.year] = {}
         users_joined_this_month = User.objects.filter(date_joined__month=date.month,
                                                       date_joined__year=date.year).aggregate(Count('pk'))
         monthly_total_users_joined[date.year][date.strftime("%B")] = users_joined_this_month['pk__count']
 
+    monthly_competitions_created = {}
+    for date in Competition.objects.all().filter(created_when__range=[start_date, end_date]).datetimes('created_when', 'month'):
+        if date.year not in monthly_competitions_created:
+            monthly_competitions_created[date.year] = {}
+        competitions_created_this_month = Competition.objects.filter(created_when__month=date.month,
+                                                      created_when__year=date.year).aggregate(Count('pk'))
+        monthly_competitions_created[date.year][date.strftime("%B")] = competitions_created_this_month['pk__count']
+
     return Response({
-        'registered_user_count': User.objects.all().count(),
-        'competition_count': Competition.objects.all().count(),
-        'competitions_published_count': Competition.objects.filter(published=True).count(),
+        'registered_user_count': User.objects.all().filter(date_joined__range=[start_date, end_date]).count(),
+        'competition_count': Competition.objects.all().filter(created_when__range=[start_date, end_date]).count(),
+        'competitions_published_count': Competition.objects.filter(published=True).filter(created_when__range=[start_date, end_date]).count(),
         'monthly_total_users_joined': monthly_total_users_joined,
+        'monthly_competitions_created': monthly_competitions_created,
+        'start_date': start_date,
+        'end_date': end_date,
     })

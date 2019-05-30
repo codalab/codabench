@@ -1,5 +1,5 @@
 from django.conf.urls import include, url
-from django.urls import path
+from django.urls import path, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework.routers import SimpleRouter
