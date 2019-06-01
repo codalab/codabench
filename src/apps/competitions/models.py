@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
 
+from competitions.tasks import logger
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
@@ -10,11 +11,13 @@ from utils.storage import BundleStorage
 class Competition(models.Model):
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="competitions")
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    is_migrating = models.BooleanField(default=False)
 
     def __str__(self):
         return "competition-{0}-{1}".format(self.title, self.pk)
@@ -22,6 +25,105 @@ class Competition(models.Model):
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
+    def check_future_phase_submissions(self):
+        """
+        Checks for if we need to migrate current phase submissions to next phase.
+        """
+        phases = self.phases.all()
+        if len(phases) == 0:
+            return
+
+        current_phase = phases.objects.get(is_active=True)
+        next_phase = phases.objects.get(status='Next')
+        final_phase = phases.objects.get(status='Final')
+
+        # Making sure current_phase or next_phase is not None
+        if current_phase is None or next_phase is None or current_phase is final_phase:
+            return
+
+        logger.info("Checking for needed migrations on competition pk=%s, current phase: %s, next phase: %s" %
+                    (self.pk, current_phase.index, next_phase.index))
+
+        # Check for next phase and see if it has auto_migration enabled
+        if next_phase and next_phase.auto_migration:
+            self.apply_phase_migration(current_phase, next_phase)
+
+    def apply_phase_migration(self, current_phase, next_phase):
+        '''
+        Does the actual migrating of submissions from last_phase to current_phase
+
+        :param current_phase: The phase object to transfer submissions from
+        :param next_phase: The new phase object we are entering
+        '''
+        logger.info("Checking for submissions that may still be running competition pk=%s" % self.pk)
+
+        if current_phase.submissions.filter(status__codename=SubmissionDetails.is_scoring).exists():
+            logger.info('Some submissions still marked as processing for competition pk=%s' % self.pk)
+            self.is_migrating_delayed = True
+            self.save()
+            return
+        else:
+            logger.info("No submissions running for competition pk=%s" % self.pk)
+
+        logger.info('Doing phase migration on competition pk=%s from phase: %s to phase: %s' %
+                    (self.pk, current_phase.index, next_phase.index))
+
+        if self.is_migrating:
+            logger.info('Trying to migrate competition pk=%s, but it is already being migrated!' % self.pk)
+            return
+
+        self.is_migrating = True
+        self.save()
+
+        try:
+            submission_list = []
+            submissions = Submission.objects.get(phase=current_phase)
+
+            for submission in submissions:
+                submission_list.append(submission.result)
+
+            participants = {}
+
+            for s in submission_list:
+                if s.is_migrated is False:
+                    participants[s.participant] = s
+
+            from .tasks import run_submission
+
+            for participant, submission in participants.items():
+                logger.info('Moving submission %s over' % submission)
+
+                file_args = {"file": submission.result}
+
+                new_submission = Submission(
+                    participant=participant,
+                    phase=next_phase,
+                    **file_args
+                )
+                new_submission.save(ignore_submission_limits=True)
+
+                submission.is_migrated = True
+                submission.save()
+
+                run_submission.apply_async((new_submission.pk, current_phase.is_scoring))
+
+        except Submission.DoesNotExist:
+            pass
+
+        # To check for submissions being migrated, does not allow to enter new submission
+        next_phase.is_migrated = True
+        next_phase.save()
+
+        # TODO: ONLY IF SUCCESSFUL
+        self.is_migrating = False  # this should really be True until evaluate_submission tasks are all the way completed
+        self.is_migrating_delayed = False
+        self.save()
+
+        # TODO: LOOSE ENDS TO TIE UP HERE
+        # No docker_image in Submission objects
+        # Where do the **file_args for submission come from? Is submission.result correct?
+        #
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -67,6 +169,7 @@ class Phase(models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
+    auto_migration = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
@@ -100,6 +203,14 @@ class Phase(models.Model):
             if total_submission_count >= self.max_submissions_per_person:
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
+
+    @property
+    def is_active(self):
+        """ Returns true when this phase of the competition is on-going. """
+        if not self.end:
+            return True
+        else:
+            return self.end > now() > self.start
 
 
 class SubmissionDetails(models.Model):
@@ -157,7 +268,8 @@ class Submission(models.Model):
 
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
-    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)
+    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
+                                    null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
