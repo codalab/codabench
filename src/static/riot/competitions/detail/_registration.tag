@@ -3,10 +3,14 @@
         <div class="row">
             <p>You have not yet registered for this competition.</p>
             <p>
-                To participate in this competition, you must accept its specific terms and conditions. After you
+                To participate in this competition, you must accept its specific <a href="" onclick="{show_modal}">terms and conditions</a>. After you
                 register, the competition organizer will review your application and notify you when your participation
-                is
-                approved.
+                is approved.
+            </p>
+            <p if="!registration_auto_approve">
+                This competition <strong>requires approval</strong> from the competition organizers. After submitting your registration request, an email
+                will be sent to the competition organizers notifying them of your request. Your application will remain pending until they
+                approve or deny it.
             </p>
         </div>
         <div class="row">
@@ -26,6 +30,20 @@
         Your current status is: {_.startCase(status)}
     </div>
 
+    <div ref="terms_modal" class="ui modal">
+        <div class="header">
+            Terms and Conditions
+        </div>
+        <div ref="terms_content" class="content">
+
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">
+                Close
+            </div>
+        </div>
+    </div>
+
     <script>
         let self = this
         self.on('mount', () => {
@@ -34,12 +52,24 @@
 
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
+            if (self.refs.terms_content) {
+                self.refs.terms_content.innerHTML = render_markdown(competition.terms)
+            }
+            self.registration_auto_approve = competition.registration_auto_approve
             self.status = competition.participant_status
             self.update()
         })
 
         self.accept_toggle = () => {
             self.accepted = !self.accepted
+        }
+
+        self.show_modal = (e) => {
+            if (e) {
+                e.preventDefault()
+            }
+            console.log('hello')
+            $(self.refs.terms_modal).modal('show')
         }
 
         self.submit_registration = () => {

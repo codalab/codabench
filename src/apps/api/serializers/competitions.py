@@ -133,6 +133,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'created_by',
             'created_when',
             'logo',
+            'terms',
             'pages',
             'phases',
             'leaderboards',
