@@ -1,0 +1,274 @@
+$backgrounddark = #2c3f4c
+$backgroundlight = #f6f8fa
+$textcolorlight = #f8f8f8
+$textcolordark = #2e2e2e
+
+body
+  font-family Roboto, sans-serif
+  background-color $backgroundlight
+  color $textcolordark !important
+
+#page_content
+  margin 0.5em
+
+.segment-container
+  padding 0 !important
+
+.segment-container > .header
+  font-size 1em !important
+  text-align left !important
+  margin-top 0 !important
+  margin-bottom 0 !important
+  background-color #f2faff !important
+  padding 10px !important
+  border-top-left-radius 3px !important
+  border-top-right-radius 3px !important
+  border-bottom solid 1px #dcdcdc !important
+
+#particles-js, #bg, .masthead
+  background-color $backgrounddark
+
+.navbar-placeholder
+  height 70px
+
+.nav-bar
+  background-color $backgrounddark !important
+  border-radius 0 !important
+  height 70px
+
+  .item:before
+    display none
+
+  .item
+    color darken($textcolorlight, 20%) !important
+
+    .image
+      width 100px !important
+
+  .button-container
+    width 100%
+    padding 1em
+
+    .ui.button
+      color #e2e2e2
+      background-color rgba(255, 255, 255, .15)
+      font-weight 100
+
+    .ui.button:hover
+      color #3f3f3f
+      background-color gainsboro
+
+.home-wrap
+  display flex
+  background-size cover
+  background-position 0 70%
+  flex-wrap wrap
+  min-height 600px
+  justify-content space-evenly
+  width 100%
+
+  .segment-container
+    margin 3em 0 !important
+
+  .column-wrap
+    width 96.5%
+    display flex
+    margin -4rem 0 0
+
+  .vert-wrap
+    margin-right 3em
+    max-width 770px
+    min-width 600px
+
+    .segment-container
+      width 100%
+      background transparent
+      border none
+      box-shadow none
+
+    .ui.header
+      font-size 24px !important
+      background none !important
+      border none !important
+
+    .container-content
+      padding 1em
+
+  .login-container
+    margin-left 1.5em
+    max-height 450px !important
+    margin-top 7.5em !important
+
+  .login-input
+    position relative
+    left -15px
+
+.github.button
+  background-color #6e5494 !important
+
+.github.button:hover
+  background-color #523e6e !important
+
+.chahub.button
+  background-color #405e73 !important
+
+.chahub.button:hover
+  background-color $backgrounddark !important
+
+/* Login Card */
+.container-content
+  text-align center
+  padding 2em 4em
+  color #909090
+
+  p
+    margin 0.75em
+
+  form input
+    background transparent !important
+    border-top none
+    border-right none
+    border-left none
+    width 60%
+    font-size 20px
+    margin-left -38px
+    line-height 1.2
+    padding 0 5px 0 38px
+    height 45px
+
+
+  .focus_input
+    font-size 20px
+    margin 0 auto
+    line-height 1.2
+    padding 0 0 0 38px
+    height 45px
+
+
+  iframe
+    box-shadow 1px 1px 3px grey
+
+  form input:hover
+    background transparent !important
+    border-top none
+    border-right none
+    border-bottom 2px solid $backgrounddark
+    border-left none
+    width 60%
+    font-size 20px
+
+  form input:focus
+    outline none
+    border-bottom 2px solid $backgrounddark
+
+
+  #login_form a
+    color #858585
+
+
+  #login_form a:hover
+    font-weight bold !important
+
+
+  #login_form a:focus
+    font-weight bold !important
+
+
+  form p a:focus
+    text-decoration underline !important
+
+
+  .input_coloring
+    -webkit-box-shadow 0 0 0 30px white inset
+
+
+  #outline
+    text-align center
+    display inline-grid
+    margin 1em
+    grid-gap 0.5em
+
+#action-container
+  margin 0 1.5em !important
+
+  .container-content
+    display flex
+
+#about-container
+  margin 3em !important
+  max-width 96.5%
+
+  p
+    text-align justify !important
+
+  .container-content
+    display flex
+    padding 2em 2.5em
+
+
+  .color-header
+    color #4a4a4a
+
+.footer.segment
+  padding 2em
+  margin 1em 7.5em
+
+.logged-in
+  display flex
+  justify-content center
+  width 100%
+  max-width 100% !important
+  min-width 100%
+  margin -3em 0 0 0 !important
+
+  .segment-container
+    margin 3em 1.5em !important
+
+    .container-content
+      padding 1em
+      display flex
+      flex-direction column
+      justify-content flex-end
+
+.loader-container
+  display flex
+  align-items center
+  justify-content center
+  width 510px
+  height 250px
+
+
+.lds-ring
+  display inline-block
+  position relative
+  width 64px
+  height 64px
+
+.lds-ring div
+  box-sizing border-box
+  display block
+  position absolute
+  width 51px
+  height 51px
+  margin 6px
+  border 6px solid #06649e
+  border-radius 50%
+  animation lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite
+  border-color #06649e transparent transparent transparent
+
+.lds-ring div:nth-child(1)
+  animation-delay -0.45s
+
+.lds-ring div:nth-child(2)
+  animation-delay -0.3s
+
+.lds-ring div:nth-child(3)
+  animation-delay -0.15s
+
+@keyframes lds-ring
+  0% {
+    transform: rotate(0deg)
+  }
+  100% {
+    transform: rotate(360deg)
+  }

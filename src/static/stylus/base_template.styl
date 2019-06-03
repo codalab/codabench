@@ -18,6 +18,9 @@
 
  header/background
  */
+html
+    background-color #f6f8fa
+
 #bg
     z-index -1
     position absolute
@@ -184,10 +187,6 @@
         @media screen and (min-width 626px)
             display none
 
-    //.secondary.pointing.menu .item,
-    //.secondary.pointing.menu .menu
-    //    display none
-
     .secondary.pointing.menu .toc.item
         display block
 
@@ -202,10 +201,12 @@
 /* --------------------------------------------------------------------------------------
  Force the footer to stretch all the way to the bottom of viewport
  */
-.pusher
-    display flex
-    //min-height 100vh
-    flex-direction column
+body.pushable>.pusher
+    background-color #f6f8fa !important
+    overflow initial
+
+.pushable
+    height 0
 
 .pusher > .footer
     flex 1

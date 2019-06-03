@@ -1,12 +1,15 @@
-from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
+from competitions.utils import get_popular_competitions, get_featured_competitions
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -71,6 +74,18 @@ class CompetitionViewSet(ModelViewSet):
         competition.published = not competition.published
         competition.save()
         return Response({"published": competition.published})
+
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def front_page_competitions(request):
+    popular_comps = get_popular_competitions()
+    featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+    popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
+    featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+    return Response(data={
+        "popular_comps": popular_comps_serializer.data,
+        "featured_comps": featured_comps_serializer.data
+    }, status=status.HTTP_200_OK)
 
 
 class PhaseViewSet(ModelViewSet):
