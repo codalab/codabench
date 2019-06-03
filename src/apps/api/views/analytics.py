@@ -2,7 +2,7 @@ from django.db.models import Count
 from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from competitions.models import Competition
+from competitions.models import Competition, Submission
 
 
 User = get_user_model()
@@ -32,12 +32,30 @@ def analytics_detail(request):
                                                       created_when__year=date.year).aggregate(Count('pk'))
         monthly_competitions_created[date.year][date.strftime("%B")] = competitions_created_this_month['pk__count']
 
+    daily_submissions_created = {}
+    for date in Submission.objects.all().filter(created_when__range=[start_date, end_date]).datetimes('created_when', 'day')[0:60]:
+        if date.year not in daily_submissions_created:
+            daily_submissions_created[date.year] = {}
+        if date.month not in daily_submissions_created[date.year]:
+            daily_submissions_created[date.year][date.strftime("%B")] = {
+                'total': 0,
+            }
+        submissions_created_this_month = Submission.objects.filter(created_when__month=date.month,
+                                                                 created_when__year=date.year).aggregate(Count('pk'))
+        submissions_created_this_day = Submission.objects.filter(created_when__day=date.day,
+                                                                 created_when__month=date.month,
+                                                                     created_when__year=date.year).aggregate(Count('pk'))
+
+        daily_submissions_created[date.year][date.strftime("%B")]['total'] += submissions_created_this_day['pk__count']
+        daily_submissions_created[date.year][date.strftime("%B")][date.strftime("%d")] = submissions_created_this_day['pk__count']
+
     return Response({
         'registered_user_count': User.objects.all().filter(date_joined__range=[start_date, end_date]).count(),
         'competition_count': Competition.objects.all().filter(created_when__range=[start_date, end_date]).count(),
         'competitions_published_count': Competition.objects.filter(published=True).filter(created_when__range=[start_date, end_date]).count(),
         'monthly_total_users_joined': monthly_total_users_joined,
         'monthly_competitions_created': monthly_competitions_created,
+        'daily_submissions_created': daily_submissions_created,
         'start_date': start_date,
         'end_date': end_date,
     })

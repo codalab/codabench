@@ -37,6 +37,21 @@
         </table>
     </div>
 
+    <h2>Submission Data</h2>
+
+
+    <div each="{year, y in submissions_daily}">
+        <h3>{y}</h3>
+        <table>
+            <tr>
+                <th each="{month, month_name in year}">{month_name}</th>
+            </tr>
+            <tr>
+                <td each="{month, month_name in year}">{month.total}</th>
+            </tr>
+        </table>
+    </div>
+
 
     <h2>User Data</h2>
 
@@ -115,6 +130,7 @@
                     competitions: data.competition_count,
                     competitions_monthly: data.monthly_competitions_created,
                     competitions_published: data.competitions_published_count,
+                    submissions_daily: data.daily_submissions_created,
                     start_date: data.start_date,
                     end_date: data.end_date,
                     })
