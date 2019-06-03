@@ -166,11 +166,12 @@
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
         CODALAB.state.user = {
-            id: '{{ request.user.id }}',
+            id: {{ request.user.id }},
             name: '{{ request.user.name }}',
             username: '{{ request.user.username }}',
             email: '{{ request.user.email }}',
             bio: '{{ request.user.bio }}',
+            // converts python bools to js bools
             is_staff: '{{ request.user.is_staff }}' === "True",
             is_superuser: '{{ request.user.is_superuser }}' === "True",
             has_competition_admin_privileges: competition => {
@@ -178,6 +179,8 @@
                 if (user.is_superuser || user.is_staff) {
                     return true
                 }
+                let collabs = _.map(competition.collaborators, collab => collab.username)
+                return user.username === competition.created_by || collabs.includes(user.username)
             }
         }
         // Load in URLs or other django generated goodies
