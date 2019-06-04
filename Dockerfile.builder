@@ -6,6 +6,6 @@ WORKDIR /app
 
 # Install packages
 ADD package.json .
-RUN npm install npm-watch stylus riot -g
+RUN npm install npm-watch stylus riot@3.13.2 -g
 
 CMD npm-watch
