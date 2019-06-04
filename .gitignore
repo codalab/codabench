@@ -11,6 +11,7 @@ uploads/
 venv/
 var/
 certs/
+migrations/
 
 src/static/output.css
 src/static/output.js
@@ -19,3 +20,5 @@ src/static/riot.tag
 src/static/generated/*
 
 db.sqlite3
+
+.idea
