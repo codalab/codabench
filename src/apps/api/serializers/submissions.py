@@ -1,5 +1,6 @@
 from os.path import basename
-from rest_framework import serializers, fields
+from rest_framework import serializers, fields, status
+from rest_framework.response import Response
 
 from api.serializers import leaderboards
 from competitions.models import Submission, SubmissionDetails
@@ -89,17 +90,30 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
         sub.start()
         return sub
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if 'data' in self._kwargs:
+            task_pk = self._kwargs['data'].get('task_pk')
+            if task_pk:
+                data['task_pk'] = task_pk
+        return data
+
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
             raise PermissionError("Submission secret invalid")
-
         print("Updated to...")
         print(validated_data)
 
         if validated_data["status"] == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
-            run_submission(instance.pk, is_scoring=True)
+            task_id = validated_data.get('task_pk')
+            if not task_id:
+                return Response(
+                    {'error': 'Cannot run scoring step of submission because task id was not provided'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            run_submission(instance.pk, task_pk=task_id, is_scoring=True)
         return super().update(instance, validated_data)
 
 

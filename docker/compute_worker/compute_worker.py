@@ -106,6 +106,8 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
+        self.task_id = run_args.get('task_id')
+
         # Socket connection to stream output of submission
         api_url_parsed = urlparse(self.api_url)
         websocket_host = api_url_parsed.netloc
@@ -138,6 +140,7 @@ class Run:
         resp = requests.patch(url, {
             "secret": self.secret,
             "status": status,
+            "task_pk": self.task_id,
             "status_details": extra_information,
         })
         # logger.info(resp)

@@ -117,7 +117,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk, is_scoring=False):
+def run_submission(submission_pk, task_pk, is_scoring=False):
     select_models = (
         'phase',
         'phase__competition',
@@ -131,6 +131,7 @@ def run_submission(submission_pk, is_scoring=False):
     )
     qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
     submission = qs.get(pk=submission_pk)
+    task = Task.objects.get(id=task_pk)
 
     run_arguments = {
         # TODO! Remove this hardcoded api url...
@@ -149,27 +150,27 @@ def run_submission(submission_pk, is_scoring=False):
     if not is_scoring:
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
 
-    for task in submission.phase.tasks.all():
-        if task.ingestion_program:
-            if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-                run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                if task.input_data:
-                    run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
+    if task.ingestion_program:
+        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
+            run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+            if task.input_data:
+                run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
-        if is_scoring and task.reference_data:
-            run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
+    if is_scoring and task.reference_data:
+        run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
-        run_arguments['program_data'] = make_url_sassy(
-            path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
-        )
-        run_arguments['result'] = make_url_sassy(
-            path=submission.result.name,
-            permission='w' if not is_scoring else 'r'
-        )
-        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
-        for detail_name in detail_names:
-            run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
-        send(submission, run_arguments)
+    run_arguments['program_data'] = make_url_sassy(
+        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+    )
+    run_arguments['result'] = make_url_sassy(
+        path=submission.result.name,
+        permission='w' if not is_scoring else 'r'
+    )
+    run_arguments['task_id'] = task.id
+    detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+    for detail_name in detail_names:
+        run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
+    send(submission, run_arguments)
 
 
 class CompetitionUnpackingException(Exception):
