@@ -28,6 +28,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'auto_migration',
         )
 
 

@@ -1,11 +1,13 @@
+import logging
 import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
 
-from competitions.tasks import logger
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
+
+logger = logging.getLogger()
 
 
 class Competition(models.Model):
@@ -58,7 +60,7 @@ class Competition(models.Model):
         '''
         logger.info("Checking for submissions that may still be running competition pk=%s" % self.pk)
 
-        if current_phase.submissions.filter(status__codename=SubmissionDetails.is_scoring).exists():
+        if current_phase.submissions.filter(status='Scoring').exists():
             logger.info('Some submissions still marked as processing for competition pk=%s' % self.pk)
             self.is_migrating_delayed = True
             self.save()
@@ -78,10 +80,10 @@ class Competition(models.Model):
 
         try:
             submission_list = []
-            submissions = Submission.objects.get(phase=current_phase)
+            submissions = Submission.objects.filter(phase=current_phase)
 
             for submission in submissions:
-                submission_list.append(submission.result)
+                submission_list.append(submission)
 
             participants = {}
 
@@ -89,24 +91,24 @@ class Competition(models.Model):
                 if s.is_migrated is False:
                     participants[s.participant] = s
 
-            from .tasks import run_submission
-
             for participant, submission in participants.items():
                 logger.info('Moving submission %s over' % submission)
 
-                file_args = {"file": submission.result}
+                file_args = {"result": submission.result,
+                             "owner": submission.owner,
+                             "data": submission.data,
+                             }
 
                 new_submission = Submission(
                     participant=participant,
                     phase=next_phase,
                     **file_args
                 )
-                new_submission.save(ignore_submission_limits=True)
+                new_submission.save(ignore_submission_limit=True)
+                new_submission.start()
 
                 submission.is_migrated = True
                 submission.save()
-
-                run_submission.apply_async((new_submission.pk, current_phase.is_scoring))
 
         except Submission.DoesNotExist:
             pass
@@ -122,8 +124,6 @@ class Competition(models.Model):
 
         # TODO: LOOSE ENDS TO TIE UP HERE
         # No docker_image in Submission objects
-        # Where do the **file_args for submission come from? Is submission.result correct?
-        #
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -278,6 +278,7 @@ class Submission(models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
+    is_migrated = models.BooleanField(default=False)
 
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
