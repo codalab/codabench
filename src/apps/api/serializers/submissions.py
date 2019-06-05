@@ -1,4 +1,6 @@
 from os.path import basename
+
+from django.core.exceptions import ValidationError
 from rest_framework import serializers, fields, status
 from rest_framework.response import Response
 
@@ -109,10 +111,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             from competitions.tasks import run_submission
             task_id = validated_data.get('task_pk')
             if not task_id:
-                return Response(
-                    {'error': 'Cannot run scoring step of submission because task id was not provided'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                raise ValidationError('Cannot update submission. Task pk was not provided')
             run_submission(instance.pk, task_pk=task_id, is_scoring=True)
         return super().update(instance, validated_data)
 

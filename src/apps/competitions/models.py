@@ -306,13 +306,7 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     def start(self):
         from .tasks import run_submission
-        for i, task in enumerate(self.phase.tasks.all()):
-            sub = self  # submit this submission object
-            if i != 0:
-                # Create new submission object for each additional task
-                sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
-                sub.save(ignore_submission_limit=True)
-            run_submission.apply_async((sub.pk, task.pk))
+        run_submission.apply_async((self.pk,))
 
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)

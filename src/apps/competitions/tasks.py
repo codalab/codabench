@@ -117,7 +117,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk, task_pk, is_scoring=False):
+def run_submission(submission_pk, task_pk=None, is_scoring=False):
     select_models = (
         'phase',
         'phase__competition',
@@ -131,7 +131,6 @@ def run_submission(submission_pk, task_pk, is_scoring=False):
     )
     qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
     submission = qs.get(pk=submission_pk)
-    task = Task.objects.get(id=task_pk)
 
     run_arguments = {
         # TODO! Remove this hardcoded api url...
@@ -146,7 +145,20 @@ def run_submission(submission_pk, task_pk, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
-    # TODO: refactor all this later for multiple tasks per phase. This will further reduce gross DRY stuff
+    if task_pk is None:
+        task = submission.phase.tasks.first()
+        for _task in submission.phase.tasks.exclude(id=task.id):
+            # TODO: make a duplicate submission method and use it here
+            sub = Submission(
+                owner=submission.owner,
+                phase=submission.phase,
+                data=submission.data,
+                participant=submission.participant
+            )
+            sub.save(ignore_submission_limit=True)
+            run_submission(sub.id, _task.id)
+    else:
+        task = Task.objects.get(id=task_pk)
     if not is_scoring:
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
 
