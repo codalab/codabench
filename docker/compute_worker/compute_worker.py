@@ -107,6 +107,8 @@ class Run:
         self.reference_data = run_args.get("reference_data", None)
 
         self.task_id = run_args.get('task_id')
+        self.parent_pk = run_args.get('parent_pk')
+        self.parent_secret = run_args.get('parent_secret')
 
         # Socket connection to stream output of submission
         api_url_parsed = urlparse(self.api_url)
@@ -141,6 +143,8 @@ class Run:
             "secret": self.secret,
             "status": status,
             "task_pk": self.task_id,
+            "parent_pk": self.parent_pk,
+            "parent_secret": self.parent_secret,
             "status_details": extra_information,
         })
         # logger.info(resp)
@@ -373,6 +377,16 @@ class Run:
         else:
             self._update_status(STATUS_SCORING)
 
+    def _post_scores(self, scores, submission_id, secret):
+        url = f"{self.api_url}/upload_submission_scores/{submission_id}/"
+        logger.info(f"Submitting these scores to {url}: {scores}")
+        resp = requests.post(url, json={
+            "secret": secret,
+            "scores": scores,
+        })
+        logger.info(resp)
+        logger.info(str(resp.content))
+
     def push_scores(self):
         # POST to some endpoint:
         # {
@@ -383,15 +397,9 @@ class Run:
             scores = json.load(open(scores_file, 'r'))
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
-
-        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
-        logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = requests.post(url, json={
-            "secret": self.secret,
-            "scores": scores,
-        })
-        logger.info(resp)
-        logger.info(str(resp.content))
+        self._post_scores(scores, self.submission_id, self.secret)
+        if self.parent_secret and self.parent_pk:
+            self._post_scores(scores, self.parent_pk, self.parent_secret)
 
     def push_result(self):
         self._put_dir(self.result, self.output_dir)
