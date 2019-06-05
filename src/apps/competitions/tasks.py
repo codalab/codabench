@@ -117,7 +117,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk, task_pk=None, is_scoring=False):
+def run_submission(submission_pk, task_pk=None, parent_pk=None, parent_secret=None, is_scoring=False):
     select_models = (
         'phase',
         'phase__competition',
@@ -143,6 +143,8 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
         "is_scoring": is_scoring,
+        "parent_secret": parent_secret,
+        "parent_pk": parent_pk,
     }
 
     if task_pk is None:
@@ -156,7 +158,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
                 participant=submission.participant
             )
             sub.save(ignore_submission_limit=True)
-            run_submission(sub.id, _task.id)
+            run_submission(sub.id, _task.id, parent_pk=submission.id, parent_secret=submission.secret)
     else:
         task = Task.objects.get(id=task_pk)
     if not is_scoring:
