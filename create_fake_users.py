@@ -8,7 +8,7 @@ def generate_random_sequence(length=8):
     r =  ''.join(choice(letters) for c in range(length))
     return r
 
-for i in range(10):
+for i in range(400):
     unique_username = False
     username = None
     while not unique_username:
