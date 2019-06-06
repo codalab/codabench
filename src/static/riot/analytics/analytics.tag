@@ -57,91 +57,48 @@
     </div>
 
     <div class='data-tab-container'>
-    <div id='competitions-data' class='data-tab' style='display: block;'>
-        <h2>Competition Data</h2>
+        <div id='competitions-data' class='data-tab' style='display: block;'>
+            <h2>Competition Data</h2>
 
-        <table>
-            <tr>
-                <th>Competitions</th>
-                <th>Published Competitions</th>
-            </tr>
-            <tr>
-                <td>{competitions}</td>
-                <td>{competitions_published}</td>
-            </tr>
-        </table>
-
-        <canvas id="competition_chart"></canvas>
-    </div>
-
-    <!--
-    <div each="{year, y in competitions_monthly}">
-        <h3>{y}</h3>
-        <table>
-            <tr>
-                <th each="{month_count, month in year}">{month}</th>
-            </tr>
-            <tr>
-                <td each="{month_count, month in year}">{month_count}</th>
-            </tr>
-        </table>
-    </div>
-    -->
-
-    <div id='submissions-data' class='data-tab'>
-        <h2>Submission Data</h2>
-
-        <canvas id="submission_chart"></canvas>
-
-        <!--
-        <div each="{year, y in submissions_daily}">
-            <h3>{y}</h3>
             <table>
                 <tr>
-                    <th each="{month, month_name in year}">{month_name}</th>
+                    <th>Competitions</th>
+                    <th>Published Competitions</th>
                 </tr>
                 <tr>
-                    <td each="{month, month_name in year}">{month.average_submissions_per_day}</th>
+                    <td>{competitions}</td>
+                    <td>{competitions_published}</td>
                 </tr>
             </table>
+
+            <canvas id="competition_chart"></canvas>
         </div>
-        -->
 
-    </div>
 
-    <div id='users-data' class='data-tab'>
-        <h2>User Data</h2>
+        <div id='submissions-data' class='data-tab'>
+            <h2>Submission Data</h2>
 
-        <table>
-            <tr>
-                <th>Users</th>
-            </tr>
-            <tr>
-                <td>{users_total}</td>
-            </tr>
-        </table>
+            <canvas id="submission_chart"></canvas>
+        </div>
 
-        <canvas id="user_chart"></canvas>
+        <div id='users-data' class='data-tab'>
+            <h2>User Data</h2>
 
-        <!--
-        <div each="{year, y in users_monthly}">
-            <h3>{y}</h3>
             <table>
                 <tr>
-                    <th each="{month_count, month in year}">{month}</th>
+                    <th>Users</th>
                 </tr>
                 <tr>
-                    <td each="{month_count, month in year}">{month_count}</th>
+                    <td>{users_total}</td>
                 </tr>
             </table>
+
+            <canvas id="user_chart"></canvas>
         </div>
-        -->
-    </div>
 
-    <div id='download-analytics-data'>
-        <h3 class='download-button'>Download</h3>
-    </div>
-
+        <div id='download-analytics-data'>
+            <h3 class='download-button'>Download</h3>
+        </div>
     </div>
 
     <script>
@@ -175,13 +132,12 @@
         }
 
         self.one("mount", function () {
-            console.log("analytics mounted")
             // Make semantic elements work
             $(".ui.dropdown", self.root).dropdown()
             $(".ui.checkbox", self.root).checkbox()
 
 
-            formatter = {
+            calendar_formatter = {
                 date: function (date, settings) {
                     if (!date) return '';
                     var day = date.getDate();
@@ -194,57 +150,44 @@
                 type: 'date',
                 endCalendar: $('#end-calendar'),
                 onChange: function(date, text) {
-                    console.log(date)
 
                     let year = date.getFullYear()
                     let month = date.getMonth()
-                    console.log(['year', year])
-                    console.log(['month', month])
                     if(month == 0) {
-                        console.log('month == 0')
                         start_date = {
                             year: year - 1,
                             month: 12,
                             day: 1,
                         }
                     } else {
-                        console.log('month != 0')
                         start_date = {
                             year: year,
                             month: month,
                             day: 1,
                         }
                     }
-
-                    console.log(['start_date', start_date])
-                    console.log(['end_date',end_date])
                     self.update_analytics(start_date, end_date, g_time_unit)
                 },
-                formatter: formatter,
+                formatter: calendar_formatter,
             });
 
             $('#end-calendar').calendar({
                 type: 'date',
                 startCalendar: $('#start-calendar'),
                 onChange: function(date, text) {
-                    console.log(date)
 
                     let year = date.getFullYear()
                     let month = date.getMonth() + 1
                     let day = date.getDate()
-                    console.log(['year', year])
-                    console.log(['month', month])
                     end_date = {
                         year: year,
                         month: month,
                         day: day,
                     }
 
-                    console.log(['start_date', start_date])
-                    console.log(['end_date',end_date])
                     self.update_analytics(start_date, end_date, g_time_unit)
                 },
-                formatter: formatter,
+                formatter: calendar_formatter,
             });
 
 
@@ -279,7 +222,7 @@
                         xAxes: [{
                             type: 'time',
                             time: {
-                                unit: 'week'
+                                unit: 'month'
                             }
                         }],
                         yAxes: [{
@@ -310,9 +253,6 @@
                             if(!month_obj.hasOwnProperty(day)) continue;
 
                             if (year_obj[month][day].total == undefined) {
-                                console.log('undefined date')
-                                console.log(year_obj[month])
-                                console.log(day)
                             }
                             if (csv_format) {
                                 x_data.push(new Date(year, month - 1, day).toJSON().slice(0,10))
@@ -363,13 +303,8 @@
                 end_date.setDate(end_date.getDate() + 1)
             }
 
-
-            console.log(start_date.toJSON().slice(0,10))
-            console.log(end_date.toJSON().slice(0,10))
-
             CODALAB.api.get_analytics(start_date.toJSON().slice(0,10), end_date.toJSON().slice(0,10), time_unit)
                 .done(function (data) {
-                    console.log(data)
                     let time_unit = data.time_unit == 'day'
                     update_chart(competitionsChart, data.competitions_data, time_unit)
                     update_chart(submissionsChart, data.submissions_data, time_unit)
@@ -380,11 +315,11 @@
                     g_users_data = data.users_data
 
                     self.update({
-                    users_total: data.registered_user_count,
-                    competitions: data.competition_count,
-                    competitions_published: data.competitions_published_count,
-                    start_date: data.start_date,
-                    end_date: data.end_date,
+                        users_total: data.registered_user_count,
+                        competitions: data.competition_count,
+                        competitions_published: data.competitions_published_count,
+                        start_date: data.start_date,
+                        end_date: data.end_date,
                     })
                 })
                 .fail(function (response) {
@@ -446,8 +381,6 @@
                 }
             }
 
-            console.log(start_date)
-
             self.update_analytics(start_date, end_date, 'day')
 
             if (unit_selection != 'year') {
@@ -457,7 +390,7 @@
             }
         })
 
-        // Chart Unit Scale
+        // Chart Units (Months, Weeks, Days)
         $(document).on('click','.chart-resolution-button', function(e) {
             $('.chart-resolution-button').removeClass('selected-grouped-button')
             if ($(e.target).prop('tagName') == 'H6') {
@@ -499,7 +432,6 @@
 
         function create_csv_data(data) {
             let day_resolution = g_time_unit != 'month'
-            console.log(['day_resolution', day_resolution])
             let d = build_chart_data(data, day_resolution, true)
 
             let x_text = array_to_text(d.x)
@@ -514,7 +446,6 @@
         }
 
         $(document).on('click','#download-analytics-data', function(e) {
-            console.log('downloading csv')
             let competitions_text = create_csv_data(g_competitions_data)
             let submissions_text = create_csv_data(g_submissions_data)
             let users_text = create_csv_data(g_users_data)
@@ -523,7 +454,6 @@
             file_text += '\nsubmissions\n' + submissions_text
             file_text += '\nusers\n' + users_text
 
-            console.log(file_text)
             download('codalab_analytics.csv', file_text)
         })
 
