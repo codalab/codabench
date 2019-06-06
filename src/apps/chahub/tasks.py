@@ -8,6 +8,7 @@ from profiles.models import User
 
 logger = logging.getLogger(__name__)
 
+
 @task
 def send_users_to_chahub():
     all_users = User.objects.all()

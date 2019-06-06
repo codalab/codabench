@@ -60,9 +60,7 @@ class ChaHubSaveMixin(models.Model):
         """
         # By default, always push
         return True
-    # -------------------------------------------------------------------------
     # Regular methods
-    # -------------------------------------------------------------------------
     def save(self, force_to_chahub=False, *args, **kwargs):
         # We do a save here to give us an ID for generating URLs and such
         try:
