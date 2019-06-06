@@ -245,9 +245,8 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Analytics
     ---------------------------------------------------------------------*/
-    get_analytics: (start_date, end_date) => {
-        let url = `${URLS.API}analytics/?start_date=` + start_date + '&end_date=' + end_date
-        //let url = `${URLS.API}analytics/` + start_date + '/' + end_date + '/'
+    get_analytics: (start_date, end_date, time_unit) => {
+        let url = `${URLS.API}analytics/?start_date=` + start_date + '&end_date=' + end_date + '&time_unit=' + time_unit
         console.log(url)
         return CODALAB.api.request('GET', url, null)
     },

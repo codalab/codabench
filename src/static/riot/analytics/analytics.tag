@@ -14,16 +14,31 @@
                 <input type="text" placeholder="{end_date}">
             </div>
         </div>
-        <div class='ui chart-unit-scale'>
-            <div class='chart-unit-scale-button selected-chart-unit-scale-button' id='month-units'>
-                <h6>Month</h6>
-            </div>
-            <div class='chart-unit-scale-button' id='week-units'>
-                <h6>Week</h6>
-            </div>
-            <div class='chart-unit-scale-button last-chart-unit-scale-button' id='day-units'>
-                <h6>Day</h6>
-            </div>
+    </div>
+
+    <h3>Shortcut Date Ranges</h3>
+    <div class='ui button-group'>
+        <div class='grouped-button shortcut-button' id='this-week'>
+            <h6>This Week</h6>
+        </div>
+        <div class='grouped-button shortcut-button' id='this-month'>
+            <h6>This Month</h6>
+        </div>
+        <div class='grouped-button last-grouped-button shortcut-button' id='this-year'>
+            <h6>This Year</h6>
+        </div>
+    </div>
+
+    <h3>Chart Resolution</h3>
+    <div class='ui button-group'>
+        <div class='grouped-button selected-grouped-button chart-resolution-button'id='month-units'>
+            <h6>Month</h6>
+        </div>
+        <div class='grouped-button chart-resolution-button' id='week-units'>
+            <h6>Week</h6>
+        </div>
+        <div class='grouped-button last-grouped-button chart-resolution-button' id='day-units'>
+            <h6>Day</h6>
         </div>
     </div>
 
@@ -41,6 +56,7 @@
         <div class='spacer-button'></div>
     </div>
 
+    <div class='data-tab-container'>
     <div id='competitions-data' class='data-tab' style='display: block;'>
         <h2>Competition Data</h2>
 
@@ -122,6 +138,12 @@
         -->
     </div>
 
+    <div id='download-analytics-data'>
+        <h3 class='download-button'>Download</h3>
+    </div>
+
+    </div>
+
     <script>
         var self = this
 
@@ -133,16 +155,23 @@
         var competitionsChart;
         var submissionsChart;
         var usersChart;
+        var g_time_unit = 'month';
+
+        var g_competitions_data;
+        var g_submissions_data;
+        var g_users_data;
 
         var start_date = {
             year: 2018,
-            month:8
+            month:8,
+            day: 1,
         }
 
         var today = new Date()
         var end_date = {
             year: today.getFullYear(),
             month: today.getMonth() + 1,
+            day: today.getDate(),
         }
 
         self.one("mount", function () {
@@ -176,18 +205,20 @@
                         start_date = {
                             year: year - 1,
                             month: 12,
+                            day: 1,
                         }
                     } else {
                         console.log('month != 0')
                         start_date = {
                             year: year,
                             month: month,
+                            day: 1,
                         }
                     }
 
                     console.log(['start_date', start_date])
                     console.log(['end_date',end_date])
-                    self.update_analytics(start_date, end_date)
+                    self.update_analytics(start_date, end_date, g_time_unit)
                 },
                 formatter: formatter,
             });
@@ -200,16 +231,18 @@
 
                     let year = date.getFullYear()
                     let month = date.getMonth() + 1
+                    let day = date.getDate()
                     console.log(['year', year])
                     console.log(['month', month])
                     end_date = {
                         year: year,
                         month: month,
+                        day: day,
                     }
 
                     console.log(['start_date', start_date])
                     console.log(['end_date',end_date])
-                    self.update_analytics(start_date, end_date)
+                    self.update_analytics(start_date, end_date, g_time_unit)
                 },
                 formatter: formatter,
             });
@@ -222,7 +255,7 @@
             var ctx_u = document.getElementById('user_chart').getContext('2d');
             usersChart = new Chart(ctx_u, create_chart_config('# of Users Joined'));
 
-            self.update_analytics(start_date, null)
+            self.update_analytics(start_date, null, g_time_unit)
 
         })
 
@@ -246,7 +279,7 @@
                         xAxes: [{
                             type: 'time',
                             time: {
-                                unit: 'month'
+                                unit: 'week'
                             }
                         }],
                         yAxes: [{
@@ -259,74 +292,72 @@
             }
         }
 
-        function update_competitions_chart(competition_data) {
-            var competition_chart_data = []
+        function build_chart_data(data, day_resolution, csv_format) {
+            var chart_data = []
+            var x_data = []
+            var y_data = []
 
-            for (var year in competition_data) {
-                if(!competition_data.hasOwnProperty(year)) continue;
+            for (var year in data) {
+                if(!data.hasOwnProperty(year)) continue;
 
-                var year_obj = competition_data[year]
+                var year_obj = data[year]
                 for(var month in year_obj) {
                     if(!year_obj.hasOwnProperty(month)) continue;
 
-                    competition_chart_data.push({
-                        x: new Date(year, month - 1),
-                        y: year_obj[month]
-                    })
+                    if(day_resolution) {
+                        var month_obj = data[year][month]
+                        for(var day in month_obj) {
+                            if(!month_obj.hasOwnProperty(day)) continue;
+
+                            if (year_obj[month][day].total == undefined) {
+                                console.log('undefined date')
+                                console.log(year_obj[month])
+                                console.log(day)
+                            }
+                            if (csv_format) {
+                                x_data.push(new Date(year, month - 1, day).toJSON().slice(0,10))
+                                y_data.push(year_obj[month][day].total)
+                            } else {
+                                chart_data.push({
+                                    x: new Date(year, month - 1, day),
+                                    y: year_obj[month][day].total
+                                })
+                            }
+                        }
+                    } else {
+                        if (csv_format) {
+                                x_data.push(new Date(year, month - 1).toJSON().slice(0,10))
+                                y_data.push(year_obj[month].total)
+                        } else {
+                            chart_data.push({
+                                x: new Date(year, month - 1),
+                                y: year_obj[month].total
+                            })
+                        }
+                    }
                 }
             }
-            competitionsChart.data.datasets[0].data = competition_chart_data
-            competitionsChart.update()
-        }
-
-        function update_submissions_chart(submission_data) {
-            var submission_chart_data = []
-
-            for (var year in submission_data) {
-                if(!submission_data.hasOwnProperty(year)) continue;
-
-                var year_obj = submission_data[year]
-                for(var month in year_obj) {
-                    if(!year_obj.hasOwnProperty(month)) continue;
-
-                        submission_chart_data.push({
-                            x: new Date(year, month - 1),
-                            y: year_obj[month].total
-                        })
+            if (csv_format) {
+                let d = {
+                    x: x_data,
+                    y: y_data,
                 }
+                return d
+            } else {
+                return chart_data
             }
-            console.log('Submission data length')
-            console.log(submission_chart_data.length)
-            submissionsChart.data.datasets[0].data = submission_chart_data
-            submissionsChart.update()
+         }
+
+        function update_chart(chart, data, day_resolution) {
+            chart.data.datasets[0].data = build_chart_data(data, day_resolution, false)
+            chart.update()
         }
 
-        function update_users_chart(user_data) {
-            var user_chart_data = []
+        self.update_analytics= function (start, end, time_unit) {
 
-            for (var year in user_data) {
-                if(!user_data.hasOwnProperty(year)) continue;
-
-                var year_obj = user_data[year]
-                for(var month in year_obj) {
-                    if(!year_obj.hasOwnProperty(month)) continue;
-
-                    user_chart_data.push({
-                        x: new Date(year, month - 1),
-                        y: year_obj[month]
-                    })
-                }
-            }
-            usersChart.data.datasets[0].data = user_chart_data
-            usersChart.update()
-        }
-
-
-        self.update_analytics= function (start, end) {
-
-            var start_date = new Date(start.year, start.month)
+            var start_date = new Date(start.year, start.month, start.day)
             if (end) {
-                var end_date = new Date(end.year, end.month)
+                var end_date = new Date(end.year, end.month, end.day)
             } else {
                 var end_date = new Date()
                 end_date.setDate(end_date.getDate() + 1)
@@ -336,19 +367,22 @@
             console.log(start_date.toJSON().slice(0,10))
             console.log(end_date.toJSON().slice(0,10))
 
-            CODALAB.api.get_analytics(start_date.toJSON().slice(0,10), end_date.toJSON().slice(0,10))
+            CODALAB.api.get_analytics(start_date.toJSON().slice(0,10), end_date.toJSON().slice(0,10), time_unit)
                 .done(function (data) {
                     console.log(data)
-                    update_competitions_chart(data.monthly_competitions_created)
-                    update_submissions_chart(data.daily_submissions_created)
-                    update_users_chart(data.monthly_total_users_joined)
+                    let time_unit = data.time_unit == 'day'
+                    update_chart(competitionsChart, data.competitions_data, time_unit)
+                    update_chart(submissionsChart, data.submissions_data, time_unit)
+                    update_chart(usersChart, data.users_data, time_unit)
+
+                    g_competitions_data = data.competitions_data
+                    g_submissions_data = data.submissions_data
+                    g_users_data = data.users_data
+
                     self.update({
-                    users_monthly: data.monthly_total_users_joined,
                     users_total: data.registered_user_count,
                     competitions: data.competition_count,
-                    competitions_monthly: data.monthly_competitions_created,
                     competitions_published: data.competitions_published_count,
-                    submissions_daily: data.daily_submissions_created,
                     start_date: data.start_date,
                     end_date: data.end_date,
                     })
@@ -372,26 +406,129 @@
             $('#' + data_selection + '-data').css('display', 'block')
         })
 
+        // Shortcut buttons
+        $(document).on('click','.shortcut-button', function(e) {
+            $('.shortcut-button').removeClass('selected-grouped-button')
+            if ($(e.target).prop('tagName') == 'H6') {
+                var id = $(e.target).parent().attr('id')
+            } else {
+                var id = $(e.target).attr('id')
+            }
+            var unit_selection = id.split('-')[1]
+            $('#' + id).addClass('selected-grouped-button')
+
+            end_date = {
+                year: new Date().getFullYear(),
+                month: new Date().getMonth() + 1,
+                day: new Date().getDate(),
+            }
+
+            if (unit_selection == 'month') {
+                start_date = {
+                    year: new Date().getFullYear(),
+                    month: new Date().getMonth() + 1,
+                    day: 1,
+                }
+            } else if (unit_selection == 'week') {
+                var start = new Date()
+                start.setDate(start.getDate() - 6)
+                start_date = {
+
+                    year: start.getFullYear(),
+                    month: start.getMonth() + 1,
+                    day: start.getDate(),
+                }
+            } else if (unit_selection == 'year') {
+                start_date = {
+                    year: new Date().getFullYear(),
+                    month: 0,
+                    day: 1,
+                }
+            }
+
+            console.log(start_date)
+
+            self.update_analytics(start_date, end_date, 'day')
+
+            if (unit_selection != 'year') {
+                $('#day-units').click()
+            } else {
+                $('#month-units').click()
+            }
+        })
+
         // Chart Unit Scale
-        $(document).on('click','.chart-unit-scale-button', function(e) {
-            $('.data-tab').css('display', 'none')
-            $('.chart-unit-scale-button').removeClass('selected-chart-unit-scale-button')
+        $(document).on('click','.chart-resolution-button', function(e) {
+            $('.chart-resolution-button').removeClass('selected-grouped-button')
             if ($(e.target).prop('tagName') == 'H6') {
                 var id = $(e.target).parent().attr('id')
             } else {
                 var id = $(e.target).attr('id')
             }
             var unit_selection = id.split('-')[0]
-            $('#' + id).addClass('selected-chart-unit-scale-button')
+            $('#' + id).addClass('selected-grouped-button')
 
-            console.log(competitionsChart)
+            if( unit_selection == 'day' || unit_selection == 'week') {
+                g_time_unit = 'day'
+            } else {
+                g_time_unit = 'month'
+            }
+
             competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            competitionsChart.update()
             submissionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            submissionsChart.update()
             usersChart.options.scales.xAxes[0].time.unit = unit_selection
+            competitionsChart.update()
+            submissionsChart.update()
             usersChart.update()
+
+            self.update_analytics(start_date, end_date, g_time_unit)
         })
+
+        function download(filename, text) {
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+
+            element.style.display = 'none';
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+        }
+
+        function create_csv_data(data) {
+            let day_resolution = g_time_unit != 'month'
+            console.log(['day_resolution', day_resolution])
+            let d = build_chart_data(data, day_resolution, true)
+
+            let x_text = array_to_text(d.x)
+            let y_text = array_to_text(d.y)
+            let all_text = x_text + y_text
+
+            return all_text
+        }
+
+        function array_to_text(arr) {
+            return arr.join(', ') + '\n'
+        }
+
+        $(document).on('click','#download-analytics-data', function(e) {
+            console.log('downloading csv')
+            let competitions_text = create_csv_data(g_competitions_data)
+            let submissions_text = create_csv_data(g_submissions_data)
+            let users_text = create_csv_data(g_users_data)
+
+            let file_text = 'competitions\n' + competitions_text
+            file_text += '\nsubmissions\n' + submissions_text
+            file_text += '\nusers\n' + users_text
+
+            console.log(file_text)
+            download('codalab_analytics.csv', file_text)
+        })
+
+
+
     </script>
     <style>
         th {
@@ -434,7 +571,7 @@
             align-items: center;
             width: 100%;
             height: 65px;
-            margin-top: 20px;
+            margin-top: 80px;
         }
 
         .tab-button {
@@ -467,6 +604,10 @@
             border-right: solid 1px #ddd;
         }
 
+        .data-tab-container {
+            height: 800px;
+        }
+
         .data-tab {
             display: none;
         }
@@ -475,38 +616,61 @@
             width: 500px;
         }
 
-        .chart-unit-scale {
+        .button-group {
             display: flex;
+            align-items: stretch;
             overflow: hidden;
             border-radius: 4px;
             border: solid 1px #ddd;
+            width: 40%;
+            margin-bottom: 30px;
         }
 
-        .chart-unit-scale-button {
+        .grouped-button {
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-grow: 1;
             border-right: solid 1px #ddd;
             text-align: center;
             padding: 10px;
             height: 35px;
         }
 
-        .chart-unit-scale-button h6 {
+        .grouped-button h6 {
             margin: 0;
         }
 
-        .chart-unit-scale-button:hover {
+        .grouped-button:hover {
             color: #666;
         }
 
-        .last-chart-unit-scale-button {
+        .last-grouped-button {
             border-right: none;
         }
 
-        .selected-chart-unit-scale-button {
+        .selected-grouped-button {
             background: #eee;
         }
+
+        #download-analytics-data {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: solid 1px #ddd;
+            padding: 15px;
+            width: 15%;
+            margin-top: 30px;
+        }
+
+        .download-button {
+            margin: none;
+        }
+
+        #download-analytics-data:hover {
+            color: #666;
+        }
+
     </style>
 
 </analytics>
