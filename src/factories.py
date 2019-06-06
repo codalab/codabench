@@ -1,6 +1,4 @@
 import random
-from random import randint
-from datetime import datetime
 
 import factory
 from django.utils.timezone import now
@@ -63,7 +61,7 @@ class DataFactory(DjangoModelFactory):
         'submission',
         'solution'])
     name = factory.LazyAttribute(lambda o: f"{o.type} @ {o.created_when}")
-    data_file = factory.django.FileField(data=bytes(randint(0,255) for _ in range(randint(10,220))))
+
 
 class TaskFactory(DjangoModelFactory):
     class Meta:
@@ -100,16 +98,13 @@ class SubmissionFactory(DjangoModelFactory):
     owner = factory.SubFactory(UserFactory)
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
-    def _get_created_when():
-        return datetime(2010 + randint(0,8), randint(1,12), randint(1,28),2,2,2,0)
-    created_when = factory.LazyFunction(_get_created_when)
+    created_when = factory.LazyFunction(now)
     data = factory.SubFactory(
         DataFactory,
         type='submission',
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
     )
-
 
 
 class CompetitionParticipantFactory(DjangoModelFactory):
