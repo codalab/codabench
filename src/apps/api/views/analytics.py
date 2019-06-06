@@ -55,8 +55,8 @@ def analytics_detail(request):
     end_date = request.query_params.get('end_date')
     time_unit = request.query_params.get('time_unit')
 
-    users = build_request_object(User,'date_joined', time_unit, start_date, end_date)
-    competitions = build_request_object(Competition,'created_when', time_unit, start_date, end_date)
+    users = build_request_object(User, 'date_joined', time_unit, start_date, end_date)
+    competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date)
     submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date)
 
     return Response({
