@@ -65,19 +65,16 @@ class Data(ChaHubSaveMixin, models.Model):
 
     @property
     def in_use(self):
-        from tasks.models import Task
-        tasks = Task.objects.filter(
-            Q(ingestion_program=self) |
-            Q(input_data=self) |
-            Q(reference_data=self) |
-            Q(scoring_program=self)
+        from competitions.models import Competition
+        competitions_in_use = Competition.objecs.filter(
+            Q(phases__tasks__ingestion_program=self) |
+            Q(phases__tasks__input_data=self) |
+            Q(phases__tasks__reference_data=self) |
+            Q(phases__tasks__scoring_program=self)
         )
-        phases_from_tasks = [phase for task in tasks for phase in task.phases.all()]
-        task_competitions = set([phase.competition.pk for phase in phases_from_tasks if phase.competition])
-
-        is_used = len(task_competitions) > 0
+        is_used = competitions_in_use.exists()
         return {'value': is_used,
-                'competitions': task_competitions}
+                'competitions': competitions_in_use}
 
     def __str__(self):
         return self.name or ''

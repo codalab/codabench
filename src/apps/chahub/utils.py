@@ -36,6 +36,7 @@ def send_to_chahub(endpoint, data, update=False):
         else:
             return requests.post(data=data, **kwargs)
     except requests.ConnectionError:
+        # TODO: Should this be raising a new exception to be caught later?
         return None
 
 
