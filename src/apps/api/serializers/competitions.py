@@ -1,26 +1,17 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
-from api.fields import NamedBase64ImageField, SlugWriteDictReadField
-from api.serializers.datasets import DataSerializer
+from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskSerializerSimple
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
-from datasets.models import Data
 from profiles.models import User
-from tasks.models import Task, Solution
+from tasks.models import Task
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    scoring_program = SlugWriteDictReadField(read_serializer=DataSerializer, queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    public_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    starting_kit = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
-    solutions = serializers.SlugRelatedField(queryset=Solution.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
 
     class Meta:
         model = Phase
@@ -31,33 +22,17 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'end',
             'name',
             'description',
-            'input_data',
-            'reference_data',
-            'scoring_program',
-            'ingestion_program',
-            'public_data',
-            'starting_kit',
             'status',
             'execution_time_limit',
-
+            'tasks',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
-
-            'tasks',
-            'solutions',
-            'is_task_and_solution',
         )
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = TaskSerializerSimple(many=True)
-    input_data = DataSerializer()
-    reference_data = DataSerializer()
-    scoring_program = DataSerializer()
-    ingestion_program = DataSerializer()
-    public_data = DataSerializer()
-    starting_kit = DataSerializer()
 
     class Meta:
         model = Phase
@@ -68,20 +43,11 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'end',
             'name',
             'description',
-            'input_data',
-            'reference_data',
-            'scoring_program',
-            'ingestion_program',
-            'public_data',
-            'starting_kit',
             'status',
-
+            'tasks',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
-
-            'tasks',
-            'is_task_and_solution'
         )
 
 

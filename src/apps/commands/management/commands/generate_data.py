@@ -1,7 +1,8 @@
 import random
 
 from django.core.management.base import BaseCommand
-from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
+    TaskFactory
 
 
 class Command(BaseCommand):
@@ -35,6 +36,6 @@ class Command(BaseCommand):
                 for u in users:
                     CompetitionParticipantFactory(competition=comp, user=u, status='approved')
                 for i in range(size):
-                    phase = PhaseFactory(competition=comp, index=i)
+                    phase = PhaseFactory(competition=comp, index=i, tasks=[TaskFactory(created_by=user)])
                     for _ in range(size):
                         SubmissionFactory(phase=phase, owner=random.choice(users))

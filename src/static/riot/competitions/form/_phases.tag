@@ -97,55 +97,15 @@
                             </a>
                         </div>
                     </div>
-                    <div class="ui toggle checkbox field">
-                        <input type="checkbox" name="is_task_and_solution" ref="task_solution_toggle" onchange="{is_task_and_solution_toggle}">
-                        <label>Task and Solution Style
-                        <span data-tooltip="Toggle between a Dataset or Task and Solution style phase" data-inverted=""
-                              data-position="bottom center"><i class="grey help icon circle"></i></span>
-                        </label>
-                    </div>
 
-                    <div show="{!is_task_solution}">
-                        <div class="three fields" data-no-js>
-                            <div class="field {required: file_field === 'scoring_program'}"
-                                 each="{file_field in ['scoring_program', 'ingestion_program', 'starting_kit']}">
-                                <label>
-                                    {_.startCase(file_field)}
-                                    <span data-tooltip="Something useful to know...!" data-inverted=""
-                                          data-position="bottom center"><i class=" grey help icon circle"></i></span>
-                                </label>
-                                <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
-                                    <i class="search icon"></i>
-                                    <input type="text" class="prompt" onchange="{file_changed}">
-                                    <div class="results"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="three fields" data-no-js>
-                            <div class="field" each="{file_field in ['reference_data', 'input_data', 'public_data']}">
-                                <label>
-                                    {_.startCase(file_field)}
-                                    <span data-tooltip="Something useful to know...!" data-inverted=""
-                                          data-position="bottom center"><i class="grey help icon circle"></i></span>
-                                </label>
-                                <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
-                                    <i class="search icon"></i>
-                                    <input type="text" class="prompt" onchange="{file_changed}">
-                                    <div class="results"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div show="{is_task_solution}">
+                    <div>
                         <div class="fluid field required">
-                            <label>
+                            <label for="tasks">
                                 Tasks
                                 <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                                       data-position="bottom center"><i class="help icon circle"></i></span>
                             </label>
-                            <select name="tasks" class="ui search selection dropdown" ref="multiselect" multiple="multiple">
+                            <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect" multiple="multiple">
                             </select>
                         </div>
                     </div>
@@ -164,20 +124,11 @@
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
-        self.file_fields = [
-            "scoring_program",
-            "ingestion_program",
-            "starting_kit",
-            "reference_data",
-            "input_data",
-            "public_data"
-        ]
         self.has_initialized_calendars = false
         self.form_is_valid = false
         self.phases = []
         self.phase_tasks = []
         self.selected_phase_index = undefined
-        self.is_task_solution = false
 
         // Form datasets have to live on their own, because they don't match up to a representation
         // on form well.. unless we use weird hidden fields everywhere.
@@ -206,40 +157,6 @@
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
-            })
-
-            // data search for all 6 data types
-            $('.ui.search.dataset', self.root).each(function (i, item) {
-                $(item)
-                    .search({
-                        apiSettings: {
-                            url: URLS.API + 'datasets/?search={query}&type=' + (item.dataset.name || ""),
-                            onResponse: function (data) {
-                                // Put results in array to use maxResults setting
-                                var data_in_array = []
-
-                                Object.keys(data).forEach(key => {
-                                    // Get rid of "null" in semantic UI search results
-                                    data[key].description = data[key].description || ''
-                                    data_in_array.push(data[key])
-                                })
-                                return {results: data_in_array}
-                            }
-                        },
-                        preserveHTML: false,
-                        minCharacters: 2,
-                        fields: {
-                            title: 'name'
-                        },
-                        cache: false,
-                        maxResults: 4,
-                        onSelect: function (result, response) {
-                            // It's hard to store the dataset information (hidden fields suck), so let's just put it here temporarily
-                            // and grab it back on save
-                            self.form_datasets[item.dataset.name] = result
-                            self.form_updated()
-                        }
-                    })
             })
 
             // Modal callback to draw markdown on EDIT show
@@ -287,12 +204,6 @@
             self.form_updated()
         }
 
-        self.is_task_and_solution_toggle = function (event) {
-            self.is_task_solution = event.target.checked
-            self.form_check_is_valid()
-            self.update()
-        }
-
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
 
@@ -337,10 +248,8 @@
             } else {
                 // Make sure each phase has the proper details
                 self.phases.forEach(function (phase) {
-                    if (!phase.name || !phase.start || !phase.description) {
+                    if (!phase.name || !phase.start || !phase.description || phase.tasks.length === 0) {
                         is_valid = false
-                    } else {
-                        is_valid = phase.is_task_and_solution ? phase.tasks.length > 0 : !!phase.scoring_program
                     }
                 })
             }
@@ -349,28 +258,14 @@
 
             if (is_valid) {
                 // We keep a copy of the list where we store JUST the dataset key
-                var phases_copy = JSON.parse(JSON.stringify(self.phases))
-
-                phases_copy.forEach(function (phase, i) {
-                    // Since we have valid data, let's attach our "index" to the phaases
+                var indexed_phases = _.map(self.phases, (phase, i) => {
                     phase.index = i
-
-                    // having an empty "end" causes problems with DRF validation, remove that
                     if (!phase.end) {
                         delete phase.end
                     }
-
-                    // Get just the key from each file field
-                    if (!self.is_task_solution) {
-                        self.file_fields.forEach(function (file_field_name) {
-                            if (!!phase[file_field_name] && !!phase[file_field_name].key) {
-                                phase[file_field_name] = phase[file_field_name].key
-                            }
-                        })
-                    }
+                    return phase
                 })
-
-                CODALAB.events.trigger('competition_data_update', {phases: phases_copy})
+                CODALAB.events.trigger('competition_data_update', {phases: indexed_phases})
             }
 
             self.form_check_is_valid()
@@ -380,19 +275,13 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            data.is_task_and_solution = self.refs.task_solution_toggle.checked
-
-            let valid_files = data.is_task_and_solution ? self.phase_tasks.length > 0 : self.form_datasets.scoring_program
-            self.form_is_valid = !!data.name && !!data.start && !!data.description && valid_files
+            self.form_is_valid = !!data.name && !!data.start && !!data.description && self.phase_tasks.length > 0
         }
 
         self.clear_form = function () {
             self.selected_phase_index = undefined
             self.phase_tasks = []
-            self.form_datasets = {}
-            $(self.refs.task_solution_toggle).prop('checked', false)
             $(self.refs.multiselect).dropdown('clear')
-            self.is_task_solution = false
 
             $(':input', self.refs.form)
                 .not('[type="file"]')
@@ -417,17 +306,6 @@
             self.phase_tasks = phase.tasks
 
             set_form_data(phase, self.refs.form)
-            self.is_task_solution = phase.is_task_and_solution
-            $(self.refs.task_solution_toggle).prop("checked", self.is_task_solution)
-
-            // Setting selected files
-            self.file_fields.forEach(function (file_field_name) {
-                if (!!phase[file_field_name]) {
-                    //phase[file_field_name] = phase[file_field_name].key
-                    $(`.input.search[data-name="${file_field_name}"] input`).val(phase[file_field_name].name)
-                    self.form_datasets[file_field_name] = phase[file_field_name]
-                }
-            })
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description)
@@ -457,20 +335,10 @@
 
         self.save = function () {
             var data = get_form_data(self.refs.form)
-            data.is_task_and_solution = self.refs.task_solution_toggle.checked
-            if (!data.is_task_and_solution) {
-                data.tasks = []
-                Object.assign(data, self.form_datasets)
-            } else {
-                data.tasks = self.phase_tasks
-                _.forEach(self.file_fields, file_field_name => {
-                    data[file_field_name] = null
-                })
-            }
+            data.tasks = self.phase_tasks
 
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
-
             } else {
                 // We have a selected phase, do an update instead of a create
                 data.id = self.phases[self.selected_phase_index].id

@@ -84,7 +84,14 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             'email': self.email,
             'username': self.username,
             'remote_id': self.pk,
-            'details': model_to_dict(self),
+            'details': {
+                "is_active": self.is_active,
+                "last_login": self.last_login,
+                "date_joined": self.date_joined,
+                "chahub_data_hash": self.chahub_data_hash,
+                "chahub_timestamp": self.chahub_timestamp,
+                "chahub_needs_retry": self.chahub_needs_retry
+            }
         }
         chahub_id = self.chahub_uid
         if chahub_id:

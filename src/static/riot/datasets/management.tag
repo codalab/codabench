@@ -331,7 +331,10 @@
         }
 
         self.update_datasets = function (page) {
-            CODALAB.api.get_datasets('', '', page)
+            var filters = {
+                'page': page
+            }
+            CODALAB.api.get_datasets(filters)
                 .done(function (data) {
                     self.datasets = data['results']
                     self.pagination = {
