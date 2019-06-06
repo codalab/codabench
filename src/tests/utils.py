@@ -14,7 +14,7 @@ from utils.storage import BundleStorage, PublicStorage
 class CodalabTestHelpersMixin(object):
 
     def login(self, username, password):
-        self.get(reverse('login'))
+        self.get(reverse('accounts:login'))
 
         self.find('input[name="username"]').send_keys(username)
         self.find('input[name="password"]').send_keys(password)
