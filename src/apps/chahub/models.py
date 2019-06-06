@@ -1,14 +1,10 @@
 import hashlib
 import json
 import logging
-
 import os
-import requests
-
 from django.conf import settings
-from django.db import models, IntegrityError, transaction
+from django.db import models, IntegrityError
 from django.utils import timezone
-
 from apps.chahub.utils import send_to_chahub
 
 logger = logging.getLogger(__name__)
@@ -64,8 +60,6 @@ class ChaHubSaveMixin(models.Model):
         """
         # By default, always push
         return True
-
-
     # -------------------------------------------------------------------------
     # Regular methods
     # -------------------------------------------------------------------------

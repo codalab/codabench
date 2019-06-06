@@ -1,12 +1,7 @@
-import json
 import datetime
-
-from django.conf import settings
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
-from django.forms import model_to_dict
 from django.utils.timezone import now
-
 from apps.chahub.models import ChaHubSaveMixin
 
 
@@ -102,6 +97,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def get_chahub_is_valid(self):
         # By default, always push
         return True
+
 
 class GithubUserInfo(models.Model):
     # Required Info

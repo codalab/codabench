@@ -2,10 +2,7 @@ import logging
 import requests
 from celery import task
 from datetime import timedelta
-
-from django.conf import settings
 from django.utils import timezone
-
 from apps.chahub.utils import send_to_chahub
 from profiles.models import User
 

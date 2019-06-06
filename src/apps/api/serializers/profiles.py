@@ -5,6 +5,7 @@ from profiles.models import GithubUserInfo
 
 User = get_user_model()
 
+
 class GithubUserInfoSerializer(ModelSerializer):
 
     class Meta:
@@ -33,6 +34,7 @@ class GithubUserInfoSerializer(ModelSerializer):
             'events_url',
             'received_events_url'
         ]
+
 
 class MyProfileSerializer(ModelSerializer):
 

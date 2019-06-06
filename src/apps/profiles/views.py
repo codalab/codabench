@@ -13,8 +13,10 @@ class LoginView(auth_views.LoginView):
         context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
         return context
 
+
 class LogoutView(auth_views.LogoutView):
     pass
+
 
 def sign_up(request):
     if request.method == 'POST':

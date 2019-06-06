@@ -1,7 +1,6 @@
 from django.conf import settings
 
 import logging
-import os
 import requests
 import json
 
@@ -38,6 +37,7 @@ def send_to_chahub(endpoint, data, update=False):
             return requests.post(data=data, **kwargs)
     except requests.ConnectionError:
         return None
+
 
 def get_all_chahub_user_data():
     from profiles.models import User
