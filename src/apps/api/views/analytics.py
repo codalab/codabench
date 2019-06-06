@@ -1,11 +1,12 @@
 from django.db.models import Count
 from django.contrib.auth import get_user_model
-from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from competitions.models import Competition, Submission
 
 
 User = get_user_model()
+
 
 def build_request_object(model_name, filter_param, time_unit, start_date, end_date):
     ob = {}
@@ -43,7 +44,6 @@ def build_request_object(model_name, filter_param, time_unit, start_date, end_da
             ob[date.year][date.month][date.day]['total'] = this_day['pk__count']
 
     return ob
-
 
 
 @api_view(['GET'])
