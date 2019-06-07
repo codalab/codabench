@@ -1,5 +1,5 @@
 <front-page-competitions>
-    <div hide="{USER_LOGGED_IN}" class="vert-wrap">
+    <div hide="{CODALAB.state.user.logged_in}" class="vert-wrap">
         <div class="segment-container ui segment">
             <div class="ui header">
                 Popular Competitions
@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <div show={USER_LOGGED_IN} class="vert-wrap logged-in">
+    <div show={CODALAB.state.user.logged_in} class="vert-wrap logged-in">
         <div class="segment-container ui segment">
             <div class="ui header">
                 Popular Competitions
