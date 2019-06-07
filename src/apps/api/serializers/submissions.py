@@ -160,7 +160,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
         return make_url_sassy(instance.data.data_file.name)
 
     def get_result(self, instance):
-        return make_url_sassy(instance.result.name)
+        if instance.result.name:
+            return make_url_sassy(instance.result.name)
 
     def get_leaderboards(self, instance):
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))

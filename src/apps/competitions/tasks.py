@@ -94,7 +94,32 @@ COLUMN_FIELDS = [
 ]
 
 
-def send(submission, run_args):
+def send(submission, task, is_scoring, run_args):
+    if not is_scoring:
+        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+
+    if task.ingestion_program:
+        if (task.ingestion_only_during_scoring and is_scoring) or (
+                not task.ingestion_only_during_scoring and not is_scoring):
+            run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+            if task.input_data:
+                run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
+
+    if is_scoring and task.reference_data:
+        run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
+
+    run_args['program_data'] = make_url_sassy(
+        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+    )
+    run_args['result'] = make_url_sassy(
+        path=submission.result.name,
+        permission='w' if not is_scoring else 'r'
+    )
+    run_args['task_pk'] = task.id
+    detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+    for detail_name in detail_names:
+        run_args[detail_name] = create_detailed_output_file(detail_name, submission)
+
     print("Task data:")
     print(run_args)
 
@@ -146,45 +171,42 @@ def run_submission(submission_pk, task_pk=None, parent_pk=None, parent_secret=No
         "parent_secret": parent_secret,
         "parent_pk": parent_pk,
     }
-
-    if task_pk is None:
-        task = submission.phase.tasks.first()
-        for _task in submission.phase.tasks.exclude(id=task.id):
-            # TODO: make a duplicate submission method and use it here
-            sub = Submission(
-                owner=submission.owner,
-                phase=submission.phase,
-                data=submission.data,
-                participant=submission.participant
+    tasks = submission.phase.tasks.all()
+    if task_pk is None:  # This is the initial submission object
+        if len(tasks) > 1:
+            # The initial submission object becomes the parent submission and we create children for each task
+            submission.has_children = True
+            submission.status = 'Running'
+            submission.save()
+            for task in tasks:
+                # TODO: make a duplicate submission method and use it here
+                sub = Submission(
+                    owner=submission.owner,
+                    phase=submission.phase,
+                    data=submission.data,
+                    participant=submission.participant,
+                    parent=submission,
+                    ignore_total=True,
+                )
+                sub.save(ignore_submission_limit=True)
+                run_submission(sub.id, task.id, parent_pk=submission.id, parent_secret=submission.secret)
+        else:
+            # The initial submission object will be the only submission
+            task = tasks.first()
+            send(
+                submission=submission,
+                task=task,
+                run_args=run_arguments,
+                is_scoring=is_scoring
             )
-            sub.save(ignore_submission_limit=True)
-            run_submission(sub.id, _task.id, parent_pk=submission.id, parent_secret=submission.secret)
     else:
         task = Task.objects.get(id=task_pk)
-    if not is_scoring:
-        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-
-    if task.ingestion_program:
-        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-            run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-            if task.input_data:
-                run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
-
-    if is_scoring and task.reference_data:
-        run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
-
-    run_arguments['program_data'] = make_url_sassy(
-        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
-    )
-    run_arguments['result'] = make_url_sassy(
-        path=submission.result.name,
-        permission='w' if not is_scoring else 'r'
-    )
-    run_arguments['task_id'] = task.id
-    detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
-    for detail_name in detail_names:
-        run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
-    send(submission, run_arguments)
+        send(
+            submission=submission,
+            task=task,
+            run_args=run_arguments,
+            is_scoring=is_scoring
+        )
 
 
 class CompetitionUnpackingException(Exception):

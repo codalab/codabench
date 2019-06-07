@@ -284,6 +284,10 @@ class Submission(ChaHubSaveMixin, models.Model):
     # uber experimental
     # track = models.IntegerField(default=1)
 
+    ignore_total = models.BooleanField(default=False)
+    has_children = models.BooleanField(default=False)
+    parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
+
     class Meta:
         unique_together = ('owner', 'leaderboard')
 

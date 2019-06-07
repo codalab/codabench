@@ -106,7 +106,7 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
-        self.task_id = run_args.get('task_id')
+        self.task_pk = run_args.get('task_pk')
         self.parent_pk = run_args.get('parent_pk')
         self.parent_secret = run_args.get('parent_secret')
 
@@ -139,14 +139,18 @@ class Run:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
         url = f"{self.api_url}/submissions/{self.submission_id}/"
         logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
-        resp = requests.patch(url, {
+        data = {
             "secret": self.secret,
             "status": status,
-            "task_pk": self.task_id,
-            "parent_pk": self.parent_pk,
-            "parent_secret": self.parent_secret,
             "status_details": extra_information,
-        })
+        }
+        if status == STATUS_SCORING:
+            data.update({
+                "task_pk": self.task_pk,
+                "parent_pk": self.parent_pk,
+                "parent_secret": self.parent_secret,
+            })
+        resp = requests.patch(url, data)
         # logger.info(resp)
         # logger.info(resp.content)
 
@@ -386,6 +390,10 @@ class Run:
         })
         logger.info(resp)
         logger.info(str(resp.content))
+
+    def _increment_parent(self):
+        # TODO: something to pass on to the parent submission to let it know things are in process?
+        pass
 
     def push_scores(self):
         # POST to some endpoint:
