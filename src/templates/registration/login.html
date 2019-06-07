@@ -4,11 +4,11 @@
 {% block content %}
     <div class="sixteen wide mobile eight wide computer centered column">
         <form class="ui large form" method="POST">
-            <h2 class="ui blue header">
-                Login
-            </h2>
             {% csrf_token %}
             <div class="ui stacked segment">
+                <h2 class="ui header">
+                    Login
+                </h2>
                 <div class="ui field">
                     <div class="ui left icon input">
                         <i class="user icon"></i>
@@ -34,8 +34,10 @@
                     </div>
                 </div>
                 <button class="ui blue submit button" type="submit">Login</button>
-                <div class="ui divider"></div>
-                <p>New to us? <a href="#">Sign Up</a></p>
+                <h2 class="ui dividing header">Login with Chahub</h2>
+                <a class="ui large green button" href="{% url "social:begin" "chahub" %}">Sign-In</a>
+{#                <a class="ui large yellow button" href="http://localhost:8888/profiles/signup?next=http://localhost{% url "social:begin" "chahub" %}">Sign-Up through Chahub</a></p>#}
+                <a class="ui large yellow button" href="{{chahub_signup_url}}">Sign-Up through Chahub</a></p>
             </div>
             <div class="ui error message"></div>
         </form>
