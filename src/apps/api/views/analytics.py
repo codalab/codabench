@@ -55,13 +55,13 @@ def analytics_detail(request):
     end_date = request.query_params.get('end_date')
     time_unit = request.query_params.get('time_unit')
 
-    users = build_request_object(User, 'date_joined', time_unit, start_date, end_date)
-    competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date)
+    users = build_request_object(User,'date_joined', time_unit, start_date, end_date)
+    competitions = build_request_object(Competition,'created_when', time_unit, start_date, end_date)
     submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date)
 
     return Response({
-        'registered_user_count': User.objects.all().filter(date_joined__range=[start_date, end_date]).count(),
-        'competition_count': Competition.objects.all().filter(created_when__range=[start_date, end_date]).count(),
+        'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
+        'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
         'competitions_published_count': Competition.objects.filter(published=True).filter(created_when__range=[start_date, end_date]).count(),
         'users_data': users,
         'competitions_data': competitions,

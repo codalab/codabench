@@ -3,7 +3,6 @@ __pycache__
 .pytest_cache/
 
 .env
-.env_s3
 .envrc
 
 node_modules/
@@ -12,7 +11,6 @@ uploads/
 venv/
 var/
 certs/
-migrations/
 
 src/static/output.css
 src/static/output.js
@@ -21,5 +19,3 @@ src/static/riot.tag
 src/static/generated/*
 
 db.sqlite3
-
-.idea
