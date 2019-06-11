@@ -33,12 +33,17 @@ class Competition(models.Model):
         Checks for if we need to migrate current phase submissions to next phase.
         """
         phases = self.phases.all()
+
         if len(phases) == 0:
             return
 
-        current_phase = phases.objects.get(is_active=True)
-        next_phase = phases.objects.get(status='Next')
-        final_phase = phases.objects.get(status='Final')
+        try:
+            current_phase = phases.get(status='Current')
+            next_phase = phases.get(status='Next')
+            final_phase = phases.get(status='Final')
+
+        except Phase.DoesNotExist:
+            return
 
         # Making sure current_phase or next_phase is not None
         if current_phase is None or next_phase is None or current_phase is final_phase:
@@ -49,11 +54,12 @@ class Competition(models.Model):
 
         # Check for next phase and see if it has auto_migration enabled
         if next_phase and next_phase.auto_migration:
-            self.apply_phase_migration(current_phase, next_phase)
+            if next_phase.start < now() and current_phase.end < now():
+                self.apply_phase_migration(current_phase, next_phase)
 
     def apply_phase_migration(self, current_phase, next_phase):
         '''
-        Does the actual migrating of submissions from last_phase to current_phase
+        Does the actual migrating of submissions from current_phase to next_phase
 
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
@@ -94,10 +100,11 @@ class Competition(models.Model):
             for participant, submission in participants.items():
                 logger.info('Moving submission %s over' % submission)
 
-                file_args = {"result": submission.result,
-                             "owner": submission.owner,
-                             "data": submission.data,
-                             }
+                file_args = {
+                    "result": submission.result,
+                    "owner": submission.owner,
+                    "data": submission.data,
+                }
 
                 new_submission = Submission(
                     participant=participant,
@@ -121,9 +128,6 @@ class Competition(models.Model):
         self.is_migrating = False  # this should really be True until evaluate_submission tasks are all the way completed
         self.is_migrating_delayed = False
         self.save()
-
-        # TODO: LOOSE ENDS TO TIE UP HERE
-        # No docker_image in Submission objects
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -210,7 +214,7 @@ class Phase(models.Model):
         if not self.end:
             return True
         else:
-            return self.end > now() > self.start
+            return self.start < now() < self.end
 
 
 class SubmissionDetails(models.Model):

@@ -680,3 +680,11 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         logger.info(f"Finished creating competition dump: {temp_comp_dump.pk} for competition: {comp.pk}")
     except ObjectDoesNotExist:
         logger.info("Could not find competition with pk {} to create a competition dump".format(competition_pk))
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 5)
+def do_phase_migrations():
+    competitions = Competition.objects.filter(is_migrating=False)
+    logger.info("Checking {} competitions for phase migrations.".format(len(competitions)))
+    for c in competitions:
+        c.check_future_phase_submissions()
