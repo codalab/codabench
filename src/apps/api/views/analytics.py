@@ -48,7 +48,7 @@ def build_request_object(model_name, filter_param, time_unit, start_date, end_da
 
 @api_view(['GET'])
 def analytics_detail(request):
-    if not request.user.is_staff:
+    if not request.user.is_superuser:
         return Response(status=404)
 
     start_date = request.query_params.get('start_date')

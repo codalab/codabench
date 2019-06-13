@@ -1,106 +1,106 @@
 <analytics>
     <h1>Analytics</h1>
 
-    <div class='date-selection'>
-        <div class="ui calendar" id="start-calendar">
-            <div class="ui input left icon">
-                <i class="calendar icon"></i>
-                <input type="text" placeholder="{ start_date }">
+
+    <h3>Date Range</h3>
+    <div class="ui blue buttons">
+        <button class="ui button" onclick="{ time_range_shortcut }" id="this-week">This Week</button>
+        <button class="ui button" onclick="{ time_range_shortcut }" id="this-month">This Month</button>
+        <button class="ui button" onclick="{ time_range_shortcut }" id="this-year">This Year</button>
+        <button class="ui button" onclick="{ show_date_selectors }" ref="custom_date">Custom</button>
+    </div>
+
+    <div class='date-selection' ref="date_selection_container" style="display: none;">
+        <div class="start-date-input date-input">
+            <h3>Start Date</h3>
+            <div class="ui calendar" ref="start_calendar">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text" placeholder="{ start_date }">
+                </div>
             </div>
         </div>
-        <div class="ui calendar" id="end-calendar">
-            <div class="ui input left icon">
-                <i class="calendar icon"></i>
-                <input type="text" placeholder="{end_date}">
+        <div class="date-input">
+            <h3>End Date</h3>
+            <div class="ui calendar" ref="end_calendar">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text" placeholder="{end_date}">
+                </div>
             </div>
         </div>
     </div>
 
-    <h3>Shortcut Date Ranges</h3>
-    <div class='ui button-group'>
-        <div class='grouped-button shortcut-button' id='this-week'>
-            <h6>This Week</h6>
-        </div>
-        <div class='grouped-button shortcut-button' id='this-month'>
-            <h6>This Month</h6>
-        </div>
-        <div class='grouped-button last-grouped-button shortcut-button' id='this-year'>
-            <h6>This Year</h6>
-        </div>
     </div>
 
     <h3>Chart Resolution</h3>
-    <div class='ui button-group'>
-        <div class='grouped-button selected-grouped-button chart-resolution-button'id='month-units'>
-            <h6>Month</h6>
-        </div>
-        <div class='grouped-button chart-resolution-button' id='week-units'>
-            <h6>Week</h6>
-        </div>
-        <div class='grouped-button last-grouped-button chart-resolution-button' id='day-units'>
-            <h6>Day</h6>
-        </div>
+    <div class="ui blue buttons">
+        <button class="ui button" onclick="{ update_chart_resolution }" id="day-units">Daily</button>
+        <button class="ui button" onclick="{ update_chart_resolution }" id="week-units">Weekly</button>
+        <button class="ui button" onclick="{ update_chart_resolution }" id="month-units">Monthly</button>
     </div>
 
-    <div class='tab-buttons'>
-        <div class='spacer-button'></div>
-        <div id='competitions-button' class='tab-button selected-tab-button'>
-            <h4>Competitions</h4>
-        </div>
-        <div id='submissions-button' class='tab-button'>
-            <h4>Submissions</h4>
-        </div>
-        <div id='users-button' class='tab-button last-tab-button'>
-            <h4>Users</h4>
-        </div>
-        <div class='spacer-button'></div>
+
+    <div class="ui top attached tabular menu">
+        <a class="item" data-tab="competitions">competitions</a>
+        <a class="item" data-tab="submissions">submissions</a>
+        <a class="active item" data-tab="users">users</a>
     </div>
 
-    <div class='data-tab-container'>
-        <div id='competitions-data' class='data-tab' style='display: block;'>
+        <div class="ui bottom attached tab segment" data-tab="competitions">
+
             <h2>Competition Data</h2>
 
             <table>
-                <tr>
-                    <th>Competitions</th>
-                    <th>Published Competitions</th>
-                </tr>
-                <tr>
-                    <td>{competitions}</td>
-                    <td>{competitions_published}</td>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Competitions</th>
+                        <th>Published Competitions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{competitions}</td>
+                        <td>{competitions_published}</td>
+                    </tr>
+                </tbody>
             </table>
 
-            <canvas id="competition_chart"></canvas>
+            <div class='chart-container'>
+                <canvas id="competition_chart"></canvas>
+            </div>
         </div>
 
-
-        <div id='submissions-data' class='data-tab'>
+        <div class="ui bottom attached tab segment" data-tab="submissions">
             <h2>Submission Data</h2>
 
-            <canvas id="submission_chart"></canvas>
+            <div class='chart-container'>
+                <canvas id="submission_chart"></canvas>
+            </div>
         </div>
 
-        <div id='users-data' class='data-tab'>
+        <div class="ui bottom attached active tab segment" data-tab="users">
             <h2>User Data</h2>
 
             <table>
-                <tr>
-                    <th>Users</th>
-                </tr>
-                <tr>
-                    <td>{users_total}</td>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Users</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{users_total}</td>
+                    </tr>
+                </tbody>
             </table>
 
-            <canvas id="user_chart"></canvas>
+            <div class='chart-container'>
+                <canvas id="user_chart"></canvas>
+            </div>
         </div>
 
-        <div id='download-analytics-data'>
-            <h3 class='download-button'>Download</h3>
-        </div>
-    </div>
-
+        <button class="ui big blue button" onclick="{ download_analytics_data }">Download</button>
     <script>
         var self = this
 
@@ -109,14 +109,14 @@
         ---------------------------------------------------------------------*/
         self.errors = []
 
-        var competitionsChart;
-        var submissionsChart;
-        var usersChart;
-        var g_time_unit = 'month';
+        self.competitionsChart;
+        self.submissionsChart;
+        self.usersChart;
+        self.time_unit = 'month';
 
-        var g_competitions_data;
-        var g_submissions_data;
-        var g_users_data;
+        self.competitions_data;
+        self.submissions_data;
+        self.users_data;
 
         var start_date = {
             year: 2018,
@@ -132,28 +132,43 @@
         }
 
         self.one("mount", function () {
-            // Make semantic elements work
-            $(".ui.dropdown", self.root).dropdown()
-            $(".ui.checkbox", self.root).checkbox()
+            // Semantic UI
+            $('.tabular.menu .item').tab();
 
-
-            calendar_formatter = {
-                date: function (date, settings) {
-                    if (!date) return '';
-                    var day = date.getDate();
-                    var month = date.getMonth() + 1;
-                    var year = date.getFullYear();
-                    return year + '-' + month + '-' + day;
+            // Calendar date-pickers
+            $(document).on('click', function(e) {
+                console.log(e.target)
+                console.log(self.refs.date_selection_container)
+                if (!self.refs.date_selection_container.contains(e.target) && e.target !== self.refs.custom_date) {
+                    $(self.refs.date_selection_container).css('display','none')
                 }
-            }
-            $('#start-calendar').calendar({
+            })
+
+            /*---------------------------------------------------------------------
+             Calendar Setup
+            ---------------------------------------------------------------------*/
+
+            general_calendar_options = {
                 type: 'date',
-                endCalendar: $('#end-calendar'),
+                // Sets the format of the placeholder date string to YYYY-MM-DD
+                formatter: {
+                   date: function (date, settings) {
+                       if (!date) return '';
+                       var day = date.getDate();
+                       var month = date.getMonth() + 1;
+                       var year = date.getFullYear();
+                       return year + '-' + month + '-' + day;
+                   }
+                },
+            }
+
+            start_specific_options = {
+                endCalendar: $(self.refs.end_calendar),
                 onChange: function(date, text) {
 
                     let year = date.getFullYear()
                     let month = date.getMonth()
-                    if(month == 0) {
+                    if(month === 0) {
                         start_date = {
                             year: year - 1,
                             month: 12,
@@ -166,14 +181,12 @@
                             day: 1,
                         }
                     }
-                    self.update_analytics(start_date, end_date, g_time_unit)
+                    self.update_analytics(start_date, end_date, self.time_unit)
                 },
-                formatter: calendar_formatter,
-            });
+            }
 
-            $('#end-calendar').calendar({
-                type: 'date',
-                startCalendar: $('#start-calendar'),
+            end_specific_options = {
+                startCalendar: $(self.refs.start_calendar),
                 onChange: function(date, text) {
 
                     let year = date.getFullYear()
@@ -185,26 +198,35 @@
                         day: day,
                     }
 
-                    self.update_analytics(start_date, end_date, g_time_unit)
+                    self.update_analytics(start_date, end_date, self.time_unit)
                 },
-                formatter: calendar_formatter,
-            });
+            }
 
+            start_calendar_options = _.assign({}, general_calendar_options, start_specific_options)
+            end_calendar_options = _.assign({}, general_calendar_options, end_specific_options)
+
+            $(self.refs.start_calendar).calendar(start_calendar_options);
+            $(self.refs.end_calendar).calendar(end_calendar_options);
+
+            /*---------------------------------------------------------------------
+             Chart Setup
+            ---------------------------------------------------------------------*/
 
             var ctx_c = document.getElementById('competition_chart').getContext('2d');
-            competitionsChart = new Chart(ctx_c, create_chart_config('# of Competitions'));
+            self.competitionsChart = new Chart(ctx_c, create_chart_config('# of Competitions'));
             var ctx_s = document.getElementById('submission_chart').getContext('2d');
-            submissionsChart = new Chart(ctx_s, create_chart_config('# of Submissions'));
+            self.submissionsChart = new Chart(ctx_s, create_chart_config('# of Submissions'));
             var ctx_u = document.getElementById('user_chart').getContext('2d');
-            usersChart = new Chart(ctx_u, create_chart_config('# of Users Joined'));
+            self.usersChart = new Chart(ctx_u, create_chart_config('# of Users Joined'));
 
-            self.update_analytics(start_date, null, g_time_unit)
+            self.update_analytics(start_date, null, self.time_unit)
 
         })
 
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+
         function create_chart_config(label) {
             return {
                 type: 'line',
@@ -252,7 +274,7 @@
                         for(var day in month_obj) {
                             if(!month_obj.hasOwnProperty(day)) continue;
 
-                            if (year_obj[month][day].total == undefined) {
+                            if (year_obj[month][day].total === undefined) {
                             }
                             if (csv_format) {
                                 x_data.push(new Date(year, month - 1, day).toJSON().slice(0,10))
@@ -293,7 +315,7 @@
             chart.update()
         }
 
-        self.update_analytics= function (start, end, time_unit) {
+        self.update_analytics = function (start, end, time_unit) {
 
             var start_date = new Date(start.year, start.month, start.day)
             if (end) {
@@ -303,16 +325,23 @@
                 end_date.setDate(end_date.getDate() + 1)
             }
 
-            CODALAB.api.get_analytics(start_date.toJSON().slice(0,10), end_date.toJSON().slice(0,10), time_unit)
-                .done(function (data) {
-                    let time_unit = data.time_unit == 'day'
-                    update_chart(competitionsChart, data.competitions_data, time_unit)
-                    update_chart(submissionsChart, data.submissions_data, time_unit)
-                    update_chart(usersChart, data.users_data, time_unit)
+            let date_parameters = {
+                start_date: start_date.toJSON().slice(0,10),
+                end_date: end_date.toJSON().slice(0,10),
+                time_unit: time_unit,
+            }
 
-                    g_competitions_data = data.competitions_data
-                    g_submissions_data = data.submissions_data
-                    g_users_data = data.users_data
+            CODALAB.api.get_analytics(date_parameters)
+                .done(function (data) {
+                    let time_unit = data.time_unit === 'day'
+
+                    update_chart(self.competitionsChart, data.competitions_data, time_unit)
+                    update_chart(self.submissionsChart, data.submissions_data, time_unit)
+                    update_chart(self.usersChart, data.users_data, time_unit)
+
+                    self.competitions_data = data.competitions_data
+                    self.submissions_data = data.submissions_data
+                    self.users_data = data.users_data
 
                     self.update({
                         users_total: data.registered_user_count,
@@ -327,30 +356,11 @@
                 })
         }
 
-        // Tabs
-        $(document).on('click','.tab-button', function(e) {
-            $('.data-tab').css('display', 'none')
-            $('.tab-button').removeClass('selected-tab-button')
-            if ($(e.target).prop('tagName') == 'H4') {
-                var id = $(e.target).parent().attr('id')
-            } else {
-                var id = $(e.target).attr('id')
-            }
-            var data_selection = id.split('-')[0]
-            $('#' + id).addClass('selected-tab-button')
-            $('#' + data_selection + '-data').css('display', 'block')
-        })
 
         // Shortcut buttons
-        $(document).on('click','.shortcut-button', function(e) {
-            $('.shortcut-button').removeClass('selected-grouped-button')
-            if ($(e.target).prop('tagName') == 'H6') {
-                var id = $(e.target).parent().attr('id')
-            } else {
-                var id = $(e.target).attr('id')
-            }
+        self.time_range_shortcut = function(e) {
+            let id = e.target.id
             var unit_selection = id.split('-')[1]
-            $('#' + id).addClass('selected-grouped-button')
 
             end_date = {
                 year: new Date().getFullYear(),
@@ -358,13 +368,13 @@
                 day: new Date().getDate(),
             }
 
-            if (unit_selection == 'month') {
+            if (unit_selection === 'month') {
                 start_date = {
                     year: new Date().getFullYear(),
                     month: new Date().getMonth() + 1,
                     day: 1,
                 }
-            } else if (unit_selection == 'week') {
+            } else if (unit_selection === 'week') {
                 var start = new Date()
                 start.setDate(start.getDate() - 6)
                 start_date = {
@@ -373,7 +383,7 @@
                     month: start.getMonth() + 1,
                     day: start.getDate(),
                 }
-            } else if (unit_selection == 'year') {
+            } else if (unit_selection === 'year') {
                 start_date = {
                     year: new Date().getFullYear(),
                     month: 0,
@@ -388,34 +398,33 @@
             } else {
                 $('#month-units').click()
             }
-        })
+        }
+
+        self.show_date_selectors = function (e) {
+            $(self.refs.date_selection_container).css('display','flex')
+        }
 
         // Chart Units (Months, Weeks, Days)
-        $(document).on('click','.chart-resolution-button', function(e) {
-            $('.chart-resolution-button').removeClass('selected-grouped-button')
-            if ($(e.target).prop('tagName') == 'H6') {
-                var id = $(e.target).parent().attr('id')
-            } else {
-                var id = $(e.target).attr('id')
-            }
+        self.update_chart_resolution = function(e) {
+            let id = e.target.id
             var unit_selection = id.split('-')[0]
-            $('#' + id).addClass('selected-grouped-button')
+            console.log(unit_selection)
 
-            if( unit_selection == 'day' || unit_selection == 'week') {
-                g_time_unit = 'day'
+            if( unit_selection === 'day' || unit_selection === 'week') {
+                self.time_unit = 'day'
             } else {
-                g_time_unit = 'month'
+                self.time_unit = 'month'
             }
 
-            competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            submissionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            usersChart.options.scales.xAxes[0].time.unit = unit_selection
-            competitionsChart.update()
-            submissionsChart.update()
-            usersChart.update()
+            self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
+            self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection
+            self.usersChart.options.scales.xAxes[0].time.unit = unit_selection
+            self.competitionsChart.update()
+            self.submissionsChart.update()
+            self.usersChart.update()
 
-            self.update_analytics(start_date, end_date, g_time_unit)
-        })
+            self.update_analytics(start_date, end_date, self.time_unit)
+        }
 
         function download(filename, text) {
             var element = document.createElement('a');
@@ -431,7 +440,7 @@
         }
 
         function create_csv_data(data) {
-            let day_resolution = g_time_unit != 'month'
+            let day_resolution = self.time_unit != 'month'
             let d = build_chart_data(data, day_resolution, true)
 
             let x_text = array_to_text(d.x)
@@ -445,17 +454,17 @@
             return arr.join(', ') + '\n'
         }
 
-        $(document).on('click','#download-analytics-data', function(e) {
-            let competitions_text = create_csv_data(g_competitions_data)
-            let submissions_text = create_csv_data(g_submissions_data)
-            let users_text = create_csv_data(g_users_data)
+        self.download_analytics_data = function(e) {
+            let competitions_text = create_csv_data(self.competitions_data)
+            let submissions_text = create_csv_data(self.submissions_data)
+            let users_text = create_csv_data(self.users_data)
 
             let file_text = 'competitions\n' + competitions_text
             file_text += '\nsubmissions\n' + submissions_text
             file_text += '\nusers\n' + users_text
 
             download('codalab_analytics.csv', file_text)
-        })
+        }
 
 
 
@@ -475,132 +484,37 @@
             margin-top: 30px;
         }
 
+        h3 {
+            margin-bottom: 8px;
+        }
+
         canvas {
             height: 500px;
         }
 
-        .date-selection {
+        .date-input {
             display: flex;
-            justify-content: start;
-            flex-direction: row;
-            width: 1000px;
-            margin: 40px 0 70px 0;
+            flex-direction: column;
         }
 
-        .calendar {
+        .start-date-input {
             margin-right: 40px;
         }
 
-        .black-bg {
-            background: #000;
-        }
-
-        .tab-buttons {
+        .date-selection {
             display: flex;
-            justify-content: stretch;
-            align-items: center;
-            width: 100%;
-            height: 65px;
-            margin-top: 80px;
-        }
-
-        .tab-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: solid 1px #ddd;
-            border-right: none;
-            background: #fff;
-            height: 100%;
-            width: 150px;
-        }
-
-        .spacer-button {
-            flex-grow: 1;
-            height: 100%;
-            border-bottom: solid 1px #ddd;
-        }
-
-        .tab-button:hover {
-            color: #666;
-        }
-
-        .selected-tab-button{
-            border-bottom: none;
+            justify-content: space-between;
+            flex-direction: row;
             background: #eee;
-        }
-
-        .last-tab-button {
-            border-right: solid 1px #ddd;
-        }
-
-        .data-tab-container {
-            height: 800px;
-        }
-
-        .data-tab {
-            display: none;
-        }
-
-        .ui-datepicker {
-            width: 500px;
-        }
-
-        .button-group {
-            display: flex;
-            align-items: stretch;
-            overflow: hidden;
-            border-radius: 4px;
-            border: solid 1px #ddd;
-            width: 40%;
-            margin-bottom: 30px;
-        }
-
-        .grouped-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            border-right: solid 1px #ddd;
-            text-align: center;
-            padding: 10px;
-            height: 35px;
-        }
-
-        .grouped-button h6 {
-            margin: 0;
-        }
-
-        .grouped-button:hover {
-            color: #666;
-        }
-
-        .last-grouped-button {
-            border-right: none;
-        }
-
-        .selected-grouped-button {
-            background: #eee;
-        }
-
-        #download-analytics-data {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: solid 1px #ddd;
-            padding: 15px;
-            width: 15%;
             margin-top: 30px;
+            border-radius: 4px;
+            padding: 10px;
+            width: fit-content;
         }
 
-        .download-button {
-            margin: none;
-        }
 
-        #download-analytics-data:hover {
-            color: #666;
+        .chart-container {
+            min-height: 450px;
         }
-
     </style>
-
 </analytics>
