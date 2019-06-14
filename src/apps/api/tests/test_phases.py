@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 
+from api.serializers.competitions import PhaseSerializer, CompetitionSerializer
+from competitions.models import Phase
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
 
 
@@ -46,3 +49,25 @@ class ReRunPhaseSubmissionTests(TestCase):
         resp = self.client.get(reverse('phases-rerun_submissions', kwargs={'pk': self.phase.id}))
         assert resp.status_code == 403, 'Did not raise permission denied and should have'
         assert self.phase.submissions.count() == 4
+
+
+# TODO: Still needs logic completed for validation
+# class PhaseSerializerValidation(TestCase):
+#     def test_phase_serializer_checks_auto_migration(self):
+#         # data = {
+#         #     "index": 1,
+#         #     "start": timezone.now(),
+#         #     'id': 1,
+#         #     'end': timezone.now() + timezone.timedelta(10000),
+#         #     'name': 'testCompetition',
+#         #     'status': Phase.CURRENT,
+#         #     # 'auto_migrate_to_this_phase': Fa,
+#         #
+#         # }
+#         #
+#         # serializer = PhaseSerializer(data=data)
+#         #
+#         # serializer.is_valid(raise_exception=True)
+#         # assert False
+#
+#         serializer = CompetitionSerializer(data=data)

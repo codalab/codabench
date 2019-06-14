@@ -22,40 +22,11 @@ class Competition(models.Model):
     is_migrating = models.BooleanField(default=False)
 
     def __str__(self):
-        return "competition-{0}-{1}".format(self.title, self.pk)
+        return f"competition-{self.title}-{self.pk}"
 
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
-
-    def check_future_phase_submissions(self):
-        """
-        Checks for if we need to migrate current phase submissions to next phase.
-        """
-        phases = self.phases.all()
-
-        if len(phases) == 0:
-            return
-
-        try:
-            current_phase = phases.get(status='Current')
-            next_phase = phases.get(status='Next')
-            final_phase = phases.get(status='Final')
-
-        except Phase.DoesNotExist:
-            return
-
-        # Making sure current_phase or next_phase is not None
-        if current_phase is None or next_phase is None or current_phase is final_phase:
-            return
-
-        logger.info("Checking for needed migrations on competition pk=%s, current phase: %s, next phase: %s" %
-                    (self.pk, current_phase.index, next_phase.index))
-
-        # Check for next phase and see if it has auto_migration enabled
-        if next_phase and next_phase.auto_migration:
-            if next_phase.start < now() and current_phase.end < now():
-                self.apply_phase_migration(current_phase, next_phase)
 
     def apply_phase_migration(self, current_phase, next_phase):
         '''
@@ -64,65 +35,41 @@ class Competition(models.Model):
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
         '''
-        logger.info("Checking for submissions that may still be running competition pk=%s" % self.pk)
+        logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
 
-        if current_phase.submissions.filter(status='Scoring').exists():
-            logger.info('Some submissions still marked as processing for competition pk=%s' % self.pk)
+        if not current_phase.submissions.filter(status='Scoring' or 'Cancelled' or 'Finished').exists():
+            logger.info(f"No submissions running for competition pk={self.pk}")
+        else:
+            logger.info(f"Some submissions still marked as processing for competition pk={self.pk}")
             self.is_migrating_delayed = True
             self.save()
             return
-        else:
-            logger.info("No submissions running for competition pk=%s" % self.pk)
 
-        logger.info('Doing phase migration on competition pk=%s from phase: %s to phase: %s' %
-                    (self.pk, current_phase.index, next_phase.index))
-
-        if self.is_migrating:
-            logger.info('Trying to migrate competition pk=%s, but it is already being migrated!' % self.pk)
-            return
+        logger.info(
+            f"Doing phase migration on competition pk={self.pk} from phase: {current_phase.index} to phase: {next_phase.index}")
 
         self.is_migrating = True
         self.save()
 
-        try:
-            submission_list = []
-            submissions = Submission.objects.filter(phase=current_phase)
+        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False)
 
-            for submission in submissions:
-                submission_list.append(submission)
+        for submission in submissions:
+            new_submission = Submission(
+                participant=submission.participant,
+                phase=next_phase,
+                result=submission.result,
+                owner=submission.owner,
+                data=submission.data,
+            )
+            new_submission.save(ignore_submission_limit=True)
+            new_submission.start()
 
-            participants = {}
-
-            for s in submission_list:
-                if s.is_migrated is False:
-                    participants[s.participant] = s
-
-            for participant, submission in participants.items():
-                logger.info('Moving submission %s over' % submission)
-
-                file_args = {
-                    "result": submission.result,
-                    "owner": submission.owner,
-                    "data": submission.data,
-                }
-
-                new_submission = Submission(
-                    participant=participant,
-                    phase=next_phase,
-                    **file_args
-                )
-                new_submission.save(ignore_submission_limit=True)
-                new_submission.start()
-
-                submission.is_migrated = True
-                submission.save()
-
-        except Submission.DoesNotExist:
-            pass
+            submission.is_migrated = True
+            submission.save()
 
         # To check for submissions being migrated, does not allow to enter new submission
-        next_phase.is_migrated = True
-        next_phase.save()
+        current_phase.has_been_migrated = True
+        current_phase.save()
 
         # TODO: ONLY IF SUCCESSFUL
         self.is_migrating = False  # this should really be True until evaluate_submission tasks are all the way completed
@@ -173,7 +120,8 @@ class Phase(models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
-    auto_migration = models.BooleanField(default=False)
+    auto_migrate_to_this_phase = models.BooleanField(default=False)
+    has_been_migrated = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
@@ -215,6 +163,26 @@ class Phase(models.Model):
             return True
         else:
             return self.start < now() < self.end
+
+    def check_future_phase_submissions(self):
+        """
+        Checks for if we need to migrate current phase submissions to next phase.
+        """
+        current_phase = self.competition.phases.get(index=self.index - 1)
+        next_phase = self
+
+        # Check for next phase and see if it has auto_migration enabled
+        try:
+            if not current_phase.has_been_migrated:
+                logger.info(
+                    f"Checking for needed migrations on competition pk={self.competition.pk}, "
+                    f"current phase: {current_phase.index}, next phase: {next_phase.index}")
+                self.competition.apply_phase_migration(current_phase, next_phase)
+
+        except next_phase.DoesNotExist:
+            logger.info(f"This competition is missing the next phase to migrate to.")
+        except current_phase.DoesNotExist:
+            logger.info(f"This competition is missing the previous phase to migrate from.")
 
 
 class SubmissionDetails(models.Model):

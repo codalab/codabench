@@ -26,7 +26,7 @@ from tempfile import TemporaryDirectory
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
-    CompetitionDump
+    CompetitionDump, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
@@ -684,7 +684,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    competitions = Competition.objects.filter(is_migrating=False)
-    logger.info("Checking {} competitions for phase migrations.".format(len(competitions)))
-    for c in competitions:
-        c.check_future_phase_submissions()
+    new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
+                                      has_been_migrated=False, competition__is_migrating=False)
+    logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
+
+    for p in new_phases:
+        p.check_future_phase_submissions()

@@ -11,7 +11,8 @@ from tasks.models import Task
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+                                         many=True)
 
     class Meta:
         model = Phase
@@ -28,8 +29,18 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
-            'auto_migration',
+            'auto_migrate_to_this_phase',
         )
+
+    # TODO: Finish validate logic for phase serializer
+    # def validate(self, attrs):
+    #     assert False
+    #     print(attrs)
+    #     """Returns False when auto-migration is not settable for this phase."""
+    #     attrs['competition']competition.phases.count()
+    #     if 'auto_migrate_to_this_phase' in attrs and self == self.competition.phases.all().first() or (
+    #             self.competition.phases.count() <= 1 or self.competition.phases.count() is None):
+    #         return setattr(Phase, 'auto_migrate_to_this_phase', False)
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
@@ -130,7 +141,6 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
-
     class Meta:
         model = Competition
         fields = (
