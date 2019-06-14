@@ -53,7 +53,7 @@ class ChaHubSaveMixin(models.Model):
         raise NotImplementedError()
 
     def get_chahub_is_valid(self):
-        """Override this to validate the specifc model before it's sent
+        """Override this to validate the specific model before it's sent
 
         Example:
             return comp.is_published
@@ -69,7 +69,8 @@ class ChaHubSaveMixin(models.Model):
         except IntegrityError:
             logger.info("Object already has ID skipping save in Chahub mixin.")
 
-        if os.environ.get('PYTEST') and not settings.PYTEST_FORCE_CHAHUB:
+        pytest_force_chahub = settings.PYTEST_FORCE_CHAHUB if hasattr(settings, 'PYTEST_FORCE_CHAHUB') else False
+        if os.environ.get('PYTEST') and not pytest_force_chahub:
             # For tests let's just assume Chahub isn't available
             # We can mock proper responses
             return None
@@ -78,12 +79,11 @@ class ChaHubSaveMixin(models.Model):
         if settings.CHAHUB_API_URL:
             is_valid = self.get_chahub_is_valid()
 
-            logger.info("ChaHub :: {}={} is_valid = {}".format(self.__class__.__name__, self.pk, is_valid))
+            logger.info(f"ChaHub :: {self.__class__.__name__}={self.pk} is_valid = {is_valid}")
 
             if is_valid and self.chahub_needs_retry and not force_to_chahub:
                 logger.info("ChaHub :: This has already been tried, waiting for do_retries to force resending")
             elif is_valid:
-                # data = json.dumps(self.get_chahub_data())
                 data = self.get_chahub_data()
                 data_hash = hashlib.md5(json.dumps(data).encode('utf-8')).hexdigest()
 
@@ -92,14 +92,14 @@ class ChaHubSaveMixin(models.Model):
                     resp = send_to_chahub(self.get_chahub_endpoint(), data)
 
                     if resp and resp.status_code in (200, 201):
-                        logger.info("ChaHub :: Received response {} {}".format(resp.status_code, resp.content))
+                        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
                         self.chahub_timestamp = timezone.now()
                         self.chahub_data_hash = data_hash
                         self.chahub_needs_retry = False
                     else:
                         status = resp.status_code if hasattr(resp, 'status_code') else 'N/A'
                         body = resp.content if hasattr(resp, 'content') else 'N/A'
-                        logger.info("ChaHub :: Error sending to chahub, status={}, body={}".format(status, body))
+                        logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
                         self.chahub_needs_retry = True
 
                     # We save at the beginning, but then again at the end to save our new chahub timestamp and such

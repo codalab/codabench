@@ -1,4 +1,4 @@
-from settings.base import *  # noqa: F401,F403
+from settings.base import *
 
 DEBUG = True
 
@@ -8,7 +8,7 @@ CELERY_TASK_ALWAYS_EAGER = True
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Use in memory database
-DATABASES['default'] = {  # noqa: F405
+DATABASES['default'] = {
     'ENGINE': 'django.db.backends.sqlite3',
 }
 
@@ -17,4 +17,4 @@ DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: False
 }
 
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")  # noqa: F405
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")

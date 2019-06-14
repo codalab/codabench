@@ -66,7 +66,7 @@ class Data(ChaHubSaveMixin, models.Model):
     @property
     def in_use(self):
         from competitions.models import Competition
-        competitions_in_use = Competition.objecs.filter(
+        competitions_in_use = Competition.objects.filter(
             Q(phases__tasks__ingestion_program=self) |
             Q(phases__tasks__input_data=self) |
             Q(phases__tasks__reference_data=self) |
@@ -82,16 +82,18 @@ class Data(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint(self):
         return "datasets/"
 
-    def clean_chahub_data(self, temp_data):
-        data = temp_data
-        for key in list(data):
-            if not data[key] or data[key] == '':
-                data.pop(key, None)
-            if isinstance(data.get(key), datetime.datetime):
-                data[key] = data[key].isoformat()
-            if isinstance(data.get(key), uuid.UUID):
-                data[key] = str(data[key])
-        return data
+    def clean_chahub_data(self, data):
+        validated_data = {}
+        for key, item in data.items():
+            if not item:
+                continue
+            elif isinstance(item, datetime.datetime):
+                validated_data[key] = item.isoformat()
+            elif isinstance(item, uuid.UUID):
+                validated_data[key] = str(item)
+            else:
+                validated_data[key] = item
+        return validated_data
 
     def get_chahub_data(self):
         data = {
@@ -109,11 +111,10 @@ class Data(ChaHubSaveMixin, models.Model):
         if chahub_id:
             data['user'] = chahub_id
         data = self.clean_chahub_data(data)
-        return [data]
+        return data
 
     def get_chahub_is_valid(self):
-        # By default, always push
-        return True
+        return self.is_public
 
 
 class DataGroup(models.Model):

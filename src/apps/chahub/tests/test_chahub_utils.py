@@ -1,46 +1,37 @@
-# Todo: Implement ChahubSaveMixin on Submissions
-# Todo: Finish fixing tests
+# # Todo: Implement ChahubSaveMixin on Submissions
+# # Todo: Finish fixing tests
 # import datetime
 # from unittest import mock
-# from django.conf import settings
 #
+# from django.conf import settings
 # from django.test import TestCase
 # from django.test.utils import override_settings
 #
-# from profiles.models import User as ClUser
-# from competitions.models import Submission as CompetitionSubmission, Competition, Phase as CompetitionPhase, CompetitionParticipant
-# # from apps.chahub.tasks import send_chahub_general_stats
+# from factories import UserFactory, CompetitionParticipantFactory, CompetitionFactory, PhaseFactory
 #
 #
 # class ChahubUtillityTests(TestCase):
 #     def setUp(self):
-#         self.user = ClUser.objects.create_user(username="user", password="pass")
-#         self.competition = Competition.objects.create(
-#             title="Test Competition",
-#             created_by=self.user,
-#             # modified_by=self.user,
-#             published=True,
-#         )
-#         self.participant = CompetitionParticipant.objects.create(
+#         self.user = UserFactory(username='admin', password='test')
+#         print('user created')
+#         self.competition = CompetitionFactory()
+#         print('competition created')
+#         self.participant = CompetitionParticipantFactory(
 #             user=self.user,
 #             competition=self.competition,
 #             status='approved'
-#             # status=ParticipantStatus.objects.get_or_create(name='approved', codename=ParticipantStatus.APPROVED)[0],
 #         )
-#         self.phase = CompetitionPhase.objects.create(
+#         print('participant created')
+#         self.phase = PhaseFactory(
 #             competition=self.competition,
-#             index=1,
-#             start=datetime.datetime.now() - datetime.timedelta(days=30),
 #         )
+#         print('phase created')
 #
 #     @override_settings(CHAHUB_API_URL='http://host.docker.internal/')
 #     def test_send_to_chahub_utillity(self):
-#         # with mock.patch('apps.web.models.CompetitionSubmission.send_to_chahub') as send_to_chahub_mock:
-#         with mock.patch('chahub.utils.send_to_chahub') as send_to_chahub_mock:
+#         print('inside test file')
+#         settings.PYTEST_FORCE_CHAHUB = True
+#         with mock.patch('profiles.models.app.chahub.models.send_to_chahub') as send_to_chahub_mock:
 #             send_to_chahub_mock.return_value = None
-#             # Calling this as a function instead of a task?
-#             # send_chahub_general_stats()
-#             # attempts to send to Chahub once
-#             # We succesfully sent data to Chahub
+#             self.user.save()
 #             assert send_to_chahub_mock.called
-#
