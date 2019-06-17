@@ -11,11 +11,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         # Optional argument
         parser.add_argument(
-            '-a',
-            '--create-admin',
+            '-n',
+            '--no-admin',
             type=bool,
-            help='Whether to create an admin'
-                 'This defaults to false')
+            help='Do not create a superuser w/ username "admin"')
         parser.add_argument(
             '-s',
             '--size',
@@ -25,8 +24,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         size = kwargs['size'] if kwargs['size'] else 5
-        create_admin = kwargs['create_admin'] if kwargs['create_admin'] else False
-        users = [UserFactory(username='admin', super_user=True) if i == 0 and create_admin else UserFactory() for i in range(size)]
+        no_admin = kwargs.get('no_admin')
+        users = [UserFactory(username='admin', super_user=True) if i == 0 and not no_admin else UserFactory() for i in range(size)]
         for user in users:
             for _ in range(size):
                 comp = CompetitionFactory(created_by=user)
