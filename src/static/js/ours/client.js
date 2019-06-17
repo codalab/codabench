@@ -44,6 +44,23 @@ CODALAB.api = {
         })
     },
 
+    request_text: function (method, url, data) {
+        if(method.toLowerCase() !== "get") {
+            data = JSON.stringify(data)
+        }
+
+        return $.ajax({
+            type: method,
+            headers: {
+                Accept: 'text/csv; charset=utf-8'
+            },
+            url: url,
+            data: data,
+            contentType: "application/json",
+            dataType: 'text'
+        })
+    },
+
     search: function (query) {
         // Todo This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
@@ -247,5 +264,9 @@ CODALAB.api = {
     ---------------------------------------------------------------------*/
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
+    },
+
+    get_analytics_csv: (filters) => {
+        return CODALAB.api.request_text('GET', `${URLS.API}analytics/`, filters)
     },
 }
