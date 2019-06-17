@@ -42,59 +42,58 @@
 
 
     <div class="ui top attached tabular menu">
-        <a class="item" data-tab="competitions">Competitions</a>
+        <a class="active item" data-tab="competitions">Competitions</a>
         <a class="item" data-tab="submissions">Submissions</a>
-        <a class="active item" data-tab="users">Users</a>
+        <a class="item" data-tab="users">Users</a>
     </div>
 
-        <div class="ui bottom attached tab segment" data-tab="competitions">
-
-            <h2>Competition Data</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Competitions</th>
-                        <th>Published Competitions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{competitions}</td>
-                        <td>{competitions_published}</td>
-                    </tr>
-                </tbody>
-            </table>
-
+        <div class="ui bottom attached active tab segment" data-tab="competitions">
+            <div class="ui statistics">
+                <div class="statistic">
+                    <div class="value">
+                        {competitions}
+                    </div>
+                    <div class="label">
+                        Competitions Created
+                    </div>
+                </div>
+                <div class="statistic">
+                    <div class="value">
+                        {competitions_published}
+                    </div>
+                    <div class="label">
+                        Competitions Published
+                    </div>
+                </div>
+            </div>
             <div class='chart-container'>
                 <canvas ref="competition_chart"></canvas>
             </div>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="submissions">
-            <h2>Submission Data</h2>
-
+            <div class="ui statistic">
+                <div class="value">
+                    {submissions_made}
+                </div>
+                <div class="label">
+                    Submissions Made
+                </div>
+            </div>
             <div class='chart-container'>
                 <canvas ref="submission_chart"></canvas>
             </div>
         </div>
 
-        <div class="ui bottom attached active tab segment" data-tab="users">
-            <h2>User Data</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Users</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{users_total}</td>
-                    </tr>
-                </tbody>
-            </table>
-
+        <div class="ui bottom attached tab segment" data-tab="users">
+            <div class="ui statistic">
+                <div class="value">
+                    {users_total}
+                </div>
+                <div class="label">
+                    Users Joined
+                </div>
+            </div>
             <div class='chart-container'>
                 <canvas ref="user_chart"></canvas>
             </div>
@@ -355,6 +354,7 @@
                             competitions_published: data.competitions_published_count,
                             start_date: data.start_date,
                             end_date: data.end_date,
+                            submissions_made: data.submissions_made_count,
                         })
                     })
                     .fail(function (a, b, c) {
@@ -504,7 +504,8 @@
         }
 
         canvas {
-            height: 500px;
+            height: 500px !important;
+            width: 1000px !important;
         }
 
         .hidden {

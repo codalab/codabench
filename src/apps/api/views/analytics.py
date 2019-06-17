@@ -77,6 +77,7 @@ def analytics_detail(request):
                     'registered_user_count',
                     'competition_count',
                     'competitions_published_count'
+                    'submissions_made_count'
                 ],
                 [
                     start_date,
@@ -84,7 +85,8 @@ def analytics_detail(request):
                     time_unit,
                     User.objects.filter(date_joined__range=[start_date, end_date]).count(),
                     Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
-                    Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count()
+                    Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
+                    Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
                 ],
                 [" "],
                 [
@@ -103,6 +105,7 @@ def analytics_detail(request):
         'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
         'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
         'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
+        'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
         'users_data': users,
         'competitions_data': competitions,
         'submissions_data': submissions,
