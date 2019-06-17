@@ -265,10 +265,6 @@
                         toastr.error('Error Retrieving Competition Files')
                     })
             }
-            self.close_modal = () => {
-                $(self.refs.dump_modal).modal('hide')
-            }
-
         </script>
 
 </comp-tabs>
