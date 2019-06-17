@@ -287,7 +287,7 @@
 
             for( let i = 0; i < data.length; i++ ) {
                 let point = {}
-                point.x = new Date(data[i].x)
+                point.x = new Date(data[i]._datefield)
                 point.x.setDate(point.x.getDate() + 1)
                 point.y = data[i].count
                 chart_data.push(point)

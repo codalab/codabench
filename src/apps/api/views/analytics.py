@@ -15,15 +15,15 @@ def build_request_object(model_name, filter_param, time_unit, start_date, end_da
         filter_param + '__range': [start_date, end_date]
     }
 
-    data = model_name.objects.filter(**filter_args).dates(filter_param, time_unit).annotate(count=Count('pk')).values('count', x=F('datefield'))
+    data = model_name.objects.filter(**filter_args).dates(filter_param, time_unit).values(count=Count('pk'), _datefield=F('datefield'))
 
     if csv:
         csv_data = {
-            'x': [],
+            '_datefield': [],
             'count': [],
         }
         for i in data:
-            csv_data['x'].append(i['x'])
+            csv_data['_datefield'].append(i['_datefield'])
             csv_data['count'].append(i['count'])
         return csv_data
     else:
@@ -49,7 +49,7 @@ def analytics_detail(request):
     submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date, csv)
 
     if csv:
-        data = [users['x'], users['count'], competitions['x'], competitions['count'], submissions['x'], submissions['count']]
+        data = [users['_datefield'], users['count'], competitions['_datefield'], competitions['count'], submissions['_datefield'], submissions['count']]
         lengths = [len(i) for i in data]
 
         csv_data = []
@@ -76,7 +76,7 @@ def analytics_detail(request):
                     'time_unit',
                     'registered_user_count',
                     'competition_count',
-                    'competitions_published_count'
+                    'competitions_published_count',
                     'submissions_made_count'
                 ],
                 [
@@ -95,7 +95,7 @@ def analytics_detail(request):
                     'competitions_data date',
                     'competitions_data count',
                     'submissions_data date',
-                    'submissions_data count'
+                    'submissions_data count',
                 ],
                 *csv_data,
             ]
