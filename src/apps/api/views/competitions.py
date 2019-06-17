@@ -72,6 +72,26 @@ class CompetitionViewSet(ModelViewSet):
         competition.save()
         return Response({"published": competition.published})
 
+    @action(detail=True, methods=('GET',))
+    def get_files(self, request, pk):
+        competition = Competition.objects.select_related(
+            'created_by'
+        ).prefetch_related(
+            'dumps__dataset',
+        ).get(id=pk)
+        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+            raise PermissionDenied("You don't have access to the competition files")
+        from utils.data import make_url_sassy
+        bundle = competition.bundle_dataset
+        files = {
+            'bundle': {
+                'name': bundle.name,
+                'url': make_url_sassy(bundle.data_file.name)
+            },
+            'dumps': [{'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)} for dump in competition.dumps.all()]
+        }
+        return Response(files)
+
 
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
