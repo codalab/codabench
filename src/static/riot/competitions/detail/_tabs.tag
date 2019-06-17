@@ -108,6 +108,7 @@
                 <button class="ui yellow button icon" onclick="{create_dump}">
                     <i class="download icon"></i> Create Competition Dump
                 </button>
+                <button class="ui teal icon button" onclick="{update_files}"><i class="sync alternate icon"></i> Refresh Table</button>
                 <table class="ui very basic table">
                     <thead>
                     <tr>
@@ -137,6 +138,18 @@
                     <h3>Stuff for managing participants</h3>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="ui basic modal" ref="dump_modal">
+        <div class="header">
+            Creating Competition Dump
+        </div>
+        <div class="content">
+                Success! You competition dump is being created. This may take some time.
+                If the files table does not update with the new dump, try refreshing the table.
+        </div>
+        <div class="actions">
+            <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
         <style type="text/stylus">
@@ -226,7 +239,9 @@
             self.create_dump = () => {
                 CODALAB.api.create_dump(self.competition.id)
                     .done(data => {
-                        toastr.success(data.status)
+                        $(self.refs.dump_modal).modal('show')
+                        // toastr.success(data.status + '<br>This may take a few minutes.')
+                        setTimeout(self.update_files, 2000)
                     })
                     .fail(response => {
                         toastr.error("Error trying to create competition dump.")
@@ -236,15 +251,22 @@
                 // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz
                 CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
             }
-            self.update_files = () => {
-                    CODALAB.api.get_competition_files(self.competition.id)
-                        .done(data => {
-                            self.files = data
-                            self.update()
-                        })
-                        .fail(response => {
-                            toastr.error('Error Retrieving Competition Files')
-                        })
+            self.update_files = (e) => {
+                CODALAB.api.get_competition_files(self.competition.id)
+                    .done(data => {
+                        self.files = data
+                        self.update()
+                        if (e) {
+                            // Only display toast if activated from button, not CODALAB.event
+                            toastr.success('Table Updated')
+                        }
+                    })
+                    .fail(response => {
+                        toastr.error('Error Retrieving Competition Files')
+                    })
+            }
+            self.close_modal = () => {
+                $(self.refs.dump_modal).modal('hide')
             }
 
         </script>
