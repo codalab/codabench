@@ -115,7 +115,9 @@
             </div>
         </div>
 
-        <button class="ui big blue button" onclick="{ download_analytics_data }">Download</button>
+        <button class="ui green button" onclick="{ download_analytics_data }">
+            <i class="icon download"></i>Download as CSV
+        </button>
     <script>
         var self = this
 
