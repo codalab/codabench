@@ -2,12 +2,37 @@
     <h1>Analytics</h1>
 
 
-    <h3>Date Range</h3>
-    <div class="ui blue buttons" ref="shortcut_buttons">
-        <button class="ui button" onclick="{ time_range_shortcut }" id="this-week">This Week</button>
-        <button class="ui button" onclick="{ time_range_shortcut }" id="this-month">This Month</button>
-        <button class="ui button" onclick="{ time_range_shortcut }" id="this-year">This Year</button>
-        <button class="ui button" onclick="{ show_date_selectors }" ref="custom_date">Custom</button>
+    <div class="ui grid">
+        <div class="four wide column">
+            <h3>Date Range</h3>
+
+            <div class="ui selection dropdown date-shortcut">
+                <input type="hidden" name="range_shortcut">
+                <i class="dropdown icon"></i>
+                <div class="default text">This Year</div>
+                <div class="menu">
+                    <div class="item" data-value="year">This Year</div>
+                    <div class="item" data-value="month">This Month</div>
+                    <div class="item" data-value="week">This Week</div>
+                    <div class="item" data-value="custom">Custom</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="four wide column">
+            <h3>Chart Resolution</h3>
+
+            <div class="ui selection dropdown resolution">
+                <input type="hidden" name="resolution">
+                <i class="dropdown icon"></i>
+                <div class="default text">Month</div>
+                <div class="menu">
+                    <div class="item" data-value="month">Month</div>
+                    <div class="item" data-value="week">Week</div>
+                    <div class="item" data-value="day">Day</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class='hidden date-selection' ref="date_selection_container">
@@ -29,15 +54,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    </div>
-
-    <h3>Chart Resolution</h3>
-    <div class="ui blue buttons">
-        <button class="ui button" onclick="{ update_chart_resolution }" id="day-units">Daily</button>
-        <button class="ui button" onclick="{ update_chart_resolution }" id="week-units">Weekly</button>
-        <button class="ui button" onclick="{ update_chart_resolution }" id="month-units">Monthly</button>
     </div>
 
 
@@ -118,8 +134,8 @@
         self.users_data;
 
         self.start_date = {
-            year: 2018,
-            month:8,
+            year: 2019,
+            month: 0,
             day: 1,
         }
 
@@ -158,11 +174,20 @@
         self.one("mount", function () {
             // Semantic UI
             $('.tabular.menu .item', self.root).tab();
+            $('.ui.dropdown.date-shortcut', self.root).dropdown({
+                onChange: function(value, text, item) {
+                    if (value === 'custom') {
+                        $(self.refs.date_selection_container).removeClass('hidden')
+                    } else {
+                        $(self.refs.date_selection_container).addClass('hidden')
+                        self.time_range_shortcut(value)
+                    }
+                }
+            })
 
-            // Calendar date-pickers
-            $(document).on('click', function(e) {
-                if (self.refs.shortcut_buttons.contains(e.target) && e.target !== self.refs.custom_date) {
-                    $(self.refs.date_selection_container).addClass('hidden')
+            $('.ui.dropdown.resolution', self.root).dropdown({
+                onChange: function(value, text, item) {
+                    self.update_chart_resolution(value)
                 }
             })
 
@@ -329,7 +354,6 @@
             if(csv) {
                 CODALAB.api.get_analytics_csv(date_parameters)
                     .done(function (data) {
-//                        let csv_data = self.format_data_to_csv(data)
                         self.download('codalab_analytics.csv', data)
                     })
                     .fail(function (a, b, c) {
@@ -365,10 +389,7 @@
 
 
         // Shortcut buttons
-        self.time_range_shortcut = function(e) {
-            let id = e.target.id
-            var unit_selection = id.split('-')[1]
-
+        self.time_range_shortcut = function(unit_selection) {
             self.end_date = {
                 year: new Date().getFullYear(),
                 month: new Date().getMonth() + 1,
@@ -407,14 +428,8 @@
             }
         }
 
-        self.show_date_selectors = function (e) {
-            $(self.refs.date_selection_container).removeClass('hidden')
-        }
-
         // Chart Units (Months, Weeks, Days)
-        self.update_chart_resolution = function(e) {
-            let id = e.target.id
-            var unit_selection = id.split('-')[0]
+        self.update_chart_resolution = function(unit_selection) {
 
             if( unit_selection === 'day') {
                 self.time_unit = 'day'
