@@ -6,7 +6,7 @@
         <div class="four wide column">
             <h3>Date Range</h3>
 
-            <div class="ui selection dropdown date-shortcut">
+            <div class="ui selection dropdown" ref="date_shortcut_dropdown">
                 <input type="hidden" name="range_shortcut">
                 <i class="dropdown icon"></i>
                 <div class="default text">This Year</div>
@@ -22,7 +22,7 @@
         <div class="four wide column">
             <h3>Chart Resolution</h3>
 
-            <div class="ui selection dropdown resolution">
+            <div class="ui selection dropdown" ref="chart_resolution_dropdown">
                 <input type="hidden" name="resolution">
                 <i class="dropdown icon"></i>
                 <div class="default text">Month</div>
@@ -64,8 +64,7 @@
     </div>
 
         <div class="ui bottom attached active tab segment" data-tab="competitions">
-            <div class="ui statistics">
-                <div class="statistic">
+                <div class="ui small statistic">
                     <div class="value">
                         {competitions}
                     </div>
@@ -73,7 +72,7 @@
                         Competitions Created
                     </div>
                 </div>
-                <div class="statistic">
+                <div class="ui small statistic">
                     <div class="value">
                         {competitions_published}
                     </div>
@@ -81,14 +80,13 @@
                         Competitions Published
                     </div>
                 </div>
-            </div>
             <div class='chart-container'>
                 <canvas ref="competition_chart"></canvas>
             </div>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="submissions">
-            <div class="ui statistic">
+            <div class="ui small statistic">
                 <div class="value">
                     {submissions_made}
                 </div>
@@ -102,7 +100,7 @@
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="users">
-            <div class="ui statistic">
+            <div class="ui small statistic">
                 <div class="value">
                     {users_total}
                 </div>
@@ -141,33 +139,23 @@
             day: 1,
         }
 
-        var today = new Date()
+        let today = new Date()
         self.end_date = {
             year: today.getFullYear(),
             month: today.getMonth() + 1,
             day: today.getDate(),
         }
 
-        self.convert_datestring_to_object = function (s, back_adjust) {
+        self.convert_datestring_to_object = function (s) {
             let date = s.split('-')
             let year = date[0]
             let month = date[1]
             let day = date[2]
 
-            let new_date = {}
-
-            if(month === 0 && back_adjust) {
-                new_date = {
-                    year: year - 1,
-                    month: 12,
-                    day: day,
-                }
-            } else {
-                new_date = {
-                    year: year,
-                    month: month - 1,
-                    day: day,
-                }
+            let new_date = {
+                year: year,
+                month: month - 1,
+                day: day,
             }
 
             return new_date
@@ -176,10 +164,14 @@
         self.one("mount", function () {
             // Semantic UI
             $('.tabular.menu .item', self.root).tab();
-            $('.ui.dropdown.date-shortcut', self.root).dropdown({
+
+            self.shortcut_dropdown = $(self.refs.date_shortcut_dropdown)
+            self.resolution_dropdown = $(self.refs.chart_resolution_dropdown)
+            self.shortcut_dropdown.dropdown({
                 onChange: function(value, text, item) {
                     if (value === 'custom') {
                         $(self.refs.date_selection_container).removeClass('hidden')
+                        self.resolution_dropdown.dropdown('set selected', 'day')
                     } else {
                         $(self.refs.date_selection_container).addClass('hidden')
                         self.time_range_shortcut(value)
@@ -187,7 +179,7 @@
                 }
             })
 
-            $('.ui.dropdown.resolution', self.root).dropdown({
+            self.resolution_dropdown.dropdown({
                 onChange: function(value, text, item) {
                     self.update_chart_resolution(value)
                 }
@@ -197,37 +189,64 @@
              Calendar Setup
             ---------------------------------------------------------------------*/
 
-            general_calendar_options = {
+            let general_calendar_options = {
                 type: 'date',
                 // Sets the format of the placeholder date string to YYYY-MM-DD
                 formatter: {
                    date: function (date, settings) {
                        if (!date) return '';
-                       var day = date.getDate();
-                       var month = date.getMonth() + 1;
-                       var year = date.getFullYear();
+                       let day = date.getDate();
+                       let month = date.getMonth() + 1;
+                       let year = date.getFullYear();
                        return year + '-' + month + '-' + day;
                    }
                 },
             }
 
-            start_specific_options = {
+            let start_specific_options = {
                 endCalendar: $(self.refs.end_calendar),
                 onChange: function(date, text) {
 
                     let year = date.getFullYear()
                     let month = date.getMonth()
+                    let day = date.getDate()
                     if(month === 0) {
                         self.start_date = {
                             year: year - 1,
                             month: 12,
-                            day: 1,
+                            day: day,
                         }
                     } else {
                         self.start_date = {
                             year: year,
                             month: month,
-                            day: 1,
+                            day: day,
+                        }
+                    }
+                    let end_date = $(self.refs.end_calendar).calendar('get date')
+                    if (end_date != null) {
+                        if (date <= end_date) {
+                            self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
+                        } else {
+                            toastr.error("Start date must be before end date.")
+                        }
+                    } else {
+                        self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
+                    }
+                },
+            }
+
+            let end_specific_options = {
+                startCalendar: $(self.refs.start_calendar),
+                onChange: function(date, text) {
+                    if (date) {
+                        let year = date.getFullYear()
+                        let month = date.getMonth()
+                        let day = date.getDate()
+                        self.end_date = {
+                            year: year,
+                            month: month,
+                            day: day,
                         }
                     }
 
@@ -235,25 +254,8 @@
                 },
             }
 
-            end_specific_options = {
-                startCalendar: $(self.refs.start_calendar),
-                onChange: function(date, text) {
-
-                    let year = date.getFullYear()
-                    let month = date.getMonth() + 1
-                    let day = date.getDate()
-                    self.end_date = {
-                        year: year,
-                        month: month,
-                        day: day,
-                    }
-
-                    self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
-                },
-            }
-
-            start_calendar_options = _.assign({}, general_calendar_options, start_specific_options)
-            end_calendar_options = _.assign({}, general_calendar_options, end_specific_options)
+            let start_calendar_options = _.assign({}, general_calendar_options, start_specific_options)
+            let end_calendar_options = _.assign({}, general_calendar_options, end_specific_options)
 
             $(self.refs.start_calendar).calendar(start_calendar_options);
             $(self.refs.end_calendar).calendar(end_calendar_options);
@@ -262,12 +264,9 @@
              Chart Setup
             ---------------------------------------------------------------------*/
 
-            var ctx_c = self.refs.competition_chart.getContext('2d');
-            self.competitionsChart = new Chart(ctx_c, create_chart_config('# of Competitions'));
-            var ctx_s = self.refs.submission_chart.getContext('2d');
-            self.submissionsChart = new Chart(ctx_s, create_chart_config('# of Submissions'));
-            var ctx_u = self.refs.user_chart.getContext('2d');
-            self.usersChart = new Chart(ctx_u, create_chart_config('# of Users Joined'));
+            self.competitionsChart = new Chart($(self.refs.competition_chart), create_chart_config('# of Competitions'));
+            self.submissionsChart = new Chart($(self.refs.submission_chart), create_chart_config('# of Submissions'));
+            self.usersChart = new Chart($(self.refs.user_chart), create_chart_config('# of Users Joined'));
 
             self.update_analytics(self.start_date, null, self.time_unit, false)
 
@@ -310,18 +309,20 @@
         }
 
         function build_chart_data(data, day_resolution, csv_format) {
-            var chart_data = []
+            let chart_data = _.map(data, data_point => {
+                let d = new Date(data_point._datefield)
+                d.setDate(d.getDate() + 1)
 
-            for( let i = 0; i < data.length; i++ ) {
-                let point = {}
-                point.x = new Date(data[i]._datefield)
-                point.x.setDate(point.x.getDate() + 1)
-                point.y = data[i].count
-                chart_data.push(point)
-            }
+                return {
+                    x: d,
+                    y: data_point.count,
+                }
+            })
+
             chart_data.sort(function(a,b) {
                 return a.x - b.x
             })
+
             return chart_data
          }
 
@@ -333,19 +334,16 @@
         self.update_analytics = function (start, end, time_unit, csv) {
 
             if (typeof start == 'string') {
-                start = self.convert_datestring_to_object(start, true)
+                start = self.convert_datestring_to_object(start)
             }
 
             if (typeof end == 'string') {
-                end = self.convert_datestring_to_object(end, false)
+                end = self.convert_datestring_to_object(end)
             }
 
-            var start_date_param = new Date(start.year, start.month, start.day)
-            if (end) {
-                var end_date_param = new Date(end.year, end.month, end.day)
-            } else {
-                var end_date_param = new Date(_.now() + 86400000)
-            }
+            let start_date_param = new Date(start.year, start.month, start.day)
+            let end_date_param = end ? new Date(end.year, end.month, end.day) : new Date(_.now())
+
 
             let date_parameters = {
                 start_date: start_date_param.toJSON().slice(0,10),
@@ -401,16 +399,15 @@
             if (unit_selection === 'month') {
                 self.start_date = {
                     year: new Date().getFullYear(),
-                    month: new Date().getMonth() + 1,
+                    month: new Date().getMonth(),
                     day: 1,
                 }
             } else if (unit_selection === 'week') {
-                var start = new Date()
+                let start = new Date()
                 start.setDate(start.getDate() - 6)
                 self.start_date = {
-
                     year: start.getFullYear(),
-                    month: start.getMonth() + 1,
+                    month: start.getMonth(),
                     day: start.getDate(),
                 }
             } else if (unit_selection === 'year') {
@@ -423,10 +420,12 @@
 
             self.update_analytics(self.start_date, self.end_date, 'day', false)
 
-            if (unit_selection != 'year') {
-                $(self.refs.day_units).click()
+            if (unit_selection !== 'year') {
+                self.resolution_dropdown.dropdown('set selected', 'day')
+                self.update_analytics(self.start_date, self.end_date, 'day', false)
             } else {
-                $(self.refs.month_units).click()
+                self.resolution_dropdown.dropdown('set selected', 'month')
+                self.update_analytics(self.start_date, self.end_date, 'month', false)
             }
         }
 
@@ -453,7 +452,7 @@
         }
 
         self.download = function (filename, text) {
-            var element = document.createElement('a');
+            let element = document.createElement('a');
             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
             element.setAttribute('download', filename);
 
@@ -482,11 +481,9 @@
         function array_to_text(arr) {
             x_string = ""
             y_string = ""
-            _(arr).forEach(function (element) {
-                x_string += element.x
-                x_string += ', '
-                y_string += element.y
-                y_string += ', '
+            _.forEach(arr, function (element) {
+                x_string += `${element.x}, `
+                y_string += `${element.y}, `
             })
             x_string += '\n'
             y_string += '\n'
@@ -497,9 +494,6 @@
             let csv = true
             self.update_analytics(self.start_date, self.end_date, self.time_unit, csv)
         }
-
-
-
     </script>
     <style>
         th {
