@@ -85,6 +85,8 @@
                               leaderboards="{ competition.leaderboards }"></leaderboards>
             </div>
         </div>
+
+        <!--admin tab-->
         <div if="{competition.is_admin}" class="admin-tab ui tab" data-tab="admin_tab">
             <div class="ui side green tabular secondary menu">
                 <div class="active item" data-tab="_tab_competition_management">
@@ -103,6 +105,28 @@
                         onclick="{ toggle_competition_publish }">
                     <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
                 </button>
+                <button class="ui yellow button icon" onclick="{create_dump}">
+                    <i class="download icon"></i> Create Competition Dump
+                </button>
+                <button class="ui teal icon button" onclick="{update_files}"><i class="sync alternate icon"></i> Refresh Table</button>
+                <table class="ui very basic table">
+                    <thead>
+                    <tr>
+                        <th>Files</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr show="{files.bundle}">
+                        <td class="selectable"><a href="{files.bundle ? files.bundle.url : ''}"><i class="file archive outline icon"></i>Bundle: {files.bundle ? files.bundle.name : ''}</a></td>
+                    </tr>
+                    <tr each="{file in files.dumps}" show="{files.dumps}">
+                        <td class="selectable"><a href="{file.url}"><i class="file archive outline icon"></i>Dump: {file.name}</a></td>
+                    </tr>
+                    <tr>
+                        <td show="{!files.dumps && !files.bundle}"><em>No Files Yet</em></td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="ui tab" data-tab="_tab_submission_management">
                 <div class="ui">
@@ -114,6 +138,18 @@
                     <h3>Stuff for managing participants</h3>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="ui basic modal" ref="dump_modal">
+        <div class="header">
+            Creating Competition Dump
+        </div>
+        <div class="content">
+                Success! You competition dump is being created. This may take some time.
+                If the files table does not update with the new dump, try refreshing the table.
+        </div>
+        <div class="actions">
+            <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
         <style type="text/stylus">
@@ -165,12 +201,16 @@
             var self = this
 
             self.competition = {}
+            self.files = {}
 
             CODALAB.events.on('competition_loaded', function (competition) {
                 self.competition = competition
                 self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
                 self.update()
-                $('.tabular.menu .item').tab();
+                if (self.competition.is_admin) {
+                    self.update_files()
+                }
+                $('.tabular.menu .item', self.root).tab();
                 _.forEach(competition.pages, (page, index) => {
                     $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
                 })
@@ -195,11 +235,36 @@
                             })
                     })
             }
-            self.phase_selected = function(event, data) {
+
+            self.create_dump = () => {
+                CODALAB.api.create_dump(self.competition.id)
+                    .done(data => {
+                        $(self.refs.dump_modal).modal('show')
+                        // toastr.success(data.status + '<br>This may take a few minutes.')
+                        setTimeout(self.update_files, 2000)
+                    })
+                    .fail(response => {
+                        toastr.error("Error trying to create competition dump.")
+                    })
+            }
+            self.phase_selected = function (event, data) {
                 // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz
                 CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
             }
-
+            self.update_files = (e) => {
+                CODALAB.api.get_competition_files(self.competition.id)
+                    .done(data => {
+                        self.files = data
+                        self.update()
+                        if (e) {
+                            // Only display toast if activated from button, not CODALAB.event
+                            toastr.success('Table Updated')
+                        }
+                    })
+                    .fail(response => {
+                        toastr.error('Error Retrieving Competition Files')
+                    })
+            }
         </script>
 
 </comp-tabs>
