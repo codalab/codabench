@@ -31,7 +31,7 @@
                             if this is your first time visiting.
                         </p>
                         <div>
-                            <form id="login_form" class="form" method="post" action="/accounts/login/">
+                            <form id="login_form" class="form" method="post" action="{% url 'accounts:login' %}">
                                 {% csrf_token %}
                                 <p class="login-input">
                                     <span class="focus_input"><i class="user icon"></i>
@@ -49,8 +49,7 @@
                                 <br>
                                 <button type="submit" class="ui button">{% trans 'Log in' %}</button>
                             </form>
-                            <p><a href="/accounts/password_reset/">{% trans "Reset your password" %}</a></p>
-                            <p><a href="/profiles/signup/">{% trans "Create an account" %}</a></p>
+                            <p><a href="{% url 'accounts:signup' %}">{% trans "Create an account" %}</a></p>
                             <div id="outline">
                                 <a>
                                     <a href="/oauth/authorize/">
