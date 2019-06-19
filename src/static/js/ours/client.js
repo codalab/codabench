@@ -81,7 +81,7 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
     },
     by_the_numbers: function (data) {
-        return CODALAB.api.request('GET', URLS.API + "by_the_numbers", data)
+        return CODALAB.api.request('GET', URLS.API + "by_the_numbers/", data)
     },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)

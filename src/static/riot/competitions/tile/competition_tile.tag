@@ -9,7 +9,7 @@
                     {title}
                 </h4>
                 <p class="comp-description">
-                    {description}
+                    {description.substring(0,90) + (description.length > 90 ? '...' : '')}
                 </p>
                 <p class="organizer">
                     <em>Organized by: <strong>{created_by}</strong></em>
@@ -33,19 +33,6 @@
                 return ''
             }
         }
-
-        self.on('mount', () => {
-            $('.comp-description').each(function (f) {
-                var newstr = $(this).text().substring(0, 90);
-                if (newstr.length < 90) {
-                    $(this).text(newstr);
-                } else {
-                    $(this).text(newstr + '...')
-                }
-            })
-        })
-
-
     </script>
 
     <style type="text/stylus">

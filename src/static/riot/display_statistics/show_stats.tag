@@ -38,22 +38,14 @@
         })
 
         self.get_general_stats = function () {
-            var endpoint = CODALAB.api.by_the_numbers()
-            endpoint
+            CODALAB.api.by_the_numbers()
                 .done(function (data) {
-                    console.log("Received Codalab Competition Stats")
-                    self.update({
-                            general_stats: [
-                                {label: "Total Competitions", count: num_formatter(data.total_competitions, 1)},
-                                {label: "Public Competitions", count: num_formatter(data.public_competitions, 1)},
-                                {label: "Private Competitions", count: num_formatter(data.private_competitions, 1)},
-                                {label: "Submissions", count: num_formatter(data.submissions, 1)},
-                                {label: "Users", count: num_formatter(data.users, 1)},
-                                {label: "Competition Participants", count: num_formatter(data.competition_participants, 1)},
-                            ],
-                        },
-                        self.producer_name = 'Codalab',
-                    )
+                    self.producer_name = 'Codalab'
+                    self.general_stats = _.map(data, stat => {
+                        stat.count = self.num_formatter(stat.count)
+                        return stat
+                    })
+                    self.update()
                 })
         }
 
@@ -62,7 +54,7 @@
             self.update()
         }
 
-        function num_formatter(num, digits) {
+        self.num_formatter = function(num, digits) {
             var si = [
                 {value: 1, symbol: ""},
                 {value: 1E3, symbol: "K"},

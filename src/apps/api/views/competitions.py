@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -118,23 +119,30 @@ def front_page_competitions(request):
 @api_view(['GET'])
 @permission_classes((AllowAny,))
 def by_the_numbers(request):
-    total_competitions = Competition.objects.all().count()
-    public_competitions = Competition.objects.filter(published=True).count()
-    private_competitions = Competition.objects.filter(published=False).count()
+    data = Competition.objects.aggregate(
+        count=Count('*'),
+        published_comps=Count('pk', filter=Q(published=True)),
+        unpublished_comps=Count('pk', filter=Q(published=False)),
+        organizers=Count('created_by', distinct=True)
+    )
+
+    total_competitions = data['count']
+    public_competitions = data['published_comps']
+    private_competitions = data['unpublished_comps']
+    organizers = data['organizers']
     users = User.objects.all().count()
     competition_participants = CompetitionParticipant.objects.all().count()
     submissions = Submission.objects.all().count()
-    organizers = Competition.objects.values_list('created_by').distinct().count()
 
-    return Response(data={
-        "total_competitions": total_competitions,
-        "public_competitions": public_competitions,
-        "private_competitions": private_competitions,
-        "users": users,
-        "competition_participants": competition_participants,
-        "submissions": submissions,
-        "organizers": organizers,
-    })
+    return Response([
+        {'label': "Total Competitions", 'count': total_competitions},
+        {'label': "Public Competitions", 'count': public_competitions},
+        {'label': "Private Competitions", 'count': private_competitions},
+        {'label': "Users", 'count': users},
+        {'label': "Competition Participants", 'count': competition_participants},
+        {'label': "Submissions", 'count': submissions},
+        # {'label': "organizers", 'count': organizers},
+    ])
 
 
 class PhaseViewSet(ModelViewSet):

@@ -20,7 +20,7 @@ def get_popular_competitions(limit=3):
         .annotate(participant_count=Count('participants')) \
         .order_by('-participant_count')
 
-    if len(competitions) < limit:
+    if len(competitions) <= limit:
         return competitions
 
     return competitions[:limit]
@@ -42,7 +42,7 @@ def get_featured_competitions(limit=3, excluded_competitions=None):
     if excluded_competitions:
         competitions = competitions.exclude(pk__in=[c.pk for c in excluded_competitions])
 
-    if len(competitions) < limit:
+    if len(competitions) <= limit:
         return competitions
     else:
         return random.sample(list(competitions), limit)

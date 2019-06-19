@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/0.10.0/lodash.min.js"></script>
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -140,11 +140,16 @@
     <user_switch></user_switch>
 
     <!-- Vendor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"
+            integrity="sha256-7/yoZS3548fXSRXqc/xYzjsmuW3sFKzuvOCHd06Pmps=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/riot/3.13.2/riot+compiler.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"
-            integrity="sha256-RKNmL9+6j/3jB72OcIg8OQr91Bi4OgFPnKQOFS1O+fo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="{% static "js/calendar.min.js" %}"></script>
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/1.0.10/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="{% static "js/calendar.min.js" %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@1.13.1/build/global/luxon.min.js"></script>
@@ -165,25 +170,25 @@
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
         {% if request.user.is_authenticated %}
-        CODALAB.state.user = {
-            id: {{ request.user.id }},
-            name: '{{ request.user.name }}',
-            username: '{{ request.user.username }}',
-            email: '{{ request.user.email }}',
-            bio: '{{ request.user.bio }}',
-            // converts python bools to js bools
-            is_staff: '{{ request.user.is_staff }}' === "True",
-            is_superuser: '{{ request.user.is_superuser }}' === "True",
-            logged_in: "{{ request.user.is_authenticated }}" === "True",
-            has_competition_admin_privileges: competition => {
-                let user = CODALAB.state.user
-                if (user.is_superuser || user.is_staff) {
-                    return true
+            CODALAB.state.user = {
+                id: {{ request.user.id }},
+                name: '{{ request.user.name }}',
+                username: '{{ request.user.username }}',
+                email: '{{ request.user.email }}',
+                bio: '{{ request.user.bio }}',
+                // converts python bools to js bools
+                is_staff: '{{ request.user.is_staff }}' === "True",
+                is_superuser: '{{ request.user.is_superuser }}' === "True",
+                logged_in: "{{ request.user.is_authenticated }}" === "True",
+                has_competition_admin_privileges: competition => {
+                    let user = CODALAB.state.user
+                    if (user.is_superuser || user.is_staff) {
+                        return true
+                    }
+                    let collabs = _.map(competition.collaborators, collab => collab.username)
+                    return user.username === competition.created_by || collabs.includes(user.username)
                 }
-                let collabs = _.map(competition.collaborators, collab => collab.username)
-                return user.username === competition.created_by || collabs.includes(user.username)
             }
-        }
         {% endif %}
         // Load in URLs or other django generated goodies
         URLS = {

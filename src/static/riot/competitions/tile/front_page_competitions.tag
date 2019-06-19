@@ -1,5 +1,5 @@
 <front-page-competitions>
-    <div hide="{CODALAB.state.user.logged_in}" class="vert-wrap">
+    <div class="vert-wrap {logged-in: CODALAB.state.user.logged_in}">
         <div class="segment-container ui segment">
             <div class="ui header">
                 Popular Competitions
@@ -17,41 +17,6 @@
             </div>
         </div>
 
-        <div class="segment-container ui segment">
-            <div class="ui header">
-                Featured Competitions
-            </div>
-            <div class="container-content">
-                <div class="loader-container popular">
-                    <div class="lds-ring">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
-                </div>
-                <competition-tile each="{featured_competitions}"></competition-tile>
-            </div>
-        </div>
-    </div>
-
-    <div show={CODALAB.state.user.logged_in} class="vert-wrap logged-in">
-        <div class="segment-container ui segment">
-            <div class="ui header">
-                Popular Competitions
-            </div>
-            <div class="container-content">
-                <div class="loader-container popular">
-                    <div class="lds-ring">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
-                </div>
-                <competition-tile each="{popular_competitions}"></competition-tile>
-            </div>
-        </div>
         <div class="segment-container ui segment">
             <div class="ui header">
                 Featured Competitions

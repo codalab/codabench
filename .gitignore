@@ -19,5 +19,3 @@ src/static/riot.tag
 src/static/generated/*
 
 db.sqlite3
-competitions_v2
-postgres
