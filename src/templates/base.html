@@ -31,7 +31,7 @@
         <a href="{% url "pages:home" %}" class="item">Competitions</a>
         <a class="item">Chagle</a>
         <a class="item">Chalab</a>
-        <a class="item">Chagrade</a>
+        <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
     </div>
 </div>
 <div class="pusher">
@@ -49,8 +49,8 @@
                     <span class="left item">
                     <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
                     <a class="tl item">Chagle</a>
-                    <a class="tl item">Chalab</a>
-                    <a class="tl item">Chagrade</a>
+                    <a href="http://chahub.org/" class="tl item">Chahub</a>
+                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>
                     </span>
                 {% if user.is_authenticated %}
                     <div id="user_dropdown" class="ui dropdown item">
@@ -78,11 +78,11 @@
                             {% endif %}
                             <div class="ui divider"></div>
                             <div class="header">You</div>
-                            <a class="item" href="#">
+                            <a class="item" href="{% url 'profiles:user_profile' %}">
                                 <i class="icon user"></i>
                                 Edit profile
                             </a>
-                            <a class="item" href="/accounts/logout/">
+                            <a class="item" href="{% url 'logout' %}">
                                 <i class="icon sign out"></i>
                                 Logout
                             </a>
@@ -90,8 +90,8 @@
                     </div>
                 {% else %}
                     <div class="right item">
-                        <a id="style_button" href="/accounts/login" class="ui button">Login</a>
-                        <a id="style_button" href="{% url "profiles:signup" %}" class="ui button">Sign-up</a>
+                        <a id="style_button" href="{% url 'login' %}" class="ui button">Login</a>
+                        <a id="style_button" href="{% url 'profiles:signup' %}" class="ui button">Sign-up</a>
                     </div>
                 {% endif %}
             </div>
