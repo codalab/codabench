@@ -16,6 +16,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 from competitions.models import Competition
+from api.pagination import BasicPagination
 from utils.data import make_url_sassy
 
 
@@ -30,6 +31,7 @@ class DataViewSet(mixins.CreateModelMixin,
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('type', 'name', 'key',)
     search_fields = ('name', 'description',)
+    pagination_class = BasicPagination
 
     def get_queryset(self):
         filters = Q(is_public=True) | Q(created_by=self.request.user)

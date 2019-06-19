@@ -83,6 +83,9 @@ CODALAB.api = {
     by_the_numbers: function (data) {
         return CODALAB.api.request('GET', URLS.API + "by_the_numbers", data)
     },
+    get_competition_files: pk => {
+        return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
+    },
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/
@@ -148,8 +151,11 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Datasets
     ---------------------------------------------------------------------*/
-    get_datasets: function (query, type) {
-        return CODALAB.api.request('GET', URLS.API + `datasets/?q=${query || ''}&type=${type || ''}`)
+    /*get_datasets: function (query, type, page) {
+        return CODALAB.api.request('GET', URLS.API + `datasets/?q=${query || ''}&page=${page || 1}&type=${type || ''}`)
+    },*/
+    get_datasets: function (filters) {
+        return CODALAB.api.request('GET', `${URLS.API}datasets/`, filters)
     },
     delete_dataset: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")

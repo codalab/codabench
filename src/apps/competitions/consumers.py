@@ -32,11 +32,10 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         # })
 
         # TODO! Get actual submission ID via router url path jazz
-        # TODO! Shit. We will have to synchronously check in database what submission ID -> secret is to do proper write
+        # TODO! We will have to synchronously check in database what submission ID -> secret is to do proper write
         # Maybe we can just write to a submission_<secret>.txt file
         # However, we need to limit
 
-        print("@@@@@@@@@@@@@@@@")
         print(self.scope)
 
         submission_id = self.scope['url_route']['kwargs']['submission_id']

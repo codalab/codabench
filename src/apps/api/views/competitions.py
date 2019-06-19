@@ -8,9 +8,12 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
+
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from profiles.models import User
+
+from utils.data import make_url_sassy
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -75,6 +78,28 @@ class CompetitionViewSet(ModelViewSet):
         competition.published = not competition.published
         competition.save()
         return Response({"published": competition.published})
+
+    @action(detail=True, methods=('GET',))
+    def get_files(self, request, pk):
+        qs_helper = Competition.objects.select_related(
+            'created_by'
+        ).prefetch_related(
+            'dumps__dataset',
+        )
+        competition = qs_helper.get(id=pk)
+        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+            raise PermissionDenied("You don't have access to the competition files")
+        bundle = competition.bundle_dataset
+        files = {
+            'bundle': {
+                'name': bundle.name,
+                'url': make_url_sassy(bundle.data_file.name)
+            },
+            'dumps': []
+        }
+        for dump in competition.dumps.all():
+            files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
+        return Response(files)
 
 
 @api_view(['GET'])

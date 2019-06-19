@@ -3,14 +3,16 @@ from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
 
+from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
 
-class Competition(models.Model):
+class Competition(ChaHubSaveMixin, models.Model):
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="competitions")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name="competitions")
     created_when = models.DateTimeField(default=now)
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
@@ -22,6 +24,31 @@ class Competition(models.Model):
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
+    def get_chahub_endpoint(self):
+        return "competitions/"
+
+    def get_chahub_data(self):
+        data = {
+            'created_by': self.created_by.username,
+            'creator_id': self.created_by.pk,
+            'created_when': self.created_when.isoformat(),
+            'title': self.title,
+            'url': 'https://www.google.com/',
+            'producer': settings.CHAHUB_PRODUCER_ID,
+            'remote_id': self.pk,
+            'logo_url': self.logo.url if self.logo else '',
+            'logo': self.logo.url if self.logo else '',
+            'published': True
+        }
+        chahub_id = self.created_by.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        return [data]
+
+    def get_chahub_is_valid(self):
+        # By default, always push
+        return True
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -157,7 +184,8 @@ class Submission(models.Model):
 
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
-    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions", null=True, blank=True)
+    leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
+                                    null=True, blank=True)
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)

@@ -15,6 +15,8 @@ USE_X_FORWARDED_HOST = True
 
 SITE_ID = 1
 
+SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
+
 THIRD_PARTY_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
@@ -37,6 +39,7 @@ THIRD_PARTY_APPS = (
     'drf_yasg',
 )
 OUR_APPS = (
+    'chahub',
     'competitions',
     'datasets',
     'pages',
@@ -109,7 +112,7 @@ LOGIN_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'utils.oauth_backends.CodalabOAuth2',
+    'utils.oauth_backends.ChahubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -120,7 +123,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
-    'social_core.pipeline.user.user_details',
+    # 'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
     'profiles.pipeline.user_details',
 )
@@ -131,8 +134,9 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 SOCIAL_AUTH_GITHUB_SCOPE = ['user']
 
 # Codalab Example settings
-# SOCIAL_AUTH_CODALAB_KEY = os.environ.get('SOCIAL_AUTH_CODALAB_KEY', 'asdfasdfasfd')
-# SOCIAL_AUTH_CODALAB_SECRET = os.environ.get('SOCIAL_AUTH_CODALAB_SECRET', 'asdfasdfasfdasdfasdf')
+SOCIAL_AUTH_CHAHUB_BASE_URL = os.environ.get('SOCIAL_AUTH_CHAHUB_BASE_URL', 'asdfasdfasfd')
+SOCIAL_AUTH_CHAHUB_KEY = os.environ.get('SOCIAL_AUTH_CHAHUB_KEY', 'asdfasdfasfd')
+SOCIAL_AUTH_CHAHUB_SECRET = os.environ.get('SOCIAL_AUTH_CHAHUB_SECRET', 'asdfasdfasfdasdfasdf')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -350,3 +354,7 @@ if DEBUG:
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": lambda request: True
     }
+
+CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL', 'http://chahub.org/api/v1/')
+CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
+CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
