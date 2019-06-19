@@ -8,8 +8,9 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
+from profiles.models import User
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -75,6 +76,7 @@ class CompetitionViewSet(ModelViewSet):
         competition.save()
         return Response({"published": competition.published})
 
+
 @api_view(['GET'])
 @permission_classes((AllowAny,))
 def front_page_competitions(request):
@@ -86,6 +88,28 @@ def front_page_competitions(request):
         "popular_comps": popular_comps_serializer.data,
         "featured_comps": featured_comps_serializer.data
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def by_the_numbers(request):
+    total_competitions = Competition.objects.all().count()
+    public_competitions = Competition.objects.filter(published=True).count()
+    private_competitions = Competition.objects.filter(published=False).count()
+    users = User.objects.all().count()
+    competition_participants = CompetitionParticipant.objects.all().count()
+    submissions = Submission.objects.all().count()
+    organizers = Competition.objects.values_list('created_by').distinct().count()
+
+    return Response(data={
+        "total_competitions": total_competitions,
+        "public_competitions": public_competitions,
+        "private_competitions": private_competitions,
+        "users": users,
+        "competition_participants": competition_participants,
+        "submissions": submissions,
+        "organizers": organizers,
+    })
 
 
 class PhaseViewSet(ModelViewSet):

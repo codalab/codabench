@@ -80,7 +80,9 @@ CODALAB.api = {
     get_front_page_competitions: function (data) {
         return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
     },
-
+    by_the_numbers: function (data) {
+        return CODALAB.api.request('GET', URLS.API + "by_the_numbers", data)
+    },
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/

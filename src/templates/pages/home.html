@@ -12,10 +12,13 @@
         <h2>Accelerating reproducible computational research.</h2>
     </div>
 
+    <show-stats></show-stats>
+
 {% endblock %}
 
 {% block content %}
     <div class="home-wrap">
+    <front-page-stats></front-page-stats>
         {% if not user.is_authenticated %}
             <div class="column-wrap">
                 <front-page-competitions></front-page-competitions>
