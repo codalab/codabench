@@ -169,27 +169,16 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
-        {% if request.user.is_authenticated %}
-            CODALAB.state.user = {
-                id: {{ request.user.id }},
-                name: '{{ request.user.name }}',
-                username: '{{ request.user.username }}',
-                email: '{{ request.user.email }}',
-                bio: '{{ request.user.bio }}',
-                // converts python bools to js bools
-                is_staff: '{{ request.user.is_staff }}' === "True",
-                is_superuser: '{{ request.user.is_superuser }}' === "True",
-                logged_in: "{{ request.user.is_authenticated }}" === "True",
-                has_competition_admin_privileges: competition => {
-                    let user = CODALAB.state.user
-                    if (user.is_superuser || user.is_staff) {
-                        return true
-                    }
-                    let collabs = _.map(competition.collaborators, collab => collab.username)
-                    return user.username === competition.created_by || collabs.includes(user.username)
-                }
+        CODALAB.state.user = JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+        CODALAB.state.user.has_competition_admin_privileges = competition => {
+            let user = CODALAB.state.user
+            if (user.is_superuser || user.is_staff) {
+                return true
             }
-        {% endif %}
+            let collabs = _.map(competition.collaborators, collab => collab.username)
+            return user.username === competition.created_by || collabs.includes(user.username)
+        }
+
         // Load in URLs or other django generated goodies
         URLS = {
             assets: {
