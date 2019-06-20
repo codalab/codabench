@@ -123,13 +123,11 @@ def by_the_numbers(request):
         count=Count('*'),
         published_comps=Count('pk', filter=Q(published=True)),
         unpublished_comps=Count('pk', filter=Q(published=False)),
-        organizers=Count('created_by', distinct=True)
     )
 
     total_competitions = data['count']
     public_competitions = data['published_comps']
     private_competitions = data['unpublished_comps']
-    organizers = data['organizers']
     users = User.objects.all().count()
     competition_participants = CompetitionParticipant.objects.all().count()
     submissions = Submission.objects.all().count()
@@ -141,7 +139,6 @@ def by_the_numbers(request):
         {'label': "Users", 'count': users},
         {'label': "Competition Participants", 'count': competition_participants},
         {'label': "Submissions", 'count': submissions},
-        # {'label': "organizers", 'count': organizers},
     ])
 
 
