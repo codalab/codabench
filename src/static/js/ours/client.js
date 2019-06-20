@@ -265,8 +265,4 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
-
-    get_analytics_csv: (filters) => {
-        return CODALAB.api.request_text('GET', `${URLS.API}analytics/`, filters)
-    },
 }

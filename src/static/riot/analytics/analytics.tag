@@ -1,7 +1,6 @@
 <analytics>
     <h1>Analytics</h1>
 
-
     <div class="ui grid">
         <div class="four wide column">
             <h3>Date Range</h3>
@@ -41,7 +40,7 @@
             <div class="ui calendar" ref="start_calendar">
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
-                    <input type="text" placeholder="{ start_date }">
+                    <input type="text" placeholder="{ start_date_string }">
                 </div>
             </div>
         </div>
@@ -50,7 +49,7 @@
             <div class="ui calendar" ref="end_calendar">
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
-                    <input type="text" placeholder="{ end_date}">
+                    <input type="text" placeholder="{ end_date_string }">
                 </div>
             </div>
         </div>
@@ -63,59 +62,64 @@
         <a class="item" data-tab="users">Users</a>
     </div>
 
-        <div class="ui bottom attached active tab segment" data-tab="competitions">
-                <div class="ui small statistic">
-                    <div class="value">
-                        {competitions}
-                    </div>
-                    <div class="label">
-                        Competitions Created
-                    </div>
-                </div>
-                <div class="ui small statistic">
-                    <div class="value">
-                        {competitions_published}
-                    </div>
-                    <div class="label">
-                        Competitions Published
-                    </div>
-                </div>
-            <div class='chart-container'>
-                <canvas ref="competition_chart"></canvas>
+    <div class="ui bottom attached active tab segment" data-tab="competitions">
+        <div class="ui small statistic">
+            <div class="value">
+                {competitions}
+            </div>
+            <div class="label">
+                Competitions Created
             </div>
         </div>
 
-        <div class="ui bottom attached tab segment" data-tab="submissions">
-            <div class="ui small statistic">
-                <div class="value">
-                    {submissions_made}
-                </div>
-                <div class="label">
-                    Submissions Made
-                </div>
+        <div class="ui small statistic">
+            <div class="value">
+                {competitions_published}
             </div>
-            <div class='chart-container'>
-                <canvas ref="submission_chart"></canvas>
+            <div class="label">
+                Competitions Published
             </div>
         </div>
 
-        <div class="ui bottom attached tab segment" data-tab="users">
-            <div class="ui small statistic">
-                <div class="value">
-                    {users_total}
-                </div>
-                <div class="label">
-                    Users Joined
-                </div>
+        <div class='chart-container'>
+            <canvas ref="competition_chart"></canvas>
+        </div>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="submissions">
+        <div class="ui small statistic">
+            <div class="value">
+                {submissions_made}
             </div>
-            <div class='chart-container'>
-                <canvas ref="user_chart"></canvas>
+            <div class="label">
+                Submissions Made
             </div>
         </div>
 
-        <button class="ui green button" onclick="{ download_analytics_data }">
-            <i class="icon download"></i>Download as CSV
-        </button>
+        <div class='chart-container'>
+            <canvas ref="submission_chart"></canvas>
+        </div>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="users">
+        <div class="ui small statistic">
+            <div class="value">
+                {users_total}
+            </div>
+            <div class="label">
+                Users Joined
+            </div>
+        </div>
+
+        <div class='chart-container'>
+            <canvas ref="user_chart"></canvas>
+        </div>
+    </div>
+
+    <a class="ui green button" href="{ URLS.ANALYTICS_API(start_date_string, end_date_string, time_unit, 'csv') }" download="codalab_analytics.csv">
+        <i class="icon download"></i>Download as CSV
+    </a>
+
     <script>
         var self = this
 
@@ -133,33 +137,9 @@
         self.submissions_data;
         self.users_data;
 
-        self.start_date = {
-            year: 2019,
-            month: 0,
-            day: 1,
-        }
-
-        let today = new Date()
-        self.end_date = {
-            year: today.getFullYear(),
-            month: today.getMonth() + 1,
-            day: today.getDate(),
-        }
-
-        self.convert_datestring_to_object = function (s) {
-            let date = s.split('-')
-            let year = date[0]
-            let month = date[1]
-            let day = date[2]
-
-            let new_date = {
-                year: year,
-                month: month - 1,
-                day: day,
-            }
-
-            return new_date
-        }
+        let datetime = luxon.DateTime
+        self.start_date = datetime.local(datetime.local().year)
+        self.end_date = datetime.local()
 
         self.one("mount", function () {
             // Semantic UI
@@ -194,11 +174,7 @@
                 // Sets the format of the placeholder date string to YYYY-MM-DD
                 formatter: {
                    date: function (date, settings) {
-                       if (!date) return '';
-                       let day = date.getDate();
-                       let month = date.getMonth() + 1;
-                       let year = date.getFullYear();
-                       return year + '-' + month + '-' + day;
+                       return datetime.fromJSDate(date).toISODate()
                    }
                 },
             }
@@ -206,32 +182,18 @@
             let start_specific_options = {
                 endCalendar: $(self.refs.end_calendar),
                 onChange: function(date, text) {
+                    self.start_date = datetime.fromJSDate(date)
 
-                    let year = date.getFullYear()
-                    let month = date.getMonth()
-                    let day = date.getDate()
-                    if(month === 0) {
-                        self.start_date = {
-                            year: year - 1,
-                            month: 12,
-                            day: day,
-                        }
-                    } else {
-                        self.start_date = {
-                            year: year,
-                            month: month,
-                            day: day,
-                        }
-                    }
                     let end_date = $(self.refs.end_calendar).calendar('get date')
                     if (end_date != null) {
                         if (date <= end_date) {
-                            self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
+                            self.update_analytics(self.start_date, self.end_date, self.time_unit)
                         } else {
+                            $(self.refs.end_calendar).calendar('set date', date, true, true);
                             toastr.error("Start date must be before end date.")
                         }
                     } else {
-                        self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
+                        self.update_analytics(self.start_date, self.end_date, self.time_unit)
                     }
                 },
             }
@@ -240,17 +202,10 @@
                 startCalendar: $(self.refs.start_calendar),
                 onChange: function(date, text) {
                     if (date) {
-                        let year = date.getFullYear()
-                        let month = date.getMonth()
-                        let day = date.getDate()
-                        self.end_date = {
-                            year: year,
-                            month: month,
-                            day: day,
-                        }
+                        self.end_date = datetime.fromJSDate(date)
                     }
 
-                    self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
+                    self.update_analytics(self.start_date, self.end_date, self.time_unit)
                 },
             }
 
@@ -268,7 +223,7 @@
             self.submissionsChart = new Chart($(self.refs.submission_chart), create_chart_config('# of Submissions'));
             self.usersChart = new Chart($(self.refs.user_chart), create_chart_config('# of Users Joined'));
 
-            self.update_analytics(self.start_date, null, self.time_unit, false)
+            self.update_analytics(self.start_date, null, self.time_unit)
 
         })
 
@@ -331,101 +286,65 @@
             chart.update()
         }
 
-        self.update_analytics = function (start, end, time_unit, csv) {
-
-            if (typeof start == 'string') {
-                start = self.convert_datestring_to_object(start)
+        self.update_analytics = function (start, end, time_unit) {
+            if (!end) {
+                end = datetime.local()
             }
 
-            if (typeof end == 'string') {
-                end = self.convert_datestring_to_object(end)
-            }
-
-            let start_date_param = new Date(start.year, start.month, start.day)
-            let end_date_param = end ? new Date(end.year, end.month, end.day) : new Date(_.now())
-
-
+            // Django's __range is exclusive of the end date, so it must be incremented by one day to include it.
             let date_parameters = {
-                start_date: start_date_param.toJSON().slice(0,10),
-                end_date: end_date_param.toJSON().slice(0,10),
+                start_date: start.toISODate(),
+                end_date: end.plus({day: 1}).toISODate(),
                 time_unit: time_unit,
             }
 
-            if(csv) {
-                CODALAB.api.get_analytics_csv(date_parameters)
-                    .done(function (data) {
-                        self.download('codalab_analytics.csv', data)
-                    })
-                    .fail(function (a, b, c) {
-                        toastr.error("Could not load analytics data...")
-                    })
-            } else {
-                CODALAB.api.get_analytics(date_parameters)
-                    .done(function (data) {
-                        let time_unit = data.time_unit === 'day'
+            CODALAB.api.get_analytics(date_parameters)
+                .done(function (data) {
+                    let time_unit = data.time_unit === 'day'
 
-                        update_chart(self.competitionsChart, data.competitions_data, time_unit)
-                        update_chart(self.submissionsChart, data.submissions_data, time_unit)
-                        update_chart(self.usersChart, data.users_data, time_unit)
+                    update_chart(self.competitionsChart, data.competitions_data, time_unit)
+                    update_chart(self.submissionsChart, data.submissions_data, time_unit)
+                    update_chart(self.usersChart, data.users_data, time_unit)
 
-                        self.competitions_data = data.competitions_data
-                        self.submissions_data = data.submissions_data
-                        self.users_data = data.users_data
+                    self.competitions_data = data.competitions_data
+                    self.submissions_data = data.submissions_data
+                    self.users_data = data.users_data
 
-                        self.update({
-                            users_total: data.registered_user_count,
-                            competitions: data.competition_count,
-                            competitions_published: data.competitions_published_count,
-                            start_date: data.start_date,
-                            end_date: data.end_date,
-                            submissions_made: data.submissions_made_count,
-                        })
+                    self.update({
+                        users_total: data.registered_user_count,
+                        competitions: data.competition_count,
+                        competitions_published: data.competitions_published_count,
+                        start_date_string: data.start_date,
+                        end_date_string: data.end_date,
+                        submissions_made: data.submissions_made_count,
                     })
-                    .fail(function (a, b, c) {
-                        toastr.error("Could not load analytics data...")
-                    })
-            }
+                })
+                .fail(function (a, b, c) {
+                    toastr.error("Could not load analytics data...")
+                })
         }
 
 
         // Shortcut buttons
         self.time_range_shortcut = function(unit_selection) {
-            self.end_date = {
-                year: new Date().getFullYear(),
-                month: new Date().getMonth() + 1,
-                day: new Date().getDate(),
-            }
+            self.end_date = datetime.local()
 
             if (unit_selection === 'month') {
-                self.start_date = {
-                    year: new Date().getFullYear(),
-                    month: new Date().getMonth(),
-                    day: 1,
-                }
+                self.start_date = self.end_date.minus({months: 1})
             } else if (unit_selection === 'week') {
-                let start = new Date()
-                start.setDate(start.getDate() - 6)
-                self.start_date = {
-                    year: start.getFullYear(),
-                    month: start.getMonth(),
-                    day: start.getDate(),
-                }
+                self.start_date = self.end_date.minus({weeks: 1}).plus({day: 1})
             } else if (unit_selection === 'year') {
-                self.start_date = {
-                    year: new Date().getFullYear(),
-                    month: 0,
-                    day: 1,
-                }
+                self.start_date = self.end_date.minus({years: 1})
             }
 
-            self.update_analytics(self.start_date, self.end_date, 'day', false)
+            self.update_analytics(self.start_date, self.end_date, 'day')
 
             if (unit_selection !== 'year') {
                 self.resolution_dropdown.dropdown('set selected', 'day')
-                self.update_analytics(self.start_date, self.end_date, 'day', false)
+                self.update_analytics(self.start_date, self.end_date, 'day')
             } else {
                 self.resolution_dropdown.dropdown('set selected', 'month')
-                self.update_analytics(self.start_date, self.end_date, 'month', false)
+                self.update_analytics(self.start_date, self.end_date, 'month')
             }
         }
 
@@ -440,7 +359,6 @@
                 self.time_unit = 'month'
             }
 
-
             self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
             self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection
             self.usersChart.options.scales.xAxes[0].time.unit = unit_selection
@@ -448,51 +366,7 @@
             self.submissionsChart.update()
             self.usersChart.update()
 
-            self.update_analytics(self.start_date, self.end_date, self.time_unit, false)
-        }
-
-        self.download = function (filename, text) {
-            let element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-            element.setAttribute('download', filename);
-
-            element.style.display = 'none';
-            document.body.appendChild(element);
-
-            element.click();
-
-            document.body.removeChild(element);
-        }
-
-        self.format_data_to_csv = function (data) {
-            let all_text = ''
-            _.forOwn(data, function(value, key) {
-                all_text += key + '\n'
-                if (Array.isArray(value)) {
-                    all_text += array_to_text(value)
-                } else {
-                    all_text += value
-                }
-                all_text += '\n'
-            })
-            return all_text
-        }
-
-        function array_to_text(arr) {
-            x_string = ""
-            y_string = ""
-            _.forEach(arr, function (element) {
-                x_string += `${element.x}, `
-                y_string += `${element.y}, `
-            })
-            x_string += '\n'
-            y_string += '\n'
-            return x_string += y_string
-        }
-
-        self.download_analytics_data = function(e) {
-            let csv = true
-            self.update_analytics(self.start_date, self.end_date, self.time_unit, csv)
+            self.update_analytics(self.start_date, self.end_date, self.time_unit)
         }
     </script>
     <style>
@@ -542,7 +416,6 @@
             padding: 10px;
             width: fit-content;
         }
-
 
         .chart-container {
             min-height: 450px;

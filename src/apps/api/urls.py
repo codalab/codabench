@@ -39,7 +39,7 @@ urlpatterns = [
     path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard),
     path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
     path('user_lookup/', profiles.user_lookup),
-    path('analytics/', analytics.analytics_detail),
+    path('analytics/', analytics.analytics_detail, name='analytics_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

@@ -37,18 +37,46 @@ def analytics_detail(request):
         return Response(status=404)
 
     csv = False
-    if request.META.get('HTTP_ACCEPT').split(' ')[0] == 'text/csv;':
-        csv = True
 
     start_date = request.query_params.get('start_date')
     end_date = request.query_params.get('end_date')
     time_unit = request.query_params.get('time_unit')
+    csv = request.query_params.get('format') == 'csv'
 
     users = build_request_object(User, 'date_joined', time_unit, start_date, end_date, csv)
     competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date, csv)
     submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date, csv)
 
     if csv:
+        aggregate_labels = [
+            'start_date',
+            'end_date',
+            'time_unit',
+            'registered_user_count',
+            'competition_count',
+            'competitions_published_count',
+            'submissions_made_count'
+        ]
+
+        list_labels = [
+            'users_data date',
+            'users_data count',
+            'competitions_data date',
+            'competitions_data count',
+            'submissions_data date',
+            'submissions_data count',
+        ]
+
+        aggregate_data = [
+            start_date,
+            end_date,
+            time_unit,
+            User.objects.filter(date_joined__range=[start_date, end_date]).count(),
+            Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
+            Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
+            Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
+        ]
+
         data = [users['_datefield'], users['count'], competitions['_datefield'], competitions['count'], submissions['_datefield'], submissions['count']]
         lengths = [len(i) for i in data]
 
@@ -58,7 +86,10 @@ def analytics_detail(request):
         i = 0
         while data_remains:
             data_remains = False
-            row = []
+            if i == 0:
+                row = aggregate_data
+            else:
+                row = [' '] * len(aggregate_labels)
             for d in range(len(data)):
                 if i < lengths[d]:
                     data_remains = True
@@ -66,38 +97,20 @@ def analytics_detail(request):
                 else:
                     row.append(' ')
             csv_data.append(row)
+            if i == 0 or i == 1:
+                print(row)
             i += 1
+
+        labels = [
+            *aggregate_labels,
+            *list_labels,
+        ]
+
 
         return Response(
             [
-                [
-                    'start_date',
-                    'end_date',
-                    'time_unit',
-                    'registered_user_count',
-                    'competition_count',
-                    'competitions_published_count',
-                    'submissions_made_count'
-                ],
-                [
-                    start_date,
-                    end_date,
-                    time_unit,
-                    User.objects.filter(date_joined__range=[start_date, end_date]).count(),
-                    Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
-                    Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
-                    Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
-                ],
-                [" "],
-                [
-                    'users_data date',
-                    'users_data count',
-                    'competitions_data date',
-                    'competitions_data count',
-                    'submissions_data date',
-                    'submissions_data count',
-                ],
-                *csv_data,
+                labels,
+                *csv_data
             ]
         )
 
