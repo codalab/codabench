@@ -31,24 +31,22 @@ class ChaHubDoRetriesTests(TestCase):
         settings.PYTEST_FORCE_CHAHUB = False
         settings.CHAHUB_API_URL = None
 
-    def test_do_retries_picks_up_all_expected_items(self):
+    def mock_retries(self, limit=None):
         with mock.patch('apps.chahub.tasks.requests.get') as chahub_get_mock:
             # This checks that ChaHub is up, mock this so the task doesn't bail
             chahub_get_mock.return_value = HttpResponseBase(status=200)
             with mock.patch('chahub.models.send_to_chahub') as send_to_chahub_mock:
                 send_to_chahub_mock.return_value = HttpResponseBase(status=201)
                 send_to_chahub_mock.return_value.content = ''
-                do_chahub_retries()
-                # Should grab 5 each Users, Comps, Datasets, Submissions
-                assert send_to_chahub_mock.call_count == 20
+                do_chahub_retries(limit=limit)
+                return send_to_chahub_mock
+
+    def test_do_retries_picks_up_all_expected_items(self):
+        resp = self.mock_retries()
+        # Should grab 5 each Users, Comps, Datasets, Submissions
+        assert resp.call_count == 20
 
     def test_do_retries_limit_will_limit_number_of_retries(self):
-        with mock.patch('apps.chahub.tasks.requests.get') as chahub_get_mock:
-            # This checks that ChaHub is up, mock this so the task doesn't bail
-            chahub_get_mock.return_value = HttpResponseBase(status=200)
-            with mock.patch('chahub.models.send_to_chahub') as send_to_chahub_mock:
-                send_to_chahub_mock.return_value = HttpResponseBase(status=201)
-                send_to_chahub_mock.return_value.content = ''
-                do_chahub_retries(limit=2)
-                # Should grab 2 each Users, Comps, Datasets, Submissions
-                assert send_to_chahub_mock.call_count == 8
+        resp = self.mock_retries(limit=2)
+        # Should grab 2 each Users, Comps, Datasets, Submissions
+        assert resp.call_count == 8

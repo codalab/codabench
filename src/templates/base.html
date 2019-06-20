@@ -168,7 +168,7 @@
     {# From `common_settings` context processor #}
     STORAGE_TYPE = "{{ STORAGE_TYPE }}"
     CODALAB.state.user = {
-        id: {{ request.user.id|default:"null" }},
+        id: {{ request.user.id }},
         name: '{{ request.user.name }}',
         username: '{{ request.user.username }}',
         email: '{{ request.user.email }}',
