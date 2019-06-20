@@ -254,7 +254,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         return data
 
     def get_chahub_is_valid(self):
-        return self.status == self.FINISHED and self.is_public
+        return self.status == self.FINISHED and self.is_public and self.phase.competition.published
 
 
 class CompetitionParticipant(models.Model):

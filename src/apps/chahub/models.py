@@ -1,9 +1,10 @@
 import hashlib
 import json
 import logging
-import os
+import sys
+
 from django.conf import settings
-from django.db import models, IntegrityError
+from django.db import models
 from django.utils import timezone
 from apps.chahub.utils import send_to_chahub
 
@@ -62,15 +63,20 @@ class ChaHubSaveMixin(models.Model):
         return True
 
     # Regular methods
-    def save(self, force_to_chahub=False, *args, **kwargs):
+    def save(self, *args, **kwargs):
         # We do a save here to give us an ID for generating URLs and such
-        try:
-            super(ChaHubSaveMixin, self).save(*args, **kwargs)
-        except IntegrityError:
-            logger.info("Object already has ID skipping save in Chahub mixin.")
+        super().save(*args, **kwargs)
 
-        pytest_force_chahub = settings.PYTEST_FORCE_CHAHUB if hasattr(settings, 'PYTEST_FORCE_CHAHUB') else False
-        if os.environ.get('PYTEST') and not pytest_force_chahub:
+        pytest_force_chahub = getattr(settings, 'PYTEST_FORCE_CHAHUB', False)
+        testing = False
+
+        try:
+            if sys.argv[0].endswith('py.test'):
+                testing = True
+        except IndexError:
+            pass
+
+        if testing and not pytest_force_chahub:
             # For tests let's just assume Chahub isn't available
             # We can mock proper responses
             return None
@@ -79,17 +85,15 @@ class ChaHubSaveMixin(models.Model):
         if settings.CHAHUB_API_URL:
             is_valid = self.get_chahub_is_valid()
 
-            logger.info(f"ChaHub :: {self.__class__.__name__}={self.pk} is_valid = {is_valid}")
+            logger.info(f"ChaHub :: {self.__class__.__name__}({self.pk}) is_valid = {is_valid}")
 
-            if is_valid and self.chahub_needs_retry and not force_to_chahub:
-                logger.info("ChaHub :: This has already been tried, waiting for do_retries to force resending")
-            elif is_valid:
+            if is_valid:
                 data = self.get_chahub_data()
                 data_hash = hashlib.md5(json.dumps(data).encode('utf-8')).hexdigest()
 
                 # Send to chahub if we haven't yet, we have new data
                 if not self.chahub_timestamp or self.chahub_data_hash != data_hash:
-                    resp = send_to_chahub(self.get_chahub_endpoint(), data)
+                    resp = send_to_chahub(self.get_chahub_endpoint(), data, update=bool(self.chahub_timestamp))
 
                     if resp and resp.status_code in (200, 201):
                         logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
@@ -97,18 +101,15 @@ class ChaHubSaveMixin(models.Model):
                         self.chahub_data_hash = data_hash
                         self.chahub_needs_retry = False
                     else:
-                        status = resp.status_code if hasattr(resp, 'status_code') else 'N/A'
-                        body = resp.content if hasattr(resp, 'content') else 'N/A'
+                        status = getattr(resp, 'status_code', 'N/A')
+                        body = getattr(resp, 'content', 'N/A')
                         logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
                         self.chahub_needs_retry = True
 
                     # We save at the beginning, but then again at the end to save our new chahub timestamp and such
-                    if not self.pk:
-                        super(ChaHubSaveMixin, self).save(force_update=False)
-                    else:
-                        super(ChaHubSaveMixin, self).save(force_update=True)
-            elif not is_valid and self.chahub_needs_retry:
-                # This is NOT valid but also marked as need retry, unmark need retry until this is
-                # valid again
+                    super().save()
+            elif self.chahub_needs_retry:
+                # This is NOT valid but also marked as need retry, unmark need retry until this is valid again
+                logger.info('ChaHub :: This is invalid but marked for retry. Clearing retry until valid again.')
                 self.chahub_needs_retry = False
-                super(ChaHubSaveMixin, self).save(force_update=True)
+                super().save()

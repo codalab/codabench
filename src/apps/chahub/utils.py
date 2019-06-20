@@ -38,7 +38,6 @@ def send_to_chahub(endpoint, data, update=False):
             }
         }
         if update:
-            # return requests.patch(data=data, **kwargs)
             return requests.put(data=data, **kwargs)
         else:
             return requests.post(data=data, **kwargs)
