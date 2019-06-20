@@ -106,7 +106,6 @@ def analytics_detail(request):
             *list_labels,
         ]
 
-
         return Response(
             [
                 labels,
