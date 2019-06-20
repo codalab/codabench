@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http.response import HttpResponseBase
 from django.test import TestCase
 
-from factories import UserFactory, CompetitionParticipantFactory, CompetitionFactory, PhaseFactory
+from factories import UserFactory
 
 
 class ChaHubUtilityTests(TestCase):
