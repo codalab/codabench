@@ -9,7 +9,7 @@
                     {title}
                 </h4>
                 <p class="comp-description">
-                    {description.substring(0,90) + (description.length > 90 ? '...' : '')}
+                    {pretty_description(description)}
                 </p>
                 <p class="organizer">
                     <em>Organized by: <strong>{created_by}</strong></em>
@@ -29,6 +29,14 @@
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL)
+            } else {
+                return ''
+            }
+        }
+
+        self.pretty_description = function(description){
+            if (description) {
+                return description.substring(0,90) + (description.length > 90 ? '...' : '')
             } else {
                 return ''
             }

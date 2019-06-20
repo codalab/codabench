@@ -3,6 +3,9 @@
         <div class="segment-container ui segment">
             <div class="ui header">
                 Popular Competitions
+                <div class="sub-header-link">
+                    <a href="#" class="view-all-comps">See more competitions</a>
+                </div>
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
@@ -20,6 +23,9 @@
         <div class="segment-container ui segment">
             <div class="ui header">
                 Featured Competitions
+            <div class="sub-header-link">
+                <a class="view-all-comps" href="#">See more competitions</a>
+            </div>
             </div>
             <div class="container-content">
                 <div class="loader-container popular">
@@ -55,4 +61,19 @@
                 })
         }
     </script>
+
+    <style>
+        .sub-header-link {
+            line-height: 0.25em;
+        }
+
+        .view-all-comps {
+            font-size: 0.5em;
+            font-weight: 100;
+        }
+
+        .view-all-comps:hover {
+            text-decoration: underline;
+        }
+    </style>
 </front-page-competitions>
