@@ -1,12 +1,19 @@
-from rest_framework.decorators import action
+from django.db.models import Count, Q
+from rest_framework import status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus
+
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
+from competitions.utils import get_popular_competitions, get_featured_competitions
+from profiles.models import User
+
 from utils.data import make_url_sassy
 
 
@@ -94,6 +101,45 @@ class CompetitionViewSet(ModelViewSet):
         for dump in competition.dumps.all():
             files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
         return Response(files)
+
+
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def front_page_competitions(request):
+    popular_comps = get_popular_competitions()
+    featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+    popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
+    featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+    return Response(data={
+        "popular_comps": popular_comps_serializer.data,
+        "featured_comps": featured_comps_serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def by_the_numbers(request):
+    data = Competition.objects.aggregate(
+        count=Count('*'),
+        published_comps=Count('pk', filter=Q(published=True)),
+        unpublished_comps=Count('pk', filter=Q(published=False)),
+    )
+
+    total_competitions = data['count']
+    public_competitions = data['published_comps']
+    private_competitions = data['unpublished_comps']
+    users = User.objects.all().count()
+    competition_participants = CompetitionParticipant.objects.all().count()
+    submissions = Submission.objects.all().count()
+
+    return Response([
+        {'label': "Total Competitions", 'count': total_competitions},
+        {'label': "Public Competitions", 'count': public_competitions},
+        {'label': "Private Competitions", 'count': private_competitions},
+        {'label': "Users", 'count': users},
+        {'label': "Competition Participants", 'count': competition_participants},
+        {'label': "Submissions", 'count': submissions},
+    ])
 
 
 class PhaseViewSet(ModelViewSet):
