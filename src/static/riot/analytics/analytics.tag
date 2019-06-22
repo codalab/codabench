@@ -300,6 +300,7 @@
 
             CODALAB.api.get_analytics(date_parameters)
                 .done(function (data) {
+                    console.log(data)
                     let time_unit = data.time_unit === 'day'
 
                     update_chart(self.competitionsChart, data.competitions_data, time_unit)
