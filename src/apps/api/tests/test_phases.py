@@ -1,10 +1,16 @@
+import json
+import os
+import tempfile
+from datetime import timedelta
+
+from PIL import Image
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework.test import APIClient
 
 from api.serializers.competitions import PhaseSerializer, CompetitionSerializer
-from competitions.models import Phase
+from competitions.models import Phase, Competition
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
 
 
@@ -52,22 +58,44 @@ class ReRunPhaseSubmissionTests(TestCase):
 
 
 # TODO: Still needs logic completed for validation
-# class PhaseSerializerValidation(TestCase):
-#     def test_phase_serializer_checks_auto_migration(self):
-#         # data = {
-#         #     "index": 1,
-#         #     "start": timezone.now(),
-#         #     'id': 1,
-#         #     'end': timezone.now() + timezone.timedelta(10000),
-#         #     'name': 'testCompetition',
-#         #     'status': Phase.CURRENT,
-#         #     # 'auto_migrate_to_this_phase': Fa,
-#         #
-#         # }
-#         #
-#         # serializer = PhaseSerializer(data=data)
-#         #
-#         # serializer.is_valid(raise_exception=True)
-#         # assert False
-#
-#         serializer = CompetitionSerializer(data=data)
+class CompetitionPhaseMigrationValidation(TestCase):
+    # def setUp(self):
+        # self.user = UserFactory(username='test')
+        # self.competition = CompetitionFactory(created_by=self.user, id=1)
+        # self.phase = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=True)
+
+    def test_phase_serializer_checks_auto_migration(self):
+        image = Image.new('RGB', (100, 100))
+        tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
+        image.save(tmp_file)
+
+        with open(tmp_file.name, 'rb') as data:
+            image = data
+
+        data = [{
+            "id": 1,
+            "logo": image,
+            "title": "It's a competition",
+            "published": True,
+            "created_by": "me",
+            "created_when": now(),
+            "phases": {
+                "id": 1,
+                "index": 1,
+                "start": now(),
+                "end": now() + timedelta(5000),
+                "name": "Phase 1",
+                "description": "adsf",
+                "status": Phase.CURRENT,
+                "auto_migrate_to_this_phase": True,
+            },
+        }]
+
+        serializer = CompetitionSerializer(data=data, many=True)
+
+        if serializer.is_valid(raise_exception=True):
+            print("It's valid nice")
+            assert True
+        else:
+            print('nope')
+            assert False

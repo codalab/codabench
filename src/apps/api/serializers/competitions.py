@@ -32,16 +32,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'auto_migrate_to_this_phase',
         )
 
-    # TODO: Finish validate logic for phase serializer
-    # def validate(self, attrs):
-    #     assert False
-    #     print(attrs)
-    #     """Returns False when auto-migration is not settable for this phase."""
-    #     attrs['competition']competition.phases.count()
-    #     if 'auto_migrate_to_this_phase' in attrs and self == self.competition.phases.all().first() or (
-    #             self.competition.phases.count() <= 1 or self.competition.phases.count() is None):
-    #         return setattr(Phase, 'auto_migrate_to_this_phase', False)
-
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = TaskSerializerSimple(many=True)
@@ -109,6 +99,16 @@ class CompetitionSerializer(WritableNestedModelSerializer):
         if not value:
             raise serializers.ValidationError("Competitions require at least 1 leaderboard")
         return value
+
+    def validate_phases(self, attrs):
+        if not attrs['phases'] or len(attrs['phases'] <= 0):
+            raise serializers.ValidationError("Competitions must have at least one phase")
+        if attrs['phases'][0]['auto_migrate_to_this_phase']:
+            raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
+        if len(attrs['phases']) == 1 and attrs['phases'][0]['auto_migrate_to_this_phase']:
+            raise serializers.ValidationError("You cannot auto migrate in a competition with one phase")
+
+        return attrs
 
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']
