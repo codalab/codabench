@@ -48,6 +48,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'scores',
             'leaderboard',
             'owner',
+            'has_children',
+            'parent',
+            'children',
         )
         extra_kwargs = {
             "phase": {"read_only": True},
@@ -121,7 +124,10 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             parent_pk = validated_data.get('parent_pk')
             parent_secret = validated_data.get('parent_secret')
             run_submission(instance.pk, task_pk=task_id, is_scoring=True, parent_pk=parent_pk, parent_secret=parent_secret)
-        return super().update(instance, validated_data)
+        resp = super().update(instance, validated_data)
+        if instance.parent:
+            instance.parent.check_children()
+        return resp
 
 
 class SubmissionDetailSerializer(serializers.ModelSerializer):

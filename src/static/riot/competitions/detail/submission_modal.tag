@@ -16,10 +16,10 @@
                     </thead>
                     <tbody>
                     <tr>
-                        <td class="selectable file-download"><a href="{ submission.data_file }"><i class="file archive outline icon"></i> Submission File</a></td>
+                        <td class="selectable file-download"><a href="{ data_file }"><i class="file archive outline icon"></i> Submission File</a></td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download"><a href="{ submission.result }"><i class="file outline icon"></i>Output from prediction step</a></td>
+                        <td class="selectable file-download"><a href="{ result }"><i class="file outline icon"></i>Output from prediction step</a></td>
                     </tr>
                     <tr>
                         <td class="selectable file-download"><a href="#"><i class="file outline icon"></i>Output from scoring step</a></td>
@@ -93,33 +93,7 @@
         </div>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
-        <form class="ui form" id="score_update_form">
-            <div each="{leaderboard in leaderboards}" class="leaderboard">
-                <h3>{leaderboard.title}</h3>
-
-                <table class="ui collapsing table">
-                    <thead>
-                    <tr>
-                        <th each="{column in leaderboard.columns}">
-                            {column.title}
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td each="{column in leaderboard.columns}">
-                            <input type="number" name="{ column.score_id }"
-                                   disabled="{ !!column.computation }"
-                                   value="{ column.score }" step="any">
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <button class="ui blue button" onclick="{ update_scores }">
-                Submit
-            </button>
-        </form>
+        <submission-scores leaderboards="{leaderboards}"></submission-scores>
     </div>
     <script>
         var self = this
@@ -128,17 +102,6 @@
         self.leaderboards = []
         self.columns = []
 
-        self.update_scores = function (event) {
-            event.preventDefault()
-            let data = get_form_data($('#score_update_form', self.root))
-            _.forEach(_.keys(data), (key) => {
-                CODALAB.api.update_submission_score(key, {score: data[key]})
-                    .done(function (data) {
-                        toastr.success('Score updated')
-                        CODALAB.events.trigger('score_updated')
-                    })
-            })
-        }
 
         self.get_score_details = function (column) {
             try {
@@ -150,22 +113,12 @@
                 return ['', '']
             }
         }
-
-        CODALAB.events.on('submission_clicked', function (submission) {
-            // reset logs and leaderboards for new submission to write to
-            self.logs = {}
-            self.leaderboards = []
-            self.submission = submission
-            // self.columns = []
-            self.update()
-            var tabs = $('.menu .item', self.root)
-            tabs.tab()
-            tabs.tab('change tab', 'downloads')
-            CODALAB.api.get_submission_details(submission.id)
+        self.update_submission_details = () => {
+            CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
-                    self.submission.result = data.result
-                    self.submission.data_file = data.data_file
+                    self.result = data.result
+                    self.data_file = data.data_file
                     _.forEach(data.logs, (item) => {
                         $.get(item.data_file)
                             .done(function (content) {
@@ -185,7 +138,15 @@
                     }
                     self.update()
                 })
+        }
+        self.on('update', () => {
+            if (!self.submission || self.submission !== opts.submission) {
+                self.submission = opts.submission
+                self.update_submission_details()
+                $('.menu .item', self.root).tab()
+            }
         })
+
     </script>
 
     <style type="text/stylus">
@@ -196,8 +157,6 @@
         .leaderboard-tab
             height 515px
             overflow auto
-        .leaderboard
-            padding-bottom 10px
         .modal-tab
             height 530px
         .file-download

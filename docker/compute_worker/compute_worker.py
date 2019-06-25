@@ -406,8 +406,6 @@ class Run:
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
         self._post_scores(scores, self.submission_id, self.secret)
-        if self.parent_secret and self.parent_pk:
-            self._post_scores(scores, self.parent_pk, self.parent_secret)
 
     def push_result(self):
         self._put_dir(self.result, self.output_dir)
