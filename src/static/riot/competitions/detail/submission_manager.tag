@@ -9,7 +9,7 @@
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
+                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
             </div>
         </div>
     </div>
@@ -85,11 +85,11 @@
             <div if="{_.get(selected_submission, 'has_children', false)}">
                 <div class="ui large green pointing menu">
                     <div each="{child, i in selected_submission.children}"
-                         class="item {active: i === 0}"
+                         class="parent-modal item {active: i === 0}"
                          data-tab="child_{i}">
                         Task {i + 1}
                     </div>
-                    <div if="{selected_submission.admin}" data-tab="admin" class="item" ref="admin_item">Admin</div>
+                    <div if="{selected_submission.admin}" data-tab="admin" class="parent-modal item" ref="admin_item">Admin</div>
                 </div>
                 <div each="{child, i in selected_submission.children}"
                      class="ui tab {active: i === 0}"
@@ -264,9 +264,9 @@
             $(self.refs.modal)
                 .modal({
                     onShow: () => {
-                        $('.menu .item').tab()
                         $(self.refs.admin_item).removeClass('active')
                         $(self.refs.admin_tab).removeClass('active')
+                        $('.menu .parent-modal.item').tab()
                     }
                 })
                 .modal('show')
