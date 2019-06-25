@@ -279,6 +279,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
                                              blank=True)
 
+    scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
     # uber experimental
@@ -325,6 +326,12 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.save()
             return True
         return False
+
+    def check_children(self):
+        done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
+        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
+            self.status = 'Finished'
+            self.save()
 
     def get_chahub_endpoint(self):
         return "submissions/"

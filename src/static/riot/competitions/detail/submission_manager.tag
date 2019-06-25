@@ -47,7 +47,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr each="{ submission, index in submissions }" onclick="{ show_modal.bind(this, submission) }" class="submission_row">
+        <tr each="{ submission, index in filter_children(submissions) }" onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
@@ -79,14 +79,36 @@
 
     <div class="ui large modal" ref="modal">
         <div class="content">
-            <submission-modal></submission-modal>
+            <div if="{!_.get(selected_submission, 'has_children', true)}">
+                <submission-modal submission="{selected_submission}"></submission-modal>
+            </div>
+            <div if="{_.get(selected_submission, 'has_children', false)}">
+                <div class="ui large green pointing menu">
+                    <div each="{child, i in selected_submission.children}"
+                         class="item {active: i === 0}"
+                         data-tab="child_{i}">
+                        Task {i + 1}
+                    </div>
+                    <div if="{selected_submission.admin}" data-tab="admin" class="item" ref="admin_item">Admin</div>
+                </div>
+                <div each="{child, i in selected_submission.children}"
+                     class="ui tab {active: i === 0}"
+                     data-tab="child_{i}">
+                    <submission-modal submission="{child}"></submission-modal>
+                </div>
+                <div class="ui tab leaderboard-tab" style="height: 565px; overflow: auto;" if="{selected_submission.admin}" data-tab="admin" ref="admin_tab">
+                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
+                </div>
+            </div>
         </div>
     </div>
+
     <script>
         var self = this
 
         self.selected_phase = undefined
-
+        self.selected_submission = undefined
+        self.leaderboards = {}
 
         self.on("mount", function () {
             $(self.refs.search).dropdown();
@@ -94,6 +116,12 @@
             $(self.refs.phase).dropdown();
             $(self.refs.rerun_button).dropdown();
         })
+
+        self.filter_children = (submissions) => {
+            return _.filter(submissions, sub => {
+                return !sub.parent
+            })
+        }
 
         self.update_submissions = function (filters) {
             if (opts.admin) {
@@ -197,12 +225,51 @@
             event.stopPropagation()
         }
 
-        self.show_modal = function (submission) {
+        self.get_score_details = function (submission, column) {
+            try {
+                let score = _.filter(submission.scores, (score) => {
+                    return score.column_key === column.key
+                })[0]
+                return [score.score, score.id]
+            } catch {
+                return ['', '']
+            }
+        }
+
+        self.submission_clicked = function (submission) {
+            submission = _.defaultsDeep({}, submission) // stupid workaround to not modify the original submission object
+            if (submission.has_children) {
+                submission.children = _.map(submission.children, child => {
+                    return {id: child}
+                })
+                CODALAB.api.get_submission_details(submission.id)
+                    .done(function (data) {
+                        self.leaderboards = data.leaderboards
+                        _.forEach(self.leaderboards, (leaderboard) => {
+                            _.map(leaderboard.columns, column => {
+                                let [score, score_id] = self.get_score_details(submission, column)
+                                column.score = score
+                                column.score_id = score_id
+                                return column
+                            })
+                        })
+                        self.update()
+                    })
+            }
             if (opts.admin) {
                 submission.admin = true
             }
-            CODALAB.events.trigger('submission_clicked', submission)
-            $(self.refs.modal).modal('show');
+            self.selected_submission = submission
+            self.update()
+            $(self.refs.modal)
+                .modal({
+                    onShow: () => {
+                        $('.menu .item').tab()
+                        $(self.refs.admin_item).removeClass('active')
+                        $(self.refs.admin_tab).removeClass('active')
+                    }
+                })
+                .modal('show')
         }
 
         CODALAB.events.on('phase_selected', function(selected_phase) {
