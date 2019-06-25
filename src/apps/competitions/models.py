@@ -34,8 +34,8 @@ class Competition(ChaHubSaveMixin, models.Model):
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
             'title': self.title,
+            # TODO: get URL
             'url': 'https://www.google.com/',
-            'producer': settings.CHAHUB_PRODUCER_ID,
             'remote_id': self.pk,
             'published': self.published
         }
