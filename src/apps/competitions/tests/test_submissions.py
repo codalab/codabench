@@ -148,5 +148,3 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         assert resp.call_count == 1
         sub = Submission.objects.get(id=self.sub.id)
         assert not sub.has_children
-
-
