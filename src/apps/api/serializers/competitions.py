@@ -100,15 +100,14 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             raise serializers.ValidationError("Competitions require at least 1 leaderboard")
         return value
 
-    def validate_phases(self, attrs):
-        if not attrs['phases'] or len(attrs['phases'] <= 0):
+    def validate_phases(self, phases):
+        if not phases or len(phases) <= 0:
             raise serializers.ValidationError("Competitions must have at least one phase")
-        if attrs['phases'][0]['auto_migrate_to_this_phase']:
+        if phases[0]['auto_migrate_to_this_phase'] is True:
             raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
-        if len(attrs['phases']) == 1 and attrs['phases'][0]['auto_migrate_to_this_phase']:
+        if len(phases) == 1 and phases[0]['auto_migrate_to_this_phase']:
             raise serializers.ValidationError("You cannot auto migrate in a competition with one phase")
-
-        return attrs
+        return phases
 
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']

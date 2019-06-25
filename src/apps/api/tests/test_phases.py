@@ -1,17 +1,11 @@
-import json
-import os
-import tempfile
-from datetime import timedelta
-
-from PIL import Image
+import pytest
 from django.test import TestCase
 from django.urls import reverse
-from django.utils.timezone import now
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from api.serializers.competitions import PhaseSerializer, CompetitionSerializer
-from competitions.models import Phase, Competition
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
+from api.serializers.competitions import CompetitionSerializer
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory
 
 
 class ReRunPhaseSubmissionTests(TestCase):
@@ -57,45 +51,40 @@ class ReRunPhaseSubmissionTests(TestCase):
         assert self.phase.submissions.count() == 4
 
 
-# TODO: Still needs logic completed for validation
 class CompetitionPhaseMigrationValidation(TestCase):
-    # def setUp(self):
-        # self.user = UserFactory(username='test')
-        # self.competition = CompetitionFactory(created_by=self.user, id=1)
-        # self.phase = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=True)
+    def setUp(self):
+        self.user = UserFactory(username='test')
+        self.competition = CompetitionFactory(created_by=self.user, id=1)
+        self.phase = PhaseFactory(competition=self.competition)
+        self.leaderboard = LeaderboardFactory(competition=self.competition)
 
-    def test_phase_serializer_checks_auto_migration(self):
-        image = Image.new('RGB', (100, 100))
-        tmp_file = tempfile.NamedTemporaryFile(suffix='.jpg')
-        image.save(tmp_file)
+    def serialize_and_validate_data(self):
+        serializer = CompetitionSerializer(self.competition)
+        data = serializer.data
 
-        with open(tmp_file.name, 'rb') as data:
-            image = data
+        with pytest.raises(ValidationError) as exception:
+            serializer = CompetitionSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
 
-        data = [{
-            "id": 1,
-            "logo": image,
-            "title": "It's a competition",
-            "published": True,
-            "created_by": "me",
-            "created_when": now(),
-            "phases": {
-                "id": 1,
-                "index": 1,
-                "start": now(),
-                "end": now() + timedelta(5000),
-                "name": "Phase 1",
-                "description": "adsf",
-                "status": Phase.CURRENT,
-                "auto_migrate_to_this_phase": True,
-            },
-        }]
+        return self, exception
 
-        serializer = CompetitionSerializer(data=data, many=True)
+    def test_phase_is_valid(self):
+        setattr(self.phase, 'auto_migrate_to_this_phase', False)
+        self.phase.save()
+        _, exception = self.serialize_and_validate_data()
 
-        if serializer.is_valid(raise_exception=True):
-            print("It's valid nice")
-            assert True
-        else:
-            print('nope')
-            assert False
+        self.assertFalse("'phase:'" in str(exception.value))
+
+    def test_phase_serializer_auto_migrate_on_first_phase(self):
+        setattr(self.phase, 'auto_migrate_to_this_phase', True)
+        self.phase.save()
+        _, exception = self.serialize_and_validate_data()
+
+        self.assertTrue("You cannot auto migrate to the first phase of a competition" in str(exception.value))
+
+    def test_phase_serializer_no_phases(self):
+        setattr(self.phase, 'competition', None)
+        self.phase.save()
+        _, exception = self.serialize_and_validate_data()
+
+        self.assertTrue("Competitions must have at least one phase" in str(exception.value))
