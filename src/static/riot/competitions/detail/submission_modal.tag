@@ -1,8 +1,8 @@
 <submission-modal>
     <div class="ui large green pointing menu">
-        <div class="active item" data-tab="downloads">DOWNLOADS</div>
-        <div class="item" data-tab="logs">LOGS</div>
-        <div class="item" data-tab="admin" if="{submission.admin}">ADMIN</div>
+        <div class="active submission-modal item" data-tab="downloads">DOWNLOADS</div>
+        <div class="submission-modal item" data-tab="logs">LOGS</div>
+        <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="downloads">
         <div class="ui relaxed centered grid">
@@ -36,17 +36,17 @@
         <div class="ui grid">
             <div class="three wide column">
                 <div class="ui fluid vertical secondary menu">
-                    <div class="active item" data-tab="prediction">Prediction Logs</div>
-                    <div class="item" data-tab="scoring">Scoring Logs</div>
+                    <div class="active submission-modal item" data-tab="prediction">Prediction Logs</div>
+                    <div class="submission-modal item" data-tab="scoring">Scoring Logs</div>
                 </div>
             </div>
             <div class="thirteen wide column">
                 <div class="ui active tab" data-tab="prediction">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active item" data-tab="p_stdout">stdout</div>
-                        <div class="item" data-tab="p_stderr">stderr</div>
-                        <div class="item" data-tab="p_ingest_stdout">Ingestion stdout</div>
-                        <div class="item" data-tab="p_ingest_stderr">Ingestion stderr</div>
+                        <div class="active submission-modal item" data-tab="p_stdout">stdout</div>
+                        <div class="submission-modal item" data-tab="p_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="p_ingest_stdout">Ingestion stdout</div>
+                        <div class="submission-modal item" data-tab="p_ingest_stderr">Ingestion stderr</div>
                     </div>
 
                     <div class="ui active bottom attached inverted segment tab log" data-tab="p_stdout">
@@ -67,10 +67,10 @@
                 </div>
                 <div class="ui tab" data-tab="scoring">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active item" data-tab="s_stdout">stdout</div>
-                        <div class="item" data-tab="s_stderr">stderr</div>
-                        <div class="item" data-tab="s_ingest_stdout">Ingestion stdout</div>
-                        <div class="item" data-tab="s_ingest_stderr">Ingestion stderr</div>
+                        <div class="active submission-modal item" data-tab="s_stdout">stdout</div>
+                        <div class="submission-modal item" data-tab="s_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="s_ingest_stdout">Ingestion stdout</div>
+                        <div class="submission-modal item" data-tab="s_ingest_stderr">Ingestion stderr</div>
                     </div>
 
                     <div class="ui active bottom attached inverted segment tab log" data-tab="s_stdout">
@@ -137,13 +137,13 @@
                         })
                     }
                     self.update()
+                    $('.menu .submission-modal.item').tab()
                 })
         }
         self.on('update', () => {
             if (!self.submission || self.submission !== opts.submission) {
                 self.submission = opts.submission
                 self.update_submission_details()
-                $('.menu .item', self.root).tab()
             }
         })
 
