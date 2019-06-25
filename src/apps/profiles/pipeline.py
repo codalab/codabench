@@ -11,8 +11,13 @@ def user_details(user, **kwargs):
             if kwargs.get('details').get('github_info'):
                 github_info = kwargs['details'].pop('github_info', None)
                 if github_info:
-                    user.github_info = GithubUserInfo.objects.create(**github_info)
-                    user.save()
+                    if user.github_info and user.github_info.uid == github_info.get('uid', None):
+                        for key in github_info:
+                            setattr(user.github_info, key, github_info.get(key, None))
+                        user.github_info.save()
+                    else:
+                        user.github_info = GithubUserInfo.objects.create(**github_info)
+                        user.save()
             pass
         else:
             user_attrs = [
