@@ -37,10 +37,12 @@ class Competition(ChaHubSaveMixin, models.Model):
             'url': 'https://www.google.com/',
             'producer': settings.CHAHUB_PRODUCER_ID,
             'remote_id': self.pk,
-            'logo_url': self.logo.url if self.logo else '',
-            'logo': self.logo.url if self.logo else '',
             'published': self.published
         }
+        if self.logo:
+            data['logo_url'] = self.logo.url
+            data['logo'] = self.logo.url
+
         chahub_id = self.created_by.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
