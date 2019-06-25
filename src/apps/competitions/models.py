@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from django.conf import settings
 from django.db import models
@@ -28,14 +29,23 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint(self):
         return "competitions/"
 
+    def clean_chahub_data(self, temp_data):
+        data = temp_data
+        for key in list(data):
+            if not data[key] or data[key] == '':
+                data.pop(key, None)
+            if isinstance(data.get(key), datetime.datetime):
+                data[key] = data[key].isoformat()
+        return data
+
     def get_chahub_data(self):
         data = {
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
             'title': self.title,
+            # Todo: Change URL
             'url': 'https://www.google.com/',
-            'producer': settings.CHAHUB_PRODUCER_ID,
             'remote_id': self.pk,
             'logo_url': self.logo.url if self.logo else '',
             'logo': self.logo.url if self.logo else '',
@@ -44,7 +54,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         chahub_id = self.created_by.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
-        return [data]
+        return [self.clean_chahub_data(data)]
 
     def get_chahub_is_valid(self):
         # By default, always push
