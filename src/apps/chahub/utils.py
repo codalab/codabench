@@ -11,7 +11,7 @@ class ChahubException(Exception):
     pass
 
 
-def send_to_chahub(endpoint, data, update=False):
+def send_to_chahub(endpoint, data):
     """
     Does a post request to the specified API endpoint on chahub with the inputted data.
     :param endpoint: String designating which API endpoint; IE: 'producers/'
@@ -37,10 +37,7 @@ def send_to_chahub(endpoint, data, update=False):
                 'X-CHAHUB-API-KEY': settings.CHAHUB_API_KEY,
             }
         }
-        if update:
-            return requests.put(data=data, **kwargs)
-        else:
-            return requests.post(data=data, **kwargs)
+        return requests.post(data=data, **kwargs)
     except requests.ConnectionError:
         raise ChahubException('Connection Error with ChaHub')
 

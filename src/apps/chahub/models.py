@@ -93,7 +93,7 @@ class ChaHubSaveMixin(models.Model):
 
                 # Send to chahub if we haven't yet, we have new data
                 if not self.chahub_timestamp or self.chahub_data_hash != data_hash:
-                    resp = send_to_chahub(self.get_chahub_endpoint(), data, update=bool(self.chahub_timestamp))
+                    resp = send_to_chahub(self.get_chahub_endpoint(), data)
 
                     if resp and resp.status_code in (200, 201):
                         logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
