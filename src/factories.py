@@ -152,4 +152,3 @@ class SubmissionScoreFactory(DjangoModelFactory):
             else:
                 for sub in extracted:
                     self.submissions.add(sub)
-
