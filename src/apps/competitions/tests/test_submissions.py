@@ -1,13 +1,17 @@
+import uuid
 from datetime import timedelta
+from unittest import mock
 
 from django.test import TestCase
 
 from competitions.models import Submission
 from django.utils.timezone import now
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory
+
+from competitions.tasks import run_submission
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory
 
 
-class MaxSubmissionsTests(TestCase):
+class SubmissionTestCase(TestCase):
     def setUp(self):
         self.user = UserFactory(username='test')
         self.competition = CompetitionFactory(created_by=self.user)
@@ -16,8 +20,10 @@ class MaxSubmissionsTests(TestCase):
     def make_submission(self, **kwargs):
         kwargs.setdefault('owner', self.user)
         kwargs.setdefault('phase', self.phase)
-        SubmissionFactory(**kwargs)
+        return SubmissionFactory(**kwargs)
 
+
+class MaxSubmissionsTests(SubmissionTestCase):
     def set_max_submissions(self, phase=None, per_person=None, per_day=None):
         phase = self.phase if phase is None else phase
         phase.has_max_submissions = True
@@ -82,17 +88,7 @@ class MaxSubmissionsTests(TestCase):
                 pass
 
 
-class SubmissionManagerTests(TestCase):
-    def setUp(self):
-        self.user = UserFactory(username='test')
-        self.competition = CompetitionFactory(created_by=self.user)
-        self.phase = PhaseFactory(competition=self.competition)
-
-    def make_submission(self, **kwargs):
-        kwargs.setdefault('owner', self.user)
-        kwargs.setdefault('phase', self.phase)
-        return SubmissionFactory(**kwargs)
-
+class SubmissionManagerTests(SubmissionTestCase):
     def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
         sub = self.make_submission()
         assert Submission.objects.all().count() == 1
@@ -115,3 +111,42 @@ class SubmissionManagerTests(TestCase):
             sub.status = status
             assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
             assert sub.status == status, 'Status was changed and should not have been'
+
+
+class MultipleTasksPerPhaseTests(SubmissionTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.comp = CompetitionFactory()
+        self.tasks = [TaskFactory() for _ in range(2)]
+        self.phase = PhaseFactory(competition=self.comp, tasks=self.tasks)
+
+    def mock_run_submission(self, submission):
+        with mock.patch('competitions.tasks.app.send_task') as celery_app:
+            with mock.patch('competitions.tasks.make_url_sassy') as mock_sassy:
+                class Task:
+                    def __init__(self):
+                        self.id = uuid.uuid4()
+
+                task = Task()
+                celery_app.return_value = task
+                mock_sassy.return_value = ''
+                run_submission(submission.pk)
+                return celery_app
+
+    def test_making_submission_creates_parent_sub_and_additional_sub_per_task(self):
+        self.sub = self.make_submission()
+        resp = self.mock_run_submission(self.sub)
+        assert resp.call_count == 2
+        sub = Submission.objects.get(id=self.sub.id)
+        assert sub.has_children
+        assert sub.children.count() == 2
+
+    def test_making_submission_to_phase_with_one_task_does_not_create_parents_or_children(self):
+        self.single_phase = PhaseFactory(competition=self.comp)
+        self.sub = self.make_submission(phase=self.single_phase)
+        resp = self.mock_run_submission(self.sub)
+        assert resp.call_count == 1
+        sub = Submission.objects.get(id=self.sub.id)
+        assert not sub.has_children
+
+
