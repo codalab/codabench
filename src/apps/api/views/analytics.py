@@ -60,33 +60,18 @@ def build_request_object(model_name, filter_param, time_unit, start_date, end_da
         filter_param + '__range': [start_date, end_date]
     }
 
-    if csv:
-        output_fields = {
-            count_key: Count('pk'),
-            data_key: F('datefield')
-        }
-        data = model_name.objects.filter(**filter_args).dates(filter_param, time_unit).values(**output_fields)
-    else:
-        data = model_name.objects.filter(**filter_args).dates(filter_param, time_unit).values(count=Count('pk'), _datefield=F('datefield'))
-    return data
+    count_key = count_key if csv else 'count'
+    data_key = data_key if csv else '_datefield'
+
+    output_fields = {
+        count_key: Count('pk'),
+        data_key: F('datefield')
+    }
+
+    return model_name.objects.filter(**filter_args).dates(filter_param, time_unit).values(**output_fields)
 
 
 class AnalyticsRenderer(r.CSVRenderer):
-    header = [
-       'start_date',
-       'end_date',
-       'time_unit',
-       'registered_user_count',
-       'competition_count',
-       'competitions_published_count',
-       'submissions_made_count',
-       'users_data_date',
-       'users_data_count',
-       'competitions_data_date',
-       'competitions_data_count',
-       'submissions_data_date',
-       'submissions_data_count',
-    ]
 
     labels = {
         'start_date': 'Start Date',
@@ -104,6 +89,22 @@ class AnalyticsRenderer(r.CSVRenderer):
         'submissions_data_count': 'Submissions Data Count',
     }
 
+    header = list(labels.keys())#[
+#        'start_date',
+#        'end_date',
+#        'time_unit',
+#        'registered_user_count',
+#        'competition_count',
+#        'competitions_published_count',
+#        'submissions_made_count',
+#        'users_data_date',
+#        'users_data_count',
+#        'competitions_data_date',
+#        'competitions_data_count',
+#        'submissions_data_date',
+#        'submissions_data_count',
+#    ]
+
 
 class AnalyticsView(APIView):
 
@@ -116,57 +117,53 @@ class AnalyticsView(APIView):
     renderer_classes = (JSONRenderer, AnalyticsRenderer,)
 
     def get(self, request):
-        if request.user.is_superuser:
-            start_date = request.query_params.get('start_date')
-            end_date = request.query_params.get('end_date')
-            time_unit = request.query_params.get('time_unit')
-            csv = request.query_params.get('format') == 'csv'
+        if not request.user.is_superuser:
+            raise Http404()
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        time_unit = request.query_params.get('time_unit')
+        csv = request.query_params.get('format') == 'csv'
 
-            users = build_request_object(User, 'date_joined', time_unit, start_date, end_date, csv, 'users_data_date', 'users_data_count')
-            competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date, csv, 'competitions_data_date', 'competitions_data_count')
-            submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date, csv, 'submissions_data_date', 'submissions_data_count')
+        users = build_request_object(User, 'date_joined', time_unit, start_date, end_date, csv, 'users_data_date', 'users_data_count')
+        competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date, csv, 'competitions_data_date', 'competitions_data_count')
+        submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date, csv, 'submissions_data_date', 'submissions_data_count')
 
-            if csv:
-                ob = [{
-                    'start_date': start_date,
-                    'end_date': end_date,
-                    'time_unit': time_unit,
-                    'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
-                    'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
-                    'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
-                    'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
-                }]
-
-                l = max(len(users), len(competitions), len(submissions))
-
-                for i in range(l):
-                    d = {}
-                    for data_list in [users, competitions, submissions]:
-                        if i < len(data_list):
-                            d = merge_dicts(d, data_list[i])
-                    if i == 0:
-                        ob[i] = merge_dicts(ob[i], d)
-                    else:
-                        ob.append(d)
-                s = AnalyticsSerializer(data=ob, many=True)
-                if s.is_valid():
-                    print(s.errors)
-                    return Response(s.validated_data)
-                else:
-                    print(s.errors)
-                    return Response(status=500)
-            return Response({
+        if csv:
+            ob = [{
+                'start_date': start_date,
+                'end_date': end_date,
+                'time_unit': time_unit,
                 'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
                 'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
                 'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
                 'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
-                'users_data': users,
-                'competitions_data': competitions,
-                'submissions_data': submissions,
-                'start_date': start_date,
-                'end_date': end_date,
-                'time_unit': time_unit,
-            })
-        else:
-            return Response(status=404)
+            }]
+
+            l = max(len(users), len(competitions), len(submissions))
+
+            for i in range(l):
+                d = {}
+                for data_list in [users, competitions, submissions]:
+                    if i < len(data_list):
+                        d = merge_dicts(d, data_list[i])
+                if i == 0:
+                    ob[i] = merge_dicts(ob[i], d)
+                else:
+                    ob.append(d)
+            serializer = AnalyticsSerializer(data=ob, many=True)
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.validated_data)
+
+        return Response({
+            'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
+            'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
+            'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
+            'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
+            'users_data': users,
+            'competitions_data': competitions,
+            'submissions_data': submissions,
+            'start_date': start_date,
+            'end_date': end_date,
+            'time_unit': time_unit,
+        })
 

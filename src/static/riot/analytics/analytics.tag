@@ -185,7 +185,7 @@
                     self.start_date = datetime.fromJSDate(date)
 
                     let end_date = $(self.refs.end_calendar).calendar('get date')
-                    if (end_date != null) {
+                    if (!!end_date) {
                         if (date <= end_date) {
                             self.update_analytics(self.start_date, self.end_date, self.time_unit)
                         } else {
@@ -330,6 +330,14 @@
         self.time_range_shortcut = function(unit_selection) {
             self.end_date = datetime.local()
 
+            let diffs = {
+                'month': {months: 1},
+                'week': {weeks: 1},
+                'year': {years: 1},
+            }
+
+            // self.start_date = self.end_date.minus(diffs[unit_selection])
+
             if (unit_selection === 'month') {
                 self.start_date = self.end_date.minus({months: 1})
             } else if (unit_selection === 'week') {
@@ -352,13 +360,7 @@
         // Chart Units (Months, Weeks, Days)
         self.update_chart_resolution = function(unit_selection) {
 
-            if( unit_selection === 'day') {
-                self.time_unit = 'day'
-            } else if (unit_selection === 'week') {
-                self.time_unit = 'week'
-            } else {
-                self.time_unit = 'month'
-            }
+            self.time_unit = unit_selection
 
             self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
             self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection

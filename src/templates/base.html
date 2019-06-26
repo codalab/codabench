@@ -186,12 +186,13 @@
         //WS_SUBMISSION_LISTEN: ""
 
         // Analytics
-        ANALYTICS_API: function (start, end, time_unit, format) {
-            let parameters = '?start_date=' + start + '&end_date=' + end + '&time_unit=' + time_unit
-            if (format != null) {
-                parameters += '&format=' + format
-            }
-            return "{% url "analytics_api" %}" + parameters
+        ANALYTICS_API: function (query_parameters) {
+//        ANALYTICS_API: function (start, end, time_unit, format) {
+//            let parameters = '?start_date=' + start + '&end_date=' + end + '&time_unit=' + time_unit
+//            if (format != null) {
+//                parameters += '&format=' + format
+//            }
+            return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
         },
 
                 // Competitions
