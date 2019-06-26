@@ -50,6 +50,16 @@ class DataFactory(DjangoModelFactory):
 
     created_by = factory.SubFactory(UserFactory)
     created_when = factory.LazyFunction(now)
+    type = factory.Iterator([
+        'ingestion_program',
+        'input_data',
+        'public_data',
+        'reference_data',
+        'scoring_program',
+        'starting_kit',
+        'competition_bundle',
+        'submission',
+        'solution'])
     name = factory.LazyAttribute(lambda o: f"{o.type} @ {o.created_when}")
 
 

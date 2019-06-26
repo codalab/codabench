@@ -34,21 +34,22 @@ class Competition(ChaHubSaveMixin, models.Model):
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
             'title': self.title,
+            # TODO: get URL
             'url': 'https://www.google.com/',
-            'producer': settings.CHAHUB_PRODUCER_ID,
             'remote_id': self.pk,
-            'logo_url': self.logo.url if self.logo else '',
-            'logo': self.logo.url if self.logo else '',
-            'published': True
+            'published': self.published
         }
+        if self.logo:
+            data['logo_url'] = self.logo.url
+            data['logo'] = self.logo.url
+
         chahub_id = self.created_by.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
-        return [data]
+        return data
 
     def get_chahub_is_valid(self):
-        # By default, always push
-        return True
+        return self.published
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -148,7 +149,7 @@ class SubmissionDetails(models.Model):
     is_scoring = models.BooleanField(default=False)
 
 
-class Submission(models.Model):
+class Submission(ChaHubSaveMixin, models.Model):
     NONE = "None"
     SUBMITTING = "Submitting"
     SUBMITTED = "Submitted"
@@ -237,6 +238,25 @@ class Submission(models.Model):
             self.save()
             return True
         return False
+
+    def get_chahub_endpoint(self):
+        return "submissions/"
+
+    def get_chahub_data(self):
+        data = {
+            "remote_id": self.id,
+            "competition": self.phase.competition_id,
+            "phase_index": self.phase.index,
+            "participant": self.participant.user.username,
+            "submitted_at": self.created_when.isoformat(),
+        }
+        chahub_id = self.owner.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        return data
+
+    def get_chahub_is_valid(self):
+        return self.status == self.FINISHED and self.is_public and self.phase.competition.published
 
 
 class CompetitionParticipant(models.Model):
