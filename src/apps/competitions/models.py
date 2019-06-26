@@ -36,15 +36,15 @@ class Competition(models.Model):
         :param next_phase: The new phase object we are entering
         '''
         logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
+        status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
 
-        if not current_phase.submissions.filter(status='Scoring' or 'Cancelled' or 'Finished').exists():
-            logger.info(f"No submissions running for competition pk={self.pk}")
-        else:
+        if current_phase.submissions.exclude(status__in=status_list).exists():
             logger.info(f"Some submissions still marked as processing for competition pk={self.pk}")
             self.is_migrating_delayed = True
             self.save()
             return
 
+        logger.info(f"No submissions running for competition pk={self.pk}")
         logger.info(
             f"Doing phase migration on competition pk={self.pk} from phase: {current_phase.index} to phase: {next_phase.index}")
 

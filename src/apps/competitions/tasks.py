@@ -685,7 +685,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
     new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
-                                      has_been_migrated=False, competition__is_migrating=False)
+                                      competition__is_migrating=False, has_been_migrated=False)
     logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
 
     for p in new_phases:
