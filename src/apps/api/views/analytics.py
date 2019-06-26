@@ -1,8 +1,6 @@
 from django.db.models import Count, F
 from django.contrib.auth import get_user_model
-from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.views import APIView
-from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.filters import BaseFilterBackend
@@ -51,9 +49,11 @@ class SimpleFilterBackend(BaseFilterBackend):
 
         return fields
 
+
 def merge_dicts(d1, d2):
     d = {**d1, **d2}
     return d
+
 
 def build_request_object(model_name, filter_param, time_unit, start_date, end_date, csv, data_key, count_key):
     filter_args = {
@@ -73,20 +73,20 @@ def build_request_object(model_name, filter_param, time_unit, start_date, end_da
 
 class AnalyticsRenderer(r.CSVRenderer):
     header = [
-            'start_date',
-            'end_date',
-            'time_unit',
-            'registered_user_count',
-            'competition_count',
-            'competitions_published_count',
-            'submissions_made_count',
-            'users_data_date',
-            'users_data_count',
-            'competitions_data_date',
-            'competitions_data_count',
-            'submissions_data_date',
-            'submissions_data_count',
-        ]
+       'start_date',
+       'end_date',
+       'time_unit',
+       'registered_user_count',
+       'competition_count',
+       'competitions_published_count',
+       'submissions_made_count',
+       'users_data_date',
+       'users_data_count',
+       'competitions_data_date',
+       'competitions_data_count',
+       'submissions_data_date',
+       'submissions_data_count',
+    ]
 
     labels = {
         'start_date': 'Start Date',
@@ -106,7 +106,6 @@ class AnalyticsRenderer(r.CSVRenderer):
 
 
 class AnalyticsView(APIView):
-
 
     """
     get:
