@@ -116,7 +116,7 @@
         </div>
     </div>
 
-    <a class="ui green button" href="{ URLS.ANALYTICS_API(start_date_string, end_date_string, time_unit, 'csv') }" download="codalab_analytics.csv">
+    <a class="ui green button" href="{ URLS.ANALYTICS_API({start_date: start_date_string, end_date: end_date_string, time_unit: time_unit, format: 'csv'}) }" download="codalab_analytics.csv">
         <i class="icon download"></i>Download as CSV
     </a>
 
@@ -300,7 +300,6 @@
 
             CODALAB.api.get_analytics(date_parameters)
                 .done(function (data) {
-                    console.log(data)
                     let time_unit = data.time_unit === 'day'
 
                     update_chart(self.competitionsChart, data.competitions_data, time_unit)
@@ -331,20 +330,12 @@
             self.end_date = datetime.local()
 
             let diffs = {
-                'month': {months: 1},
-                'week': {weeks: 1},
-                'year': {years: 1},
+                month: {months: 1},
+                week: {days: 6},
+                year: {years: 1},
             }
 
-            // self.start_date = self.end_date.minus(diffs[unit_selection])
-
-            if (unit_selection === 'month') {
-                self.start_date = self.end_date.minus({months: 1})
-            } else if (unit_selection === 'week') {
-                self.start_date = self.end_date.minus({weeks: 1}).plus({day: 1})
-            } else if (unit_selection === 'year') {
-                self.start_date = self.end_date.minus({years: 1})
-            }
+            self.start_date = self.end_date.minus(diffs[unit_selection])
 
             self.update_analytics(self.start_date, self.end_date, 'day')
 
@@ -359,7 +350,6 @@
 
         // Chart Units (Months, Weeks, Days)
         self.update_chart_resolution = function(unit_selection) {
-
             self.time_unit = unit_selection
 
             self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
