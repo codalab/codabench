@@ -111,7 +111,7 @@ class Data(ChaHubSaveMixin, models.Model):
         if chahub_id:
             data['user'] = chahub_id
         data = self.clean_chahub_data(data)
-        return data
+        return [data]
 
     def get_chahub_is_valid(self):
         return self.is_public

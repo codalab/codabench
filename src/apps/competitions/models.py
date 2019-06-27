@@ -46,7 +46,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         chahub_id = self.created_by.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
-        return data
+        return [data]
 
     def get_chahub_is_valid(self):
         return self.published
@@ -253,7 +253,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         chahub_id = self.owner.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
-        return data
+        return [data]
 
     def get_chahub_is_valid(self):
         return self.status == self.FINISHED and self.is_public and self.phase.competition.published
