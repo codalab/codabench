@@ -92,3 +92,6 @@ class CompetitionPhaseToPhase(TestCase):
         self.phase2.submissions.update(status='Finished')
         self.mock_migration()
         assert not Competition.objects.get(id=self.phase1.competition.id).is_migrating
+
+        mock_start = self.mock_migration()
+        assert mock_start.call_count == 0

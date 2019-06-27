@@ -19,3 +19,7 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")  # noqa: F405
+
+CHAHUB_API_URL = None
+CHAHUB_API_KEY = None
+CHAHUB_PRODUCER_ID = None
