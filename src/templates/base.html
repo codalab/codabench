@@ -172,53 +172,53 @@
             let collabs = _.map(competition.collaborators, collab => collab.username)
             return user.username === competition.created_by || collabs.includes(user.username)
         }
-    }
-    // Load in URLs or other django generated goodies
-    URLS = {
-        assets: {
-            header_particles: "{% static "particles/header.json" %}"
-        },
-        API: "/api/",
-        STATIC: function (file_name) {
-            return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
-        },
-        // Websockets
-        //WS_SUBMISSION_LISTEN: ""
 
-        // Analytics
-        ANALYTICS_API: function (query_parameters) {
-            return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
-        },
+        // Load in URLs or other django generated goodies
+        URLS = {
+            assets: {
+                header_particles: "{% static "particles/header.json" %}"
+            },
+            API: "/api/",
+            STATIC: function (file_name) {
+                return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+            },
+            // Websockets
+            //WS_SUBMISSION_LISTEN: ""
 
-                // Competitions
-        COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
-        COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
-        COMPETITION_ADD: "{% url "competitions:create" %}",
-        COMPETITION_DETAIL: function (pk) {
-            return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
-        },
-        COMPETITION_EDIT: function (pk) {
-            return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
-        },
-        SECRET_KEY_URL: function(pk, secret_key) {
-            var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
-            return `{{ request.get_host }}${url}?secret_key=${secret_key}`
-        },
+            // Analytics
+            ANALYTICS_API: function (query_parameters) {
+                return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
+            },
 
-        // Datasets
-        DATASET_MANAGEMENT: "{% url "datasets:management" %}",
-        DATASET_DOWNLOAD: function (key) {
-            return "{% url "datasets:download" key=0 %}".replace(0, key)
-        },
+                    // Competitions
+            COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
+            COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
+            COMPETITION_ADD: "{% url "competitions:create" %}",
+            COMPETITION_DETAIL: function (pk) {
+                return "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+            },
+            COMPETITION_EDIT: function (pk) {
+                return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
+            },
+            SECRET_KEY_URL: function(pk, secret_key) {
+                var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
+                return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+            },
 
-        // Tasks
-        TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
-        TASK_DETAIL: function(pk) {
-            return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+            // Datasets
+            DATASET_MANAGEMENT: "{% url "datasets:management" %}",
+            DATASET_DOWNLOAD: function (key) {
+                return "{% url "datasets:download" key=0 %}".replace(0, key)
+            },
+
+            // Tasks
+            TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
+            TASK_DETAIL: function(pk) {
+                return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
+            }
         }
-    }
-    // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
-    CSRF_TOKEN = $('{% csrf_token %}').attr('value')
+        // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
+        CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
 
 </script>
