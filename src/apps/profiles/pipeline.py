@@ -7,27 +7,14 @@ def user_details(user, **kwargs):
 
     if user:
         if backend and backend.name == 'chahub':
-            # user.save()  # Probably not necessary? was here to stop NoneType exception
-            if kwargs.get('details').get('github_info'):
+            if kwargs.get('details', {}).get('github_info'):
                 github_info = kwargs['details'].pop('github_info', None)
-                if github_info:
-                    user.github_info = GithubUserInfo.objects.create(**github_info)
-                    user.save()
-            pass
+                if github_info and github_info.get('uid'):
+                    obj, created = GithubUserInfo.objects.update_or_create(
+                        uid=github_info.pop('uid'),
+                        defaults=github_info,
+                    )
+                    if created:
+                        print("New github user info created for user: {}".format(user.username))
         else:
-            user_attrs = [
-                'avatar_url',
-                'url',
-                'html_url',
-                'name',
-                'company',
-                'bio',
-                'email',
-            ]
-
-            response = kwargs.pop("response")
-            for attr in user_attrs:
-                if not getattr(user, attr):
-                    setattr(user, attr, response[attr])
-
-            user.save()
+            pass
