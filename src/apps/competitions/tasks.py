@@ -418,6 +418,7 @@ def unpack_competition(competition_dataset_pk):
                     "end": _get_datetime(phase_data.get('end')),
                     'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
                     'max_submissions_per_person': phase_data.get('max_submissions'),
+                    'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase'),
                 }
                 execution_time_limit = phase_data.get('execution_time_limit_ms')
                 if execution_time_limit:
