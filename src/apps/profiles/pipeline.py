@@ -7,7 +7,7 @@ def user_details(user, **kwargs):
 
     if user:
         if backend and backend.name == 'chahub':
-            if kwargs.get('details').get('github_info'):
+            if kwargs.get('details', {}).get('github_info'):
                 github_info = kwargs['details'].pop('github_info', None)
                 if github_info and github_info.get('uid'):
                     obj, created = GithubUserInfo.objects.update_or_create(
