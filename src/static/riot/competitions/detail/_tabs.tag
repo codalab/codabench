@@ -203,7 +203,7 @@
                               leaderboards="{ competition.leaderboards }"></leaderboards>
             </div>
         </div>
-
+        
         <!-- Manage Competition Modal -->
         <div class="ui manage-competition modal">
             <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>

@@ -11,13 +11,11 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
-from utils.email import codalab_send_mail
-
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from profiles.models import User
-
 from utils.data import make_url_sassy
+from utils.email import codalab_send_mail
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -117,12 +115,13 @@ class CompetitionViewSet(ModelViewSet):
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
         files = {
-            'bundle': {
-                'name': bundle.name,
-                'url': make_url_sassy(bundle.data_file.name)
-            },
             'dumps': []
         }
+        if bundle:
+            files['bundle'] = {
+                'name': bundle.name,
+                'url': bundle.make_url_sassy(bundle.data_file.name)
+            }
         for dump in competition.dumps.all():
             files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
         return Response(files)
@@ -195,7 +194,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('user__username', 'user__email', 'status',)
+    filter_fields = ('user__username', 'user__email', 'status', 'competition')
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
