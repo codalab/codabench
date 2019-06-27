@@ -53,13 +53,12 @@ class SubmissionMixinTests(ChaHubTestCase):
         resp2 = self.mock_chahub_save(self.submission)
         assert not resp2.called
 
-    # def test_submission_save_sends_updated_data(self):
-    #     resp1 = self.mock_chahub_save(self.submission)
-    #     assert resp1.called
-    #     self.phase.index += 1
-    #     resp2 = self.mock_chahub_save(self.submission)
-    #     assert resp2.called
-    #     assert resp1.call_args[0][1]['phase_index'] == resp2.call_args[0][1]['phase_index'] - 1  # updated data actually sent
+    def test_submission_save_sends_updated_data(self):
+        resp1 = self.mock_chahub_save(self.submission)
+        assert resp1.called
+        self.phase.index += 1
+        resp2 = self.mock_chahub_save(self.submission)
+        assert resp2.called
 
     def test_invalid_submission_not_sent(self):
         self.comp.published = False
