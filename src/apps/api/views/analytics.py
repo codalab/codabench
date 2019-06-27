@@ -153,4 +153,3 @@ class AnalyticsView(APIView):
             'end_date': end_date,
             'time_unit': time_unit,
         })
-
