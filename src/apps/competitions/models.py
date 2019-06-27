@@ -1,3 +1,4 @@
+import logging
 import uuid
 from django.conf import settings
 from django.db import models
@@ -6,6 +7,8 @@ from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
+
+logger = logging.getLogger()
 
 
 class Competition(ChaHubSaveMixin, models.Model):
@@ -17,13 +20,60 @@ class Competition(ChaHubSaveMixin, models.Model):
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    is_migrating = models.BooleanField(default=False)
 
     def __str__(self):
-        return "competition-{0}-{1}".format(self.title, self.pk)
+        return f"competition-{self.title}-{self.pk}"
 
     @property
     def bundle_dataset(self):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+
+    def apply_phase_migration(self, current_phase, next_phase):
+        '''
+        Does the actual migrating of submissions from current_phase to next_phase
+
+        :param current_phase: The phase object to transfer submissions from
+        :param next_phase: The new phase object we are entering
+        '''
+        logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
+        status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
+
+        if current_phase.submissions.exclude(status__in=status_list).exists():
+            logger.info(f"Some submissions still marked as processing for competition pk={self.pk}")
+            self.is_migrating_delayed = True
+            self.save()
+            return
+
+        logger.info(f"No submissions running for competition pk={self.pk}")
+        logger.info(
+            f"Doing phase migration on competition pk={self.pk} from phase: {current_phase.index} to phase: {next_phase.index}")
+
+        self.is_migrating = True
+        self.save()
+
+        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False)
+
+        for submission in submissions:
+            new_submission = Submission(
+                created_by_migration=current_phase,
+                participant=submission.participant,
+                phase=next_phase,
+                owner=submission.owner,
+                data=submission.data,
+            )
+            new_submission.save(ignore_submission_limit=True)
+            new_submission.start()
+
+            submission.is_migrated = True
+            submission.save()
+
+        # To check for submissions being migrated, does not allow to enter new submission
+        current_phase.has_been_migrated = True
+        current_phase.save()
+
+        self.is_migrating_delayed = False
+        self.save()
 
     def get_chahub_endpoint(self):
         return "competitions/"
@@ -95,6 +145,8 @@ class Phase(models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
+    auto_migrate_to_this_phase = models.BooleanField(default=False)
+    has_been_migrated = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
@@ -128,6 +180,34 @@ class Phase(models.Model):
             if total_submission_count >= self.max_submissions_per_person:
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
+
+    @property
+    def is_active(self):
+        """ Returns true when this phase of the competition is on-going. """
+        if not self.end:
+            return True
+        else:
+            return self.start < now() < self.end
+
+    def check_future_phase_submissions(self):
+        """
+        Checks for if we need to migrate current phase submissions to next phase.
+        """
+        current_phase = self.competition.phases.get(index=self.index - 1)
+        next_phase = self
+
+        # Check for next phase and see if it has auto_migration enabled
+        try:
+            if not current_phase.has_been_migrated:
+                logger.info(
+                    f"Checking for needed migrations on competition pk={self.competition.pk}, "
+                    f"current phase: {current_phase.index}, next phase: {next_phase.index}")
+                self.competition.apply_phase_migration(current_phase, next_phase)
+
+        except next_phase.DoesNotExist:
+            logger.info(f"This competition is missing the next phase to migrate to.")
+        except current_phase.DoesNotExist:
+            logger.info(f"This competition is missing the previous phase to migrate from.")
 
 
 class SubmissionDetails(models.Model):
@@ -195,6 +275,9 @@ class Submission(ChaHubSaveMixin, models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
+    is_migrated = models.BooleanField(default=False)
+    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
+                                             blank=True)
 
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 

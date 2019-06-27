@@ -13,6 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
+from django.db.models import Subquery, OuterRef, Count
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -26,7 +27,7 @@ from tempfile import TemporaryDirectory
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
-    CompetitionDump
+    CompetitionDump, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
@@ -417,6 +418,7 @@ def unpack_competition(competition_dataset_pk):
                     "end": _get_datetime(phase_data.get('end')),
                     'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
                     'max_submissions_per_person': phase_data.get('max_submissions'),
+                    'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase'),
                 }
                 execution_time_limit = phase_data.get('execution_time_limit_ms')
                 if execution_time_limit:
@@ -680,3 +682,24 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         logger.info(f"Finished creating competition dump: {temp_comp_dump.pk} for competition: {comp.pk}")
     except ObjectDoesNotExist:
         logger.info("Could not find competition with pk {} to create a competition dump".format(competition_pk))
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 5)
+def do_phase_migrations():
+    new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
+                                      competition__is_migrating=False, has_been_migrated=False)
+    logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
+
+    for p in new_phases:
+        p.check_future_phase_submissions()
+
+    status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+    subquery = Subquery(
+        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk'))
+    competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
+        running_subs=0,
+        competition__is_migrating=True,
+        status=Phase.PREVIOUS
+    ).values_list('competition__pk', flat=True)
+
+    Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)

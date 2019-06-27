@@ -11,7 +11,8 @@ from tasks.models import Task
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+                                         many=True)
 
     class Meta:
         model = Phase
@@ -28,6 +29,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'auto_migrate_to_this_phase',
         )
 
 
@@ -98,6 +100,15 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             raise serializers.ValidationError("Competitions require at least 1 leaderboard")
         return value
 
+    def validate_phases(self, phases):
+        if not phases or len(phases) <= 0:
+            raise serializers.ValidationError("Competitions must have at least one phase")
+        if len(phases) == 1 and phases[0].get('auto_migrate_to_this_phase'):
+            raise serializers.ValidationError("You cannot auto migrate in a competition with one phase")
+        if phases[0].get('auto_migrate_to_this_phase') is True:
+            raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
+        return phases
+
     def create(self, validated_data):
         validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
@@ -129,7 +140,6 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
-
     class Meta:
         model = Competition
         fields = (

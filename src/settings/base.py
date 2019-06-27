@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import timedelta
 
 import dj_database_url
 
@@ -199,6 +200,13 @@ if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json',)
+CELERY_BEAT_SCHEDULE = {
+    'do_phase_migrations': {
+        'task': 'src.apps.competitions.tasks.do_phase_migrations',
+        'schedule': timedelta(seconds=300),
+    },
+}
+CELERY_TIMEZONE = 'UTC'
 
 # =============================================================================
 # DRF
@@ -324,21 +332,20 @@ GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
-
 # =============================================================================
 # Debug
 # =============================================================================
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = (
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
-        'querycount.middleware.QueryCountMiddleware',
-    ) + MIDDLEWARE  # we want Debug Middleware at the top
+    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
+                  'querycount.middleware.QueryCountMiddleware',
+                  ) + MIDDLEWARE  # we want Debug Middleware at the top
     # tricks to have debug toolbar when developing with docker
 
     INTERNAL_IPS = ['127.0.0.1']
 
     import socket
+
     try:
         INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
     except socket.gaierror:
