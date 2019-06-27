@@ -7,12 +7,13 @@ import datetime
 import json
 import pytz
 
+
 class AnalyticsTests(APITestCase):
     def setUp(self):
         self.user = UserFactory(username='user')
         self.admin = UserFactory(username='admin', super_user=True)
         self.day_range = 10
-        self.first_day = datetime.datetime(2019,1,1, tzinfo=pytz.UTC)
+        self.first_day = datetime.datetime(2019, 1, 1, tzinfo=pytz.UTC)
 
     def create_datetime_with_days_offset(self, offset):
         return self.first_day + datetime.timedelta(days=offset)
@@ -46,15 +47,12 @@ class AnalyticsTests(APITestCase):
         number_of_submissions_created = self.date_range_tester(SubmissionFactory, 'created_when', 'submissions_made_count')
         assert number_of_submissions_created == self.day_range - 2
 
-
     def test_super_user_can_view_analytics(self):
         self.client.login(username='admin', password='test')
-        resp = self.client.get(reverse('analytics:analytics') )
+        resp = self.client.get(reverse('analytics:analytics'))
         assert resp.status_code == 200
 
     def test_normal_user_cannot_view_analytics(self):
         self.client.login(username='user', password='test')
-        resp = self.client.get(reverse('analytics:analytics') )
+        resp = self.client.get(reverse('analytics:analytics'))
         assert resp.status_code == 403
-
-
