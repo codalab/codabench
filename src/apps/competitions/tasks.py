@@ -13,6 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
+from django.db.models import Subquery, OuterRef, Count
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -690,3 +691,14 @@ def do_phase_migrations():
 
     for p in new_phases:
         p.check_future_phase_submissions()
+
+    status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+    subquery = Subquery(
+        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk'))
+    competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
+        running_subs=0,
+        competition__is_migrating=True,
+        status=Phase.PREVIOUS
+    ).values_list('competition__pk', flat=True)
+
+    Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)

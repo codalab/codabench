@@ -56,6 +56,7 @@ class Competition(ChaHubSaveMixin, models.Model):
 
         for submission in submissions:
             new_submission = Submission(
+                created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
                 owner=submission.owner,
@@ -71,8 +72,6 @@ class Competition(ChaHubSaveMixin, models.Model):
         current_phase.has_been_migrated = True
         current_phase.save()
 
-        # TODO: ONLY IF SUCCESSFUL
-        self.is_migrating = False  # this should really be True until evaluate_submission tasks are all the way completed
         self.is_migrating_delayed = False
         self.save()
         
@@ -277,6 +276,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
     is_migrated = models.BooleanField(default=False)
+    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
+                                             blank=True)
 
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
