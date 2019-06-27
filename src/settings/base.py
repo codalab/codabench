@@ -337,10 +337,9 @@ GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 # =============================================================================
 if DEBUG:
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = (
-                     'debug_toolbar.middleware.DebugToolbarMiddleware',
-                     'querycount.middleware.QueryCountMiddleware',
-                 ) + MIDDLEWARE  # we want Debug Middleware at the top
+    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
+                  'querycount.middleware.QueryCountMiddleware',
+                  ) + MIDDLEWARE  # we want Debug Middleware at the top
     # tricks to have debug toolbar when developing with docker
 
     INTERNAL_IPS = ['127.0.0.1']

@@ -74,7 +74,7 @@ class Competition(ChaHubSaveMixin, models.Model):
 
         self.is_migrating_delayed = False
         self.save()
-        
+
     def get_chahub_endpoint(self):
         return "competitions/"
 
