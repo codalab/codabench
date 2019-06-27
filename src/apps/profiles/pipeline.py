@@ -15,6 +15,6 @@ def user_details(user, **kwargs):
                         defaults=github_info,
                     )
                     if created:
-                        print("New github user info created for user: {}".format*user.username)
+                        print("New github user info created for user: {}".format(user.username))
         else:
             pass
