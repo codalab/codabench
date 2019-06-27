@@ -1,4 +1,5 @@
 from settings.base import *  # noqa: F401,F403
+# these noqa comments are for flake8 ignores
 
 DEBUG = True
 

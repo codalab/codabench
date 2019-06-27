@@ -4,13 +4,14 @@ from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
 
+from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
 logger = logging.getLogger()
 
 
-class Competition(models.Model):
+class Competition(ChaHubSaveMixin, models.Model):
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
@@ -74,6 +75,32 @@ class Competition(models.Model):
         self.is_migrating = False  # this should really be True until evaluate_submission tasks are all the way completed
         self.is_migrating_delayed = False
         self.save()
+        
+    def get_chahub_endpoint(self):
+        return "competitions/"
+
+    def get_chahub_data(self):
+        data = {
+            'created_by': self.created_by.username,
+            'creator_id': self.created_by.pk,
+            'created_when': self.created_when.isoformat(),
+            'title': self.title,
+            # TODO: get URL
+            'url': 'https://www.google.com/',
+            'remote_id': self.pk,
+            'published': self.published
+        }
+        if self.logo:
+            data['logo_url'] = self.logo.url
+            data['logo'] = self.logo.url
+
+        chahub_id = self.created_by.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        return [data]
+
+    def get_chahub_is_valid(self):
+        return self.published
 
 
 class CompetitionCreationTaskStatus(models.Model):
@@ -203,7 +230,7 @@ class SubmissionDetails(models.Model):
     is_scoring = models.BooleanField(default=False)
 
 
-class Submission(models.Model):
+class Submission(ChaHubSaveMixin, models.Model):
     NONE = "None"
     SUBMITTING = "Submitting"
     SUBMITTED = "Submitted"
@@ -293,6 +320,25 @@ class Submission(models.Model):
             self.save()
             return True
         return False
+
+    def get_chahub_endpoint(self):
+        return "submissions/"
+
+    def get_chahub_data(self):
+        data = {
+            "remote_id": self.id,
+            "competition": self.phase.competition_id,
+            "phase_index": self.phase.index,
+            "participant": self.participant.user.username,
+            "submitted_at": self.created_when.isoformat(),
+        }
+        chahub_id = self.owner.chahub_uid
+        if chahub_id:
+            data['user'] = chahub_id
+        return [data]
+
+    def get_chahub_is_valid(self):
+        return self.status == self.FINISHED and self.is_public and self.phase.competition.published
 
 
 class CompetitionParticipant(models.Model):

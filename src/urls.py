@@ -18,7 +18,8 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 
     # Django built in
-    path('accounts/', include('django.contrib.auth.urls')),
+    # path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/', include('profiles.urls_accounts')),
     path('admin/', admin.site.urls),
     path('social/', include('social_django.urls', namespace='social')),
 ]

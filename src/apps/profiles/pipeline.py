@@ -1,3 +1,4 @@
+from profiles.models import GithubUserInfo
 
 
 def user_details(user, **kwargs):
@@ -5,25 +6,15 @@ def user_details(user, **kwargs):
     backend = kwargs.get('backend')
 
     if user:
-        if backend and backend.name == 'codalab':
-            # user.save()  # Probably not necessary? was here to stop NoneType exception
-            pass
+        if backend and backend.name == 'chahub':
+            if kwargs.get('details', {}).get('github_info'):
+                github_info = kwargs['details'].pop('github_info', None)
+                if github_info and github_info.get('uid'):
+                    obj, created = GithubUserInfo.objects.update_or_create(
+                        uid=github_info.pop('uid'),
+                        defaults=github_info,
+                    )
+                    if created:
+                        print("New github user info created for user: {}".format(user.username))
         else:
-            user_attrs = [
-                'avatar_url',
-                'url',
-                'html_url',
-                'name',
-                'company',
-                'bio',
-                'email',
-            ]
-
-            response = kwargs.pop("response")
-            for attr in user_attrs:
-                if not getattr(user, attr):
-                    setattr(user, attr, response[attr])
-
-            # Set the ID github returns to UID on user.
-            user.github_uid = response['id']
-            user.save()
+            pass

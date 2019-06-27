@@ -37,7 +37,7 @@ jobs:
       # Setup env, background tasks, cache
       - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
       - run: nvm install 6.14.4
-      - run: npm install stylus riot -g
+      - run: npm install stylus riot@3.13.2 -g
       - run: npm run build-stylus
       - run: npm run build-riot
 
