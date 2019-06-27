@@ -80,8 +80,10 @@ class CompetitionPhaseMigrationValidation(TestCase):
         self.phase.save()
         exception = self.serialize_and_validate_data()
 
-        assert ("You cannot auto migrate in a competition with one phase" or
-                "You cannot auto migrate to the first phase of a competition" in str(exception.value))
+        errors = ["You cannot auto migrate in a competition with one phase",
+                  "You cannot auto migrate to the first phase of a competition"]
+
+        assert any(error in str(exception.value) for error in errors)
 
     def test_phase_serializer_no_phases(self):
         self.phase.competition = None
