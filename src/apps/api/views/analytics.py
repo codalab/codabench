@@ -89,21 +89,7 @@ class AnalyticsRenderer(r.CSVRenderer):
         'submissions_data_count': 'Submissions Data Count',
     }
 
-    header = list(labels.keys())#[
-#        'start_date',
-#        'end_date',
-#        'time_unit',
-#        'registered_user_count',
-#        'competition_count',
-#        'competitions_published_count',
-#        'submissions_made_count',
-#        'users_data_date',
-#        'users_data_count',
-#        'competitions_data_date',
-#        'competitions_data_count',
-#        'submissions_data_date',
-#        'submissions_data_count',
-#    ]
+    header = list(labels.keys())
 
 
 class AnalyticsView(APIView):
