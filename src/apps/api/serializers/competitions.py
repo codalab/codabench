@@ -103,10 +103,10 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def validate_phases(self, phases):
         if not phases or len(phases) <= 0:
             raise serializers.ValidationError("Competitions must have at least one phase")
-        if phases[0]['auto_migrate_to_this_phase'] is True:
-            raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
         if len(phases) == 1 and phases[0]['auto_migrate_to_this_phase']:
             raise serializers.ValidationError("You cannot auto migrate in a competition with one phase")
+        if phases[0]['auto_migrate_to_this_phase'] is True:
+            raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
         return phases
 
     def create(self, validated_data):

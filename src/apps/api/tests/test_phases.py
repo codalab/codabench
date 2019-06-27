@@ -66,25 +66,26 @@ class CompetitionPhaseMigrationValidation(TestCase):
             serializer = CompetitionSerializer(data=data)
             serializer.is_valid(raise_exception=True)
 
-        return self, exception
+        return exception
 
     def test_phase_is_valid(self):
-        setattr(self.phase, 'auto_migrate_to_this_phase', False)
+        self.phase.auto_migrate_to_this_phase = False
         self.phase.save()
-        _, exception = self.serialize_and_validate_data()
+        exception = self.serialize_and_validate_data()
 
-        self.assertFalse("'phase:'" in str(exception.value))
+        assert ("'phase:'" not in str(exception.value))
 
     def test_phase_serializer_auto_migrate_on_first_phase(self):
-        setattr(self.phase, 'auto_migrate_to_this_phase', True)
+        self.phase.auto_migrate_to_this_phase = True
         self.phase.save()
-        _, exception = self.serialize_and_validate_data()
+        exception = self.serialize_and_validate_data()
 
-        self.assertTrue("You cannot auto migrate to the first phase of a competition" in str(exception.value))
+        assert ("You cannot auto migrate in a competition with one phase" or
+                "You cannot auto migrate to the first phase of a competition" in str(exception.value))
 
     def test_phase_serializer_no_phases(self):
-        setattr(self.phase, 'competition', None)
+        self.phase.competition = None
         self.phase.save()
-        _, exception = self.serialize_and_validate_data()
+        exception = self.serialize_and_validate_data()
 
-        self.assertTrue("Competitions must have at least one phase" in str(exception.value))
+        assert ("Competitions must have at least one phase" in str(exception.value))

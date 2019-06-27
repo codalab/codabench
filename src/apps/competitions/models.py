@@ -57,7 +57,6 @@ class Competition(models.Model):
             new_submission = Submission(
                 participant=submission.participant,
                 phase=next_phase,
-                result=submission.result,
                 owner=submission.owner,
                 data=submission.data,
             )

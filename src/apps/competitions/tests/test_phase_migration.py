@@ -47,12 +47,12 @@ class CompetitionPhaseToPhase(TestCase):
         self.competition.is_migrating = True
         self.competition.save()
         do_phase_migrations()
-        assert not self.phase1.submissions.count() == self.phase2.submissions.count()
+        assert self.phase1.submissions.count() != self.phase2.submissions.count()
 
     def test_competitions_with_scoring_submissions_dont_migrate(self):
         self.make_submission(status=Submission.SCORING, participant=self.competition_participant)
         do_phase_migrations()
-        assert not self.phase1.submissions.count() == self.phase2.submissions.count()
+        assert self.phase1.submissions.count() != self.phase2.submissions.count()
 
     def test_submission_ran_after_migration_complete(self):
         do_phase_migrations()
@@ -63,12 +63,12 @@ class CompetitionPhaseToPhase(TestCase):
         self.phase1.save()
         assert not self.phase2.submissions.exists()
         do_phase_migrations()
-        assert not self.phase1.submissions.count() == self.phase2.submissions.count()
+        assert self.phase1.submissions.count() != self.phase2.submissions.count()
 
     def test_prevent_migration_to_auto_migrate_to_the_phase_is_false(self):
         assert not self.phase2.submissions.exists()
         assert not self.phase3.submissions.exists()
         do_phase_migrations()
         assert self.phase1.submissions.count() == self.phase2.submissions.count()
-        assert not self.phase1.submissions.count() == self.phase3.submissions.count()
-        assert not self.phase2.submissions.count() == self.phase3.submissions.count()
+        assert self.phase1.submissions.count() != self.phase3.submissions.count()
+        assert self.phase2.submissions.count() != self.phase3.submissions.count()
