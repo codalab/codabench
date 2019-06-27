@@ -97,6 +97,7 @@ class ChaHubSaveMixin(models.Model):
 
                     if resp and resp.status_code in (200, 201):
                         logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
+                        print(f"ChaHub :: Received response {resp.status_code} {resp.content}")
                         self.chahub_timestamp = timezone.now()
                         self.chahub_data_hash = data_hash
                         self.chahub_needs_retry = False
@@ -104,6 +105,7 @@ class ChaHubSaveMixin(models.Model):
                         status = getattr(resp, 'status_code', 'N/A')
                         body = getattr(resp, 'content', 'N/A')
                         logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
+                        print(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
                         self.chahub_needs_retry = True
 
                     # We save at the beginning, but then again at the end to save our new chahub timestamp and such
