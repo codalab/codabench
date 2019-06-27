@@ -30,7 +30,11 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     @property
     def bundle_dataset(self):
-        return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+        try:
+            bundle = CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+        except CompetitionCreationTaskStatus.DoesNotExist:
+            bundle = None
+        return bundle
 
     def apply_phase_migration(self, current_phase, next_phase):
         '''
