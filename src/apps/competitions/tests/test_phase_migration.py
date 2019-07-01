@@ -6,8 +6,7 @@ from django.utils.timezone import now
 
 from competitions.models import Submission, Competition, Phase
 from competitions.tasks import do_phase_migrations
-from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, SubmissionScoreFactory, \
-    CompetitionParticipantFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory
 
 twenty_minutes_ago = now() - datetime.timedelta(hours=0, minutes=20)
 five_minutes_ago = now() - datetime.timedelta(hours=0, minutes=5)
