@@ -142,7 +142,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk, task_pk=None, parent_pk=None, parent_secret=None, is_scoring=False):
+def run_submission(submission_pk, task_pk=None, is_scoring=False):
     select_models = (
         'phase',
         'phase__competition',
@@ -168,8 +168,6 @@ def run_submission(submission_pk, task_pk=None, parent_pk=None, parent_secret=No
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
         "is_scoring": is_scoring,
-        "parent_secret": parent_secret,
-        "parent_pk": parent_pk,
     }
     tasks = submission.phase.tasks.all()
     if task_pk is None:  # This is the initial submission object
@@ -189,7 +187,7 @@ def run_submission(submission_pk, task_pk=None, parent_pk=None, parent_secret=No
                     ignore_total=True,
                 )
                 sub.save(ignore_submission_limit=True)
-                run_submission(sub.id, task.id, parent_pk=submission.id, parent_secret=submission.secret)
+                run_submission(sub.id, task.id)
         else:
             # The initial submission object will be the only submission
             task = tasks.first()

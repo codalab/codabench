@@ -381,20 +381,6 @@ class Run:
         else:
             self._update_status(STATUS_SCORING)
 
-    def _post_scores(self, scores, submission_id, secret):
-        url = f"{self.api_url}/upload_submission_scores/{submission_id}/"
-        logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = requests.post(url, json={
-            "secret": secret,
-            "scores": scores,
-        })
-        logger.info(resp)
-        logger.info(str(resp.content))
-
-    def _increment_parent(self):
-        # TODO: something to pass on to the parent submission to let it know things are in process?
-        pass
-
     def push_scores(self):
         # POST to some endpoint:
         # {
@@ -405,13 +391,19 @@ class Run:
             scores = json.load(open(scores_file, 'r'))
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
-        self._post_scores(scores, self.submission_id, self.secret)
+
+        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
+        logger.info(f"Submitting these scores to {url}: {scores}")
+        resp = requests.post(url, json={
+            "secret": self.secret,
+            "scores": scores,
+        })
+        logger.info(resp)
+        logger.info(str(resp.content))
 
     def push_result(self):
         self._put_dir(self.result, self.output_dir)
 
     def clean_up(self):
-
-
         logger.info("We're not cleaning up yet... TODO: cleanup!")
         pass
