@@ -169,7 +169,7 @@ class Phase(models.Model):
         if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user).exclude(status='Failed')
+        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
         daily_submission_count = qs.filter(created_when__day=now().day).count()
 
@@ -285,7 +285,6 @@ class Submission(ChaHubSaveMixin, models.Model):
     # uber experimental
     # track = models.IntegerField(default=1)
 
-    ignore_total = models.BooleanField(default=False)
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 

@@ -3,10 +3,9 @@ from datetime import timedelta
 from unittest import mock
 
 from django.test import TestCase
-
-from competitions.models import Submission
 from django.utils.timezone import now
 
+from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory
 
@@ -34,20 +33,12 @@ class MaxSubmissionsTests(SubmissionTestCase):
     def test_creating_submission_checks_max_submission_per_day_not_exceeded(self):
         self.set_max_submissions(per_day=1)
         self.make_submission()
-        try:
-            self.make_submission()
-            assert False, "This should have raised a PermissionError"
-        except PermissionError:
-            pass
+        self.assertRaises(PermissionError, self.make_submission)
 
     def test_creating_submission_checks_max_submission_per_person_not_exceeded(self):
         self.set_max_submissions(per_person=1)
         self.make_submission()
-        try:
-            self.make_submission()
-            assert False, "This should have raised a PermissionError"
-        except PermissionError:
-            pass
+        self.assertRaises(PermissionError, self.make_submission)
 
     def test_failed_submissions_not_counted_towards_max(self):
         self.set_max_submissions(per_person=1, per_day=1)
@@ -78,14 +69,14 @@ class MaxSubmissionsTests(SubmissionTestCase):
     def test_submission_not_created_if_max_reached(self):
         self.set_max_submissions(per_person=1)
         self.make_submission()
-        try:
-            self.make_submission(name='Find Me')
-        except PermissionError:
-            try:
-                Submission.objects.get(name='Find Me')
-                assert False, "Submission should not have been created"
-            except Submission.DoesNotExist:
-                pass
+        self.assertRaises(PermissionError, self.make_submission)
+        assert not Submission.objects.filter(name='Find Me').exists()
+
+    def test_children_submissions_dont_count_toward_max(self):
+        self.make_submission(parent=self.make_submission())  # Should only count as one submission
+        self.set_max_submissions(per_person=2)
+        self.make_submission()  # Should be able to make this submission and reach 2 subs
+        self.assertRaises(PermissionError, self.make_submission)  # This should put us over the limit
 
 
 class SubmissionManagerTests(SubmissionTestCase):
