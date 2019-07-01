@@ -96,16 +96,9 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        if 'data' in self._kwargs:
-            task_pk = self._kwargs['data'].get('task_pk')
-            parent_pk = self._kwargs['data'].get('parent_pk')
-            parent_secret = self._kwargs['data'].get('parent_secret')
-            if task_pk:
-                data['task_pk'] = task_pk
-            if parent_pk:
-                data['parent_pk'] = parent_pk
-            if parent_secret:
-                data['parent_secret'] = parent_secret
+        task_pk = self._kwargs.get('data', {}).get('task_pk')
+        if task_pk:
+            data['task_pk'] = task_pk
         return data
 
     def update(self, instance, validated_data):
@@ -120,9 +113,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             task_id = validated_data.get('task_pk')
             if not task_id:
                 raise ValidationError('Cannot update submission. Task pk was not provided')
-            parent_pk = validated_data.get('parent_pk')
-            parent_secret = validated_data.get('parent_secret')
-            run_submission(instance.pk, task_pk=task_id, is_scoring=True, parent_pk=parent_pk, parent_secret=parent_secret)
+            run_submission(instance.pk, task_pk=task_id, is_scoring=True)
         resp = super().update(instance, validated_data)
         if instance.parent:
             instance.parent.check_children()
