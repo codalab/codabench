@@ -107,8 +107,6 @@ class Run:
         self.reference_data = run_args.get("reference_data", None)
 
         self.task_pk = run_args.get('task_pk')
-        self.parent_pk = run_args.get('parent_pk')
-        self.parent_secret = run_args.get('parent_secret')
 
         # Socket connection to stream output of submission
         api_url_parsed = urlparse(self.api_url)
@@ -147,12 +145,8 @@ class Run:
         if status == STATUS_SCORING:
             data.update({
                 "task_pk": self.task_pk,
-                "parent_pk": self.parent_pk,
-                "parent_secret": self.parent_secret,
             })
-        resp = requests.patch(url, data)
-        # logger.info(resp)
-        # logger.info(resp.content)
+        requests.patch(url, data)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))

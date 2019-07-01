@@ -184,7 +184,6 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
                     data=submission.data,
                     participant=submission.participant,
                     parent=submission,
-                    ignore_total=True,
                 )
                 sub.save(ignore_submission_limit=True)
                 run_submission(sub.id, task.id)
