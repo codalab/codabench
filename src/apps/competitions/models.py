@@ -52,7 +52,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating = True
         self.save()
 
-        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False)
+        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False, parent__isnull=True)
 
         for submission in submissions:
             new_submission = Submission(

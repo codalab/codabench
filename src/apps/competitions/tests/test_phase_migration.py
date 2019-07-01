@@ -36,7 +36,6 @@ class CompetitionPhaseToPhase(TestCase):
         kwargs.setdefault('phase', self.phase1)
         kwargs.setdefault('status', 'None')
         sub = SubmissionFactory(**kwargs)
-        SubmissionScoreFactory(submission=sub)
         return sub
 
     def mock_migration(self):
@@ -95,3 +94,9 @@ class CompetitionPhaseToPhase(TestCase):
 
         mock_start = self.mock_migration()
         assert mock_start.call_count == 0
+
+    def test_only_parent_submissions_migrated(self):
+        self.parent_submission = self.make_submission()
+        self.phase1.submissions.exclude(id=self.parent_submission.id).update(parent=self.parent_submission)
+        mock_sub_start = self.mock_migration()
+        assert mock_sub_start.call_count == 1

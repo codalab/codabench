@@ -79,25 +79,25 @@
 
     <div class="ui large modal" ref="modal">
         <div class="content">
-            <div if="{!_.get(selected_submission, 'has_children', true)}">
+            <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
                 <submission-modal submission="{selected_submission}"></submission-modal>
             </div>
-            <div if="{_.get(selected_submission, 'has_children', false)}">
+            <div if="{!!selected_submission && _.get(selected_submission, 'has_children', false)}">
                 <div class="ui large green pointing menu">
-                    <div each="{child, i in selected_submission.children}"
-                         class="parent-modal item {active: i === 0}"
-                         data-tab="child_{i}">
+                    <div each="{child, i in _.get(selected_submission, 'children')}"
+                         class="parent-modal item"
+                         data-tab="{admin_: is_admin()}child_{i}">
                         Task {i + 1}
                     </div>
-                    <div if="{selected_submission.admin}" data-tab="admin" class="parent-modal item" ref="admin_item">Admin</div>
+                    <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
                 </div>
-                <div each="{child, i in selected_submission.children}"
-                     class="ui tab {active: i === 0}"
-                     data-tab="child_{i}">
+                <div each="{child, i in _.get(selected_submission, 'children')}"
+                     class="ui tab"
+                     data-tab="{admin_: is_admin()}child_{i}">
                     <submission-modal submission="{child}"></submission-modal>
                 </div>
-                <div class="ui tab leaderboard-tab" style="height: 565px; overflow: auto;" if="{selected_submission.admin}" data-tab="admin" ref="admin_tab">
-                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
+                <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
+                        <submission-scores leaderboards="{leaderboards}"></submission-scores>
                 </div>
             </div>
         </div>
@@ -116,6 +116,10 @@
             $(self.refs.phase).dropdown();
             $(self.refs.rerun_button).dropdown();
         })
+
+        self.is_admin = () => {
+            return _.get(self.selected_submission, 'admin', false)
+        }
 
         self.filter_children = (submissions) => {
             return _.filter(submissions, sub => {
@@ -264,12 +268,15 @@
             $(self.refs.modal)
                 .modal({
                     onShow: () => {
-                        $(self.refs.admin_item).removeClass('active')
-                        $(self.refs.admin_tab).removeClass('active')
-                        $('.menu .parent-modal.item').tab()
+                        if(_.get(self.selected_submission, 'has_children', false)){
+                            let path = self.is_admin() ? 'admin_child_0' : 'child_0'
+                            $('.menu .parent-modal.item')
+                                .tab('change tab', path)
+                        }
                     }
                 })
                 .modal('show')
+            CODALAB.events.trigger('submission_clicked')
         }
 
         CODALAB.events.on('phase_selected', function(selected_phase) {
