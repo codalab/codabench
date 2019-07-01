@@ -21,11 +21,11 @@ class CompetitionPhaseToPhase(TestCase):
         self.competition_participant = CompetitionParticipantFactory(user=self.normal_user,
                                                                      competition=self.competition)
         self.phase1 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=False,
-                                   end=twenty_minutes_ago, index=1, name='Phase1')
+                                   end=twenty_minutes_ago, index=0, name='Phase1', status=Phase.CURRENT)
         self.phase2 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=True,
-                                   start=five_minutes_ago, index=2, name='Phase2')
+                                   start=five_minutes_ago, index=1, name='Phase2', status=Phase.NEXT)
         self.phase3 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=False,
-                                   index=3, name='Phase3')
+                                   index=2, name='Phase3', status=Phase.FINAL)
 
         for _ in range(4):
             self.make_submission()
@@ -51,10 +51,10 @@ class CompetitionPhaseToPhase(TestCase):
         assert self.phase1.submissions.count() == self.phase2.submissions.count()
 
     def test_currently_migrating_competitions_dont_migrate(self):
-        self.competition.is_migrating = True
-        self.competition.save()
         self.mock_migration()
-        assert self.phase1.submissions.count() != self.phase2.submissions.count()
+        assert Competition.objects.get(id=self.competition.id).is_migrating
+        mock_start = self.mock_migration()
+        assert not mock_start.called
 
     def test_competitions_with_scoring_submissions_dont_migrate(self):
         self.make_submission(status=Submission.SCORING, participant=self.competition_participant)
@@ -66,8 +66,8 @@ class CompetitionPhaseToPhase(TestCase):
         assert not self.phase2.submissions.filter(status='None').exists()
 
     def test_has_been_migrated_competitions_arent_migrated(self):
-        self.phase1.has_been_migrated = True
-        self.phase1.save()
+        self.phase2.has_been_migrated = True
+        self.phase2.save()
         assert not self.phase2.submissions.exists()
         self.mock_migration()
         assert self.phase1.submissions.count() != self.phase2.submissions.count()
@@ -82,9 +82,11 @@ class CompetitionPhaseToPhase(TestCase):
 
     def test_all_submissions_migrated_before_changing_phase_status(self):
         self.mock_migration()
-        self.phase1.status = Phase.PREVIOUS
-        self.phase1.save()
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
         assert Competition.objects.get(id=self.competition.id).is_migrating
+        phase2 = Phase.objects.get(id=self.phase2.id)
+        assert phase2.has_been_migrated
+        assert phase2.status == Phase.CURRENT
 
         self.mock_migration()
         assert Competition.objects.get(id=self.competition.id).is_migrating

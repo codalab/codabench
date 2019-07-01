@@ -13,7 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count
+from django.db.models import Subquery, OuterRef, Count, Q
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -686,16 +686,17 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
-                                      competition__is_migrating=False, has_been_migrated=False)
-    logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
+    # TODO: Update phase statuses here. These "work" but not well or completely.
+    Phase.objects.filter(end__lte=now(), status=Phase.CURRENT).update(status=Phase.PREVIOUS)
+    Phase.objects.filter(Q(end__gt=now()) | Q(end__isnull=True), start__lte=now()).exclude(status=Phase.CURRENT).update(status=Phase.CURRENT)
 
-    for p in new_phases:
-        p.check_future_phase_submissions()
-
+    # Updating Competitions whose phases have finished migrating to `is_migrating=False`
     status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+
     subquery = Subquery(
-        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk'))
+        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk')
+    )
+
     competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
         running_subs=0,
         competition__is_migrating=True,
@@ -703,3 +704,16 @@ def do_phase_migrations():
     ).values_list('competition__pk', flat=True)
 
     Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)
+
+    # Checking for new phases to start migrating
+    new_phases = Phase.objects.filter(
+        auto_migrate_to_this_phase=True,
+        start__lte=now(),
+        competition__is_migrating=False,
+        has_been_migrated=False
+    )
+
+    logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
+
+    for p in new_phases:
+        p.check_future_phase_submissions()
