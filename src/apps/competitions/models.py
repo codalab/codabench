@@ -326,7 +326,7 @@ class Submission(ChaHubSaveMixin, models.Model):
             return True
         return False
 
-    def check_children(self):
+    def check_child_submission_statuses(self):
         done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
         if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
             self.status = 'Finished'

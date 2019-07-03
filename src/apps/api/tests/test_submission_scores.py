@@ -22,7 +22,7 @@ class SubmissionScoreChangeTests(APITestCase):
     def make_submission(self, create_score=True, **kwargs):
         kwargs.setdefault('owner', self.user)
         kwargs.setdefault('phase', self.phase)
-        parent_sub = kwargs.pop('parent_submission') if 'parent_submission' in kwargs else None
+        parent_sub = kwargs.pop('parent_submission', None)
         sub = SubmissionFactory(**kwargs)
         subs = [sub]
         if parent_sub:

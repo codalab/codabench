@@ -264,7 +264,8 @@
         }
 
         self.submission_clicked = function (submission) {
-            submission = _.defaultsDeep({}, submission) // stupid workaround to not modify the original submission object
+            // stupid workaround to not modify the original submission object
+            submission = _.defaultsDeep({}, submission)
             if (submission.has_children) {
                 submission.children = _.map(submission.children, child => {
                     return {id: child}
@@ -292,6 +293,7 @@
                 .modal({
                     onShow: () => {
                         if(_.get(self.selected_submission, 'has_children', false)){
+                            // only try and tabulate the parent modal if children exist
                             let path = self.is_admin() ? 'admin_child_0' : 'child_0'
                             $('.menu .parent-modal.item')
                                 .tab('change tab', path)

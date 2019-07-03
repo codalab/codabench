@@ -94,7 +94,7 @@ COLUMN_FIELDS = [
 ]
 
 
-def send(submission, task, is_scoring, run_args):
+def send_submission(submission, task, is_scoring, run_args):
     if not is_scoring:
         submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
 
@@ -116,7 +116,12 @@ def send(submission, task, is_scoring, run_args):
         permission='w' if not is_scoring else 'r'
     )
     run_args['task_pk'] = task.id
-    detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+
+    if not is_scoring:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
+    else:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+
     for detail_name in detail_names:
         run_args[detail_name] = create_detailed_output_file(detail_name, submission)
 
@@ -190,7 +195,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
-            send(
+            send_submission(
                 submission=submission,
                 task=task,
                 run_args=run_arguments,
@@ -198,7 +203,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
             )
     else:
         task = Task.objects.get(id=task_pk)
-        send(
+        send_submission(
             submission=submission,
             task=task,
             run_args=run_arguments,

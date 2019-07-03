@@ -73,10 +73,10 @@ class MaxSubmissionsTests(SubmissionTestCase):
         assert not Submission.objects.filter(name='Find Me').exists()
 
     def test_children_submissions_dont_count_toward_max(self):
-        self.make_submission(parent=self.make_submission())  # Should only count as one submission
+        self.make_submission(parent=self.make_submission())
         self.set_max_submissions(per_person=2)
-        self.make_submission()  # Should be able to make this submission and reach 2 subs
-        self.assertRaises(PermissionError, self.make_submission)  # This should put us over the limit
+        self.make_submission()
+        self.assertRaises(PermissionError, self.make_submission)
 
 
 class SubmissionManagerTests(SubmissionTestCase):

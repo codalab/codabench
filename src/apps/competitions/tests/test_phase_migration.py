@@ -99,5 +99,7 @@ class CompetitionPhaseToPhase(TestCase):
     def test_only_parent_submissions_migrated(self):
         self.parent_submission = self.make_submission()
         self.phase1.submissions.exclude(id=self.parent_submission.id).update(parent=self.parent_submission)
+        assert Submission.objects.get(id=self.parent_submission.id).children.exists()
+        assert Submission.objects.get(id=self.parent_submission.id).children.count() > 0
         mock_sub_start = self.mock_migration()
         assert mock_sub_start.call_count == 1
