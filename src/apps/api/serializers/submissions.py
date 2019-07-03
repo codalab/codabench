@@ -116,7 +116,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             run_submission(instance.pk, task_pk=task_id, is_scoring=True)
         resp = super().update(instance, validated_data)
         if instance.parent:
-            instance.parent.check_children()
+            instance.parent.check_child_submission_statuses()
         return resp
 
 
