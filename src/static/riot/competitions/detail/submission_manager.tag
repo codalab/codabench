@@ -42,7 +42,7 @@
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
             <th class="right aligned status-column">Status</th>
-            <th class="center aligned {admin-action-column: opts.admin} {action-column: !opts.admin}">Actions</th>
+            <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
         <tbody>
