@@ -14,24 +14,24 @@ class AnalyticsTests(APITestCase):
         self.admin = UserFactory(username='admin', super_user=True)
         self.day_range = 10
         self.first_day = datetime.datetime(2019, 1, 1, tzinfo=pytz.UTC)
-        self.object_data = [{
-            'factory': UserFactory,
-            'datefield_name': 'date_joined',
-            'countfield_name': 'registered_user_count',
-        },{
-            'factory': CompetitionFactory,
-            'datefield_name': 'created_when',
-            'countfield_name': 'competition_count',
-        },{
-            'factory': SubmissionFactory,
-            'datefield_name': 'created_when',
-            'countfield_name': 'submissions_made_count',
-        }
+        self.object_data = [
+            {
+                'factory': UserFactory,
+                'datefield_name': 'date_joined',
+                'countfield_name': 'registered_user_count',
+            }, {
+                'factory': CompetitionFactory,
+                'datefield_name': 'created_when',
+                'countfield_name': 'competition_count',
+            }, {
+                'factory': SubmissionFactory,
+                'datefield_name': 'created_when',
+                'countfield_name': 'submissions_made_count',
+            }
         ]
 
         self.dummy_objects = []
         self.create_dummy_objects()
-
 
     def create_dummy_objects(self):
         for object_category in self.object_data:
