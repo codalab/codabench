@@ -9,7 +9,9 @@ from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
 from api.serializers.analytics import AnalyticsSerializer
 
+import datetime
 import coreapi
+import pytz
 
 
 User = get_user_model()
@@ -110,6 +112,9 @@ class AnalyticsView(APIView):
         end_date = request.query_params.get('end_date')
         time_unit = request.query_params.get('time_unit')
         csv = request.query_params.get('format') == 'csv'
+
+        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').replace(hour=11, minute=59, second=59, tzinfo=pytz.UTC)
 
         users = build_request_object(User, 'date_joined', time_unit, start_date, end_date, csv, 'users_data_date', 'users_data_count')
         competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date, csv, 'competitions_data_date', 'competitions_data_count')
