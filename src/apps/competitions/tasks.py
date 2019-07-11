@@ -243,11 +243,10 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
-    elif isinstance(field, datetime.datetime):
-        return field
-    else:
-        return parser.parse(field)
-
+    elif not isinstance(field, datetime.datetime):
+        field = parser.parse(field)
+    field = field.replace(tzinfo=now().tzinfo)
+    return field
 
 def _zip_if_directory(path):
     """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
@@ -484,7 +483,7 @@ def unpack_competition(competition_dataset_pk):
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
                     )
 
-            current_phase = list(filter(lambda phase: phase['start'] < datetime.datetime.now() < phase['end'], competition['phases']))
+            current_phase = list(filter(lambda phase: phase['start'] < now() < phase['end'], competition['phases']))
             if current_phase:
                 current_phase_index = current_phase[0]['index']
                 previous_index = current_phase_index - 1 if current_phase_index >= 1 else None
