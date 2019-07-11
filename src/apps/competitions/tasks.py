@@ -248,6 +248,7 @@ def _get_datetime(field):
     field = field.replace(tzinfo=now().tzinfo)
     return field
 
+
 def _zip_if_directory(path):
     """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
     file"""
