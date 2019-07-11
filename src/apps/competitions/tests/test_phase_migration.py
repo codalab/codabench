@@ -9,7 +9,9 @@ from competitions.tasks import do_phase_migrations
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory
 
 twenty_minutes_ago = now() - datetime.timedelta(hours=0, minutes=20)
+twenty_five_minutes_ago = now() - datetime.timedelta(hours=0, minutes=25)
 five_minutes_ago = now() - datetime.timedelta(hours=0, minutes=5)
+twenty_minutes_from_now = now() + datetime.timedelta(hours=0, minutes=20)
 
 
 class CompetitionPhaseToPhase(TestCase):
@@ -19,12 +21,34 @@ class CompetitionPhaseToPhase(TestCase):
         self.competition = CompetitionFactory(created_by=self.owner, title="Competition One")
         self.competition_participant = CompetitionParticipantFactory(user=self.normal_user,
                                                                      competition=self.competition)
-        self.phase1 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=False,
-                                   end=twenty_minutes_ago, index=0, name='Phase1', status=Phase.CURRENT)
-        self.phase2 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=True,
-                                   start=five_minutes_ago, index=1, name='Phase2', status=Phase.NEXT)
-        self.phase3 = PhaseFactory(competition=self.competition, auto_migrate_to_this_phase=False,
-                                   index=2, name='Phase3', status=Phase.FINAL)
+        self.phase1 = PhaseFactory(
+            competition=self.competition,
+            auto_migrate_to_this_phase=False,
+            start=twenty_five_minutes_ago,
+            end=twenty_minutes_ago,
+            index=0,
+            name='Phase1',
+            status=Phase.CURRENT
+        )
+
+        self.phase2 = PhaseFactory(
+            competition=self.competition,
+            auto_migrate_to_this_phase=True,
+            start=five_minutes_ago,
+            end=twenty_minutes_from_now,
+            index=1,
+            name='Phase2',
+            status=Phase.NEXT
+        )
+
+        self.phase3 = PhaseFactory(
+            competition=self.competition,
+            auto_migrate_to_this_phase=False,
+            start=twenty_minutes_from_now,
+            index=2,
+            name='Phase3',
+            status=Phase.FINAL
+        )
 
         for _ in range(4):
             self.make_submission()
