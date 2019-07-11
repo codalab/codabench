@@ -13,7 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count, Q
+from django.db.models import Subquery, OuterRef, Count, Q, Case, When, Value
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -434,7 +434,29 @@ def unpack_competition(competition_dataset_pk):
                 new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
                 competition['phases'].append(new_phase)
+            for i in range(len(competition['phases'])):
+                if i == 0:
+                    continue
+                phase1 = competition['phases'][i - 1]
+                phase2 = competition['phases'][i]
+                if phase2['start'] < phase1['end']:
+                    raise CompetitionUnpackingException(
+                        f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
+                        f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
+                    )
 
+            current_phase = list(filter(lambda phase: phase['start'] < datetime.datetime.now() < phase['end'], competition['phases']))
+            if current_phase:
+                current_phase_index = current_phase[0]['index']
+                previous_index = current_phase_index - 1 if current_phase_index >= 1 else None
+                next_index = current_phase_index + 1 if current_phase_index < len(competition['phases']) - 1 else None
+                competition['phases'][current_phase_index]['status'] = Phase.CURRENT
+                if next_index:
+                    competition['phases'][next_index]['status'] = Phase.NEXT
+                if previous_index:
+                    competition['phases'][previous_index]['status'] = Phase.PREVIOUS
+            else:
+                competition['phases'][0]['status'] = Phase.NEXT
             # ---------------------------------------------------------------------
             # Leaderboards
             for leaderboard in competition_yaml.get('leaderboards'):
@@ -686,24 +708,35 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    # TODO: Update phase statuses here. These "work" but not well or completely.
-    Phase.objects.filter(end__lte=now(), status=Phase.CURRENT).update(status=Phase.PREVIOUS)
-    Phase.objects.filter(Q(end__gt=now()) | Q(end__isnull=True), start__lte=now()).exclude(status=Phase.CURRENT).update(status=Phase.CURRENT)
+    new_current_phases = Phase.objects.filter(
+        Q(end__gt=now()) | Q(end__isnull=True),
+        start__lte=now()
+    ).exclude(status=Phase.CURRENT).prefetch_related('competition__phases')
 
+    for phase in new_current_phases:
+        phase.competition.phases.update(status=Case(
+            When(index=phase.index - 1, then=Value(Phase.PREVIOUS)),
+            When(index=phase.index, then=Value(Phase.CURRENT)),
+            When(index=phase.index + 1, then=Value(Phase.NEXT)),
+            default=None,
+        ))
     # Updating Competitions whose phases have finished migrating to `is_migrating=False`
     status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
 
-    subquery = Subquery(
-        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk')
-    )
-
-    competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
-        running_subs=0,
-        competition__is_migrating=True,
-        status=Phase.PREVIOUS
-    ).values_list('competition__pk', flat=True)
-
-    Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)
+    Competition.objects.filter(
+        pk__in=Phase.objects.annotate(
+            running_subs=Count(Subquery(
+                Submission.objects.filter(
+                    created_by_migration=OuterRef('pk')
+                ).exclude(
+                    status__in=status_list
+                ).values('pk')
+            ))).filter(
+            running_subs=0,
+            competition__is_migrating=True,
+            status=Phase.PREVIOUS
+        ).values_list('competition__pk', flat=True)
+    ).update(is_migrating=False)
 
     # Checking for new phases to start migrating
     new_phases = Phase.objects.filter(
