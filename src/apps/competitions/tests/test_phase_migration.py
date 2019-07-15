@@ -1,21 +1,21 @@
-import datetime
-from unittest import mock
 
+from unittest import mock
+from datetime import timedelta
 from django.test import TestCase
 from django.utils.timezone import now
 
 from competitions.models import Submission, Competition, Phase
 from competitions.tasks import do_phase_migrations
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, SubmissionScoreFactory, \
-    CompetitionParticipantFactory
+    CompetitionParticipantFactory, TaskFactory
 
-twenty_minutes_ago = now() - datetime.timedelta(hours=0, minutes=20)
-twenty_five_minutes_ago = now() - datetime.timedelta(hours=0, minutes=25)
-five_minutes_ago = now() - datetime.timedelta(hours=0, minutes=5)
-twenty_minutes_from_now = now() + datetime.timedelta(hours=0, minutes=20)
+twenty_minutes_ago = now() - timedelta(hours=0, minutes=20)
+twenty_five_minutes_ago = now() - timedelta(hours=0, minutes=25)
+five_minutes_ago = now() - timedelta(hours=0, minutes=5)
+twenty_minutes_from_now = now() + timedelta(hours=0, minutes=20)
 
 
-class CompetitionPhaseToPhase(TestCase):
+class PhaseToPhaseMigrationTests(TestCase):
     def setUp(self):
         self.owner = UserFactory(username='owner', super_user=True)
         self.normal_user = UserFactory(username='norm')
@@ -121,3 +121,48 @@ class CompetitionPhaseToPhase(TestCase):
 
         mock_start = self.mock_migration()
         assert mock_start.call_count == 0
+
+
+class PhaseStatusTests(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.comp = CompetitionFactory(created_by=self.user)
+        self.tasks = [TaskFactory(created_by=self.user)]
+        base = {'competition': self.comp, 'tasks': self.tasks}
+        self.phase1 = PhaseFactory(
+            **base,
+            start=now() - timedelta(minutes=10),
+            end=now() - timedelta(minutes=5),
+        )
+        self.phase2 = PhaseFactory(
+            **base,
+            start=now() - timedelta(minutes=1),
+            end=now() + timedelta(minutes=5),
+        )
+        self.phase3 = PhaseFactory(
+            **base,
+            start=now() + timedelta(minutes=10),
+            end=now() + timedelta(minutes=15),
+        )
+
+    def test_phase_migration_updates_statuses(self):
+        do_phase_migrations()
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.CURRENT
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
+
+        self.phase2.start = now() - timedelta(minutes=5)
+        self.phase2.end = now() - timedelta(minutes=3)
+        self.phase2.save(update_fields=['start', 'end'])
+        do_phase_migrations()
+        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
+
+        self.phase3.start = now() - timedelta(minutes=2)
+        self.phase3.end = now() + timedelta(minutes=3)
+        self.phase3.save(update_fields=['start', 'end'])
+        do_phase_migrations()
+        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT

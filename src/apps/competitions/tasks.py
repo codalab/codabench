@@ -13,7 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count, Q, Case, When, Value
+from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -708,18 +708,34 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    new_current_phases = Phase.objects.filter(
-        Q(end__gt=now()) | Q(end__isnull=True),
-        start__lte=now()
-    ).exclude(status=Phase.CURRENT).prefetch_related('competition__phases')
+    # Update phase statuses
+    current_subquery = Phase.objects.filter(
+            competition=OuterRef('competition'),
+            start__lte=now(),
+            end__gt=now(),
+        ).values_list('index', flat=True)
 
-    for phase in new_current_phases:
-        phase.competition.phases.update(status=Case(
-            When(index=phase.index - 1, then=Value(Phase.PREVIOUS)),
-            When(index=phase.index, then=Value(Phase.CURRENT)),
-            When(index=phase.index + 1, then=Value(Phase.NEXT)),
-            default=None,
-        ))
+    previous_subquery = Phase.objects.filter(
+            competition=OuterRef('competition'),
+            end__lte=now()
+        ).order_by('-index').values('index')[:1]
+
+    next_subquery = Phase.objects.filter(
+            competition=OuterRef('competition'),
+            start__gt=now()
+        ).order_by('index').values('index')[:1]
+
+    Phase.objects.annotate(
+        current_index=Subquery(current_subquery),
+        previous_index=Subquery(previous_subquery),
+        next_index=Subquery(next_subquery),
+    ).update(status=Case(
+        When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
+        When(index=F('current_index'), then=Value(Phase.CURRENT)),
+        When(index=F('next_index'), then=Value(Phase.NEXT)),
+        default=None
+    ))
+
     # Updating Competitions whose phases have finished migrating to `is_migrating=False`
     status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
 
