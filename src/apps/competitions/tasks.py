@@ -749,20 +749,20 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 def do_phase_migrations():
     # Update phase statuses
     current_subquery = Phase.objects.filter(
-            competition=OuterRef('competition'),
-            start__lte=now(),
-            end__gt=now(),
-        ).values_list('index', flat=True)
+        competition=OuterRef('competition'),
+        start__lte=now(),
+        end__gt=now(),
+    ).values_list('index', flat=True)
 
     previous_subquery = Phase.objects.filter(
-            competition=OuterRef('competition'),
-            end__lte=now()
-        ).order_by('-index').values('index')[:1]
+        competition=OuterRef('competition'),
+        end__lte=now()
+    ).order_by('-index').values('index')[:1]
 
     next_subquery = Phase.objects.filter(
-            competition=OuterRef('competition'),
-            start__gt=now()
-        ).order_by('index').values('index')[:1]
+        competition=OuterRef('competition'),
+        start__gt=now()
+    ).order_by('index').values('index')[:1]
 
     Phase.objects.annotate(
         current_index=Subquery(current_subquery),
