@@ -1,0 +1,9 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+This is a message updating your access to the competition:
+{{ participant.competition.title }} -> http://{{ site.domain }}{{ participant.competition.get_absolute_url }}
+
+Your participation privileges have been denied.
+
+{% endblock %}
