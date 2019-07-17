@@ -1,4 +1,4 @@
-Hello {{ user.username }},
+Hello{% if user %} {{ user.username }}{% endif %},
 {% block title %}{% endblock %}
 
 {% block content %}{% endblock %}
@@ -11,7 +11,7 @@ CodaLab Team
 
 
 Unsubscribe or manage notification settings:
-http://{{ site.domain }}{% url 'user_settings' %}
+http://{{ site.domain }}
 
 Privacy policy:
 http://codalab.github.io/codalab/notices.html

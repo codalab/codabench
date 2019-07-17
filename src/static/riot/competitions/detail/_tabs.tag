@@ -239,7 +239,7 @@
                 </tbody>
             </table>
         </div>
-
+        
         <!-- Manage Submissions Modal -->
         <div class="ui manage-submissions modal">
             <div class="ui">

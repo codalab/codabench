@@ -11,11 +11,12 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
+    send_participation_denied_emails
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from profiles.models import User
 from utils.data import make_url_sassy
-from utils.email import codalab_send_mail
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -91,14 +92,14 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         user = request.user
         participant = CompetitionParticipant.objects.create(competition=competition, user=user)
-        if competition.registration_auto_approve:
+        if user in [competition.created_by] + list(competition.collaborators.all()):
             participant.status = 'approved'
+        elif competition.registration_auto_approve:
+            participant.status = 'approved'
+            send_participation_accepted_emails(participant)
         else:
-            to = [competition.created_by.email] + [collab.email for collab in competition.collaborators.all()]
-            subject = f'Registration request for {competition.title}'
-            message = f'{user.username} has requested permission to join your competition: {competition.title}.'
-            codalab_send_mail(subject=subject, message=message, recipient_list=to)
             participant.status = 'pending'
+            send_participation_requested_emails(participant)
 
         participant.save()
         return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
@@ -120,7 +121,7 @@ class CompetitionViewSet(ModelViewSet):
         if bundle:
             files['bundle'] = {
                 'name': bundle.name,
-                'url': bundle.make_url_sassy(bundle.data_file.name)
+                'url': make_url_sassy(bundle.data_file.name)
             }
         for dump in competition.dumps.all():
             files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
@@ -201,3 +202,17 @@ class CompetitionParticipantViewSet(ModelViewSet):
         qs = super().get_queryset()
         qs = qs.select_related('user').order_by('user__username')
         return qs
+
+    def update(self, request, *args, **kwargs):
+        if request.method == 'PATCH':
+            if 'status' in request.data:
+                participation_status = request.data['status']
+                participant = self.get_object()
+                emails = {
+                    'approved': send_participation_accepted_emails,
+                    'denied': send_participation_denied_emails,
+                }
+                if participation_status in emails:
+                    emails[participation_status](participant)
+
+        return super().update(request, *args, **kwargs)
