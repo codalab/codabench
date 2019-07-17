@@ -129,7 +129,7 @@
                         <td class="selectable"><a href="{file.url}"><i class="file archive outline icon"></i>Dump: {file.name}</a></td>
                     </tr>
                     <tr>
-                        <td show="{files.dumps.length === 0 && !files.bundle}"><em>No Files Yet</em></td>
+                        <td show="{!_.get(files.dumps, 'length') && !files.bundle}"><em>No Files Yet</em></td>
                     </tr>
                     </tbody>
                 </table>

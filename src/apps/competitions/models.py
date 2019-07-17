@@ -2,6 +2,7 @@ import logging
 import uuid
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
@@ -107,6 +108,9 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def get_chahub_is_valid(self):
         return self.published
+
+    def get_absolute_url(self):
+        return reverse('competitions:detail', kwargs={'pk': self.id})
 
 
 class CompetitionCreationTaskStatus(models.Model):
