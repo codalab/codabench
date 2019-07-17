@@ -253,7 +253,6 @@ CODALAB.api = {
     },
     update_status: (pk, data) => {
         return CODALAB.api.request('PATCH', `${URLS.API}participants/${pk}/`, data)
-    }
     },
 
     /*---------------------------------------------------------------------
