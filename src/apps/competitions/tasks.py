@@ -139,7 +139,7 @@ def run_submission(submission_pk, is_scoring=False):
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
         # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
         "secret": submission.secret,
-        "docker_image": "python:3.7",
+        "docker_image": "codalab/codalab-legacy:py3",
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
         "is_scoring": is_scoring,
@@ -204,6 +204,9 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
+    elif isinstance(field, datetime.date):
+        # turn the date into a datetime @ midnight that day
+        return datetime.datetime.combine(datetime.date.today(), datetime.time())
     elif isinstance(field, datetime.datetime):
         return field
     else:

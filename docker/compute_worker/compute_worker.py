@@ -377,7 +377,11 @@ class Run:
         # }
         try:
             scores_file = os.path.join(self.output_dir, "scores.json")
+            print(scores_file)
+            print("content:", open(scores_file, 'r').read())
             scores = json.load(open(scores_file, 'r'))
+        except json.decoder.JSONDecodeError:
+            raise SubmissionException("Could not decode scores json properly, it contains an error.")
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
 
