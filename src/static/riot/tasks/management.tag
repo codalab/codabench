@@ -1,5 +1,5 @@
 <task-management>
-    <div class="ui tabular menu">
+    <div class="ui secondary pointing menu">
         <div class="active item" data-tab="my_tasks">My Tasks</div>
         <div class="item" data-tab="public_tasks">Public Tasks</div>
     </div>
@@ -33,24 +33,6 @@
             </tr>
             </tbody>
             <tfoot>
-            <!-- Pagination that we may want later...
-            <tr>
-                <th colspan="3">
-                    <div class="ui right floated pagination menu">
-                        <a class="icon item">
-                            <i class="left chevron icon"></i>
-                        </a>
-                        <a class="item">1</a>
-                        <a class="item">2</a>
-                        <a class="item">3</a>
-                        <a class="item">4</a>
-                        <a class="icon item">
-                            <i class="right chevron icon"></i>
-                        </a>
-                    </div>
-                </th>
-            </tr>
-            -->
             </tfoot>
         </table>
     </div>
@@ -159,7 +141,7 @@
         </div>
         <div class="actions">
             <div class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
-            <div class="ui cancel button">Cancel</div>
+            <div class="ui basic red cancel button">Cancel</div>
         </div>
     </div>
 
