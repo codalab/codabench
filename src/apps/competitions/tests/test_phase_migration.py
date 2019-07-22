@@ -127,41 +127,76 @@ class PhaseStatusTests(TestCase):
         self.user = UserFactory()
         self.comp = CompetitionFactory(created_by=self.user)
         self.tasks = [TaskFactory(created_by=self.user)]
-        base = {'competition': self.comp, 'tasks': self.tasks}
-        self.phase1 = PhaseFactory(
-            **base,
-            start=now() - timedelta(minutes=10),
-            end=now() - timedelta(minutes=5),
-        )
-        self.phase2 = PhaseFactory(
-            **base,
-            start=now() - timedelta(minutes=1),
-            end=now() + timedelta(minutes=5),
-        )
-        self.phase3 = PhaseFactory(
-            **base,
-            start=now() + timedelta(minutes=10),
-            end=now() + timedelta(minutes=15),
-        )
+        self.base = {'competition': self.comp, 'tasks': self.tasks}
+        self.phase1 = PhaseFactory.create(**self.base)
+        self.phase2 = PhaseFactory.create(**self.base)
+        self.phase3 = PhaseFactory.create(**self.base)
 
-    def test_phase_migration_updates_statuses(self):
+        self.before_previous = {'start': now() - timedelta(minutes=20), 'end': now() - timedelta(minutes=15)}
+        self.previous = {'start': now() - timedelta(minutes=10), 'end': now() - timedelta(minutes=5)}
+        self.current = {'start': now() - timedelta(minutes=1), 'end': now() + timedelta(minutes=5)}
+        self.next = {'start': now() + timedelta(minutes=10), 'end': now() + timedelta(minutes=15)}
+        self.after_next = {'start': now() + timedelta(minutes=20), 'end': now() + timedelta(minutes=25)}
+
+    def set_start_end(self, phase, start, end):
+        phase.start = start
+        phase.end = end
+        phase.save()
+        return phase
+
+    def set_phase_indexes(self, phases=None):
+        phases = [self.phase1, self.phase2, self.phase3] if phases is None else phases
+        for i, phase in enumerate(phases):
+            phase.index = i
+            phase.save(update_fields=['index'])
+
+    def test_three_phases_updated_correctly(self):
+        self.set_start_end(self.phase1, **self.current)
+        self.set_start_end(self.phase2, **self.next)
+        self.set_start_end(self.phase3, **self.after_next)
+        do_phase_migrations()
+        assert Phase.objects.get(id=self.phase1.id).status == Phase.CURRENT
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.NEXT
+        assert Phase.objects.get(id=self.phase3.id).status is None
+
+        self.set_start_end(self.phase1, **self.previous)
+        self.set_start_end(self.phase2, **self.current)
+        self.set_start_end(self.phase3, **self.next)
         do_phase_migrations()
         assert Phase.objects.get(id=self.phase1.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase2.id).status == Phase.CURRENT
         assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
 
-        self.phase2.start = now() - timedelta(minutes=5)
-        self.phase2.end = now() - timedelta(minutes=3)
-        self.phase2.save(update_fields=['start', 'end'])
+        self.set_start_end(self.phase1, **self.before_previous)
+        self.set_start_end(self.phase2, **self.previous)
+        self.set_start_end(self.phase3, **self.next)
         do_phase_migrations()
         assert Phase.objects.get(id=self.phase1.id).status is None
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.NEXT
 
-        self.phase3.start = now() - timedelta(minutes=2)
-        self.phase3.end = now() + timedelta(minutes=3)
-        self.phase3.save(update_fields=['start', 'end'])
+        self.set_start_end(self.phase1, **self.before_previous)
+        self.set_start_end(self.phase2, **self.previous)
+        self.set_start_end(self.phase3, **self.current)
         do_phase_migrations()
         assert Phase.objects.get(id=self.phase1.id).status is None
         assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
         assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT
+
+    def test_five_phases_updated_correctly(self):
+        self.phase4 = PhaseFactory.create(**self.base)
+        self.phase5 = PhaseFactory.create(**self.base)
+
+        self.set_start_end(self.phase1, **self.before_previous)
+        self.set_start_end(self.phase2, **self.previous)
+        self.set_start_end(self.phase3, **self.current)
+        self.set_start_end(self.phase4, **self.next)
+        self.set_start_end(self.phase5, **self.after_next)
+
+        do_phase_migrations()
+
+        assert Phase.objects.get(id=self.phase1.id).status is None
+        assert Phase.objects.get(id=self.phase2.id).status == Phase.PREVIOUS
+        assert Phase.objects.get(id=self.phase3.id).status == Phase.CURRENT
+        assert Phase.objects.get(id=self.phase4.id).status == Phase.NEXT
+        assert Phase.objects.get(id=self.phase5.id).status is None
