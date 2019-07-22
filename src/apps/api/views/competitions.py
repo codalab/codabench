@@ -36,20 +36,24 @@ class CompetitionViewSet(ModelViewSet):
             qs = qs.filter(participants__user=self.request.user, participants__status="approved")
 
         # On GETs lets optimize the query to reduce DB calls
-        if self.request.method == 'GET' and self.action != 'list':
-            qs = qs.select_related('created_by')
-            qs = qs.prefetch_related(
-                'phases',
-                'pages',
-                'leaderboards',
-                'leaderboards__columns',
-                'collaborators',
-            )
-            sub_query = CompetitionParticipant.objects.filter(
-                competition=OuterRef('pk'),
-                user=self.request.user
-            ).values_list('status')[:1]
-            qs = qs.annotate(participant_status=Subquery(sub_query))
+        if self.request.method == 'GET':
+            if self.action == 'list':
+                qs = qs.select_related('created_by')
+            else:
+                qs = qs.select_related('created_by')
+                qs = qs.prefetch_related(
+                    'phases',
+                    'pages',
+                    'leaderboards',
+                    'leaderboards__columns',
+                    'collaborators',
+                )
+                sub_query = CompetitionParticipant.objects.filter(
+                    competition=OuterRef('pk'),
+                    user=self.request.user
+                ).values_list('status')[:1]
+                qs = qs.annotate(participant_count=Count('participants'))
+                qs = qs.annotate(participant_status=Subquery(sub_query))
 
         qs = qs.order_by('created_when')
 
