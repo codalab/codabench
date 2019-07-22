@@ -1,6 +1,4 @@
 <data-management>
-    <h1>Dataset Management</h1>
-    <div class="ui divider"></div>
     <!-------------------------------------
              Search and filter bits
       ------------------------------------->
@@ -13,24 +11,24 @@
         <option value="-">----</option>
         <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
     </select>
-    <div style="margin-left: 1vw;" class="ui checkbox input" onclick="{ filter.bind(this, undefined) }">
+    <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
         <label>Show Auto Created?</label>
         <input type="checkbox" ref="auto_created">
     </div>
-    <div style="margin-left: 30vw;" class="ui input">
-        <a class="ui green button" onclick="{show_modal}">Add Dataset</a>
-    </div>
+    <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
+        <i class="plus icon"></i>
+        Add Dataset
+    </button>
 
     <!-------------------------------------
                   Data Table
       ------------------------------------->
-    <table class="ui celled compact table">
+    <table class="ui selectable celled compact table">
         <thead>
         <tr>
             <th>Name</th>
             <th width="175px">Type</th>
             <th width="125px">Uploaded...</th>
-            <th width="325px">Key</th>
             <th width="60px">In Use</th>
             <th width="60px">Public</th>
             <th width="50px">Delete?</th>
@@ -38,18 +36,11 @@
         </thead>
         <tbody>
         <tr each="{ dataset, index in datasets }"
-            class="dataset-row">
-            <td><a href="{ URLS.DATASET_DOWNLOAD(dataset.key) }">{ dataset.name }</a></td>
+            class="dataset-row"
+            onclick="{show_info_modal.bind(this, dataset)}">
+            <td>{ dataset.name }</td>
             <td>{ dataset.type }</td>
             <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
-            <!--<td>{ dataset.key }</td>-->
-            <td>
-                <div class="ui form">
-                    <div class="field">
-                        <input disabled type="text" value="{dataset.key}">
-                    </div>
-                </div>
-            </td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ dataset.in_use.length > 0 }"></i>
             </td>
@@ -57,7 +48,7 @@
                 <i class="checkmark box icon green" show="{ dataset.is_public }"></i>
             </td>
             <td class="center aligned">
-                <button class="micro ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                <button class="tiny ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
                     <i class="icon delete"></i>
                 </button>
             </td>
@@ -69,7 +60,7 @@
                       Pagination
         ------------------------------------->
         <tr>
-            <th colspan="8">
+            <th colspan="6">
                 <div class="ui right floated pagination menu">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -86,65 +77,101 @@
         </tfoot>
     </table>
 
+    <div ref="info_modal" class="ui modal">
+        <div class="header">
+            {selected_row.name}
+        </div>
+        <div class="content">
+            <h3>Details</h3>
 
-    <div ref="dataset_modal" class="ui modal">
-        <div class="five wide column form-empty">
-            <div class="ui segment">
-                <h3>Form</h3>
-
-                <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
-                    <div class="header">
-                        Error(s) creating dataset
-                    </div>
-                    <ul class="list">
-                        <li each="{ error, field in errors }">
-                            <strong>{field}:</strong> {error}
-                        </li>
-                    </ul>
+            <table class="ui very basic table">
+                <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Created By</th>
+                    <th>Created</th>
+                    <th>Type</th>
+                    <th>Public</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{selected_row.key}</td>
+                    <td>{selected_row.created_by}</td>
+                    <td>{luxon.DateTime.fromISO(selected_row.created_when).toLocaleString(luxon.DateTime.DATE_FULL)}</td>
+                    <td>{_.startCase(selected_row.type)}</td>
+                    <td>{_.startCase(selected_row.is_public)}</td>
+                </tr>
+                </tbody>
+            </table>
+            <virtual if="{!!selected_row.description}">
+                <div>Description:</div>
+                <div class="ui segment">
+                    {selected_row.description}
                 </div>
-
-                <form class="ui form coda-animated {error: errors}" ref="form" onsubmit="{ check_form }">
-                    <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
-                    <input-text name="description" ref="description" error="{errors.description}"
-                                placeholder="Description"></input-text>
-
-                    <div class="field {error: errors.type}">
-                        <select id="type_of_data" name="type" ref="type" class="ui dropdown">
-                            <option value="">Type</option>
-                            <option value="-">----</option>
-                            <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
-                        </select>
-                    </div>
-
-                    <div show="{is_type_competition_bundle}" class="field {error: errors.type}">
-                        <select name="competition" ref="competition" class="ui dropdown">
-                            <option value="">Competition to Dump</option>
-                            <option value="-">-----</option>
-                            <option each="{comp in competitions}" value="{comp.id}">{comp.title}-{comp.id}</option>
-                        </select>
-                    </div>
-
-                    <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-
-                    <div class="field">
-                        <div class="ui checkbox">
-                            <input type="checkbox" name="is_public" tabindex="0" class="hidden">
-                            <label>Public?</label>
-                        </div>
-                    </div>
-
-                    <button class="ui green button" type="submit" value="submit">Submit</button>
-                    <a class="ui red button" onclick="{close_modal}">Cancel</a>
-                </form>
-
-                <div class="ui indicating progress" ref="progress">
-                    <div class="bar">
-                        <div class="progress">{ upload_progress }%</div>
-                    </div>
+            </virtual>
+            <div show="{!!_.get(selected_row.in_use, 'length')}"><strong>Used by:</strong>
+                <div class="ui bulleted list">
+                    <div class="item" each="{id in selected_row.in_use}"><a href="{URLS.COMPETITION_DETAIL(id)}"
+                                                                            target="_blank">Competition id: {id}</a></div>
                 </div>
             </div>
         </div>
+        <div class="actions">
+            <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}"
+                    class="ui green icon button"><i class="download icon"></i>Download File</a>
+            <button class="ui cancel button">Close</button>
+        </div>
+    </div>
 
+
+    <div ref="dataset_creation_modal" class="ui modal">
+        <div class="header">Form</div>
+
+        <div class="content">
+            <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
+                <div class="header">
+                    Error(s) creating dataset
+                </div>
+                <ul class="list">
+                    <li each="{ error, field in errors }">
+                        <strong>{field}:</strong> {error}
+                    </li>
+                </ul>
+            </div>
+
+            <form class="ui form coda-animated {error: errors}" ref="form">
+                <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                <input-text name="description" ref="description" error="{errors.description}"
+                            placeholder="Description"></input-text>
+
+                <div class="field {error: errors.type}">
+                    <select id="type_of_data" name="type" ref="type" class="ui dropdown">
+                        <option value="">Type</option>
+                        <option value="-">----</option>
+                        <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
+                    </select>
+                </div>
+
+                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                            accept=".zip"></input-file>
+            </form>
+
+            <div class="ui indicating progress" ref="progress">
+                <div class="bar">
+                    <div class="progress">{ upload_progress }%</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="actions">
+            <button class="ui blue icon button" onclick="{check_form}">
+                <i class="upload icon"></i>
+                Upload
+            </button>
+            <button class="ui basic red cancel button">Cancel</button>
+        </div>
+    </div>
         <script>
             var self = this
             self.mixin(ProgressBarMixin)
@@ -163,6 +190,8 @@
             ]
             self.errors = []
             self.datasets = []
+            self.selected_row = {}
+
 
             self.upload_progress = undefined
 
@@ -174,8 +203,15 @@
                 self.update_datasets()
             })
 
-            self.show_modal = function () {
-                $(self.refs.dataset_modal).modal('show')
+            self.show_info_modal = function (row) {
+                self.selected_row = row
+                console.table(row)
+                self.update()
+                $(self.refs.info_modal).modal('show')
+            }
+
+            self.show_creation_modal = function () {
+                $(self.refs.dataset_creation_modal).modal('show')
             }
 
             self.close_modal = function () {
@@ -222,7 +258,6 @@
                 }
                 CODALAB.api.get_datasets(filters)
                     .done(function (data) {
-                        console.log(data)
                         self.datasets = data.results
                         self.pagination = {
                             "count": data.count,
@@ -340,40 +375,8 @@
             }
         </script>
 
-        <style>
-            .dataset-row:hover {
-                background-color: rgba(46, 91, 183, 0.05);
-            }
-
-            *, div {
-
-            }
-
-            /*
-            .progress {
-                -webkit-transition: all .1s ease-in-out;
-                -moz-transition: all .1s ease-in-out;
-                -o-transition: all .1s ease-in-out;
-                transition: all .1s ease-in-out;
-                margin: 0;
-                height: 0;
-                -ms-flex: 1 0 auto;
-                flex: 1 0 auto;
-                overflow: hidden;
-            }
-
-            form {
-                max-height: 1000px;  /* a max height we'll never hit, useful for CSS transitions *//*
-
-                -webkit-transition: all 1s ease-in-out;
-                -moz-transition: all 1s ease-in-out;
-                -o-transition: all 1s ease-in-out;
-                transition: all 1s ease-in-out;
-            }
-
-            .progress .bar {
-                height: 24px;
-            }*/
-
+        <style type="text/stylus">
+            .dataset-row:hover
+                cursor pointer
         </style>
 </data-management>
