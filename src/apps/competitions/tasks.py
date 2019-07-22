@@ -445,18 +445,28 @@ def unpack_competition(competition_dataset_pk):
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
                     )
 
-            current_phase = list(filter(lambda phase: phase['start'] < now() < phase['end'], competition['phases']))
+            current_phase = list(filter(lambda p: p['start'] < now() < p['end'], competition['phases']))
             if current_phase:
-                current_phase_index = current_phase[0]['index']
-                previous_index = current_phase_index - 1 if current_phase_index >= 1 else None
-                next_index = current_phase_index + 1 if current_phase_index < len(competition['phases']) - 1 else None
-                competition['phases'][current_phase_index]['status'] = Phase.CURRENT
-                if next_index:
-                    competition['phases'][next_index]['status'] = Phase.NEXT
-                if previous_index:
-                    competition['phases'][previous_index]['status'] = Phase.PREVIOUS
+                current_index = current_phase[0]['index']
+                previous_index = current_index - 1 if current_index >= 1 else None
+                next_index = current_index + 1 if current_index < len(competition['phases']) - 1 else None
             else:
-                competition['phases'][0]['status'] = Phase.NEXT
+                current_index = None
+                next_phase = list(filter(lambda p: p['start'] > now() < p['end'], competition['phases']))
+                if next_phase:
+                    next_index = next_phase[0]['index']
+                    previous_index = next_index - 1 if next_index >= 1 else None
+                else:
+                    next_index = None
+                    previous_index = None
+
+            if current_index is not None:
+                competition['phases'][current_index]['status'] = Phase.CURRENT
+            if next_index is not None:
+                competition['phases'][next_index]['status'] = Phase.NEXT
+            if previous_index is not None:
+                competition['phases'][previous_index]['status'] = Phase.PREVIOUS
+
             # ---------------------------------------------------------------------
             # Leaderboards
             for leaderboard in competition_yaml.get('leaderboards'):
@@ -737,17 +747,18 @@ def do_phase_migrations():
     ))
 
     # Updating Competitions whose phases have finished migrating to `is_migrating=False`
-    status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+    completed_statuses = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+
+    running_subs_query = Submission.objects.filter(
+        created_by_migration=OuterRef('pk')
+    ).exclude(
+        status__in=completed_statuses
+    ).values_list('pk')
 
     Competition.objects.filter(
         pk__in=Phase.objects.annotate(
-            running_subs=Count(Subquery(
-                Submission.objects.filter(
-                    created_by_migration=OuterRef('pk')
-                ).exclude(
-                    status__in=status_list
-                ).values('pk')
-            ))).filter(
+            running_subs=Count(Subquery(running_subs_query))
+        ).filter(
             running_subs=0,
             competition__is_migrating=True,
             status=Phase.PREVIOUS
