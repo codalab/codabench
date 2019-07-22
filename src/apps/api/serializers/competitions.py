@@ -144,14 +144,22 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
+    created_by = serializers.CharField(source='created_by.username')
+    participant_count = serializers.CharField(read_only=True)
+    logo = NamedBase64ImageField(required=False)
+
     class Meta:
         model = Competition
         fields = (
             'id',
             'title',
+            'created_by',
             'created_when',
-            'published'
+            'published',
+            'participant_count',
+            'logo'
         )
+
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')
