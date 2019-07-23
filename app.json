@@ -13,6 +13,14 @@
     "AWS_STORAGE_PRIVATE_BUCKET_NAME":  {"required": true}
   },
   "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "free"
+    }
   },
   "addons": [
     "heroku-postgresql",
