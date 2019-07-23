@@ -1,4 +1,6 @@
 from os.path import basename
+
+from django.core.exceptions import ValidationError
 from rest_framework import serializers, fields
 
 from api.serializers import leaderboards
@@ -45,6 +47,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'scores',
             'leaderboard',
             'owner',
+            'has_children',
+            'parent',
+            'children',
         )
         extra_kwargs = {
             "phase": {"read_only": True},
@@ -89,18 +94,30 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
         sub.start()
         return sub
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        task_pk = self._kwargs.get('data', {}).get('task_pk')
+        if task_pk:
+            data['task_pk'] = task_pk
+        return data
+
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
             raise PermissionError("Submission secret invalid")
-
         print("Updated to...")
         print(validated_data)
 
         if validated_data["status"] == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
-            run_submission(instance.pk, is_scoring=True)
-        return super().update(instance, validated_data)
+            task_id = validated_data.get('task_pk')
+            if not task_id:
+                raise ValidationError('Cannot update submission. Task pk was not provided')
+            run_submission(instance.pk, task_pk=task_id, is_scoring=True)
+        resp = super().update(instance, validated_data)
+        if instance.parent:
+            instance.parent.check_child_submission_statuses()
+        return resp
 
 
 class SubmissionDetailSerializer(serializers.ModelSerializer):
@@ -139,7 +156,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
         return make_url_sassy(instance.data.data_file.name)
 
     def get_result(self, instance):
-        return make_url_sassy(instance.result.name)
+        if instance.result.name:
+            return make_url_sassy(instance.result.name)
 
     def get_leaderboards(self, instance):
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))
