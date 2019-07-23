@@ -165,13 +165,50 @@
         }
 
         self._save = function (publish) {
+            let previous_index, current_index, next_index;
+            let now = new Date()
+
+            let current_phase = _.first(_.filter(self.competition.phases, phase => {
+                return new Date(phase.start) < now && now < new Date(phase.end)
+            }))
+
+            if (current_phase) {
+                current_index = current_phase.index
+                previous_index = current_index > 0 ? current_index - 1 : null
+                next_index = current_index < self.competition.phases.length - 1 ? current_index + 1 : null
+            } else {
+                let next_phase = _.first(_.filter(self.competition.phases, phase => {
+                    return now < new Date(phase.start) && now < new Date(phase.end)
+                }))
+                if (next_phase) {
+                    next_index = next_phase.index
+                    previous_index = next_index > 0 ? next_index - 1 : null
+                }
+            }
+
             // convert serializer task data to just keys if we didn't edit phases
+            // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
                 if (phase.tasks && typeof(phase.tasks[0]) === "object") {
                     phase.tasks = _.map(phase.tasks, task => task.value)
                 }
+                switch (phase.index) {
+                    case current_index:
+                        phase.status = 'Current'
+                        break
+                    case previous_index:
+                        phase.status = 'Previous'
+                        break
+                    case next_index:
+                        phase.status = 'Next'
+                        break
+                    default:
+                        phase.status = null
+                }
                 return phase
             })
+
+
             self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
 
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
