@@ -240,5 +240,12 @@ CODALAB.api = {
     ---------------------------------------------------------------------*/
     user_lookup: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}user_lookup/`, filters)
-    }
+    },
+
+    /*---------------------------------------------------------------------
+         Analytics
+    ---------------------------------------------------------------------*/
+    get_analytics: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
+    },
 }

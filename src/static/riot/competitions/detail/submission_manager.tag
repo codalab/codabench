@@ -41,9 +41,8 @@
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
-            <th class="right aligned" width="50px">Status</th>
-            <th class="center aligned" if="{ opts.admin }">Actions</th>
-            <th class="right aligned" width="50px">Leaderboard?</th>
+            <th class="right aligned status-column">Status</th>
+            <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -53,25 +52,45 @@
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
             <td class="right aligned">{ submission.status }</td>
-            <td if="{ opts.admin }" class="center aligned action-column">
-                <button class="mini ui button inverted basic blue icon"
-                        onclick="{ rerun_submission.bind(this, submission) }">
-                    <i class="icon redo"></i>
-                    <!-- rerun submission -->
-                </button>
-                <button class="mini ui button inverted basic yellow icon"
-                        onclick="{ cancel_submission.bind(this, submission) }">
-                    <i class="x icon"></i>
-                    <!-- cancel submission -->
-                </button>
-                <button class="mini ui button inverted basic red icon"
-                        onclick="{ delete_submission.bind(this, submission) }">
-                    <i class="icon trash alternate"></i>
-                    <!-- delete submission -->
-                </button>
-            </td>
             <td class="center aligned">
-                <i class="add_to_leaderboard check square large icon { disabled: !submission.leaderboard }" onclick="{ add_to_leaderboard.bind(this, submission) }"></i>
+                <virtual if="{ opts.admin }">
+                    <button class="mini ui button inverted basic blue icon"
+                            data-tooltip="Rerun Submission"
+                            data-inverted=""
+                            onclick="{ rerun_submission.bind(this, submission) }">
+                        <i class="icon redo"></i>
+                        <!-- rerun submission -->
+                    </button>
+                    <button class="mini ui button inverted basic yellow icon"
+                            data-tooltip="Cancel Submission"
+                            data-inverted=""
+                            onclick="{ cancel_submission.bind(this, submission) }">
+                        <i class="x icon"></i>
+                        <!-- cancel submission -->
+                    </button>
+                    <button class="mini ui button inverted basic red icon"
+                            data-tooltip="Delete Submission"
+                            data-inverted=""
+                            onclick="{ delete_submission.bind(this, submission) }">
+                        <i class="icon trash alternate"></i>
+                        <!-- delete submission -->
+                    </button>
+                </virtual>
+                <button if="{!submission.leaderboard}"
+                        class="mini ui button inverted basic green icon"
+                        data-tooltip="Add to Leaderboard"
+                        data-inverted=""
+                        onclick="{ add_to_leaderboard.bind(this, submission) }">
+                    <i class="icon share"></i>
+                    <!-- send submission to leaderboard-->
+                </button>
+                <div if="{!!submission.leaderboard}"
+                     class="mini ui green button icon on-leaderboard"
+                     data-tooltip="On the Leaderboard"
+                     data-inverted=""
+                     onclick="{do_nothing}">
+                    <i class="icon check"></i>
+                </div>
             </td>
         </tr>
         </tbody>
@@ -125,6 +144,10 @@
             return _.filter(submissions, sub => {
                 return !sub.parent
             })
+        } 
+
+        self.do_nothing = event => {
+            event.stopPropagation()
         }
 
         self.update_submissions = function (filters) {
@@ -303,16 +326,19 @@
         .admin-buttons
             padding-bottom: 20px;
 
-        .action-column
-            width: 150px
-
-        .add_to_leaderboard
-            cursor pointer
+        .on-leaderboard
             &:hover
-                opacity 1 !important
-            &.selected
-                opacity 1 !important
-                color #40f940
+                cursor auto
+                background-color #21ba45 !important
+
+        .admin-action-column
+            width 200px
+
+        .action-column
+            width 100px
+
+        .status-column
+            width 50px
 
         .index-column
             width: 40px
