@@ -39,7 +39,7 @@ class DataViewSet(mixins.CreateModelMixin,
 
         qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
 
-        qs = qs.select_related('created_by')
+        qs = qs.select_related('created_by').order_by('-created_when')
 
         return qs
 
