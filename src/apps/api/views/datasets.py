@@ -103,10 +103,14 @@ def upload_completed(request, key):
     dataset.upload_completed_successfully = True
     dataset.save()
 
+    print("Testing upload completed is getting stuck before unpacking?")
+
     if dataset.type == Data.COMPETITION_BUNDLE:
         # Doing a local import here to avoid circular imports
         from competitions.tasks import unpack_competition
         unpack_competition.apply_async((dataset.pk,))
+
+    print("Testing upload completed is getting stuck AFTER unpacking?")
 
     return Response({"key": dataset.key})
 
