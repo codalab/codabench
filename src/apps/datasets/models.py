@@ -71,7 +71,7 @@ class Data(ChaHubSaveMixin, models.Model):
             Q(phases__tasks__input_data=self) |
             Q(phases__tasks__reference_data=self) |
             Q(phases__tasks__scoring_program=self)
-        ).values_list('pk', flat=True)
+        ).values_list('pk', flat=True).distinct()
         return competitions_in_use
 
     def __str__(self):

@@ -4,6 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
+from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
 from tasks.models import Task
 
@@ -17,9 +18,16 @@ class TaskViewSet(ModelViewSet):
     filter_fields = ('created_by', 'is_public')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name', 'description',)
+    pagination_class = BasicPagination
 
     def get_queryset(self):
-        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user)).prefetch_related('solutions', 'solutions__data')
+        show_public = self.request.query_params.get('public')
+        qs = Task.objects.prefetch_related('solutions', 'solutions__data')
+        if show_public:
+            qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
+        else:
+            qs = qs.filter(created_by=self.request.user)
+        return qs.order_by('-created_when')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

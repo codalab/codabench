@@ -48,7 +48,7 @@
                 <i class="checkmark box icon green" show="{ dataset.is_public }"></i>
             </td>
             <td class="center aligned">
-                <button class="tiny ui button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                <button class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
                     <i class="icon delete"></i>
                 </button>
             </td>
@@ -282,6 +282,7 @@
                             toastr.error("Could not delete dataset!")
                         })
                 }
+            event.stopPropagation()
             }
 
             self.clear_form = function () {
