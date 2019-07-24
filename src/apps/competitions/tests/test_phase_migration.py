@@ -6,8 +6,8 @@ from django.utils.timezone import now
 
 from competitions.models import Submission, Competition, Phase
 from competitions.tasks import do_phase_migrations
-from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, SubmissionScoreFactory, \
-    CompetitionParticipantFactory, TaskFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
+    TaskFactory
 
 twenty_minutes_ago = now() - timedelta(hours=0, minutes=20)
 twenty_five_minutes_ago = now() - timedelta(hours=0, minutes=25)
@@ -120,6 +120,14 @@ class PhaseToPhaseMigrationTests(TestCase):
 
         mock_start = self.mock_migration()
         assert mock_start.call_count == 0
+
+    def test_only_parent_submissions_migrated(self):
+        self.parent_submission = self.make_submission()
+        self.phase1.submissions.exclude(id=self.parent_submission.id).update(parent=self.parent_submission)
+        assert Submission.objects.get(id=self.parent_submission.id).children.exists()
+        assert Submission.objects.get(id=self.parent_submission.id).children.count() > 0
+        mock_sub_start = self.mock_migration()
+        assert mock_sub_start.call_count == 1
 
 
 class PhaseStatusTests(TestCase):
