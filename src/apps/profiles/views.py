@@ -19,6 +19,11 @@ class LogoutView(auth_views.LogoutView):
 
 
 def sign_up(request):
+    context = {}
+    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
+        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
+        settings.SITE_DOMAIN
+    )
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -28,9 +33,12 @@ def sign_up(request):
             user = authenticate(username=username, password=raw_password)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('pages:home')
+        else:
+            context['form'] = form
 
-    form = SignUpForm()
-    return render(request, 'registration/signup.html', {'form': form})
+    if not context.get('form'):
+        context['form'] = SignUpForm()
+    return render(request, 'registration/signup.html', context)
 
 
 def user_profile(request):
