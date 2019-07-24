@@ -196,7 +196,7 @@ RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 # ============================================================================
 # Celery
 # ============================================================================
-CELERY_BROKER_URL = os.environ.get("RABBITMQ_BIGWIG_URL") or os.environ.get('BROKER_URL')
+CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL") or os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
 CELERY_TASK_SERIALIZER = 'json'

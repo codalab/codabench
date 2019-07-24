@@ -13,7 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count
+from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -243,10 +243,10 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
-    elif isinstance(field, datetime.datetime):
-        return field
-    else:
-        return parser.parse(field)
+    elif not isinstance(field, datetime.datetime):
+        field = parser.parse(field)
+    field = field.replace(tzinfo=now().tzinfo)
+    return field
 
 
 def _zip_if_directory(path):
@@ -473,6 +473,38 @@ def unpack_competition(competition_dataset_pk):
                 new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
                 competition['phases'].append(new_phase)
+            for i in range(len(competition['phases'])):
+                if i == 0:
+                    continue
+                phase1 = competition['phases'][i - 1]
+                phase2 = competition['phases'][i]
+                if phase2['start'] < phase1['end']:
+                    raise CompetitionUnpackingException(
+                        f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
+                        f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
+                    )
+
+            current_phase = list(filter(lambda p: p['start'] < now() < p['end'], competition['phases']))
+            if current_phase:
+                current_index = current_phase[0]['index']
+                previous_index = current_index - 1 if current_index >= 1 else None
+                next_index = current_index + 1 if current_index < len(competition['phases']) - 1 else None
+            else:
+                current_index = None
+                next_phase = list(filter(lambda p: p['start'] > now() < p['end'], competition['phases']))
+                if next_phase:
+                    next_index = next_phase[0]['index']
+                    previous_index = next_index - 1 if next_index >= 1 else None
+                else:
+                    next_index = None
+                    previous_index = None
+
+            if current_index is not None:
+                competition['phases'][current_index]['status'] = Phase.CURRENT
+            if next_index is not None:
+                competition['phases'][next_index]['status'] = Phase.NEXT
+            if previous_index is not None:
+                competition['phases'][previous_index]['status'] = Phase.PREVIOUS
 
             # ---------------------------------------------------------------------
             # Leaderboards
@@ -725,20 +757,62 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
-                                      competition__is_migrating=False, has_been_migrated=False)
+    # Update phase statuses
+    current_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__lte=now(),
+        end__gt=now(),
+    ).values_list('index', flat=True)
+
+    previous_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        end__lte=now()
+    ).order_by('-index').values('index')[:1]
+
+    next_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__gt=now()
+    ).order_by('index').values('index')[:1]
+
+    Phase.objects.annotate(
+        current_index=Subquery(current_subquery),
+        previous_index=Subquery(previous_subquery),
+        next_index=Subquery(next_subquery),
+    ).update(status=Case(
+        When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
+        When(index=F('current_index'), then=Value(Phase.CURRENT)),
+        When(index=F('next_index'), then=Value(Phase.NEXT)),
+        default=None
+    ))
+
+    # Updating Competitions whose phases have finished migrating to `is_migrating=False`
+    completed_statuses = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+
+    running_subs_query = Submission.objects.filter(
+        created_by_migration=OuterRef('pk')
+    ).exclude(
+        status__in=completed_statuses
+    ).values_list('pk')
+
+    Competition.objects.filter(
+        pk__in=Phase.objects.annotate(
+            running_subs=Count(Subquery(running_subs_query))
+        ).filter(
+            running_subs=0,
+            competition__is_migrating=True,
+            status=Phase.PREVIOUS
+        ).values_list('competition__pk', flat=True)
+    ).update(is_migrating=False)
+
+    # Checking for new phases to start migrating
+    new_phases = Phase.objects.filter(
+        auto_migrate_to_this_phase=True,
+        start__lte=now(),
+        competition__is_migrating=False,
+        has_been_migrated=False
+    )
+
     logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
 
     for p in new_phases:
         p.check_future_phase_submissions()
-
-    status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
-    subquery = Subquery(
-        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk'))
-    competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
-        running_subs=0,
-        competition__is_migrating=True,
-        status=Phase.PREVIOUS
-    ).values_list('competition__pk', flat=True)
-
-    Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)

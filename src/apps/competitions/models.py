@@ -30,12 +30,12 @@ class Competition(ChaHubSaveMixin, models.Model):
         return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
 
     def apply_phase_migration(self, current_phase, next_phase):
-        '''
+        """
         Does the actual migrating of submissions from current_phase to next_phase
 
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
-        '''
+        """
         logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
         status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
 
@@ -69,8 +69,8 @@ class Competition(ChaHubSaveMixin, models.Model):
             submission.save()
 
         # To check for submissions being migrated, does not allow to enter new submission
-        current_phase.has_been_migrated = True
-        current_phase.save()
+        next_phase.has_been_migrated = True
+        next_phase.save()
 
         self.is_migrating_delayed = False
         self.save()
@@ -198,7 +198,7 @@ class Phase(models.Model):
 
         # Check for next phase and see if it has auto_migration enabled
         try:
-            if not current_phase.has_been_migrated:
+            if not next_phase.has_been_migrated:
                 logger.info(
                     f"Checking for needed migrations on competition pk={self.competition.pk}, "
                     f"current phase: {current_phase.index}, next phase: {next_phase.index}")
