@@ -251,7 +251,7 @@ CODALAB.api = {
     get_participants: filters => {
         return CODALAB.api.request('GET', `${URLS.API}participants/`, filters)
     },
-    update_status: (pk, data) => {
+    update_participant_status: (pk, data) => {
         return CODALAB.api.request('PATCH', `${URLS.API}participants/${pk}/`, data)
     },
 

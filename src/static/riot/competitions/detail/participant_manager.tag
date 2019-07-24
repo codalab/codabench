@@ -27,14 +27,16 @@
                 <td>{email}</td>
                 <td>{_.startCase(status)}</td>
                 <td class="right aligned">
-                    <button class="mini ui red button icon" show="{status !== 'denied'}"
+                    <button class="mini ui red button icon"
+                            show="{status !== 'denied'}"
                             onclick="{ revoke_permission.bind(this, id) }"
                             data-tooltip="Revoke"
                             data-inverted=""
                             data-position="bottom center">
                         <i class="close icon"></i>
                     </button>
-                    <button class="mini ui green button icon" show="{status !== 'approved'}"
+                    <button class="mini ui green button icon"
+                            show="{status !== 'approved'}"
                             onclick="{ approve_permission.bind(this, id) }"
                             data-tooltip="Approve"
                             data-inverted=""
@@ -45,7 +47,7 @@
                             data-tooltip="Send Message"
                             data-inverted=""
                             data-position="bottom center"
-                            onclick="">
+                            onclick="{show_email_modal}">
                         <i class="envelope icon"></i>
                     </button>
                 </td>
@@ -54,10 +56,8 @@
         </table>
     </div>
 
-
     <script>
         let self = this
-
 
         self.on('mount', () => {
             self.update_participants()
@@ -82,7 +82,7 @@
         }
 
         self._update_status = (id, status) => {
-            CODALAB.api.update_status(id, {status: status})
+            CODALAB.api.update_participant_status(id, {status: status})
                 .done(() => {
                     toastr.success('success')
                     self.update_participants()
@@ -102,6 +102,10 @@
         self.search_participants = () => {
             let filter = self.refs.participant_search.value
             delay(() => self.update_participants({search: filter}), 100)
+        }
+
+        self.show_email_modal = () => {
+            // todo: create modal for admins to write & distribute emails to participants
         }
 
     </script>
