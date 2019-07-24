@@ -37,6 +37,10 @@ class Competition(ChaHubSaveMixin, models.Model):
             bundle = None
         return bundle
 
+    @property
+    def all_organizers(self):
+        return [self.created_by] + list(self.collaborators.all())
+
     def apply_phase_migration(self, current_phase, next_phase):
         """
         Does the actual migrating of submissions from current_phase to next_phase

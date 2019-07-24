@@ -2,7 +2,7 @@ from utils.email import codalab_send_mail
 
 
 def get_organizer_emails(competition):
-    return [competition.created_by.email] + [collab.email for collab in competition.collaborators.all()]
+    return [user.email for user in competition.all_organizers]
 
 
 def send_participation_requested_emails(participant):

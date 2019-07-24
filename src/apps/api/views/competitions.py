@@ -37,9 +37,8 @@ class CompetitionViewSet(ModelViewSet):
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
-            if self.action == 'list':
-                qs = qs.select_related('created_by')
-            else:
+            qs = qs.select_related('created_by')
+            if self.action != 'list':
                 qs = qs.select_related('created_by')
                 qs = qs.prefetch_related(
                     'phases',
@@ -96,7 +95,7 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         user = request.user
         participant = CompetitionParticipant.objects.create(competition=competition, user=user)
-        if user in [competition.created_by] + list(competition.collaborators.all()):
+        if user in competition.all_organizers:
             participant.status = 'approved'
         elif competition.registration_auto_approve:
             participant.status = 'approved'
@@ -180,7 +179,7 @@ class PhaseViewSet(ModelViewSet):
     def rerun_submissions(self, request, pk):
         phase = self.get_object()
         comp = phase.competition
-        if request.user not in [comp.created_by] + list(comp.collaborators.all()) and not request.user.is_superuser:
+        if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionDenied('You do not have permission to re-run submissions')
         submissions = phase.submissions.all()
         for submission in submissions:
@@ -204,6 +203,9 @@ class CompetitionParticipantViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user
+        if not user.is_superuser:
+            qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
         qs = qs.select_related('user').order_by('user__username')
         return qs
 

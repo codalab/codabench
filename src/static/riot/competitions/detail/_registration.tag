@@ -68,7 +68,6 @@
             if (e) {
                 e.preventDefault()
             }
-            console.log('hello')
             $(self.refs.terms_modal).modal('show')
         }
 
@@ -88,7 +87,7 @@
                     self.update()
                 })
                 .fail(response => {
-                    toastr.error('Something went wrong.')
+                    toastr.error('Error submitting your registration application.')
                 })
         }
     </script>
