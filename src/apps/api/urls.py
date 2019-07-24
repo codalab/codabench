@@ -6,7 +6,7 @@ from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
 from api.views.competitions import front_page_competitions, by_the_numbers
-from .views import competitions, datasets, profiles, leaderboards, submissions, tasks
+from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks
 
 
 router = SimpleRouter()
@@ -39,6 +39,7 @@ urlpatterns = [
     path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard),
     path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
     path('user_lookup/', profiles.user_lookup),
+    path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 

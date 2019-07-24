@@ -35,7 +35,6 @@ class Column(models.Model):
 
 
 class SubmissionScore(models.Model):
-    submission = models.ForeignKey('competitions.Submission', on_delete=models.CASCADE, related_name="scores")
     column = models.ForeignKey(Column, on_delete=models.CASCADE)
     score = models.DecimalField(max_digits=20, decimal_places=10)
 

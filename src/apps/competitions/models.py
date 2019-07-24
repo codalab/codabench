@@ -52,7 +52,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating = True
         self.save()
 
-        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False)
+        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False, parent__isnull=True)
 
         for submission in submissions:
             new_submission = Submission(
@@ -169,7 +169,7 @@ class Phase(models.Model):
         if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user).exclude(status='Failed')
+        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
         daily_submission_count = qs.filter(created_when__day=now().day).count()
 
@@ -279,10 +279,14 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
                                              blank=True)
 
+    scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
     # uber experimental
     # track = models.IntegerField(default=1)
+
+    has_children = models.BooleanField(default=False)
+    parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 
     class Meta:
         unique_together = ('owner', 'leaderboard')
@@ -321,6 +325,12 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.save()
             return True
         return False
+
+    def check_child_submission_statuses(self):
+        done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
+        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
+            self.status = 'Finished'
+            self.save()
 
     def get_chahub_endpoint(self):
         return "submissions/"

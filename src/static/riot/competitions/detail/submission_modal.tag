@@ -1,10 +1,10 @@
 <submission-modal>
     <div class="ui large green pointing menu">
-        <div class="active item" data-tab="downloads">DOWNLOADS</div>
-        <div class="item" data-tab="logs">LOGS</div>
-        <div class="item" data-tab="admin" if="{submission.admin}">ADMIN</div>
+        <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}logs">LOGS</div>
+        <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
-    <div class="ui tab active modal-tab" data-tab="downloads">
+    <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
                 <div class="ui horizontal divider"></div>
@@ -16,10 +16,10 @@
                     </thead>
                     <tbody>
                     <tr>
-                        <td class="selectable file-download"><a href="{ submission.data_file }"><i class="file archive outline icon"></i> Submission File</a></td>
+                        <td class="selectable file-download"><a href="{ data_file }"><i class="file archive outline icon"></i> Submission File</a></td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download"><a href="{ submission.result }"><i class="file outline icon"></i>Output from prediction step</a></td>
+                        <td class="selectable file-download"><a href="{ result }"><i class="file outline icon"></i>Output from prediction step</a></td>
                     </tr>
                     <tr>
                         <td class="selectable file-download"><a href="#"><i class="file outline icon"></i>Output from scoring step</a></td>
@@ -32,60 +32,60 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="logs">
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs">
         <div class="ui grid">
             <div class="three wide column">
                 <div class="ui fluid vertical secondary menu">
-                    <div class="active item" data-tab="prediction">Prediction Logs</div>
-                    <div class="item" data-tab="scoring">Scoring Logs</div>
+                    <div class="active submission-modal item" data-tab="{admin_: submission.admin}prediction">Prediction Logs</div>
+                    <div class="submission-modal item" data-tab="{admin_: submission.admin}scoring">Scoring Logs</div>
                 </div>
             </div>
             <div class="thirteen wide column">
-                <div class="ui active tab" data-tab="prediction">
+                <div class="ui active tab" data-tab="{admin_: submission.admin}prediction">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active item" data-tab="p_stdout">stdout</div>
-                        <div class="item" data-tab="p_stderr">stderr</div>
-                        <div class="item" data-tab="p_ingest_stdout">Ingestion stdout</div>
-                        <div class="item" data-tab="p_ingest_stderr">Ingestion stderr</div>
+                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}p_stdout">stdout</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stdout">Ingestion stdout</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stderr">Ingestion stderr</div>
                     </div>
 
-                    <div class="ui active bottom attached inverted segment tab log" data-tab="p_stdout">
+                    <div class="ui active bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_stdout">
                         <pre>{ logs.prediction_stdout }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="p_stderr">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_stderr">
                         <pre>{ logs.prediction_stderr }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="p_ingest_stdout">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_ingest_stdout">
                         <pre>{ logs.prediction_ingestion_stdout }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="p_ingest_stderr">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_ingest_stderr">
                         <pre>{ logs.prediction_ingestion_stderr }</pre>
                     </div>
                 </div>
-                <div class="ui tab" data-tab="scoring">
+                <div class="ui tab" data-tab="{admin_: submission.admin}scoring">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active item" data-tab="s_stdout">stdout</div>
-                        <div class="item" data-tab="s_stderr">stderr</div>
-                        <div class="item" data-tab="s_ingest_stdout">Ingestion stdout</div>
-                        <div class="item" data-tab="s_ingest_stderr">Ingestion stderr</div>
+                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}s_stdout">stdout</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stdout">Ingestion stdout</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stderr">Ingestion stderr</div>
                     </div>
 
-                    <div class="ui active bottom attached inverted segment tab log" data-tab="s_stdout">
+                    <div class="ui active bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}s_stdout">
                         <pre>{ logs.scoring_stdout }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="s_stderr">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}s_stderr">
                         <pre>{ logs.scoring_stderr }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="s_ingest_stdout">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}s_ingest_stdout">
                         <pre>{ logs.scoring_ingestion_stdout }</pre>
                     </div>
 
-                    <div class="ui bottom attached inverted segment tab log" data-tab="s_ingest_stderr">
+                    <div class="ui bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}s_ingest_stderr">
                         <pre>{ logs.scoring_ingestion_stderr }</pre>
                     </div>
                 </div>
@@ -93,33 +93,7 @@
         </div>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
-        <form class="ui form" id="score_update_form">
-            <div each="{leaderboard in leaderboards}" class="leaderboard">
-                <h3>{leaderboard.title}</h3>
-
-                <table class="ui collapsing table">
-                    <thead>
-                    <tr>
-                        <th each="{column in leaderboard.columns}">
-                            {column.title}
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td each="{column in leaderboard.columns}">
-                            <input type="number" name="{ column.score_id }"
-                                   disabled="{ !!column.computation }"
-                                   value="{ column.score }" step="any">
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <button class="ui blue button" onclick="{ update_scores }">
-                Submit
-            </button>
-        </form>
+        <submission-scores leaderboards="{leaderboards}"></submission-scores>
     </div>
     <script>
         var self = this
@@ -128,17 +102,6 @@
         self.leaderboards = []
         self.columns = []
 
-        self.update_scores = function (event) {
-            event.preventDefault()
-            let data = get_form_data($('#score_update_form', self.root))
-            _.forEach(_.keys(data), (key) => {
-                CODALAB.api.update_submission_score(key, {score: data[key]})
-                    .done(function (data) {
-                        toastr.success('Score updated')
-                        CODALAB.events.trigger('score_updated')
-                    })
-            })
-        }
 
         self.get_score_details = function (column) {
             try {
@@ -150,22 +113,12 @@
                 return ['', '']
             }
         }
-
-        CODALAB.events.on('submission_clicked', function (submission) {
-            // reset logs and leaderboards for new submission to write to
-            self.logs = {}
-            self.leaderboards = []
-            self.submission = submission
-            // self.columns = []
-            self.update()
-            var tabs = $('.menu .item', self.root)
-            tabs.tab()
-            tabs.tab('change tab', 'downloads')
-            CODALAB.api.get_submission_details(submission.id)
+        self.update_submission_details = () => {
+            CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
-                    self.submission.result = data.result
-                    self.submission.data_file = data.data_file
+                    self.result = data.result
+                    self.data_file = data.data_file
                     _.forEach(data.logs, (item) => {
                         $.get(item.data_file)
                             .done(function (content) {
@@ -185,7 +138,16 @@
                     }
                     self.update()
                 })
+        }
+
+        CODALAB.events.on('submission_clicked', () => {
+            self.submission = opts.submission
+            self.update()
+            self.update_submission_details()
+            let path = self.submission.admin ? 'admin_downloads' : 'downloads'
+            $('.menu .submission-modal.item').tab('change tab', path)
         })
+
     </script>
 
     <style type="text/stylus">
@@ -196,8 +158,6 @@
         .leaderboard-tab
             height 515px
             overflow auto
-        .leaderboard
-            padding-bottom 10px
         .modal-tab
             height 530px
         .file-download
