@@ -164,7 +164,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
 
     run_arguments = {
         # TODO! Remove this hardcoded api url...
-        "api_url": "http://django/api",
+        "api_url": "https://competitions-v2-staging.herokuapp.com/api",
         # "program_data": make_url_sassy(submission.data.data_file.name),
         # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
         # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
