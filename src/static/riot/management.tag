@@ -1,4 +1,6 @@
 <management>
+    <!--Todo: ultimately decide whether this belongs on tasks:management or dataset:management
+            Is currently at both locations-->
     <div class="ui tabular menu">
         <div class="active item" data-tab="datasets">Datasets</div>
         <div class="item" data-tab="tasks">Tasks</div>
