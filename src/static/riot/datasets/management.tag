@@ -98,7 +98,7 @@
                 <tr>
                     <td>{selected_row.key}</td>
                     <td>{selected_row.created_by}</td>
-                    <td>{luxon.DateTime.fromISO(selected_row.created_when).toLocaleString(luxon.DateTime.DATE_FULL)}</td>
+                    <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>
                 </tr>
@@ -112,14 +112,15 @@
             </virtual>
             <div show="{!!_.get(selected_row.in_use, 'length')}"><strong>Used by:</strong>
                 <div class="ui bulleted list">
-                    <div class="item" each="{id in selected_row.in_use}"><a href="{URLS.COMPETITION_DETAIL(id)}"
-                                                                            target="_blank">Competition id: {id}</a></div>
+                    <div class="item" each="{id in selected_row.in_use}">
+                        <a href="{URLS.COMPETITION_DETAIL(id)}" target="_blank">Competition id: {id}</a>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="actions">
             <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}"
-                    class="ui green icon button"><i class="download icon"></i>Download File</a>
+               class="ui green icon button"><i class="download icon"></i>Download File</a>
             <button class="ui cancel button">Close</button>
         </div>
     </div>
@@ -172,212 +173,214 @@
             <button class="ui basic red cancel button">Cancel</button>
         </div>
     </div>
-        <script>
-            var self = this
-            self.mixin(ProgressBarMixin)
+    <script>
+        var self = this
+        self.mixin(ProgressBarMixin)
 
-            /*---------------------------------------------------------------------
-             Init
-            ---------------------------------------------------------------------*/
-            self.types = [
-                "ingestion_program",
-                "input_data",
-                "public_data",
-                "reference_data",
-                "scoring_program",
-                "starting_kit",
-                "submission",
-            ]
-            self.errors = []
-            self.datasets = []
-            self.selected_row = {}
+        /*---------------------------------------------------------------------
+         Init
+        ---------------------------------------------------------------------*/
+        self.types = [
+            "ingestion_program",
+            "input_data",
+            "public_data",
+            "reference_data",
+            "scoring_program",
+            "starting_kit",
+            "submission",
+        ]
+        self.errors = []
+        self.datasets = []
+        self.selected_row = {}
 
 
-            self.upload_progress = undefined
+        self.upload_progress = undefined
 
-            self.page = 1
+        self.page = 1
 
-            self.one("mount", function () {
-                $(".ui.dropdown", self.root).dropdown()
-                $(".ui.checkbox", self.root).checkbox()
-                self.update_datasets()
+        self.one("mount", function () {
+            $(".ui.dropdown", self.root).dropdown()
+            $(".ui.checkbox", self.root).checkbox()
+            self.update_datasets()
+        })
+
+        self.show_info_modal = function (row) {
+            self.selected_row = row
+            console.table(row)
+            self.update()
+            $(self.refs.info_modal).modal('show')
+        }
+
+        self.show_creation_modal = function () {
+            $(self.refs.dataset_creation_modal).modal('show')
+        }
+
+        self.close_modal = function () {
+            $(self.refs.dataset_modal).modal('hide')
+        }
+
+        /*---------------------------------------------------------------------
+         Methods
+        ---------------------------------------------------------------------*/
+        self.pretty_date = date => luxon.DateTime.fromISO(date).toLocaleString(luxon.DateTime.DATE_FULL)
+
+        self.filter = function (filters) {
+            let type = $(self.refs.type_filter).val()
+            filters = filters || {}
+            _.defaults(filters, {
+                type: type === '-' ? '' : type,
+                search: $(self.refs.search).val(),
+                page: 1,
+            })
+            self.page = filters.page
+            self.update_datasets(filters)
+        }
+
+        self.next_page = function () {
+            if (!!self.pagination.next) {
+                self.page += 1
+                self.filter({page: self.page})
+            } else {
+                alert("No valid page to go to!")
+            }
+        }
+        self.previous_page = function () {
+            if (!!self.pagination.previous) {
+                self.page -= 1
+                self.filter({page: self.page})
+            } else {
+                alert("No valid page to go to!")
+            }
+        }
+
+        self.update_datasets = function (filters) {
+            filters = filters || {}
+            let show_datasets_created_by_comp = $(self.refs.auto_created).prop('checked')
+            if (!show_datasets_created_by_comp) {
+                filters.was_created_by_competition = false
+            }
+            CODALAB.api.get_datasets(filters)
+                .done(function (data) {
+                    self.datasets = data.results
+                    self.pagination = {
+                        "count": data.count,
+                        "next": data.next,
+                        "previous": data.previous
+                    }
+                    self.update()
+                })
+                .fail(function (response) {
+                    toastr.error("Could not load datasets...")
+                })
+        }
+
+        self.delete_dataset = function (dataset) {
+            if (confirm("Are you sure you want to delete '" + dataset.name + "'?")) {
+                CODALAB.api.delete_dataset(dataset.id)
+                    .done(function () {
+                        self.update_datasets()
+                        toastr.success("Dataset deleted successfully!")
+                    })
+                    .fail(function (response) {
+                        toastr.error("Could not delete dataset!")
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.clear_form = function () {
+            // Clear form
+            $(':input', self.refs.form)
+                .not(':button, :submit, :reset, :hidden')
+                .val('')
+                .removeAttr('checked')
+                .removeAttr('selected');
+
+            $('.dropdown', self.refs.form).dropdown('restore defaults')
+
+            self.errors = {}
+            self.update()
+        }
+
+        self.check_form = function (event) {
+            if (event) {
+                event.preventDefault()
+            }
+
+            // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
+            // best place to do it -- also resets animations
+            self.file_upload_progress_handler(undefined)
+
+            // Let's do some quick validation
+            self.errors = {}
+            var validate_data = get_form_data(self.refs.form)
+
+            var required_fields = ['name', 'type', 'data_file']
+            required_fields.forEach(field => {
+                if (validate_data[field] === '') {
+                    self.errors[field] = "This field is required"
+                }
             })
 
-            self.show_info_modal = function (row) {
-                self.selected_row = row
-                console.table(row)
+            if (Object.keys(self.errors).length > 0) {
+                // display errors and drop out
                 self.update()
-                $(self.refs.info_modal).modal('show')
+                return
             }
 
-            self.show_creation_modal = function () {
-                $(self.refs.dataset_creation_modal).modal('show')
-            }
+            // Call the progress bar wrapper and do the upload -- we want to check and display errors
+            // first before doing the actual upload
+            self.prepare_upload(self.upload)()
+        }
 
-            self.close_modal = function () {
-                $(self.refs.dataset_modal).modal('hide')
-            }
+        self.upload = function () {
+            // Have to get the "FormData" to get the file in a special way
+            // jquery likes to work with
+            var metadata = get_form_data(self.refs.form)
+            delete metadata.data_file  // dont send this with metadata
 
-            /*---------------------------------------------------------------------
-             Methods
-            ---------------------------------------------------------------------*/
-            self.filter = function (filters) {
-                let type = $(self.refs.type_filter).val()
-                filters = filters || {}
-                _.defaults(filters, {
-                        type: type === '-' ? '' : type,
-                        search: $(self.refs.search).val(),
-                        page: 1,
-                    })
-                self.page = filters.page
-                self.update_datasets(filters)
-            }
-
-            self.next_page = function () {
-                if (!!self.pagination.next) {
-                    self.page += 1
-                    self.filter({page: self.page})
-                } else {
-                    alert("No valid page to go to!")
-                }
-            }
-            self.previous_page = function () {
-                if (!!self.pagination.previous) {
-                    self.page -= 1
-                    self.filter({page: self.page})
-                } else {
-                    alert("No valid page to go to!")
-                }
-            }
-
-            self.update_datasets = function (filters) {
-                filters = filters || {}
-                let show_datasets_created_by_comp = $(self.refs.auto_created).prop('checked')
-                if (!show_datasets_created_by_comp) {
-                    filters.was_created_by_competition = false
-                }
-                CODALAB.api.get_datasets(filters)
-                    .done(function (data) {
-                        self.datasets = data.results
-                        self.pagination = {
-                            "count": data.count,
-                            "next": data.next,
-                            "previous": data.previous
-                        }
-                        self.update()
-                    })
-                    .fail(function (response) {
-                        toastr.error("Could not load datasets...")
-                    })
-            }
-
-            self.delete_dataset = function (dataset) {
-                if (confirm("Are you sure you want to delete '" + dataset.name + "'?")) {
-                    CODALAB.api.delete_dataset(dataset.id)
-                        .done(function () {
-                            self.update_datasets()
-                            toastr.success("Dataset deleted successfully!")
-                        })
-                        .fail(function (response) {
-                            toastr.error("Could not delete dataset!")
-                        })
-                }
-            event.stopPropagation()
-            }
-
-            self.clear_form = function () {
-                // Clear form
-                $(':input', self.refs.form)
-                    .not(':button, :submit, :reset, :hidden')
-                    .val('')
-                    .removeAttr('checked')
-                    .removeAttr('selected');
-
-                $('.dropdown', self.refs.form).dropdown('restore defaults')
-
-                self.errors = {}
-                self.update()
-            }
-
-            self.check_form = function (event) {
-                if (event) {
-                    event.preventDefault()
-                }
-
-                // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
-                // best place to do it -- also resets animations
-                self.file_upload_progress_handler(undefined)
-
-                // Let's do some quick validation
-                self.errors = {}
-                var validate_data = get_form_data(self.refs.form)
-
-                var required_fields = ['name', 'type', 'data_file']
-                required_fields.forEach(field => {
-                    if (validate_data[field] === '') {
-                        self.errors[field] = "This field is required"
-                    }
-                })
-
-                if (Object.keys(self.errors).length > 0) {
-                    // display errors and drop out
-                    self.update()
+            if (metadata.is_public === 'on') {
+                var public_confirm = confirm("Creating a public dataset means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
+                if (!public_confirm) {
                     return
                 }
-
-                // Call the progress bar wrapper and do the upload -- we want to check and display errors
-                // first before doing the actual upload
-                self.prepare_upload(self.upload)()
             }
 
-            self.upload = function () {
-                // Have to get the "FormData" to get the file in a special way
-                // jquery likes to work with
-                var metadata = get_form_data(self.refs.form)
-                delete metadata.data_file  // dont send this with metadata
+            var data_file = self.refs.data_file.refs.file_input.files[0]
 
-                if (metadata.is_public === 'on') {
-                    var public_confirm = confirm("Creating a public dataset means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
-                    if (!public_confirm) {
-                        return
-                    }
-                }
+            CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
+                .done(function (data) {
+                    console.log("UPLOAD SUCCESSFUL")
+                    toastr.success("Dataset successfully uploaded!")
+                    self.update_datasets()
+                    self.clear_form()
+                    $('#dataset_modal').modal('hide')
+                })
+                .fail(function (response) {
+                    if (response) {
+                        try {
+                            var errors = JSON.parse(response.responseText)
 
-                var data_file = self.refs.data_file.refs.file_input.files[0]
+                            // Clean up errors to not be arrays but plain text
+                            Object.keys(errors).map(function (key, index) {
+                                errors[key] = errors[key].join('; ')
+                            })
 
-                CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
-                    .done(function (data) {
-                        console.log("UPLOAD SUCCESSFUL")
-                        toastr.success("Dataset successfully uploaded!")
-                        self.update_datasets()
-                        self.clear_form()
-                        $('#dataset_modal').modal('hide')
-                    })
-                    .fail(function (response) {
-                        if (response) {
-                            try {
-                                var errors = JSON.parse(response.responseText)
+                            self.update({errors: errors})
+                        } catch (e) {
 
-                                // Clean up errors to not be arrays but plain text
-                                Object.keys(errors).map(function (key, index) {
-                                    errors[key] = errors[key].join('; ')
-                                })
-
-                                self.update({errors: errors})
-                            } catch (e) {
-
-                            }
                         }
-                        toastr.error("Creation failed, error occurred")
-                    })
-                    .always(function () {
-                        self.hide_progress_bar()
-                    })
-            }
-        </script>
+                    }
+                    toastr.error("Creation failed, error occurred")
+                })
+                .always(function () {
+                    self.hide_progress_bar()
+                })
+        }
+    </script>
 
-        <style type="text/stylus">
-            .dataset-row:hover
-                cursor pointer
-        </style>
+    <style type="text/stylus">
+        .dataset-row:hover
+            cursor pointer
+    </style>
 </data-management>
