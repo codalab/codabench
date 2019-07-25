@@ -24,7 +24,8 @@
   },
   "addons": [
     "heroku-postgresql",
-    "searchbox:starter"
+    "searchbox:starter",
+    "cloudamqp:lemur"
   ],
   "buildpacks": [
     {
