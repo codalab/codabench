@@ -157,7 +157,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     environment:
-      - BROKER_URL=amqp://nwywrbwj:2yJcIL6-ToCk4XpAt6izAZx6wA9bxIPE@emu.rmq.cloudamqp.com/nwywrbwj
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
     logging:
       options:
         max-size: "500k"
