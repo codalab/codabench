@@ -269,6 +269,8 @@ CHANNEL_LAYERS = {
 STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
 DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
 
+TEMP_SUBMISSION_STORAGE = os.environ.get('TEMP_SUBMISSION_STORAGE', '/codalab_tmp')
+
 STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
 STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'
 STORAGE_IS_AZURE = STORAGE_TYPE == 'azure'

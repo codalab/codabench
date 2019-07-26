@@ -6,6 +6,8 @@
   "env": {
     "USE_SSL": "True",
     "GUNICORN_CMD_ARGS": "--workers=3",
+    "DJANGO_SETTINGS_MODULE": "settings.base",
+    "TEMP_SUBMISSION_STORAGE": "./temp_submission_storage/",
     "AWS_ACCESS_KEY_ID": {"required": true},
     "AWS_SECRET_ACCESS_KEY": {"required": true},
     "AWS_S3_ENDPOINT_URL":  {"required": true},
@@ -24,6 +26,7 @@
   },
   "addons": [
     "heroku-postgresql",
+    "heroku-redis",
     "searchbox:starter",
     "cloudamqp:lemur"
   ],
