@@ -43,6 +43,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
 
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
+        os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
         print(f"opening {submission_output_path}")
         async with aiofiles.open(submission_output_path, 'a+') as f:
             await f.write(text_data)
