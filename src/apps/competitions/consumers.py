@@ -1,6 +1,9 @@
+import os
+
 import aiofiles
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
@@ -39,7 +42,8 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         print(self.scope)
 
         submission_id = self.scope['url_route']['kwargs']['submission_id']
-        submission_output_path = f"/codalab_tmp/{submission_id}.txt"
+        submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
+        os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
         print(f"opening {submission_output_path}")
         async with aiofiles.open(submission_output_path, 'a+') as f:
             await f.write(text_data)

@@ -42,12 +42,12 @@ class Competition(ChaHubSaveMixin, models.Model):
         return [self.created_by] + list(self.collaborators.all())
 
     def apply_phase_migration(self, current_phase, next_phase):
-        '''
+        """
         Does the actual migrating of submissions from current_phase to next_phase
 
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
-        '''
+        """
         logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
         status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
 
@@ -64,7 +64,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating = True
         self.save()
 
-        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False)
+        submissions = Submission.objects.filter(phase=current_phase, is_migrated=False, parent__isnull=True)
 
         for submission in submissions:
             new_submission = Submission(
@@ -81,8 +81,8 @@ class Competition(ChaHubSaveMixin, models.Model):
             submission.save()
 
         # To check for submissions being migrated, does not allow to enter new submission
-        current_phase.has_been_migrated = True
-        current_phase.save()
+        next_phase.has_been_migrated = True
+        next_phase.save()
 
         self.is_migrating_delayed = False
         self.save()
@@ -184,7 +184,7 @@ class Phase(models.Model):
         if not self.has_max_submissions:
             return True, None
 
-        qs = self.submissions.filter(owner=user).exclude(status='Failed')
+        qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
         daily_submission_count = qs.filter(created_when__day=now().day).count()
 
@@ -213,7 +213,7 @@ class Phase(models.Model):
 
         # Check for next phase and see if it has auto_migration enabled
         try:
-            if not current_phase.has_been_migrated:
+            if not next_phase.has_been_migrated:
                 logger.info(
                     f"Checking for needed migrations on competition pk={self.competition.pk}, "
                     f"current phase: {current_phase.index}, next phase: {next_phase.index}")
@@ -294,10 +294,14 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
                                              blank=True)
 
+    scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
     # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
 
     # uber experimental
     # track = models.IntegerField(default=1)
+
+    has_children = models.BooleanField(default=False)
+    parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 
     class Meta:
         unique_together = ('owner', 'leaderboard')
@@ -336,6 +340,12 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.save()
             return True
         return False
+
+    def check_child_submission_statuses(self):
+        done_statuses = [self.FINISHED, self.FAILED, self.CANCELLED]
+        if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
+            self.status = 'Finished'
+            self.save()
 
     def get_chahub_endpoint(self):
         return "submissions/"
