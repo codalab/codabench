@@ -1,14 +1,14 @@
+from django.urls import reverse
 import pytest
 from django.test import TestCase
-from django.urls import reverse
+from rest_framework.test import APITestCase
 from rest_framework.exceptions import ValidationError
-from rest_framework.test import APIClient
 
 from api.serializers.competitions import CompetitionSerializer
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory
 
 
-class ReRunPhaseSubmissionTests(TestCase):
+class ReRunPhaseSubmissionTests(APITestCase):
     def setUp(self):
         self.user = UserFactory(username='test')
         self.admin = UserFactory(username='admin', super_user=True)
@@ -17,7 +17,6 @@ class ReRunPhaseSubmissionTests(TestCase):
         self.competition = CompetitionFactory(created_by=self.user)
         self.competition.collaborators.add(self.collab)
         self.phase = PhaseFactory(competition=self.competition)
-        self.client = APIClient()
 
         for _ in range(4):
             self.make_submission()

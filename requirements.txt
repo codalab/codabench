@@ -15,13 +15,13 @@ flower==0.9.2
 # Tornado here is just to fix a flower problem..
 tornado>=4.2.0,<6.0.0
 urllib3<1.25,>=1.21.1
-uvicorn==0.3.22
+uvicorn==0.8.4
 #daphne==2.2.2
 pyyaml==3.13
 watchdog==0.8.3
 python-dateutil==2.7.3
 bpython==0.17.1
-websockets==6.0
+websockets==7.0
 aiofiles==0.4.0
 oyaml==0.7
 factory_boy==2.11.1
@@ -32,7 +32,7 @@ django-querycount==0.7.0
 
 # Database
 dj-database-url==0.4.2
-psycopg2==2.7.3
+psycopg2==2.8.3
 
 # Storage
 #-e git+https://github.com/jschneier/django-storages.git#egg=django-storages[azure,google]

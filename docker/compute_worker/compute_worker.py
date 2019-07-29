@@ -106,6 +106,8 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
+        self.task_pk = run_args.get('task_pk')
+
         # Socket connection to stream output of submission
         api_url_parsed = urlparse(self.api_url)
         websocket_host = api_url_parsed.netloc
@@ -135,13 +137,16 @@ class Run:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
         url = f"{self.api_url}/submissions/{self.submission_id}/"
         logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
-        resp = requests.patch(url, {
+        data = {
             "secret": self.secret,
             "status": status,
             "status_details": extra_information,
-        })
-        # logger.info(resp)
-        # logger.info(resp.content)
+        }
+        if status == STATUS_SCORING:
+            data.update({
+                "task_pk": self.task_pk,
+            })
+        requests.patch(url, data)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -394,7 +399,5 @@ class Run:
         self._put_dir(self.result, self.output_dir)
 
     def clean_up(self):
-
-
         logger.info("We're not cleaning up yet... TODO: cleanup!")
         pass

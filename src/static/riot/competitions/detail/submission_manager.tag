@@ -9,7 +9,7 @@
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
+                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
             </div>
         </div>
     </div>
@@ -41,37 +41,56 @@
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
-            <th class="right aligned" width="50px">Status</th>
-            <th class="center aligned" if="{ opts.admin }">Actions</th>
-            <th class="right aligned" width="50px">Leaderboard?</th>
+            <th class="right aligned status-column">Status</th>
+            <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
         <tbody>
-        <tr each="{ submission, index in submissions }" onclick="{ show_modal.bind(this, submission) }" class="submission_row">
+        <tr each="{ submission, index in filter_children(submissions) }" onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
             <td class="right aligned">{ submission.status }</td>
-            <td if="{ opts.admin }" class="center aligned action-column">
-                <button class="mini ui button inverted basic blue icon"
-                        onclick="{ rerun_submission.bind(this, submission) }">
-                    <i class="icon redo"></i>
-                    <!-- rerun submission -->
-                </button>
-                <button class="mini ui button inverted basic yellow icon"
-                        onclick="{ cancel_submission.bind(this, submission) }">
-                    <i class="x icon"></i>
-                    <!-- cancel submission -->
-                </button>
-                <button class="mini ui button inverted basic red icon"
-                        onclick="{ delete_submission.bind(this, submission) }">
-                    <i class="icon trash alternate"></i>
-                    <!-- delete submission -->
-                </button>
-            </td>
             <td class="center aligned">
-                <i class="add_to_leaderboard check square large icon { disabled: !submission.leaderboard }" onclick="{ add_to_leaderboard.bind(this, submission) }"></i>
+                <virtual if="{ opts.admin }">
+                    <button class="mini ui button inverted basic blue icon"
+                            data-tooltip="Rerun Submission"
+                            data-inverted=""
+                            onclick="{ rerun_submission.bind(this, submission) }">
+                        <i class="icon redo"></i>
+                        <!-- rerun submission -->
+                    </button>
+                    <button class="mini ui button inverted basic yellow icon"
+                            data-tooltip="Cancel Submission"
+                            data-inverted=""
+                            onclick="{ cancel_submission.bind(this, submission) }">
+                        <i class="x icon"></i>
+                        <!-- cancel submission -->
+                    </button>
+                    <button class="mini ui button inverted basic red icon"
+                            data-tooltip="Delete Submission"
+                            data-inverted=""
+                            onclick="{ delete_submission.bind(this, submission) }">
+                        <i class="icon trash alternate"></i>
+                        <!-- delete submission -->
+                    </button>
+                </virtual>
+                <button if="{!submission.leaderboard}"
+                        class="mini ui button inverted basic green icon"
+                        data-tooltip="Add to Leaderboard"
+                        data-inverted=""
+                        onclick="{ add_to_leaderboard.bind(this, submission) }">
+                    <i class="icon share"></i>
+                    <!-- send submission to leaderboard-->
+                </button>
+                <div if="{!!submission.leaderboard}"
+                     class="mini ui green button icon on-leaderboard"
+                     data-tooltip="On the Leaderboard"
+                     data-inverted=""
+                     onclick="{do_nothing}">
+                    <i class="icon check"></i>
+                </div>
             </td>
         </tr>
         </tbody>
@@ -79,14 +98,36 @@
 
     <div class="ui large modal" ref="modal">
         <div class="content">
-            <submission-modal></submission-modal>
+            <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
+                <submission-modal submission="{selected_submission}"></submission-modal>
+            </div>
+            <div if="{!!selected_submission && _.get(selected_submission, 'has_children', false)}">
+                <div class="ui large green pointing menu">
+                    <div each="{child, i in _.get(selected_submission, 'children')}"
+                         class="parent-modal item"
+                         data-tab="{admin_: is_admin()}child_{i}">
+                        Task {i + 1}
+                    </div>
+                    <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
+                </div>
+                <div each="{child, i in _.get(selected_submission, 'children')}"
+                     class="ui tab"
+                     data-tab="{admin_: is_admin()}child_{i}">
+                    <submission-modal submission="{child}"></submission-modal>
+                </div>
+                <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
+                        <submission-scores leaderboards="{leaderboards}"></submission-scores>
+                </div>
+            </div>
         </div>
     </div>
+
     <script>
         var self = this
 
         self.selected_phase = undefined
-
+        self.selected_submission = undefined
+        self.leaderboards = {}
 
         self.on("mount", function () {
             $(self.refs.search).dropdown();
@@ -94,6 +135,20 @@
             $(self.refs.phase).dropdown();
             $(self.refs.rerun_button).dropdown();
         })
+
+        self.is_admin = () => {
+            return _.get(self.selected_submission, 'admin', false)
+        }
+
+        self.filter_children = (submissions) => {
+            return _.filter(submissions, sub => {
+                return !sub.parent
+            })
+        } 
+
+        self.do_nothing = event => {
+            event.stopPropagation()
+        }
 
         self.update_submissions = function (filters) {
             if (opts.admin) {
@@ -197,12 +252,56 @@
             event.stopPropagation()
         }
 
-        self.show_modal = function (submission) {
+        self.get_score_details = function (submission, column) {
+            try {
+                let score = _.filter(submission.scores, (score) => {
+                    return score.column_key === column.key
+                })[0]
+                return [score.score, score.id]
+            } catch {
+                return ['', '']
+            }
+        }
+
+        self.submission_clicked = function (submission) {
+            // stupid workaround to not modify the original submission object
+            submission = _.defaultsDeep({}, submission)
+            if (submission.has_children) {
+                submission.children = _.map(submission.children, child => {
+                    return {id: child}
+                })
+                CODALAB.api.get_submission_details(submission.id)
+                    .done(function (data) {
+                        self.leaderboards = data.leaderboards
+                        _.forEach(self.leaderboards, (leaderboard) => {
+                            _.map(leaderboard.columns, column => {
+                                let [score, score_id] = self.get_score_details(submission, column)
+                                column.score = score
+                                column.score_id = score_id
+                                return column
+                            })
+                        })
+                        self.update()
+                    })
+            }
             if (opts.admin) {
                 submission.admin = true
             }
-            CODALAB.events.trigger('submission_clicked', submission)
-            $(self.refs.modal).modal('show');
+            self.selected_submission = submission
+            self.update()
+            $(self.refs.modal)
+                .modal({
+                    onShow: () => {
+                        if(_.get(self.selected_submission, 'has_children', false)){
+                            // only try and tabulate the parent modal if children exist
+                            let path = self.is_admin() ? 'admin_child_0' : 'child_0'
+                            $('.menu .parent-modal.item')
+                                .tab('change tab', path)
+                        }
+                    }
+                })
+                .modal('show')
+            CODALAB.events.trigger('submission_clicked')
         }
 
         CODALAB.events.on('phase_selected', function(selected_phase) {
@@ -227,16 +326,19 @@
         .admin-buttons
             padding-bottom: 20px;
 
-        .action-column
-            width: 150px
-
-        .add_to_leaderboard
-            cursor pointer
+        .on-leaderboard
             &:hover
-                opacity 1 !important
-            &.selected
-                opacity 1 !important
-                color #40f940
+                cursor auto
+                background-color #21ba45 !important
+
+        .admin-action-column
+            width 200px
+
+        .action-column
+            width 100px
+
+        .status-column
+            width 50px
 
         .index-column
             width: 40px

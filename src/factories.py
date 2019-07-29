@@ -139,6 +139,16 @@ class SubmissionScoreFactory(DjangoModelFactory):
     class Meta:
         model = SubmissionScore
 
-    submission = factory.SubFactory(SubmissionFactory)
     column = factory.SubFactory(ColumnFactory)
     score = factory.LazyAttribute(lambda n: random.choice(range(1, 11)) / 10)
+
+    @post_generation
+    def submissions(self, created, submissions, **kwargs):
+        if not created:
+            return
+        if submissions:
+            if isinstance(submissions, Submission):
+                self.submissions.add(submissions)
+            else:
+                for sub in submissions:
+                    self.submissions.add(sub)

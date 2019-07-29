@@ -6,6 +6,11 @@
         <div class="column">
             <div class="ui divider"></div>
             <form class="ui large form" method="post">
+                {% if form.non_field_errors %}
+                    <div class="ui red message">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
                 <h2 class="ui blue header">
                     Sign-Up
                 </h2>
@@ -23,6 +28,11 @@
                                    required>
                         </div>
                     </div>
+                    {% if form.username.errors %}
+                    <div class="ui red message">
+                        {{ form.username.errors }}
+                    </div>
+                    {% endif %}
 
                     <div class="ui field">
                         <div class="ui left icon input">
@@ -36,6 +46,11 @@
                                    required>
                         </div>
                     </div>
+                    {% if form.email.errors %}
+                    <div class="ui red message">
+                        {{ form.email.errors }}
+                    </div>
+                    {% endif %}
 
                     <div class="ui field">
                         <div class="ui left icon input">
@@ -49,6 +64,11 @@
                                    required>
                         </div>
                     </div>
+                    {% if form.password1.errors %}
+                    <div class="ui red message">
+                        {{ form.password1.errors }}
+                    </div>
+                    {% endif %}
 
                     <div class="ui field">
                         <div class="ui left icon input">
@@ -62,8 +82,16 @@
                                    required>
                         </div>
                     </div>
+                    {% if form.password2.errors %}
+                    <div class="ui red message">
+                        {{ form.password2.errors }}
+                    </div>
+                    {% endif %}
 
                     <button class="ui blue submit button" type="submit">Sign-Up</button>
+                    <h2 class="ui dividing header">Login with Chahub</h2>
+                    <a class="ui large green button" href="{% url "social:begin" "chahub" %}">Sign-In</a>
+                    <a class="ui large yellow button" href="{{ chahub_signup_url }}">Sign-Up through Chahub</a>
                 </div>
             </form>
         </div>
