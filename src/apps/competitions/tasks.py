@@ -163,7 +163,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     run_arguments = {
-        "api_url": os.environ.get('API_URL', "http://django/api"),
+        "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
         "secret": submission.secret,
         "docker_image": "python:3.7",
         "execution_time_limit": submission.phase.execution_time_limit,
