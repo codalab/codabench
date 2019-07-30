@@ -61,10 +61,6 @@ class DataViewSet(mixins.CreateModelMixin,
         sassy_file_name = os.path.basename(new_dataset.request_sassy_file_name)
         # encode here helps GCS do the upload, complains
         # ```TypeError: ('`data` must be bytes, received', <class 'str'>)``` otherwise
-        print("uhhh??")
-        print(new_dataset.request_sassy_file_name)
-        print(sassy_file_name)
-        print(new_dataset.data_file.name)
 
         new_dataset.data_file.save(sassy_file_name, ContentFile(''.encode()))
         context = {

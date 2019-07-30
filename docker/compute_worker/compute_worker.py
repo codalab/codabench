@@ -88,6 +88,7 @@ class Run:
     def __init__(self, run_args):
         # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
 
         # Details for submission
@@ -206,7 +207,8 @@ class Run:
                     if out:
                         value["data"] += out
                         print("DATA!!!! " + str(out))
-                        await websocket.send(out.decode())
+                        # TODO Re-enable this!
+                        #await websocket.send(out.decode())
                     else:
                         value["continue"] = False
 
@@ -232,9 +234,13 @@ class Run:
                     raise SubmissionException("Program directory missing 'command' in metadata")
         except FileNotFoundError:
             if can_be_output:
-                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
-                            "program so move it to output")
-                shutil.move(program_dir, self.output_dir)
+
+                # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
+                # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
+                # logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                #             "program so move it to output")
+                # shutil.move(program_dir, self.output_dir)
+                # return
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml'")
@@ -244,29 +250,48 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
+
             # Try the new timeout feature
             '--stop-timeout={}'.format(self.execution_time_limit),
+
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
-            # Set the right volume
-            '-v', f'{program_dir}:/app',
+
+            # Set the volumes
+            # '-v', f'{program_dir}:/app',
+            '-v', f'{program_dir}:/app/program',
+
             '-v', f'{self.output_dir}:/app/output',
+
             # Start in the right directory
-            '-w', '/app',
+            '-w', '/app/program',
+
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
 
         # TODO: Should pass in reference data if scoring, or something?
 
-        # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
-        if kind == 'ingestion' and self.input_data:
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+        if kind == 'ingestion':
+            # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "program")}:/app/ingested_program']
+
+        if self.input_data:
+            # if kind == 'ingestion':
+            #     # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
+            #     docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+            # else:
+            #     # Unhidden
+            #     docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
 
         if self.is_scoring:
             # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
             # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
+
+            # Input from submission (or submission + ingestion combo)
+            docker_cmd += ['-v', f'{self.input_dir}:/app/input']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
@@ -334,7 +359,7 @@ class Run:
 
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
-            bundles += [(self.result, os.path.join('program', 'input'))]
+            bundles += [(self.result, os.path.join('input', 'res'))]
 
         for url, path in bundles:
             if url is not None:

@@ -153,8 +153,9 @@ def run_submission(submission_pk, is_scoring=False):
         if task.ingestion_program:
             if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
                 run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-                if task.input_data:
-                    run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
+
+        if not is_scoring and task.input_data:
+            run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
         if is_scoring and task.reference_data:
             run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
