@@ -15,8 +15,8 @@ $ docker-compose exec django python manage.py createsuperuser
 
 ```
 # Non "end to end tests"
-$ docker-compose exec django py.test -m "not e2e"
-
-# "End to end tests" (a shell script to launch a selenium docker container)
-$ ./run_selenium_tests.sh
+$ docker exec -it django py.test -m "not e2e"
+making some changes
+# "End to end tests" (uses actual browser window to click around site and confirm actions work)
+$ py.test -m e2e
 ```
