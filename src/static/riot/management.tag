@@ -1,14 +1,14 @@
 <management>
     <!--Todo: ultimately decide whether this belongs on tasks:management or dataset:management
             Is currently at both locations-->
-    <div class="ui tabular menu">
+    <div class="ui top attached tabular menu">
         <div class="active item" data-tab="datasets">Datasets</div>
         <div class="item" data-tab="tasks">Tasks</div>
     </div>
-    <div class="ui active tab" data-tab="datasets">
+    <div class="ui active bottom attached tab segment" data-tab="datasets">
         <data-management></data-management>
     </div>
-    <div class="ui tab" data-tab="tasks">
+    <div class="ui bottom attached tab segment" data-tab="tasks">
         <task-management></task-management>
     </div>
 
