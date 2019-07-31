@@ -11,8 +11,6 @@
         </ul>
     </div>
 
-    </div>
-
     <div class="ui container center aligned grid" show="{ phases.length == 0 }">
         <div class="row">
             <div class="four wide column">
@@ -47,82 +45,51 @@
             Edit phase
         </div>
         <div class="content">
-            <div class="ui top pointing secondary menu">
-                <a class="active item" data-tab="phase_details">Phase details</a>
-                <a class="item" data-tab="phase_data">Data</a>
-            </div>
-
             <form class="ui form" ref="form">
-
-                <!-- #####################
-                     ##  Phase Details  ##
-                     ##################### -->
-
-                <div class="ui bottom active tab" data-tab="phase_details">
-                    <div class="field required">
-                        <label>Name</label>
-                        <input name="name">
-                    </div>
-
-                    <div class="two fields">
-                        <div class="ui calendar field required" ref="calendar_start">
-                            <label>Start</label>
-                            <div class="ui input left icon">
-                                <i class="calendar icon"></i>
-                                <input type="text" name="start">
-                            </div>
-                        </div>
-
-                        <div class="ui calendar field" ref="calendar_end">
-                            <label>End</label>
-                            <div class="ui input left icon">
-                                <i class="calendar icon"></i>
-                                <input type="text" name="end">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field required smaller-mde">
-                        <label>Description</label>
-                        <textarea class="markdown-editor" ref="description" name="description"></textarea>
-                    </div>
-
-
-
+                <div class="field required">
+                    <label>Name</label>
+                    <input name="name">
                 </div>
 
-                <!-- #####################
-                     ##    Phase Data   ##
-                     ##################### -->
-                <div class="ui bottom tab" data-tab="phase_data">
-                    <div class="two fields">
-                        <div class="field">
-                            <a href="{ URLS.DATASET_MANAGEMENT }" class="ui fluid large primary button" target="_blank">
-                                <i class="logout icon"></i>Manage Datasets
-                            </a>
-                        </div>
-                        <div class="field">
-                            <a href="{ URLS.TASK_MANAGEMENT }" class="ui fluid large primary button" target="_blank">
-                                <i class="logout icon"></i>Manage Tasks
-                            </a>
+                <div class="two fields">
+                    <div class="ui calendar field required" ref="calendar_start">
+                        <label>Start</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text" name="start">
                         </div>
                     </div>
 
-                    <div>
-                        <div class="fluid field required">
-                            <label for="tasks">
-                                Tasks
-                                <span data-tooltip="Use task manager to create new tasks" data-inverted=""
-                                      data-position="bottom center"><i class="help icon circle"></i></span>
-                            </label>
-                            <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect" multiple="multiple">
-                            </select>
+                    <div class="ui calendar field" ref="calendar_end">
+                        <label>End</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text" name="end">
                         </div>
                     </div>
+                </div>
+
+                <div class="fluid field required">
+                    <label for="tasks">
+                        Tasks
+                        <span data-tooltip="Use task manager to create new tasks" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                    </label>
+                    <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
+                            multiple="multiple">
+                    </select>
+                </div>
+
+                <div class="field required smaller-mde">
+                    <label>Description</label>
+                    <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
             </form>
         </div>
         <div class="actions">
+            <a href="{ URLS.TASK_MANAGEMENT }" class="ui inverted green button" target="_blank">
+                <i class="logout icon"></i>Manage Tasks / Datasets
+            </a>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
             <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
