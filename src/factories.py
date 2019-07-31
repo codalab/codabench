@@ -43,6 +43,14 @@ class CompetitionFactory(DjangoModelFactory):
     created_by = factory.SubFactory(UserFactory)
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
 
+    @post_generation
+    def collaborators(self, created, extracted, **kwargs):
+        if not created:
+            return
+        if extracted:
+            for user in extracted:
+                self.collaborators.add(user)
+
 
 class DataFactory(DjangoModelFactory):
     class Meta:

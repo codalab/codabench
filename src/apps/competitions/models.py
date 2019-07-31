@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
+from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
@@ -115,6 +116,17 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.id})
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        to_create = (self.collaborators.all() | User.objects.filter(id=self.created_by_id)).exclude(
+            id__in=self.participants.values_list('user_id', flat=True)
+        )
+        new_participants = []
+        for user in to_create:
+            new_participants.append(CompetitionParticipant(user=user, competition=self, status='approved'))
+        if new_participants:
+            CompetitionParticipant.objects.bulk_create(new_participants)
 
 
 class CompetitionCreationTaskStatus(models.Model):
