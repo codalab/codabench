@@ -9,6 +9,8 @@ $ docker-compose up -d
 
 # and if you'd like to make a user for testing...
 $ docker exec -it django python manage.py createsuperuser
+
+# TODO: add how to generate dummy data
 ```
 
 ## Running tests
