@@ -241,19 +241,13 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
-# <<<<<<< HEAD
     elif isinstance(field, datetime.date):
         # turn the date into a datetime @ midnight that day
-        return datetime.datetime.combine(datetime.date.today(), datetime.time())
-    elif isinstance(field, datetime.datetime):
-        return field
-    else:
-        return parser.parse(field)
-# # =======
-#     elif not isinstance(field, datetime.datetime):
-#         field = parser.parse(field)
-#     field = field.replace(tzinfo=now().tzinfo)
-#     return field
+        field = datetime.datetime.combine(datetime.date.today(), datetime.time())
+    elif not isinstance(field, datetime.datetime):
+        field = parser.parse(field)
+    field = field.replace(tzinfo=now().tzinfo)
+    return field
 # >>>>>>> develop
 
 
@@ -486,7 +480,11 @@ def unpack_competition(competition_dataset_pk):
                     continue
                 phase1 = competition['phases'][i - 1]
                 phase2 = competition['phases'][i]
-                if phase2['start'] < phase1['end']:
+                if phase1['end'] is None:
+                    raise CompetitionUnpackingException(
+                        f'Phase: {phase1.get("name", phase2["index"])} must have an end time because it has a phase after it.'
+                    )
+                elif phase2['start'] < phase1['end']:
                     raise CompetitionUnpackingException(
                         f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
