@@ -168,7 +168,12 @@ class Run:
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
-        and a socket"""
+        and a socket
+
+        :param docker_cmd: the list of docker command arguments
+        :param kind: either 'ingestion' or 'program'
+        :return:
+        """
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         logger.info(f"Connecting to {url}")
 
@@ -354,7 +359,7 @@ class Run:
             (self.program_data, 'program'),
             (self.ingestion_program_data, 'ingestion_program'),
             (self.input_data, 'input_data'),
-            (self.reference_data, 'reference_data'),
+            (self.reference_data, 'input/ref'),
         ]
 
         if self.is_scoring:
