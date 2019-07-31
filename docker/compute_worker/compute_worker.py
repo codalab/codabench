@@ -218,6 +218,7 @@ class Run:
                         value["data"] += out
                         print("DATA!!!! " + str(out))
                         # TODO Re-enable this!
+                        # asdf cruft
                         await websocket.send(out.decode())
                     else:
                         value["continue"] = False
