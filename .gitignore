@@ -10,6 +10,7 @@ staticfiles/
 uploads/
 venv/
 var/
+var_*/
 certs/
 
 src/static/output.css

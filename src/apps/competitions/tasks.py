@@ -13,7 +13,7 @@ from io import BytesIO
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count
+from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
 
@@ -94,7 +94,38 @@ COLUMN_FIELDS = [
 ]
 
 
-def send(submission, run_args):
+def send_submission(submission, task, is_scoring, run_args):
+    if not is_scoring:
+        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+
+    if task.ingestion_program:
+        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
+            run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+
+    if not is_scoring and task.input_data:
+        run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
+
+    if is_scoring and task.reference_data:
+        run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
+
+    run_args['program_data'] = make_url_sassy(
+        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+    )
+    run_args['result'] = make_url_sassy(
+        path=submission.result.name,
+        permission='w' if not is_scoring else 'r'
+    )
+
+    run_args['task_pk'] = task.id
+
+    if not is_scoring:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
+    else:
+        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+
+    for detail_name in detail_names:
+        run_args[detail_name] = create_detailed_output_file(detail_name, submission)
+
     print("Task data:")
     print(run_args)
 
@@ -117,7 +148,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def run_submission(submission_pk, is_scoring=False):
+def run_submission(submission_pk, task_pk=None, is_scoring=False):
     select_models = (
         'phase',
         'phase__competition',
@@ -133,11 +164,7 @@ def run_submission(submission_pk, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     run_arguments = {
-        # TODO! Remove this hardcoded api url...
-        "api_url": "http://django/api",
-        # "program_data": make_url_sassy(submission.data.data_file.name),
-        # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
-        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
         "secret": submission.secret,
         "docker_image": "codalab/codalab-legacy:py3",
         "execution_time_limit": submission.phase.execution_time_limit,
@@ -145,32 +172,41 @@ def run_submission(submission_pk, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
-    # TODO: refactor all this later for multiple tasks per phase. This will further reduce gross DRY stuff
-    if not is_scoring:
-        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
-
-    for task in submission.phase.tasks.all():
-        if task.ingestion_program:
-            if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-                run_arguments['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-
-        if not is_scoring and task.input_data:
-            run_arguments['input_data'] = make_url_sassy(task.input_data.data_file.name)
-
-        if is_scoring and task.reference_data:
-            run_arguments['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
-
-        run_arguments['program_data'] = make_url_sassy(
-            path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+    tasks = submission.phase.tasks.all()
+    if task_pk is None:  # This is the initial submission object
+        if len(tasks) > 1:
+            # The initial submission object becomes the parent submission and we create children for each task
+            submission.has_children = True
+            submission.status = 'Running'
+            submission.save()
+            for task in tasks:
+                # TODO: make a duplicate submission method and use it here
+                sub = Submission(
+                    owner=submission.owner,
+                    phase=submission.phase,
+                    data=submission.data,
+                    participant=submission.participant,
+                    parent=submission,
+                )
+                sub.save(ignore_submission_limit=True)
+                run_submission.apply_async((sub.id, task.id))
+        else:
+            # The initial submission object will be the only submission
+            task = tasks.first()
+            send_submission(
+                submission=submission,
+                task=task,
+                run_args=run_arguments,
+                is_scoring=is_scoring
+            )
+    else:
+        task = Task.objects.get(id=task_pk)
+        send_submission(
+            submission=submission,
+            task=task,
+            run_args=run_arguments,
+            is_scoring=is_scoring
         )
-        run_arguments['result'] = make_url_sassy(
-            path=submission.result.name,
-            permission='w' if not is_scoring else 'r'
-        )
-        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION if not is_scoring else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
-        for detail_name in detail_names:
-            run_arguments[detail_name] = create_detailed_output_file(detail_name, submission)
-        send(submission, run_arguments)
 
 
 class CompetitionUnpackingException(Exception):
@@ -205,6 +241,7 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
+# <<<<<<< HEAD
     elif isinstance(field, datetime.date):
         # turn the date into a datetime @ midnight that day
         return datetime.datetime.combine(datetime.date.today(), datetime.time())
@@ -212,6 +249,12 @@ def _get_datetime(field):
         return field
     else:
         return parser.parse(field)
+# # =======
+#     elif not isinstance(field, datetime.datetime):
+#         field = parser.parse(field)
+#     field = field.replace(tzinfo=now().tzinfo)
+#     return field
+# >>>>>>> develop
 
 
 def _zip_if_directory(path):
@@ -438,6 +481,38 @@ def unpack_competition(competition_dataset_pk):
                 new_phase['tasks'] = [competition['tasks'][index] for index in tasks]
 
                 competition['phases'].append(new_phase)
+            for i in range(len(competition['phases'])):
+                if i == 0:
+                    continue
+                phase1 = competition['phases'][i - 1]
+                phase2 = competition['phases'][i]
+                if phase2['start'] < phase1['end']:
+                    raise CompetitionUnpackingException(
+                        f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
+                        f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
+                    )
+
+            current_phase = list(filter(lambda p: p['start'] < now() < p['end'], competition['phases']))
+            if current_phase:
+                current_index = current_phase[0]['index']
+                previous_index = current_index - 1 if current_index >= 1 else None
+                next_index = current_index + 1 if current_index < len(competition['phases']) - 1 else None
+            else:
+                current_index = None
+                next_phase = list(filter(lambda p: p['start'] > now() < p['end'], competition['phases']))
+                if next_phase:
+                    next_index = next_phase[0]['index']
+                    previous_index = next_index - 1 if next_index >= 1 else None
+                else:
+                    next_index = None
+                    previous_index = None
+
+            if current_index is not None:
+                competition['phases'][current_index]['status'] = Phase.CURRENT
+            if next_index is not None:
+                competition['phases'][next_index]['status'] = Phase.NEXT
+            if previous_index is not None:
+                competition['phases'][previous_index]['status'] = Phase.PREVIOUS
 
             # ---------------------------------------------------------------------
             # Leaderboards
@@ -690,20 +765,62 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    new_phases = Phase.objects.filter(auto_migrate_to_this_phase=True, start__lte=now(),
-                                      competition__is_migrating=False, has_been_migrated=False)
+    # Update phase statuses
+    current_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__lte=now(),
+        end__gt=now(),
+    ).values_list('index', flat=True)
+
+    previous_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        end__lte=now()
+    ).order_by('-index').values('index')[:1]
+
+    next_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__gt=now()
+    ).order_by('index').values('index')[:1]
+
+    Phase.objects.annotate(
+        current_index=Subquery(current_subquery),
+        previous_index=Subquery(previous_subquery),
+        next_index=Subquery(next_subquery),
+    ).update(status=Case(
+        When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
+        When(index=F('current_index'), then=Value(Phase.CURRENT)),
+        When(index=F('next_index'), then=Value(Phase.NEXT)),
+        default=None
+    ))
+
+    # Updating Competitions whose phases have finished migrating to `is_migrating=False`
+    completed_statuses = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
+
+    running_subs_query = Submission.objects.filter(
+        created_by_migration=OuterRef('pk')
+    ).exclude(
+        status__in=completed_statuses
+    ).values_list('pk')
+
+    Competition.objects.filter(
+        pk__in=Phase.objects.annotate(
+            running_subs=Count(Subquery(running_subs_query))
+        ).filter(
+            running_subs=0,
+            competition__is_migrating=True,
+            status=Phase.PREVIOUS
+        ).values_list('competition__pk', flat=True)
+    ).update(is_migrating=False)
+
+    # Checking for new phases to start migrating
+    new_phases = Phase.objects.filter(
+        auto_migrate_to_this_phase=True,
+        start__lte=now(),
+        competition__is_migrating=False,
+        has_been_migrated=False
+    )
+
     logger.info(f"Checking {len(new_phases)} phases for phase migrations.")
 
     for p in new_phases:
         p.check_future_phase_submissions()
-
-    status_list = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
-    subquery = Subquery(
-        Submission.objects.filter(created_by_migration=OuterRef('pk')).exclude(status__in=status_list).values('pk'))
-    competition_list = Phase.objects.annotate(running_subs=Count(subquery)).filter(
-        running_subs=0,
-        competition__is_migrating=True,
-        status=Phase.PREVIOUS
-    ).values_list('competition__pk', flat=True)
-
-    Competition.objects.filter(pk__in=competition_list).update(is_migrating=False)

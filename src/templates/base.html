@@ -67,7 +67,7 @@
                                 <div class="header">Admin management</div>
                                 <a class="item" href="#">Customize Codalab</a>
                                 <a class="item" href="#">Monitors</a>
-                                <a class="item" href="#">Analytics</a>
+                                <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
                                 <a class="item" href="#">Health</a>
                                 <a class="item" href="#">Users</a>
                                 <a class="item" href="#">Submissions</a>
@@ -134,7 +134,6 @@
         </div>
     </div>
 
-
     {# Admin only user switching #}
     <user_switch></user_switch>
 
@@ -186,7 +185,12 @@
             // Websockets
             //WS_SUBMISSION_LISTEN: ""
 
-            // Competitions
+            // Analytics
+            ANALYTICS_API: function (query_parameters) {
+                return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
+            },
+
+                    // Competitions
             COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
             COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
             COMPETITION_ADD: "{% url "competitions:create" %}",
@@ -196,7 +200,7 @@
             COMPETITION_EDIT: function (pk) {
                 return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
             },
-            SECRET_KEY_URL: function (pk, secret_key) {
+            SECRET_KEY_URL: function(pk, secret_key) {
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
             },
@@ -208,21 +212,20 @@
             },
 
             // Tasks
-            // TODO:// update this URL when the task management view gets moved to the right place
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
-            TASK_DETAIL: function (pk) {
+            TASK_DETAIL: function(pk) {
                 return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
             }
         }
-
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
-    </script>
-    {% block extra_js %}
-    {% endblock %}
-    {% block extra_body %}
-    {% endblock %}
+
+</script>
+{% block extra_js %}
+{% endblock %}
+{% block extra_body %}
+{% endblock %}
 
 </body>
 </html>

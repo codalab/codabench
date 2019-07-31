@@ -94,7 +94,7 @@ class Run:
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
         self.submission_id = run_args["id"]
-        self.api_url = run_args["api_url"]
+        self.submissions_api_url = run_args["submissions_api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
         self.result = run_args["result"]  # TODO, rename this to result_url
@@ -107,10 +107,12 @@ class Run:
         self.input_data = run_args.get("input_data", None)
         self.reference_data = run_args.get("reference_data", None)
 
+        self.task_pk = run_args.get('task_pk')
+
         # Socket connection to stream output of submission
-        api_url_parsed = urlparse(self.api_url)
-        websocket_host = api_url_parsed.netloc
-        websocket_scheme = 'ws' if api_url_parsed.scheme == 'http' else 'wss'
+        submission_api_url_parsed = urlparse(self.submissions_api_url)
+        websocket_host = submission_api_url_parsed.netloc
+        websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
     def _get_stdout_stderr_file_names(self, run_args):
@@ -134,15 +136,18 @@ class Run:
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
-        url = f"{self.api_url}/submissions/{self.submission_id}/"
+        url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
-        resp = requests.patch(url, {
+        data = {
             "secret": self.secret,
             "status": status,
             "status_details": extra_information,
-        })
-        # logger.info(resp)
-        # logger.info(resp.content)
+        }
+        if status == STATUS_SCORING:
+            data.update({
+                "task_pk": self.task_pk,
+            })
+        requests.patch(url, data)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -213,7 +218,7 @@ class Run:
                         value["data"] += out
                         print("DATA!!!! " + str(out))
                         # TODO Re-enable this!
-                        #await websocket.send(out.decode())
+                        await websocket.send(out.decode())
                     else:
                         value["continue"] = False
 
@@ -415,7 +420,7 @@ class Run:
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
 
-        url = f"{self.api_url}/upload_submission_scores/{self.submission_id}/"
+        url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
         logger.info(f"Submitting these scores to {url}: {scores}")
         resp = requests.post(url, json={
             "secret": self.secret,
@@ -428,7 +433,5 @@ class Run:
         self._put_dir(self.result, self.output_dir)
 
     def clean_up(self):
-
-
         logger.info("We're not cleaning up yet... TODO: cleanup!")
         pass

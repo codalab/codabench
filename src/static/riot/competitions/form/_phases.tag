@@ -2,6 +2,16 @@
     <button class="ui primary button modal-button" onclick="{ add }">
         <i class="add circle icon"></i> Add phase
     </button>
+    <div class="ui warning message" if="{warnings.length > 0}">
+        <div class="header">
+            Phase Errors
+        </div>
+        <ul class="list">
+            <li each="{item in warnings}">{item}</li>
+        </ul>
+    </div>
+
+    </div>
 
     <div class="ui container center aligned grid" show="{ phases.length == 0 }">
         <div class="row">
@@ -129,10 +139,7 @@
         self.phases = []
         self.phase_tasks = []
         self.selected_phase_index = undefined
-
-        // Form datasets have to live on their own, because they don't match up to a representation
-        // on form well.. unless we use weird hidden fields everywhere.
-        self.form_datasets = {}
+        self.warnings = []
 
         self.one("mount", function () {
             // awesome markdown editor
@@ -175,16 +182,6 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-        self.file_changed = (event) => {
-            let file_type = event.item.file_field
-            let file_name = event.target.value
-            if (self.form_datasets[file_type]) {
-                if (self.form_datasets[file_type] !== file_name) {
-                    delete self.form_datasets[file_type]
-                }
-            }
-            self.form_updated()
-        }
         self.task_added = (key, text, item) => {
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
@@ -252,11 +249,28 @@
                         is_valid = false
                     }
                 })
+                _.forEach(_.range(self.phases.length), i => {
+                    if (i !== 0) {
+                        let end = Date.parse(self.phases[i-1].end)
+                        let start = Date.parse(self.phases[i].start)
+
+                        if (end > start || !end) {
+                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i-1], 'name', i)}" ends`
+                            if (!self.warnings.includes(message)) {
+                                self.warnings.push(message)
+                                self.update()
+                            }
+                            is_valid = false
+                        }
+                    }
+                })
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'phases', is_valid)
 
             if (is_valid) {
+                self.warnings = []
+                self.update()
                 // We keep a copy of the list where we store JUST the dataset key
                 var indexed_phases = _.map(self.phases, (phase, i) => {
                     phase.index = i
@@ -299,6 +313,14 @@
             self.clear_form()
             self.show_modal()
         }
+
+        self.parse_date = function (date) {
+            if (!date) {
+                return date
+            }
+            return new Date(Date.parse(date))
+        }
+
 
         self.edit = function (index) {
             self.selected_phase_index = index
