@@ -2,9 +2,11 @@ import logging
 import uuid
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
+from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
@@ -20,6 +22,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    registration_required = models.BooleanField(default=False)
+    registration_auto_approve = models.BooleanField(default=False)
+    terms = models.TextField(null=True, blank=True)
     is_migrating = models.BooleanField(default=False)
 
     def __str__(self):
@@ -27,7 +32,15 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     @property
     def bundle_dataset(self):
-        return CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+        try:
+            bundle = CompetitionCreationTaskStatus.objects.get(resulting_competition=self).dataset
+        except CompetitionCreationTaskStatus.DoesNotExist:
+            bundle = None
+        return bundle
+
+    @property
+    def all_organizers(self):
+        return [self.created_by] + list(self.collaborators.all())
 
     def apply_phase_migration(self, current_phase, next_phase):
         """
@@ -100,6 +113,20 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def get_chahub_is_valid(self):
         return self.published
+
+    def get_absolute_url(self):
+        return reverse('competitions:detail', kwargs={'pk': self.id})
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        to_create = (self.collaborators.all() | User.objects.filter(id=self.created_by_id)).exclude(
+            id__in=self.participants.values_list('user_id', flat=True)
+        )
+        new_participants = []
+        for user in to_create:
+            new_participants.append(CompetitionParticipant(user=user, competition=self, status='approved'))
+        if new_participants:
+            CompetitionParticipant.objects.bulk_create(new_participants)
 
 
 class CompetitionCreationTaskStatus(models.Model):
