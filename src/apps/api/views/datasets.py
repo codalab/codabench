@@ -27,10 +27,9 @@ class DataViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   GenericViewSet):
     queryset = Data.objects.all()
-    serializer_class = serializers.DataSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type', 'name', 'key',)
-    search_fields = ('name', 'description',)
+    filter_fields = ('type', 'name', 'key', 'was_created_by_competition')
+    search_fields = ('name', 'description', 'key',)
     pagination_class = BasicPagination
 
     def get_queryset(self):
@@ -38,9 +37,17 @@ class DataViewSet(mixins.CreateModelMixin,
 
         qs = Data.objects.filter(filters)
 
-        qs = qs.exclude(type=Data.COMPETITION_BUNDLE, name=None)
+        qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
+
+        qs = qs.select_related('created_by').order_by('-created_when')
 
         return qs
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return serializers.DataDetailSerializer
+        else:
+            return serializers.DataSerializer
 
     def get_serializer_context(self):
         # Have to do this because of docs sending blank requests (?)

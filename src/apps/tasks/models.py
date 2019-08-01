@@ -29,7 +29,7 @@ class Solution(models.Model):
     description = models.TextField(null=True, blank=True)
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     tasks = models.ManyToManyField(Task, related_name="solutions")
-    data = models.ForeignKey('datasets.Data', null=True, blank=True, on_delete=models.SET_NULL)
+    data = models.ForeignKey('datasets.Data', null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"Solution - {self.data.name} - ({self.id})"

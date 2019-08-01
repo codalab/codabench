@@ -1,99 +1,111 @@
 <task-management>
-    <div class="ui tabular menu">
-        <div class="active item" data-tab="my_tasks">My Tasks</div>
-        <div class="item" data-tab="public_tasks">Public Tasks</div>
+    <div class="ui icon input">
+        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{ filter }">
+        <i class="search icon"></i>
     </div>
-    <div class="ui active tab" data-tab="my_tasks">
-        <div class="ui icon input">
-            <input type="text" placeholder="Search by name..." ref="search_mine" onkeyup="{ search_my_tasks }">
-            <i class="search icon"></i>
-        </div>
-        <div class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i> Create Task</div>
-        <table class="ui celled compact table">
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th width="125px">Uploaded...</th>
-                <th width="50px">Public</th>
-                <th width="50px">Delete?</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr each="{ task in my_tasks }" class="task-row">
-                <td><a href="{URLS.TASK_DETAIL(task.id)}">{ task.name }</a></td>
-                <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
-                <td class="center aligned">
-                    <i class="checkmark box icon green" show="{ task.is_public }"></i>
-                </td>
-                <td class="center aligned">
-                    <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
-                        <i class="icon delete"></i>
-                    </button>
-                </td>
-            </tr>
-            </tbody>
-            <tfoot>
-            <!-- Pagination that we may want later...
-            <tr>
-                <th colspan="3">
-                    <div class="ui right floated pagination menu">
-                        <a class="icon item">
-                            <i class="left chevron icon"></i>
-                        </a>
-                        <a class="item">1</a>
-                        <a class="item">2</a>
-                        <a class="item">3</a>
-                        <a class="item">4</a>
-                        <a class="icon item">
-                            <i class="right chevron icon"></i>
-                        </a>
+    <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
+        <label>Show Public Tasks</label>
+        <input type="checkbox" ref="public">
+    </div>
+    <div class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
+        Create Task
+    </div>
+    <table class="ui selectable celled compact table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th width="125px">Uploaded...</th>
+            <th width="50px">Public</th>
+            <th width="50px">Delete?</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
+            <td>{ task.name }</td>
+            <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
+            <td class="center aligned">
+                <i class="checkmark box icon green" show="{ task.is_public }"></i>
+            </td>
+            <td class="center aligned">
+                <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
+                    <i class="icon delete"></i>
+                </button>
+            </td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <!-------------------------------------
+                  Pagination
+        ------------------------------------->
+        <tr>
+            <th colspan="6">
+                <div class="ui right floated pagination menu">
+                    <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
+                        <i class="left chevron icon"></i>
+                    </a>
+                    <div class="item">
+                        <label>{page}</label>
                     </div>
-                </th>
-            </tr>
-            -->
-            </tfoot>
-        </table>
-    </div>
-    <div class="ui tab" data-tab="public_tasks">
-        <div class="ui icon input">
-            <input type="text" placeholder="Search by name..." ref="search_public" onkeyup="{ search_public_tasks }">
-            <i class="search icon"></i>
+                    <a show="{!!_.get(pagination, 'next')}" class="icon item" onclick="{next_page}">
+                        <i class="right chevron icon"></i>
+                    </a>
+                </div>
+            </th>
+        </tr>
+        </tfoot>
+    </table>
+
+    <div class="ui modal" ref="detail_modal">
+        <div class="header">
+            {selected_task.name}
         </div>
-        <table class="ui celled compact table">
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th width="125px">Uploaded...</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr each="{ task in public_tasks }" class="task-row">
-                <td><a href="{URLS.TASK_DETAIL(task.id)}">{ task.name }</a></td>
-                <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
-            </tr>
-            </tbody>
-            <tfoot>
-            <!-- Pagination that we may want later...
-            <tr>
-                <th colspan="3">
-                    <div class="ui right floated pagination menu">
-                        <a class="icon item">
-                            <i class="left chevron icon"></i>
-                        </a>
-                        <a class="item">1</a>
-                        <a class="item">2</a>
-                        <a class="item">3</a>
-                        <a class="item">4</a>
-                        <a class="icon item">
-                            <i class="right chevron icon"></i>
-                        </a>
-                    </div>
-                </th>
-            </tr>
-            -->
-            </tfoot>
-        </table>
+        <div class="content">
+            <div style="font-size: 18px;">{selected_task.description}</div>
+            <div class="ui divider" show="{selected_task.description}"></div>
+            <div><strong>Created By:</strong> {selected_task.created_by}</div>
+            <div><strong>Key:</strong> {selected_task.key}</div>
+            <div><strong>Is Public:</strong>
+                <span show="{selected_task.is_public}">Yes</span>
+                <span show="{!selected_task.is_public}">No</span>
+            </div>
+            <div class="ui secondary pointing green two item tabular menu">
+                <div class="active item" data-tab="files">Files</div>
+                <div class="item" data-tab="solutions">Solutions</div>
+            </div>
+            <div class="ui active tab" data-tab="files">
+                <table class="ui table">
+                    <thead>
+                    <tr>
+                        <th>Files</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{file in selected_task.files}">
+                        <td><a href="{URLS.DATASET_DOWNLOAD(file.key)}">{file.name}</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="ui tab" data-tab="solutions">
+                <table class="ui table">
+                    <thead>
+                    <tr>
+                        <th>Solutions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{solution in selected_task.solutions}">
+                        <td><a href="{URLS.DATASET_DOWNLOAD(solution.key)}">{solution.data}</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="ui cancel button">Close</button>
+        </div>
     </div>
+
 
     <div class="ui modal" ref="modal">
         <div class="header">
@@ -112,7 +124,8 @@
                     </div>
                     <div class="required field">
                         <label>Description</label>
-                        <textarea rows="4" name="description" placeholder="Description" ref="description" onkeyup="{ form_updated }"></textarea>
+                        <textarea rows="4" name="description" placeholder="Description" ref="description"
+                                  onkeyup="{ form_updated }"></textarea>
                     </div>
                 </div>
                 <div class="ui tab" data-tab="data">
@@ -159,7 +172,7 @@
         </div>
         <div class="actions">
             <div class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
-            <div class="ui cancel button">Cancel</div>
+            <div class="ui basic red cancel button">Cancel</div>
         </div>
     </div>
 
@@ -171,28 +184,27 @@
          Init
         ---------------------------------------------------------------------*/
 
-        self.my_tasks = []
-        self.public_tasks = []
+        self.tasks = []
         self.form_datasets = {}
+        self.selected_task = {}
+        self.page = 1
+
 
         self.one("mount", function () {
             self.update_tasks()
-            $('.ui.menu .item', self.root).tab()
+            $(".ui.checkbox", self.root).checkbox()
             $('.ui.search.dataset', self.root).each(function (i, item) {
                 $(item)
                     .search({
                         apiSettings: {
                             url: URLS.API + 'datasets/?search={query}&type=' + (item.dataset.name || ""),
                             onResponse: function (data) {
-                                // Put results in array to use maxResults setting
-                                var data_in_array = []
-
-                                Object.keys(data).forEach(key => {
-                                    // Get rid of "null" in semantic UI search results
-                                    data[key].description = data[key].description || ''
-                                    data_in_array.push(data[key])
+                                let results = _.map(data.results, result => {
+                                    result.description = result.description || ''
+                                    return result
                                 })
-                                return {results: data_in_array}
+
+                                return {results: results}
                             }
                         },
                         preserveHTML: false,
@@ -245,7 +257,7 @@
                 .done((response) => {
                     toastr.success('Task Created')
                     self.close_modal()
-                    self.update_my_tasks()
+                    self.update_tasks()
                 })
                 .fail((response) => {
                     toastr.error('Error Creating Task')
@@ -257,20 +269,61 @@
             self.update()
         }
 
+        self.show_detail_modal = (task) => {
+            CODALAB.api.get_task(task.id)
+                .done((data) => {
+                    self.selected_task = data
+                    self.update()
+                })
+            $(self.refs.detail_modal).modal('show')
+        }
+
         /*---------------------------------------------------------------------
          Table Methods
         ---------------------------------------------------------------------*/
-        self.update_tasks = function () {
-            self.update_my_tasks()
-            self.update_public_tasks()
+
+        self.filter = function (filters) {
+            filters = filters || {}
+            _.defaults(filters, {
+                search: $(self.refs.search).val(),
+                page: 1,
+            })
+            self.page = filters.page
+            self.update_tasks(filters)
         }
 
-        self.update_my_tasks = function (filters) {
+        self.next_page = function () {
+            if (!!self.pagination.next) {
+                self.page += 1
+                self.filter({page: self.page})
+            } else {
+                alert("No valid page to go to!")
+            }
+        }
+        self.previous_page = function () {
+            if (!!self.pagination.previous) {
+                self.page -= 1
+                self.filter({page: self.page})
+            } else {
+                alert("No valid page to go to!")
+            }
+        }
+
+
+        self.update_tasks = function (filters) {
             filters = filters || {}
-            filters.created_by = CODALAB.state.user.id
+            let show_public_tasks = $(self.refs.public).prop('checked')
+            if (show_public_tasks) {
+                filters.public = true
+            }
             CODALAB.api.get_tasks(filters)
                 .done(function (data) {
-                    self.my_tasks = data
+                    self.tasks = data.results
+                    self.pagination = {
+                        "count": data.count,
+                        "next": data.next,
+                        "previous": data.previous
+                    }
                     self.update()
                 })
                 .fail(function (response) {
@@ -278,33 +331,14 @@
                 })
         }
 
-        self.update_public_tasks = function (filters) {
-            filters = filters || {}
-            filters.is_public = true
-            CODALAB.api.get_tasks(filters)
-                .done(function (data) {
-                    self.public_tasks = data
-                    self.update()
-                })
-                .fail(function (response) {
-                    toastr.error("Could not load tasks")
-                })
+        self.search_tasks = function () {
+            var filter = self.refs.search.value
+
+            delay(() => self.update_tasks({search: filter}), 100)
         }
 
-        self.search_my_tasks = function () {
-            var filter = self.refs.search_mine.value
-
-            delay(() => self.update_my_tasks({search: filter}), 100)
-        }
-
-        self.search_public_tasks = function () {
-            var filter = self.refs.search_public.value
-
-            delay(() => self.update_public_tasks({search: filter}), 100)
-        }
 
         self.delete_task = function (task) {
-            console.log(task)
             if (confirm("Are you sure you want to delete '" + task.name + "'?")) {
                 CODALAB.api.delete_task(task.id)
                     .done(function () {
@@ -315,10 +349,12 @@
                         toastr.error("Could not delete task!")
                     })
             }
+            event.stopPropagation()
         }
     </script>
     <style type="text/stylus">
         .task-row
-            height: 42px;
+            height 42px
+            cursor pointer
     </style>
 </task-management>

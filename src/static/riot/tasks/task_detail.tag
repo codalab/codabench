@@ -1,22 +1,20 @@
 <task-detail>
-    <div class="ui container">
-        <div class="ui segment">
-            <h1>{task.name}</h1>
-            <div class="ui container">
-                <div style="font-size: 18px;">{task.description}</div>
-                <div class="ui divider"></div>
-                <div><strong>Created By:</strong> {task.created_by}</div>
-                <div if="{task.created_by === CODALAB.state.user.username}">
-                    <!-- TODO: add is_superuser to this later -->
-                    <button class="ui blue right floated button" onclick="{edit_task}">
-                        <i class="edit icon"></i>Edit
-                    </button>
-                </div>
-                <div><strong>Key:</strong> {task.key}</div>
-                <div><strong>Is Public:</strong>
-                    <span show="{task.is_public}">Yes</span>
-                    <span show="{!task.is_public}">No</span>
-                </div>
+    <div class="ui segment">
+        <h1>{task.name}</h1>
+        <div class="ui container">
+            <div style="font-size: 18px;">{task.description}</div>
+            <div class="ui divider"></div>
+            <div><strong>Created By:</strong> {task.created_by}</div>
+            <div if="{task.created_by === CODALAB.state.user.username}">
+                <!-- TODO: add is_superuser to this later -->
+                <button class="ui blue right floated button" onclick="{edit_task}">
+                    <i class="edit icon"></i>Edit
+                </button>
+            </div>
+            <div><strong>Key:</strong> {task.key}</div>
+            <div><strong>Is Public:</strong>
+                <span show="{task.is_public}">Yes</span>
+                <span show="{!task.is_public}">No</span>
             </div>
         </div>
     </div>
