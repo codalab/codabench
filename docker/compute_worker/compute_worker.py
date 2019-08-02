@@ -109,6 +109,14 @@ class Run:
 
         self.task_pk = run_args.get('task_pk')
 
+        # During prediction program will be the submission program, during scoring it will be the
+        # scoring program
+        self.program_exit_code = None
+        self.ingestion_program_exit_code = None
+
+        self.program_elapsed_time = None
+        self.ingestion_elapsed_time = None
+
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
         websocket_host = submission_api_url_parsed.netloc
@@ -190,6 +198,7 @@ class Run:
         #       pairs
 
         async with websockets.connect(url) as websocket:
+            start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -222,6 +231,15 @@ class Run:
                         await websocket.send(out.decode())
                     else:
                         value["continue"] = False
+
+            end = time.time()
+
+            if type == 'program':
+                self.program_exit_code = proc.returncode
+                self.program_elapsed_time = end - start
+            elif type == 'ingestion':
+                self.ingestion_program_exit_code = proc.returncode
+                self.ingestion_elapsed_time = end - start
 
             logger.info(f'[exited with {proc.returncode}]')
             for key, value in logs.items():
@@ -431,6 +449,16 @@ class Run:
         logger.info(str(resp.content))
 
     def push_result(self):
+        # V1.5 compatibility, write program statuses to metadata file
+        prog_status = {
+            'exitCode': self.program_exit_code,
+            'ingestionExitCode': self.ingestion_program_exit_code,
+            'elapsedTime': self.program_elapsed_time
+        }
+
+        with open(os.path.join(self.output_dir, 'metadata'), 'w') as f:
+            f.write(yaml.dump(prog_status, default_flow_style=False))
+
         self._put_dir(self.result, self.output_dir)
 
     def clean_up(self):
