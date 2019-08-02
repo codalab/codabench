@@ -5,7 +5,7 @@ from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskSerializerSimple
-from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from profiles.models import User
 from tasks.models import Task
 
@@ -121,6 +121,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     phases = PhaseDetailSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = CollaboratorSerializer(many=True)
+    participant_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Competition
@@ -132,21 +133,31 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'created_by',
             'created_when',
             'logo',
+            'terms',
             'pages',
             'phases',
             'leaderboards',
             'collaborators',
+            'participant_status',
+            'registration_required'
         )
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
+    created_by = serializers.CharField(source='created_by.username')
+    participant_count = serializers.CharField(read_only=True)
+    logo = NamedBase64ImageField(required=False)
+
     class Meta:
         model = Competition
         fields = (
             'id',
             'title',
+            'created_by',
             'created_when',
-            'published'
+            'published',
+            'participant_count',
+            'logo'
         )
 
 
@@ -160,4 +171,18 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
             'status',
             'details',
             'resulting_competition',
+        )
+
+
+class CompetitionParticipantSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    email = serializers.CharField(source='user.email')
+
+    class Meta:
+        model = CompetitionParticipant
+        fields = (
+            'id',
+            'username',
+            'email',
+            'status',
         )

@@ -87,7 +87,7 @@ class SubmissionViewSet(ModelViewSet):
 
     def has_admin_permission(self, user, submission):
         competition = submission.phase.competition
-        return user.is_superuser or user in [competition.created_by] + list(competition.collaborators.all())
+        return user.is_superuser or user in competition.all_organizers
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
