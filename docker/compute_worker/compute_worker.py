@@ -64,11 +64,7 @@ def run_wrapper(run_args):
         run.start()
         if run.is_scoring:
             run.push_scores()
-            # TODO: Also output push result at some point, so SCORING STEPS have output as well?
-            #   run.push_result()
-            #   when this is changed, make sure to include files in submission manager download section
-        else:
-            run.push_result()
+        run.push_output()
     except SubmissionException as e:
         run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -425,6 +421,7 @@ class Run:
             self._update_status(STATUS_SCORING)
 
     def push_scores(self):
+        """This is only ran at the end of the scoring step"""
         # POST to some endpoint:
         # {
         #     "correct": 1.0
@@ -448,7 +445,8 @@ class Run:
         logger.info(resp)
         logger.info(str(resp.content))
 
-    def push_result(self):
+    def push_output(self):
+        """Output is pushed at the end of both prediction and scoring steps."""
         # V1.5 compatibility, write program statuses to metadata file
         prog_status = {
             'exitCode': self.program_exit_code,
