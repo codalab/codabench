@@ -1,6 +1,6 @@
 <task-management>
     <div class="ui icon input">
-        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{ filter }">
+        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{filter.bind(this, undefined)}">
         <i class="search icon"></i>
     </div>
     <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
@@ -39,7 +39,7 @@
         ------------------------------------->
         <tr>
             <th colspan="6">
-                <div class="ui right floated pagination menu">
+                <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
                     </a>
@@ -49,6 +49,9 @@
                     <a show="{!!_.get(pagination, 'next')}" class="icon item" onclick="{next_page}">
                         <i class="right chevron icon"></i>
                     </a>
+                </div>
+                <div if="{tasks.length === 0}">
+                    <em>No Tasks Yet!</em>
                 </div>
             </th>
         </tr>

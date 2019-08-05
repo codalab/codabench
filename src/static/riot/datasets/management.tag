@@ -61,7 +61,7 @@
         ------------------------------------->
         <tr>
             <th colspan="6">
-                <div class="ui right floated pagination menu">
+                <div class="ui right floated pagination menu" if="{datasets.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
                     </a>
@@ -71,6 +71,9 @@
                     <a show="{!!_.get(pagination, 'next')}" class="icon item" onclick="{next_page}">
                         <i class="right chevron icon"></i>
                     </a>
+                </div>
+                <div if="{datasets.length === 0}">
+                    <em>No Datasets Yet!</em>
                 </div>
             </th>
         </tr>
