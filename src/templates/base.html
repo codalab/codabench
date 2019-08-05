@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Overpass+Mono&display=swap" rel="stylesheet">
+
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -160,6 +162,7 @@
     <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
     <script src="{% static "generated/riot.js" %}"></script>
 
+
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
@@ -190,7 +193,7 @@
                 return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
             },
 
-                    // Competitions
+            // Competitions
             COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
             COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
             COMPETITION_ADD: "{% url "competitions:create" %}",
@@ -200,7 +203,7 @@
             COMPETITION_EDIT: function (pk) {
                 return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
             },
-            SECRET_KEY_URL: function(pk, secret_key) {
+            SECRET_KEY_URL: function (pk, secret_key) {
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
             },
@@ -213,7 +216,7 @@
 
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
-            TASK_DETAIL: function(pk) {
+            TASK_DETAIL: function (pk) {
                 return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
             }
         }
@@ -221,11 +224,11 @@
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
 
-</script>
-{% block extra_js %}
-{% endblock %}
-{% block extra_body %}
-{% endblock %}
+    </script>
+    {% block extra_js %}
+    {% endblock %}
+    {% block extra_body %}
+    {% endblock %}
 
 </body>
 </html>

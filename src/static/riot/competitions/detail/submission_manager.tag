@@ -34,7 +34,7 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
-    <table class="ui celled selectable inverted table">
+    <table class="ui celled selectable table">
         <thead>
         <tr>
             <th class="index-column">#</th>
@@ -54,21 +54,21 @@
             <td class="right aligned">{ submission.status }</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
-                    <button class="mini ui button inverted basic blue icon"
+                    <button class="mini ui button basic blue icon"
                             data-tooltip="Rerun Submission"
                             data-inverted=""
                             onclick="{ rerun_submission.bind(this, submission) }">
                         <i class="icon redo"></i>
                         <!-- rerun submission -->
                     </button>
-                    <button class="mini ui button inverted basic yellow icon"
+                    <button class="mini ui button basic yellow icon"
                             data-tooltip="Cancel Submission"
                             data-inverted=""
                             onclick="{ cancel_submission.bind(this, submission) }">
                         <i class="x icon"></i>
                         <!-- cancel submission -->
                     </button>
-                    <button class="mini ui button inverted basic red icon"
+                    <button class="mini ui button basic red icon"
                             data-tooltip="Delete Submission"
                             data-inverted=""
                             onclick="{ delete_submission.bind(this, submission) }">
@@ -77,7 +77,7 @@
                     </button>
                 </virtual>
                 <button if="{!submission.leaderboard}"
-                        class="mini ui button inverted basic green icon"
+                        class="mini ui button basic green icon"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">

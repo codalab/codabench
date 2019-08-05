@@ -1,5 +1,5 @@
 <leaderboards>
-    <table each="{ leaderboard in opts.leaderboards }" class="ui celled selectable inverted table">
+    <table each="{ leaderboard in opts.leaderboards }" class="ui celled selectable table">
         <thead>
         <tr>
             <th colspan="100%" style="text-align: center;">
@@ -47,7 +47,5 @@
             display: block
             width: 100%
             height: 100%
-        .ui.inverted.table
-            background #44586b
     </style>
 </leaderboards>
