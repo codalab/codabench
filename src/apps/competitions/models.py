@@ -26,6 +26,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     registration_auto_approve = models.BooleanField(default=False)
     terms = models.TextField(null=True, blank=True)
     is_migrating = models.BooleanField(default=False)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}"

@@ -30,24 +30,17 @@
                     </div>
                     <errors errors="{errors}"></errors>
                 </div>
-                <!--
-                            <virtual if="{ error_object.constructor == Array }">
-                                asdfasdfasdf
-                                <span each="{error in error_object}">{error}</span>
-                            </virtual>
-
-                            <virtual if="{ error_object.constructor == Object }">
-                                AYESSSS
-                                <span each="{inline_error, i in error_object}">{inline_error} - {i}</span>
-                            </virtual>
-                            -->
-
 
                 <div class="ui top pointing five item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
                         Competition details
+                    </a>
+                    <a class="item" data-tab="terms">
+                        <i class="checkmark box icon green" show="{ sections.terms.valid && !errors.pages }"></i>
+                        <i class="minus circle icon red" show="{ errors.terms }"></i>
+                        Terms
                     </a>
                     <a class="item" data-tab="pages">
                         <i class="checkmark box icon green" show="{ sections.pages.valid && !errors.pages }"></i>
@@ -73,6 +66,9 @@
 
                 <div class="ui bottom active tab" data-tab="competition_details">
                     <competition-details errors="{ errors.details }"></competition-details>
+                </div>
+                <div class="ui bottom tab" data-tab="terms">
+                    <h1>TBD</h1>
                 </div>
                 <div class="ui bottom tab" data-tab="pages">
                     <competition-pages errors="{ errors.pages }"></competition-pages>
@@ -110,11 +106,12 @@
         ---------------------------------------------------------------------*/
         self.competition = {}
         self.sections = {
-            'details': {valid: false},
-            'pages': {valid: false},
-            'phases': {valid: false},
-            'leaderboards': {valid: false},
-            'collaborators': {valid: false}
+            details: {valid: false},
+            pages: {valid: false},
+            terms: {valid: false},
+            phases: {valid: false},
+            leaderboards: {valid: false},
+            collaborators: {valid: false}
         }
         self.errors = {}
 
@@ -145,16 +142,14 @@
         }
 
         self.are_all_sections_valid = function () {
-            for (var section in self.sections) {
-                if (section === 'collaborators') {
+            _.forEach(_.keys(self.sections), section => {
+                if (section !== 'collaborators') {
                     // collaborators is optional
-                    continue;
+                    if (!self.sections[section].valid) {
+                        return false
+                    }
                 }
-
-                if (!self.sections[section].valid) {
-                    return false
-                }
-            }
+            })
             return true
         }
 
