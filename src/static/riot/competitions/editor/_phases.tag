@@ -39,6 +39,7 @@
             </a>
         </div>
     </div>
+
     <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
@@ -83,6 +84,54 @@
                 <div class="field required smaller-mde">
                     <label>Description</label>
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
+                </div>
+
+                <div class="ui advanced-settings accordion">
+                    <div class="title">
+                        <i class="dropdown icon"></i>
+                        Advanced
+                        <i class="cogs icon"></i>
+                    </div>
+                    <div class="content">
+                        <div class="three fields">
+                            <div class="field">
+                                <label for="execution_time_limit">
+                                    Execution Time Limit <span data-tooltip="In milliseconds, 600ms default if unset"
+                                                               data-inverted=""
+                                                               data-position="bottom center"><i
+                                        class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="execution_time_limit">
+                            </div>
+                            <div class="field">
+                                <label for="max_submissions_per_day">
+                                    Max Submissions Per Day <span
+                                        data-tooltip="The maximum number of submissions a user can be made per day"
+                                        data-inverted=""
+                                        data-position="bottom center"><i
+                                        class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="max_submissions_per_day">
+                            </div>
+                            <div class="field">
+                                <label for="max_submissions_per_person">
+                                    Max Submissions Per Person <span
+                                        data-tooltip="The maximum number of submissions any single user can make to the phase"
+                                        data-inverted=""
+                                        data-position="bottom center"><i
+                                        class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="max_submissions_per_person">
+                            </div>
+                        </div>
+
+                        <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
+                            <div class="ui checkbox">
+                                <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
+                                <label>Auto migrate to this phase</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -144,6 +193,8 @@
                     self.clear_form()
                 }
             })
+            $('.ui.checkbox', self.root).checkbox()
+            $('.ui.advanced-settings.accordion').accordion()
         })
 
         /*---------------------------------------------------------------------
@@ -270,6 +321,7 @@
                 .not('[readonly]').each(function (i, field) {
                 $(field).val('')
             })
+            $(self.refs.auto_migrate).prop('checked', false)
 
             self.simple_markdown_editor.value('')
 
@@ -294,7 +346,9 @@
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
 
+            self.update()
             set_form_data(phase, self.refs.form)
+            $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description)
@@ -323,9 +377,22 @@
         }
 
         self.save = function () {
+            let number_fields = [
+                'max_submissions_per_person',
+                'max_submissions_per_day',
+                'execution_time_limit'
+            ]
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
-
+            data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
+            _.forEach(number_fields, field => {
+                let str = _.get(data, field)
+                if (str) {
+                    data[field] = parseInt(str)
+                } else {
+                    delete data[field]
+                }
+            })
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
             } else {

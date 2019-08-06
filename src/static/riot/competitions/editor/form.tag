@@ -31,16 +31,16 @@
                     <errors errors="{errors}"></errors>
                 </div>
 
-                <div class="ui top pointing five item secondary menu">
+                <div class="ui top pointing six item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
-                        Competition details
+                        Details
                     </a>
-                    <a class="item" data-tab="terms">
-                        <i class="checkmark box icon green" show="{ sections.terms.valid && !errors.pages }"></i>
-                        <i class="minus circle icon red" show="{ errors.terms }"></i>
-                        Terms
+                    <a class="item" data-tab="participation">
+                        <i class="checkmark box icon green" show="{ sections.participation.valid && !errors.pages }"></i>
+                        <i class="minus circle icon red" show="{ errors.participation }"></i>
+                        Participation
                     </a>
                     <a class="item" data-tab="pages">
                         <i class="checkmark box icon green" show="{ sections.pages.valid && !errors.pages }"></i>
@@ -67,8 +67,8 @@
                 <div class="ui bottom active tab" data-tab="competition_details">
                     <competition-details errors="{ errors.details }"></competition-details>
                 </div>
-                <div class="ui bottom tab" data-tab="terms">
-                    <h1>TBD</h1>
+                <div class="ui bottom tab" data-tab="participation">
+                    <h1>Participating in a comp</h1>
                 </div>
                 <div class="ui bottom tab" data-tab="pages">
                     <competition-pages errors="{ errors.pages }"></competition-pages>
@@ -108,7 +108,7 @@
         self.sections = {
             details: {valid: false},
             pages: {valid: false},
-            terms: {valid: false},
+            participation: {valid: false},
             phases: {valid: false},
             leaderboards: {valid: false},
             collaborators: {valid: false}

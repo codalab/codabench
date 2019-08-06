@@ -47,9 +47,11 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'description',
             'status',
             'tasks',
+            'auto_migrate_to_this_phase',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'execution_time_limit',
         )
 
 
