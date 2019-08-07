@@ -93,6 +93,8 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'leaderboards',
             'collaborators',
             'description',
+            'terms',
+            'registration_auto_approve',
         )
 
     def get_created_by(self, object):
@@ -142,7 +144,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'leaderboards',
             'collaborators',
             'participant_status',
-            'registration_required',
+            'registration_auto_approve',
             'description',
         )
 

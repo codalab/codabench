@@ -33,32 +33,32 @@
 
                 <div class="ui top pointing six item secondary menu">
                     <a class="active item" data-tab="competition_details">
-                        <i class="checkmark box icon green" show="{ sections.details.valid && !errors.details }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.details && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
                         Details
                     </a>
                     <a class="item" data-tab="participation">
-                        <i class="checkmark box icon green" show="{ sections.participation.valid && !errors.pages }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.participation && !errors.pages }"></i>
                         <i class="minus circle icon red" show="{ errors.participation }"></i>
                         Participation
                     </a>
                     <a class="item" data-tab="pages">
-                        <i class="checkmark box icon green" show="{ sections.pages.valid && !errors.pages }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.pages && !errors.pages }"></i>
                         <i class="minus circle icon red" show="{ errors.pages }"></i>
                         Pages
                     </a>
                     <a class="item" data-tab="phases">
-                        <i class="checkmark box icon green" show="{ sections.phases.valid && !errors.phases }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.phases && !errors.phases }"></i>
                         <i class="minus circle icon red" show="{ errors.phases }"></i>
                         Phases
                     </a>
                     <a class="item" data-tab="leaderboard">
-                        <i class="checkmark box icon green" show="{ sections.leaderboards.valid && !errors.leaderboards }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.leaderboards && !errors.leaderboards }"></i>
                         <i class="minus circle icon red" show="{ errors.leaderboards }"></i>
                         Leaderboard
                     </a>
                     <a class="item" data-tab="collaborators">
-                        <i class="checkmark box icon green" show="{ sections.collaborators.valid && !errors.collaborators }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.collaborators && !errors.collaborators }"></i>
                         <i class="minus circle icon red" show="{ errors.collaborators }"></i>
                         Collaborators
                     </a>
@@ -68,7 +68,7 @@
                     <competition-details errors="{ errors.details }"></competition-details>
                 </div>
                 <div class="ui bottom tab" data-tab="participation">
-                    <h1>Participating in a comp</h1>
+                    <competition-participation errors="{ errors.participation}"></competition-participation>
                 </div>
                 <div class="ui bottom tab" data-tab="pages">
                     <competition-pages errors="{ errors.pages }"></competition-pages>
@@ -105,20 +105,25 @@
          Init
         ---------------------------------------------------------------------*/
         self.competition = {}
-        self.sections = {
-            details: {valid: false},
-            pages: {valid: false},
-            participation: {valid: false},
-            phases: {valid: false},
-            leaderboards: {valid: false},
-            collaborators: {valid: false}
+        self.valid_sections = {
+            details: false,
+            pages: false,
+            participation: false,
+            phases: false,
+            leaderboards: false,
+            collaborators: false
         }
+        self.optional_sections = [
+            'collaborators',
+        ]
+
+        self.required_sections = _.filter(_.keys(self.valid_sections), section => !self.optional_sections.includes(section))
+
         self.errors = {}
 
         self.one("mount", function () {
             // tabs
             $('.menu .item', self.root).tab()
-
             if (!!self.opts.competition_id) {
                 self.update_competition_data(self.opts.competition_id)
             }
@@ -142,15 +147,7 @@
         }
 
         self.are_all_sections_valid = function () {
-            _.forEach(_.keys(self.sections), section => {
-                if (section !== 'collaborators') {
-                    // collaborators is optional
-                    if (!self.sections[section].valid) {
-                        return false
-                    }
-                }
-            })
-            return true
+            return _.every(_.map(self.required_sections, section => self.valid_sections[section]))
         }
 
         self.discard = function () {
@@ -205,7 +202,6 @@
 
 
             self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
-
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             // Send competition_id for either create or update, won't hurt anything but is
@@ -268,7 +264,7 @@
             self.update()
         })
         CODALAB.events.on('competition_is_valid_update', function (name, is_valid) {
-            self.sections[name].valid = is_valid
+            self.valid_sections[name] = is_valid
             self.update()
         })
     </script>

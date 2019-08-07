@@ -301,7 +301,6 @@ def unpack_competition(competition_dataset_pk):
                 "title": competition_yaml.get('title'),
                 # NOTE! We use 'logo' instead of 'image' here....
                 "logo": None,
-                "registration_required": competition_yaml.get('registration_required', False),
                 "registration_auto_approve": competition_yaml.get('registration_auto_approve', False),
                 "pages": [],
                 "phases": [],
@@ -313,21 +312,19 @@ def unpack_competition(competition_dataset_pk):
 
             # ---------------------------------------------------------------------
             # Terms
-            if competition['registration_required']:
-                terms_path = competition_yaml.get('terms')
-                if not terms_path:
-                    raise CompetitionUnpackingException('The registration_required flag is set to true, but a file '
-                                                        'containing the terms has not been supplied in the required '
-                                                        'location')
-                try:
-                    terms_content = open(os.path.join(temp_directory, terms_path)).read()
+            terms_path = competition_yaml.get('terms')
+            if not terms_path:
+                raise CompetitionUnpackingException('A file containing the terms of this competition has not been '
+                                                    'supplied in the required location')
+            try:
+                terms_content = open(os.path.join(temp_directory, terms_path)).read()
 
-                    if not terms_content:
-                        raise CompetitionUnpackingException(f"{terms_path} is empty, it must contain content.")
+                if not terms_content:
+                    raise CompetitionUnpackingException(f"{terms_path} is empty, it must contain content.")
 
-                    competition['terms'] = terms_content
-                except FileNotFoundError:
-                    raise CompetitionUnpackingException(f"Unable to find page: {terms_path}")
+                competition['terms'] = terms_content
+            except FileNotFoundError:
+                raise CompetitionUnpackingException(f"Unable to find page: {terms_path}")
 
             # ---------------------------------------------------------------------
             # Logo
