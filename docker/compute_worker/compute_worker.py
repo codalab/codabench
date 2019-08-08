@@ -230,10 +230,10 @@ class Run:
 
             end = time.time()
 
-            if type == 'program':
+            if kind == 'program':
                 self.program_exit_code = proc.returncode
                 self.program_elapsed_time = end - start
-            elif type == 'ingestion':
+            elif kind == 'ingestion':
                 self.ingestion_program_exit_code = proc.returncode
                 self.ingestion_elapsed_time = end - start
 
@@ -450,9 +450,13 @@ class Run:
         # V1.5 compatibility, write program statuses to metadata file
         prog_status = {
             'exitCode': self.program_exit_code,
+            # for v1.5 compat, send `ingestion_elapsed_time` if no `program_elapsed_time`
+            'elapsedTime': self.program_elapsed_time or self.ingestion_elapsed_time,
             'ingestionExitCode': self.ingestion_program_exit_code,
-            'elapsedTime': self.program_elapsed_time
+            'ingestionElapsedTime': self.ingestion_elapsed_time,
         }
+
+        logger.info(f"Metadata output: {prog_status}")
 
         with open(os.path.join(self.output_dir, 'metadata'), 'w') as f:
             f.write(yaml.dump(prog_status, default_flow_style=False))
