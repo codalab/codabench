@@ -126,7 +126,6 @@ def send_submission(submission, task, is_scoring, run_args):
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
     )
 
-
     run_args['task_pk'] = task.id
 
     if not is_scoring:
