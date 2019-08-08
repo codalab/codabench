@@ -96,7 +96,21 @@ COLUMN_FIELDS = [
 
 def send_submission(submission, task, is_scoring, run_args):
     if not is_scoring:
-        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        run_args['prediction_result'] = make_url_sassy(
+            path=submission.prediction_result.name,
+            permission='w'
+        )
+    else:
+        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        run_args['prediction_result'] = make_url_sassy(
+            path=submission.prediction_result.name,
+            permission='r'
+        )
+        run_args['scoring_result'] = make_url_sassy(
+            path=submission.scoring_result.name,
+            permission='w'
+        )
 
     if task.ingestion_program:
         if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
@@ -111,10 +125,7 @@ def send_submission(submission, task, is_scoring, run_args):
     run_args['program_data'] = make_url_sassy(
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
     )
-    run_args['result'] = make_url_sassy(
-        path=submission.result.name,
-        permission='w' if not is_scoring else 'r'
-    )
+
 
     run_args['task_pk'] = task.id
 
@@ -248,7 +259,6 @@ def _get_datetime(field):
         field = parser.parse(field)
     field = field.replace(tzinfo=now().tzinfo)
     return field
-# >>>>>>> develop
 
 
 def _zip_if_directory(path):

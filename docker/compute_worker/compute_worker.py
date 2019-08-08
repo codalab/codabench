@@ -93,7 +93,8 @@ class Run:
         self.submissions_api_url = run_args["submissions_api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
-        self.result = run_args["result"]  # TODO, rename this to result_url
+        self.prediction_result = run_args["prediction_result"]
+        self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
@@ -221,9 +222,7 @@ class Run:
                     out = await value["stream"].readline()
                     if out:
                         value["data"] += out
-                        print("DATA!!!! " + str(out))
-                        # TODO Re-enable this!
-                        # asdf cruft
+                        print("WS: " + str(out))
                         await websocket.send(out.decode())
                     else:
                         value["continue"] = False
@@ -384,7 +383,7 @@ class Run:
 
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
-            bundles += [(self.result, os.path.join('input', 'res'))]
+            bundles += [(self.prediction_result, os.path.join('input', 'res'))]
 
         for url, path in bundles:
             if url is not None:
@@ -428,8 +427,6 @@ class Run:
         # }
         try:
             scores_file = os.path.join(self.output_dir, "scores.json")
-            print(scores_file)
-            print("content:", open(scores_file, 'r').read())
             scores = json.load(open(scores_file, 'r'))
         except json.decoder.JSONDecodeError:
             raise SubmissionException("Could not decode scores json properly, it contains an error.")
@@ -458,10 +455,19 @@ class Run:
 
         logger.info(f"Metadata output: {prog_status}")
 
-        with open(os.path.join(self.output_dir, 'metadata'), 'w') as f:
+        metadata_path = os.path.join(self.output_dir, 'metadata')
+
+        if os.path.exists(metadata_path):
+            raise SubmissionException("Error, the output directory already contains a metadata file. This file is used "
+                                      "to store exitCode and other data, do not write to this file manually.")
+
+        with open(metadata_path, 'w') as f:
             f.write(yaml.dump(prog_status, default_flow_style=False))
 
-        self._put_dir(self.result, self.output_dir)
+        if not self.is_scoring:
+            self._put_dir(self.prediction_result, self.output_dir)
+        else:
+            self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
         logger.info("We're not cleaning up yet... TODO: cleanup!")
