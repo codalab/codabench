@@ -1,6 +1,6 @@
 <task-management>
     <div class="ui icon input">
-        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{ filter }">
+        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{filter.bind(this, undefined)}">
         <i class="search icon"></i>
     </div>
     <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
@@ -10,7 +10,7 @@
     <div class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
-    <table class="ui selectable celled compact table">
+    <table class="ui {selectable: tasks.length > 0} celled compact table">
         <thead>
         <tr>
             <th>Name</th>
@@ -32,14 +32,20 @@
                 </button>
             </td>
         </tr>
+
+        <tr if="{tasks.length === 0}">
+            <td class="center aligned" colspan="4">
+                <em>No Tasks Yet!</em>
+            </td>
+        </tr>
         </tbody>
         <tfoot>
         <!-------------------------------------
                   Pagination
         ------------------------------------->
-        <tr>
-            <th colspan="6">
-                <div class="ui right floated pagination menu">
+        <tr if="{tasks.length > 0}">
+            <th colspan="4">
+                <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
                     </a>

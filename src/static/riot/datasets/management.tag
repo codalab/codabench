@@ -23,7 +23,7 @@
     <!-------------------------------------
                   Data Table
       ------------------------------------->
-    <table class="ui selectable celled compact table">
+    <table class="ui {selectable: datasets.length > 0} celled compact table">
         <thead>
         <tr>
             <th>Name</th>
@@ -53,6 +53,12 @@
                 </button>
             </td>
         </tr>
+
+        <tr if="{datasets.length === 0}">
+            <td class="center aligned" colspan="6">
+                <em>No Datasets Yet!</em>
+            </td>
+        </tr>
         </tbody>
         <tfoot>
 
@@ -60,8 +66,8 @@
                       Pagination
         ------------------------------------->
         <tr>
-            <th colspan="6">
-                <div class="ui right floated pagination menu">
+            <th colspan="6" if="{datasets.length > 0}">
+                <div class="ui right floated pagination menu" if="{datasets.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
                     </a>
