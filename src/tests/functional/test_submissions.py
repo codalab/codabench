@@ -39,7 +39,8 @@ class TestSubmissions(SeleniumTestCase):
         created_files = [
             submission.data.data_file.name,
             submission.prediction_result.name,
-            submission.scoring_result.name,
+            # TODO: Score the submission
+            # submission.scoring_result.name,
         ]
         for detail in submission.details.all():
             created_files.append(detail.data_file.name)
