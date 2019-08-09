@@ -253,7 +253,7 @@ def _get_datetime(field):
         return None
     elif isinstance(field, datetime.date):
         # turn the date into a datetime @ midnight that day
-        field = datetime.datetime.combine(datetime.date.today(), datetime.time())
+        field = datetime.datetime.combine(field, datetime.time())
     elif not isinstance(field, datetime.datetime):
         field = parser.parse(field)
     field = field.replace(tzinfo=now().tzinfo)
