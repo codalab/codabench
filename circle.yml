@@ -41,7 +41,6 @@ jobs:
       - run: npm run build-stylus
       - run: npm run build-riot
 
-
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
       - run: cp .env_sample .env
@@ -74,6 +73,9 @@ jobs:
             exit 0;
           "
 
+      # Right now only caching pip.. better than nothing!
+      - restore_cache:
+          key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
       - run: sudo pip install -r requirements.dev.txt
       - save_cache:
           key: codalab-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}
