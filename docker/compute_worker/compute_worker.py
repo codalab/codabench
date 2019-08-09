@@ -282,9 +282,7 @@ class Run:
             '--security-opt=no-new-privileges',
 
             # Set the volumes
-            # '-v', f'{program_dir}:/app',
             '-v', f'{program_dir}:/app/program',
-
             '-v', f'{self.output_dir}:/app/output',
 
             # Start in the right directory
@@ -301,12 +299,6 @@ class Run:
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "program")}:/app/ingested_program']
 
         if self.input_data:
-            # if kind == 'ingestion':
-            #     # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
-            #     docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
-            # else:
-            #     # Unhidden
-            #     docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
 
         if self.is_scoring:

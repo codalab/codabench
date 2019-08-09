@@ -176,7 +176,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     run_arguments = {
         "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
         "secret": submission.secret,
-        "docker_image": "codalab/codalab-legacy:py3",
+        "docker_image": submission.phase.competition.docker_image,
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
         "is_scoring": is_scoring,
@@ -511,7 +511,7 @@ def unpack_competition(competition_dataset_pk):
                 phase2 = competition['phases'][i]
                 if phase1['end'] is None:
                     raise CompetitionUnpackingException(
-                        f'Phase: {phase1.get("name", phase2["index"])} must have an end time because it has a phase after it.'
+                        f'Phase: {phase1.get("name", phase1["index"])} must have an end time because it has a phase after it.'
                     )
                 elif phase2['start'] < phase1['end']:
                     raise CompetitionUnpackingException(
