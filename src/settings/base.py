@@ -100,9 +100,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(
 
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
-# FIXME: change these addresses to something more relevant
-DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
-SERVER_EMAIL = 'Do Not Reply <donotreply@imagefirstuniforms.com>'
+DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@blank.com>'
+SERVER_EMAIL = 'Do Not Reply <donotreply@blank.com>'
 
 LOGIN_REDIRECT_URL = '/'
 
@@ -248,7 +247,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [('redis', 6379)],
+            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
         },
         # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },
@@ -268,6 +267,8 @@ CHANNEL_LAYERS = {
 # =============================================================================
 STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
 DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
+
+TEMP_SUBMISSION_STORAGE = os.environ.get('TEMP_SUBMISSION_STORAGE', '/codalab_tmp')
 
 STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
 STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'

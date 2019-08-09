@@ -1,0 +1,8 @@
+{% extends 'emails/base_email.txt' %}
+
+{% block content %}
+The user {{ participant.user.username }} was revoked permission to your competition:
+{{ participant.competition.title }} -> http://{{ site.domain }}{{ participant.competition.get_absolute_url }}
+
+Participants can be managed from the admin tab of your competition
+{% endblock %}

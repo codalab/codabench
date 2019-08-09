@@ -77,6 +77,10 @@ CODALAB.api = {
     re_run_phase_submissions: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/rerun_submissions/`)
     },
+    submit_competition_registration: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/register/`)
+    },
+
     get_front_page_competitions: function (data) {
         return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
     },
@@ -240,6 +244,15 @@ CODALAB.api = {
     ---------------------------------------------------------------------*/
     user_lookup: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}user_lookup/`, filters)
+    },
+    /*---------------------------------------------------------------------
+         Participants
+    ---------------------------------------------------------------------*/
+    get_participants: filters => {
+        return CODALAB.api.request('GET', `${URLS.API}participants/`, filters)
+    },
+    update_participant_status: (pk, data) => {
+        return CODALAB.api.request('PATCH', `${URLS.API}participants/${pk}/`, data)
     },
 
     /*---------------------------------------------------------------------

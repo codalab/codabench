@@ -44,6 +44,25 @@ class DataSerializer(serializers.ModelSerializer):
         return instance
 
 
+class DataDetailSerializer(serializers.ModelSerializer):
+    created_by = serializers.CharField(source='created_by.username')
+
+    class Meta:
+        model = Data
+        fields = (
+            'id',
+            'created_by',
+            'created_when',
+            'name',
+            'type',
+            'description',
+            'is_public',
+            'key',
+            'was_created_by_competition',
+            'in_use'
+        )
+
+
 class DataGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataGroup

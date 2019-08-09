@@ -1,0 +1,8 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+    <p>The user {{ participant.user.username }} requested access to your competition:</p>
+    <a href="http://
+            {{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
+    <p>Participants can be managed from the admin tab of your competition</p>
+{% endblock %}

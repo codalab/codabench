@@ -163,11 +163,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     run_arguments = {
-        # TODO! Remove this hardcoded api url...
-        "api_url": "http://django/api",
-        # "program_data": make_url_sassy(submission.data.data_file.name),
-        # "scoring_program": make_url_sassy(submission.phase.scoring_program.data_file.name),
-        # "ingestion_program": make_url_sassy(submission.phase.ingestion_program.data_file.name),
+        "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
         "secret": submission.secret,
         "docker_image": "python:3.7",
         "execution_time_limit": submission.phase.execution_time_limit,
@@ -305,6 +301,8 @@ def unpack_competition(competition_dataset_pk):
                 "title": competition_yaml.get('title'),
                 # NOTE! We use 'logo' instead of 'image' here....
                 "logo": None,
+                "registration_required": competition_yaml.get('registration_required', False),
+                "registration_auto_approve": competition_yaml.get('registration_auto_approve', False),
                 "pages": [],
                 "phases": [],
                 "leaderboards": [],
@@ -312,6 +310,24 @@ def unpack_competition(competition_dataset_pk):
                 "tasks": {},
                 "solutions": {},
             }
+
+            # ---------------------------------------------------------------------
+            # Terms
+            if competition['registration_required']:
+                terms_path = competition_yaml.get('terms')
+                if not terms_path:
+                    raise CompetitionUnpackingException('The registration_required flag is set to true, but a file '
+                                                        'containing the terms has not been supplied in the required '
+                                                        'location')
+                try:
+                    terms_content = open(os.path.join(temp_directory, terms_path)).read()
+
+                    if not terms_content:
+                        raise CompetitionUnpackingException(f"{terms_path} is empty, it must contain content.")
+
+                    competition['terms'] = terms_content
+                except FileNotFoundError:
+                    raise CompetitionUnpackingException(f"Unable to find page: {terms_path}")
 
             # ---------------------------------------------------------------------
             # Logo
