@@ -190,7 +190,7 @@
             // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
                 if (phase.tasks && typeof(phase.tasks[0]) === "object") {
-                    phase.tasks = _.map(phase.tasks, task => task.value)
+                    phase.tasks = _.map(phase.tasks, task => task.key)
                 }
                 switch (phase.index) {
                     case current_index:

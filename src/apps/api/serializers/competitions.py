@@ -4,7 +4,7 @@ from rest_framework import serializers
 from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
-from api.serializers.tasks import TaskSerializerSimple
+from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from profiles.models import User
 from tasks.models import Task
@@ -34,7 +34,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    tasks = TaskSerializerSimple(many=True)
+    tasks = TaskListSerializer(many=True)
 
     class Meta:
         model = Phase
@@ -122,6 +122,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
+    participant_count = serializers.IntegerField(read_only=True)
+    submission_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Competition
@@ -139,6 +141,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'leaderboards',
             'collaborators',
             'participant_status',
+            'participant_count',
+            'submission_count',
             'registration_required'
         )
 
