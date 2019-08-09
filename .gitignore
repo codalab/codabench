@@ -10,6 +10,7 @@ staticfiles/
 uploads/
 venv/
 var/
+var_*/
 certs/
 
 src/static/output.css
@@ -21,3 +22,4 @@ src/static/generated/*
 db.sqlite3
 
 celerybeat-schedule
+package-lock.json
