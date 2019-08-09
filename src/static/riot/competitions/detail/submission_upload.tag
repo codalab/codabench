@@ -12,15 +12,26 @@
             </div>
         </div>
 
-        <div id="output-modal" class="ui modal" ref="modal">
-            <i id="close-modal" class="close icon"></i>
-            <div class="header">Output</div>
+        <div class="ui styled fluid accordion {hidden: !display_output}" ref="modal">
+            <div class="title">
+                <i class="dropdown icon"></i>
+                {selected_submission.name}
+            </div>
             <div class="content">
-                <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
-                <!-- We have to have this on a gross line so Pre formatting stays nice -->
-                <pre class="submission_output" ref="submission_output"><virtual if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                <div id="submission-output" class="ui" ref="modal">
+                    <div class="header">Output</div>
+                    <div class="content">
+                        <canvas class="output-chart" height="200" ref="chart"></canvas>
+                        <!-- We have to have this on a gross line so Pre formatting stays nice -->
+                        <pre class="submission_output" ref="submission_output"><virtual
+                                if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                each="{ line in lines[selected_submission.id] }">{ line }</virtual>
+                </pre>
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
     <script>
         var self = this
@@ -31,6 +42,7 @@
         self.errors = {}
         self.lines = {}
         self.selected_submission = {}
+        self.display_output = false
 
         self.graph_config = {
             type: 'line',
@@ -81,7 +93,7 @@
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
-
+            $('.ui.accordion', self.root).accordion()
 
 
             /*
@@ -121,9 +133,9 @@
                     var event_data = event.data.split(';')[1]
                     var data = JSON.parse(event_data);
 
-                    if(data.type === "error_rate_update") {
+                    if (data.type === "error_rate_update") {
                         self.add_graph_data_point(data.error_rate)
-                    } else if(data.type === "message") {
+                    } else if (data.type === "message") {
                         self.add_line(data.message)
                     }
                 } catch (e) {
@@ -134,7 +146,7 @@
             ws.open()
         })
 
-        self.add_graph_data_point = function(number) {
+        self.add_graph_data_point = function (number) {
             // Add empty label for the graph, may not be necessary?
             self.chart.data.labels.push('');
 
@@ -145,12 +157,12 @@
             self.chart.update();
         }
 
-        self.add_line = function(line) {
+        self.add_line = function (line) {
             var line_parts = line.split(/;(.+)/)
             var submission_id = line_parts[0]
             var message = line_parts[1]
 
-            if(!self.lines[submission_id]) {
+            if (!self.lines[submission_id]) {
                 self.lines[submission_id] = []
             }
 
@@ -183,7 +195,7 @@
         }
 
         self.upload = function () {
-            $(self.refs.modal).modal('show')
+            self.display_output = true
 
             var data_file_metadata = {
                 type: 'submission'
@@ -206,7 +218,7 @@
                         "data": data.key,
                         "phase": self.selected_phase.id
                     })
-                        .done(function(data){
+                        .done(function (data) {
                             console.log("Submission created:")
                             console.log(data)
                             CODALAB.events.trigger('new_submission_created', data)
@@ -236,10 +248,10 @@
                 })
         }
 
-        CODALAB.events.on('phase_selected', function(selected_phase) {
+        CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
         })
-        CODALAB.events.on('submission_selected', function(selected_submission) {
+        CODALAB.events.on('submission_selected', function (selected_submission) {
             console.log("selected_submission")
             console.log(selected_submission)
             self.selected_submission = selected_submission
@@ -254,5 +266,8 @@
 
         code
             background hsl(220, 80%, 90%)
+
+        .hidden
+            display none
     </style>
 </submission-upload>

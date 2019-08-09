@@ -32,8 +32,7 @@ class TestSubmissions(SeleniumTestCase):
                 time += .5
             assert celery_app.called
             assert celery_app.call_args[1]['queue'] == 'compute-worker'
-        assert self.element_is_visible('#output-modal')
-        self.execute_script("$('#output-modal').modal('hide')")
+        assert self.element_is_visible('#submission-output')
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission.zip'
         submission = self.user.submission.first()
         created_files = [

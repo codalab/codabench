@@ -2,7 +2,7 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="active item" data-tab="home-tab">Home</div>
+            <div class="item" data-tab="home-tab">Home</div>
             <div class="item" data-tab="pages-tab">Get Started</div>
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
@@ -45,7 +45,7 @@
             </div>
         </div> -->
 
-        <div class="ui home-tab active tab" data-tab="home-tab">
+        <div class="ui home-tab tab" data-tab="home-tab">
             <div class="ui grid">
                 <div class="row">
                     <div class="seven wide column">
@@ -157,12 +157,15 @@
                     <div class="twelve wide centered column">
                         <div each="{ phase, i in competition.phases }" class="ui segments">
                             <div class="ui teal segment phase-header">
-                                <span class="asdf underline">{phase.name}</span>
+                                <span class="underline">{phase.name}</span>
                             </div>
                             <div class="ui bottom attached segment">
-                                <div class="phase-label">Start: </div><div class="phase-info">{pretty_date(phase.start)}</div>
-                                <div class="phase-label">End: </div><div class="phase-info">{pretty_date(phase.end)}</div>
-                                <span class="phase-label">Description: </span><div class="phase-markdown" id="phase_{i}"></div>
+                                <div class="phase-label">Start:</div>
+                                <div class="phase-info">{pretty_date(phase.start)}</div>
+                                <div class="phase-label">End:</div>
+                                <div class="phase-info">{pretty_date(phase.end)}</div>
+                                <span class="phase-label">Description: </span>
+                                <div class="phase-markdown" id="phase_{i}"></div>
                             </div>
                         </div>
                     </div>
@@ -173,9 +176,17 @@
         <!-- Submissions tab-->
         <div class="submission-tab ui tab" data-tab="participate-tab">
             <!-- Tab Content !-->
-            <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
+            <!-- <select class="ui dropdown" ref="phase" onchange="{ phase_selected }">
                 <option each="{ phase in competition.phases }" value="{ phase.id }">Phase: { phase.name }</option>
-            </select>
+            </select> -->
+
+            <div class="ui button-container">
+                <div class="ui inline button {active: selected_phase_index == phase.id}"
+                     each="{ phase in competition.phases }"
+                     onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
+                </div>
+            </div>
+
             <div>
                 <submission-upload phases="{ competition.phases }"></submission-upload>
             </div>
@@ -256,6 +267,7 @@
             <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
+
     <style type="text/stylus">
         $blue = #2c3f4c
         $teal = #00bbbb
@@ -385,8 +397,6 @@
             .phase-info
                 margin-bottom 10px
 
-
-
         .admin-tab
             margin 0 auto
             width 100%
@@ -423,12 +433,11 @@
 
     </style>
     <script>
-        $('.tabular.menu .item').tab(); // Activate tabs
-
         var self = this
 
         self.competition = {}
         self.files = {}
+        self.selected_phase_index = undefined
 
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
@@ -437,7 +446,14 @@
             if (self.competition.is_admin) {
                 self.update_files()
             }
-            $('.tabular.menu .item', self.root).tab();
+
+            $('.tabular.menu .item', self.root).tab({
+                history: true,
+                historyType: 'hash',
+            })
+
+            $('.tabular.menu .item', self.root).tab('change tab', (window.location.hash || 'home-tab').replace('#/', ''))
+
             _.forEach(competition.pages, (page, index) => {
                 $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
             })
@@ -478,10 +494,14 @@
                     toastr.error("Error trying to create competition dump.")
                 })
         }
-        self.phase_selected = function (event, data) {
-            // Really gross way of getting phase from the <select>'s <option each={ phase in phases}> jazz
-            CODALAB.events.trigger('phase_selected', self.refs.phase.options[self.refs.phase.selectedIndex]._tag.phase)
+
+        self.phase_selected = function (data, event) {
+            self.selected_phase_index = data.id
+            self.update()
+
+            CODALAB.events.trigger('phase_selected', data)
         }
+
         self.update_files = (e) => {
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
