@@ -98,9 +98,6 @@ class Competition(ChaHubSaveMixin, models.Model):
             data['user'] = chahub_id
         return [data]
 
-    def get_chahub_is_valid(self):
-        return self.published
-
 
 class CompetitionCreationTaskStatus(models.Model):
     STARTING = "Starting"
@@ -352,7 +349,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         return self.status == self.FINISHED and self.is_public and self.phase.competition.published
 
 
-class CompetitionParticipant(models.Model):
+class CompetitionParticipant(ChaHubSaveMixin, models.Model):
     UNKNOWN = 'unknown'
     DENIED = 'denied'
     APPROVED = 'approved'
@@ -373,6 +370,25 @@ class CompetitionParticipant(models.Model):
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
+
+    def get_chahub_is_valid(self):
+        """Override this to validate the specific model before it's sent
+
+        Example:
+            return comp.is_published
+        """
+        # By default, always push
+        return True
+
+    def get_chahub_endpoint(self):
+        return 'participants/'
+
+    def get_chahub_data(self):
+        return [{
+            'competition': self.competition.id,
+            'user': self.user.id,
+            'status': self.status,
+        }]
 
 
 class Page(models.Model):
