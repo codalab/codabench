@@ -1,6 +1,7 @@
 import uuid
 from unittest import mock
 
+from django.test import override_settings
 from django.urls import reverse
 
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory
@@ -15,6 +16,7 @@ class TestSubmissions(SeleniumTestCase):
         self.phase = PhaseFactory(competition=self.competition)
         CompetitionParticipantFactory(user=self.user, competition=self.competition, status='approved')
 
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=False)
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
         self.get(reverse('competitions:detail', kwargs={'pk': self.competition.id}))

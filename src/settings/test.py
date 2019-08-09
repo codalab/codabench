@@ -11,6 +11,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 # Use in memory database
 DATABASES['default'] = {  # noqa: F405
     'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': ':memory:',
 }
 
 # Must override this so djdt doesn't screw up tests
