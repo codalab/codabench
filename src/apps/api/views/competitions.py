@@ -42,17 +42,25 @@ class CompetitionViewSet(ModelViewSet):
                 qs = qs.select_related('created_by')
                 qs = qs.prefetch_related(
                     'phases',
+                    'phases__submissions',
+                    'phases__tasks',
+                    'phases__tasks__solutions__data',
                     'pages',
                     'leaderboards',
                     'leaderboards__columns',
                     'collaborators',
                 )
-                sub_query = CompetitionParticipant.objects.filter(
+                participant_status_query = CompetitionParticipant.objects.filter(
                     competition=OuterRef('pk'),
                     user=self.request.user
                 ).values_list('status')[:1]
-                qs = qs.annotate(participant_count=Count('participants'))
-                qs = qs.annotate(participant_status=Subquery(sub_query))
+                participant_count_query = CompetitionParticipant.objects.filter(
+                    competition=OuterRef('pk'),
+                    status=CompetitionParticipant.APPROVED
+                ).values_list('id')
+                qs = qs.annotate(participant_count=Count(Subquery(participant_count_query), distinct=True))
+                qs = qs.annotate(submission_count=Count('phases__submissions'))
+                qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
         qs = qs.order_by('created_when')
 
