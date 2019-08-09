@@ -75,10 +75,18 @@ def run_wrapper(run_args):
 
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
-    to.  Currently, the run_args are:
+    to. There is also a secret key to do special commands for just this submission.
 
+    Some example API's you can hit using this secret key are:
 
+        push_scores
 
+        (maybe later:
+            get previous submission
+            get sibling submission
+            get top submission
+            get some different dataset
+            post results to twitter)
     """
 
     def __init__(self, run_args):
