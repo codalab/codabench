@@ -3,12 +3,16 @@ services:
   django:
     environment:
       - SELENIUM_HOSTNAME=selenium
+      - SUBMISSIONS_API_URL=http://django:36475/api
+    ports:
+      - 36475:36475
 
-  #-----------------------------------------------
-  # Firefox for Selenium
-  #-----------------------------------------------
   selenium:
     image: selenium/standalone-firefox-debug:3.141.59
+    volumes:
+      - ./src/tests/functional/test_files:/test_files/
     ports:
       - 4444:4444
       - 5900:5900
+
+#  compute_worker:

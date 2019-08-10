@@ -29,6 +29,7 @@ from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from datasets.models import Data
+from settings.test import IS_TESTING
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
 
@@ -94,7 +95,7 @@ COLUMN_FIELDS = [
 ]
 
 
-def send_submission(submission, task, is_scoring, run_args):
+def _send_submission(submission, task, is_scoring, run_args):
     if not is_scoring:
         submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         run_args['prediction_result'] = make_url_sassy(
@@ -157,8 +158,17 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-@app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk, task_pk=None, is_scoring=False):
+    if IS_TESTING:
+        return _run_submission(submission_pk, task_pk=task_pk, is_scoring=is_scoring)
+    else:
+        return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
+
+
+@app.task(queue='site-worker', soft_time_limit=60)
+def _run_submission(submission_pk, task_pk=None, is_scoring=False):
+    """This function is wrapped so that when we run tests we can run this function not
+    via celery"""
     select_models = (
         'phase',
         'phase__competition',
@@ -199,11 +209,12 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
                     parent=submission,
                 )
                 sub.save(ignore_submission_limit=True)
-                run_submission.apply_async((sub.id, task.id))
+                # run_submission.apply_async((sub.id, task.id))
+                run_submission(sub.id, task.id)
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
-            send_submission(
+            _send_submission(
                 submission=submission,
                 task=task,
                 run_args=run_arguments,
@@ -211,7 +222,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
             )
     else:
         task = Task.objects.get(id=task_pk)
-        send_submission(
+        _send_submission(
             submission=submission,
             task=task,
             run_args=run_arguments,

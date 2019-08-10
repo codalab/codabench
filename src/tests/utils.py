@@ -2,6 +2,7 @@ import os
 import socket
 
 import pytest
+from channels.testing import ChannelsLiveServerTestCase
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
@@ -22,11 +23,14 @@ class CodalabTestHelpersMixin(object):
 
 
 @pytest.mark.e2e
-class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
+class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
+# class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     urls = 'urls'  # TODO: what the F is this???
     serialized_rollback = True
 
     host = '0.0.0.0'
+    port = 36475
+    serve_static = True
 
     test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
 
