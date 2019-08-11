@@ -97,8 +97,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         cls.selenium.quit()
         super().tearDownClass()
 
-    @staticmethod
-    def wait(seconds):
+    def wait(self, seconds):
         return sleep(seconds)
 
     def setUp(self):
@@ -110,6 +109,9 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
     def find(self, selector):
         return self.selenium.find_element_by_css_selector(selector)
+
+    def find_text_in_class(self, klass, text):
+        return self.selenium.find_element_by_xpath(f"//*[@class='{klass}' and text()[contains(., '{text}')]]")
 
     def screenshot(self, name="screenshot.png"):
         self.selenium.get_screenshot_as_file(name)

@@ -85,7 +85,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./var/postgres:/var/lib/postgresql/data
+      - ./var/postgres:/var/lib/postgresql/data:delegated
     logging:
       options:
         max-size: "20k"
@@ -102,7 +102,7 @@ services:
       - 5672:5672
     volumes:
       # To save rabbit state between container ups/downs
-      - ./var/rabbit:/var/lib/rabbit/
+      - ./var/rabbit:/var/lib/rabbit/:delegated
     logging:
       options:
         max-size: "20k"
