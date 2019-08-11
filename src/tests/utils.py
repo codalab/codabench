@@ -1,14 +1,22 @@
+import multiprocessing
 import os
 import socket
+import traceback
 
 import pytest
 from channels.testing import ChannelsLiveServerTestCase
+from daphne.endpoints import build_endpoint_description_strings
+from daphne.server import Server
+from daphne.testing import DaphneProcess
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 from time import sleep
+
+from twisted.internet import reactor
+
 from utils.storage import BundleStorage, PublicStorage
 
 
@@ -22,17 +30,56 @@ class CodalabTestHelpersMixin(object):
         self.find('.submit.button').click()
 
 
+
+class CodalabDaphneProcess(DaphneProcess):
+
+    # have to set port in this hidden way so we can override it later (Daphne uses
+    # fancy multiprocessing shared memory vars we have to work around
+    _port = 36475
+
+    def __init__(self, host, application, kwargs=None, setup=None, teardown=None):
+        super().__init__(host, application, kwargs=None, setup=None, teardown=None)
+
+        # Move our port into shared memory
+        self.port.value = self._port
+
+    def run(self):
+        """Overriding this _just_ for the port bit...!"""
+        try:
+            # Create the server class -- with our fancy multiprocessing variable (note
+            # `self.port.value`)
+            endpoints = build_endpoint_description_strings(host=self.host, port=self.port.value)
+            self.server = Server(
+                application=self.application,
+                endpoints=endpoints,
+                signal_handlers=False,
+                **self.kwargs
+            )
+            # Set up a poller to look for the port
+            reactor.callLater(0.1, self.resolve_port)
+            # Run with setup/teardown
+            self.setup()
+            try:
+                self.server.run()
+            finally:
+                self.teardown()
+        except Exception as e:
+            # Put the error on our queue so the parent gets it
+            self.errors.put((e, traceback.format_exc()))
+
+
 @pytest.mark.e2e
 class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 # class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     urls = 'urls'  # TODO: what the F is this???
     serialized_rollback = True
 
+    ProtocolServerProcess = CodalabDaphneProcess
     host = '0.0.0.0'
-    port = 36475
     serve_static = True
 
-    test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
+    # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
+    test_files_dir = f'/test_files'
 
     @classmethod
     def setUpClass(cls):

@@ -1,3 +1,5 @@
+import os
+
 from django.urls import reverse
 
 from factories import UserFactory
@@ -13,7 +15,7 @@ class TestCompetitions(SeleniumTestCase):
     def test_competition_upload(self):
         self.get(reverse('competitions:upload'))
         self.circleci_screenshot(name='uploading_task.png')
-        self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/competition.zip')
+        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
         time = 0
         while time < 10 and not self.element_is_visible('div .ui.success.message'):
             self.wait(.5)

@@ -1,3 +1,4 @@
+import os
 import uuid
 from unittest import mock
 
@@ -40,9 +41,11 @@ class TestSubmissions(SeleniumTestCase):
 
         print(self.live_server_url)
 
-        import time;time.sleep(1000)
+        # import time;time.sleep(1000)
 
-        self.find('input[ref="file_input"]').send_keys(f'{self.test_files_dir}/submission.zip')
+        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
+
+        import time;time.sleep(1000)
 
         assert self.element_is_visible('#output-modal')
         self.execute_script("$('#output-modal').modal('hide')")

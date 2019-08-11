@@ -151,19 +151,19 @@
     <script src="https://cdn.jsdelivr.net/npm/luxon@1.13.1/build/global/luxon.min.js"></script>
 
     <!-- Ours -->
-    <script src="{% static "js/ours/client.js" %}"></script>
-    <script src="{% static "js/ours/init.js" %}"></script>
-    <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
-    <script src="{% static "js/ours/utils.js" %}"></script>
-    <script src="{% static "js/jquery.form.serializer.js" %}"></script>
-    <script src="{% static "js/Chart.bundle.js" %}"></script>
-    <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
-    <script src="{% static "generated/riot.js" %}"></script>
+
 
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
-        CODALAB.state.user = JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+        CODALAB = {
+            state: {
+                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+            }
+        }
+        {#CODALAB.state.user = JSON.parse("{{ USER_JSON_DATA|escapejs }}")#}
+
+        {# Doing this here to append functionality to user data #}
         CODALAB.state.user.has_competition_admin_privileges = competition => {
             let user = CODALAB.state.user
             if (user.is_superuser || user.is_staff) {
@@ -219,9 +219,17 @@
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
+    </script>
 
+    <script src="{% static "js/ours/client.js" %}"></script>
+    <script src="{% static "js/ours/init.js" %}"></script>
+    <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+    <script src="{% static "js/ours/utils.js" %}"></script>
+    <script src="{% static "js/jquery.form.serializer.js" %}"></script>
+    <script src="{% static "js/Chart.bundle.js" %}"></script>
+    <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
+    <script src="{% static "generated/riot.js" %}"></script>
 
-</script>
 {% block extra_js %}
 {% endblock %}
 {% block extra_body %}
