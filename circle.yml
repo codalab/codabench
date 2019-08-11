@@ -10,7 +10,7 @@ jobs:
   test:
     machine:
       docker_layer_caching: true
-      
+
     environment:
       BASH_ENV: ~/.nvm/nvm.sh
       MINIO_ACCESS_KEY: testkey
