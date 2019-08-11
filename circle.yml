@@ -37,15 +37,15 @@ jobs:
       - checkout
 #      - setup_remote_docker
 
-      # Directory for any test reports
-      - run: mkdir test-reports
-
-      # Setup env, background tasks, cache
-      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-      - run: nvm install 6.14.4
-      - run: npm install stylus riot@3.13.2 -g
-      - run: npm run build-stylus
-      - run: npm run build-riot
+#      # Directory for any test reports
+#      - run: mkdir test-reports
+#
+#      # Setup env, background tasks, cache
+#      - run: curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+#      - run: nvm install 6.14.4
+#      - run: npm install stylus riot@3.13.2 -g
+#      - run: npm run build-stylus
+#      - run: npm run build-riot
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
