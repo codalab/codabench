@@ -8,6 +8,7 @@ version: 2
 
 jobs:
   test:
+    machine: true
     environment:
       BASH_ENV: ~/.nvm/nvm.sh
       MINIO_ACCESS_KEY: testkey
