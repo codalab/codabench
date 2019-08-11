@@ -48,7 +48,7 @@ jobs:
 
       # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
       - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
-      - run: cp .env_sample .env
+      - run: cp .env_circleci .env
 
       # Start compute worker
       - run:
