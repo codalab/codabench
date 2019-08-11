@@ -46,15 +46,15 @@ jobs:
       - run: npm run build-stylus
       - run: npm run build-riot
 
+      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
+      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
+      - run: cp .env_sample .env
+
       # Start compute worker
       - run:
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
-
-      # Make our environment take all .env variables MAKE SURE THIS MATCHES $BASH_ENV!
-      - run: sed -i 's/docker.for.mac.localhost/localhost/g' .env_sample
-      - run: cp .env_sample .env
 
       - run:
           name: Download Selenium
