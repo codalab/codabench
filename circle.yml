@@ -23,7 +23,7 @@ jobs:
       # NOTE! port 9000 here should match $MINIO_PORT
       AWS_S3_ENDPOINT_URL: http://localhost:9000/
       AWS_QUERYSTRING_AUTH: False
-      DB_HOST: postgres
+      DB_HOST: localhost
 
     docker:
       - image: circleci/python:3.6-jessie-browsers
