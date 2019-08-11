@@ -58,8 +58,30 @@ jobs:
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml run createbuckets
-#            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test -m "not e2e"
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+
+
+
+
+
+
+# Includes all tests here, have to comment out entirely, comments in the middle of command break things?
+#      - run:
+#          command: |
+#            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
+#            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml run createbuckets
+#            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test -m "not e2e"
+#            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+
+
+
+
+
+
+
+
+
+
 
 #      - run:
 #          name: Download Selenium
