@@ -46,7 +46,7 @@
         </div> -->
 
         <div class="ui home-tab tab" data-tab="home-tab">
-            <div class="ui grid">
+            <div class="ui two column grid">
                 <div class="row">
                     <div class="seven wide column">
                         <div class="short-description">
@@ -68,7 +68,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                <div class="sixteen wide row">
                     <div class="leaderboard">
                         <h1>Top 10 Results</h1>
                         <a class="float-right" href="#">View Full Results<i class="angle right icon"></i>
@@ -136,13 +136,20 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
+                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                                Files
+                            </div>
                         </div>
                     </div>
                     <div class="twelve wide column">
                         <div each="{ page, i in competition.pages }" class="ui {active: i == 0} tab"
                              data-tab="_tab_page{page.index}">
                             <div class="ui" id="page_{i}">
-
+                            </div>
+                        </div>
+                        <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
+                            <div class="ui" id="files">
+                                Files Placeholder
                             </div>
                         </div>
                     </div>
@@ -244,10 +251,12 @@
             <div class="ui">
                 <submission-manager admin="true" competition="{ competition }"></submission-manager>
             </div>
-            <div class="ui tab" data-tab="_tab_participant_management">
-                <div class="ui">
-                    <participant-manager competition_id="{competition.id}"></participant-manager>
-                </div>
+        </div>
+
+        <!-- Manage Participants Modal -->
+        <div class="ui manage-participants modal">
+            <div class="ui">
+                <participant-manager competition_id="{competition}"></participant-manager>
             </div>
         </div>
     </div>
@@ -437,6 +446,7 @@
         self.selected_phase_index = undefined
 
         CODALAB.events.on('competition_loaded', function (competition) {
+            console.log(competition)
             self.competition = competition
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()

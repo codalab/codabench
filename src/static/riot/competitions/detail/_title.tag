@@ -106,9 +106,10 @@
 <comp-detail-title>
     <div class="title-flex">
         <div class="competition-logo">
-            <!-- <img class="competition-image ui medium circular image" height="200" width="200" alt="Competition Logo" src="{ competition.logo }"> -->
             <img class="competition-image ui medium circular image" height="200" width="200" alt="Competition Logo"
-                 src="https://picsum.photos/200">
+                 src="{ competition.logo }">
+            <!-- <img class="competition-image ui medium circular image" height="200" width="200" alt="Competition Logo"
+                 src="https://picsum.photos/200"> -->
         </div>
         <div class="competition-details">
             <div class="competition-name">
@@ -135,13 +136,13 @@
                 <div class="organized-by disc-label">
                     Organized by:
                     <span class="organizer-name desc-item">
-                        An Organizer
+                        {competition.created_by}
                     </span>
                 </div>
                 <div class="phase-end disc-label">
                     Current phase ends:
                     <span class="organizer-name desc-item">
-                        July 36th, 2045, 00:00
+                        {get_end_date(competition)}
                     </span>
                 </div>
                 <div class="competition-secret-key" if="{ competition.admin_privilege }">
@@ -208,6 +209,18 @@
             document.execCommand("copy");
             window.getSelection().removeAllRanges();// to deselect
             $('.send-pop').popup('toggle')
+        }
+
+        self.get_end_date = function (competition) {
+            let end_date = _.get(
+                _.first(
+                    _.filter(
+                        competition.phases, phase => {
+                            return phase.status === 'Current'
+                        })),
+                'end')
+            return end_date ? pretty_date(end_date) : 'Never'
+
         }
 
     </script>

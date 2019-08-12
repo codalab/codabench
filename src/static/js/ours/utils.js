@@ -51,7 +51,7 @@ window.delay = (function () {
 })();
 
 /* ----------------------------------------------------------------------------
- timeSince
+ Time Utils
  ----------------------------------------------------------------------------*/
 function timeSince(date) {
 
@@ -79,6 +79,14 @@ function timeSince(date) {
         return interval + " minutes";
     }
     return Math.floor(seconds) + " seconds";
+}
+
+function pretty_date(date_string) {
+    if (!!date_string) {
+        return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATETIME_FULL)
+    } else {
+        return ''
+    }
 }
 
 /* ----------------------------------------------------------------------------
