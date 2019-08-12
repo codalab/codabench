@@ -136,6 +136,16 @@
             $(self.refs.rerun_button).dropdown();
         })
 
+        self.is_admin = () => {
+            return _.get(self.selected_submission, 'admin', false)
+        }
+
+        self.filter_children = (submissions) => {
+            return _.filter(submissions, sub => {
+                return !sub.parent
+            })
+        } 
+
         self.do_nothing = event => {
             event.stopPropagation()
         }
