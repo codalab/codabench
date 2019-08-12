@@ -149,7 +149,70 @@
                         </div>
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
-                                Files Placeholder
+
+                                <table class="ui celled selectable table">
+                                    <thead>
+                                    <tr>
+                                        <th class="index-column">Download</th>
+                                        <th>Size</th>
+                                        <th>Phase</th>
+                                        <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr each="{ file, index in files }" class="file_row">
+                                        <td>
+                                            <a href="{ file.url }"><div class="ui button">{ file.name }</div></a>
+                                        </td>
+                                        <td></td>
+                                        <td>{ file.phase }</td>
+                                        <td class="center aligned">
+                                            <!-- <virtual if="{ opts.admin }">
+                                               <button class="mini ui button basic blue icon"
+                                                        data-tooltip="Rerun Submission"
+                                                        data-inverted=""
+                                                        onclick="{ rerun_submission.bind(this, file) }">
+                                                    <i class="icon redo"></i>
+
+                                                </button>
+                                                <button class="mini ui button basic yellow icon"
+                                                        data-tooltip="Cancel Submission"
+                                                        data-inverted=""
+                                                        onclick="{ cancel_submission.bind(this, file) }">
+                                                    <i class="x icon"></i>
+
+                                                </button>
+                                                <button class="mini ui button basic red icon"
+                                                        data-tooltip="Delete Submission"
+                                                        data-inverted=""
+                                                        onclick="{ delete_submission.bind(this, file) }">
+                                                    <i class="icon trash alternate"></i>
+
+                                                </button>
+                                            </virtual>
+                                            <button if="{!submission.leaderboard}"
+                                                    class="mini ui button basic green icon"
+                                                    data-tooltip="Add to Leaderboard"
+                                                    data-inverted=""
+                                                    onclick="{ add_to_leaderboard.bind(this, file) }">
+                                                <i class="icon share"></i>
+
+                                            </button>
+                                            <div if="{!!submission.leaderboard}"
+                                                 class="mini ui green button icon on-leaderboard"
+                                                 data-tooltip="On the Leaderboard"
+                                                 data-inverted=""
+                                                 onclick="{do_nothing}">
+                                                <i class="icon check"></i>
+                                            </div>
+                                            send submission to leaderboard-->
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
                             </div>
                         </div>
                     </div>
@@ -210,7 +273,7 @@
                               leaderboards="{ competition.leaderboards }"></leaderboards>
             </div>
         </div>
-        
+
         <!-- Manage Competition Modal -->
         <div class="ui manage-competition modal">
             <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
@@ -444,6 +507,7 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
+        self.competition_file = {}
 
         CODALAB.events.on('competition_loaded', function (competition) {
             console.log(competition)
@@ -513,6 +577,7 @@
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
                     self.files = data
+                    console.table(self.files)
                     self.update()
                     if (e) {
                         // Only display toast if activated from button, not CODALAB.event

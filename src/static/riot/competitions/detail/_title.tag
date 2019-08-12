@@ -157,7 +157,7 @@
         <div class="competition-stats">
             <div class="ui tiny left labeled button">
                 <a class="ui tiny basic red label">
-                    2,048
+                    {competition.participant_count}
                 </a>
                 <div class="ui tiny red button">
                     Participants
@@ -165,7 +165,7 @@
             </div>
             <div class="ui tiny left labeled button">
                 <a class="ui tiny basic teal label">
-                    1,520
+                    {competition.submission_count}
                 </a>
                 <div class="ui tiny teal button">
                     Submissions
