@@ -157,7 +157,7 @@
         <div class="competition-stats">
             <div class="ui tiny left labeled button">
                 <a class="ui tiny basic red label">
-                    {competition.participant_count}
+                    {competition.participants}
                 </a>
                 <div class="ui tiny red button">
                     Participants
@@ -190,8 +190,8 @@
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
-        })
 
+        })
 
         self.admin_modal = function (name) {
             $('.manage-' + name).modal('show')
@@ -220,7 +220,6 @@
                         })),
                 'end')
             return end_date ? pretty_date(end_date) : 'Never'
-
         }
 
     </script>
