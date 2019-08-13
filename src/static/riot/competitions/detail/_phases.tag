@@ -1,14 +1,10 @@
 <comp-detail-phases>
     <section>
         <ol class="progress-bar">
-            <li class="is-complete"><span>asdf</span></li>
             <li each="{ phase in phases }" class="{is-active: phase.status == 'Current'}">
-                <span class="phase-name">{ phase.name }</span>
-                <span class="phase-date">{get_date(phase.start)}</span>
+                <div class="phase-name">{ phase.name }<br></div>
+                <div class="phase-date">{get_date(phase.start)}</div>
             </li>
-
-            <li><span>asdf</span></li>
-
         </ol>
     </section>
 
@@ -110,11 +106,11 @@
             left auto
 
 
-        .progress-bar span
+        .progress-bar div
             transition opacity .3s ease-in-out
 
 
-        .progress-bar li:not(.is-active) span
+        .progress-bar li:not(.is-active) div
             opacity 0
 
 
@@ -130,7 +126,7 @@
             border-bottom 2px solid $teal
 
 
-        .progress-bar li:last-child span
+        .progress-bar li:last-child div
             width 200%
             display inline-block
             position absolute
@@ -159,12 +155,12 @@
             transform scale(1.33)
 
 
-        .progress-bar li:hover span,
-        .progress-bar li.is-hovered span
+        .progress-bar li:hover div,
+        .progress-bar li.is-hovered div
             opacity 1
 
 
-        .progress-bar:hover li:not(:hover) span
+        .progress-bar:hover li:not(:hover) div
             opacity 0
 
 

@@ -57,8 +57,8 @@ class CompetitionViewSet(ModelViewSet):
                 participant_count_query = CompetitionParticipant.objects.filter(
                     competition=OuterRef('pk'),
                     status=CompetitionParticipant.APPROVED
-                ).values_list('id')
-                qs = qs.annotate(participant_count=Count(Subquery(participant_count_query), distinct=True))
+                ).values_list('id', flat=True)
+                # qs = qs.annotate(participant_count=Subquery(participant_count_query))
                 qs = qs.annotate(submission_count=Count('phases__submissions'))
                 qs = qs.annotate(participant_status=Subquery(participant_status_query))
 

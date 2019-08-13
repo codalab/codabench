@@ -268,6 +268,12 @@
         <!-- Leaderboard tab-->
         <div class="results-tab ui tab" data-tab="results-tab">
             <!-- Tab Content !-->
+            <div class="ui button-container">
+                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
+                         each="{ leaderboard in competition.leaderboards }"
+                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
+                    </div>
+                </div>
             <div>
                 <leaderboards competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }"></leaderboards>
@@ -507,6 +513,7 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
+        self.selected_leaderboard_index = undefined
         self.competition_file = {}
 
         CODALAB.events.on('competition_loaded', function (competition) {
@@ -571,6 +578,13 @@
             self.update()
 
             CODALAB.events.trigger('phase_selected', data)
+        }
+
+        self.leaderboard_selected = function (data, event) {
+            self.selected_leaderboard_index = data.id
+            self.update()
+
+            CODALAB.events.trigger('leaderboard_selected', data)
         }
 
         self.update_files = (e) => {
