@@ -32,6 +32,7 @@ class Column(models.Model):
 
     class Meta:
         unique_together = ('leaderboard', 'key')
+        ordering = ('index',)
 
 
 class SubmissionScore(models.Model):

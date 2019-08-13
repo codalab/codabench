@@ -137,7 +137,8 @@ class SubmissionDetailSerializer(serializers.ModelSerializer):
 class SubmissionFilesSerializer(serializers.ModelSerializer):
     logs = serializers.SerializerMethodField()
     data_file = serializers.SerializerMethodField()
-    result = serializers.SerializerMethodField()
+    prediction_result = serializers.SerializerMethodField()
+    scoring_result = serializers.SerializerMethodField()
     leaderboards = serializers.SerializerMethodField()
 
     class Meta:
@@ -145,8 +146,9 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
         fields = (
             'logs',
             'data_file',
-            'result',
-            'leaderboards'
+            'prediction_result',
+            'scoring_result',
+            'leaderboards',
         )
 
     def get_logs(self, instance):
@@ -155,9 +157,13 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     def get_data_file(self, instance):
         return make_url_sassy(instance.data.data_file.name)
 
-    def get_result(self, instance):
-        if instance.result.name:
-            return make_url_sassy(instance.result.name)
+    def get_prediction_result(self, instance):
+        if instance.prediction_result.name:
+            return make_url_sassy(instance.prediction_result.name)
+
+    def get_scoring_result(self, instance):
+        if instance.scoring_result.name:
+            return make_url_sassy(instance.scoring_result.name)
 
     def get_leaderboards(self, instance):
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))

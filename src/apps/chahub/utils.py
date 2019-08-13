@@ -29,7 +29,6 @@ def send_to_chahub(endpoint, data):
     data = json.dumps(data)
 
     logger.info(f"ChaHub :: Sending to ChaHub ({url}) the following data: \n{data}")
-    print(f"ChaHub :: Sending to ChaHub ({url}) the following data: \n{data}")
     try:
         kwargs = {
             'url': url,

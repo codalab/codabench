@@ -64,11 +64,7 @@ def run_wrapper(run_args):
         run.start()
         if run.is_scoring:
             run.push_scores()
-            # TODO: Also output push result at some point, so SCORING STEPS have output as well?
-            #   run.push_result()
-            #   when this is changed, make sure to include files in submission manager download section
-        else:
-            run.push_result()
+        run.push_output()
     except SubmissionException as e:
         run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -79,15 +75,24 @@ def run_wrapper(run_args):
 
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
-    to.  Currently, the run_args are:
+    to. There is also a secret key to do special commands for just this submission.
 
+    Some example API's you can hit using this secret key are:
 
+        push_scores
 
+        (maybe later:
+            get previous submission
+            get sibling submission
+            get top submission
+            get some different dataset
+            post results to twitter)
     """
 
     def __init__(self, run_args):
         # Directories for the run
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
 
         # Details for submission
@@ -96,7 +101,8 @@ class Run:
         self.submissions_api_url = run_args["submissions_api_url"]
         self.docker_image = run_args["docker_image"]
         self.secret = run_args["secret"]
-        self.result = run_args["result"]  # TODO, rename this to result_url
+        self.prediction_result = run_args["prediction_result"]
+        self.scoring_result = run_args.get("scoring_result")
         self.execution_time_limit = run_args["execution_time_limit"]
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
@@ -107,6 +113,14 @@ class Run:
         self.reference_data = run_args.get("reference_data", None)
 
         self.task_pk = run_args.get('task_pk')
+
+        # During prediction program will be the submission program, during scoring it will be the
+        # scoring program
+        self.program_exit_code = None
+        self.ingestion_program_exit_code = None
+
+        self.program_elapsed_time = None
+        self.ingestion_elapsed_time = None
 
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
@@ -172,7 +186,12 @@ class Run:
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
-        and a socket"""
+        and a socket
+
+        :param docker_cmd: the list of docker command arguments
+        :param kind: either 'ingestion' or 'program'
+        :return:
+        """
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         logger.info(f"Connecting to {url}")
 
@@ -184,6 +203,7 @@ class Run:
         #       pairs
 
         async with websockets.connect(url) as websocket:
+            start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -210,10 +230,19 @@ class Run:
                     out = await value["stream"].readline()
                     if out:
                         value["data"] += out
-                        print("DATA!!!! " + str(out))
+                        print("WS: " + str(out))
                         await websocket.send(out.decode())
                     else:
                         value["continue"] = False
+
+            end = time.time()
+
+            if kind == 'program':
+                self.program_exit_code = proc.returncode
+                self.program_elapsed_time = end - start
+            elif kind == 'ingestion':
+                self.ingestion_program_exit_code = proc.returncode
+                self.ingestion_elapsed_time = end - start
 
             logger.info(f'[exited with {proc.returncode}]')
             for key, value in logs.items():
@@ -237,9 +266,13 @@ class Run:
                     raise SubmissionException("Program directory missing 'command' in metadata")
         except FileNotFoundError:
             if can_be_output:
-                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
-                            "program so move it to output")
-                shutil.move(program_dir, self.output_dir)
+
+                # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
+                # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
+                # logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                #             "program so move it to output")
+                # shutil.move(program_dir, self.output_dir)
+                # return
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml'")
@@ -249,29 +282,40 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
+
             # Try the new timeout feature
             '--stop-timeout={}'.format(self.execution_time_limit),
+
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
-            # Set the right volume
-            '-v', f'{program_dir}:/app',
+
+            # Set the volumes
+            '-v', f'{program_dir}:/app/program',
             '-v', f'{self.output_dir}:/app/output',
+
             # Start in the right directory
-            '-w', '/app',
+            '-w', '/app/program',
+
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
 
         # TODO: Should pass in reference data if scoring, or something?
 
-        # TODO: Check with zhengying (already contacted him, waiting) on whether we need a hidden dir or not.
-        if kind == 'ingestion' and self.input_data:
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/hidden']
+        if kind == 'ingestion':
+            # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "program")}:/app/ingested_program']
+
+        if self.input_data:
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
 
         if self.is_scoring:
             # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
             # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
+
+            # Input from submission (or submission + ingestion combo)
+            docker_cmd += ['-v', f'{self.input_dir}:/app/input']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
@@ -334,12 +378,12 @@ class Run:
             (self.program_data, 'program'),
             (self.ingestion_program_data, 'ingestion_program'),
             (self.input_data, 'input_data'),
-            (self.reference_data, 'reference_data'),
+            (self.reference_data, 'input/ref'),
         ]
 
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
-            bundles += [(self.result, os.path.join('program', 'input'))]
+            bundles += [(self.prediction_result, os.path.join('input', 'res'))]
 
         for url, path in bundles:
             if url is not None:
@@ -376,6 +420,7 @@ class Run:
             self._update_status(STATUS_SCORING)
 
     def push_scores(self):
+        """This is only ran at the end of the scoring step"""
         # POST to some endpoint:
         # {
         #     "correct": 1.0
@@ -383,6 +428,8 @@ class Run:
         try:
             scores_file = os.path.join(self.output_dir, "scores.json")
             scores = json.load(open(scores_file, 'r'))
+        except json.decoder.JSONDecodeError:
+            raise SubmissionException("Could not decode scores json properly, it contains an error.")
         except FileNotFoundError:
             raise SubmissionException("Could not find scores.json, did the scoring program output it?")
 
@@ -395,8 +442,32 @@ class Run:
         logger.info(resp)
         logger.info(str(resp.content))
 
-    def push_result(self):
-        self._put_dir(self.result, self.output_dir)
+    def push_output(self):
+        """Output is pushed at the end of both prediction and scoring steps."""
+        # V1.5 compatibility, write program statuses to metadata file
+        prog_status = {
+            'exitCode': self.program_exit_code,
+            # for v1.5 compat, send `ingestion_elapsed_time` if no `program_elapsed_time`
+            'elapsedTime': self.program_elapsed_time or self.ingestion_elapsed_time,
+            'ingestionExitCode': self.ingestion_program_exit_code,
+            'ingestionElapsedTime': self.ingestion_elapsed_time,
+        }
+
+        logger.info(f"Metadata output: {prog_status}")
+
+        metadata_path = os.path.join(self.output_dir, 'metadata')
+
+        if os.path.exists(metadata_path):
+            raise SubmissionException("Error, the output directory already contains a metadata file. This file is used "
+                                      "to store exitCode and other data, do not write to this file manually.")
+
+        with open(metadata_path, 'w') as f:
+            f.write(yaml.dump(prog_status, default_flow_style=False))
+
+        if not self.is_scoring:
+            self._put_dir(self.prediction_result, self.output_dir)
+        else:
+            self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
         logger.info("We're not cleaning up yet... TODO: cleanup!")

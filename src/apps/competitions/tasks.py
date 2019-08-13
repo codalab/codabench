@@ -96,14 +96,28 @@ COLUMN_FIELDS = [
 
 def send_submission(submission, task, is_scoring, run_args):
     if not is_scoring:
-        submission.result.save('result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        run_args['prediction_result'] = make_url_sassy(
+            path=submission.prediction_result.name,
+            permission='w'
+        )
+    else:
+        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        run_args['prediction_result'] = make_url_sassy(
+            path=submission.prediction_result.name,
+            permission='r'
+        )
+        run_args['scoring_result'] = make_url_sassy(
+            path=submission.scoring_result.name,
+            permission='w'
+        )
 
     if task.ingestion_program:
-        if (task.ingestion_only_during_scoring and is_scoring) or (
-                not task.ingestion_only_during_scoring and not is_scoring):
+        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
             run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-            if task.input_data:
-                run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
+
+    if not is_scoring and task.input_data:
+        run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
     if is_scoring and task.reference_data:
         run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
@@ -111,10 +125,7 @@ def send_submission(submission, task, is_scoring, run_args):
     run_args['program_data'] = make_url_sassy(
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
     )
-    run_args['result'] = make_url_sassy(
-        path=submission.result.name,
-        permission='w' if not is_scoring else 'r'
-    )
+
     run_args['task_pk'] = task.id
 
     if not is_scoring:
@@ -165,11 +176,12 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     run_arguments = {
         "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
         "secret": submission.secret,
-        "docker_image": "python:3.7",
+        "docker_image": submission.phase.competition.docker_image,
         "execution_time_limit": submission.phase.execution_time_limit,
         "id": submission.pk,
         "is_scoring": is_scoring,
     }
+
     tasks = submission.phase.tasks.all()
     if task_pk is None:  # This is the initial submission object
         if len(tasks) > 1:
@@ -187,7 +199,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
                     parent=submission,
                 )
                 sub.save(ignore_submission_limit=True)
-                run_submission(sub.id, task.id)
+                run_submission.apply_async((sub.id, task.id))
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
@@ -239,6 +251,9 @@ def get_data_key(obj, file_type, temp_directory, creator):
 def _get_datetime(field):
     if not field:
         return None
+    elif isinstance(field, datetime.date):
+        # turn the date into a datetime @ midnight that day
+        field = datetime.datetime.combine(field, datetime.time())
     elif not isinstance(field, datetime.datetime):
         field = parser.parse(field)
     field = field.replace(tzinfo=now().tzinfo)
@@ -494,7 +509,11 @@ def unpack_competition(competition_dataset_pk):
                     continue
                 phase1 = competition['phases'][i - 1]
                 phase2 = competition['phases'][i]
-                if phase2['start'] < phase1['end']:
+                if phase1['end'] is None:
+                    raise CompetitionUnpackingException(
+                        f'Phase: {phase1.get("name", phase1["index"])} must have an end time because it has a phase after it.'
+                    )
+                elif phase2['start'] < phase1['end']:
                     raise CompetitionUnpackingException(
                         f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'

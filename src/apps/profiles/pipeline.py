@@ -14,7 +14,11 @@ def user_details(user, **kwargs):
                         uid=github_info.pop('uid'),
                         defaults=github_info,
                     )
+                    user.github_info = obj
+                    user.save()
                     if created:
                         print("New github user info created for user: {}".format(user.username))
+                    if not created:
+                        print("We updated existing info for user: {}".format(user.username))
         else:
             pass
