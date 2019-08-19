@@ -60,7 +60,7 @@ jobs:
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
 
       - store_artifacts:
-          path: ~/project/artifacts
+          path: ~/project/artifacts/
 
 
 
