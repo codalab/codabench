@@ -23,11 +23,10 @@ class TestSubmissions(SeleniumTestCase):
 
         self.get(reverse('competitions:upload'))
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
-        time = 0
-        while time < 10 and not self.element_is_visible('div .ui.success.message'):
-            self.wait(.5)
-            time += .5
-        assert self.element_is_visible('div .ui.success.message')
+
+        with self.implicit_wait_context(60):
+            assert self.element_is_visible('div .ui.success.message')
+
         competition = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": competition.id})
         self.find(f'a[href="{comp_url}"]').click()
@@ -37,14 +36,18 @@ class TestSubmissions(SeleniumTestCase):
 
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
         self.circleci_screenshot(name='uploading_submission.png')
+
         # Hopefully we can get rid of this static sleep, not sure why we need it but the #output-model check
         # below is naggy without it..
         self.wait(10)
 
         # Bump selenium waiting in case things take a while...
-        self.selenium.implicitly_wait(10 * 60)
+        # self.selenium.implicitly_wait(10 * 60)
 
-        assert self.element_is_visible('#output-modal')
+        with self.implicit_wait_context(60):
+            assert self.element_is_visible('#output-modal')
+
+        # self.selenium.implicitly_wait(10)
 
         # Have to use xpath here for the text lookup... could make this into a
         assert self.find_text_in_class('submission_output', 'Scores')

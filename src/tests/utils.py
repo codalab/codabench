@@ -80,6 +80,8 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
+    default_implicit_wait_time = 10
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -89,7 +91,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             desired_capabilities=DesiredCapabilities.FIREFOX,
         )
         # Wait 10 seconds for elements to appear, always
-        cls.selenium.implicitly_wait(10)
+        cls.selenium.implicitly_wait(cls.default_implicit_wait_time)
 
     @classmethod
     def tearDownClass(cls):
@@ -145,3 +147,20 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         for item in args:
             PublicStorage.delete(item)
             BundleStorage.delete(item)
+
+    def implicit_wait_context(self, new_wait_time):
+        return SeleniumImplicitWait(self, new_wait_time)
+
+
+class SeleniumImplicitWait(object):
+
+    def __init__(self, test_class, new_wait_time):
+        self.driver = test_class.selenium
+        self.old_wait_time = test_class.default_implicit_wait_time
+        self.new_wait_time = new_wait_time
+
+    def __enter__(self):
+        self.driver.implicitly_wait(self.new_wait_time)
+
+    def __exit__(self, *_):
+        self.driver.implicitly_wait(self.old_wait_time)
