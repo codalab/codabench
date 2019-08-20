@@ -15,12 +15,12 @@ class TestCompetitions(SeleniumTestCase):
     def test_competition_upload(self):
         self.get(reverse('competitions:upload'))
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
-        self.circleci_screenshot(name='uploading_task.png')
         time = 0
         while time < 10 and not self.element_is_visible('div .ui.success.message'):
             self.wait(.5)
             time += .5
         assert self.element_is_visible('div .ui.success.message')
+        self.circleci_screenshot(name='uploading_comp.png')
         comp = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": comp.id})
         self.find(f'a[href="{comp_url}"]').click()

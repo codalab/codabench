@@ -18,12 +18,10 @@ class TestSubmissions(SeleniumTestCase):
         # CompetitionParticipantFactory(user=self.user, competition=self.competition, status='approved')
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=False)
-    # @override_settings(DEBUG=True)
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
 
         self.get(reverse('competitions:upload'))
-        self.circleci_screenshot(name='uploading_task.png')
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
         time = 0
         while time < 10 and not self.element_is_visible('div .ui.success.message'):
@@ -38,7 +36,7 @@ class TestSubmissions(SeleniumTestCase):
         self.circleci_screenshot("set_submission_file_name.png")
 
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
-
+        self.circleci_screenshot(name='uploading_submission.png')
         # Hopefully we can get rid of this static sleep, not sure why we need it but the #output-model check
         # below is naggy without it..
         self.wait(10)

@@ -30,7 +30,6 @@ class CodalabTestHelpersMixin(object):
         self.find('.submit.button').click()
 
 
-
 class CodalabDaphneProcess(DaphneProcess):
 
     # have to set port in this hidden way so we can override it later (Daphne uses
