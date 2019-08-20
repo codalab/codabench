@@ -23,3 +23,4 @@ db.sqlite3
 
 celerybeat-schedule
 package-lock.json
+artifacts/
