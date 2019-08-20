@@ -120,7 +120,6 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         # TODO: Should the os.path.join() be outside the os.environ.get?
         circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
         self.screenshot(os.path.join(circle_dir, name))
-        os.chdir(circle_dir)
 
     def execute_script(self, script):
         return self.selenium.execute_script(script)
