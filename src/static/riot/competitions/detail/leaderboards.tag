@@ -1,5 +1,5 @@
 <leaderboards>
-    <table class="ui celled selectable table">
+    <table class="ui celled selectable table ">
         <thead>
         <tr>
             <th colspan="100%" style="text-align: center;">
@@ -22,6 +22,8 @@
     </table>
     <script>
         var self = this
+        self.selected_leaderboard = {}
+        self.selected_leaderboard_index = {}
 
         self.one("updated", function () {
             // Get the actual data
@@ -29,10 +31,16 @@
         })
 
         self.update_leaderboards = function () {
-            self.opts.leaderboards.forEach(function(leaderboard){
+            if (!self.opts.leaderboards) {
+                return
+            }
+
+            self.opts.leaderboards.forEach(function (leaderboard) {
                 CODALAB.api.get_leaderboard(leaderboard.id)
                     .done(function (data) {
                         leaderboard.submissions = data.submissions
+                        self.selected_leaderboard = self.opts.leaderboards[0]
+                        self.selected_leaderboard_index = self.selected_leaderboard.id
                         self.update()
                     })
                     .fail(function (response) {
@@ -43,10 +51,10 @@
 
         CODALAB.events.on('leaderboard_selected', function (selected_leaderboard) {
             self.selected_leaderboard = selected_leaderboard
-            console.log('--------------')
             console.log(selected_leaderboard)
-            console.log('--------------')
         })
+
+        CODALAB.events.on('submission_added_to_leaderboard', () => self.update_leaderboards())
 
     </script>
     <style type="text/stylus">
@@ -54,5 +62,8 @@
             display: block
             width: 100%
             height: 100%
+
+        .celled.table.selectable
+            margin 1em 0
     </style>
 </leaderboards>

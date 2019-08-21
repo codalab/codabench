@@ -12,21 +12,23 @@
             </div>
         </div>
 
-        <div class="ui styled fluid accordion {hidden: !display_output}" ref="modal">
+        <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="modal">
             <div class="title">
                 <i class="dropdown icon"></i>
-                {selected_submission.name}
+                <!-- {selected_submission.filename ? `Running ${selected_submission.filename}` : "Uploading"}... -->
+                {selected_submission.filename}
             </div>
             <div class="content">
                 <div id="submission-output" class="ui" ref="modal">
                     <div class="header">Output</div>
                     <div class="content">
-                        <canvas class="output-chart" height="200" ref="chart"></canvas>
                         <!-- We have to have this on a gross line so Pre formatting stays nice -->
                         <pre class="submission_output" ref="submission_output"><virtual
                                 if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
-                                each="{ line in lines[selected_submission.id] }">{ line }</virtual>
-                </pre>
+                                each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                        <div class="graph-container">
+                            <canvas class="output-chart" height="200" ref="chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -56,6 +58,7 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
                 legend: false,
                 responsive: true,
                 animation: {
@@ -251,11 +254,16 @@
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
         })
+
         CODALAB.events.on('submission_selected', function (selected_submission) {
-            console.log("selected_submission")
-            console.log(selected_submission)
             self.selected_submission = selected_submission
+            self.auto_scroll_output()
         })
+
+        self.auto_scroll_output = function () {
+            var output = $('.submission_output')
+            output.scrollTop = output.scrollHeight
+        }
     </script>
 
     <style type="text/stylus">
@@ -267,7 +275,22 @@
         code
             background hsl(220, 80%, 90%)
 
+        .submission-container
+            margin-top 1em
+
         .hidden
             display none
+
+        .submission-output-container
+            max-height 300px
+            overflow-y auto
+
+        .submission_output
+            max-height 11em
+            overflow-y auto
+
+        .graph-container
+            display block
+            height 250px
     </style>
 </submission-upload>

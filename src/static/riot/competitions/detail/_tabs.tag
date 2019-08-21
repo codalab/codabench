@@ -71,7 +71,7 @@
                 <div class="sixteen wide row">
                     <div class="leaderboard">
                         <h1>Top 10 Results</h1>
-                        <a class="float-right" href="#">View Full Results<i class="angle right icon"></i>
+                        <a class="float-right" href="#/results-tab">View Full Results<i class="angle right icon"></i>
                         </a>
                         <table class="ui center aligned striped table">
                             <thead>
@@ -149,66 +149,23 @@
                         </div>
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
-
-                                <table class="ui celled selectable table">
+                                <table class="ui celled table">
                                     <thead>
                                     <tr>
                                         <th class="index-column">Download</th>
                                         <th>Size</th>
                                         <th>Phase</th>
-                                        <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">
-                                            Actions
-                                        </th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr each="{ file, index in files }" class="file_row">
+                                    <tr class="file_row">
                                         <td>
-                                            <a href="{ file.url }"><div class="ui button">{ file.name }</div></a>
+                                            <a href="#">
+                                                <div class="ui button">File Name</div>
+                                            </a>
                                         </td>
+                                        <td>59.8mb</td>
                                         <td></td>
-                                        <td>{ file.phase }</td>
-                                        <td class="center aligned">
-                                            <!-- <virtual if="{ opts.admin }">
-                                               <button class="mini ui button basic blue icon"
-                                                        data-tooltip="Rerun Submission"
-                                                        data-inverted=""
-                                                        onclick="{ rerun_submission.bind(this, file) }">
-                                                    <i class="icon redo"></i>
-
-                                                </button>
-                                                <button class="mini ui button basic yellow icon"
-                                                        data-tooltip="Cancel Submission"
-                                                        data-inverted=""
-                                                        onclick="{ cancel_submission.bind(this, file) }">
-                                                    <i class="x icon"></i>
-
-                                                </button>
-                                                <button class="mini ui button basic red icon"
-                                                        data-tooltip="Delete Submission"
-                                                        data-inverted=""
-                                                        onclick="{ delete_submission.bind(this, file) }">
-                                                    <i class="icon trash alternate"></i>
-
-                                                </button>
-                                            </virtual>
-                                            <button if="{!submission.leaderboard}"
-                                                    class="mini ui button basic green icon"
-                                                    data-tooltip="Add to Leaderboard"
-                                                    data-inverted=""
-                                                    onclick="{ add_to_leaderboard.bind(this, file) }">
-                                                <i class="icon share"></i>
-
-                                            </button>
-                                            <div if="{!!submission.leaderboard}"
-                                                 class="mini ui green button icon on-leaderboard"
-                                                 data-tooltip="On the Leaderboard"
-                                                 data-inverted=""
-                                                 onclick="{do_nothing}">
-                                                <i class="icon check"></i>
-                                            </div>
-                                            send submission to leaderboard-->
-                                        </td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -269,11 +226,11 @@
         <div class="results-tab ui tab" data-tab="results-tab">
             <!-- Tab Content !-->
             <div class="ui button-container">
-                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
-                         each="{ leaderboard in competition.leaderboards }"
-                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
-                    </div>
+                <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
+                     each="{ leaderboard in competition.leaderboards }"
+                     onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                 </div>
+            </div>
             <div>
                 <leaderboards competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }"></leaderboards>
@@ -517,8 +474,9 @@
         self.competition_file = {}
 
         CODALAB.events.on('competition_loaded', function (competition) {
-            console.log(competition)
             self.competition = competition
+            self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            self.selected_phase_index = _.find(self.competition.phases, {'status': 'Current'}).id
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()
             if (self.competition.is_admin) {
@@ -583,6 +541,7 @@
         self.leaderboard_selected = function (data, event) {
             self.selected_leaderboard_index = data.id
             self.update()
+            console.log(data)
 
             CODALAB.events.trigger('leaderboard_selected', data)
         }
@@ -591,7 +550,6 @@
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
                     self.files = data
-                    console.table(self.files)
                     self.update()
                     if (e) {
                         // Only display toast if activated from button, not CODALAB.event

@@ -54,7 +54,6 @@
             padding 0
             margin 0 0 1rem 0
 
-
         .progress-bar li
             flex 2
             position relative
@@ -127,11 +126,8 @@
 
 
         .progress-bar li:last-child div
-            width 200%
-            display inline-block
-            position absolute
-            left -100%
-
+            display block
+            position relative
 
         .progress-bar .is-complete:last-child:after,
         .progress-bar .is-active:last-child:after

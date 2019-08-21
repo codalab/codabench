@@ -197,6 +197,7 @@
         .tiny.left.labeled.button
             display flex
             margin-top 15px
+            justify-content flex-end
 
             .ui.tiny.button
                 width 120px

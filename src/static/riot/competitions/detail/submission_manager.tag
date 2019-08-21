@@ -1,4 +1,4 @@
-<submission-manager>
+<submission-manager class="submission-manager">
     <h1>Submission manager</h1>
     <div if="{ opts.admin }" class="admin-buttons">
         <a class="ui green button" href="{csv_link}">
@@ -191,6 +191,7 @@
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
+                    CODALAB.events.trigger('submission_added_to_leaderboard')
                 })
                 .fail(function (response) {
                     toastr.error("Could not find competition")
@@ -331,8 +332,9 @@
     </script>
 
     <style type="text/stylus">
-        //:scope
-        //    height 100%
+        :scope
+            margin 1em 0
+            //    height 100%
         .admin-buttons
             padding-bottom: 20px;
 
