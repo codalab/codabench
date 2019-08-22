@@ -46,6 +46,7 @@
         </tr>
         </thead>
         <tbody>
+        <tr if="{ _.get(submissions, 'length', 0) === 0}" class="center aligned"><td colspan="6"><em>No submissions found! Please make a submission</em></td></tr>
         <tr each="{ submission, index in filter_children(submissions) }" onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
@@ -359,5 +360,8 @@
             &:hover
                 cursor: pointer
             height: 52px
+
+        table tbody .center.aligned td
+            color #8c8c8c
     </style>
 </submission-manager>

@@ -2,7 +2,7 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <div class="item" data-tab="home-tab">Home</div>
+            <!-- <div class="item" data-tab="home-tab">Home</div> -->
             <div class="item" data-tab="pages-tab">Get Started</div>
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
@@ -45,7 +45,8 @@
             </div>
         </div> -->
 
-        <div class="ui home-tab tab" data-tab="home-tab">
+        <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
+        <!-- <div class="ui home-tab tab" data-tab="home-tab">
             <div class="ui two column grid">
                 <div class="row">
                     <div class="seven wide column">
@@ -124,14 +125,14 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <!--Get Started tab-->
         <div class="pages-tab ui tab" data-tab="pages-tab">
             <div class="ui relaxed grid">
                 <div class="row">
                     <div class="four wide column">
-                        <div class="ui side teal vertical tabular pages-menu menu">
+                        <div class="ui side vertical tabular pages-menu menu">
                             <div each="{ page, i in competition.pages }" class="{active: i == 0} item"
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
@@ -181,19 +182,22 @@
         <div class="phases-tab ui tab" data-tab="phases-tab">
             <div class="ui relaxed grid">
                 <div class="row">
-                    <div class="twelve wide centered column">
-                        <div each="{ phase, i in competition.phases }" class="ui segments">
-                            <div class="ui teal segment phase-header">
-                                <span class="underline">{phase.name}</span>
-                            </div>
-                            <div class="ui bottom attached segment">
-                                <div class="phase-label">Start:</div>
-                                <div class="phase-info">{pretty_date(phase.start)}</div>
-                                <div class="phase-label">End:</div>
-                                <div class="phase-info">{pretty_date(phase.end)}</div>
-                                <span class="phase-label">Description: </span>
-                                <div class="phase-markdown" id="phase_{i}"></div>
-                            </div>
+                    <div class="sixteen wide centered column">
+                        <div class="ui styled accordion">
+                            <virtual each="{ phase, i in competition.phases }">
+                                <div class="ui teal phase-header title {active: selected_phase_index === phase.id}">
+                                    <i class="ui dropdown icon"></i>
+                                    {phase.name}
+                                </div>
+                                <div class="ui bottom attached content {active: selected_phase_index === phase.id}">
+                                    <div class="phase-label">Start:</div>
+                                    <div class="phase-info">{pretty_date(phase.start)}</div>
+                                    <div class="phase-label">End:</div>
+                                    <div class="phase-info">{pretty_date(phase.end)}</div>
+                                    <span class="phase-label">Description: </span>
+                                    <div class="phase-markdown" id="phase_{i}"></div>
+                                </div>
+                            </virtual>
                         </div>
                     </div>
                 </div>
@@ -412,12 +416,25 @@
                 font-family 'Overpass Mono', monospace
                 font-size 14px
 
+            .ui.styled.accordion
+                width 100%
+
+            .ui.styled.accordion .phase-header.active
+                color rgb(44, 63, 76) !important
+                border-bottom solid 1px gainsboro !important
+                background #05b5ad87 !important
+
             .phase-header
                 font-family 'Roboto', sans-serif
                 font-size 20px !important
                 text-transform uppercase
                 font-weight 600
                 background-color #e5fbfa
+                color $blue !important
+
+            .phase-header:hover
+                color rgb(44, 63, 76) !important
+                background #05b5ad65 !important
 
             .phase-label
                 font-size 15px
@@ -483,12 +500,14 @@
                 self.update_files()
             }
 
+            $('.phases-tab .accordion', self.root).accordion()
+
             $('.tabular.menu .item', self.root).tab({
                 history: true,
                 historyType: 'hash',
             })
 
-            $('.tabular.menu .item', self.root).tab('change tab', (window.location.hash || 'home-tab').replace('#/', ''))
+            $('.tabular.menu .item', self.root).tab('change tab', (window.location.hash || 'pages-tab').replace('#/', ''))
 
             _.forEach(competition.pages, (page, index) => {
                 $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)

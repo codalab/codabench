@@ -15,19 +15,24 @@
         <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="modal">
             <div class="title">
                 <i class="dropdown icon"></i>
-                <!-- {selected_submission.filename ? `Running ${selected_submission.filename}` : "Uploading"}... -->
-                {selected_submission.filename}
+                {selected_submission.filename ? "Running " + selected_submission.filename : "Uploading..."}
             </div>
-            <div class="content">
-                <div id="submission-output" class="ui" ref="modal">
-                    <div class="header">Output</div>
-                    <div class="content">
-                        <!-- We have to have this on a gross line so Pre formatting stays nice -->
-                        <pre class="submission_output" ref="submission_output"><virtual
-                                if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
-                                each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
-                        <div class="graph-container">
-                            <canvas class="output-chart" height="200" ref="chart"></canvas>
+            <div class="ui basic segment">
+                <div class="content">
+                    <div id="submission-output" class="ui" ref="modal">
+                        <div class="header">Output</div>
+                        <div class="content">
+                            <!-- We have to have this on a gross line so Pre formatting stays nice -->
+                            <pre class="submission_output" ref="submission_output"><virtual
+                                    if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                    each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                            <div class="ui checkbox" ref="autoscroll_checkbox">
+                                <input type="checkbox"/>
+                                <label>Autoscroll output</label>
+                            </div>
+                            <div class="graph-container">
+                                <canvas class="output-chart" height="200" ref="chart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -45,6 +50,7 @@
         self.lines = {}
         self.selected_submission = {}
         self.display_output = false
+        self.autoscroll_selected = true
 
         self.graph_config = {
             type: 'line',
@@ -96,7 +102,28 @@
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
-            $('.ui.accordion', self.root).accordion()
+            $('.ui.accordion', self.root).accordion({
+                onOpen: () => $('.submission-output-container .ui.basic.segment').show(),
+                onClose: () => $('.submission-output-container .ui.basic.segment').hide(),
+            })
+
+            $(self.refs.autoscroll_checkbox).checkbox({
+                onChecked: function () {
+                    self.autoscroll_selected = true;
+                    self.autoscroll_output()
+                },
+                onUnchecked: function () {
+                    self.autoscroll_selected = false;
+                },
+            })
+
+            self.set_checkbox()
+
+            $(self.refs.submission_output).scroll(function () {
+                var output = self.refs.submission_output
+                self.autoscroll_selected = output.scrollTop === output.scrollHeight - Math.ceil($(output).height()) - 30
+                self.set_checkbox()
+            })
 
 
             /*
@@ -132,6 +159,7 @@
                 console.log(event)
             })
             ws.addEventListener("message", function (event) {
+                self.autoscroll_output()
                 try {
                     var event_data = event.data.split(';')[1]
                     var data = JSON.parse(event_data);
@@ -148,6 +176,11 @@
             })
             ws.open()
         })
+
+        self.set_checkbox = function () {
+            $(self.refs.autoscroll_checkbox).children('input').prop('checked', self.autoscroll_selected)
+        }
+
 
         self.add_graph_data_point = function (number) {
             // Add empty label for the graph, may not be necessary?
@@ -171,7 +204,8 @@
 
             self.lines[submission_id].push(message + "\n")
             self.update()
-            self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
+            self.autoscroll_output()
+            // self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
         }
 
         self.clear_form = function () {
@@ -257,12 +291,14 @@
 
         CODALAB.events.on('submission_selected', function (selected_submission) {
             self.selected_submission = selected_submission
-            self.auto_scroll_output()
+            self.autoscroll_output()
         })
 
-        self.auto_scroll_output = function () {
-            var output = $('.submission_output')
-            output.scrollTop = output.scrollHeight
+        self.autoscroll_output = function () {
+            if (self.autoscroll_selected) {
+                var output = self.refs.submission_output
+                output.scrollTop = output.scrollHeight
+            }
         }
     </script>
 
@@ -281,12 +317,14 @@
         .hidden
             display none
 
-        .submission-output-container
+        .submission-output-container .ui.basic.segment
             max-height 300px
+            display none
             overflow-y auto
 
         .submission_output
             max-height 11em
+            padding 15px !important
             overflow-y auto
 
         .graph-container

@@ -451,8 +451,6 @@
             overflow-x: auto;
         }
 
-
-
         .chevron.icon {
             color: rgba(34, 36, 38, .25);
             cursor: pointer;

@@ -4,8 +4,12 @@
             <li each="{ phase in phases }" class="{is-active: phase.status == 'Current'}">
                 <div class="phase-name">{ phase.name }<br></div>
                 <div class="phase-date">{get_date(phase.start)}</div>
+                <span class="prog-span"></span>
             </li>
         </ol>
+        <!--<canvas height="35" width="800" id="phase-progress">-->
+
+        </canvas>
     </section>
 
     <script>
@@ -15,7 +19,25 @@
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.phases = competition.phases
 
+            first_phase = _.first(self.phases)
+            last_phase = _.last(self.phases)
+
+            first_start = new Date(first_phase.start).getTime()
+            first_end = new Date(first_phase.end).getTime()
+            today = new Date().getTime()
+            last_start = new Date(last_phase.start).getTime()
+            last_end = new Date(last_phase.end || last_phase.start).getTime()
+
+            percentage = self.get_scale(today, first_start, last_end, 0, 100)
+            linear_gradient = 'linear-gradient(to right, #00bbbb ' + percentage + '%, gainsboro ' + percentage + '%, gainsboro 100%)'
+            self.update()
+            $('.progress-bar .is-active:not(:last-child) .prog-span').css('background-image', linear_gradient)
         })
+
+        self.get_scale = function (today_date, start_date, end_date, min_percentage=0, max_percentage=100) {
+            return (((today_date - start_date) * (max_percentage - min_percentage)) / (end_date - start_date)) + min_percentage
+        }
+
 
         self.get_date = function (phase_date) {
             var date = new Date(phase_date)
@@ -66,7 +88,6 @@
             overflow visible
             min-width 0
             text-align center
-            border-bottom 2px solid $gray-disabled
 
 
         .progress-bar li:first-child,
@@ -104,7 +125,6 @@
             right 0
             left auto
 
-
         .progress-bar div
             transition opacity .3s ease-in-out
 
@@ -112,28 +132,37 @@
         .progress-bar li:not(.is-active) div
             opacity 0
 
-
-        .progress-bar .is-complete:not(:first-child):after,
-        .progress-bar .is-active:not(:first-child):after
-            content ""
-            display block
+        .prog-span
             width 100%
+
+        .progress-bar li:first-child .prog-span
+            width 200%
+            left 0 !important
+
+        .progress-bar .is-complete .prog-span
+            display inherit
             position absolute
             bottom -2px
-            left -50%
+            left 50%
             z-index 2
-            border-bottom 2px solid $teal
+            background-image linear-gradient(to right, $teal, $teal)
+            height 2px
 
+        .progress-bar .is-active:not(:last-child) .prog-span,
+        .progress-bar .is-active:not(:first-child) .prog-span
+            display inherit
+            position absolute
+            bottom -2px
+            left 50%
+            z-index 2
+            background-image linear-gradient(to right, gainsboro, gainsboro)
+            height 2px
+
+        //
 
         .progress-bar li:last-child div
             display block
             position relative
-
-        .progress-bar .is-complete:last-child:after,
-        .progress-bar .is-active:last-child:after
-            width 200%
-            left -100%
-
 
         .progress-bar .is-complete:before
             background-color: $teal
