@@ -26,6 +26,20 @@ class SolutionSerializer(WritableNestedModelSerializer):
         return make_url_sassy(solution.data.data_file.name)
 
 
+class SolutionListSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Solution
+        fields = (
+            'name',
+            'url'
+        )
+
+    def get_url(self, solution):
+        return make_url_sassy(solution.data.data_file.name)
+
+
 class TaskSerializer(WritableNestedModelSerializer):
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
@@ -96,10 +110,21 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
                 })
         return files
 
+
+class TaskListSerializer(serializers.ModelSerializer):
+    solutions = SolutionListSerializer(many=True, required=False, read_only=True)
+
+    class Meta:
+        model = Task
+        fields = (
+            'key',
+            'name',
+            'solutions',
+        )
+
+
 # TODO:// Simple serializer exists solely for Select2. Has a whole separate view and URL for using it. can this be done
 #   with a get_serializer_call() method instead?
-
-
 class TaskSerializerSimple(serializers.ModelSerializer):
     value = serializers.CharField(source='key')
 

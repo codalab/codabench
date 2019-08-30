@@ -111,9 +111,6 @@ class Data(ChaHubSaveMixin, models.Model):
         data = self.clean_chahub_data(data)
         return [data]
 
-    def get_chahub_is_valid(self):
-        return self.is_public
-
 
 class DataGroup(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

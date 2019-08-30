@@ -26,6 +26,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     terms = models.TextField(null=True, blank=True)
     is_migrating = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
+    docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}"
@@ -110,9 +111,6 @@ class Competition(ChaHubSaveMixin, models.Model):
         if chahub_id:
             data['user'] = chahub_id
         return [data]
-
-    def get_chahub_is_valid(self):
-        return self.published
 
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.id})
@@ -287,8 +285,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
 
-    result = models.FileField(upload_to=PathWrapper('submission_result'), null=True, blank=True, storage=BundleStorage)
-    # Add "scoring_result" ???
+    prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
+    scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
@@ -379,7 +377,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         return self.status == self.FINISHED and self.is_public and self.phase.competition.published
 
 
-class CompetitionParticipant(models.Model):
+class CompetitionParticipant(ChaHubSaveMixin, models.Model):
     UNKNOWN = 'unknown'
     DENIED = 'denied'
     APPROVED = 'approved'
@@ -400,6 +398,25 @@ class CompetitionParticipant(models.Model):
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
+
+    def get_chahub_is_valid(self):
+        """Override this to validate the specific model before it's sent
+
+        Example:
+            return comp.is_published
+        """
+        # By default, always push
+        return True
+
+    def get_chahub_endpoint(self):
+        return 'participants/'
+
+    def get_chahub_data(self):
+        return [{
+            'competition': self.competition.id,
+            'user': self.user.id,
+            'status': self.status,
+        }]
 
 
 class Page(models.Model):
