@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, Count, Q
+from django.db.models import Subquery, OuterRef, Count, Q, F
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -58,7 +58,7 @@ class CompetitionViewSet(ModelViewSet):
                     competition=OuterRef('pk'),
                     status=CompetitionParticipant.APPROVED
                 ).values_list('id')
-                qs = qs.annotate(participant_count=Count(Subquery(participant_count_query), distinct=True))
+                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
                 qs = qs.annotate(submission_count=Count('phases__submissions'))
                 qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
