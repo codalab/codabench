@@ -1,35 +1,53 @@
 <competition-pages>
-    <button class="ui primary button modal-button" onclick="{ add }">
-        <i class="add circle icon"></i> Add page
-    </button>
     <div class="ui centered grid">
-        <div class="ten wide column">
-            <table class="ui padded striped table">
-                <tbody>
-                <tr each="{page, index in pages}" class="page-row">
-                    <td>{page.title}</td>
-                    <td class="right aligned">
-                <span class="hidden">
-                    <a class="chevron">
-                        <sorting-chevrons data="{ pages }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
-                    </a>
-                    <a class="icon-button"
-                       onclick="{ view_page.bind(this, index)}">
-                        <i class="grey eye icon"></i>
-                    </a>
-                    <a class="icon-button"
-                       onclick="{ edit.bind(this, index) }">
-                        <i class="blue edit icon"></i>
-                    </a>
-                    <a class="icon-button"
-                       onclick="{ delete_page.bind(this, index) }">
-                        <i class="red trash alternate outline icon"></i>
-                    </a>
-                </span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+        <div class="row">
+            <div class="fourteen wide column">
+                <table class="ui padded striped table">
+                    <thead>
+                    <tr>
+                        <th colspan="2">Pages</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{page, index in pages}">
+                        <td>{page.title}</td>
+                        <td class="right aligned">
+                            <a class="chevron">
+                                <sorting-chevrons data="{ pages }"
+                                                  index="{ index }"
+                                                  onupdate="{ form_updated }"></sorting-chevrons>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ view_page.bind(this, index)}">
+                                <i class="grey eye icon"></i>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ edit.bind(this, index) }">
+                                <i class="blue edit icon"></i>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ delete_page.bind(this, index) }">
+                                <i class="red trash alternate outline icon"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr show="{pages.length === 0}">
+                        <td class="center aligned" colspan="2">
+                            <em>No pages added yet, at least 1 is required!</em>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2" class="right aligned">
+                            <button class="ui tiny inverted green icon button" onclick="{ add }">
+                                <i class="add icon"></i> Add page
+                            </button>
+                        </th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -63,7 +81,7 @@
         <div class="header">
             Page Preview
         </div>
-        <div class="content">
+        <div class="scrolling content">
             <div ref="page_content">
 
             </div>
@@ -86,11 +104,7 @@
 
         self.one("mount", function () {
             // awesome markdown editor
-            self.simple_markdown_editor = new EasyMDE({
-                element: self.refs.content,
-                autoRefresh: true,
-                hideIcons: ["preview", "side-by-side", "fullscreen"]
-            })
+            self.simple_markdown_editor = create_easyMDE(self.refs.content)
 
             // Modal callback to draw markdown on show
             $(self.refs.edit_modal).modal({
@@ -145,7 +159,7 @@
         self.view_page = function (page_index) {
             self.selected_page_index = page_index
             $(self.refs.view_modal).modal('show')
-            self.refs.page_content.innerHTML = sanitize_HTML(self.pages[page_index].content)
+            self.refs.page_content.innerHTML = render_markdown(self.pages[page_index].content)
         }
 
         self.form_updated = function () {

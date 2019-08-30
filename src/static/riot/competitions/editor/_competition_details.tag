@@ -41,12 +41,8 @@
         self.logo_file_name = ''
 
         self.one("mount", function () {
-            self.markdown_editor = new EasyMDE({
-                element: self.refs.comp_description,
-                autoRefresh: true,
-                forceSync: true,
-                hideIcons: ["preview", "side-by-side", "fullscreen"]
-            })
+            self.markdown_editor = create_easyMDE(self.refs.comp_description)
+
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)

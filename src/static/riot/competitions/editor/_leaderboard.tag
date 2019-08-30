@@ -1,66 +1,168 @@
 <competition-leaderboards-form>
-    <button class="ui primary button modal-button" onclick="{ add }">
-        <i class="add circle icon"></i> Add leaderboard
-    </button>
-
-    <div class="ui fluid styled accordion" show="{leaderboards.length !== 0}">
-        <virtual each="{ leaderboard, index in leaderboards }">
-            <div class="title { active: leaderboard.is_active }">
-                <h1>
-                    <span class="trigger"><i class="dropdown icon"></i> { leaderboard.title }</span>
-                    <span class="key"> Key: { leaderboard.key }</span>
-                    <sorting-chevrons data="{ leaderboards }" index="{ index }" onupdate="{ form_updated }"></sorting-chevrons>
-                    <div class="ui right floated buttons">
-                        <div class="ui negative button" onclick="{ delete_leaderboard.bind(this, index) }">
-                            <i class="delete icon"></i>
-                            Delete
-                        </div>
-                        <div class="ui button" onclick="{ edit.bind(this, index) }">
-                            <i class="pencil icon"></i>
-                            Edit
-                        </div>
-                    </div>
-                </h1>
-            </div>
-            <div class="content { active: leaderboard.is_active }">
-                <competition-leaderboard-form-table columns="{ leaderboard.columns }" primary_index="{ leaderboard.primary_index }" leaderboard_index="{index}"></competition-leaderboard-form-table>
-            </div>
-        </virtual>
-    </div>
-
-    <div class="ui container center aligned grid" show="{ leaderboards.length == 0 }">
+    <div class="ui center aligned grid">
         <div class="row">
-            <div class="four wide column">
-                <i>No leaderboards added yet, at least 1 is required!</i>
+            <div class="fourteen wide column">
+                <table class="ui padded table">
+                    <thead>
+                    <tr>
+                        <th colspan="2">Leaderboards</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{ board, index in leaderboards }">
+                        <td>{ board.title }</td>
+                        <td class="right aligned">
+                            <a class="chevron">
+                                <sorting-chevrons data="{ leaderboards }" index="{ index }"
+                                                  onupdate="{ form_updated }"></sorting-chevrons>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ edit.bind(this, index) }">
+                                <i class="blue edit icon"></i>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ delete_leaderboard.bind(this, index) }">
+                                <i class="red trash alternate outline icon"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr show="{leaderboards.length === 0}">
+                        <td colspan="2" class="center aligned">
+                            <em>No leaderboards added yet, at least 1 is required!</em>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2" class="right aligned">
+                            <button class="ui tiny inverted green icon button" onclick="{ add }">
+                                <i class="add icon"></i> Add leaderboard
+                            </button>
+                        </th>
+                    </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="ui modal" ref="modal">
+    <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
             Leaderboard form
         </div>
-        <div class="content">
-            <form class="ui form" onsubmit="{ save }">
-                <div class="field required">
-                    <label>Title</label>
-                    <input ref="title"/>
+        <div class="scrolling content">
+            <div class="ui warning message" show="{!_.isEmpty(error_messages)}">
+                <div class="header">
+                    Leaderboard Errors
                 </div>
-                <div class="field required">
-                    <label>
-                        Key
-                        <span data-tooltip="This is the key you will use to assign scores to leaderboards in your scoring program" data-inverted="" data-position="right center">
+                <ul class="list">
+                    <li each="{message in error_messages}">
+                        { message }
+                    </li>
+                </ul>
+            </div>
+            <div ref="leaderboard_form" class="ui form">
+                <div class="two fields">
+                    <div class="field required">
+                        <label>Title</label>
+                        <input name="title" value="{_.get(selected_leaderboard, 'title')}" onchange="{ modal_updated }">
+                    </div>
+                    <div class="field required">
+                        <label>
+                            Key
+                            <span data-tooltip="This is the key you will use to assign scores to leaderboards in your scoring program"
+                                  data-inverted="" data-position="right center">
                             <i class="help icon circle"></i>
                         </span>
-                    </label>
-                    <input ref="key"/>
+                        </label>
+                        <input name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
+                    </div>
                 </div>
-            </form>
+                <table class="ui celled definition table">
+                <!--TODO make an empty column that says "please add a column" if leaderboard is empty-->
+                    <thead>
+                    <tr>
+                        <th width="125px"></th>
+                        <th if="{_.isEmpty(columns)}"></th>
+                        <th each="{ column, index in columns || [] }" style="min-width: 200px;">
+                            <input type="text" class="ui field" name="title_{index}" value="{_.get(column, 'title')}" onchange="{ update_leaderboard }">
+                            <input type="hidden" name="id_{index}" value="{_.get(column, 'id')}">
+                        </th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <td>Primary Column</td>
+                        <td if="{_.isEmpty(columns)}" rowspan="5"><em>No Columns Yet!</em></td>
+                        <td each="{ column, index in columns || [] }" class="center aligned">
+                            <input type="radio" name="primary_index" data-index="{index}" checked="{ index === _.get(selected_leaderboard, 'primary_index') }">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Computation</td>
+                        <td each="{ column, index in columns || [] }">
+                            <div class="ui fluid computation selection dropdown">
+                                <input type="hidden" name="computation_{index}" value="{column.computation || 'none'}" onchange="{ modal_updated }">
+                                <div class="default text"></div>
+                                <i class="dropdown icon"></i>
+                                <div class="menu">
+                                    <div class="item" data-index="{index}" data-value="none">None</div>
+                                    <div class="item" data-index="{index}" data-value="avg">Average</div>
+                                </div>
+                            </div>
+                            <label if="{column.computation}" style="display: block; padding-top: 10px;">Apply to:</label>
+                            <select class="ui fluid multiselect index_{index} dropdown"
+                                    if="{column.computation}"
+                                    multiple=""
+                                    id="computation_indexes_{index}"
+                                    name="computation_indexes_{index}"
+                                    onchange="{ modal_updated }">
+                                <option each="{ inner_column, inner_index in columns }"
+                                        if="{ inner_index !== index }"
+                                        selected="{_.includes(column.computation_indexes, inner_index.toString())}"
+                                        value="{ inner_index }"> { inner_column.title }
+                                </option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Sorting</td>
+                        <td each="{ column, index in columns || [] }">
+                            <div class="ui fluid sorting selection dropdown">
+                                <input type="hidden" name="sorting_{index}" value="{column.sorting || 'desc'}">
+                                <div class="default text">Sorting</div>
+                                <i class="dropdown icon"></i>
+                                <div class="menu">
+                                    <div class="item" data-value="desc">Descending</div>
+                                    <div class="item" data-value="asc">Ascending</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Column Key</td>
+                        <td each="{ column, index in columns || [] }">
+                            <input type="text" class="ui field" name="column_key_{index}" value="{_.get(column, 'key')}" onchange="{ modal_updated }">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td each="{ column, index in columns || [] }" class="center aligned">
+                            <a onclick="{move_column.bind(this, index, -1)}" class="icon-button"><i class="chevron left icon {disabled: index === 0 }"></i></a>
+                            <a class="icon-button" onclick="{ delete_column.bind(this, index) }"><i class="red trash alternate outline icon"></i></a>
+                            <a onclick="{move_column.bind(this, index, 1)}" class="icon-button" ><i class="chevron right icon {disabled: index + 1 === _.get(selected_leaderboard, 'columns.length', 0) }"></i></a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div class="actions">
+            <div class="ui inverted green icon button" onclick="{ add_column }"><i class="ui plus icon"></i> Add column</div>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <div class="ui button primary" onclick="{ save }">Save</div>
+            <div class="ui button primary {disabled: !modal_is_valid}" onclick="{ save }">Save</div>
         </div>
     </div>
 
@@ -72,34 +174,78 @@
         ---------------------------------------------------------------------*/
         self.leaderboards = []
         self.selected_leaderboard_index = undefined
+        self.selected_leaderboard = undefined
+        self.columns = []
+        self.modal_is_valid = false
+        self.error_messages = []
 
         self.on('mount', () => {
-            $('.ui.accordion', self.root).accordion({
-                selector: {
-                    trigger: '.title .trigger'
+            $(self.refs.modal).modal({
+                closable: false,
+                onHidden: () => self.clear_form(),
+                onShow: () => {
+                    self.initialize_dropdowns()
                 }
+
             })
         })
 
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        self.initialize_dropdowns = function () {
+            $('.ui.sorting.dropdown').dropdown()
+            $('.ui.multiselect.dropdown').dropdown()
+            $('.ui.computation.dropdown').dropdown({
+                onChange: (value, text, element) => {
+                    let index = element.data().index
+                    if (value === 'none') {
+                        self.columns[index].computation = null
+                        self.update()
+                        $(`.ui.multiselect.index_${index}.dropdown`)
+                            .dropdown('clear')
+                            // .dropdown('hide') and ('remove visible) do nothing, have to force hide w/ css
+                            .css('display', 'none')
+                    } else {
+                        self.columns[index].computation = value
+                        self.update()
+                        $('.ui.multiselect.dropdown').dropdown({
+                            onChange: () => {
+                                self.update_leaderboard()
+                            }
+                        })
+                    }
+                }
+            })
+        }
+
+
         self.add = function () {
-            $(self.refs.modal).modal('show')
+            self.selected_leaderboard = {
+                primary_index: 0,
+            }
+            self.columns = []
+            self.add_column()
+            self.show_modal()
         }
 
         self.edit = function (index) {
-            $(self.refs.modal).modal('show')
-            var leaderboard = self.leaderboards[index]
-            self.refs.title.value = leaderboard.title
-            self.refs.key.value = leaderboard.key
-
             self.selected_leaderboard_index = index
+            // have to clone the leaderboard here so we can interact w/ selected_leaderboard as its own object, not a reference
+            self.selected_leaderboard = _.cloneDeep(self.leaderboards[index])
+            self.columns = self.selected_leaderboard.columns || []
+            console.log(self.selected_leaderboard_index)
+            self.update()
+            self.show_modal()
+        }
+
+        self.show_modal = function () {
+            $(self.refs.modal).modal('show')
+            self.modal_updated()
         }
 
         self.close_modal = function () {
             $(self.refs.modal).modal('hide')
-            self.clear_form()
         }
 
         self.delete_leaderboard = function (index) {
@@ -111,85 +257,166 @@
         }
 
         self.save = function () {
-            var leaderboard_data = {
-                title: self.refs.title.value,
-                key: self.refs.key.value
-            }
-            if (self.selected_leaderboard_index === undefined) {
-                leaderboard_data['is_active'] = true
-                leaderboard_data['columns'] = [{title: "Score", is_primary: true}]
-                self.leaderboards.push(leaderboard_data)
+            if (self.selected_leaderboard_index >= 0) {
+                self.leaderboards[self.selected_leaderboard_index] = self.get_leaderboard_data()
             } else {
-                Object.assign(self.leaderboards[self.selected_leaderboard_index], leaderboard_data)
+                self.leaderboards.push(self.get_leaderboard_data())
+
             }
-            self.clear_form()
-
-            // make sure to init new accordions
-            $(".ui.accordion").accordion({
-                selector: {
-                    trigger: '.title .trigger'
-                }
-            })
-
-            // then unhide modal
             self.close_modal()
-        }
-
-        self.clear_form = function () {
-            self.refs.title.value = ''
-            self.refs.key.value = ''
-
-            self.selected_leaderboard_index = undefined
-
             self.form_updated()
             self.update()
         }
 
-        self.form_updated = function () {
-            var is_valid = true
+        self.clear_form = function () {
+            self.selected_leaderboard_index = undefined
+            self.selected_leaderboard = undefined
+            self.columns = []
+            self.update()
+        }
 
-            // Make sure we have at least 1 leaderboard
-            if (self.leaderboards.length === 0) {
+        self.modal_updated = function () {
+            self.modal_is_valid = self.validate_leaderboard(self.get_leaderboard_data())
+            self.update()
+        }
+
+        self.form_updated = function () {
+            let is_valid = true
+
+            if (_.isEmpty(self.leaderboards)) {
+                is_valid = false
+            } else if (_.some(self.leaderboards, leaderboard => _.isEmpty(leaderboard.columns))) {
                 is_valid = false
             } else {
-                // Make sure we have 1 column
-                if (self.leaderboards[0].columns.length === 0) {
-                    is_valid = false
-                }
-
-                // Make sure no columns are currently being edited, have keys, etc.
-                self.leaderboards.forEach(function (leaderboard) {
-                    leaderboard.columns.forEach(function (column) {
-                        if (column.editing) {
+                _.forEach(self.leaderboards, leaderboard => {
+                    if (is_valid) {
+                        if (!self.validate_leaderboard(leaderboard)) {
                             is_valid = false
                         }
-                        if (column.key === '' || column.key === undefined) {
-                            is_valid = false
-                        }
-                        if (column.computation) {
-                            if (!column.computation_indexes) {
-                                is_valid = false
-                            } else if (column.computation_indexes.length === 0) {
-                                is_valid = false
-                            }
-                        }
-
-                    })
+                    }
                 })
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'leaderboards', is_valid)
 
             if (is_valid) {
-                // Since we have valid data, let's attach our "index" to the columns
-                self.leaderboards.forEach(function (leaderboard) {
-                    leaderboard.columns.forEach(function (column, i) {
-                        column.index = i
-                    })
-                })
-
                 CODALAB.events.trigger('competition_data_update', {leaderboards: self.leaderboards})
             }
+            return is_valid
+        }
+
+        self.validate_leaderboard = function (leaderboard) {
+            self.error_messages = []
+            let is_valid = true
+            if (!leaderboard.key || !leaderboard.title) {
+                is_valid = false
+            }
+            _.forEach(leaderboard.columns, column => {
+                if (!column.key || !column.title) {
+                    is_valid = false
+                } else if (column.computation) {
+                    if (_.isEmpty(column.computation_indexes)) {
+                        is_valid = false
+                    } else {
+                        let indexes = _.map(column.computation_indexes, index => parseInt(index))
+                        _.forEach(indexes, index => {
+                            let reference_column = leaderboard.columns[index]
+                            if (_.includes(_.get(reference_column, 'computation_indexes', []), column.index.toString())) {
+                                is_valid = false
+                                self.error_messages.push(`Cyclical computation references at column indexes: ${_.join(_.sortBy([reference_column.index, column.index]), ', ')}.`)
+                            }
+                        })
+                    }
+                }
+            })
+            self.error_messages = _.uniq(self.error_messages)
+            return is_valid
+        }
+
+        self.get_leaderboard_data = function () {
+            let data = get_form_data(self.refs.leaderboard_form)
+            return {
+                title: data.title,
+                key: data.key,
+                primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
+                columns: _.map(_.range(_.get(self.selected_leaderboard, 'columns.length', 0)), i => {
+                    let column = {
+                        index: i,
+                        title: _.get(data, `title_${i}`),
+                        key: _.get(data, `column_key_${i}`),
+                        sorting: _.get(data, `sorting_${i}`),
+                    }
+                    let id = _.get(data, `id_${i}`)
+                    if (id) {
+                        column.id = id
+                    }
+                    let computation = _.get(data, `computation_${i}`)
+                    if (computation !== 'none') {
+                        column.computation = computation
+                        column.computation_indexes = _.get(data, `computation_indexes_${i}`)
+                    }
+                    return column
+                })
+            }
+        }
+
+        self.update_leaderboard = function () {
+            self.selected_leaderboard = self.get_leaderboard_data()
+            self.columns = self.selected_leaderboard.columns
+            self.update()
+            self.modal_updated()
+            self.initialize_dropdowns()
+        }
+
+        self.add_column = function () {
+            self.columns.push({title: 'New Column'})
+            self.update()
+            _.delay(() => self.update_leaderboard(), 10)
+        }
+
+        self.delete_column = function (index) {
+            _.pullAt(self.columns, index)
+            self.update()
+            self.update_leaderboard()
+        }
+
+        self.move_column = function (index, offset) {
+            let from_index = index
+            let to_index = index + offset
+            let data_to_move = self.columns[from_index]
+            self.columns.splice(from_index, 1)
+            self.columns.splice(to_index, 0, data_to_move)
+            self.columns = _.map(self.columns, (column, i) => {
+                column.index = i
+                return column
+            })
+            // computation indexes are lists of indexes as strings
+            from_index = from_index.toString()
+            to_index = to_index.toString()
+            self.columns = _.map(self.columns, column => {
+                let comp_indexes = _.get(column, 'computation_indexes')
+                if (comp_indexes) {
+                    let push_to = false
+                    let push_from = false
+                    if (_.includes(comp_indexes, from_index)) {
+                        _.pull(column.computation_indexes, from_index)
+                        push_to = true
+                    }
+                    if (_.includes(comp_indexes, to_index)) {
+                        _.pull(column.computation_indexes, to_index)
+                        push_from = true
+                    }
+                    if (push_from) {
+                        column.computation_indexes.push(from_index)
+                    }
+                    if (push_to) {
+                        column.computation_indexes.push(to_index)
+                    }
+                }
+                return column
+            })
+            self.update()
+            self.update_leaderboard()
         }
 
         /*---------------------------------------------------------------------
@@ -200,300 +427,8 @@
             self.form_updated()
         })
     </script>
-    <style>
-        .modal-button {
-            margin-bottom: 20px !important;
-        }
-        .key {
-            font-size: 16px;
-            font-style: italic;
-        }
+    <style scoped type="text/stylus">
+        a.icon-button:hover
+            cursor pointer
     </style>
 </competition-leaderboards-form>
-
-<competition-leaderboard-form-table>
-    <!-- The form is here for the radio button to work -->
-    <form onsubmit="return false">
-        <table class="ui compact celled small table table-bordered definition">
-            <thead>
-            <tr>
-                <th class="right aligned" width="175px">
-
-                </th>
-                <th each="{ column, index in columns }" class="center aligned" width="175px">
-                    <i class="left floated chevron left icon" show="{ !column.editing && index > 0 }" onclick="{ move_left.bind(this, index) }"></i>
-
-                    <span class="column_name" show="{ !column.editing }" onclick="{ edit_column_name.bind(this, index) }">
-                        <i class="counterclockwise rotated icon pencil small"></i> { column.title }
-                    </span>
-
-                    <div class="ui input" show="{ column.editing }">
-                        <input id="column_input_{ index }" type="text" value="{ column.title }" onkeydown="{ edit_column_name_submit.bind(this, index) }">
-                    </div>
-
-                    <i class="right floated chevron right icon" show="{ !column.editing && index + 1 < columns.length }" onclick="{ move_right.bind(this, index) }"></i>
-                </th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr class="ui aligned right">
-                <td>Primary Column?</td>
-                <td each="{ column, index in columns }" class="center aligned">
-                    <input type="radio" name="primary" checked="{ index === primary_index }" onchange="{ set_primary.bind(this, index) }">
-                </td>
-                <td></td> <!-- Empty cell so it cuts off nicely at the end of rows -->
-            </tr>
-
-            <tr class="ui aligned right">
-                <td>
-                    <span>
-                        Applied computation
-                        <span data-tooltip="This operation is applied to every other column" data-inverted="" data-position="right center">
-                            <i class="help icon circle"></i>
-                        </span>
-                    </span>
-                </td>
-                <td each="{ column, index in columns }" class="center aligned">
-                    <div class="ui field">
-                        <select class="ui fluid small dropdown" onchange="{ edit_column_type.bind(this, index) }">
-                            <option selected="{!column.computation}">
-                                ------
-                            </option>
-                            <option value="avg" selected="{column.computation === 'avg'}">Average</option>
-                        </select>
-                    </div>
-                    <div class="ui field" show="{ column.computation }">
-                        <label>Apply to:</label>
-                        <select class="ui fluid small multiselect dropdown" multiple="" id="computation_indexes_{index}" onchange="{update_computation_indexes.bind(this, index)}">
-                            <option each="{ inner_column, inner_index in columns }" if="{ index != inner_index && !inner_column.editing }" selected="{_.indexOf(column.computation_indexes, inner_index.toString()) != -1}" value="{ inner_index }"> { inner_column.title }</option>
-                        </select>
-                    </div>
-                </td>
-                <td></td>
-            </tr>
-
-            <tr class="ui aligned right">
-                <td>Sorting</td>
-                <td each="{ columns }" class="center aligned">
-                    <select class="ui fluid small dropdown">
-                        <option selected>Descending</option>
-                        <option>Ascending</option>
-                    </select>
-                </td>
-                <td></td>
-            </tr>
-
-            <tr class="ui aligned right">
-                <td>
-                    <span>
-                        Column Key <span class="required">*</span>
-                        <span data-tooltip="This is the key you will use to assign scoring columns, along with leaderboard key, in your scoring program" data-inverted="" data-position="right center">
-                            <i class="help icon circle"></i>
-                        </span>
-                    </span>
-                </td>
-                <td each="{ c, index in columns }" class="center aligned">
-                    <div class="ui fluid input">
-                        <input type="text" placeholder="Key" value="{c.key}" onkeyup="{ edit_key.bind(this, index) }">
-                    </div>
-                </td>
-                <td></td>
-            </tr>
-
-            <tr>
-                <td></td>
-                <td each="{ c, index in columns }" class="center aligned">
-                    <button type="button" class="ui basic icon button mini red remove" onclick="{ remove_column.bind(this, index) }">
-                        <i class="icon trash alternate outline"></i>Remove
-                    </button>
-                </td>
-                <td></td>
-            </tr>
-            </tbody>
-
-            <tfoot class="full-width">
-            <tr>
-                <th></th>
-                <th colspan="{ columns.length + 1}">
-                    <button type="button" class="ui small primary labeled icon button" onclick="{ add_column }">
-                        <i class="add square icon"></i> Add column
-                    </button>
-                </th>
-            </tr>
-            </tfoot>
-        </table>
-    </form>
-    <script>
-        var self = this
-
-        /*---------------------------------------------------------------------
-         Initializing
-        ---------------------------------------------------------------------*/
-        self.columns = []
-
-        self.one("mount", function () {
-            //$(".tooltip").popup()
-            $(".dropdown", self.root).dropdown()
-
-
-            // *NOTE* Assigning columns this way gets it out of "opts" and makes it namespace properly!
-            self.columns = self.opts.columns
-            self.primary_index = self.opts.primary_index
-            self.selected_leaderboard = self.opts.leaderboard_index
-        })
-
-        self.on("update", function () {
-            // Force refresh of dropdown on update, otherwise they don't show new elements and
-            // don't reflect new names
-            let leaderboard_dropdown = $(".dropdown", self.root)
-            leaderboard_dropdown.dropdown("refresh")
-            setTimeout(() => {
-                leaderboard_dropdown.dropdown()
-            }, 5)
-        })
-
-        /*---------------------------------------------------------------------
-         Methods
-        ---------------------------------------------------------------------*/
-        self.add_column = function () {
-            self.columns.push({title: "Score2", key: ''})
-            self.update()
-
-            // Automatically start editing the last column we added
-            self.edit_column_name(self.columns.length - 1)
-        }
-        self.update_computation_indexes = index => {
-            self.columns[index].computation_indexes = $(`#computation_indexes_${index}`).val()
-            self.parent.form_updated()
-        }
-
-        self.edit_column_name = function (index) {
-            self.columns[index].editing = true
-            self.update()
-            $("#column_input_" + index).focus()
-
-            // Even though we're just starting editing, we want to change validation so
-            // the user knows they have to finish editing or the form will remain invalid
-            self.parent.form_updated()
-        }
-
-        self.edit_column_type = function (index, event) {
-            let value = event.target.value
-            if (!value) {
-                self.columns[index].computation_indexes = null
-                self.columns[index].computation = null
-            } else {
-                self.columns[index].computation = value
-            }
-
-            self.parent.form_updated()
-        }
-
-        self.edit_column_name_submit = function (index, event) {
-            if (event.keyCode === 13) {
-                self.columns[index].title = event.target.value
-                self.columns[index].editing = false
-                self.parent.form_updated()
-            }
-        }
-
-        self.edit_key = function (index, event) {
-            self.columns[index].key = event.target.value
-            self.parent.form_updated()
-        }
-
-        self.remove_column = function (index) {
-            if (self.columns.length === 1) {
-                toastr.error("Each leaderboard must have at least 1 column!")
-                return
-            }
-
-            self.columns.splice(index, 1)
-            self.update()
-            self.parent.form_updated()
-        }
-
-        self.set_primary = function (index) {
-            self.parent.leaderboards[self.selected_leaderboard].primary_index = index
-            self.parent.form_updated()
-        }
-
-        self.edit_leaderboard_details = function () {
-            CODALAB.events.trigger('leaderboard_select_index')
-        }
-
-        self.move_left = function (index) {
-            self.move(index, -1)
-        }
-
-        self.move_right = function (index) {
-            self.move(index, 1)
-        }
-        self.move = function (index, offset) {
-            var data_to_move = self.columns[index]
-
-            // Remove the item
-            self.columns.splice(index, 1)
-
-            // Add 1 item offset up OR down
-            self.columns.splice(index + offset, 0, data_to_move)
-
-            self.update()
-            self.parent.form_updated()
-        }
-    </script>
-
-    <style>
-        :scope {
-            display: block;
-            padding: 20px 0;
-            overflow-x: auto;
-        }
-
-
-
-        .chevron.icon {
-            color: rgba(34, 36, 38, .25);
-            cursor: pointer;
-        }
-
-        .chevron.icon:hover {
-            color: rgba(34, 36, 38, .55);
-        }
-
-        .chevron.floated.left {
-            float: left;
-        }
-
-        .chevron.floated.right {
-            float: right;
-        }
-
-        .column_name {
-            cursor: pointer;
-            position: relative;
-        }
-
-        .column_name:hover .pencil {
-            opacity: 1;
-        }
-
-        .column_name .pencil {
-            position: absolute;
-            left: -1.3em;
-            opacity: .45;
-        }
-
-        .ui.basic.red.button.remove:hover {
-            color: white !important;
-            background-color: #db2828 !important;
-            box-shadow: 0 0 0 1px #db2828 inset!important;
-        }
-
-        /* Special class just to color the label for "Key" required asterisk! */
-        .required {
-            color: #DB2828;
-        }
-    </style>
-</competition-leaderboard-form-table>

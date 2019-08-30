@@ -31,7 +31,7 @@
                     <errors errors="{errors}"></errors>
                 </div>
 
-                <div class="ui top pointing six item secondary menu">
+                <div class="ui pointing six item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ valid_sections.details && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
@@ -63,23 +63,22 @@
                         Collaborators
                     </a>
                 </div>
-
-                <div class="ui bottom active tab" data-tab="competition_details">
+                <div class="ui active tab" data-tab="competition_details">
                     <competition-details errors="{ errors.details }"></competition-details>
                 </div>
-                <div class="ui bottom tab" data-tab="participation">
+                <div class="ui tab" data-tab="participation">
                     <competition-participation errors="{ errors.participation}"></competition-participation>
                 </div>
-                <div class="ui bottom tab" data-tab="pages">
+                <div class="ui tab" data-tab="pages">
                     <competition-pages errors="{ errors.pages }"></competition-pages>
                 </div>
-                <div class="ui bottom tab" data-tab="phases">
+                <div class="ui tab" data-tab="phases">
                     <competition-phases errors="{ errors.phases }"></competition-phases>
                 </div>
-                <div class="ui bottom tab" data-tab="leaderboard">
+                <div class="ui tab" data-tab="leaderboard">
                     <competition-leaderboards-form errors="{ errors.details }"></competition-leaderboards-form>
                 </div>
-                <div class="ui bottom tab" data-tab="collaborators">
+                <div class="ui tab" data-tab="collaborators">
                     <competition-collaborators errors="{ errors.details }"></competition-collaborators>
                 </div>
             </div>
@@ -124,6 +123,11 @@
         self.one("mount", function () {
             // tabs
             $('.menu .item', self.root).tab()
+            // TODO: uncomment for tab history after merging comp detail page.
+            // $('.menu .item', self.root).tab({
+            //     history: true,
+            //     historyType: 'hash'
+            // })
             if (!!self.opts.competition_id) {
                 self.update_competition_data(self.opts.competition_id)
             }

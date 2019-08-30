@@ -7,7 +7,7 @@
         <div class="field">
             <div class="ui checkbox">
                 <input type="checkbox" name="registration_auto_approve" ref="registration_auto_approve" onchange="{form_updated}">
-                <label for="registration_auto_approve">Auto approve registration requests
+                <label>Auto approve registration requests
                     <span data-tooltip="If left unchecked, registration requests must be manually approved by the competition creator or collaborators"
                           data-inverted=""
                           data-position="bottom center">
@@ -23,12 +23,7 @@
         self.data = {}
 
         self.on('mount', () => {
-            self.markdown_editor = new EasyMDE({
-                element: self.refs.terms,
-                autoRefresh: true,
-                forceSync: true,
-                hideIcons: ["preview", "side-by-side", "fullscreen"]
-            })
+            self.markdown_editor = create_easyMDE(self.refs.terms)
 
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)

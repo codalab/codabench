@@ -409,8 +409,6 @@ def unpack_competition(competition_dataset_pk):
                     index = solution['index']
                     task_keys = [competition['tasks'][task_index] for task_index in solution.get('tasks')]
 
-                    # TODO: Pretty sure some of this will be done by yaml validator?
-
                     if not task_keys:
                         raise CompetitionUnpackingException(
                             f"ERROR: Solution: {solution['key']} missing task index pointers")
