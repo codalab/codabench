@@ -1,4 +1,5 @@
 import os
+import time
 
 from django.urls import reverse
 
@@ -15,9 +16,9 @@ class TestCompetitions(SeleniumTestCase):
     def test_competition_upload(self):
         self.get(reverse('competitions:upload'))
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
-        time = 0
+        start = time.time()
         with self.implicit_wait_context(60):
-            assert self.element_is_visible('div .ui.success.message')
+            assert self.element_is_visible('div .ui.success.message'), f'element not visible, waited for: {time.time() - start}'
         self.circleci_screenshot(name='uploading_comp.png')
         comp = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": comp.id})

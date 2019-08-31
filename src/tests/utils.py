@@ -9,7 +9,6 @@ from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 from daphne.testing import DaphneProcess
 from django.conf import settings
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
@@ -69,7 +68,6 @@ class CodalabDaphneProcess(DaphneProcess):
 
 @pytest.mark.e2e
 class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
-# class SeleniumTestCase(CodalabTestHelpersMixin, StaticLiveServerTestCase):
     urls = 'urls'  # TODO: what the F is this???
     serialized_rollback = True
 
