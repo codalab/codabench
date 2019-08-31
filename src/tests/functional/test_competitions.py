@@ -19,8 +19,8 @@ class TestCompetitions(SeleniumTestCase):
         # with self.implicit_wait_context(60):
         self.selenium.implicitly_wait(60)
         start = time.time()
-
-        assert self.element_is_visible('div .ui.success.message'), f'element not visible, waited for: {time.time() - start}'
+        el = self.find('div .ui.success.message')
+        assert el.is_displayed(), f'element not visible, waited for: {time.time() - start}'
         self.selenium.implicitly_wait(self.default_implicit_wait_time)
         self.circleci_screenshot(name='uploading_comp.png')
         comp = self.user.competitions.first()
