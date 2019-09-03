@@ -1,7 +1,7 @@
-import multiprocessing
 import os
 import socket
 import traceback
+from time import sleep
 
 import pytest
 from channels.testing import ChannelsLiveServerTestCase
@@ -14,8 +14,6 @@ from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from time import sleep
-
 from selenium.webdriver.support.wait import WebDriverWait
 from twisted.internet import reactor
 
@@ -81,7 +79,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
-    default_implicit_wait_time = 10
+    default_implicit_wait_time = 0
 
     @classmethod
     def setUpClass(cls):
@@ -109,8 +107,9 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     def get(self, url):
         return self.selenium.get(f'{self.live_server_url}{url}')
 
-    def find(self, selector):
-        return self.selenium.find_element_by_css_selector(selector)
+    def find(self, selector, wait_time=10):
+        wait = WebDriverWait(self.selenium, wait_time)
+        return wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
 
     def find_text_in_class(self, klass, text):
         wait = WebDriverWait(self.selenium, 60)
@@ -152,20 +151,3 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         for item in args:
             PublicStorage.delete(item)
             BundleStorage.delete(item)
-
-    def implicit_wait_context(self, new_wait_time):
-        return SeleniumImplicitWait(self, new_wait_time)
-
-
-class SeleniumImplicitWait(object):
-
-    def __init__(self, test_class, new_wait_time):
-        self.driver = test_class.selenium
-        self.old_wait_time = test_class.default_implicit_wait_time
-        self.new_wait_time = new_wait_time
-
-    def __enter__(self):
-        self.driver.implicitly_wait(self.new_wait_time)
-
-    def __exit__(self, *_):
-        self.driver.implicitly_wait(self.old_wait_time)
