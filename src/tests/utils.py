@@ -11,6 +11,7 @@ from daphne.testing import DaphneProcess
 from django.conf import settings
 from django.urls import reverse
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -111,7 +112,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         try:
             wait = WebDriverWait(self.selenium, wait_time)
             return wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
-        except TimeoutError as e:
+        except TimeoutException as e:
             self.circleci_screenshot(f'find_{selector}.png')
             raise e
 
@@ -143,7 +144,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             wait = WebDriverWait(self.selenium, 60)
             element = wait.until(EC.visibility_of(element))
             return element.is_displayed()
-        except TimeoutError as e:
+        except TimeoutException:
             self.circleci_screenshot(f'{selector}_is_visible.png')
             raise e
 
