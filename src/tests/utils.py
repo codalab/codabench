@@ -80,7 +80,6 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
-    default_implicit_wait_time = 0
 
     @classmethod
     def setUpClass(cls):
@@ -90,8 +89,6 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             command_executor=f'http://{settings.SELENIUM_HOSTNAME}:4444/wd/hub',
             desired_capabilities=DesiredCapabilities.FIREFOX,
         )
-        # Wait 10 seconds for elements to appear, always
-        cls.selenium.implicitly_wait(cls.default_implicit_wait_time)
 
     @classmethod
     def tearDownClass(cls):
