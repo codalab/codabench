@@ -108,8 +108,12 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         return self.selenium.get(f'{self.live_server_url}{url}')
 
     def find(self, selector, wait_time=10):
-        wait = WebDriverWait(self.selenium, wait_time)
-        return wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+        try:
+            wait = WebDriverWait(self.selenium, wait_time)
+            return wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+        except TimeoutError as e:
+            self.circleci_screenshot(f'find_{selector}.png')
+            raise e
 
     def find_text_in_class(self, klass, text):
         wait = WebDriverWait(self.selenium, 60)
@@ -134,10 +138,14 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         assert self.selenium.current_url == f"{self.live_server_url}{url}", f'{self.selenium.current_url} != {self.live_server_url}{url}'
 
     def element_is_visible(self, selector):
-        element = self.find(selector)
-        wait = WebDriverWait(self.selenium, 60)
-        element = wait.until(EC.visibility_of(element))
-        return element.is_displayed()
+        try:
+            element = self.find(selector)
+            wait = WebDriverWait(self.selenium, 60)
+            element = wait.until(EC.visibility_of(element))
+            return element.is_displayed()
+        except TimeoutError as e:
+            self.circleci_screenshot(f'{selector}_is_visible.png')
+            raise e
 
     @staticmethod
     def assert_storage_items_exist(*args):
