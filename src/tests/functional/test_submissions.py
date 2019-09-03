@@ -2,9 +2,12 @@ import os
 import uuid
 from unittest import mock
 
+import pytest
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
+from competitions.models import Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory
 from ..utils import SeleniumTestCase
 
@@ -22,10 +25,10 @@ class TestSubmissions(SeleniumTestCase):
         self.login(username=self.user.username, password='test')
 
         self.get(reverse('competitions:upload'))
-        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
-
         with self.implicit_wait_context(60):
-            assert self.element_is_visible('div .ui.success.message')
+            self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
+
+        assert self.element_is_visible('div .ui.success.message')
 
         competition = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": competition.id})
@@ -33,25 +36,15 @@ class TestSubmissions(SeleniumTestCase):
         self.assert_current_url(comp_url)
 
         self.circleci_screenshot("set_submission_file_name.png")
-
-        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
+        with self.implicit_wait_context(60):
+            self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
         self.circleci_screenshot(name='uploading_submission.png')
-
-        # Hopefully we can get rid of this static sleep, not sure why we need it but the #output-model check
-        # below is naggy without it..
-        self.wait(10)
-
-        # Bump selenium waiting in case things take a while...
-        # self.selenium.implicitly_wait(10 * 60)
 
         with self.implicit_wait_context(60):
             assert self.element_is_visible('#output-modal')
 
-        # self.selenium.implicitly_wait(10)
-
-        # Have to use xpath here for the text lookup... could make this into a
-        assert self.find_text_in_class('submission_output', 'Scores')
-        assert self.find_text_in_class('submission_output', 'accuracy')
+        assert self.find_text_in_class('.submission_output', 'Scores')
+        assert self.find_text_in_class('.submission_output', 'accuracy')
 
         self.execute_script("$('#output-modal').modal('hide')")
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission.zip'
@@ -72,5 +65,6 @@ class TestSubmissions(SeleniumTestCase):
         ]
         for detail in submission.details.all():
             created_files.append(detail.data_file.name)
+
         self.assert_storage_items_exist(*created_files)
         self.remove_items_from_storage(*created_files)

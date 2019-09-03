@@ -12,8 +12,11 @@ from django.conf import settings
 from django.urls import reverse
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 
+from selenium.webdriver.support.wait import WebDriverWait
 from twisted.internet import reactor
 
 from utils.storage import BundleStorage, PublicStorage
@@ -110,13 +113,13 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         return self.selenium.find_element_by_css_selector(selector)
 
     def find_text_in_class(self, klass, text):
-        return self.selenium.find_element_by_xpath(f"//*[@class='{klass}' and text()[contains(., '{text}')]]")
+        wait = WebDriverWait(self.selenium, 60)
+        return wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, klass), text))
 
     def screenshot(self, name="screenshot.png"):
         self.selenium.get_screenshot_as_file(name)
 
     def circleci_screenshot(self, name="screenshot.png"):
-        # TODO: Should the os.path.join() be outside the os.environ.get?
         circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
         self.screenshot(os.path.join(circle_dir, name))
 
@@ -127,10 +130,14 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # Assertion Helpers
     # ===========================================================
     def assert_current_url(self, url):
-        assert self.selenium.current_url == f"{self.live_server_url}{url}"
+        wait = WebDriverWait(self.selenium, 10)
+        wait.until(EC.url_to_be(f'{self.live_server_url}{url}'))
+        assert self.selenium.current_url == f"{self.live_server_url}{url}", f'{self.selenium.current_url} != {self.live_server_url}{url}'
 
     def element_is_visible(self, selector):
-        return self.find(selector).is_displayed()
+        wait = WebDriverWait(self.selenium, 60)
+        element = wait.until(EC.visibility_of(self.find(selector)))
+        return element.is_displayed()
 
     @staticmethod
     def assert_storage_items_exist(*args):

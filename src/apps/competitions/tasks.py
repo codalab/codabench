@@ -96,14 +96,20 @@ COLUMN_FIELDS = [
 
 
 def _send_submission(submission, task, is_scoring, run_args):
-    if not is_scoring:
+    if not submission.prediction_result.name:
         submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.save(update_fields=['prediction_result'])
+    if not submission.scoring_result.name:
+        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.save(update_fields=['scoring_result'])
+    submission = Submission.objects.get(id=submission.id)
+
+    if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
             permission='w'
         )
     else:
-        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
             permission='r'
