@@ -141,7 +141,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             wait = WebDriverWait(self.selenium, 60)
             element = wait.until(EC.visibility_of(element))
             return element.is_displayed()
-        except TimeoutException:
+        except TimeoutException as e:
             self.circleci_screenshot(f'{selector}_is_visible.png')
             raise e
 
