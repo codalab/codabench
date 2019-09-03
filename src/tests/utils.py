@@ -142,11 +142,6 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             element = wait.until(EC.visibility_of(element))
             return element.is_displayed()
         except TimeoutException as e:
-            try:
-                print(self.selenium.get_log('browser'))
-            except Exception as e2:
-                print(e2)
-                print('could not grab browser log')
             self.circleci_screenshot(f'{selector}_is_visible.png')
             raise e
 
