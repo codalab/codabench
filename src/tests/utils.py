@@ -134,8 +134,9 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         assert self.selenium.current_url == f"{self.live_server_url}{url}", f'{self.selenium.current_url} != {self.live_server_url}{url}'
 
     def element_is_visible(self, selector):
+        element = self.find(selector)
         wait = WebDriverWait(self.selenium, 60)
-        element = wait.until(EC.visibility_of(self.find(selector)))
+        element = wait.until(EC.visibility_of(element))
         return element.is_displayed()
 
     @staticmethod
