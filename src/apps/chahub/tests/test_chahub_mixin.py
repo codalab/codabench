@@ -61,8 +61,6 @@ class SubmissionMixinTests(ChaHubTestCase):
         assert resp2.called
 
     def test_invalid_submission_not_sent(self):
-        self.comp.published = False
-        self.comp.save()
         self.submission.status = "Running"
         self.submission.is_public = False
         resp1 = self.mock_chahub_save(self.submission)
@@ -70,10 +68,6 @@ class SubmissionMixinTests(ChaHubTestCase):
         self.submission.status = "Finished"
         resp2 = self.mock_chahub_save(self.submission)
         assert not resp2.called
-        self.comp.published = True
-        self.mock_chahub_save(self.comp)  # Inside mock so test doesn't get angry about invalid endpoints
-        resp3 = self.mock_chahub_save(self.submission)
-        assert not resp3.called
         self.submission.is_public = True
         resp4 = self.mock_chahub_save(self.submission)
         assert resp4.called
@@ -104,33 +98,3 @@ class ProfileMixinTests(ChaHubTestCase):
         self.user.password = 'this_is_different'  # Not using user.set_password() to control when the save happens
         resp2 = self.mock_chahub_save(self.user)
         assert not resp2.called
-
-
-class CompetitionMixinTests(ChaHubTestCase):
-    def setUp(self):
-        self.user = UserFactory(username='admin', password='test')
-        self.comp = CompetitionFactory.build(created_by=self.user, published=True, title='competition 1')
-        super().setUp()
-
-    def test_invalid_competition_not_sent(self):
-        self.comp.published = False  # not valid to send to Chahub
-        resp1 = self.mock_chahub_save(self.comp)
-        assert not resp1.called
-        self.comp.published = True  # make it valid
-        resp2 = self.mock_chahub_save(self.comp)
-        assert resp2.called
-
-
-class DatasetMixinTests(ChaHubTestCase):
-    def setUp(self):
-        self.user = UserFactory()
-        super().setUp()
-        self.data = DataFactory.build(created_by=self.user, is_public=True)
-
-    def test_invalid_dataset_not_sent(self):
-        self.data.is_public = False
-        resp1 = self.mock_chahub_save(self.data)
-        assert not resp1.called
-        self.data.is_public = True
-        resp2 = self.mock_chahub_save(self.data)
-        assert resp2.called
