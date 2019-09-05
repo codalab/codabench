@@ -6,20 +6,22 @@
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
 
-        <div class="ui indicating progress" ref="progress">
-            <div class="bar">
-                <div class="progress">{ upload_progress }%</div>
-            </div>
-        </div>
 
-        <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="modal">
+        <!--TODO: Do we want this progress bar? It's not working right now and it's messing with styling-->
+        <!--<div class="ui indicating progress" ref="progress">-->
+            <!--<div class="bar">-->
+                <!--<div class="progress">{ upload_progress }%</div>-->
+            <!--</div>-->
+        <!--</div>-->
+
+        <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="accordion">
             <div class="title">
                 <i class="dropdown icon"></i>
                 {selected_submission.filename ? "Running " + selected_submission.filename : "Uploading..."}
             </div>
             <div class="ui basic segment">
                 <div class="content">
-                    <div id="submission-output" class="ui" ref="modal">
+                    <div id="submission-output" class="ui" ref="submission-output">
                         <div class="header">Output</div>
                         <div class="content">
                             <!-- We have to have this on a gross line so Pre formatting stays nice -->
@@ -125,24 +127,6 @@
                 self.set_checkbox()
             })
 
-
-            /*
-            var loop = function () {
-                self.chart.data.labels.push('');
-                self.chart.data.datasets.forEach((dataset) => {
-                    dataset.data.push(Math.random() * 100);
-                });
-                self.chart.update();
-
-                //self.lines.push('asdf')
-                //self.update()
-                //self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
-                setTimeout(loop, 1000)
-            }
-            loop()
-             */
-
-
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
 
@@ -205,7 +189,6 @@
             self.lines[submission_id].push(message + "\n")
             self.update()
             self.autoscroll_output()
-            // self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
         }
 
         self.clear_form = function () {
@@ -307,6 +290,7 @@
             display block
             width 100%
             height 100%
+            margin-bottom 15px
 
         code
             background hsl(220, 80%, 90%)
@@ -317,10 +301,13 @@
         .hidden
             display none
 
-        .submission-output-container .ui.basic.segment
-            max-height 300px
-            display none
-            overflow-y auto
+        .submission-output-container
+            margin-top 15px
+
+            .ui.basic.segment
+                max-height 300px
+                display none
+                overflow-y auto
 
         .submission_output
             max-height 11em

@@ -2,48 +2,13 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
+            <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
             <!-- <div class="item" data-tab="home-tab">Home</div> -->
             <div class="item" data-tab="pages-tab">Get Started</div>
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
         </div>
-
-        <!-- Details tab -->
-        <!-- <div class="ui active tab" data-tab="details_tab">
-            <div class="ui grid">
-                <div class="row">
-                    <div class="sixteen wide column">
-                        <div class="ui side green tabular secondary menu">
-                            <div each="{page, index in competition.pages}" class="item {active: index === 0}"
-                                 data-tab="page_{index}">
-                                {page.title}
-                            </div>
-                            <div class="item" data-tab="_tags_placeholder">Cool tags (placeholders)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="sixteen wide column">
-                        <div each="{page, index in competition.pages}" class="ui tab {active: index === 0}"
-                             data-tab="page_{index}" id="page_{index}">
-                        </div>
-                        <div class="ui tab" data-tab="_tags_placeholder">
-                            <div class="comp-data-containers">
-                                <comp-run-info competition={competition}></comp-run-info>
-                                <comp-stats competition={competition}></comp-stats>
-                                <comp-tags competition={competition}></comp-tags>
-                            </div>
-                        </div>
-
-                        <div class="ui tab" data-tab="_tab_terms">
-                            <div class="ui">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> -->
 
         <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
         <!-- <div class="ui home-tab tab" data-tab="home-tab">
@@ -133,7 +98,7 @@
                 <div class="row">
                     <div class="four wide column">
                         <div class="ui side vertical tabular pages-menu menu">
-                            <div each="{ page, i in competition.pages }" class="{active: i == 0} item"
+                            <div each="{ page, i in competition.pages }" class="{active: i === 0} item"
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
@@ -143,7 +108,7 @@
                         </div>
                     </div>
                     <div class="twelve wide column">
-                        <div each="{ page, i in competition.pages }" class="ui {active: i == 0} tab"
+                        <div each="{ page, i in competition.pages }" class="ui {active: i === 0} tab"
                              data-tab="_tab_page{page.index}">
                             <div class="ui" id="page_{i}">
                             </div>
@@ -166,7 +131,7 @@
                                             </a>
                                         </td>
                                         <td>59.8mb</td>
-                                        <td></td>
+                                        <td>1</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -236,8 +201,8 @@
                 </div>
             </div>
             <div>
-                <leaderboards competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }"></leaderboards>
+                <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }">
+                </leaderboards>
             </div>
         </div>
 
@@ -251,8 +216,9 @@
             <button class="ui yellow button icon" onclick="{create_dump}">
                 <i class="download icon"></i> Create Competition Dump
             </button>
-            <button class="ui teal icon button" onclick="{update_files}"><i class="sync alternate icon"></i> Refresh
-                Table
+            <button class="ui teal icon button" onclick="{update_files}">
+                <i class="sync alternate icon"></i>
+                Refresh Table
             </button>
             <table class="ui table">
                 <thead>
@@ -262,16 +228,25 @@
                 </thead>
                 <tbody>
                 <tr show="{files.bundle}">
-                    <td class="selectable"><a href="{files.bundle ? files.bundle.url : ''}"><i
-                            class="file archive outline icon"></i>Bundle: {files.bundle ? files.bundle.name : ''}
-                    </a></td>
+                    <td class="selectable">
+                        <a href="{files.bundle ? files.bundle.url : ''}">
+                            <i class="file archive outline icon"></i>
+                            Bundle: {files.bundle ? files.bundle.name : ''}
+                        </a>
+                    </td>
                 </tr>
                 <tr each="{file in files.dumps}" show="{files.dumps}">
-                    <td class="selectable"><a href="{file.url}"><i class="file archive outline icon"></i>Dump:
-                        {file.name}</a></td>
+                    <td class="selectable">
+                        <a href="{file.url}">
+                            <i class="file archive outline icon"></i>
+                            Dump: {file.name}
+                        </a>
+                    </td>
                 </tr>
                 <tr>
-                    <td show="{!files.dumps && !files.bundle}"><em>No Files Yet</em></td>
+                    <td show="{!files.dumps && !files.bundle}">
+                        <em>No Files Yet</em>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -403,6 +378,7 @@
             margin 0 auto
             width 100%
             color #2c3f4c
+            padding 50px 0 150px
 
             @media screen and (min-width 768px)
                 width 85%
@@ -419,11 +395,6 @@
             .ui.styled.accordion
                 width 100%
 
-            .ui.styled.accordion .phase-header.active
-                color rgb(44, 63, 76) !important
-                border-bottom solid 1px gainsboro !important
-                background #05b5ad87 !important
-
             .phase-header
                 font-family 'Roboto', sans-serif
                 font-size 20px !important
@@ -432,9 +403,14 @@
                 background-color #e5fbfa
                 color $blue !important
 
+            .ui.styled.accordion .phase-header.active
+                color rgb(44, 63, 76) !important
+                border-bottom solid 1px gainsboro !important
+                background rgba(5,181,173, 65) !important
+
             .phase-header:hover
                 color rgb(44, 63, 76) !important
-                background #05b5ad65 !important
+                background rgba(5,181,173, 65) !important
 
             .phase-label
                 font-size 15px
@@ -542,7 +518,6 @@
             CODALAB.api.create_dump(self.competition.id)
                 .done(data => {
                     $(self.refs.dump_modal).modal('show')
-                    // toastr.success(data.status + '<br>This may take a few minutes.')
                     setTimeout(self.update_files, 2000)
                 })
                 .fail(response => {
@@ -560,7 +535,6 @@
         self.leaderboard_selected = function (data, event) {
             self.selected_leaderboard_index = data.id
             self.update()
-            console.log(data)
 
             CODALAB.events.trigger('leaderboard_selected', data)
         }

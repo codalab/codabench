@@ -1,5 +1,4 @@
 <submission-manager class="submission-manager">
-    <h1>Submission manager</h1>
     <div if="{ opts.admin }" class="admin-buttons">
         <a class="ui green button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
@@ -9,7 +8,9 @@
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
+                <div class="parent-modal item" each="{phase in opts.competition.phases}"
+                     onclick="{rerun_phase.bind(this, phase)}">{ phase.name }
+                </div>
             </div>
         </div>
     </div>
@@ -46,8 +47,11 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{ _.get(submissions, 'length', 0) === 0}" class="center aligned"><td colspan="6"><em>No submissions found! Please make a submission</em></td></tr>
-        <tr each="{ submission, index in filter_children(submissions) }" onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
+        <tr if="{ _.get(submissions, 'length', 0) === 0}" class="center aligned">
+            <td colspan="6"><em>No submissions found! Please make a submission</em></td>
+        </tr>
+        <tr each="{ submission, index in filter_children(submissions) }"
+            onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
@@ -117,7 +121,7 @@
                     <submission-modal submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
-                        <submission-scores leaderboards="{leaderboards}"></submission-scores>
+                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
                 </div>
             </div>
         </div>
@@ -145,12 +149,12 @@
             return _.filter(submissions, sub => {
                 return !sub.parent
             })
-        } 
+        }
 
         self.do_nothing = event => {
             event.stopPropagation()
         }
-        
+
         self.is_admin = () => {
             return _.get(self.selected_submission, 'admin', false)
         }
@@ -163,7 +167,7 @@
 
         self.update_submissions = function (filters) {
             if (opts.admin) {
-                filters = filters || {phase__competition: opts.competition.id }
+                filters = filters || {phase__competition: opts.competition.id}
             } else {
                 filters = filters || {phase: self.selected_phase.id}
             }
@@ -188,7 +192,7 @@
                 })
         }
 
-        self.add_to_leaderboard = function(submission) {
+        self.add_to_leaderboard = function (submission) {
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
@@ -304,7 +308,7 @@
             $(self.refs.modal)
                 .modal({
                     onShow: () => {
-                        if(_.get(self.selected_submission, 'has_children', false)){
+                        if (_.get(self.selected_submission, 'has_children', false)) {
                             // only try and tabulate the parent modal if children exist
                             let path = self.is_admin() ? 'admin_child_0' : 'child_0'
                             $('.menu .parent-modal.item')
@@ -316,12 +320,12 @@
             CODALAB.events.trigger('submission_clicked')
         }
 
-        CODALAB.events.on('phase_selected', function(selected_phase) {
+        CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
             self.update_submissions()
         })
 
-        CODALAB.events.on('new_submission_created', function(new_submission_data) {
+        CODALAB.events.on('new_submission_created', function (new_submission_data) {
             self.submissions.unshift(new_submission_data)
             self.update()
         })
@@ -334,8 +338,8 @@
 
     <style type="text/stylus">
         :scope
-            margin 1em 0
-            //    height 100%
+            margin 2em 0
+
         .admin-buttons
             padding-bottom: 20px;
 

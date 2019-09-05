@@ -1,40 +1,120 @@
 <comp-detail-phases>
     <section>
-        <ol class="progress-bar">
-            <li each="{ phase in phases }" class="{is-active: phase.status == 'Current'}">
-                <div class="phase-name">{ phase.name }<br></div>
-                <div class="phase-date">{get_date(phase.start)}</div>
-                <span class="prog-span"></span>
-            </li>
-        </ol>
-        <!--<canvas height="35" width="800" id="phase-progress">-->
-
-        </canvas>
+        <canvas id="myChart" height="120" width="800"></canvas>
     </section>
 
     <script>
         var self = this
 
+        self.phase_array = []
+
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.phases = competition.phases
-
-            first_phase = _.first(self.phases)
-            last_phase = _.last(self.phases)
-
-            first_start = new Date(first_phase.start).getTime()
-            first_end = new Date(first_phase.end).getTime()
-            today = new Date().getTime()
-            last_start = new Date(last_phase.start).getTime()
-            last_end = new Date(last_phase.end || last_phase.start).getTime()
-
-            percentage = self.get_scale(today, first_start, last_end, 0, 100)
-            linear_gradient = 'linear-gradient(to right, #00bbbb ' + percentage + '%, gainsboro ' + percentage + '%, gainsboro 100%)'
+            self.phase_timeline(competition.phases)
             self.update()
-            $('.progress-bar .is-active:not(:last-child) .prog-span').css('background-image', linear_gradient)
+            self.draw_chart()
         })
 
-        self.get_scale = function (today_date, start_date, end_date, min_percentage=0, max_percentage=100) {
+        // TODO: Need Labels(tooltips?) to properly display which phase they are attached to to give better context to the end-user.
+        self.draw_chart = function () {
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            data: [
+                                {x: self.get_date(self.phase_array[0]), y: 0},
+                            ],
+                            borderWidth: 6,
+                            borderColor: '#00bbbb',
+                            pointBackgroundColor: '#00bbbb',
+                            pointStyle: 'circle'
+                        },
+                        {
+                            data: [
+                                {x: self.get_date(self.phase_array[0]), y: 0},
+                                {x: self.get_date(new Date().getTime()), y: 0}
+                            ],
+                            borderWidth: 6,
+                            borderColor: '#00bbbb',
+                            pointBackgroundColor: '#00bbbb',
+                            borderCapStyle: 'round',
+                            pointStyle: 'line',
+                        },
+                        {
+                            data: [
+                                {x: self.get_date(new Date().getTime()), y: 0}
+                            ],
+                            radius: 1,
+                            borderWidth: 1,
+                            borderColor: '#00bbbb',
+                            pointBackgroundColor: '#00bbbb',
+                            borderCapStyle: 'round',
+                            pointStyle: 'rect',
+                        },
+                        {
+                            fill: false,
+                            data: _.map(self.phase_array, (phase) => {
+                                return {x: self.get_date(phase), y: 0}
+                            }),
+                            borderWidth: 4,
+                            pointBackgroundColor: '#f6f8fa',
+                            borderColor: '#4a4a4a',
+                            pointRadius: 2,
+                            pointHoverRadius: 8,
+                        }]
+                },
+                options: {
+                    animation: {
+                        duration: 0,
+                    },
+                    layout: {
+                        padding: {
+                            left: 50,
+                            right: 50,
+                        }
+                    },
+                    scales: {
+                        yAxes: [{
+                            display: false,
+                            gridLines: {
+                                display: false
+                            },
+                        }],
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                            },
+                            display: true,
+                            gridLines: {
+                                display: true
+                            },
+                        }]
+                    },
+                    legend: {
+                        display: false
+                    },
+                    axes: {
+                        display: false
+                    },
+                    tooltips: {
+                        backgroundColor: '#fff',
+                        padding: 20,
+                        borderColor: '#DCDCDC',
+                        borderWidth: 1,
+                        titleFontSize: 12,
+                        titleFontColor: '#2d3f4b',
+                        bodyFontSize: 0,
+                        displayColors: false,
+                    }
+                }
+            });
+        }
+
+        self.get_scale = function (today_date, start_date, end_date, min_percentage = 0, max_percentage = 100) {
             return (((today_date - start_date) * (max_percentage - min_percentage)) / (end_date - start_date)) + min_percentage
         }
 
@@ -42,6 +122,19 @@
         self.get_date = function (phase_date) {
             var date = new Date(phase_date)
             return date.toUTCString()
+        }
+
+        self.phase_timeline = function (phases) {
+            _.forEach(phases, function (phase) {
+                phase_start = new Date(phase.start).getTime()
+                if (phase.end) {
+                    phase_end = new Date(phase.end).getTime()
+                } else {
+                    phase_end = new Date(phase.start).getTime()
+                }
+                self.phase_array.push(phase_start)
+                self.phase_array.push(phase_end)
+            })
         }
     </script>
 
