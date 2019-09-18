@@ -16,6 +16,17 @@
             <div class="ui horizontal divider" style="padding-bottom: 5px; padding-top: 5px;">
                 &nbsp;&nbsp;&nbsp;&nbsp; Or &nbsp;&nbsp;&nbsp;&nbsp;
             </div>
+
+            {% if form.non_field_errors %}
+            <div class="ui red message">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            {% if form.username.errors %}
+            <div class="ui red message">
+                {{ form.username.errors }}
+            </div>
+            {% endif %}
             <div class="field">
                 <div class="ui left icon input">
                     <i class="user icon"></i>
@@ -28,6 +39,12 @@
                            required>
                 </div>
             </div>
+
+            {% if form.password.errors %}
+            <div class="ui red message">
+                {{ form.password.errors }}
+            </div>
+            {% endif %}
             <div class="field">
                 <div class="ui left icon input">
                     <i class="lock icon"></i>
