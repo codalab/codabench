@@ -18,40 +18,7 @@
     <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.10/semantic.min.js"></script>
 
     <!-- Compiled stylus -->
-    <link rel="stylesheet" href="{% static "output.css" %}">
-
-    <script>
-        $(document)
-            .ready(function () {
-                $('.ui.form')
-                    .form({
-                        fields: {
-                            email: {
-                                identifier: 'email',
-                                rules: [{
-                                    type: 'empty',
-                                    prompt: 'Please enter your e-mail'
-                                },
-                                    {
-                                        type: 'email',
-                                        prompt: 'Please enter a valid e-mail'
-                                    }]
-                            },
-                            password: {
-                                identifier: 'password',
-                                rules: [{
-                                    type: 'empty',
-                                    prompt: 'Please enter your password'
-                                },
-                                    {
-                                        type: 'length[6]',
-                                        prompt: 'Your password must be at least 6 characters'
-                                    }]
-                            }
-                        }
-                    });
-            });
-    </script>
+    <link rel="stylesheet" href="{% static 'generated/output.css' %}">
 </head>
 <body id="simple_page">
 
