@@ -80,7 +80,6 @@
                     </div>
                 </div>
                 <table class="ui celled definition table">
-                <!--TODO make an empty column that says "please add a column" if leaderboard is empty-->
                     <thead>
                     <tr>
                         <th width="125px"></th>
@@ -142,7 +141,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Column Key</td>
+                        <td>Column Key <span style="color: red;">*</span></td>
                         <td each="{ column, index in columns || [] }">
                             <input type="text" class="ui field" name="column_key_{index}" value="{_.get(column, 'key')}" onchange="{ modal_updated }">
                         </td>

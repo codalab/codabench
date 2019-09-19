@@ -22,7 +22,8 @@
                         <td>{ phase.name }</td>
                         <td class="right aligned">
                             <a class="chevron">
-                                <sorting-chevrons data="{ phases }" index="{ index }"
+                                <sorting-chevrons data="{ phases }"
+                                                  index="{ index }"
                                                   onupdate="{ form_updated }"></sorting-chevrons>
                             </a>
                             <a class="icon-button"
@@ -113,8 +114,8 @@
                                 <label>
                                     Execution Time Limit <span data-tooltip="In milliseconds, 600ms default if unset"
                                                                data-inverted=""
-                                                               data-position="bottom center"><i
-                                        class="help icon circle"></i></span>
+                                                               data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
                                 </label>
                                 <input type="number" name="execution_time_limit">
                             </div>
@@ -123,8 +124,8 @@
                                     Max Submissions Per Day <span
                                         data-tooltip="The maximum number of submissions a user can be made per day"
                                         data-inverted=""
-                                        data-position="bottom center"><i
-                                        class="help icon circle"></i></span>
+                                        data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
                                 </label>
                                 <input type="number" name="max_submissions_per_day">
                             </div>
@@ -279,11 +280,11 @@
                 })
                 _.forEach(_.range(self.phases.length), i => {
                     if (i !== 0) {
-                        let end = Date.parse(self.phases[i-1].end)
+                        let end = Date.parse(self.phases[i - 1].end)
                         let start = Date.parse(self.phases[i].start)
 
                         if (end > start || !end) {
-                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i-1], 'name', i)}" ends`
+                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
                             if (!self.warnings.includes(message)) {
                                 self.warnings.push(message)
                                 self.update()
