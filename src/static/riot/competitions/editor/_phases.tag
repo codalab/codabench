@@ -134,8 +134,8 @@
                                     Max Submissions Per Person <span
                                         data-tooltip="The maximum number of submissions any single user can make to the phase"
                                         data-inverted=""
-                                        data-position="bottom center"><i
-                                        class="help icon circle"></i></span>
+                                        data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
                                 </label>
                                 <input type="number" name="max_submissions_per_person">
                             </div>
