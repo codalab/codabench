@@ -58,19 +58,25 @@
 
     <script>
         let self = this
+        self.competition_id = undefined
 
         self.on('mount', () => {
-            self.update_participants()
             $(self.refs.participant_status).dropdown()
+        })
+
+        CODALAB.events.on('competition_loaded', function(competition) {
+            self.competition_id = competition.id
+            self.update_participants()
         })
 
         self.update_participants = filters => {
             filters = filters || {}
-            filters.competition = opts.competition_id
+            filters.competition = self.competition_id
             let status = self.refs.participant_status.value
             if (status && status !== '-') {
                 filters.status = status
             }
+
             CODALAB.api.get_participants(filters)
                 .done(participants => {
                     self.participants = participants

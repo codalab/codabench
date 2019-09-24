@@ -149,7 +149,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'registration_auto_approve',
             'description',
             'participant_count',
-            'submission_count'
+            'submission_count',
         )
 
 
