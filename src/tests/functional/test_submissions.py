@@ -17,7 +17,7 @@ class TestSubmissions(SeleniumTestCase):
 
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
-        self.get(reverse('competitions:detail', kwargs={'pk': self.competition.id}))
+        self.get(reverse('competitions:detail', kwargs={'pk': self.competition.id}) + '/#/participate-tab')
         with mock.patch('competitions.tasks.app.send_task') as celery_app:
             class Task:
                 def __init__(self):
