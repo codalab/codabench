@@ -143,7 +143,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'participant_status',
             'participant_count',
             'submission_count',
-            'registration_required'
+            'registration_required',
         )
 
 
