@@ -208,7 +208,7 @@
 
         <!-- Manage Competition Modal -->
         <div class="ui manage-competition modal">
-            <a href="{window.URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
+            <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
             <button class="ui button published icon { grey: !competition.published, green: competition.published }"
                     onclick="{ toggle_competition_publish }">
                 <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
@@ -271,7 +271,7 @@
             Creating Competition Dump
         </div>
         <div class="content">
-            Success! You competition dump is being created. This may take some time.
+            Success! Your competition dump is being created. This may take some time.
             If the files table does not update with the new dump, try refreshing the table.
         </div>
         <div class="actions">

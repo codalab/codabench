@@ -47,7 +47,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{ _.get(submissions, 'length', 0) === 0}" class="center aligned">
+        <tr if="{ _.isEmpty(submissions)}" class="center aligned">
             <td colspan="6"><em>No submissions found! Please make a submission</em></td>
         </tr>
         <tr each="{ submission, index in filter_children(submissions) }"

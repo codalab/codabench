@@ -3,8 +3,6 @@
         <div class="competition-logo">
             <img class="competition-image ui medium circular image" height="200" width="200" alt="Competition Logo"
                  src="{ competition.logo }">
-            <!-- <img class="competition-image ui medium circular image" height="200" width="200" alt="Competition Logo"
-                 src="https://picsum.photos/200"> -->
         </div>
         <div class="competition-details">
             <div class="competition-name">
@@ -12,15 +10,15 @@
                 <div if={competition.admin_privilege} class="ui admin-dropdown dropdown">
                     <i onclick="{admin_dropdown}" class="admin-icon mini cogs icon"></i>
                     <div class="menu">
-                        <div onclick="{admin_modal.bind(self, 'competition')}" class="item">
+                        <div onclick="{admin_modal.bind(this, 'competition')}" class="item">
                             <i class="wrench icon"></i>
                             <span class="label-text">Manage Competition</span>
                         </div>
-                        <div onclick="{admin_modal.bind(self, 'submissions')}" class="item">
+                        <div onclick="{admin_modal.bind(this, 'submissions')}" class="item">
                             <i class="file archive outline icon"></i>
                             <span class="label-text">Manage Submissions</span>
                         </div>
-                        <div onclick="{admin_modal.bind(self, 'participants')}" class="item">
+                        <div onclick="{admin_modal.bind(this, 'participants')}" class="item">
                             <i class="users icon"></i>
                             <span class="label-text">Manage Participants</span>
                         </div>

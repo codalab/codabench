@@ -122,9 +122,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
-    # TODO: Remove default and replace with Subquery that doesn't return multiple lines
-    #   CompetitionViewSet for the annotation
-    participant_count = serializers.IntegerField(read_only=True, default=10)
+    participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
 
     class Meta:

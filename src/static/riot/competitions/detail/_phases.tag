@@ -19,7 +19,7 @@
         // TODO: Need Labels(tooltips?) to properly display which phase they are attached to to give better context to the end-user.
         self.draw_chart = function () {
             var ctx = document.getElementById('myChart').getContext('2d');
-            var myChart = new Chart(ctx, {
+            new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [
@@ -114,7 +114,9 @@
             });
         }
 
-        self.get_scale = function (today_date, start_date, end_date, min_percentage = 0, max_percentage = 100) {
+        self.get_scale = function (today_date, start_date, end_date, min_percentage, max_percentage) {
+            min_percentage = min_percentage || 0
+            max_percentage = max_percentage || 100
             return (((today_date - start_date) * (max_percentage - min_percentage)) / (end_date - start_date)) + min_percentage
         }
 
@@ -126,14 +128,9 @@
 
         self.phase_timeline = function (phases) {
             _.forEach(phases, function (phase) {
-                phase_start = new Date(phase.start).getTime()
-                if (phase.end) {
-                    phase_end = new Date(phase.end).getTime()
-                } else {
-                    phase_end = new Date(phase.start).getTime()
-                }
-                self.phase_array.push(phase_start)
-                self.phase_array.push(phase_end)
+                self.phase_array.push(new Date(phase.start).getTime())
+                // TODO: how do we handle endless phases?
+                self.phase_array.push(new Date(phase.end ? phase.end : phase.start).getTime())
             })
         }
     </script>
@@ -158,7 +155,6 @@
             width 70%
             margin 0 auto 2rem
 
-
         .phase-date
             display block
 
@@ -182,18 +178,15 @@
             min-width 0
             text-align center
 
-
         .progress-bar li:first-child,
         .progress-bar li:last-child
             flex 1
-
 
         .progress-bar li:first-child
             text-align left
 
         .progress-bar li:last-child
             text-align right
-
 
         .progress-bar li:before
             content ""
@@ -209,10 +202,8 @@
             z-index 3
             transition all .2s ease-in-out
 
-
         .progress-bar li:first-child:before
             left 0
-
 
         .progress-bar li:last-child:before
             right 0
@@ -220,7 +211,6 @@
 
         .progress-bar div
             transition opacity .3s ease-in-out
-
 
         .progress-bar li:not(.is-active) div
             opacity 0
@@ -251,8 +241,6 @@
             background-image linear-gradient(to right, gainsboro, gainsboro)
             height 2px
 
-        //
-
         .progress-bar li:last-child div
             display block
             position relative
@@ -260,31 +248,25 @@
         .progress-bar .is-complete:before
             background-color: $teal
 
-
         .progress-bar .is-active:before,
         .progress-bar li:hover:before,
         .progress-bar .is-hovered:before
             background-color $background
             border-color $teal
 
-
         .progress-bar li:hover:before,
         .progress-bar .is-hovered:before
             transform scale(1.33)
-
 
         .progress-bar li:hover div,
         .progress-bar li.is-hovered div
             opacity 1
 
-
         .progress-bar:hover li:not(:hover) div
             opacity 0
 
-
         .progress-bar .has-changes
             opacity 1 !important
-
 
         .progress-bar .has-changes:before
             content ""
