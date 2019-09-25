@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    .or-line {
+        padding: 5px 0;
+    }
+    .or-words {
+        padding: 0 20px
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="six wide centered column">
     {% if form.non_field_errors %}
@@ -22,8 +33,8 @@
                 <a class="ui fluid basic button" href="{{ chahub_signup_url }}" target="_blank">Create a ChaHub
                     Account</a>
             </div>
-            <div class="ui horizontal divider" style="padding-bottom: 5px; padding-top: 5px;">
-                &nbsp;&nbsp;&nbsp;&nbsp; Or &nbsp;&nbsp;&nbsp;&nbsp;
+            <div class="ui horizontal divider or-line">
+                <span class="or-words">Or</span>
             </div>
             <div class="field">
                 <div class="ui left icon input">
@@ -100,7 +111,7 @@
             <button class="ui blue fluid submit button" type="submit">Sign Up</button>
         </form>
         <div class="ui divider"></div>
-        <p>Or <a href="{% url 'accounts:login' %}">Log In</a> instead.</p>
+        <p>Already have an account? <a href="{% url 'accounts:login' %}">Log In</a> instead.</p>
     </div>
 
 </div>

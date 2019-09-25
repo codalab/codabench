@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    .or-line {
+        padding: 5px 0;
+    }
+    .or-words {
+        padding: 0 20px
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="sixteen wide mobile six wide computer centered column">
     <h2 class="ui blue centered header">
@@ -13,8 +25,8 @@
             <div class="field">
                 <a class="ui fluid basic button" href="{% url 'social:begin' 'chahub' %}">Log in with ChaHub</a>
             </div>
-            <div class="ui horizontal divider" style="padding-bottom: 5px; padding-top: 5px;">
-                &nbsp;&nbsp;&nbsp;&nbsp; Or &nbsp;&nbsp;&nbsp;&nbsp;
+            <div class="ui horizontal divider or-line">
+                <span class="or-words">or</span>
             </div>
 
             {% if form.non_field_errors %}
