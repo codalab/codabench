@@ -102,7 +102,7 @@
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
 
-                <div class="ui advanced-settings accordion">
+                <div class="ui accordion" ref="advanced_settings">
                     <div class="title">
                         <i class="dropdown icon"></i>
                         Advanced
@@ -205,7 +205,7 @@
                 }
             })
             $('.ui.checkbox', self.root).checkbox()
-            $('.ui.advanced-settings.accordion').accordion()
+            $(self.refs.advanced_settings).accordion()
         })
 
         /*---------------------------------------------------------------------
