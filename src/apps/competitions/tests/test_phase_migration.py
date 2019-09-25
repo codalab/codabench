@@ -9,7 +9,6 @@ from competitions.tasks import do_phase_migrations
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
     TaskFactory
 
-
 twenty_minutes_ago = now() - timedelta(hours=0, minutes=20)
 twenty_five_minutes_ago = now() - timedelta(hours=0, minutes=25)
 five_minutes_ago = now() - timedelta(hours=0, minutes=5)

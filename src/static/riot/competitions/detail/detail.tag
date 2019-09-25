@@ -1,5 +1,6 @@
 <competition-detail>
     <comp-detail-title class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-title>
+    <comp-detail-phases class="comp-detail-phases" competition="{ competition }"></comp-detail-phases>
     <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
     <script>
         var self = this
@@ -40,5 +41,15 @@
 
         .ui.inverted.table
             background #44586b
+
+        .ui.modal
+            margin 20px
+
+        .ui.table
+            color $blue !important
+
+            thead > tr > th
+                color $blue !important
+                background-color $lightblue !important
     </style>
 </competition-detail>
