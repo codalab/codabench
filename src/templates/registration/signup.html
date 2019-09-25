@@ -1,17 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block extra_head %}
-<style>
-    .or-line {
-        padding: 5px 0;
-    }
-    .or-words {
-        padding: 0 20px
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="six wide centered column">
     {% if form.non_field_errors %}
@@ -33,8 +22,8 @@
                 <a class="ui fluid basic button" href="{{ chahub_signup_url }}" target="_blank">Create a ChaHub
                     Account</a>
             </div>
-            <div class="ui horizontal divider or-line">
-                <span class="or-words">Or</span>
+            <div class="ui horizontal divider form-divider-line">
+                <span class="form-divider-words">Or</span>
             </div>
             <div class="field">
                 <div class="ui left icon input">
