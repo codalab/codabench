@@ -1,32 +1,39 @@
 <competition-collaborators>
-    <button class="ui primary button modal-button" ref="modal_button">
-        <i class="add circle icon"></i> Add collaborator
-    </button>
-
-    <div show="{collabs.length > 0}">
-        <div class="ui horizontal divider"></div>
-        <table class="ui celled table">
-            <thead>
-            <tr>
-                <th>Collaborator Name</th>
-                <th class="action-column">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr each="{collab, index in collabs}">
-                <td>{collab.name || collab.username}</td>
-                <td class="center aligned">
-                    <button class="ui button red" onclick="{ remove_collaborator.bind(this, index, (collab.name || collab.username)) }">Remove</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="ui container center aligned grid" show="{ collabs.length === 0 }">
+    <div class="ui center aligned grid">
         <div class="row">
-            <div class="four wide column">
-                <em>No collaborators yet!</em>
+            <div class="fourteen wide column">
+                <table class="ui padded table">
+                    <thead>
+                    <tr>
+                        <th colspan="2">Collaborators</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{collab, index in collabs}">
+                        <td>{collab.name || collab.username}</td>
+                        <td class="right aligned">
+                            <a class="icon-button"
+                               onclick="{ remove_collaborator.bind(this, index, (collab.name || collab.username)) }">
+                                <i class="red trash alternate outline icon"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr show="{collabs.length === 0}">
+                        <td colspan="2" class="center aligned">
+                            <em>No collaborators yet!</em>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2" class="right aligned">
+                            <button class="ui tiny inverted green icon button" ref="modal_button">
+                                <i class="add icon"></i> Add collaborator
+                            </button>
+                        </th>
+                    </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
@@ -131,7 +138,7 @@
         })
     </script>
     <style type="text/stylus">
-        .action-column
-            width: 150px !important
+        .chevron, .icon-button
+            cursor pointer
     </style>
 </competition-collaborators>

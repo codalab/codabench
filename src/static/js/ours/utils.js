@@ -125,6 +125,23 @@ function set_form_data(data, base_element) {
     })
 }
 
+function create_easyMDE(element) {
+    return new EasyMDE({
+        element: element,
+        autoRefresh: true,
+        forceSync: true,
+        hideIcons: ["side-by-side", "fullscreen"],
+        renderingConfig: {
+            markedOptions: {
+                sanitize: true,
+                sanitizer: function (input) {
+                    return sanitize_HTML(input)
+                }
+            }
+        }
+    })
+}
+
 function sanitize_HTML(input, extra_settings) {
     extra_settings = extra_settings || {}
     input = input || ''
