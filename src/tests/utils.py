@@ -80,19 +80,33 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.host = socket.gethostbyname(socket.gethostname())
+
+        # Setup console.log logging
+        desired_capabilities = DesiredCapabilities.FIREFOX
+        desired_capabilities['loggingPrefs'] = {'browser': 'ALL'}
+
         cls.selenium = webdriver.Remote(
             command_executor=f'http://{settings.SELENIUM_HOSTNAME}:4444/wd/hub',
-            desired_capabilities=DesiredCapabilities.FIREFOX,
+            desired_capabilities=desired_capabilities,
         )
 
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
+
+        # Save console.log output
+        output_path = os.path.join(cls.circle_dir, "console.log.txt")
+        with open(output_path, 'w') as f:
+            f.writelines(cls.selenium.get_log('browser'))
+
         super().tearDownClass()
 
     def wait(self, seconds):
@@ -121,8 +135,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         self.selenium.get_screenshot_as_file(name)
 
     def circleci_screenshot(self, name="screenshot.png"):
-        circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
-        self.screenshot(os.path.join(circle_dir, name))
+        self.screenshot(os.path.join(self.circle_dir, name))
 
     def execute_script(self, script):
         return self.selenium.execute_script(script)
