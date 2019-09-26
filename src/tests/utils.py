@@ -99,11 +99,14 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     def tearDownClass(cls):
         cls.selenium.quit()
 
+        # TODO: Saving logs is not working, gets HTTP 405 not allowed. Maybe our `desired_capabilities` need to change
+        # to reflect specific firefox stuff?
+        #
         # Save console.log output
-        output_path = os.path.join(cls.circle_dir, "console.log.txt")
-        with open(output_path, 'w') as f:
-            f.write("Selenium browser logs:\n")
-            f.writelines(cls.selenium.get_log('browser'))
+        # output_path = os.path.join(cls.circle_dir, "console.log.txt")
+        # with open(output_path, 'w') as f:
+        #     f.write("Selenium browser logs:\n")
+        #     f.writelines(cls.selenium.get_log('browser'))
 
         super().tearDownClass()
 
