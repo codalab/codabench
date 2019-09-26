@@ -80,14 +80,11 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.host = socket.gethostbyname(socket.gethostname())
+        cls.circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
 
         # Setup console.log logging
         desired_capabilities = DesiredCapabilities.FIREFOX
