@@ -17,15 +17,6 @@ class TestCompetitions(SeleniumTestCase):
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'competition.zip'))
         self.circleci_screenshot(name='uploading_comp.png')
 
-        self.wait(3)
-        self.circleci_screenshot(name='uploading_comp2.png')
-
-        self.wait(3)
-        self.circleci_screenshot(name='uploading_comp3.png')
-
-        self.wait(3)
-        self.circleci_screenshot(name='uploading_comp4.png')
-
         assert self.element_is_visible('div .ui.success.message')
 
         comp = self.user.competitions.first()

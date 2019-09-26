@@ -30,6 +30,13 @@ jobs:
 
       - run: cp .env_circleci .env
 
+
+      - run:
+          name: Making gross directories for minio, cannot be made by docker for some reason
+          command: |
+            sudo mkdir -p var/minio/public
+            sudo mkdir -p var/minio/private
+
       - run:
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
