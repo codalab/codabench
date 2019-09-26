@@ -26,16 +26,23 @@ class TestSubmissions(SeleniumTestCase):
         self.find(f'a[href="{comp_url}"]').click()
         self.assert_current_url(comp_url)
 
+        # This clicks the page before it loads fully, delay it a bit...
+        self.wait(5)
+        self.find('.item[data-tab="participate-tab"]').click()
+
         self.circleci_screenshot("set_submission_file_name.png")
         self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission.zip'))
         self.circleci_screenshot(name='uploading_submission.png')
 
-        assert self.element_is_visible('#output-modal')
+        # The accordion shows "Running submission.zip"
+        assert self.find_text_in_class('.submission-output-container .title', "Running submission.zip")
 
+        # Inside the accordion the output is being streamed
+        self.find('.submission-output-container .title').click()
         assert self.find_text_in_class('.submission_output', 'Scores')
         assert self.find_text_in_class('.submission_output', 'accuracy')
 
-        self.execute_script("$('#output-modal').modal('hide')")
+        # The submission table lists our submission!
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission.zip'
 
         submission = self.user.submission.first()

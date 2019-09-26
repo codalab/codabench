@@ -15,5 +15,3 @@ services:
     ports:
       - 4444:4444
       - 5900:5900
-
-#  compute_worker:

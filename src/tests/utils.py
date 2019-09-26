@@ -113,8 +113,8 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
             self.circleci_screenshot(f'find_{selector}.png')
             raise e
 
-    def find_text_in_class(self, klass, text):
-        wait = WebDriverWait(self.selenium, 60)
+    def find_text_in_class(self, klass, text, timeout=60):
+        wait = WebDriverWait(self.selenium, timeout)
         return wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, klass), text))
 
     def screenshot(self, name="screenshot.png"):
