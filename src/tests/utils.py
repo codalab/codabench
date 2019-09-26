@@ -102,6 +102,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         # Save console.log output
         output_path = os.path.join(cls.circle_dir, "console.log.txt")
         with open(output_path, 'w') as f:
+            f.write("Selenium browser logs:\n")
             f.writelines(cls.selenium.get_log('browser'))
 
         super().tearDownClass()

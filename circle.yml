@@ -14,6 +14,20 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          # NOTE: To connect to this, use an SSH tunnel in front, like so..
+          #
+          #     In one terminal:
+          #         $ ssh -p PORT ubuntu@CIRCLE_IP_ADDRESS -L 5900:localhost:5900
+          #
+          #     In another terminal:
+          #         $ open vnc://0.0.0.0:5900
+          name: Download and start X for VNC viewing
+          command: |
+            sudo apt-get install -y x11vnc
+            x11vnc -forever -nopw
+          background: true
+
       - run: cp .env_circleci .env
 
       - run:
