@@ -1,7 +1,4 @@
 <competition-phases>
-    <button class="ui primary button modal-button" onclick="{ add }">
-        <i class="add circle icon"></i> Add phase
-    </button>
     <div class="ui warning message" if="{warnings.length > 0}">
         <div class="header">
             Phase Errors
@@ -11,34 +8,54 @@
         </ul>
     </div>
 
-    <div class="ui container center aligned grid" show="{ phases.length == 0 }">
+    <div class="ui center aligned grid">
         <div class="row">
-            <div class="four wide column">
-                <i>No phases added yet, at least 1 is required!</i>
+            <div class="fourteen wide column">
+                <table class="ui padded table">
+                    <thead>
+                    <tr>
+                        <th colspan="2">Phases</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr each="{phase, index in phases}">
+                        <td>{ phase.name }</td>
+                        <td class="right aligned">
+                            <a class="chevron">
+                                <sorting-chevrons data="{ phases }"
+                                                  index="{ index }"
+                                                  onupdate="{ form_updated }"></sorting-chevrons>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ edit.bind(this, index) }">
+                                <i class="blue edit icon"></i>
+                            </a>
+                            <a class="icon-button"
+                               onclick="{ delete_phase.bind(this, index) }">
+                                <i class="red trash alternate outline icon"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr show="{phases.length === 0}">
+                        <td colspan="2" class="center aligned">
+                            <em>No phases added yet, at least 1 is required!</em>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2" class="right aligned">
+                            <button class="ui tiny inverted green icon button" onclick="{ add }">
+                                <i class="add circle icon"></i> Add phase
+                            </button>
+                        </th>
+                    </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="ui centered">
-        <div class="ui one cards">
-            <a each="{phase, index in phases}" class="green card no-pointer">
-                <div class="content">
-                    <sorting-chevrons data="{ phases }" index="{ index }" class="hover" onupdate="{form_updated}"></sorting-chevrons>
-                    <div class="header">{ phase.name }</div>
-                </div>
-                <div class="extra content">
-                        <span class="left floated like hover" onclick="{ edit.bind(this, index) }">
-                            <i class="edit icon"></i>
-                            Edit
-                        </span>
-                    <span class="right floated star hover-red" onclick="{ delete_phase.bind(this, index) }">
-                            <i class="delete icon"></i>
-                            Delete
-                        </span>
-                </div>
-            </a>
-        </div>
-    </div>
     <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
@@ -84,6 +101,54 @@
                     <label>Description</label>
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
+
+                <div class="ui accordion" ref="advanced_settings">
+                    <div class="title">
+                        <i class="dropdown icon"></i>
+                        Advanced
+                        <i class="cogs icon"></i>
+                    </div>
+                    <div class="content">
+                        <div class="three fields">
+                            <div class="field">
+                                <label>
+                                    Execution Time Limit <span data-tooltip="In milliseconds, 600ms default if unset"
+                                                               data-inverted=""
+                                                               data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="execution_time_limit">
+                            </div>
+                            <div class="field">
+                                <label>
+                                    Max Submissions Per Day <span
+                                        data-tooltip="The maximum number of submissions a user can be made per day"
+                                        data-inverted=""
+                                        data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="max_submissions_per_day">
+                            </div>
+                            <div class="field">
+                                <label>
+                                    Max Submissions Per Person <span
+                                        data-tooltip="The maximum number of submissions any single user can make to the phase"
+                                        data-inverted=""
+                                        data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
+                                </label>
+                                <input type="number" name="max_submissions_per_person">
+                            </div>
+                        </div>
+
+                        <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
+                            <div class="ui checkbox">
+                                <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
+                                <label>Auto migrate to this phase</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
         <div class="actions">
@@ -110,12 +175,7 @@
 
         self.one("mount", function () {
             // awesome markdown editor
-            self.simple_markdown_editor = new EasyMDE({
-                element: self.refs.description,
-                autoRefresh: true,
-                forceSync: true,
-                hideIcons: ["preview", "side-by-side", "fullscreen"]
-            })
+            self.simple_markdown_editor = create_easyMDE(self.refs.description)
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
@@ -144,6 +204,8 @@
                     self.clear_form()
                 }
             })
+            $('.ui.checkbox', self.root).checkbox()
+            $(self.refs.advanced_settings).accordion()
         })
 
         /*---------------------------------------------------------------------
@@ -218,11 +280,11 @@
                 })
                 _.forEach(_.range(self.phases.length), i => {
                     if (i !== 0) {
-                        let end = Date.parse(self.phases[i-1].end)
+                        let end = Date.parse(self.phases[i - 1].end)
                         let start = Date.parse(self.phases[i].start)
 
                         if (end > start || !end) {
-                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i-1], 'name', i)}" ends`
+                            let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
                             if (!self.warnings.includes(message)) {
                                 self.warnings.push(message)
                                 self.update()
@@ -242,7 +304,7 @@
                 var indexed_phases = _.map(self.phases, (phase, i) => {
                     phase.index = i
                     if (!phase.end) {
-                        delete phase.end
+                        phase.end = null
                     }
                     return phase
                 })
@@ -270,6 +332,7 @@
                 .not('[readonly]').each(function (i, field) {
                 $(field).val('')
             })
+            $(self.refs.auto_migrate).prop('checked', false)
 
             self.simple_markdown_editor.value('')
 
@@ -294,7 +357,9 @@
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
 
+            self.update()
             set_form_data(phase, self.refs.form)
+            $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description)
@@ -312,20 +377,30 @@
         }
 
         self.delete_phase = function (index) {
-            if (self.phases.length === 1) {
-                toastr.error("Cannot delete, you need at least one phase")
-            } else {
-                if (confirm("Are you sure you want to delete '" + self.phases[index].name + "'?")) {
-                    self.phases.splice(index, 1)
-                    self.form_updated()
-                }
+            if (confirm("Are you sure you want to delete '" + self.phases[index].name + "'?")) {
+                self.phases.splice(index, 1)
+                self.form_updated()
             }
+
         }
 
         self.save = function () {
+            let number_fields = [
+                'max_submissions_per_person',
+                'max_submissions_per_day',
+                'execution_time_limit'
+            ]
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
-
+            data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
+            _.forEach(number_fields, field => {
+                let str = _.get(data, field)
+                if (str) {
+                    data[field] = parseInt(str)
+                } else {
+                    delete data[field]
+                }
+            })
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
             } else {
@@ -344,26 +419,8 @@
             self.form_updated()
         })
     </script>
-    <style scoped>
-        .ui[class*="left icon"].input > i.icon {
-            opacity: .15;
-        }
-
-        .modal-button {
-            margin-bottom: 20px !important;
-        }
-        .no-pointer:hover {
-            cursor: auto !important;
-        }
-
-        .hover:hover {
-            color: #262626;
-            cursor: pointer;
-        }
-
-        .hover-red:hover {
-            color: #DB2828;
-            cursor: pointer;
-        }
+    <style type="text/stylus">
+        .chevron, .icon-button
+            cursor pointer
     </style>
 </competition-phases>

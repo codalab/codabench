@@ -5,12 +5,6 @@
             <input ref="title">
         </div>
 
-        <!--<div class="field required">
-            <label>Logo</label>
-            <input type="file">
-        </div>-->
-
-
         <div class="field required">
             <label>Logo</label>
 
@@ -23,45 +17,14 @@
                 </button>
                 <input id="form_file_logo" type="file" ref="logo" accept="image/*">
 
-
-                <!-- Drop down selector -->
-                <!--<select class="dropdown fluid">
-                    <option value="test">Test</option>
-                    <option value="test">Test</option>
-                </select>-->
-
                 <!-- Just showing the file after it is uploaded -->
                 <input value="{ logo_file_name }" readonly onclick="document.getElementById('form_file_logo').click()">
             </div>
         </div>
-
-        <!--<div class="two fields">
-            <div class="ui calendar field required" ref="calendar_start">
-                <label>Start</label>
-                <div class="ui input left icon">
-                    <i class="calendar icon"></i>
-                    <input type="text" ref="start">
-                </div>
-            </div>
-
-            <div class="ui calendar field" ref="calendar_end">
-                <label>End</label>
-                <div class="ui input left icon">
-                    <i class="calendar icon"></i>
-                    <input type="text" ref="end">
-                </div>
-            </div>
-        </div>-->
-
-        <!--<div class="field required">
+        <div class="field smaller-mde">
             <label>Description</label>
-            <p>Uses <a href="https://simplemde.com/markdown-guide">markdown</a> formatting</p>
-            <textarea class="markdown-editor" ref="description"></textarea>
-        </div>-->
-        <!--                        <div class="field"> -->
-        <!--                            <label>Short Text</label> -->
-        <!--                            <textarea rows="2"></textarea> -->
-        <!--                        </div> -->
+            <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
+        </div>
     </div>
 
     <script>
@@ -78,36 +41,11 @@
         self.logo_file_name = ''
 
         self.one("mount", function () {
-            /*
-            // datetime pickers
-            var datetime_options = {
-                type: 'date',
-                popupOptions: {
-                    position: 'bottom left',
-                    lastResort: 'bottom left',
-                    hideOnScroll: false
-                },
-                onHide: function () {
-                    // Have to do this because onchange isn't fired when date is picked
-                    self.form_updated()
-                }
-            }
-            var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
-            var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
-
-            $(self.refs.calendar_start).calendar(start_options)
-            $(self.refs.calendar_end).calendar(end_options)
-
-            // awesome markdown editor
-            $(self.refs.description).each(function (i, ele) {
-                new SimpleMDE({element: ele})
-            })
-            */
+            self.markdown_editor = create_easyMDE(self.refs.comp_description)
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
-                console.log("Form Change Event Broadcast")
             })
 
             // Capture and convert logo to base64 for easy uploading
@@ -129,6 +67,7 @@
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value
+            self.data['description'] = self.markdown_editor.value()
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -154,6 +93,8 @@
             self.is_editing_competition = true
 
             self.refs.title.value = competition.title
+            self.markdown_editor.value(competition.description || '')
+
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
             self.uploaded_logo_name = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
             self.uploaded_logo = competition.logo

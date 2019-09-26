@@ -6,21 +6,41 @@
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
 
-        <div class="ui indicating progress" ref="progress">
-            <div class="bar">
-                <div class="progress">{ upload_progress }%</div>
+
+        <!--TODO: Do we want this progress bar? It's not working right now and it's messing with styling-->
+        <!--<div class="ui indicating progress" ref="progress">-->
+            <!--<div class="bar">-->
+                <!--<div class="progress">{ upload_progress }%</div>-->
+            <!--</div>-->
+        <!--</div>-->
+
+        <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="accordion">
+            <div class="title">
+                <i class="dropdown icon"></i>
+                {selected_submission.filename ? "Running " + selected_submission.filename : "Uploading..."}
+            </div>
+            <div class="ui basic segment">
+                <div class="content">
+                    <div id="submission-output" class="ui" ref="submission-output">
+                        <div class="header">Output</div>
+                        <div class="content">
+                            <!-- We have to have this on a gross line so Pre formatting stays nice -->
+                            <pre class="submission_output" ref="submission_output"><virtual
+                                    if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                    each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                            <div class="ui checkbox" ref="autoscroll_checkbox">
+                                <input type="checkbox"/>
+                                <label>Autoscroll output</label>
+                            </div>
+                            <div class="graph-container">
+                                <canvas class="output-chart" height="200" ref="chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="output-modal" class="ui modal" ref="modal">
-            <i id="close-modal" class="close icon"></i>
-            <div class="header">Output</div>
-            <div class="content">
-                <canvas ref="chart" style="width: 100%; height: 150px;"></canvas>
-                <!-- We have to have this on a gross line so Pre formatting stays nice -->
-                <pre class="submission_output" ref="submission_output"><virtual if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
-            </div>
-        </div>
     </div>
     <script>
         var self = this
@@ -31,6 +51,8 @@
         self.errors = {}
         self.lines = {}
         self.selected_submission = {}
+        self.display_output = false
+        self.autoscroll_selected = true
 
         self.graph_config = {
             type: 'line',
@@ -44,6 +66,7 @@
                 }]
             },
             options: {
+                maintainAspectRatio: false,
                 legend: false,
                 responsive: true,
                 animation: {
@@ -81,25 +104,28 @@
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
+            $('.ui.accordion', self.root).accordion({
+                onOpen: () => $('.submission-output-container .ui.basic.segment').show(),
+                onClose: () => $('.submission-output-container .ui.basic.segment').hide(),
+            })
 
+            $(self.refs.autoscroll_checkbox).checkbox({
+                onChecked: function () {
+                    self.autoscroll_selected = true;
+                    self.autoscroll_output()
+                },
+                onUnchecked: function () {
+                    self.autoscroll_selected = false;
+                },
+            })
 
+            self.set_checkbox()
 
-            /*
-            var loop = function () {
-                self.chart.data.labels.push('');
-                self.chart.data.datasets.forEach((dataset) => {
-                    dataset.data.push(Math.random() * 100);
-                });
-                self.chart.update();
-
-                //self.lines.push('asdf')
-                //self.update()
-                //self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
-                setTimeout(loop, 1000)
-            }
-            loop()
-             */
-
+            $(self.refs.submission_output).scroll(function () {
+                var output = self.refs.submission_output
+                self.autoscroll_selected = output.scrollTop === output.scrollHeight - Math.ceil($(output).height()) - 30
+                self.set_checkbox()
+            })
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
@@ -117,13 +143,14 @@
                 console.log(event)
             })
             ws.addEventListener("message", function (event) {
+                self.autoscroll_output()
                 try {
                     var event_data = event.data.split(';')[1]
                     var data = JSON.parse(event_data);
 
-                    if(data.type === "error_rate_update") {
+                    if (data.type === "error_rate_update") {
                         self.add_graph_data_point(data.error_rate)
-                    } else if(data.type === "message") {
+                    } else if (data.type === "message") {
                         self.add_line(data.message)
                     }
                 } catch (e) {
@@ -134,7 +161,12 @@
             ws.open()
         })
 
-        self.add_graph_data_point = function(number) {
+        self.set_checkbox = function () {
+            $(self.refs.autoscroll_checkbox).children('input').prop('checked', self.autoscroll_selected)
+        }
+
+
+        self.add_graph_data_point = function (number) {
             // Add empty label for the graph, may not be necessary?
             self.chart.data.labels.push('');
 
@@ -145,18 +177,18 @@
             self.chart.update();
         }
 
-        self.add_line = function(line) {
+        self.add_line = function (line) {
             var line_parts = line.split(/;(.+)/)
             var submission_id = line_parts[0]
             var message = line_parts[1]
 
-            if(!self.lines[submission_id]) {
+            if (!self.lines[submission_id]) {
                 self.lines[submission_id] = []
             }
 
             self.lines[submission_id].push(message + "\n")
             self.update()
-            self.refs.submission_output.scrollTop = self.refs.submission_output.scrollHeight
+            self.autoscroll_output()
         }
 
         self.clear_form = function () {
@@ -183,7 +215,7 @@
         }
 
         self.upload = function () {
-            $(self.refs.modal).modal('show')
+            self.display_output = true
 
             var data_file_metadata = {
                 type: 'submission'
@@ -206,7 +238,7 @@
                         "data": data.key,
                         "phase": self.selected_phase.id
                     })
-                        .done(function(data){
+                        .done(function (data) {
                             console.log("Submission created:")
                             console.log(data)
                             CODALAB.events.trigger('new_submission_created', data)
@@ -236,14 +268,21 @@
                 })
         }
 
-        CODALAB.events.on('phase_selected', function(selected_phase) {
+        CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
         })
-        CODALAB.events.on('submission_selected', function(selected_submission) {
-            console.log("selected_submission")
-            console.log(selected_submission)
+
+        CODALAB.events.on('submission_selected', function (selected_submission) {
             self.selected_submission = selected_submission
+            self.autoscroll_output()
         })
+
+        self.autoscroll_output = function () {
+            if (self.autoscroll_selected) {
+                var output = self.refs.submission_output
+                output.scrollTop = output.scrollHeight
+            }
+        }
     </script>
 
     <style type="text/stylus">
@@ -251,8 +290,32 @@
             display block
             width 100%
             height 100%
+            margin-bottom 15px
 
         code
             background hsl(220, 80%, 90%)
+
+        .submission-container
+            margin-top 1em
+
+        .hidden
+            display none
+
+        .submission-output-container
+            margin-top 15px
+
+            .ui.basic.segment
+                max-height 300px
+                display none
+                overflow-y auto
+
+        .submission_output
+            max-height 11em
+            padding 15px !important
+            overflow-y auto
+
+        .graph-container
+            display block
+            height 250px
     </style>
 </submission-upload>

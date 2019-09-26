@@ -22,10 +22,10 @@ class Competition(ChaHubSaveMixin, models.Model):
     collaborators = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="collaborations", blank=True)
     published = models.BooleanField(default=False)
     secret_key = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
-    registration_required = models.BooleanField(default=False)
     registration_auto_approve = models.BooleanField(default=False)
     terms = models.TextField(null=True, blank=True)
     is_migrating = models.BooleanField(default=False)
+    description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
 
     def __str__(self):

@@ -143,7 +143,7 @@ services:
         max-file: "10"
 
   compute_worker:
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1 --without-gossip --without-mingle --without-heartbeat"
     working_dir: /app
     build:
       context: .

@@ -47,9 +47,11 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'description',
             'status',
             'tasks',
+            'auto_migrate_to_this_phase',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
+            'execution_time_limit',
         )
 
 
@@ -90,6 +92,9 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'phases',
             'leaderboards',
             'collaborators',
+            'description',
+            'terms',
+            'registration_auto_approve',
         )
 
     def get_created_by(self, object):
@@ -141,9 +146,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'leaderboards',
             'collaborators',
             'participant_status',
+            'registration_auto_approve',
+            'description',
             'participant_count',
             'submission_count',
-            'registration_required'
         )
 
 
@@ -161,7 +167,8 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'created_when',
             'published',
             'participant_count',
-            'logo'
+            'logo',
+            'description',
         )
 
 
