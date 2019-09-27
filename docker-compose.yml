@@ -17,7 +17,6 @@ services:
       - .:/app
       - /tmp/codalab-v2/django:/codalab_tmp
     ports:
-      - 8000:8000
       - 80:80
     depends_on:
       - db
@@ -51,10 +50,11 @@ services:
     env_file: .env
     entrypoint: >
       /bin/sh -c "
+      set -x
       /usr/bin/mc config host add minio_docker $AWS_S3_ENDPOINT_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
-      /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
-      /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
-      /usr/bin/mc policy set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb /export/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb /export/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+      /usr/bin/mc policy set download /export/$AWS_STORAGE_BUCKET_NAME;
       exit 0;
       "
 
@@ -85,7 +85,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./var/postgres:/var/lib/postgresql/data
+      - ./var/postgres:/var/lib/postgresql/data:delegated
     logging:
       options:
         max-size: "20k"
@@ -102,7 +102,7 @@ services:
       - 5672:5672
     volumes:
       # To save rabbit state between container ups/downs
-      - ./var/rabbit:/var/lib/rabbit/
+      - ./var/rabbit:/var/lib/rabbit/:delegated
     logging:
       options:
         max-size: "20k"
