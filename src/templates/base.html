@@ -165,7 +165,6 @@
                 user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
             }
         }
-        {#CODALAB.state.user = JSON.parse("{{ USER_JSON_DATA|escapejs }}")#}
 
         {# Doing this here to append functionality to user data #}
         CODALAB.state.user.has_competition_admin_privileges = competition => {

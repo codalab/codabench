@@ -1,5 +1,3 @@
-// var CODALAB = {}
-
 // CODALAB.URLS = []  // Set in base.html
 // CODALAB.state = {} // Set in base.html
 CODALAB.events = riot.observable()

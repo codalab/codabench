@@ -9,6 +9,7 @@ from daphne.endpoints import build_endpoint_description_strings
 from daphne.server import Server
 from daphne.testing import DaphneProcess
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -77,7 +78,6 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     host = '0.0.0.0'
     serve_static = True
 
-    # test_files_dir = f'{os.getcwd()}/src/tests/functional/test_files'
     test_files_dir = f'/test_files'
 
     @classmethod
@@ -100,7 +100,8 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         cls.selenium.quit()
 
         # TODO: Saving logs is not working, gets HTTP 405 not allowed. Maybe our `desired_capabilities` need to change
-        # to reflect specific firefox stuff?
+        # to reflect specific firefox stuff? NOTE: From Jimmy Sept 27 2019 (Austen's birthday!): Chrome is the only
+        # browser this will work in (and we're currently using firefox)
         #
         # Save console.log output
         # output_path = os.path.join(cls.circle_dir, "console.log.txt")

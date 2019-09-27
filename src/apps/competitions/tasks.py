@@ -165,10 +165,7 @@ def create_detailed_output_file(detail_name, submission):
 
 
 def run_submission(submission_pk, task_pk=None, is_scoring=False):
-    if IS_TESTING:
-        return _run_submission(submission_pk, task_pk=task_pk, is_scoring=is_scoring)
-    else:
-        return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
+    return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
 
 
 @app.task(queue='site-worker', soft_time_limit=60)

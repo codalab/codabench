@@ -335,7 +335,6 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     def start(self):
         from .tasks import run_submission
-        # run_submission.apply_async((self.pk,))
         run_submission(self.pk)
 
     def re_run(self):

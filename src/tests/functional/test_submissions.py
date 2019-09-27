@@ -1,6 +1,5 @@
 import os
 
-from django.test import override_settings
 from django.urls import reverse
 
 from factories import UserFactory
@@ -12,7 +11,6 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    @override_settings(CELERY_TASK_ALWAYS_EAGER=False)
     def test_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
 
@@ -27,7 +25,7 @@ class TestSubmissions(SeleniumTestCase):
         self.assert_current_url(comp_url)
 
         # This clicks the page before it loads fully, delay it a bit...
-        self.wait(5)
+        self.wait(1)
         self.find('.item[data-tab="participate-tab"]').click()
 
         self.circleci_screenshot("set_submission_file_name.png")
