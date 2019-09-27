@@ -29,7 +29,6 @@ from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from datasets.models import Data
-from settings.test import IS_TESTING
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
 
@@ -802,16 +801,16 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
     # Update phase statuses
-    current_subquery = Phase.objects.filter(
-        competition=OuterRef('competition'),
-        start__lte=now(),
-        end__gt=now(),
-    ).values_list('index', flat=True)
-
     previous_subquery = Phase.objects.filter(
         competition=OuterRef('competition'),
         end__lte=now()
     ).order_by('-index').values('index')[:1]
+
+    current_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__lte=now(),
+        end__gt=now(),
+    ).values('index')[:1]
 
     next_subquery = Phase.objects.filter(
         competition=OuterRef('competition'),
@@ -819,8 +818,8 @@ def do_phase_migrations():
     ).order_by('index').values('index')[:1]
 
     Phase.objects.annotate(
-        current_index=Subquery(current_subquery),
         previous_index=Subquery(previous_subquery),
+        current_index=Subquery(current_subquery),
         next_index=Subquery(next_subquery),
     ).update(status=Case(
         When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
@@ -836,7 +835,7 @@ def do_phase_migrations():
         created_by_migration=OuterRef('pk')
     ).exclude(
         status__in=completed_statuses
-    ).values_list('pk')
+    ).values_list('pk')[:1]
 
     Competition.objects.filter(
         pk__in=Phase.objects.annotate(
