@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from apps.chahub.utils import send_to_chahub
+from settings.test import IS_TESTING
 
 logger = logging.getLogger(__name__)
 
@@ -68,15 +69,8 @@ class ChaHubSaveMixin(models.Model):
         super().save(*args, **kwargs)
 
         pytest_force_chahub = getattr(settings, 'PYTEST_FORCE_CHAHUB', False)
-        testing = False
 
-        try:
-            if sys.argv[0].endswith('py.test'):
-                testing = True
-        except IndexError:
-            pass
-
-        if testing and not pytest_force_chahub:
+        if IS_TESTING and not pytest_force_chahub:
             # For tests let's just assume Chahub isn't available
             # We can mock proper responses
             return None

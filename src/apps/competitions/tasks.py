@@ -94,15 +94,21 @@ COLUMN_FIELDS = [
 ]
 
 
-def send_submission(submission, task, is_scoring, run_args):
-    if not is_scoring:
+def _send_submission(submission, task, is_scoring, run_args):
+    if not submission.prediction_result.name:
         submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.save(update_fields=['prediction_result'])
+    if not submission.scoring_result.name:
+        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.save(update_fields=['scoring_result'])
+    submission = Submission.objects.get(id=submission.id)
+
+    if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
             permission='w'
         )
     else:
-        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
             permission='r'
@@ -157,8 +163,14 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-@app.task(queue='site-worker', soft_time_limit=60)
 def run_submission(submission_pk, task_pk=None, is_scoring=False):
+    return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
+
+
+@app.task(queue='site-worker', soft_time_limit=60)
+def _run_submission(submission_pk, task_pk=None, is_scoring=False):
+    """This function is wrapped so that when we run tests we can run this function not
+    via celery"""
     select_models = (
         'phase',
         'phase__competition',
@@ -199,11 +211,12 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
                     parent=submission,
                 )
                 sub.save(ignore_submission_limit=True)
-                run_submission.apply_async((sub.id, task.id))
+                # run_submission.apply_async((sub.id, task.id))
+                run_submission(sub.id, task.id)
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
-            send_submission(
+            _send_submission(
                 submission=submission,
                 task=task,
                 run_args=run_arguments,
@@ -211,7 +224,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
             )
     else:
         task = Task.objects.get(id=task_pk)
-        send_submission(
+        _send_submission(
             submission=submission,
             task=task,
             run_args=run_arguments,
@@ -788,16 +801,16 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
     # Update phase statuses
-    current_subquery = Phase.objects.filter(
-        competition=OuterRef('competition'),
-        start__lte=now(),
-        end__gt=now(),
-    ).values_list('index', flat=True)
-
     previous_subquery = Phase.objects.filter(
         competition=OuterRef('competition'),
         end__lte=now()
     ).order_by('-index').values('index')[:1]
+
+    current_subquery = Phase.objects.filter(
+        competition=OuterRef('competition'),
+        start__lte=now(),
+        end__gt=now(),
+    ).values('index')[:1]
 
     next_subquery = Phase.objects.filter(
         competition=OuterRef('competition'),
@@ -805,8 +818,8 @@ def do_phase_migrations():
     ).order_by('index').values('index')[:1]
 
     Phase.objects.annotate(
-        current_index=Subquery(current_subquery),
         previous_index=Subquery(previous_subquery),
+        current_index=Subquery(current_subquery),
         next_index=Subquery(next_subquery),
     ).update(status=Case(
         When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
@@ -822,7 +835,7 @@ def do_phase_migrations():
         created_by_migration=OuterRef('pk')
     ).exclude(
         status__in=completed_statuses
-    ).values_list('pk')
+    ).values_list('pk')[:1]
 
     Competition.objects.filter(
         pk__in=Phase.objects.annotate(

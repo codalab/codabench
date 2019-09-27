@@ -1,11 +1,17 @@
 version: '3'
 services:
-  #-----------------------------------------------
-  # Chrome for Selenium
-  #-----------------------------------------------
+  django:
+    environment:
+      - SELENIUM_HOSTNAME=selenium
+      - SUBMISSIONS_API_URL=http://django:36475/api
+    ports:
+      - 36475:36475
+
   selenium:
-    container_name: selenium
     image: selenium/standalone-firefox-debug:3.141.59
+    volumes:
+      - ./src/tests/functional/test_files:/test_files/
+      - ./artifacts:/artifacts/:z
     ports:
       - 4444:4444
       - 5900:5900
