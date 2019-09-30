@@ -259,11 +259,22 @@ class Run:
             return
 
         try:
-            with open(os.path.join(program_dir, "metadata.yaml"), 'r') as metadata_file:
+            if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
+                logger.info("We're using v2 style metadata")
+                metadata_path = 'metadata.yaml'
+            else:
+                logger.info("We're using LEGACY style metadata")
+                metadata_path = 'metadata'
+            logger.info("Metadata path is {}".format(os.path.join(program_dir, metadata_path)))
+            with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
                 metadata = yaml.load(metadata_file.read())
+                logger.info("Metadata contains:\n {}".format(metadata))
                 command = metadata.get("command")
-                if not command:
+                if not command and kind == "ingestion":
                     raise SubmissionException("Program directory missing 'command' in metadata")
+                elif not command:
+                    logger.info(f"Warning: {program_dir} has no command in metadata, continuing anyway (may be meant to be consumed by an ingestion program)")
+                    return
         except FileNotFoundError:
             if can_be_output:
 
@@ -275,13 +286,14 @@ class Run:
                 # return
                 return
             else:
-                raise SubmissionException("Program directory missing 'metadata.yaml'")
+                # Handle legacy competitions, which do not append the .yaml file extension
+                raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
 
         docker_cmd = [
             'docker',
             'run',
             # Remove it after run
-            '--rm',
+            # '--rm',
 
             # Try the new timeout feature
             '--stop-timeout={}'.format(self.execution_time_limit),
@@ -315,10 +327,28 @@ class Run:
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
 
             # Input from submission (or submission + ingestion combo)
-            docker_cmd += ['-v', f'{self.input_dir}:/app/input']
+            docker_cmd += [f'-v', f'{self.input_dir}:/app/input']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
+
+        # Handle Legacy competitions by replacing anything in the run command
+
+        vars_to_replace = [
+            # ('$input', '/app/input_data'),
+            ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
+            ('$output', '/app/output'),
+            ('$program', '/app/program'),
+            ('$ingestion_program', '/app/program'),
+            ('$hidden', '/app/input/ref'),
+            ('$shared', '/app/shared'),
+            ('$submission_program', '/app/ingested_program'),
+        ]
+
+        for var_string, var_replacement in vars_to_replace:
+            command = command.replace(var_string, var_replacement)
+
+        # End legacy competition support
 
         # Append the actual program to run
         docker_cmd += command.split(' ')
@@ -387,7 +417,10 @@ class Run:
 
         for url, path in bundles:
             if url is not None:
-                self._get_bundle(url, path)
+                try:
+                    self._get_bundle(url, path)
+                except zipfile.BadZipFile as error:
+                    print(error)
 
         # For logging purposes let's dump file names
         for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
@@ -404,7 +437,9 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
+        logger.info("Running scoring program, and then ingestion program??????????????????????????????????")
         self._run_program_directory(program_dir, kind='program', can_be_output=True)
+        logger.info("NOW RUNNING INGESTION %%%%%%%%%%%%%%%%%%%%%%%%%%")
         self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory
@@ -431,7 +466,16 @@ class Run:
         except json.decoder.JSONDecodeError:
             raise SubmissionException("Could not decode scores json properly, it contains an error.")
         except FileNotFoundError:
-            raise SubmissionException("Could not find scores.json, did the scoring program output it?")
+            # Handle legacy scoring output
+            # raise SubmissionException("Could not find scores.json, did the scoring program output it?")
+            try:
+                scores_file = os.path.join(self.output_dir, "scores.txt")
+                scores = yaml.load(open(scores_file, 'r'))
+                # scores = json.load(open(scores_file, 'r'))
+            # except json.decoder.JSONDecodeError:
+            #     raise SubmissionException("Could not decode scores json properly, it contains an error.")
+            except FileNotFoundError:
+                raise SubmissionException("Could not find scores.txt or scores.json, did the scoring program output it?")
 
         url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
         logger.info(f"Submitting these scores to {url}: {scores}")

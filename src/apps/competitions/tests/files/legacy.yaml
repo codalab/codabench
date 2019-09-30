@@ -1,0 +1,72 @@
+admin_names: guyon,lsenta
+allow_public_submissions: true
+allow_teams: false
+anonymous_leaderboard: false
+description: The well known Iris dataset from Fisher's classic paper (Fisher, 1936).
+disallow_leaderboard_modifying: true
+enable_detailed_results: true
+enable_forum: true
+enable_per_submission_metadata: false
+end_date: null
+force_submission_to_leaderboard: true
+has_registration: false
+html:
+  data: data.html
+  evaluation: evaluation.html
+  overview: overview.html
+  terms: terms.html
+image: logo.png
+leaderboard:
+  columns:
+    Duration:
+      label: Duration
+      leaderboard: &id001
+        label: Results
+        rank: 1
+      numeric_format: 2
+      rank: 7
+    set1_score:
+      label: Prediction score
+      leaderboard: *id001
+      numeric_format: 4
+      rank: 2
+  leaderboards:
+    Results: *id001
+phases:
+  1:
+    color: green
+    description: 'Development phase: create models and submit them or directly submit
+      results on validation and/or test data; feed-back are provided on the validation
+      set only.'
+    execution_time_limit: 500
+    ingestion_program: ingestion_program_1_2.zip
+    input_data: input_data_1_2.zip
+    is_scoring_only: false
+    label: Development
+    max_submissions: 100
+    max_submissions_per_day: 5
+    phasenumber: 1
+    public_data: input_data_1_2.zip
+    reference_data: reference_data_1.zip
+    scoring_program: scoring_program_1_2.zip
+    start_date: 2017-10-22 18:53:00+00:00
+    starting_kit: iris_starting_kit.zip
+  2:
+    auto_migration: true
+    color: purple
+    description: 'Final phase: submissions from the previous phase are automatically
+      cloned and used to compute the final score. The results on the test set will
+      be revealed when the organizers make them available.'
+    execution_time_limit: 500
+    ingestion_program: ingestion_program_1_2.zip
+    input_data: input_data_1_2.zip
+    is_scoring_only: false
+    label: Final
+    max_submissions: 100
+    max_submissions_per_day: 0
+    phasenumber: 2
+    reference_data: reference_data_2.zip
+    scoring_program: scoring_program_1_2.zip
+    start_date: 2018-04-30 18:53:00+00:00
+show_datasets_from_yaml: true
+title: Iris

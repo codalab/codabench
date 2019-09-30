@@ -1,0 +1,59 @@
+title: Sample Competition
+description: Sample competition M2AIC 2018-2019
+image: logo.jpg
+docker_image: codalab/codalab-legacy:py3
+terms: rules.html
+pages:
+- title: data
+  file: data.html
+- title: evaluation
+  file: evaluation.html
+- title: overview
+  file: overview.html
+- title: terms
+  file: rules.html
+phases:
+- name: Development Phase
+  description: 'Development phase: tune your models and submit prediction results,
+    trained model, or untrained model.'
+  start: 2018-11-15
+  tasks:
+  - 1
+  solutions:
+  - 1
+- name: Final Phase
+  description: Final phase (no submission, your last submission from the previous
+    phase is automatically forwarded).
+  start: 2050-04-30
+  tasks:
+  - 2
+tasks:
+- index: 1
+  name: Development Phase
+  ingestion_program: ingestion_program.zip
+  input_data: input_data.zip
+  scoring_program: scoring_program.zip
+  reference_data: reference_data_1.zip
+- index: 2
+  name: Final Phase
+  ingestion_program: ingestion_program.zip
+  input_data: input_data.zip
+  scoring_program: scoring_program.zip
+  reference_data: reference_data_2.zip
+solutions:
+- index: 1
+  tasks:
+  - 1
+  path: starting_kit.zip
+leaderboards:
+- title: Results
+  key: Results
+  columns:
+  - title: Prediction score
+    key: set1_score
+    index: 1
+    sorting: desc
+  - title: Duration
+    key: Duration
+    index: 2
+    sorting: desc

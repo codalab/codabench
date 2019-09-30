@@ -277,6 +277,8 @@ def _zip_if_directory(path):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(competition_dataset_pk):
+    # Local import to prevent circular with Exceptions
+    from competitions.converter import LegacyBundleConverter
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
 
@@ -310,6 +312,10 @@ def unpack_competition(competition_dataset_pk):
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
 
+            # Attempt to convert bundle. If not legacy format, will be skipped.
+            converter = LegacyBundleConverter(competition_yaml)
+            competition_yaml = converter.convert()
+
             # ---------------------------------------------------------------------
             # Initialize the competition dict
             competition = {
@@ -318,6 +324,7 @@ def unpack_competition(competition_dataset_pk):
                 "logo": None,
                 "registration_required": competition_yaml.get('registration_required', False),
                 "registration_auto_approve": competition_yaml.get('registration_auto_approve', False),
+                "docker_image": competition_yaml.get('docker_image', 'codalab/codalab-legacy:py3'),
                 "pages": [],
                 "phases": [],
                 "leaderboards": [],
@@ -514,12 +521,19 @@ def unpack_competition(competition_dataset_pk):
                         f'Phase: {phase1.get("name", phase1["index"])} must have an end time because it has a phase after it.'
                     )
                 elif phase2['start'] < phase1['end']:
+                    logger.info("@@@@@@@@@@@@@@@@@@@@@@@@@")
+                    logger.info(phase1['end'])
+                    logger.info(phase2['start'])
+                    logger.info("@@@@@@@@@@@@@@@@@@@@@@@@@")
                     raise CompetitionUnpackingException(
                         f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
                     )
 
-            current_phase = list(filter(lambda p: p['start'] < now() < p['end'], competition['phases']))
+            # TODO: Ensure I didn't break phase start/end validation with this
+            current_phase = list(filter(
+                lambda p: p['start'] if p.get('start') else datetime.datetime < now() < p['end'] if p.get('end') else datetime.datetime, competition['phases']
+            ))
             if current_phase:
                 current_index = current_phase[0]['index']
                 previous_index = current_index - 1 if current_index >= 1 else None

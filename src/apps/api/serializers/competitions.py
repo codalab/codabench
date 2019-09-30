@@ -86,6 +86,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'created_by',
             'created_when',
             'logo',
+            'docker_image',
             'pages',
             'phases',
             'leaderboards',
