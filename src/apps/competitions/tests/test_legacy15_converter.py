@@ -1,14 +1,9 @@
 import json
 import os
-
-import pytz
-
-from datetime import date, datetime
-from unittest import TestCase
-import requests
 import yaml
 
-from competitions.tasks import _get_datetime
+from unittest import TestCase
+
 from apps.competitions.converter import LegacyBundleConverter, LEGACY_PHASE_KEY_MAPPING, LEGACY_DEPRECATED_KEYS
 
 

@@ -521,10 +521,6 @@ def unpack_competition(competition_dataset_pk):
                         f'Phase: {phase1.get("name", phase1["index"])} must have an end time because it has a phase after it.'
                     )
                 elif phase2['start'] < phase1['end']:
-                    logger.info("@@@@@@@@@@@@@@@@@@@@@@@@@")
-                    logger.info(phase1['end'])
-                    logger.info(phase2['start'])
-                    logger.info("@@@@@@@@@@@@@@@@@@@@@@@@@")
                     raise CompetitionUnpackingException(
                         f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                         f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'

@@ -441,9 +441,8 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        logger.info("Running scoring program, and then ingestion program??????????????????????????????????")
+        logger.info("Running scoring program, and then ingestion program")
         self._run_program_directory(program_dir, kind='program', can_be_output=True)
-        logger.info("NOW RUNNING INGESTION %%%%%%%%%%%%%%%%%%%%%%%%%%")
         self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         # Unpack submission and data into some directory

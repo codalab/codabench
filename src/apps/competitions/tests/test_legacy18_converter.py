@@ -1,8 +1,8 @@
 import json
 import os
+import yaml
 
 from unittest import TestCase
-import yaml
 
 from apps.competitions.converter import LegacyBundleConverter, LEGACY_PHASE_KEY_MAPPING, LEGACY_DEPRECATED_KEYS
 
