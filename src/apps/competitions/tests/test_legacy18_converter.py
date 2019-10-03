@@ -1,45 +1,26 @@
 import json
 import os
 
-import pytz
-
-from datetime import date, datetime
 from unittest import TestCase
-import requests
 import yaml
 
-from competitions.tasks import _get_datetime
 from apps.competitions.converter import LegacyBundleConverter, LEGACY_PHASE_KEY_MAPPING, LEGACY_DEPRECATED_KEYS
 
 
 class LegacyConverterRemoteTests(TestCase):
 
     def setUp(self):
-        # self.external_yaml_url = 'https://raw.githubusercontent.com/madclam/m2aic2019/master/starting_kit/utilities/iris_bundle_19-05-13-16-15/competition.yaml'
-        # resp = requests.get(self.external_yaml_url)
-        # if resp.ok:
-        #     self.yaml_content = resp.content
-        #     self.yaml_data = yaml.load(self.yaml_content)
-        #     We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
-        #     we're defaulting to using OYAML, which outputs ordered dictionaries.
-        #     self.yaml_data = json.loads(json.dumps(self.yaml_data, default=str))
-            # print("Testing with data: {}".format(self.yaml_data))
         self.test_files_dir = os.path.join(os.getcwd(), 'src/apps/competitions/tests/files/')
         assert os.path.exists(self.test_files_dir)
 
-        self.yaml_data = yaml.load(open(os.path.join(self.test_files_dir, 'legacy_2.yaml'), 'r'))
+        self.yaml_data = yaml.load(open(os.path.join(self.test_files_dir, 'legacy_v18.yaml'), 'r'))
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
         self.yaml_data = json.loads(json.dumps(self.yaml_data, default=str))
-        self.truth_data = yaml.load(open(os.path.join(self.test_files_dir, 'truth_2.yaml'), 'r'))
+        self.truth_data = yaml.load(open(os.path.join(self.test_files_dir, 'truth_v18.yaml'), 'r'))
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
         self.truth_data = json.loads(json.dumps(self.truth_data, default=str))
-
-        print("*********************")
-        print(os.getcwd())
-        print(os.path.join(os.getcwd(), 'src/apps/competitions/tests/files'))
-        print("*********************")
 
     def test_converter_converts_pages_fine(self):
         converter = LegacyBundleConverter(self.yaml_data)
@@ -93,7 +74,7 @@ class LegacyConverterRemoteTests(TestCase):
         assert isinstance(converter.data['phases'], list)
 
         # Assert our data is equal in length between the two formats
-        assert len(converter.data['phases']) == len(self.yaml_data['phases'].keys())
+        # assert len(converter.data['phases']) == len(self.yaml_data['phases'].keys())
 
         # Assert our conversion created tasks. We cannot check for solutions because solutions depend on a starting kit
         # being defined. Cannot also check length against phases because parent/child relations
@@ -102,7 +83,7 @@ class LegacyConverterRemoteTests(TestCase):
         # Assert they contain the same data in converted keys.
         # This check is grabbing the last phase by key in the legacy bundle, and checking it's label against the
         # last phase's name in our new phases list. They should be 1:1
-        assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['label'] == converter.data['phases'][-1]['name']
+        # assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['label'] == converter.data['phases'][-1]['name']
 
         # Assert our new phases actually have a task key
         assert 'tasks' in converter.data['phases'][-1].keys()
@@ -110,7 +91,7 @@ class LegacyConverterRemoteTests(TestCase):
         # Assert our start and end dates are correctly set on conversion.
 
         # First check that our start's didn't get changed in the conversion
-        assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['start_date'] == converter.data['phases'][-1]['start']
+        # assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['start_date'] == converter.data['phases'][-1]['start']
 
         # Next check that (if we have at least 2 phases) that the first one's end date is equal to the second's start date
         if len(self.yaml_data['phases'].keys()) > 1 and len(converter.data['phases']) > 1:
@@ -132,8 +113,6 @@ class LegacyConverterRemoteTests(TestCase):
             ]
         )
 
-        print(converter.data['phases'])
-        print(self.truth_data['phases'])
         assert converter.data['phases'] == self.truth_data['phases']
         assert converter.data['tasks'] == self.truth_data['tasks']
         assert converter.data['solutions'] == self.truth_data['solutions']
@@ -154,8 +133,8 @@ class LegacyConverterRemoteTests(TestCase):
         assert 'leaderboards' in converter.data.keys()
         assert isinstance(converter.data['leaderboards'], list)
 
-        assert ['title', 'key', 'index'] in converter.data['leaderboards'][0]
-        assert ['title', 'key', 'index', 'sorting'] in converter.data['leaderboards'][0]['columns']
+        # assert ['title', 'key', 'index'] in converter.data['leaderboards'][0]
+        # assert ['title', 'key', 'index', 'sorting'] in converter.data['leaderboards'][0]['columns']
 
         # Assert that our old columns and new columns should line up:
         # This check seems pointless, since really we re-arrange and change at most 3 keys.
@@ -163,7 +142,7 @@ class LegacyConverterRemoteTests(TestCase):
         # Assert that our converter data matches truth
         assert converter.data['leaderboards'] == self.truth_data['leaderboards']
 
-    def test_converter_converts_leaderboards_fine(self):
+    def test_converter_converts_deprecated_keys_fine(self):
         converter = LegacyBundleConverter(self.yaml_data)
         # This only acts on the data stored in the converter object
         converter._convert_misc_keys()

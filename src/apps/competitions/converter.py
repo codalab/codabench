@@ -1,8 +1,6 @@
-import datetime
 import logging
 import json
 import copy
-import os
 
 from apps.competitions.tasks import CompetitionUnpackingException
 logger = logging.getLogger(__name__)
@@ -63,7 +61,7 @@ class LegacyBundleConverter:
     def __get_parent_phase(self, parent_phase_index, new_temp_phase_list):
         # Loop through index, phase_data and find whichever one has the matching index. We delete the extra key later.
         for index, phase_data in enumerate(new_temp_phase_list):
-            if phase_data.get('index') == parent_phase_index:
+            if int(phase_data.get('index')) == int(parent_phase_index):
                 return index
         return None
 
@@ -83,32 +81,20 @@ class LegacyBundleConverter:
 
     def __get_phase_end(self, current_index, next_index):
         if self.data['phases'].get(next_index):
-            # Handle parent phases
-            # if self.data['phases'][current_index].get('is_parallel_parent'):
-            #     # This is a parent phase
-            #     pass
-            # elif self.data['phases'][current_index].get('parent_phasenumber'):
-            #     # This is a child phase
-            #     pass
-            # else:
-            # This is a regular sequential phase without children/parents
             logger.info('Converter: There is a next phase')
-            print('Converter: There is a next phase')
             if self.data['phases'][next_index].get('start_date'):
                 logger.info('Converter: There is a next phase with a start date')
-                print('Converter: There is a next phase with a start date')
                 # We have a phase after this one with a start date
-                # new_phase_data['end'] = self.data['phases'][next_index]['start_date']
                 return self.data['phases'][next_index]['start_date']
         return None
 
     def convert(self, plain=False):
         if not self._is_legacy_bundle():
             logger.info("Bundle data does not appear to be legacy. Skipping.")
-            print("Bundle data does not appear to be legacy. Skipping.")
             return self.data
         else:
             if not self.data.get('competition_docker_image') or not self.data.get('docker_image'):
+                logger.info("Competition is legacy and missing docker image. Setting to ckcollab/codalab-legacy:latest")
                 self.data['docker_image'] = 'ckcollab/codalab-legacy:latest'
         self._convert_pages()
         self._convert_phases()
@@ -116,7 +102,7 @@ class LegacyBundleConverter:
         self._convert_misc_keys()
         if plain:
             self.data = json.loads(json.dumps(self.data, default=str))
-        print("Retrning data: {}".format(self.data))
+        logger.info("Retrning data: {}".format(self.data))
         return self.data
 
     def _is_legacy_bundle(self):
@@ -124,10 +110,8 @@ class LegacyBundleConverter:
 
     def _convert_pages(self):
         new_html_data = []
-
         self._key_sanity_check('html')
         logger.info("Converting HTML to pages")
-        print("Converting HTML to pages")
         for page_key, page_file in self.data['html'].items():
             if page_key == 'terms':
                 self.data['terms'] = page_file
@@ -146,7 +130,6 @@ class LegacyBundleConverter:
 
         self._key_sanity_check('phases')
         logger.info("Converting phase format")
-        print("Converting phase format")
 
         has_parent_phases = any('is_parallel_parent' in phase_data for phase_index, phase_data in self.data['phases'].items())
 
@@ -155,11 +138,8 @@ class LegacyBundleConverter:
         for phase_index, phase_data in self.data['phases'].items():
             new_phase_data = {}
             new_task_data = {}
-            parent_phase_tracking = {}
 
             legacy_index_type = type(phase_index)
-            legacy_index = legacy_index_type(phase_index)
-
             new_task_data['index'] = int(phase_index)
 
             # Automatic mapping
@@ -171,36 +151,22 @@ class LegacyBundleConverter:
 
             # If we're not a child phase, get our next date and set it
             if not self.data['phases'][phase_index].get('parent_phasenumber'):
-                next_index = self.__get_next_index(current_index=phase_index, key_type=legacy_index_type,
-                                                   has_parent_phases=has_parent_phases)
+                next_index = self.__get_next_index(
+                    current_index=phase_index,
+                    key_type=legacy_index_type,
+                    has_parent_phases=has_parent_phases
+                )
                 next_end_date = self.__get_phase_end(phase_index, next_index)
                 if next_end_date:
+                    logger.info("Setting end date as {end_date} on phase {phase_index}".format(
+                        end_date=next_end_date,
+                        phase_index=phase_index)
+                    )
                     new_phase_data['end'] = next_end_date
-
-
-            # This is dumb. Phases in legacy format are `indices` but are read as strings. This fails in tests, so help
-            # it out with the converison
-
-
-            # TODO: Rework this... This should all be based on phase_index type...
-
-            # if type(phase_index) != int:
-            #     phase_index = int(phase_index)
-            #     next_index = int(phase_index) + 1
-            # else:
-            #     phase_index = str(phase_index)
-            #     next_index = str(int(phase_index) + 1)
-
-            # # Try to set the data type right. In tests all keys are strings, in non-tests int are fine as keys
-            # if not self.data['phases'].get(next_index) and type(next_index) == int:
-            #     next_index = str(next_index)
-            # if not self.data['phases'].get(next_index) and type(next_index) == str:
-            #     next_index = int(next_index)
-
-            # Call our next end stuff here
 
             new_task_list.append(new_task_data)
             if phase_data.get('starting_kit'):
+                logger.info("Adding starting kit as solution to task: {}".format(phase_index))
                 new_solution_data = {
                     'index': int(phase_index),
                     'tasks': [int(phase_index)],
@@ -209,49 +175,24 @@ class LegacyBundleConverter:
                 new_phase_data['solutions'] = [int(phase_index)]
                 new_solution_list.append(new_solution_data)
 
-            print(self.data['phases'])
-            print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-            # print(self.data['phases'])
-            print(phase_index)
-            print(type(phase_index))
-            print([type(index) for index in self.data['phases'].keys()])
-            print(self.data['phases'].keys())
-            print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
             # Handle new task + solution
-            if has_parent_phases and self.data['phases'][phase_index].get('parent_phasenumber'):
-                # self.__get_parent_phase(phase_index, new_phase_list)
-                # parent_phase_index = self.data['phases'][phase_index]['parent_phasenumber']
-                # if parent_phase_index > 1:
-                #     parent_phase_index -= 1
-                # print(parent_phase_index)
-                # print(len(new_phase_list))
-                parent_phase_index = self.__get_parent_phase(self.data['phases'][phase_index]['parent_phasenumber'], new_phase_list)
-                logger.info("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-                logger.info("This phase has a parent phase that should be at index {}".format(self.data['phases'][phase_index]['parent_phasenumber']))
-                logger.info(parent_phase_index)
-                logger.info("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+            if has_parent_phases and phase_data.get('parent_phasenumber'):
+                parent_phase_index = self.__get_parent_phase(phase_data['parent_phasenumber'], new_phase_list)
+                logger.info("This phase has a parent phase that should be at index {}".format(phase_data['parent_phasenumber']))
                 if parent_phase_index != None:
                     logger.info("Adding task entry to phase")
                     if not new_phase_list[parent_phase_index].get('tasks'):
                         new_phase_list[parent_phase_index]['tasks'] = []
                     new_phase_list[parent_phase_index]['tasks'].append(int(phase_index))
-            elif has_parent_phases and self.data['phases'][phase_index].get('is_parallel_parent'):
+            elif has_parent_phases and phase_data.get('is_parallel_parent'):
                 new_phase_data['index'] = phase_index
-                logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
                 logger.info("This is a parent phase; Adding it's index to help track: {}".format(phase_index))
-                print(new_phase_data)
-                print(new_phase_list)
-                logger.info("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
                 new_phase_list.append(new_phase_data)
             else:
                 logger.info("Regularly doing phase data, and task data")
                 new_phase_data['tasks'] = [int(phase_index)]
                 # Append our new phase data
                 new_phase_list.append(new_phase_data)
-
-                # if self.data['phases'][phase_index].get('is_parallel_parent'):
-                #     parent_phase_tracking[
-        print(new_phase_list)
         del self.data['phases']
         # Cleanup residual keys we're not using
         for phase_data in new_phase_list:
@@ -261,13 +202,9 @@ class LegacyBundleConverter:
         self.data['tasks'] = new_task_list
         self.data['solutions'] = new_solution_list
 
-
     def _convert_leaderboard(self):
         new_leaderboard_list = []
-
-
         logger.info("Converting leaderboard")
-        print("Converting leaderboard")
 
         # Combine leaderboard + columns, then process
         if not self.data['leaderboard'].get('columns') or not self.data['leaderboard'].get('leaderboards'):
@@ -318,16 +255,3 @@ class LegacyBundleConverter:
             raise CompetitionConversionException("Could not find {} key in data.".format(key))
         if not isinstance(self.data.get(key), dict):
             raise CompetitionConversionException("Did not receive a dict of {} data, but the key is present".format(key))
-
-# import yaml
-# import requests
-# from apps.competitions.converter import LegacyBundleConverter
-# my_url = 'https://raw.githubusercontent.com/madclam/m2aic2019/master/starting_kit/utilities/competition.yaml'
-# # my_url = 'https://raw.githubusercontent.com/madclam/timeSeries/master/starting_kit/utilities/sample_bundle_19-04-09-22-34/competition.yaml'
-# resp = requests.get(my_url)
-# my_data = resp.content
-# my_yaml_data = yaml.load(my_data)
-# converter = LegacyBundleConverter(my_yaml_data)
-# result = converter.convert()
-# with open('data.yml', 'w') as outfile:
-#     yaml.dump(result, outfile, default_flow_style=False, ignore_aliases=True)

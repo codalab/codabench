@@ -15,31 +15,17 @@ from apps.competitions.converter import LegacyBundleConverter, LEGACY_PHASE_KEY_
 class LegacyConverterRemoteTests(TestCase):
 
     def setUp(self):
-        # self.external_yaml_url = 'https://raw.githubusercontent.com/madclam/m2aic2019/master/starting_kit/utilities/iris_bundle_19-05-13-16-15/competition.yaml'
-        # resp = requests.get(self.external_yaml_url)
-        # if resp.ok:
-        #     self.yaml_content = resp.content
-        #     self.yaml_data = yaml.load(self.yaml_content)
-        #     We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
-        #     we're defaulting to using OYAML, which outputs ordered dictionaries.
-        #     self.yaml_data = json.loads(json.dumps(self.yaml_data, default=str))
-            # print("Testing with data: {}".format(self.yaml_data))
         self.test_files_dir = os.path.join(os.getcwd(), 'src/apps/competitions/tests/files/')
         assert os.path.exists(self.test_files_dir)
 
-        self.yaml_data = yaml.load(open(os.path.join(self.test_files_dir, 'legacy_2.yaml'), 'r'))
+        self.yaml_data = yaml.load(open(os.path.join(self.test_files_dir, 'legacy.yaml'), 'r'))
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
         self.yaml_data = json.loads(json.dumps(self.yaml_data, default=str))
-        self.truth_data = yaml.load(open(os.path.join(self.test_files_dir, 'truth_2.yaml'), 'r'))
+        self.truth_data = yaml.load(open(os.path.join(self.test_files_dir, 'truth.yaml'), 'r'))
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
         self.truth_data = json.loads(json.dumps(self.truth_data, default=str))
-
-        print("*********************")
-        print(os.getcwd())
-        print(os.path.join(os.getcwd(), 'src/apps/competitions/tests/files'))
-        print("*********************")
 
     def test_converter_converts_pages_fine(self):
         converter = LegacyBundleConverter(self.yaml_data)
@@ -75,8 +61,7 @@ class LegacyConverterRemoteTests(TestCase):
         # Assert we get the same number of pages
         assert len(converter.data['pages']) == len(self.yaml_data['html'].keys())
 
-        # Assert that it equals the verified output we have that works?
-
+        # Assert that it equals the verified output we have that works
         assert converter.data['pages'] == self.truth_data['pages']
 
     def test_converter_converts_phases_fine(self):
@@ -132,8 +117,6 @@ class LegacyConverterRemoteTests(TestCase):
             ]
         )
 
-        print(converter.data['phases'])
-        print(self.truth_data['phases'])
         assert converter.data['phases'] == self.truth_data['phases']
         assert converter.data['tasks'] == self.truth_data['tasks']
         assert converter.data['solutions'] == self.truth_data['solutions']

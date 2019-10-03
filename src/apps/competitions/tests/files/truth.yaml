@@ -17,6 +17,7 @@ phases:
   description: 'Development phase: tune your models and submit prediction results,
     trained model, or untrained model.'
   start: 2018-11-15
+  end: '2050-04-30'
   tasks:
   - 1
   solutions:

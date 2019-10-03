@@ -128,6 +128,23 @@ class Run:
         websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
+    @staticmethod
+    def _replace_legacy_metadata_command(command='', kind='scoring'):
+        vars_to_replace = [
+            # ('$input', '/app/input_data'),
+            ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
+            ('$output', '/app/output'),
+            ('$program', '/app/program'),
+            ('$ingestion_program', '/app/program'),
+            ('$hidden', '/app/input/ref'),
+            ('$shared', '/app/shared'),
+            ('$submission_program', '/app/ingested_program'),
+        ]
+        new_command = command
+        for var_string, var_replacement in vars_to_replace:
+            new_command = new_command.replace(var_string, var_replacement)
+        return new_command
+
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
         if not self.is_scoring:
@@ -277,13 +294,12 @@ class Run:
                     return
         except FileNotFoundError:
             if can_be_output:
-
                 # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
                 # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
-                # logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
-                #             "program so move it to output")
-                # shutil.move(program_dir, self.output_dir)
-                # return
+                # Note: Re-enabling this got result submissions working
+                logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
+                            "program so move it to output")
+                shutil.move(program_dir, self.output_dir)
                 return
             else:
                 # Handle legacy competitions, which do not append the .yaml file extension
@@ -293,7 +309,7 @@ class Run:
             'docker',
             'run',
             # Remove it after run
-            # '--rm',
+            '--rm',
 
             # Try the new timeout feature
             '--stop-timeout={}'.format(self.execution_time_limit),
@@ -334,19 +350,7 @@ class Run:
 
         # Handle Legacy competitions by replacing anything in the run command
 
-        vars_to_replace = [
-            # ('$input', '/app/input_data'),
-            ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
-            ('$output', '/app/output'),
-            ('$program', '/app/program'),
-            ('$ingestion_program', '/app/program'),
-            ('$hidden', '/app/input/ref'),
-            ('$shared', '/app/shared'),
-            ('$submission_program', '/app/ingested_program'),
-        ]
-
-        for var_string, var_replacement in vars_to_replace:
-            command = command.replace(var_string, var_replacement)
+        command = self._replace_legacy_metadata_command(command=command, kind=kind)
 
         # End legacy competition support
 
