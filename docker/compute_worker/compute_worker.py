@@ -343,7 +343,7 @@ class Run:
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
 
             # Input from submission (or submission + ingestion combo)
-            docker_cmd += [f'-v', f'{self.input_dir}:/app/input']
+            docker_cmd += ['-v', f'{self.input_dir}:/app/input']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
