@@ -1,5 +1,4 @@
-<submission-manager>
-    <h1>Submission manager</h1>
+<submission-manager class="submission-manager">
     <div if="{ opts.admin }" class="admin-buttons">
         <a class="ui green button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
@@ -9,7 +8,9 @@
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">{ phase.name }</div>
+                <div class="parent-modal item" each="{phase in opts.competition.phases}"
+                     onclick="{rerun_phase.bind(this, phase)}">{ phase.name }
+                </div>
             </div>
         </div>
     </div>
@@ -34,7 +35,7 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
-    <table class="ui celled selectable inverted table">
+    <table class="ui celled selectable table">
         <thead>
         <tr>
             <th class="index-column">#</th>
@@ -46,7 +47,11 @@
         </tr>
         </thead>
         <tbody>
-        <tr each="{ submission, index in filter_children(submissions) }" onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
+        <tr if="{ _.isEmpty(submissions)}" class="center aligned">
+            <td colspan="6"><em>No submissions found! Please make a submission</em></td>
+        </tr>
+        <tr each="{ submission, index in filter_children(submissions) }"
+            onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
@@ -54,21 +59,21 @@
             <td class="right aligned">{ submission.status }</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
-                    <button class="mini ui button inverted basic blue icon"
+                    <button class="mini ui button basic blue icon"
                             data-tooltip="Rerun Submission"
                             data-inverted=""
                             onclick="{ rerun_submission.bind(this, submission) }">
                         <i class="icon redo"></i>
                         <!-- rerun submission -->
                     </button>
-                    <button class="mini ui button inverted basic yellow icon"
+                    <button class="mini ui button basic yellow icon"
                             data-tooltip="Cancel Submission"
                             data-inverted=""
                             onclick="{ cancel_submission.bind(this, submission) }">
                         <i class="x icon"></i>
                         <!-- cancel submission -->
                     </button>
-                    <button class="mini ui button inverted basic red icon"
+                    <button class="mini ui button basic red icon"
                             data-tooltip="Delete Submission"
                             data-inverted=""
                             onclick="{ delete_submission.bind(this, submission) }">
@@ -77,7 +82,7 @@
                     </button>
                 </virtual>
                 <button if="{!submission.leaderboard}"
-                        class="mini ui button inverted basic green icon"
+                        class="mini ui button basic green icon"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
@@ -116,7 +121,7 @@
                     <submission-modal submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
-                        <submission-scores leaderboards="{leaderboards}"></submission-scores>
+                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
                 </div>
             </div>
         </div>
@@ -144,15 +149,25 @@
             return _.filter(submissions, sub => {
                 return !sub.parent
             })
-        } 
+        }
 
         self.do_nothing = event => {
             event.stopPropagation()
         }
 
+        self.is_admin = () => {
+            return _.get(self.selected_submission, 'admin', false)
+        }
+
+        self.filter_children = (submissions) => {
+            return _.filter(submissions, sub => {
+                return !sub.parent
+            })
+        }
+
         self.update_submissions = function (filters) {
             if (opts.admin) {
-                filters = filters || {phase__competition: opts.competition.id }
+                filters = filters || {phase__competition: opts.competition.id}
             } else {
                 filters = filters || {phase: self.selected_phase.id}
             }
@@ -177,10 +192,11 @@
                 })
         }
 
-        self.add_to_leaderboard = function(submission) {
+        self.add_to_leaderboard = function (submission) {
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
+                    CODALAB.events.trigger('submission_added_to_leaderboard')
                 })
                 .fail(function (response) {
                     toastr.error("Could not find competition")
@@ -292,7 +308,7 @@
             $(self.refs.modal)
                 .modal({
                     onShow: () => {
-                        if(_.get(self.selected_submission, 'has_children', false)){
+                        if (_.get(self.selected_submission, 'has_children', false)) {
                             // only try and tabulate the parent modal if children exist
                             let path = self.is_admin() ? 'admin_child_0' : 'child_0'
                             $('.menu .parent-modal.item')
@@ -304,12 +320,12 @@
             CODALAB.events.trigger('submission_clicked')
         }
 
-        CODALAB.events.on('phase_selected', function(selected_phase) {
+        CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
             self.update_submissions()
         })
 
-        CODALAB.events.on('new_submission_created', function(new_submission_data) {
+        CODALAB.events.on('new_submission_created', function (new_submission_data) {
             self.submissions.unshift(new_submission_data)
             self.update()
         })
@@ -321,8 +337,9 @@
     </script>
 
     <style type="text/stylus">
-        //:scope
-        //    height 100%
+        :scope
+            margin 2em 0
+
         .admin-buttons
             padding-bottom: 20px;
 
@@ -347,5 +364,8 @@
             &:hover
                 cursor: pointer
             height: 52px
+
+        table tbody .center.aligned td
+            color #8c8c8c
     </style>
 </submission-manager>

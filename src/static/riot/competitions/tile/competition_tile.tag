@@ -36,6 +36,7 @@
 
         self.pretty_description = function(description){
             if (description) {
+                description = render_markdown(description)
                 return description.substring(0,90) + (description.length > 90 ? '...' : '')
             } else {
                 return ''

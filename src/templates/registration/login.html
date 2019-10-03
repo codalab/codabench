@@ -2,45 +2,67 @@
 {% load static %}
 
 {% block content %}
-    <div class="sixteen wide mobile eight wide computer centered column">
-        <form class="ui large form" method="POST">
+<div class="sixteen wide mobile six wide computer centered column">
+    <h2 class="ui blue centered header">
+        Login
+    </h2>
+    <div class="ui stacked segment">
+        <form class="ui form" method="POST">
             {% csrf_token %}
-            <div class="ui stacked segment">
-                <h2 class="ui header">
-                    Login
-                </h2>
-                <div class="ui field">
-                    <div class="ui left icon input">
-                        <i class="user icon"></i>
-                        <input type="text"
-                               name="username"
-                               placeholder="username"
-                               id="id_username"
-                               value="{{ form.username.value|default:""}}"
-                               maxlength="{{ form.username.field.max_length }}"
-                               required>
-                    </div>
-                </div>
-                <div class="ui field">
-                    <div class="ui left icon input">
-                        <i class="user icon"></i>
-                        <input type="password"
-                               name="password"
-                               placeholder="password"
-                               id="id_password"
-                               value="{{ form.password.value|default:""}}"
-                               maxlength="{{ form.password.field.max_length }}"
-                               required>
-                    </div>
-                </div>
-                <button class="ui blue submit button" type="submit">Login</button>
-                <h2 class="ui dividing header">Login with Chahub</h2>
-                <a class="ui large green button" href="{% url "social:begin" "chahub" %}">Sign-In</a>
-                <a class="ui large yellow button" href="{{chahub_signup_url}}">Sign-Up through Chahub</a>
-                <div class="ui divider"></div>
-                <p>New to us? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+
+            <div class="field">
+                <a class="ui fluid basic button" href="{% url 'social:begin' 'chahub' %}">Log in with ChaHub</a>
             </div>
+            <div class="ui horizontal divider form-divider-line">
+                <span class="form-divider-words">or</span>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="ui red message">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            {% if form.username.errors %}
+            <div class="ui red message">
+                {{ form.username.errors }}
+            </div>
+            {% endif %}
+            <div class="field">
+                <div class="ui left icon input">
+                    <i class="user icon"></i>
+                    <input type="text"
+                           name="username"
+                           placeholder="username"
+                           id="id_username"
+                           value="{{ form.username.value|default:''}}"
+                           maxlength="{{ form.username.field.max_length }}"
+                           required>
+                </div>
+            </div>
+
+            {% if form.password.errors %}
+            <div class="ui red message">
+                {{ form.password.errors }}
+            </div>
+            {% endif %}
+            <div class="field">
+                <div class="ui left icon input">
+                    <i class="lock icon"></i>
+                    <input type="password"
+                           name="password"
+                           placeholder="password"
+                           id="id_password"
+                           value="{{ form.password.value|default:''}}"
+                           maxlength="{{ form.password.field.max_length }}"
+                           required>
+                </div>
+            </div>
+            <button class="ui fluid blue submit button" type="submit">Log In</button>
+            <div class="ui divider"></div>
+            <p>New to us? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+
             <div class="ui error message"></div>
         </form>
     </div>
+</div>
 {% endblock %}

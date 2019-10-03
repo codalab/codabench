@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Overpass+Mono&display=swap" rel="stylesheet">
+
 
     <!-- Ours -->
     <link rel="stylesheet" href="{% static "generated/output.css" %}">
@@ -149,21 +151,22 @@
     <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/1.0.10/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@1.13.1/build/global/luxon.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.address/1.6/jquery.address.min.js" integrity="sha256-mLCPYHfNREhSETFQGuowilY3zBAZGnDO2cxCnCEm8/I=" crossorigin="anonymous"></script>
 
     <!-- Ours -->
-    <script src="{% static "js/ours/client.js" %}"></script>
-    <script src="{% static "js/ours/init.js" %}"></script>
-    <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
-    <script src="{% static "js/ours/utils.js" %}"></script>
-    <script src="{% static "js/jquery.form.serializer.js" %}"></script>
-    <script src="{% static "js/Chart.bundle.js" %}"></script>
-    <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
-    <script src="{% static "generated/riot.js" %}"></script>
+
+
 
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
-        CODALAB.state.user = JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+        CODALAB = {
+            state: {
+                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+            }
+        }
+
+        {# Doing this here to append functionality to user data #}
         CODALAB.state.user.has_competition_admin_privileges = competition => {
             let user = CODALAB.state.user
             if (user.is_superuser || user.is_staff) {
@@ -190,7 +193,7 @@
                 return "{% url "analytics_api" %}" + `?${$.param(query_parameters)}`
             },
 
-                    // Competitions
+            // Competitions
             COMPETITION_MANAGEMENT: "{% url "competitions:management" %}",
             COMPETITION_UPLOAD: "{% url "competitions:upload" %}",
             COMPETITION_ADD: "{% url "competitions:create" %}",
@@ -200,7 +203,7 @@
             COMPETITION_EDIT: function (pk) {
                 return "{% url "competitions:edit" pk=0 %}".replace(0, pk)
             },
-            SECRET_KEY_URL: function(pk, secret_key) {
+            SECRET_KEY_URL: function (pk, secret_key) {
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
             },
@@ -213,19 +216,27 @@
 
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
-            TASK_DETAIL: function(pk) {
+            TASK_DETAIL: function (pk) {
                 return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
             }
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
+    </script>
 
+    <script src="{% static "js/ours/client.js" %}"></script>
+    <script src="{% static "js/ours/init.js" %}"></script>
+    <script src="{% static "js/ours/riotjs_mixins.js" %}"></script>
+    <script src="{% static "js/ours/utils.js" %}"></script>
+    <script src="{% static "js/jquery.form.serializer.js" %}"></script>
+    <script src="{% static "js/Chart.bundle.js" %}"></script>
+    <script src="{% static "js/reconnecting-websocket.min.js" %}"></script>
+    <script src="{% static "generated/riot.js" %}"></script>
 
-</script>
-{% block extra_js %}
-{% endblock %}
-{% block extra_body %}
-{% endblock %}
+    {% block extra_js %}
+    {% endblock %}
+    {% block extra_body %}
+    {% endblock %}
 
 </body>
 </html>

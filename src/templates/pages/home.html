@@ -51,13 +51,10 @@
                             </form>
                             <p><a href="{% url 'accounts:signup' %}">{% trans "Create an account" %}</a></p>
                             <div id="outline">
-                                <a>
-                                    <a href="/oauth/authorize/">
-                                        <button class="ui blue chahub button">
-                                            <i class="sync icon"></i>
-                                            Sign Up with Chahub
-                                        </button>
-                                    </a>
+                                <a href="{% url 'social:begin' 'chahub' %}"
+                                   class="ui blue chahub button">
+                                    <i class="sync icon"></i>
+                                    Sign Up with Chahub
                                 </a>
                             </div>
                         </div>
