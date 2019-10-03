@@ -119,19 +119,21 @@
                                     <thead>
                                     <tr>
                                         <th class="index-column">Download</th>
-                                        <th>Size</th>
                                         <th>Phase</th>
+                                        <th>Task</th>
+                                        <th>Size</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr class="file_row">
+                                    <tr class="file_row" each="{file in competition.files}">
                                         <td>
-                                            <a href="#">
-                                                <div class="ui button">File Name</div>
+                                            <a href="{URLS.DATASET_DOWNLOAD(file.key)}">
+                                                <div class="ui button">{file.name}</div>
                                             </a>
                                         </td>
-                                        <td>59.8mb</td>
-                                        <td>1</td>
+                                        <td>{file.phase}</td>
+                                        <td>{file.task}</td>
+                                        <td>{filesize(file.file_size)}</td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -208,59 +210,61 @@
 
         <!-- Manage Competition Modal -->
         <div class="ui manage-competition modal">
-            <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
-            <button class="ui button published icon { grey: !competition.published, green: competition.published }"
-                    onclick="{ toggle_competition_publish }">
-                <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
-            </button>
-            <button class="ui yellow button icon" onclick="{create_dump}">
-                <i class="download icon"></i> Create Competition Dump
-            </button>
-            <button class="ui teal icon button" onclick="{update_files}">
-                <i class="sync alternate icon"></i>
-                Refresh Table
-            </button>
-            <table class="ui table">
-                <thead>
-                <tr>
-                    <th>Files</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr show="{files.bundle}">
-                    <td class="selectable">
-                        <a href="{files.bundle ? files.bundle.url : ''}">
-                            <i class="file archive outline icon"></i>
-                            Bundle: {files.bundle ? files.bundle.name : ''}
-                        </a>
-                    </td>
-                </tr>
-                <tr each="{file in files.dumps}" show="{files.dumps}">
-                    <td class="selectable">
-                        <a href="{file.url}">
-                            <i class="file archive outline icon"></i>
-                            Dump: {file.name}
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td show="{!files.dumps && !files.bundle}">
-                        <em>No Files Yet</em>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="content">
+                <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui blue button">Edit competition</a>
+                <button class="ui button published icon { grey: !competition.published, green: competition.published }"
+                        onclick="{ toggle_competition_publish }">
+                    <i class="icon file"></i> {competition.published ? "Published" : "Draft"}
+                </button>
+                <button class="ui yellow button icon" onclick="{create_dump}">
+                    <i class="download icon"></i> Create Competition Dump
+                </button>
+                <button class="ui teal icon button" onclick="{update_files}">
+                    <i class="sync alternate icon"></i>
+                    Refresh Table
+                </button>
+                <table class="ui table">
+                    <thead>
+                    <tr>
+                        <th>Files</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr show="{files.bundle}">
+                        <td class="selectable">
+                            <a href="{files.bundle ? files.bundle.url : ''}">
+                                <i class="file archive outline icon"></i>
+                                Bundle: {files.bundle ? files.bundle.name : ''}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr each="{file in files.dumps}" show="{files.dumps}">
+                        <td class="selectable">
+                            <a href="{file.url}">
+                                <i class="file archive outline icon"></i>
+                                Dump: {file.name}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td show="{!files.dumps && !files.bundle}">
+                            <em>No Files Yet</em>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <!-- Manage Submissions Modal -->
         <div class="ui manage-submissions modal">
-            <div class="ui">
+            <div class="content">
                 <submission-manager admin="true" competition="{ competition }"></submission-manager>
             </div>
         </div>
 
         <!-- Manage Participants Modal -->
         <div class="ui manage-participants modal">
-            <div class="ui">
+            <div class="content">
                 <participant-manager competition_id="{competition}"></participant-manager>
             </div>
         </div>
@@ -278,6 +282,120 @@
             <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
+
+    <script>
+        var self = this
+
+        self.competition = {}
+        self.files = {}
+        self.selected_phase_index = undefined
+        self.selected_leaderboard_index = undefined
+
+        self.on('mount', function () {
+            $('.tabular.menu.details-menu .item', self.root).tab({
+                history: true,
+                historyType: 'hash',
+            })
+        })
+
+        CODALAB.events.on('competition_loaded', function (competition) {
+            self.competition = competition
+            console.log(competition)
+            self.competition.files = []
+            _.forEach(competition.phases, phase => {
+                _.forEach(phase.tasks, task => {
+                    _.forEach(task.solutions, solution => {
+                        self.competition.files.push({
+                            key: solution.data.key,
+                            name: solution.name,
+                            file_size: solution.data.file_size,
+                            phase: phase.name,
+                            task: task.name,
+                        })
+                    })
+                })
+            })
+            self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            self.selected_phase_index = _.find(self.competition.phases, {'status': 'Current'}).id
+            self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            self.update()
+            if (self.competition.is_admin) {
+                self.update_files()
+            }
+
+            $('.phases-tab .accordion', self.root).accordion()
+
+            $('.tabular.pages-menu.menu .item', self.root).tab()
+
+            _.forEach(competition.pages, (page, index) => {
+                $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+            })
+            _.forEach(competition.phases, (phase, index) => {
+                $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
+            })
+        })
+
+        self.pretty_date = function (date_string) {
+            if (!!date_string) {
+                return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATETIME_FULL)
+            } else {
+                return ''
+            }
+        }
+
+        self.toggle_competition_publish = function () {
+            CODALAB.api.toggle_competition_publish(self.competition.id)
+                .done(function (data) {
+                    var published_state = data.published ? "published" : "unpublished"
+                    toastr.success(`Competition has been ${published_state} successfully`)
+                    self.update()
+                    CODALAB.api.get_competition(self.competition.id)
+                        .done((competition) => {
+                            CODALAB.events.trigger('competition_loaded', competition)
+                        })
+                })
+        }
+
+        self.create_dump = () => {
+            CODALAB.api.create_dump(self.competition.id)
+                .done(data => {
+                    $(self.refs.dump_modal).modal('show')
+                    setTimeout(self.update_files, 2000)
+                })
+                .fail(response => {
+                    toastr.error("Error trying to create competition dump.")
+                })
+        }
+
+        self.phase_selected = function (data, event) {
+            self.selected_phase_index = data.id
+            self.update()
+
+            CODALAB.events.trigger('phase_selected', data)
+        }
+
+        self.leaderboard_selected = function (data, event) {
+            self.selected_leaderboard_index = data.id
+            self.update()
+
+            CODALAB.events.trigger('leaderboard_selected', data)
+        }
+
+        self.update_files = (e) => {
+            CODALAB.api.get_competition_files(self.competition.id)
+                .done(data => {
+                    self.files = data
+                    self.update()
+                    if (e) {
+                        // Only display toast if activated from button, not CODALAB.event
+                        toastr.success('Table Updated')
+                    }
+                })
+                .fail(response => {
+                    toastr.error('Error Retrieving Competition Files')
+                })
+        }
+    </script>
 
     <style type="text/stylus">
         $blue = #2c3f4c
@@ -457,102 +575,4 @@
                 width auto
 
     </style>
-    <script>
-        var self = this
-
-        self.competition = {}
-        self.files = {}
-        self.selected_phase_index = undefined
-        self.selected_leaderboard_index = undefined
-        self.competition_file = {}
-
-        CODALAB.events.on('competition_loaded', function (competition) {
-            self.competition = competition
-            self.selected_leaderboard_index = self.competition.leaderboards[0].id
-            self.selected_phase_index = _.find(self.competition.phases, {'status': 'Current'}).id
-            self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
-            self.update()
-            if (self.competition.is_admin) {
-                self.update_files()
-            }
-
-            $('.phases-tab .accordion', self.root).accordion()
-
-            $('.tabular.menu .item', self.root).tab({
-                history: true,
-                historyType: 'hash',
-            })
-
-            $('.tabular.menu .item', self.root).tab('change tab', (window.location.hash || 'pages-tab').replace('#/', ''))
-
-            _.forEach(competition.pages, (page, index) => {
-                $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
-            })
-            _.forEach(competition.phases, (phase, index) => {
-                $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
-            })
-        })
-
-        self.pretty_date = function (date_string) {
-            if (!!date_string) {
-                return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATETIME_FULL)
-            } else {
-                return ''
-            }
-        }
-
-        self.toggle_competition_publish = function () {
-            CODALAB.api.toggle_competition_publish(self.competition.id)
-                .done(function (data) {
-                    var published_state = data.published ? "published" : "unpublished"
-                    toastr.success(`Competition has been ${published_state} successfully`)
-                    self.update()
-                    CODALAB.api.get_competition(self.competition.id)
-                        .done((competition) => {
-                            CODALAB.events.trigger('competition_loaded', competition)
-                        })
-                })
-        }
-
-        self.create_dump = () => {
-            CODALAB.api.create_dump(self.competition.id)
-                .done(data => {
-                    $(self.refs.dump_modal).modal('show')
-                    setTimeout(self.update_files, 2000)
-                })
-                .fail(response => {
-                    toastr.error("Error trying to create competition dump.")
-                })
-        }
-
-        self.phase_selected = function (data, event) {
-            self.selected_phase_index = data.id
-            self.update()
-
-            CODALAB.events.trigger('phase_selected', data)
-        }
-
-        self.leaderboard_selected = function (data, event) {
-            self.selected_leaderboard_index = data.id
-            self.update()
-
-            CODALAB.events.trigger('leaderboard_selected', data)
-        }
-
-        self.update_files = (e) => {
-            CODALAB.api.get_competition_files(self.competition.id)
-                .done(data => {
-                    self.files = data
-                    self.update()
-                    if (e) {
-                        // Only display toast if activated from button, not CODALAB.event
-                        toastr.success('Table Updated')
-                    }
-                })
-                .fail(response => {
-                    toastr.error('Error Retrieving Competition Files')
-                })
-        }
-    </script>
-
 </comp-tabs>

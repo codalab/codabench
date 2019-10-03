@@ -8,6 +8,7 @@
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
                 <div class="ui horizontal divider"></div>
+                <!-- todo: fix styling here from output.css - color looks weird w/ "very basic table" -->
                 <table class="ui very basic table" id="downloads">
                     <thead>
                     <tr>
@@ -50,6 +51,11 @@
                     </div>
 
                     <div class="ui active bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_stdout">
+                        <!--
+                        todo: something like:
+                            <pre>{ logs.prediction_stdout ? logs.prediction_stdout : "Empty Logs"}</pre>
+                            so log files don't look empty
+                        -->
                         <pre>{ logs.prediction_stdout }</pre>
                     </div>
 

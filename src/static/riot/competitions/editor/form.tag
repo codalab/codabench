@@ -38,7 +38,7 @@
                         Details
                     </a>
                     <a class="item" data-tab="participation">
-                        <i class="checkmark box icon green" show="{ valid_sections.participation && !errors.pages }"></i>
+                        <i class="checkmark box icon green" show="{ valid_sections.participation && !errors.participation }"></i>
                         <i class="minus circle icon red" show="{ errors.participation }"></i>
                         Participation
                     </a>
@@ -122,12 +122,10 @@
 
         self.one("mount", function () {
             // tabs
-            $('.menu .item', self.root).tab()
-            // TODO: uncomment for tab history after merging comp detail page.
-            // $('.menu .item', self.root).tab({
-            //     history: true,
-            //     historyType: 'hash'
-            // })
+            $('.menu .item', self.root).tab({
+                history: true,
+                historyType: 'hash'
+            })
             if (!!self.opts.competition_id) {
                 self.update_competition_data(self.opts.competition_id)
             }
