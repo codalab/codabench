@@ -421,10 +421,7 @@ class Run:
 
         for url, path in bundles:
             if url is not None:
-                try:
-                    self._get_bundle(url, path)
-                except zipfile.BadZipFile as error:
-                    print(error)
+                self._get_bundle(url, path)
 
         # For logging purposes let's dump file names
         for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
@@ -469,14 +466,10 @@ class Run:
         except json.decoder.JSONDecodeError:
             raise SubmissionException("Could not decode scores json properly, it contains an error.")
         except FileNotFoundError:
-            # Handle legacy scoring output
-            # raise SubmissionException("Could not find scores.json, did the scoring program output it?")
+            # Handle legacy scoring output; We handle/read them differently so we don't wrap them in the same try/except
             try:
                 scores_file = os.path.join(self.output_dir, "scores.txt")
                 scores = yaml.load(open(scores_file, 'r'))
-                # scores = json.load(open(scores_file, 'r'))
-            # except json.decoder.JSONDecodeError:
-            #     raise SubmissionException("Could not decode scores json properly, it contains an error.")
             except FileNotFoundError:
                 raise SubmissionException("Could not find scores.txt or scores.json, did the scoring program output it?")
 
