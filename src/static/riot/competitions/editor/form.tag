@@ -183,8 +183,8 @@
             // convert serializer task data to just keys if we didn't edit phases
             // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
-                if (phase.tasks && typeof(phase.tasks[0]) === "object") {
-                    phase.tasks = _.map(phase.tasks, task => task.key)
+                if (phase.tasks && _.some(phase.tasks, Object)) {
+                    phase.tasks = _.map(phase.tasks, task => task.key || task.value)
                 }
                 switch (phase.index) {
                     case current_index:
