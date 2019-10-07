@@ -7,9 +7,7 @@
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
-                <div class="ui horizontal divider"></div>
-                <!-- todo: fix styling here from output.css - color looks weird w/ "very basic table" -->
-                <table class="ui very basic table" id="downloads">
+                <table class="ui table" id="downloads">
                     <thead>
                     <tr>
                         <th><i class="download icon"></i> Files</th>
