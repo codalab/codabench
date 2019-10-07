@@ -128,6 +128,8 @@ def _send_submission(submission, task, is_scoring, run_args):
     if is_scoring and task.reference_data:
         run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
+    run_args['ingestion_only_during_scoring'] = task.ingestion_only_during_scoring
+
     run_args['program_data'] = make_url_sassy(
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
     )
@@ -417,7 +419,7 @@ def unpack_competition(competition_dataset_pk):
                             'name': task.get('name'),
                             'description': task.get('description'),
                             'created_by': creator.id,
-                            'ingestion_only_during_scoring': task.get('ingestion_only_during_scoring')
+                            'ingestion_only_during_scoring': task.get('ingestion_only_during_scoring', False)
                         }
                         for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
                             new_task[file_type] = get_data_key(

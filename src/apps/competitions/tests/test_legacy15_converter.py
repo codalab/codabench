@@ -132,8 +132,8 @@ class LegacyConverterRemoteTests(TestCase):
         assert 'leaderboards' in converter.data.keys()
         assert isinstance(converter.data['leaderboards'], list)
 
-        assert ['title', 'key', 'index'] in converter.data['leaderboards'][0]
-        assert ['title', 'key', 'index', 'sorting'] in converter.data['leaderboards'][0]['columns']
+        assert all([key in list(converter.data['leaderboards'][0].keys()) for key in ['title', 'key']])
+        assert all([key in list(converter.data['leaderboards'][0]['columns'][0].keys()) for key in ['title', 'key', 'index', 'sorting']])
 
         # Assert that our old columns and new columns should line up:
         # This check seems pointless, since really we re-arrange and change at most 3 keys.
@@ -141,7 +141,7 @@ class LegacyConverterRemoteTests(TestCase):
         # Assert that our converter data matches truth
         assert converter.data['leaderboards'] == self.truth_data['leaderboards']
 
-    def test_converter_converts_leaderboards_fine(self):
+    def test_converter_converts_deprecated_keys_fine(self):
         converter = LegacyBundleConverter(self.yaml_data)
         # This only acts on the data stored in the converter object
         converter._convert_misc_keys()

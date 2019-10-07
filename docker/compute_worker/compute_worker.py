@@ -122,6 +122,8 @@ class Run:
         self.program_elapsed_time = None
         self.ingestion_elapsed_time = None
 
+        self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring', None)
+
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
         websocket_host = submission_api_url_parsed.netloc
@@ -129,17 +131,17 @@ class Run:
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
 
     @staticmethod
-    def _replace_legacy_metadata_command(command='', kind='scoring'):
+    def _replace_legacy_metadata_command(command='', kind='scoring', ingestion_only_during_scoring=None):
         vars_to_replace = [
-            # ('$input', '/app/input_data'),
             ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
             ('$output', '/app/output'),
-            ('$program', '/app/program'),
+            ('$program', '/app/program' if not ingestion_only_during_scoring else '/app/ingestion_program'),
             ('$ingestion_program', '/app/program'),
             ('$hidden', '/app/input/ref'),
             ('$shared', '/app/shared'),
             ('$submission_program', '/app/ingested_program'),
         ]
+        # Probably unnecessary
         new_command = command
         for var_string, var_replacement in vars_to_replace:
             new_command = new_command.replace(var_string, var_replacement)
@@ -350,7 +352,7 @@ class Run:
 
         # Handle Legacy competitions by replacing anything in the run command
 
-        command = self._replace_legacy_metadata_command(command=command, kind=kind)
+        command = self._replace_legacy_metadata_command(command=command, kind=kind, ingestion_only_during_scoring=self.ingestion_only_during_scoring)
 
         # End legacy competition support
 

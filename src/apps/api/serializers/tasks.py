@@ -56,6 +56,7 @@ class TaskSerializer(WritableNestedModelSerializer):
             'created_by',
             'created_when',
             'is_public',
+            'ingestion_only_during_scoring',
 
             # Data pieces
             'input_data',
@@ -120,6 +121,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'key',
             'name',
             'solutions',
+            'ingestion_only_during_scoring'
         )
 
 

@@ -36,6 +36,7 @@ PHASE_TASK_COMMON_MAPPING = {
     'scoring_program': 'scoring_program',
     'reference_data': 'reference_data',
     'ingestion_program': 'ingestion_program',
+    'ingestion_program_only_during_scoring': 'ingestion_only_during_scoring',
     # 'public_data': 'public_data',
     # 'starting_kit': 'starting_kit',
 }
@@ -238,7 +239,6 @@ class LegacyBundleConverter:
 
     def _convert_misc_keys(self):
         logger.info("Converting misc keys")
-        print("Converting misc keys")
         top_level_keys = list(self.data.keys())
         for top_level_key in top_level_keys:
             if top_level_key in LEGACY_COMPETITION_KEY_MAPPING:

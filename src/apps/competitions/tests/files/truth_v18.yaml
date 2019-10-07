@@ -49,30 +49,35 @@ tasks:
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_1.zip
+  ingestion_only_during_scoring: True
 - index: 3
   name: Dataset 2
   input_data: AutoDL_input_data_2.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_2.zip
+  ingestion_only_during_scoring: True
 - index: 4
   name: Dataset 3
   input_data: AutoDL_input_data_3.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_3.zip
+  ingestion_only_during_scoring: True
 - index: 5
   name: Dataset 4
   input_data: AutoDL_input_data_4.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_4.zip
+  ingestion_only_during_scoring: True
 - index: 6
   name: Dataset 5
   input_data: AutoDL_input_data_5.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_5.zip
+  ingestion_only_during_scoring: True
 - index: 7
   name: All datasets 2
   scoring_program: AutoDL_parent_scoring_program.zip
@@ -82,30 +87,35 @@ tasks:
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_1.zip
+  ingestion_only_during_scoring: True
 - index: 9
   name: Dataset 2
   input_data: AutoDL_input_data_2.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_2.zip
+  ingestion_only_during_scoring: True
 - index: 10
   name: Dataset 3
   input_data: AutoDL_input_data_3.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_3.zip
+  ingestion_only_during_scoring: True
 - index: 11
   name: Dataset 4
   input_data: AutoDL_input_data_4.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_4.zip
+  ingestion_only_during_scoring: True
 - index: 12
   name: Dataset 5
   input_data: AutoDL_input_data_5.zip
   ingestion_program: AutoDL_ingestion_program.zip
   scoring_program: AutoDL_scoring_program.zip
   reference_data: AutoDL_reference_data_5.zip
+  ingestion_only_during_scoring: True
 solutions: []
 leaderboards:
 - title: Results

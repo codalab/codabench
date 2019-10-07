@@ -73,25 +73,49 @@ class LegacyConverterRemoteTests(TestCase):
         assert 'phases' in converter.data.keys()
         assert isinstance(converter.data['phases'], list)
 
-        # Assert our data is equal in length between the two formats
-        # assert len(converter.data['phases']) == len(self.yaml_data['phases'].keys())
-
         # Assert our conversion created tasks. We cannot check for solutions because solutions depend on a starting kit
         # being defined. Cannot also check length against phases because parent/child relations
         assert 'tasks' in converter.data.keys()
 
-        # Assert they contain the same data in converted keys.
-        # This check is grabbing the last phase by key in the legacy bundle, and checking it's label against the
-        # last phase's name in our new phases list. They should be 1:1
-        # assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['label'] == converter.data['phases'][-1]['name']
-
         # Assert our new phases actually have a task key
         assert 'tasks' in converter.data['phases'][-1].keys()
+
+        last_parallel_parent_index = None
+        children_phases = []
+
+        for phase_index, phase_data in self.yaml_data['phases'].items():
+            if phase_data.get('is_parallel_parent'):
+                last_parallel_parent_index = phase_index
+        assert last_parallel_parent_index
+        for phase_index, phase_data in self.yaml_data['phases'].items():
+            # Default as -999 so we can do the cast in the same line and not worry about having a NoneType
+            if int(phase_data.get('parent_phasenumber', -9999)) == int(last_parallel_parent_index):
+                children_phases.append(phase_index)
+        assert len(converter.data['phases'][0]['tasks']) == len(children_phases)
+
+        # Only our parent phases should've carried across as phases
+
+        parallel_parents = []
+
+        for phase_index, phase_data in self.yaml_data['phases'].items():
+            if phase_data.get('is_parallel_parent'):
+                parallel_parents.append(phase_index)
+        assert len(converter.data['phases']) == len(parallel_parents)
+
+        # Assert that we carry across the flag `ingestion_program_only_during_scoring`
+
+        for phase_index, phase_data in self.yaml_data['phases'].items():
+            # Our actual list index position should only be -1 off because we read it in order
+            if phase_data.get('ingestion_program_only_during_scoring'):
+                assert converter.data['tasks'][int(phase_index) - 1].get('ingestion_only_during_scoring')
+
+        # parent_phase_number = self.yaml_data['phases'][7]
+        # Get last parent phase index
 
         # Assert our start and end dates are correctly set on conversion.
 
         # First check that our start's didn't get changed in the conversion
-        # assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['start_date'] == converter.data['phases'][-1]['start']
+        assert self.yaml_data['phases'][list(self.yaml_data['phases'].keys())[-1]]['start_date'] == converter.data['phases'][-1]['start']
 
         # Next check that (if we have at least 2 phases) that the first one's end date is equal to the second's start date
         if len(self.yaml_data['phases'].keys()) > 1 and len(converter.data['phases']) > 1:
@@ -133,8 +157,10 @@ class LegacyConverterRemoteTests(TestCase):
         assert 'leaderboards' in converter.data.keys()
         assert isinstance(converter.data['leaderboards'], list)
 
-        # assert ['title', 'key', 'index'] in converter.data['leaderboards'][0]
-        # assert ['title', 'key', 'index', 'sorting'] in converter.data['leaderboards'][0]['columns']
+        # Assert that our first leaderboard has these keys
+        assert all(key in converter.data['leaderboards'][0] for key in ['title', 'key', 'columns'])
+        # Assert that our first column has these keys
+        assert all(key in converter.data['leaderboards'][0]['columns'][0] for key in ['title', 'key', 'index', 'sorting'])
 
         # Assert that our old columns and new columns should line up:
         # This check seems pointless, since really we re-arrange and change at most 3 keys.
