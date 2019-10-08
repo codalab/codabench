@@ -33,7 +33,7 @@ class TestSubmissions(SeleniumTestCase):
         self.circleci_screenshot(name='uploading_submission.png')
 
         # The accordion shows "Running submission.zip"
-        assert self.find_text_in_class('.submission-output-container .title', "Running submission.zip", timeout=720)
+        assert self.find_text_in_class('.submission-output-container .title', "Running submission.zip", timeout=450)
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
