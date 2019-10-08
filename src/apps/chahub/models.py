@@ -6,8 +6,7 @@ import sys
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from apps.chahub.utils import send_to_chahub
-from settings.test import IS_TESTING
+from apps.chahub.utils import send_to_chahub, ChahubException
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +67,7 @@ class ChaHubSaveMixin(models.Model):
         # We do a save here to give us an ID for generating URLs and such
         super().save(*args, **kwargs)
 
-        pytest_force_chahub = getattr(settings, 'PYTEST_FORCE_CHAHUB', False)
-
-        if IS_TESTING and not pytest_force_chahub:
+        if getattr(settings, 'IS_TESTING', False) and not getattr(settings, 'PYTEST_FORCE_CHAHUB', False):
             # For tests let's just assume Chahub isn't available
             # We can mock proper responses
             return None
@@ -87,8 +84,10 @@ class ChaHubSaveMixin(models.Model):
 
                 # Send to chahub if we haven't yet, we have new data
                 if not self.chahub_timestamp or self.chahub_data_hash != data_hash:
-                    resp = send_to_chahub(self.get_chahub_endpoint(), data)
-
+                    try:
+                        resp = send_to_chahub(self.get_chahub_endpoint(), data)
+                    except ChahubException:
+                        resp = None
                     if resp and resp.status_code in (200, 201):
                         logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
                         print(f"ChaHub :: Received response {resp.status_code} {resp.content}")
