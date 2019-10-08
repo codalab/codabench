@@ -296,12 +296,15 @@ class Run:
                     return
         except FileNotFoundError:
             if can_be_output:
-                # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
-                # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
-                # Note: Re-enabling this got result submissions working
+                # # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
+                # # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
+                # # Note: Re-enabling this got result submissions working
                 logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
                             "program so move it to output")
-                shutil.move(program_dir, self.output_dir)
+                # shutil.move(program_dir, self.output_dir)
+                # Copy instead of moving so if something is looking for that ref for v1.5 compatibillity, but we may run
+                # into issues later.
+                shutil.copytree(program_dir, self.output_dir)
                 return
             else:
                 # Handle legacy competitions, which do not append the .yaml file extension
