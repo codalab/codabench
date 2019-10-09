@@ -44,6 +44,7 @@ class CompetitionViewSet(ModelViewSet):
                     'phases',
                     'phases__submissions',
                     'phases__tasks',
+                    'phases__tasks__solutions',
                     'phases__tasks__solutions__data',
                     'pages',
                     'leaderboards',
