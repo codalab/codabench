@@ -43,6 +43,7 @@ jobs:
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+          no_output_timeout: 20m
 
       - store_artifacts:
           path: artifacts/
