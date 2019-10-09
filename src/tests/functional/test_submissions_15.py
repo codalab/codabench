@@ -11,7 +11,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def test_submission_appears_in_submissions_table(self):
+    def test_v15_submission_appears_in_submissions_table(self):
         self.login(username=self.user.username, password='test')
 
         self.get(reverse('competitions:upload'))
@@ -33,11 +33,11 @@ class TestSubmissions(SeleniumTestCase):
         self.circleci_screenshot(name='uploading_submission.png')
 
         # The accordion shows "Running submission.zip"
-        assert self.find_text_in_class('.submission-output-container .title', "Running submission.zip", timeout=650)
+        assert self.find_text_in_class('.submission-output-container .title', "Running submission_15.zip", timeout=300)
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
-        assert self.find_text_in_class('.submission_output', 'Scores')
+        assert self.find_text_in_class('.submission_output', 'Scores', timeout=1000)
         assert self.find_text_in_class('.submission_output', 'accuracy')
 
         # The submission table lists our submission!
