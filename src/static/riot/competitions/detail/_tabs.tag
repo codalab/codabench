@@ -133,7 +133,7 @@
                                         </td>
                                         <td>{file.phase}</td>
                                         <td>{file.task}</td>
-                                        <td>{filesize(file.file_size)}</td>
+                                        <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
                                     </tbody>
                                 </table>
