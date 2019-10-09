@@ -46,7 +46,6 @@ class DataSerializer(serializers.ModelSerializer):
 
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
-    file_size = serializers.SerializerMethodField()
 
     class Meta:
         model = Data
@@ -63,9 +62,6 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'in_use',
             'file_size',
         )
-
-    def get_file_size(self, instance):
-        return instance.data_file.size
 
 
 class DataGroupSerializer(serializers.ModelSerializer):

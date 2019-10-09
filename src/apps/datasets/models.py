@@ -50,6 +50,7 @@ class Data(ChaHubSaveMixin, models.Model):
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
+    file_size = models.PositiveIntegerField(null=True, blank=True)
 
     # This is true if the Data model was created as part of unpacking a competition. Competition bundles themselves
     # are NOT marked True, since they are not created by unpacking!
@@ -59,6 +60,8 @@ class Data(ChaHubSaveMixin, models.Model):
     # TODO: remove upload_completed_successfully=False after 3 days ???
 
     def save(self, *args, **kwargs):
+        if not self.file_size and self.data_file:
+            self.file_size = self.data_file.size
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
