@@ -37,7 +37,7 @@ class TestSubmissions(SeleniumTestCase):
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
-        assert self.find_text_in_class('.submission_output', 'Scores', timeout=1000)
+        assert self.find_text_in_class('.submission_output', 'Scores', timeout=9999)
         assert self.find_text_in_class('.submission_output', 'accuracy')
 
         # The submission table lists our submission!
