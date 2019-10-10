@@ -1,0 +1,3 @@
+
+class CompetitionUnpackingException(Exception):
+    pass
