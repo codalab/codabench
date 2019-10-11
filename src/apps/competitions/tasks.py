@@ -19,6 +19,7 @@ from competitions.models import Submission, SubmissionDetails, Competition, \
     CompetitionDump, Phase, CompetitionCreationTaskStatus
 from competitions.unpacker.finalizer import Finalizer
 from competitions.unpacker.v2 import V2Unpacker
+from competitions.unpacker.v15 import V15Unpacker
 from datasets.models import Data
 from utils.data import make_url_sassy
 from competitions.unpacker.exceptions import CompetitionUnpackingException
@@ -321,14 +322,43 @@ def unpack_competition(competition_dataset_pk):
 
             unpacker = None
 
-            if yaml_version == '1.5':
-                pass
-            elif yaml_version == '2':
-                unpacker = V2Unpacker(competition_yaml=competition_yaml, temp_directory=temp_directory, creator=creator,
-                                      version=yaml_version)
-            else:
-                unpacker = V2Unpacker(competition_yaml=competition_yaml, temp_directory=temp_directory, creator=creator,
-                                      version=yaml_version)
+            print("The YAML version is: {}".format(yaml_version))
+
+            import time
+
+            start = time.time()
+            print("hello")
+
+            for i in range(1000000):
+                # print(i)
+                if yaml_version == '1.5':
+                    unpacker = V15Unpacker(
+                        competition_yaml=competition_yaml,
+                        temp_directory=temp_directory,
+                        creator=creator,
+                        version=yaml_version
+                    )
+                elif yaml_version == '2':
+                    unpacker = V2Unpacker(
+                        competition_yaml=competition_yaml,
+                        temp_directory=temp_directory,
+                        creator=creator,
+                        version=yaml_version
+                    )
+            # else:
+            #     # unpacker = V2Unpacker(competition_yaml=competition_yaml, temp_directory=temp_directory, creator=creator,
+            #     #                       version=yaml_version)
+            #     unpacker = V15Unpacker(
+            #         competition_yaml=competition_yaml,
+            #         temp_directory=temp_directory,
+            #         creator=creator,
+            #         version=yaml_version
+            #     )
+
+            end = time.time()
+            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+            print(end - start)
+            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
 
             unpacked_competition_data = unpacker.unpack()
 

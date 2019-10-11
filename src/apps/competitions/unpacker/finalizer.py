@@ -15,12 +15,10 @@ class Finalizer:
 
     def finalize(self):
         # Local import so we don't hit issues
-        from competitions.unpacker.exceptions import CompetitionUnpackingException
+        # from competitions.unpacker.exceptions import CompetitionUnpackingException
 
         self._create_tasks()
         self._create_solutions()
-
-        print("MY god damn data is {}".format(self.data['competition']))
 
         serializer = CompetitionSerializer(
             data=self.data['competition'],
@@ -51,21 +49,26 @@ class Finalizer:
             # print("My god damn index: {}".format())
             for phase_data in self.data['competition']['phases']:
                 for index, temp_task_data in enumerate(phase_data['tasks']):
-                    print("*****************************************")
-                    print(temp_task_data)
-                    print(isinstance(temp_task_data, UUID))
-                    print("*****************************************")
                     if not isinstance(temp_task_data, UUID):
                         if temp_task_data['index'] == temp_index:
                             phase_data['tasks'][index] = new_task.key
-                            print("*****************************************")
-                            print(temp_task_data)
-                            print("*****************************************")
+            for solution_data in self.data['solutions']:
+                for index, temp_task_data in enumerate(solution_data.get('tasks')):
+                    if not isinstance(temp_task_data, UUID):
+                        if temp_task_data['index'] == temp_index:
+                            solution_data['tasks'][index] = new_task.key
             # self.data['competition']["tasks"][temp_index] = new_task.key
 
     def _create_solutions(self):
         for solution_data in self.data['solutions']:
+            print("MY SOLUTION DATA: {}".format(solution_data))
+            temp_index = solution_data['index']
             serializer = SolutionSerializer(data=solution_data)
             serializer.is_valid(raise_exception=True)
             new_solution = serializer.save()
-            self.data['competition']['solutions'][solution_data['index']] = new_solution.key
+            for phase_data in self.data['competition']['phases']:
+                for index, temp_solution_data in enumerate(phase_data.get('solutions', [])):
+                    if not isinstance(temp_solution_data, UUID):
+                        if temp_solution_data['index'] == temp_index:
+                            phase_data['solutions'][index] = new_solution.key
+            # self.data['competition']['solutions'][solution_data['index']] = new_solution.key

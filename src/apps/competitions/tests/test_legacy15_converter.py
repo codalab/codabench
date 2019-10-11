@@ -7,6 +7,8 @@ from unittest import TestCase
 from apps.competitions.converter import LegacyBundleConverter, LEGACY_PHASE_KEY_MAPPING, LEGACY_DEPRECATED_KEYS
 
 
+COMP_DICT = {}
+
 class LegacyConverterRemoteTests(TestCase):
 
     def setUp(self):
@@ -21,6 +23,11 @@ class LegacyConverterRemoteTests(TestCase):
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
         self.truth_data = json.loads(json.dumps(self.truth_data, default=str))
+
+    def test_v15_unpacker(self):
+        l = Legacy_unpacker()
+        new_dict = l.unpack(yaml.load())
+        assert new_dict == COMP_DICT
 
     def test_converter_converts_pages_fine(self):
         converter = LegacyBundleConverter(self.yaml_data)
