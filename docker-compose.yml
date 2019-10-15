@@ -36,7 +36,6 @@ services:
     command: server /export
     volumes:
       - ./var/minio:/export
-      - ./docker/run_minio.sh:/app/run_minio.sh
     ports:
       - $MINIO_PORT:9000
     env_file: .env
@@ -46,8 +45,9 @@ services:
     depends_on:
       - minio
     env_file: .env
-    volumes:
-      - ./var/minio:/export
+#    volumes:
+      # This volume is shared with `minio`, so `z` to share it
+#      - ./var/minio:/export
     entrypoint: >
       /bin/sh -c "
       set -x
