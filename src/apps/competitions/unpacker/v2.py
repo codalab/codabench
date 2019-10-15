@@ -4,22 +4,13 @@ import json
 import datetime
 
 from django.utils import timezone
-
 from django.core.files import File
 
-from rest_framework.exceptions import ValidationError
-
-from competitions.unpacker.exceptions import CompetitionUnpackingException
-
-from competitions.unpacker.utils import _get_datetime, _zip_if_directory, get_data_key
-
-from datasets.models import Data
-
-from tasks.models import Solution, Task
-
 from competitions.models import Phase
-
-from api.serializers.competitions import CompetitionSerializer
+from competitions.unpacker.exceptions import CompetitionUnpackingException
+from competitions.unpacker.utils import _get_datetime, _zip_if_directory, get_data_key
+from datasets.models import Data
+from tasks.models import Solution, Task
 
 
 class V2Unpacker:
@@ -137,9 +128,6 @@ class V2Unpacker:
                         f"ERROR: No index for solution: {solution['name'] if 'name' in solution else solution['key']}")
 
                 index = solution['index']
-                print(type(index))
-                print(solution.get('tasks'))
-                print(self.competition.get('tasks'))
                 # task_keys = [self.competition['tasks'][task_index] for task_index in solution.get('tasks')]
                 task_keys = [self.tasks[task_index] for task_index in solution.get('tasks')]
 
