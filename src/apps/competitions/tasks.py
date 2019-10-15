@@ -11,6 +11,7 @@ import zipfile
 
 from io import BytesIO
 
+from celery._state import app_or_default
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -149,8 +150,20 @@ def _send_submission(submission, task, is_scoring, run_args):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
-                         soft_time_limit=time_limit)
+    if submission.phase.competition.queue:
+        submission.queue_name = submission.phase.competition.queue.name or ''
+        submission.save()
+
+        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app` variable above
+        celery_app = app_or_default()
+        with celery_app.connection() as new_connection:
+            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
+            task = celery_app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
+                                 soft_time_limit=time_limit, connection=new_connection)
+    else:
+        task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
+                             soft_time_limit=time_limit)
+
     submission.task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
