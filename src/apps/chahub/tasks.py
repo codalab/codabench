@@ -1,35 +1,80 @@
+import json
 import logging
 
 import requests
-from celery import task
-from datetime import timedelta
-
-from django.conf import settings
 from django.utils import timezone
-from apps.chahub.utils import send_to_chahub, ChahubException
-from chahub.models import ChaHubSaveMixin
-from profiles.models import User
+
+from celery_config import app
+from django.apps import apps
+from django.conf import settings
+from apps.chahub.utils import ChahubException
 
 logger = logging.getLogger(__name__)
 
 
-@task
-def send_users_to_chahub():
-    all_users = User.objects.all()
-    user_data_list = []
-    for user in all_users:
-        user_data_list.append(user.get_chahub_data())
+def _send(endpoint, data):
+    url = f"{settings.CHAHUB_API_URL}{endpoint}"
+    headers = {
+        'Content-type': 'application/json',
+        'X-CHAHUB-API-KEY': settings.CHAHUB_API_KEY,
+    }
+    logger.info(f"ChaHub :: Sending to ChaHub ({url}) the following data: \n{data}")
+    return requests.post(url=url, data=json.dumps(data), headers=headers)
+
+
+@app.task(queue='site-worker')
+def send_to_chahub(app_label, pk, data, data_hash):
+    """
+    Does a post request to the specified API endpoint on chahub with the inputted data.
+    """
+    if not settings.CHAHUB_API_URL:
+        raise ChahubException("CHAHUB_API_URL env var required to send to Chahub")
+    if not settings.CHAHUB_API_KEY:
+        raise ChahubException("No ChaHub API Key provided")
+
+    Model = apps.get_model(app_label)
+
     try:
-        logger.info("Sending profile data to Chahub")
-        resp = send_to_chahub('profiles/', user_data_list, update=False)
+        obj = Model.objects.get(pk=pk)
+    except Model.DoesNotExist:
+        raise ChahubException(f"Could not find {Model.__class__.__name__} with pk: {pk}")
+
+    try:
+        resp = _send(obj.get_chahub_endpoint(), data)
+    except requests.exceptions.RequestException:
+        resp = None
+
+    if resp and resp.status_code in (200, 201):
+        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
+        obj.chahub_timestamp = timezone.now()
+        obj.chahub_data_hash = data_hash
+        obj.chahub_needs_retry = False
+    else:
+        status = getattr(resp, 'status_code', 'N/A')
+        body = getattr(resp, 'content', 'N/A')
+        logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
+        obj.chahub_needs_retry = True
+    obj.save()
+
+
+def batch_send_to_chahub(model, retry_only=False, limit=None):
+    qs = model.objects.all()
+    if retry_only:
+        qs = qs.filter(chahub_needs_retry=True)
+    if limit is not None:
+        qs = qs[:limit]
+
+    endpoint = model.get_chahub_endpoint()
+    data = [obj.get_chahub_data() for obj in qs if obj.get_chahub_is_valid()]
+    try:
+        logger.info(f"Sending all {model.__class__.__name__} data to Chahub")
+        resp = _send(endpoint=endpoint, data=data)
         logger.info(f"Response Status Code: {resp.status_code}")
-    # TODO: Will this catch timeouts and errors from our code? We should bubble up errors from send_to_chahub nicely.
     except ChahubException:
-        logger.info("There was a problem reaching Chahub, it is currently offline. Re-trying in 5 minutes.")
-        send_users_to_chahub.apply_async(eta=timezone.now() + timedelta(minutes=5))
+        logger.info("There was a problem reaching Chahub. Retry again later")
 
 
-@task(queue='site-worker')
+@app.task(queue='site-worker')
 def do_chahub_retries(limit=None):
     if not settings.CHAHUB_API_URL:
         return
@@ -44,13 +89,8 @@ def do_chahub_retries(limit=None):
         return
 
     logger.info("ChaHub is online, checking for objects needing to be re-sent to ChaHub")
+    from chahub.models import ChaHubSaveMixin
     chahub_models = ChaHubSaveMixin.__subclasses__()
+    logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
-        needs_retry = model.objects.filter(chahub_needs_retry=True)
-
-        if limit:
-            needs_retry = needs_retry[:limit]
-
-        for instance in needs_retry:
-            # Saving forces chahub update
-            instance.save()
+        batch_send_to_chahub(model, retry_only=True, limit=limit)

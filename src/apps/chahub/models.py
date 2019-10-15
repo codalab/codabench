@@ -1,12 +1,11 @@
 import hashlib
 import json
 import logging
-import sys
 
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
-from apps.chahub.utils import send_to_chahub, ChahubException
+
+from chahub.tasks import send_to_chahub
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,8 @@ class ChaHubSaveMixin(models.Model):
     # -------------------------------------------------------------------------
     # METHODS TO OVERRIDE WHEN USING THIS MIXIN!
     # -------------------------------------------------------------------------
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         """Override this to return the endpoint URL for this resource
 
         Example:
@@ -79,30 +79,13 @@ class ChaHubSaveMixin(models.Model):
             logger.info(f"ChaHub :: {self.__class__.__name__}({self.pk}) is_valid = {is_valid}")
 
             if is_valid:
-                data = self.get_chahub_data()
+                data = [self.get_chahub_data()]
                 data_hash = hashlib.md5(json.dumps(data).encode('utf-8')).hexdigest()
 
                 # Send to chahub if we haven't yet, we have new data
                 if not self.chahub_timestamp or self.chahub_data_hash != data_hash:
-                    try:
-                        resp = send_to_chahub(self.get_chahub_endpoint(), data)
-                    except ChahubException:
-                        resp = None
-                    if resp and resp.status_code in (200, 201):
-                        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
-                        print(f"ChaHub :: Received response {resp.status_code} {resp.content}")
-                        self.chahub_timestamp = timezone.now()
-                        self.chahub_data_hash = data_hash
-                        self.chahub_needs_retry = False
-                    else:
-                        status = getattr(resp, 'status_code', 'N/A')
-                        body = getattr(resp, 'content', 'N/A')
-                        logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
-                        print(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
-                        self.chahub_needs_retry = True
-
-                    # We save at the beginning, but then again at the end to save our new chahub timestamp and such
-                    super().save()
+                    app_label = f'{self.__class__._meta.app_label}.{self.__class__.__name__}'
+                    send_to_chahub.apply_async((app_label, self.pk, data, data_hash))
             elif self.chahub_needs_retry:
                 # This is NOT valid but also marked as need retry, unmark need retry until this is valid again
                 logger.info('ChaHub :: This is invalid but marked for retry. Clearing retry until valid again.')

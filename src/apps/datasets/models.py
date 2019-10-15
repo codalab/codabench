@@ -77,8 +77,12 @@ class Data(ChaHubSaveMixin, models.Model):
     def __str__(self):
         return self.name or ''
 
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         return "datasets/"
+
+    def get_chahub_is_valid(self):
+        return self.upload_completed_successfully
 
     def get_chahub_data(self):
         data = {
@@ -92,7 +96,7 @@ class Data(ChaHubSaveMixin, models.Model):
             'key': str(self.key),
             'is_public': self.is_public
         }
-        return [data]
+        return data
 
 
 class DataGroup(models.Model):

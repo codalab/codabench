@@ -93,7 +93,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.pk})
 
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         return "competitions/"
 
     def get_chahub_data(self):
@@ -114,7 +115,7 @@ class Competition(ChaHubSaveMixin, models.Model):
             data['logo_url'] = self.logo.url
             data['logo'] = self.logo.url
 
-        return [data]
+        return data
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -369,7 +370,8 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.status = 'Finished'
             self.save()
 
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         return "submissions/"
 
     def get_chahub_data(self):
@@ -383,7 +385,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         chahub_id = self.owner.chahub_uid
         if chahub_id:
             data['user'] = chahub_id
-        return [data]
+        return data
 
     def get_chahub_is_valid(self):
         return self.status == self.FINISHED and self.is_public and self.phase.competition.published
@@ -420,15 +422,16 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
         # By default, always push
         return True
 
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         return 'participants/'
 
     def get_chahub_data(self):
-        return [{
+        return {
             'competition': self.competition.id,
             'user': self.user.id,
             'status': self.status,
-        }]
+        }
 
 
 class Page(models.Model):

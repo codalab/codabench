@@ -58,7 +58,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             return associations.first().uid
         return None
 
-    def get_chahub_endpoint(self):
+    @classmethod
+    def chahub_endpoint(cls):
         return "profiles/"
 
     def clean_chahub_data(self, data):
@@ -89,7 +90,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         if chahub_id:
             data['user'] = chahub_id
         data = self.clean_chahub_data(data)
-        return [data]
+        return data
 
     def get_chahub_is_valid(self):
         # By default, always push
