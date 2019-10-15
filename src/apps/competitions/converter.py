@@ -2,7 +2,8 @@ import logging
 import json
 import copy
 
-from apps.competitions.tasks import CompetitionUnpackingException
+# from apps.competitions.tasks import CompetitionUnpackingException
+from apps.competitions.unpacker.exceptions import CompetitionUnpackingException
 logger = logging.getLogger(__name__)
 
 
