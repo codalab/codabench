@@ -46,6 +46,8 @@ services:
     depends_on:
       - minio
     env_file: .env
+    volumes:
+      - ./var/minio:/export
     entrypoint: >
       /bin/sh -c "
       set -x
