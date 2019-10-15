@@ -26,18 +26,13 @@ def send_to_chahub(endpoint, data):
 
     url = f"{settings.CHAHUB_API_URL}{endpoint}"
 
-    data = json.dumps(data)
-
     logger.info(f"ChaHub :: Sending to ChaHub ({url}) the following data: \n{data}")
     try:
-        kwargs = {
-            'url': url,
-            'headers': {
-                'Content-type': 'application/json',
-                'X-CHAHUB-API-KEY': settings.CHAHUB_API_KEY,
-            }
+        headers = {
+            'Content-type': 'application/json',
+            'X-CHAHUB-API-KEY': settings.CHAHUB_API_KEY,
         }
-        return requests.post(data=data, **kwargs)
+        return requests.post(url=url, data=json.dumps(data), headers=headers)
     except requests.ConnectionError:
         raise ChahubException('Connection Error with ChaHub')
 

@@ -80,35 +80,18 @@ class Data(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint(self):
         return "datasets/"
 
-    def clean_chahub_data(self, data):
-        validated_data = {}
-        for key, item in data.items():
-            if not item:
-                continue
-            elif isinstance(item, datetime.datetime):
-                validated_data[key] = item.isoformat()
-            elif isinstance(item, uuid.UUID):
-                validated_data[key] = str(item)
-            else:
-                validated_data[key] = item
-        return validated_data
-
     def get_chahub_data(self):
         data = {
             'creator_id': self.created_by.id,
             'remote_id': self.pk,
             'created_by': str(self.created_by.username),
-            'created_when': self.created_when,
+            'created_when': self.created_when.isoformat(),
             'name': self.name,
             'type': self.type,
             'description': self.description,
-            'key': self.key,
+            'key': str(self.key),
             'is_public': self.is_public
         }
-        chahub_id = self.created_by.chahub_uid
-        if chahub_id:
-            data['user'] = chahub_id
-        data = self.clean_chahub_data(data)
         return [data]
 
 

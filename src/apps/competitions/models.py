@@ -1,6 +1,7 @@
 import logging
 import uuid
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.urls import reverse
 from django.utils.timezone import now
@@ -89,31 +90,31 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating_delayed = False
         self.save()
 
+    def get_absolute_url(self):
+        return reverse('competitions:detail', kwargs={'pk': self.pk})
+
     def get_chahub_endpoint(self):
         return "competitions/"
 
     def get_chahub_data(self):
+        from api.serializers.competitions import PhaseSerializer
         data = {
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
+            'start': self.phases.first().start.isoformat(),
             'title': self.title,
-            # TODO: get URL
-            'url': 'https://www.google.com/',
+            'url': f'http://{Site.objects.get_current().domain}{self.get_absolute_url()}',
             'remote_id': self.pk,
-            'published': self.published
+            'published': self.published,
+            'participants': [p.user.id for p in self.participants.all()],
+            'phases': [phase.get_chahub_data() for phase in self.phases.all()],
         }
         if self.logo:
             data['logo_url'] = self.logo.url
             data['logo'] = self.logo.url
 
-        chahub_id = self.created_by.chahub_uid
-        if chahub_id:
-            data['user'] = chahub_id
         return [data]
-
-    def get_absolute_url(self):
-        return reverse('competitions:detail', kwargs={'pk': self.id})
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -205,6 +206,17 @@ class Phase(models.Model):
             if total_submission_count >= self.max_submissions_per_person:
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
+
+    def get_chahub_data(self):
+        return {
+            'id': self.id,
+            'index': self.index,
+            'start': self.start.isoformat(),
+            'end': self.end.isoformat() if self.end else None,
+            'name': self.name,
+            'description': self.description,
+            'is_active': self.is_active,
+        }
 
     @property
     def is_active(self):
