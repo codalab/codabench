@@ -1,0 +1,30 @@
+{% extends "queues/base_queues.html" %}
+
+{% block head_title %}Queue form{% endblock %}
+{% block page_title %}<h2>Queue form</h2>{% endblock page_title %}
+
+{% block content %}
+    <div class="ui container message">
+        <form class="ui form" action="" method="post">
+            {% csrf_token %}
+            <table class="ui table table-bordered">
+                {{ form.as_table }}
+            </table>
+
+            <input type="submit" value="Save" class="ui blue button" style="float: right;">
+        </form>
+    </div>
+
+
+    <style>
+        .select2-container {
+            width: 100%;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $('document').ready(function () {
+            $("#id_organizers").select2()
+        })
+    </script>
+{% endblock %}

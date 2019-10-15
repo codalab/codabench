@@ -13,6 +13,8 @@ urlpatterns = [
     path('datasets/', include('datasets.urls', namespace='datasets')),
     path('profiles/', include('profiles.urls', namespace='profiles')),
     path('tasks/', include('tasks.urls', namespace='tasks')),
+    # url(r'^queues/', include('apps.queues.urls', namespace="queues")),
+    path('queues/', include('queues.urls', namespace="queues")),
 
     # Third party
     path('api/', include('api.urls')),
