@@ -29,11 +29,11 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.item[data-tab="participate-tab"]').click()
 
         self.circleci_screenshot("set_submission_file_name.png")
-        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission_15.zip'))
+        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, 'submission_15_result.zip'))
         self.circleci_screenshot(name='uploading_submission.png')
 
         # The accordion shows "Running submission.zip"
-        assert self.find_text_in_class('.submission-output-container .title', "Running submission_15.zip", timeout=300)
+        assert self.find_text_in_class('.submission-output-container .title', "Running submission_15_result.zip", timeout=300)
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
@@ -41,7 +41,7 @@ class TestSubmissions(SeleniumTestCase):
         assert self.find_text_in_class('.submission_output', 'accuracy')
 
         # The submission table lists our submission!
-        assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission.zip'
+        assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == 'submission_15_result.zip'
 
         submission = self.user.submission.first()
         task = competition.phases.first().tasks.first()
