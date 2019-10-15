@@ -33,9 +33,6 @@ class Queue(models.Model):
 
     @property
     def broker_url(self):
-        # Start with pyamqp://guest:guest@localhost:5672//
-        broker_url_parts = urlparse(settings.BROKER_URL)
-        # Get localhost:5672
         from django.contrib.sites.models import Site
         host = Site.objects.get_current().domain
 
