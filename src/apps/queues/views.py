@@ -30,7 +30,6 @@ class QueueListView(LoginRequiredMixin, ListView):
     template_name = 'queues/list.html'
 
     def get_queryset(self):
-        # return Queue.objects.filter(owner=self.request.user)
         qs = Queue.objects.filter(owner=self.request.user) | self.request.user.organized_queues.all()
         return qs
 
@@ -41,7 +40,7 @@ class QueueCreateView(LoginRequiredMixin, QueueFormMixin, CreateView):
     form_class = QueueForm
 
     def form_valid(self, form):
-        # try:
+        try:
             queue = form.save(commit=False)
             queue.owner = self.request.user
             if rabbit.check_user_needs_initialization(self.request.user):
@@ -52,10 +51,10 @@ class QueueCreateView(LoginRequiredMixin, QueueFormMixin, CreateView):
             queue.save()
             form.save_m2m()
             return HttpResponseRedirect(self.get_success_url())
-        # except HTTPError:
-        #     errors = form._errors.setdefault("__all__", ErrorList())
-        #     errors.append("Failed to create RabbitMQ queue... please report this issue on the Codalab github!")
-        #     return self.form_invalid(form)
+        except HTTPError:
+            errors = form._errors.setdefault("__all__", ErrorList())
+            errors.append("Failed to create RabbitMQ queue... please report this issue on the Codalab github!")
+            return self.form_invalid(form)
 
 
 class QueueUpdateView(LoginRequiredMixin, QueueFormMixin, UpdateView):

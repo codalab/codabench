@@ -9,9 +9,7 @@ from pyrabbit.http import HTTPError, NetworkError
 def _get_rabbit_connection():
     """Helper giving us a rabbit connection from settings.BROKER_URL"""
     host_with_port = "{}:{}/".format(settings.RABBITMQ_HOST, settings.RABBITMQ_MANAGEMENT_PORT)
-    print("Host with port is: {}".format(host_with_port))
-    scheme = 'https' if settings.USE_SSL else 'http'
-    # return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS, scheme=scheme)
+    # TODO: Scheme was deprecated? Verify this
     return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS)
 
 
