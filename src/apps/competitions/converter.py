@@ -92,7 +92,7 @@ class LegacyBundleConverter:
         return None
 
     def convert(self, plain=False):
-        if not self._is_legacy_bundle():
+        if not self.is_legacy_bundle(self.data):
             logger.info("Bundle data does not appear to be legacy. Skipping.")
             return self.data
         else:
@@ -108,8 +108,9 @@ class LegacyBundleConverter:
         logger.info("Retrning data: {}".format(self.data))
         return self.data
 
-    def _is_legacy_bundle(self):
-        return any([bool(key in self.data) for key in LEGACY_DEPRECATED_KEYS])
+    @staticmethod
+    def is_legacy_bundle(data={}):
+        return any([bool(key in data) for key in LEGACY_DEPRECATED_KEYS])
 
     def _convert_pages(self):
         new_html_data = []

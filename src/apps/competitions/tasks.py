@@ -23,6 +23,7 @@ from competitions.unpacker.v15 import V15Unpacker
 from datasets.models import Data
 from utils.data import make_url_sassy
 from competitions.unpacker.exceptions import CompetitionUnpackingException
+from competitions.converter import LegacyBundleConverter
 
 logger = logging.getLogger()
 
@@ -262,7 +263,13 @@ def unpack_competition(competition_dataset_pk):
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
 
-            yaml_version = str(competition_yaml.get('version', '2'))
+            yaml_version = str(competition_yaml.get('version', 'N/A'))
+            if yaml_version == 'N/A':
+                # Automatically try to read type
+                if LegacyBundleConverter.is_legacy_bundle(competition_yaml):
+                    yaml_version = '1.5'
+                else:
+                    yaml_version = '2'
 
             unpacker = None
 
@@ -287,7 +294,7 @@ def unpack_competition(competition_dataset_pk):
 
             finalizer = Finalizer(data=unpacked_competition_data, creator=creator)
 
-            competition = finalizer.finalize())
+            competition = finalizer.finalize()
 
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
