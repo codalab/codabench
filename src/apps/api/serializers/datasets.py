@@ -59,7 +59,8 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'is_public',
             'key',
             'was_created_by_competition',
-            'in_use'
+            'in_use',
+            'file_size',
         )
 
 
