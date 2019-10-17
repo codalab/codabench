@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block extra_headers %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}forums/forums.css">
+    <link rel="stylesheet" href="{% static "css/queues.css" %}">
 {% endblock extra_headers %}
 
 {% block content_wrapper %}
-    <div id="queues-wrapper" class="container">
+    <div class="container">
         <div class="ui segment">
             {% block content %}
             {% endblock content %}

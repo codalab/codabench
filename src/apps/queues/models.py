@@ -1,11 +1,7 @@
-from urllib.parse import urlparse
-
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from pyrabbit.http import HTTPError
-# from django.contrib.sites.models import Site
-
-import uuid
 
 from apps.queues import rabbit
 
@@ -33,16 +29,9 @@ class Queue(models.Model):
 
     @property
     def broker_url(self):
-        from django.contrib.sites.models import Site
         host = Site.objects.get_current().domain
-
         if self.owner:
-            return "pyamqp://{}:{}@{}/{}".format(
-                self.owner.rabbitmq_username,
-                self.owner.rabbitmq_password,
-                host,
-                self.vhost
-            )
+            return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{host}/{self.vhost}"
 
     def delete(self, using=None):
         try:

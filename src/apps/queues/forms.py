@@ -12,7 +12,7 @@ class QueueForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
-        super(QueueForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Remove extra help text that obfuscates our organizer message
         remove_message = 'Hold down "Control", or "Command" on a Mac, to select more than one.'
@@ -21,7 +21,6 @@ class QueueForm(ModelForm):
     def clean(self):
         # If we're creating this, make sure we don't have > the limited # of queues
         if not self.instance.pk:
-            queue_count = Queue.objects.filter(owner=self.user).count()
-            if queue_count >= self.user.rabbitmq_queue_limit:
-                raise ValidationError("Cannot create more than {} queues".format(self.user.rabbitmq_queue_limit))
-        return super(QueueForm, self).clean()
+            if self.user.queues.count() >= self.user.rabbitmq_queue_limit:
+                raise ValidationError(f"Cannot create more than {self.user.rabbitmq_queue_limit} queues")
+        return super().clean()

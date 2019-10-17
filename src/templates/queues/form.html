@@ -7,11 +7,11 @@
     <div class="ui container message">
         <form class="ui form" action="" method="post">
             {% csrf_token %}
-            <table class="ui table table-bordered">
+            <table class="ui table table-bordered form-table-padding">
                 {{ form.as_table }}
             </table>
 
-            <input type="submit" value="Save" class="ui blue button" style="float: right;">
+            <button type="submit" value="Save" class="ui blue button form-save">Save</button>
         </form>
     </div>
 

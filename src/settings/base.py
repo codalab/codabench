@@ -177,9 +177,7 @@ else:
 # =============================================================================
 # SSL
 # =============================================================================
-USE_SSL = os.environ.get('USE_SSL')
-
-if USE_SSL:
+if os.environ.get('USE_SSL'):
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
@@ -200,7 +198,7 @@ RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 # ============================================================================
 CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL") or os.environ.get('BROKER_URL')
 # Rabbit/Pyrabbit reference BROKER_URL internally
-BROKER_URL = CELERY_BROKER_URL
+# BROKER_URL = CELERY_BROKER_URL
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
 CELERY_TASK_SERIALIZER = 'json'
