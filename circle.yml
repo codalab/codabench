@@ -8,9 +8,7 @@ version: 2
 
 jobs:
   test:
-    # machine:
-      # docker_layer_caching: true
-
+    machine:
     steps:
       - checkout
 
