@@ -367,8 +367,13 @@
             // Setting Tasks
             $(self.refs.multiselect)
                 .dropdown('change values', _.map(phase.tasks, task => {
-                    task.selected = true
-                    return task
+                    // renaming things to work w/ semantic UI multiselect
+                    return {
+                        value: task.key,
+                        text: task.name,
+                        name: task.name,
+                        selected: true,
+                    }
                 }))
 
             self.show_modal()

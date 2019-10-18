@@ -6,70 +6,53 @@
     <script>
         var self = this
 
-        self.phase_array = []
+        self.phase_timeline = []
+        self.point_styles = []
 
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.phases = competition.phases
-            self.phase_timeline(competition.phases)
+            self.make_phase_timeline(competition.phases)
             self.update()
             self.draw_chart()
         })
 
-        // TODO: Need Labels(tooltips?) to properly display which phase they are attached to to give better context to the end-user.
+
         self.draw_chart = function () {
-            var ctx = document.getElementById('myChart').getContext('2d');
+            let ctx = document.getElementById('myChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [
+                        // data for blue line (start of comp to today)
                         {
                             data: [
-                                {x: self.get_date(self.phase_array[0]), y: 0},
-                            ],
-                            borderWidth: 6,
-                            borderColor: '#00bbbb',
-                            pointBackgroundColor: '#00bbbb',
-                            pointStyle: 'circle'
-                        },
-                        {
-                            data: [
-                                {x: self.get_date(self.phase_array[0]), y: 0},
+                                {x: self.get_date(self.phase_timeline[0].time), y: 0},
                                 {x: self.get_date(new Date().getTime()), y: 0}
                             ],
-                            borderWidth: 6,
+                            label: [
+                                self.phase_timeline[0].name,
+                                'Today'
+                            ],
+                            borderWidth: 5,
                             borderColor: '#00bbbb',
                             pointBackgroundColor: '#00bbbb',
                             borderCapStyle: 'round',
-                            pointStyle: 'line',
+                            pointStyle: ['circle', 'line'],
                         },
+                        // Grey Line (actual comp timeline)
                         {
-                            data: [
-                                {x: self.get_date(new Date().getTime()), y: 0}
-                            ],
-                            radius: 1,
-                            borderWidth: 1,
-                            borderColor: '#00bbbb',
-                            pointBackgroundColor: '#00bbbb',
-                            borderCapStyle: 'round',
-                            pointStyle: 'rect',
-                        },
-                        {
-                            fill: false,
-                            data: _.map(self.phase_array, (phase) => {
-                                return {x: self.get_date(phase), y: 0}
+                            data: _.map(self.phase_timeline, phase => {
+                                return {x: self.get_date(phase.time), y: 0}
                             }),
+                            label: _.map(self.phase_timeline, phase => phase.name),
                             borderWidth: 4,
-                            pointBackgroundColor: '#f6f8fa',
+                            pointBackgroundColor: '#4a4a4a',
                             borderColor: '#4a4a4a',
-                            pointRadius: 2,
-                            pointHoverRadius: 8,
+                            pointStyle: self.point_styles
                         }]
                 },
                 options: {
-                    animation: {
-                        duration: 0,
-                    },
                     layout: {
                         padding: {
                             left: 50,
@@ -97,40 +80,58 @@
                     legend: {
                         display: false
                     },
-                    axes: {
-                        display: false
-                    },
                     tooltips: {
                         backgroundColor: '#fff',
-                        padding: 20,
                         borderColor: '#DCDCDC',
                         borderWidth: 1,
                         titleFontSize: 12,
                         titleFontColor: '#2d3f4b',
-                        bodyFontSize: 0,
+                        bodyFontColor: '#2d3f4b',
                         displayColors: false,
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                let title = _.get(data.datasets[tooltipItem.datasetIndex], `label[${tooltipItem.index}]`, 'N/A')
+                                if (title === 'Competition Never Ends') {
+                                    return ''
+                                }
+                                return pretty_date(new Date(tooltipItem.xLabel).toISOString())
+                            },
+                            title: function (tooltipItem, data) {
+                                tooltipItem = _.head(tooltipItem)
+                                return _.get(data.datasets[tooltipItem.datasetIndex], `label[${tooltipItem.index}]`, 'N/A')
+                            }
+                        }
                     }
                 }
-            });
+            })
         }
-
-        self.get_scale = function (today_date, start_date, end_date, min_percentage, max_percentage) {
-            min_percentage = min_percentage || 0
-            max_percentage = max_percentage || 100
-            return (((today_date - start_date) * (max_percentage - min_percentage)) / (end_date - start_date)) + min_percentage
-        }
-
 
         self.get_date = function (phase_date) {
             var date = new Date(phase_date)
             return date.toUTCString()
         }
 
-        self.phase_timeline = function (phases) {
+        self.make_phase_timeline = function (phases) {
             _.forEach(phases, function (phase) {
-                self.phase_array.push(new Date(phase.start).getTime())
-                // TODO: how do we handle endless phases?
-                self.phase_array.push(new Date(phase.end ? phase.end : phase.start).getTime())
+                self.phase_timeline.push({
+                    time: new Date(phase.start).getTime(),
+                    name: `${phase.name} Start`,
+                })
+                self.point_styles.push('circle')
+                if (phase.end) {
+                    self.phase_timeline.push({
+                        time: new Date(phase.end).getTime(),
+                        name: `${phase.name} End`,
+                    })
+                    self.point_styles.push('circle')
+                } else {
+                    self.phase_timeline.push({
+                        time: new Date().setDate(new Date().getDate() + 90),
+                        name: 'Competition Never Ends',
+                    })
+                    self.point_styles.push('line')
+                }
+
             })
         }
     </script>

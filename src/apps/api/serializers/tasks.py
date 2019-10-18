@@ -1,6 +1,7 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
+from api.serializers.datasets import DataDetailSerializer
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
@@ -9,7 +10,6 @@ from utils.data import make_url_sassy
 class SolutionSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    file_path = serializers.SerializerMethodField(read_only=True, required=False)
 
     class Meta:
         model = Solution
@@ -19,25 +19,18 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'key',
             'tasks',
             'data',
-            'file_path',
         ]
-
-    def get_file_path(self, solution):
-        return make_url_sassy(solution.data.data_file.name)
 
 
 class SolutionListSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField()
+    data = DataDetailSerializer()
 
     class Meta:
         model = Solution
         fields = (
             'name',
-            'url'
+            'data'
         )
-
-    def get_url(self, solution):
-        return make_url_sassy(solution.data.data_file.name)
 
 
 class TaskSerializer(WritableNestedModelSerializer):
