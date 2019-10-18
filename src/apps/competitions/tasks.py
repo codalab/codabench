@@ -18,8 +18,7 @@ from celery_config import app
 from competitions.models import Submission, SubmissionDetails, Competition, \
     CompetitionDump, Phase, CompetitionCreationTaskStatus
 from competitions.unpacker.finalizer import Finalizer
-from competitions.unpacker.v2 import V2Unpacker
-from competitions.unpacker.v15 import V15Unpacker
+from competitions.unpacker.unpacker import V15Unpacker, V2Unpacker
 from datasets.models import Data
 from utils.data import make_url_sassy
 from competitions.unpacker.exceptions import CompetitionUnpackingException
@@ -229,7 +228,6 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(competition_dataset_pk):
-    # Local import to prevent circular with Exceptions
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
 
@@ -255,11 +253,9 @@ def unpack_competition(competition_dataset_pk):
             # ---------------------------------------------------------------------
             # Read metadata (competition.yaml)
             yaml_path = os.path.join(temp_directory, "competition.yaml")
-
             if not os.path.exists(yaml_path):
                 raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
                                                     "to make sure it is in the root directory.")
-
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
 
@@ -273,7 +269,7 @@ def unpack_competition(competition_dataset_pk):
 
             unpacker = None
 
-            print("The YAML version is: {}".format(yaml_version))
+            logger.info("The YAML version is: {}".format(yaml_version))
 
             if yaml_version == '1.5':
                 unpacker = V15Unpacker(
@@ -291,18 +287,16 @@ def unpack_competition(competition_dataset_pk):
                 )
 
             unpacked_competition_data = unpacker.unpack()
-
             finalizer = Finalizer(data=unpacked_competition_data, creator=creator)
-
             competition = finalizer.finalize()
 
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
             status.save()
-            print("Competition saved!")
+            logger.info("Competition saved!")
 
     except CompetitionUnpackingException as e:
-        print(str(e))
+        logger.info(str(e))
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
         status.save()

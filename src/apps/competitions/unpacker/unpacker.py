@@ -6,9 +6,10 @@ import datetime
 from django.utils import timezone
 from django.core.files import File
 
+from competitions.converter import LegacyBundleConverter
 from competitions.models import Phase
 from competitions.unpacker.exceptions import CompetitionUnpackingException
-from competitions.unpacker.utils import _get_datetime, _zip_if_directory, get_data_key
+from competitions.unpacker.utils import get_datetime, zip_if_directory
 from datasets.models import Data
 from tasks.models import Solution, Task
 
@@ -108,13 +109,6 @@ class V2Unpacker:
                             'creator': self.creator,
                             'index': index
                         }
-
-                    # serializer = TaskSerializer(
-                    #     data=new_task,
-                    # )
-                    # serializer.is_valid(raise_exception=True)
-                    # new_task = serializer.save()
-                    # self.competition["tasks"][index] = new_task.key
                     self.tasks.append(new_task)
 
     def _unpack_solutions(self):
@@ -128,7 +122,6 @@ class V2Unpacker:
                         f"ERROR: No index for solution: {solution['name'] if 'name' in solution else solution['key']}")
 
                 index = solution['index']
-                # task_keys = [self.competition['tasks'][task_index] for task_index in solution.get('tasks')]
                 task_keys = [self.tasks[task_index] for task_index in solution.get('tasks')]
 
                 if not task_keys:
@@ -161,7 +154,7 @@ class V2Unpacker:
                             name=name,
                             was_created_by_competition=True,
                         )
-                        file_path = _zip_if_directory(file_path)
+                        file_path = zip_if_directory(file_path)
                         new_solution_data.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
                         new_solution = {
                             'data': new_solution_data.key,
@@ -171,14 +164,8 @@ class V2Unpacker:
                             'index': index,
                         }
                         self.solutions.append(new_solution)
-                        # serializer = SolutionSerializer(data=new_solution)
-                        # serializer.is_valid(raise_exception=True)
-                        # new_solution = serializer.save()
-                        # self.competition['solutions'][index] = new_solution.key
                     else:
                         pass
-                        # TODO: add processing for using a key to data for a solution?
-                        # new_task[file_type] = new_dataset.key
 
     def _unpack_terms(self):
         # ---------------------------------------------------------------------
@@ -219,14 +206,18 @@ class V2Unpacker:
         # ---------------------------------------------------------------------
         # Phases
 
+        # The lowest int index of tasks in all phases will be used as an offset if it isn't 0
+        phase_tasks = [min(phase_data.get('tasks')) for phase_data in self.competition_yaml.get('phases')]
+        index_offset = min(phase_tasks)
+
         for index, phase_data in enumerate(sorted(self.competition_yaml.get('phases'), key=lambda x: x.get('index') or 0)):
             # This normalizes indexes to be 0 indexed but respects the ordering of phase indexes from the yaml if present
             new_phase = {
                 "index": index,
                 "name": phase_data.get('name'),
                 "description": phase_data.get('description'),
-                "start": _get_datetime(phase_data.get('start')),
-                "end": _get_datetime(phase_data.get('end')),
+                "start": get_datetime(phase_data.get('start')),
+                "end": get_datetime(phase_data.get('end')),
                 'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
                 'max_submissions_per_person': phase_data.get('max_submissions'),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
@@ -242,8 +233,7 @@ class V2Unpacker:
             if not tasks:
                 raise CompetitionUnpackingException(f'Phases must contain at least one task to be valid')
 
-            # new_phase['tasks'] = [self.competition['tasks'][index] for index in tasks]
-            new_phase['tasks'] = [self.tasks[index] for index in tasks]
+            new_phase['tasks'] = [self.tasks[index - index_offset] for index in tasks]
 
             self.competition['phases'].append(new_phase)
         for i in range(len(self.competition['phases'])):
@@ -292,3 +282,11 @@ class V2Unpacker:
         # Leaderboards
         for leaderboard in self.competition_yaml.get('leaderboards'):
             self.competition['leaderboards'].append(leaderboard)
+
+
+class V15Unpacker(V2Unpacker):
+    def unpack(self):
+        converter = LegacyBundleConverter(data=self.competition_yaml)
+        # We just need to convert our data before hand versus v2
+        self.competition_yaml = converter.convert()
+        return super().unpack()

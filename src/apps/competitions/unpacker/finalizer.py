@@ -1,7 +1,5 @@
-from pprint import pprint
 from uuid import UUID
 
-from rest_framework.exceptions import ValidationError
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.unpacker.utils import get_data_key
@@ -14,9 +12,6 @@ class Finalizer:
         self.creator = creator
 
     def finalize(self):
-        # Local import so we don't hit issues
-        # from competitions.unpacker.exceptions import CompetitionUnpackingException
-
         self._create_tasks()
         self._create_solutions()
 
@@ -46,7 +41,6 @@ class Finalizer:
             )
             serializer.is_valid(raise_exception=True)
             new_task = serializer.save()
-            # print("My god damn index: {}".format())
             for phase_data in self.data['competition']['phases']:
                 for index, temp_task_data in enumerate(phase_data['tasks']):
                     if not isinstance(temp_task_data, UUID):
@@ -57,11 +51,9 @@ class Finalizer:
                     if not isinstance(temp_task_data, UUID):
                         if temp_task_data['index'] == temp_index:
                             solution_data['tasks'][index] = new_task.key
-            # self.data['competition']["tasks"][temp_index] = new_task.key
 
     def _create_solutions(self):
         for solution_data in self.data['solutions']:
-            print("MY SOLUTION DATA: {}".format(solution_data))
             temp_index = solution_data['index']
             serializer = SolutionSerializer(data=solution_data)
             serializer.is_valid(raise_exception=True)
@@ -71,4 +63,3 @@ class Finalizer:
                     if not isinstance(temp_solution_data, UUID):
                         if temp_solution_data['index'] == temp_index:
                             phase_data['solutions'][index] = new_solution.key
-            # self.data['competition']['solutions'][solution_data['index']] = new_solution.key

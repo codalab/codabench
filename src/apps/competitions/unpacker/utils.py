@@ -12,6 +12,22 @@ from competitions.unpacker.exceptions import CompetitionUnpackingException
 
 logger = logging.getLogger()
 
+
+def zip_if_directory(path):
+    """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
+    file"""
+    logger.info(f"Checking if path is directory: {path}")
+    if os.path.isdir(path):
+        base_path = os.path.dirname(os.path.dirname(path))  # gets parent directory
+        folder_name = os.path.basename(path.strip("/"))
+        logger.info(f"Zipping it up because it is directory, saving it to: {folder_name}.zip")
+        new_path = shutil.make_archive(os.path.join(base_path, folder_name), 'zip', path)
+        logger.info("New zip file path = " + new_path)
+        return new_path
+    else:
+        return path
+
+
 def get_data_key(obj, file_type, temp_directory, creator, index):
     file_name = obj.get(file_type)
     if not file_name:
@@ -25,7 +41,7 @@ def get_data_key(obj, file_type, temp_directory, creator, index):
             name=f"{file_type} @ {timezone.now().strftime('%m-%d-%Y %H:%M')}",
             was_created_by_competition=True,
         )
-        file_path = _zip_if_directory(file_path)
+        file_path = zip_if_directory(file_path)
         new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
         return new_dataset.key
     elif len(file_name) in (32, 36):
@@ -37,7 +53,7 @@ def get_data_key(obj, file_type, temp_directory, creator, index):
         raise CompetitionUnpackingException(f'Cannot find dataset: "{file_name}" for task: "{obj["name"]}"')
 
 
-def _get_datetime(field):
+def get_datetime(field):
     if not field:
         return None
     elif isinstance(field, datetime.date):
@@ -47,18 +63,3 @@ def _get_datetime(field):
         field = parser.parse(field)
     field = field.replace(tzinfo=timezone.now().tzinfo)
     return field
-
-
-def _zip_if_directory(path):
-    """If the path is a folder it zips it up and returns the new zipped path, otherwise returns existing
-    file"""
-    logger.info(f"Checking if path is directory: {path}")
-    if os.path.isdir(path):
-        base_path = os.path.dirname(os.path.dirname(path))  # gets parent directory
-        folder_name = os.path.basename(path.strip("/"))
-        logger.info(f"Zipping it up because it is directory, saving it to: {folder_name}.zip")
-        new_path = shutil.make_archive(os.path.join(base_path, folder_name), 'zip', path)
-        logger.info("New zip file path = " + new_path)
-        return new_path
-    else:
-        return path
