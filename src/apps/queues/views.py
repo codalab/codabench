@@ -12,6 +12,7 @@ from . import rabbit
 
 
 class QueueFormMixin:
+    # Necessary for DeleteQueueView, base class references missing `self.object`
     def get_success_url(self):
         return reverse('queues:list')
 

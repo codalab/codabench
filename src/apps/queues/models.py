@@ -21,7 +21,6 @@ class Queue(models.Model):
         settings.AUTH_USER_MODEL,
         related_name='organized_queues',
         blank=True,
-        help_text="(Organizers allowed to view this queue when they assign their competition to a queue)"
     )
 
     def __str__(self):
