@@ -63,7 +63,7 @@ class ChaHubSaveMixin(models.Model):
         return True
 
     # Regular methods
-    def save(self, *args, **kwargs):
+    def save(self, send=True, *args, **kwargs):
         # We do a save here to give us an ID for generating URLs and such
         super().save(*args, **kwargs)
 
@@ -73,7 +73,7 @@ class ChaHubSaveMixin(models.Model):
             return None
 
         # Make sure we're not sending these in tests
-        if settings.CHAHUB_API_URL:
+        if settings.CHAHUB_API_URL and send:
             is_valid = self.get_chahub_is_valid()
 
             logger.info(f"ChaHub :: {self.__class__.__name__}({self.pk}) is_valid = {is_valid}")

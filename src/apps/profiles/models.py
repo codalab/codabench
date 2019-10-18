@@ -58,8 +58,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             return associations.first().uid
         return None
 
-    @classmethod
-    def chahub_endpoint(cls):
+    @staticmethod
+    def get_chahub_endpoint():
         return "profiles/"
 
     def clean_chahub_data(self, data):

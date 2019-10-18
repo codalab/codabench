@@ -97,18 +97,23 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return "competitions/"
 
+    def get_chahub_is_valid(self):
+        finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()])
+        has_phases = self.phases.exists()
+        return finished and has_phases
+
     def get_chahub_data(self):
-        from api.serializers.competitions import PhaseSerializer
         data = {
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
-            'start': self.phases.first().start.isoformat(),
+            # Todo: will phases.first() always be lowest indexed phase? Maybe Min(index)?
+            'start': self.phases.first().start.isoformat() if self.phases.first() else None,
             'title': self.title,
             'url': f'http://{Site.objects.get_current().domain}{self.get_absolute_url()}',
             'remote_id': self.pk,
             'published': self.published,
-            'participants': [p.user.id for p in self.participants.all()],
+            'participants': [p.get_chahub_data() for p in self.participants.all()],
             'phases': [phase.get_chahub_data() for phase in self.phases.all()],
         }
         if self.logo:
@@ -145,7 +150,7 @@ class CompetitionCreationTaskStatus(models.Model):
     details = models.TextField(null=True, blank=True)
 
     # The resulting competition is only made on success
-    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True)
+    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='creation_statuses')
 
     def __str__(self):
         return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
@@ -210,13 +215,14 @@ class Phase(models.Model):
 
     def get_chahub_data(self):
         return {
-            'id': self.id,
+            'remote_id': self.pk,
             'index': self.index,
             'start': self.start.isoformat(),
             'end': self.end.isoformat() if self.end else None,
             'name': self.name,
             'description': self.description,
             'is_active': self.is_active,
+            'tasks': [task.get_chahub_data() for task in self.tasks.all()]
         }
 
     @property
@@ -412,15 +418,6 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
-
-    def get_chahub_is_valid(self):
-        """Override this to validate the specific model before it's sent
-
-        Example:
-            return comp.is_published
-        """
-        # By default, always push
-        return True
 
     @staticmethod
     def get_chahub_endpoint():

@@ -54,10 +54,10 @@ def send_to_chahub(app_label, pk, data, data_hash):
         body = getattr(resp, 'content', 'N/A')
         logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
         obj.chahub_needs_retry = True
-    obj.save()
+    obj.save(send=False)
 
 
-def batch_send_to_chahub(model, retry_only=False, limit=None):
+def batch_send_to_chahub(model, limit=None, retry_only=False):
     qs = model.objects.all()
     if retry_only:
         qs = qs.filter(chahub_needs_retry=True)
@@ -67,30 +67,54 @@ def batch_send_to_chahub(model, retry_only=False, limit=None):
     endpoint = model.get_chahub_endpoint()
     data = [obj.get_chahub_data() for obj in qs if obj.get_chahub_is_valid()]
     try:
-        logger.info(f"Sending all {model.__class__.__name__} data to Chahub")
+        logger.info(f"Sending all {qs.first().__class__.__name__} data to Chahub")
         resp = _send(endpoint=endpoint, data=data)
         logger.info(f"Response Status Code: {resp.status_code}")
+        if resp.status_code != 201:
+            logger.warning(f'ChaHub Response Content: {resp.content}')
     except ChahubException:
         logger.info("There was a problem reaching Chahub. Retry again later")
 
 
-@app.task(queue='site-worker')
-def do_chahub_retries(limit=None):
+def chahub_is_up():
     if not settings.CHAHUB_API_URL:
-        return
+        return False
 
     logger.info("Checking whether ChaHub is online before sending retries")
     try:
         response = requests.get(settings.CHAHUB_API_URL)
-        if response.status_code != 200:
-            return
+        if response.ok:
+            logger.info("ChaHub is online")
+            return True
+        else:
+            logger.info("Bad Status from ChaHub")
+            return False
     except requests.exceptions.RequestException:
         # This base exception works for HTTP errors, Connection errors, etc.
-        return
+        logger.info("Request Exception trying to access ChaHub")
+        return False
 
-    logger.info("ChaHub is online, checking for objects needing to be re-sent to ChaHub")
+
+def get_chahub_models():
     from chahub.models import ChaHubSaveMixin
-    chahub_models = ChaHubSaveMixin.__subclasses__()
+    return ChaHubSaveMixin.__subclasses__()
+
+
+@app.task(queue='site-worker')
+def do_chahub_retries(limit=None):
+    if not chahub_is_up():
+        return
+    logger.info("ChaHub is online, checking for objects needing to be re-sent to ChaHub")
+    chahub_models = get_chahub_models()
     logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
         batch_send_to_chahub(model, retry_only=True, limit=limit)
+
+
+@app.task(queue='site-worker')
+def send_everything_to_chahub(limit=None):
+    if not chahub_is_up():
+        return
+    chahub_models = get_chahub_models()
+    for model in chahub_models:
+        batch_send_to_chahub(model, limit=limit)
