@@ -2,7 +2,6 @@ import logging
 import json
 import copy
 
-# from apps.competitions.tasks import CompetitionUnpackingException
 from apps.competitions.unpacker.exceptions import CompetitionUnpackingException
 logger = logging.getLogger(__name__)
 
@@ -38,8 +37,6 @@ PHASE_TASK_COMMON_MAPPING = {
     'reference_data': 'reference_data',
     'ingestion_program': 'ingestion_program',
     'ingestion_program_only_during_scoring': 'ingestion_only_during_scoring',
-    # 'public_data': 'public_data',
-    # 'starting_kit': 'starting_kit',
 }
 
 # TODO: Remove all casts, or smartly handle them based on type(?)
