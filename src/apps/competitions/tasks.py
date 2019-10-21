@@ -259,8 +259,8 @@ def unpack_competition(competition_dataset_pk):
             yaml_data = open(yaml_path).read()
             competition_yaml = yaml.load(yaml_data)
 
-            yaml_version = str(competition_yaml.get('version', 'N/A'))
-            if yaml_version == 'N/A':
+            yaml_version = str(competition_yaml.get('version'))
+            if not yaml_version:
                 # Automatically try to read type
                 if LegacyBundleConverter.is_legacy_bundle(competition_yaml):
                     yaml_version = '1.5'
