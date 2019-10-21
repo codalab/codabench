@@ -88,7 +88,6 @@
             var tempList = _.values(_.mapValues(collabs , function(collab) { return collab.id }))
             self.collabs = tempList
         })
-
     </script>
     <style>
         .actions {

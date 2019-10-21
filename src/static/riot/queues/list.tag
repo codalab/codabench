@@ -1,5 +1,4 @@
 <queues-list>
-
     <div class="ui icon input">
         <input type="text" placeholder="Search by name..." ref="search" onkeyup="{filter.bind(this, undefined)}">
         <i class="search icon"></i>
