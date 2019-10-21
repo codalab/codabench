@@ -6,7 +6,7 @@ from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
 from api.views.competitions import front_page_competitions, by_the_numbers
-from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks
+from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
 
 router = SimpleRouter()
@@ -21,6 +21,7 @@ router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submi
 router.register('tasks', tasks.TaskViewSet)
 router.register('tasksearch', tasks.TaskViewSetSimple)
 router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
+router.register('queues', queues.QueueViewSet, 'queues')
 
 schema_view = get_schema_view(
     openapi.Info(

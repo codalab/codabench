@@ -95,6 +95,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'description',
             'terms',
             'registration_auto_approve',
+            'queue',
         )
 
     def get_created_by(self, object):

@@ -22,6 +22,7 @@ class Queue(models.Model):
         related_name='organized_queues',
         blank=True,
     )
+    created_when = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -39,3 +40,8 @@ class Queue(models.Model):
             # Vhost not found or something
             pass
         return super(Queue, self).delete(using)
+
+    def save(self, **kwargs):
+        if not self.vhost:
+            self.vhost = rabbit.create_queue(self.owner)
+        super().save(**kwargs)

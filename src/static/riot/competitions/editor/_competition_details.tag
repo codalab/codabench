@@ -25,6 +25,11 @@
             <label>Description</label>
             <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
         </div>
+        <!-- TODO: Finish setting this up! -->
+        <div class="field">
+            <label>Queue</label>
+            <input ref="queue">
+        </div>
     </div>
 
     <script>

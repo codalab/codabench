@@ -1,43 +1,7 @@
 {% extends "queues/base_queues.html" %}
 
 {% block content %}
-    <div class="ui message container">
-        <a href="https://github.com/codalab/codalab-competitions/wiki/Dev-Worker-Queues"><i class="ui question icon"></i> Read more about Worker Queues here.</a>
-
-        <a href="{% url "queues:create" %}" class="ui blue button add-queue-button">
-            Add Queue
-        </a>
-
-        <table class="ui celled striped table">
-            <thead>
-                <tr class="bold-table-row">
-                    <td>Name</td>
-                    <td>Broker URL</td>
-                    <td width="100px;">Is public?</td>
-                    <td width="150px;">Actions</td>
-                </tr>
-            </thead>
-            <tbody>
-            {% for queue in object_list %}
-                <tr>
-                    <td>{{ queue.name }}</td>
-                    <td>{{ queue.broker_url }}</td>
-                    <td>{% if queue.is_public %}<i class="ui checkmark icon"></i>{% endif %}</td>
-                    <td>
-                        {% if queue in request.user.queues.all %}
-                            <a href="{% url "queues:update" pk=queue.pk %}" class="ui button">Edit</a>
-                            <a href="{% url "queues:delete" pk=queue.pk %}" class="ui red button">Delete</a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="4">
-                        <em class="no-queues">No queues created, yet!</em>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div class="ui container">
+        <queues-list></queues-list>
     </div>
 {% endblock %}
