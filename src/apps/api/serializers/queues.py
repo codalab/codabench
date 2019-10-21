@@ -5,7 +5,6 @@ from profiles.models import User
 
 
 class QueueSerializer(serializers.ModelSerializer):
-
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
@@ -36,7 +35,6 @@ class QueueSerializer(serializers.ModelSerializer):
 
 
 class QueueDetailSerializer(serializers.ModelSerializer):
-
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
     owner = serializers.CharField(source='owner.username', read_only=True)
