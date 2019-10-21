@@ -33,10 +33,8 @@
         self.collabs = []
 
         self.one('mount', function() {
-            console.log(self.opts.queue_id)
+            $(".ui.checkbox", self.root).checkbox()
             if (self.opts.queue_id !== null && self.opts.queue_id !== undefined && self.opts.queue_id !== '') {
-                console.log("We're not null!")
-                $(".ui.checkbox", self.root).checkbox()
                 self.set_queue(self.opts.queue_id)
             }
         })
