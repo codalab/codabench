@@ -68,8 +68,4 @@ class QueueDetailSerializer(serializers.ModelSerializer):
         return False
 
     def get_organizers(self, instance):
-        return [{
-            'username': organizer.username,
-            'email': organizer.email,
-            'id': organizer.id,
-        } for organizer in instance.organizers.all()]
+        return instance.organizers.values('username', 'email', 'id')
