@@ -11,8 +11,6 @@ class LegacyConverterRemoteTests(TestCase):
 
     def setUp(self):
         self.test_files_dir = os.path.join(os.getcwd(), 'src/apps/competitions/tests/files/')
-        assert os.path.exists(self.test_files_dir)
-
         self.yaml_data = yaml.load(open(os.path.join(self.test_files_dir, 'legacy_v18.yaml'), 'r'))
         # We do this with JSON here to make sure in tests we're working with plain dictionaries. It looks like
         # we're defaulting to using OYAML, which outputs ordered dictionaries.
