@@ -21,11 +21,11 @@ class QueueViewSet(ModelViewSet):
 
     def get_queryset(self):
         show_public = self.request.query_params.get('public')
-        # qs = Queue.objects.prefetch_related('solutions', 'solutions__data')
+        qs = self.queryset.prefetch_related('organizers')
         if show_public:
-            qs = self.queryset.filter(Q(is_public=True) | Q(owner=self.request.user)) | self.request.user.organized_queues.all()
+            qs = qs.filter(Q(is_public=True) | Q(owner=self.request.user)) | self.request.user.organized_queues.all()
         else:
-            qs = self.queryset.filter(owner=self.request.user) | self.request.user.organized_queues.all()
+            qs = qs.filter(owner=self.request.user) | self.request.user.organized_queues.all()
         # Distinct so that we don't get duplicates
         return qs.order_by('-created_when').distinct()
 
