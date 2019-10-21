@@ -172,7 +172,4 @@
             event.stopPropagation()
         }
     </script>
-    <style>
-
-    </style>
 </queues-list>
