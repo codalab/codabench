@@ -1,18 +1,14 @@
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+from queues.models import Queue
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.filters import SearchFilter
-from django_filters.rest_framework import DjangoFilterBackend
 
 from api.pagination import BasicPagination
 from api.serializers import queues as serializers
-from queues.models import Queue
-from queues import rabbit
-
-# TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
-#   is there a better way to do it using get_serializer_class() method?
 
 
 class QueueViewSet(ModelViewSet):

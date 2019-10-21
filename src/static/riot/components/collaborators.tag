@@ -1,3 +1,4 @@
+<!-- TODO: Setup competitions collaborators to use this -->
 <collaborators-component>
     <div class="ui center aligned grid">
         <div class="row">
