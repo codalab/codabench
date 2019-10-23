@@ -3,7 +3,7 @@ from django.contrib.sites.models import Site
 from django.db import models
 from pyrabbit.http import HTTPError
 
-from apps.queues import rabbit
+from queues import rabbit
 
 
 class Queue(models.Model):
