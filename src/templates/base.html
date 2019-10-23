@@ -29,8 +29,7 @@
 <div class="ui thin sidebar left inverted vertical overlay menu">
     <div class="ui container">
         <a href="{% url "pages:home" %}" class="item">Competitions</a>
-        <a class="item">Chagle</a>
-        <a class="item">Chalab</a>
+        <a class="item">Chahub</a>
         <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
     </div>
 </div>
@@ -47,10 +46,10 @@
         <div class="ui container">
             <div id="topleft_menu" class="ui secondary inverted menu">
                     <span class="left item">
-                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
-                    <a class="tl item">Chagle</a>
-                    <a href="http://chahub.org/" class="tl item">Chahub</a>
-                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>
+{#                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>#}
+                    <a class="tl item">Search</a>
+{#                    <a href="http://chahub.org/" class="tl item">Chahub</a>#}
+{#                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>#}
                     </span>
                 {% if user.is_authenticated %}
                     <div id="user_dropdown" class="ui dropdown item">
@@ -90,6 +89,7 @@
                     </div>
                 {% else %}
                     <div class="right item">
+                        <a href="{% url "pages:home" %}" class="item">Competitions</a>
                         <a id="style_button" href="{% url 'accounts:login' %}" class="ui button">Login</a>
                         <a id="style_button" href="{% url 'accounts:signup' %}" class="ui button">Sign-up</a>
                     </div>
@@ -111,6 +111,14 @@
 <div class="ui inverted vertical footer segment">
     <div class="ui container">
         <div class="ui stackable inverted divided equal height stackable grid">
+            <div class="three wide column">
+                <h4 class="ui inverted header">Chasuite</h4>
+                <div class="ui inverted link list">
+                    <a href="#" class="item">Chagle</a>
+                    <a href="http://chahub.org/" class="item">Chahub</a>
+                    <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
+                </div>
+            </div>
             <div class="three wide column">
                 <h4 class="ui inverted header">About</h4>
                 <div class="ui inverted link list">

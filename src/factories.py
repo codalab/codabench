@@ -42,6 +42,7 @@ class CompetitionFactory(DjangoModelFactory):
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
+    description = factory.Faker('paragraph')
 
     @post_generation
     def collaborators(self, created, extracted, **kwargs):
