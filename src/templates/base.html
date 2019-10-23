@@ -63,6 +63,7 @@
                             <div class="header">Your management</div>
                             <a class="item" href="{% url "competitions:management" %}">Competitions</a>
                             <a class="item" href="{% url "tasks:task_management" %}">Tasks & Datasets</a>
+                            <a class="item" href="{% url "queues:list" %}">Queues</a>
                             <a class="item" href="#">Teams</a>
                             {% if request.user.is_staff %}
                                 <div class="ui divider"></div>

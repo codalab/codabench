@@ -29,6 +29,7 @@ from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
+from queues.models import Queue
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
@@ -350,6 +351,17 @@ def unpack_competition(competition_dataset_pk):
                 "tasks": {},
                 "solutions": {},
             }
+
+            # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!
+            if competition_yaml.get('queue'):
+                try:
+                    queue = Queue.objects.get(vhost=competition_yaml.get('queue'))
+                    if not queue.is_public:
+                        if queue.owner != creator or creator.username not in queue.organizers.all().values_list('username'):
+                            raise CompetitionUnpackingException("You do not have access to the specified queue!")
+                    competition['queue'] = queue.id
+                except Queue.DoesNotExist:
+                    raise CompetitionUnpackingException("The specified Queue does not exist!")
 
             # ---------------------------------------------------------------------
             # Terms

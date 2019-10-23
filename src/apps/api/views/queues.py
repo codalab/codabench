@@ -14,7 +14,7 @@ from api.serializers import queues as serializers
 class QueueViewSet(ModelViewSet):
     queryset = Queue.objects.all()
     serializer_class = serializers.QueueSerializer
-    filter_fields = ('owner', 'is_public')
+    filter_fields = ('owner', 'is_public', 'name')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
     pagination_class = BasicPagination
