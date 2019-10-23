@@ -17,7 +17,7 @@
             <th width="150px">Owner</th>
             <th width="125px">Created</th>
             <th width="50px">Public</th>
-            <th width="150px">Actions</th>
+            <th class="right aligned" width="150px">Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -28,21 +28,19 @@
             <td class="center aligned">
                 <i class="checkmark box icon green" if="{ queue.is_public }"></i>
             </td>
-            <td class="center aligned">
-                <span class="popup" data-tooltip="{queue.broker_url}" data-position="top center">
-                    <i class="icon eye popup-button" if="{ !!queue.broker_url }"></i>
+            <td class="right aligned">
+                <span class="popup" data-tooltip="{queue.broker_url}" data-position="left center">
+                    <i class="grey icon eye popup-button" if="{ !!queue.broker_url }"></i>
                 </span>
                 <span class="popup" data-tooltip="Copy Broker URL">
-                    <i class="icon copy popup-button" if="{ !!queue.broker_url }"
+                    <i class="icon copy outline popup-button" if="{ !!queue.broker_url }"
                        onclick="{ copy_queue_url.bind(this, queue) }"></i>
                 </span>
                 <span class="popup" data-tooltip="Edit Queue">
-                    <i class="blue icon edit popup-button" if="{ queue.is_owner && !!queue.broker_url }"
-                       <!--onclick="{ edit_queue.bind(this, queue) }"></i>-->
-                       onclick="{ show_modal.bind(this, queue) }"></i>
+                    <i class="blue icon edit popup-button" if="{ queue.is_owner && !!queue.broker_url }" onclick="{ show_modal.bind(this, queue) }"></i>
                 </span>
                 <span class="popup" data-tooltip="Delete Queue">
-                    <i class="red icon trash popup-button" if="{ queue.is_owner && !!queue.broker_url }"
+                    <i class="red icon trash alternate outline popup-button" if="{ queue.is_owner && !!queue.broker_url }"
                        onclick="{ delete_queue.bind(this, queue) }"></i>
                 </span>
             </td>
@@ -128,7 +126,6 @@
                     },
                     clearable: true,
                     preserveHTML: false,
-                    //minCharacters: 2,
                     fields: {
                         remoteValues: 'results',
                         name: 'username',
@@ -152,7 +149,7 @@
             }
             CODALAB.api.get_queues(filters)
                 .done(function (data) {
-                    self.queues = data.results
+                    self.queues = _.orderBy(data.results, queue => !queue.is_owner);
                     self.pagination = {
                         "count": data.count,
                         "next": data.next,
@@ -189,37 +186,25 @@
 
         self.set_selected_queue = function (queue) {
             self.selected_queue = queue
-            $('.collab-search').dropdown('setup menu', {
-                values: _.values(_.mapValues(queue.organizers, function (organizer) {
-                    return {id: organizer.id, username: organizer.username}
-                }))
-            })
-            $('.collab-search').dropdown('set selected',  _.values(_.mapValues(queue.organizers, function (organizer) {
-                return organizer.username
-            })))
+            $('.collab-search')
+                .dropdown('setup menu', {values: queue.organizers})
+                .dropdown('set selected',  _.map(queue.organizers, o => o.username))
+
             if (queue.is_public) {
                 self.refs.queue_public.checked = true
             }
         }
 
         self.handle_queue = function () {
-            var data = {
+            let data = {
                 name: self.refs.queue_name.value,
                 is_public: self.refs.queue_public.checked,
+                organizers: _.compact($('.collab-search').dropdown('get value').split(','))
             }
-            var endpoint
-            // TODO: Better way to handle collaborators?
-            if ($('.collab-search').dropdown('get value') != ''){
-                data.organizers = $('.collab-search').dropdown('get value').split(",")
-            } else {
-                data.organizers = []
-            }
-            if (!_.isEmpty(self.selected_queue)) {
-                endpoint = CODALAB.api.update_queue(self.selected_queue.id, data)
-            } else {
-                endpoint = CODALAB.api.create_queue(data)
-            }
-            endpoint
+            let endpoint = !_.isEmpty(self.selected_queue)
+                ? CODALAB.api.update_queue
+                : CODALAB.api.create_queue
+            endpoint(data, _.get(self, 'selected_queue.id'))
                 .done(function (response) {
                     toastr.success("Succesfully updated/made queue!")
                     self.close_modal()

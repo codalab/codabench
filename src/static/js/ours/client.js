@@ -249,7 +249,7 @@ CODALAB.api = {
     delete_queue: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + 'queues/' + id + '/')
     },
-    update_queue: function (pk, data) {
+    update_queue: function (data, pk) {
         return CODALAB.api.request('PATCH', `${URLS.API}queues/${pk}/`, data)
     },
     create_queue: (data) => {
