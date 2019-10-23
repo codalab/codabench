@@ -35,6 +35,10 @@ class CompetitionViewSet(ModelViewSet):
         if participating_in:
             qs = qs.filter(participants__user=self.request.user, participants__status="approved")
 
+        search_query = self.request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
             qs = qs.select_related('created_by')

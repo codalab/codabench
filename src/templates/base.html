@@ -47,7 +47,16 @@
             <div id="topleft_menu" class="ui secondary inverted menu">
                     <span class="left item">
 {#                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>#}
-                    <a class="tl item">Search</a>
+{#                    <a class="tl item">Search</a>#}
+
+                    <div class="ui search">
+                        <div class="ui left icon input">
+                            <input class="prompt" type="text" placeholder="Search Codalab">
+                            <i class="search icon"></i>
+                        </div>
+                    </div>
+
+
 {#                    <a href="http://chahub.org/" class="tl item">Chahub</a>#}
 {#                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>#}
                     </span>
@@ -231,6 +240,19 @@
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
+
+        $(document).ready( function () {
+            $('.ui.search').search({
+                apiSettings: {
+                    onResponse: function(codalabResponse) {
+                        return {
+                            results: codalabResponse,
+                        }
+                    },
+                    url: URLS.API + 'competitions/?search={query}'
+                },
+            })
+        })
     </script>
 
     <script src="{% static "js/ours/client.js" %}"></script>
