@@ -107,8 +107,6 @@ class Competition(ChaHubSaveMixin, models.Model):
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
             'created_when': self.created_when.isoformat(),
-            # Todo: will phases.first() always be lowest indexed phase? Maybe Min(index)?
-            'start': self.phases.first().start.isoformat() if self.phases.first() else None,
             'title': self.title,
             'url': f'http://{Site.objects.get_current().domain}{self.get_absolute_url()}',
             'remote_id': self.pk,
@@ -116,6 +114,10 @@ class Competition(ChaHubSaveMixin, models.Model):
             'participants': [p.get_chahub_data() for p in self.participants.all()],
             'phases': [phase.get_chahub_data() for phase in self.phases.all()],
         }
+        start = getattr(self.phases.order_by('index').first(), 'start', None)
+        data['start'] = start.isoformat() if start is not None else None
+        end = getattr(self.phases.order_by('index').last(), 'end', None)
+        data['end'] = end.isoformat() if end is not None else None
         if self.logo:
             data['logo_url'] = self.logo.url
             data['logo'] = self.logo.url
@@ -425,7 +427,7 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
 
     def get_chahub_data(self):
         return {
-            'competition': self.competition.id,
+            'remote_id': self.pk,
             'user': self.user.id,
             'status': self.status,
         }
