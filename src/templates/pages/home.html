@@ -12,58 +12,12 @@
         <h2>Accelerating reproducible computational research.</h2>
     </div>
 
-{#    <show-stats></show-stats>#}
-
 {% endblock %}
 
 {% block content %}
     <div class="home-wrap">
-        {% if not user.is_authenticated %}
-            <div class="column-wrap">
-                <front-page-competitions></front-page-competitions>
-                <div class="segment-container ui segment login-container">
-                    <div class="ui header">
-                        Start your journey
-                    </div>
-                    <div class="container-content">
-                        <p style="max-width: 400px;">
-                            Sign in below or create a new account
-                            if this is your first time visiting.
-                        </p>
-                        <div>
-                            <form id="login_form" class="form" method="post" action="{% url 'accounts:login' %}">
-                                {% csrf_token %}
-                                <p class="login-input">
-                                    <span class="focus_input"><i class="user icon"></i>
-                                        <input class="input_coloring" type="text" name="username" placeholder="Username"
-                                               autofocus=""
-                                               maxlength="254" required id="id_email" data-op-id="0">
-                                    </span>
-                                </p>
-                                <p class="login-input">
-                                    <span class="focus_input"><i class="lock icon"></i>
-                                        <input class="input_coloring" type="password" placeholder="Password"
-                                               name="password" required id="id_password" data-op-id="1">
-                                    </span>
-                                </p>
-                                <br>
-                                <button type="submit" class="ui button">{% trans 'Log in' %}</button>
-                            </form>
-                            <p><a href="{% url 'accounts:signup' %}">{% trans "Create an account" %}</a></p>
-                            <div id="outline">
-                                <a href="{% url 'social:begin' 'chahub' %}"
-                                   class="ui blue chahub button">
-                                    <i class="sync icon"></i>
-                                    Sign Up with Chahub
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <front-page-competitions></front-page-competitions>
-        {% endif %}
+        <front-page-competitions></front-page-competitions>
+
         <div id="action-container" class="segment-container ui segment full-width">
             <div class="ui header">
                 About Codalab
@@ -104,6 +58,8 @@
                 </div>
             </div>
         </div>
+
+            <show-stats class="ui segment"></show-stats>
 
         <div id="about-container" class="segment-container ui segment full-width">
             <div class="ui header">

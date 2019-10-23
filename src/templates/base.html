@@ -46,8 +46,9 @@
         <div class="ui container">
             <div id="topleft_menu" class="ui secondary inverted menu">
                     <span class="left item">
-{#                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>#}
-{#                    <a class="tl item">Search</a>#}
+                        <a href="/" id="home-logo">
+                            <img class="ui mini image" src="/static/img/C_Logo.ico">
+                        </a>
 
                     <div class="ui search">
                         <div class="ui left icon input">
@@ -56,56 +57,53 @@
                         </div>
                     </div>
 
-
-{#                    <a href="http://chahub.org/" class="tl item">Chahub</a>#}
-{#                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>#}
                     </span>
-            </div>
-        </div>
-        <div class="right menu">
-            <a class="item" href="{% url "tasks:task_management" %}">Tasks & Datasets</a>
-            {#                        <a class="item" href="{% url "competitions:management" %}">Competitions</a>#}
-            {% if user.is_authenticated %}
-                <div id="user_dropdown" class="ui dropdown item">
-                    <div class="text">
-                        <i class="icon user outline"></i>
-                        {{ request.user.username }}
-                    </div>
-                    <i class="dropdown icon"></i>
-                    <div class="menu">
-                        <div class="header">Your management</div>
-                        <a class="item" href="#">Teams</a>
-                        {% if request.user.is_staff %}
-                            <div class="ui divider"></div>
-                            <div class="header">Admin management</div>
-                            <a class="item" href="#">Customize Codalab</a>
-                            <a class="item" href="#">Monitors</a>
-                            <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
-                            <a class="item" href="#">Health</a>
-                            <a class="item" href="#">Users</a>
-                            <a class="item" href="#">Submissions</a>
-                            <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
-                                User</a>
-                        {% endif %}
-                        <div class="ui divider"></div>
-                        <div class="header">You</div>
-                        <a class="item" href="{% url 'profiles:user_profile' %}">
-                            <i class="icon user"></i>
-                            Edit profile
-                        </a>
-                        <a class="item" href="{% url 'accounts:logout' %}">
-                            <i class="icon sign out"></i>
-                            Logout
-                        </a>
-                    </div>
+                <div class="right menu item">
+                    <a class="item" href="{% url "competitions:management" %}">
+                        <i class="ui small trophy icon"></i>
+                        Competitions
+                    </a>
+                    <a class="item" href="{% url "tasks:task_management" %}">
+                        <i class="ui small file icon"></i>
+                        Tasks & Datasets
+                    </a>
+                    {% if user.is_authenticated %}
+                        <div id="user_dropdown" class="ui dropdown item">
+                            <div class="text">
+                                <i class="icon user outline"></i>
+                                {{ request.user.username }}
+                            </div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                {% if request.user.is_staff %}
+                                    <div class="header">Admin management</div>
+                                    <a class="item" href="#">Customize Codalab</a>
+                                    <a class="item" href="#">Monitors</a>
+                                    <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
+                                    <a class="item" href="#">Health</a>
+                                    <a class="item" href="#">Users</a>
+                                    <a class="item" href="#">Submissions</a>
+                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
+                                        User</a>
+                                {% endif %}
+                                <div class="ui divider"></div>
+                                <div class="header">You</div>
+                                <a class="item" href="{% url 'profiles:user_profile' %}">
+                                    <i class="icon user"></i>
+                                    Edit profile
+                                </a>
+                                <a class="item" href="{% url 'accounts:logout' %}">
+                                    <i class="icon sign out"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
+                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                    {% endif %}
                 </div>
-                {#                        {% else %}#}
-                {#                            <div class="right item">#}
-                {#                                <a href="{% url "pages:home" %}" class="ui button style_button">Competitions</a>#}
-                {#                                <a href="{% url 'accounts:login' %}" class="ui button style_button">Login</a>#}
-                {#                                <a href="{% url 'accounts:signup' %}" class="ui button style_button">Sign-up</a>#}
-                {#                            </div>#}
-            {% endif %}
+            </div>
         </div>
         {% block top_div_extra_content %}{% endblock %}
     </div>

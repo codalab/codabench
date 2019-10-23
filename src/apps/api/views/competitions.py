@@ -21,6 +21,7 @@ from utils.data import make_url_sassy
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
+    permission_classes = (AllowAny,)
 
     def get_queryset(self):
         qs = super().get_queryset()
