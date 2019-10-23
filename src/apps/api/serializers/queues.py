@@ -4,6 +4,16 @@ from queues.models import Queue
 from profiles.models import User
 
 
+class OrganizerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email',
+            'id'
+        ]
+
+
 class QueueSerializer(serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
@@ -37,7 +47,7 @@ class QueueSerializer(serializers.ModelSerializer):
 class QueueDetailSerializer(serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)
-    organizers = serializers.SerializerMethodField()
+    organizers = OrganizerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Queue
@@ -63,6 +73,3 @@ class QueueDetailSerializer(serializers.ModelSerializer):
         if instance.owner == self.context.get('owner'):
             return True
         return False
-
-    def get_organizers(self, instance):
-        return instance.organizers.values('username', 'email', 'id')
