@@ -71,7 +71,7 @@ class PageSerializer(WritableNestedModelSerializer):
 
 
 class CompetitionSerializer(WritableNestedModelSerializer):
-    created_by = serializers.SerializerMethodField(read_only=True)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
     logo = NamedBase64ImageField(required=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
@@ -97,9 +97,6 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'terms',
             'registration_auto_approve',
         )
-
-    def get_created_by(self, object):
-        return str(object.created_by)
 
     def validate_leaderboards(self, value):
         if not value:

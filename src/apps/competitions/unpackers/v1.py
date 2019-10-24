@@ -2,12 +2,9 @@ import logging
 import json
 import copy
 
-from apps.competitions.tasks import CompetitionUnpackingException
+from competitions.unpackers.utils import CompetitionUnpackingException
+
 logger = logging.getLogger(__name__)
-
-
-class CompetitionConversionException(CompetitionUnpackingException):
-    pass
 
 
 LEGACY_DEPRECATED_KEYS = [
@@ -209,7 +206,7 @@ class LegacyBundleConverter:
 
         # Combine leaderboard + columns, then process
         if not self.data['leaderboard'].get('columns') or not self.data['leaderboard'].get('leaderboards'):
-            raise CompetitionConversionException("Leaderboard data missing keys: columns, and leaderboards.")
+            raise CompetitionUnpackingException("Leaderboard data missing keys: columns, and leaderboards.")
 
         for ldb_key, ldb_data in self.data['leaderboard']['leaderboards'].items():
             new_ldb_data = {
@@ -252,6 +249,6 @@ class LegacyBundleConverter:
 
     def _key_sanity_check(self, key):
         if not self.data.get(key):
-            raise CompetitionConversionException("Could not find {} key in data.".format(key))
+            raise CompetitionUnpackingException("Could not find {} key in data.".format(key))
         if not isinstance(self.data.get(key), dict):
-            raise CompetitionConversionException("Did not receive a dict of {} data, but the key is present".format(key))
+            raise CompetitionUnpackingException("Did not receive a dict of {} data, but the key is present".format(key))

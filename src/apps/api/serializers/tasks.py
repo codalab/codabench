@@ -48,7 +48,7 @@ class TaskSerializer(WritableNestedModelSerializer):
 
     class Meta:
         model = Task
-        fields = [
+        fields = (
             'id',
             'name',
             'description',
@@ -63,7 +63,7 @@ class TaskSerializer(WritableNestedModelSerializer):
             'ingestion_program',
             'reference_data',
             'scoring_program',
-        ]
+        )
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
@@ -77,7 +77,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
 
     class Meta:
         model = Task
-        fields = [
+        fields = (
             'id',
             'name',
             'description',
@@ -93,7 +93,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'scoring_program',
             'files',
             'solutions',
-        ]
+        )
 
     def get_files(self, task):
         files = []
