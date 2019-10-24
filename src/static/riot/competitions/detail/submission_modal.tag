@@ -7,8 +7,7 @@
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
-                <div class="ui horizontal divider"></div>
-                <table class="ui very basic table" id="downloads">
+                <table class="ui table" id="downloads">
                     <thead>
                     <tr>
                         <th><i class="download icon"></i> Files</th>
@@ -50,6 +49,11 @@
                     </div>
 
                     <div class="ui active bottom attached inverted segment tab log" data-tab="{admin_: submission.admin}p_stdout">
+                        <!--
+                        todo: something like:
+                            <pre>{ logs.prediction_stdout ? logs.prediction_stdout : "Empty Logs"}</pre>
+                            so log files don't look empty
+                        -->
                         <pre>{ logs.prediction_stdout }</pre>
                     </div>
 
