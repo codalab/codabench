@@ -125,7 +125,7 @@ class CompetitionViewSet(ModelViewSet):
             'dumps__dataset',
         )
         competition = qs_helper.get(id=pk)
-        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
         files = {

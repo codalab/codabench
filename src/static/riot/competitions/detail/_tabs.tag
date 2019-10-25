@@ -300,6 +300,7 @@
 
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
+            console.info('competition', competition)
             self.competition.files = []
             _.forEach(competition.phases, phase => {
                 _.forEach(phase.tasks, task => {
@@ -314,7 +315,9 @@
                     })
                 })
             })
-            self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            if (self.competition.leaderboards.length > 0) {
+                self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            }
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()

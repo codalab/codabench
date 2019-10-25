@@ -1,7 +1,7 @@
 <show-stats>
-    <div class="ui three column grid">
+    <div class="ui six column grid">
         <div class="column" each="{ stat in general_stats }" no-reorder>
-            <div class="ui six large statistics">
+            <div class="ui six small statistics">
                 <div class="statistic">
                     <div class="value">
                         { stat.count }
