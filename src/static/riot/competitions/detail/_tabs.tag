@@ -300,7 +300,6 @@
 
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
-            console.info('competition', competition)
             self.competition.files = []
             _.forEach(competition.phases, phase => {
                 _.forEach(phase.tasks, task => {
