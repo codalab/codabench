@@ -1,5 +1,3 @@
-import base64
-import json
 import os
 
 from django.utils import timezone
@@ -10,12 +8,6 @@ from .utils import get_datetime, CompetitionUnpackingException
 
 
 class V2Unpacker(BaseUnpacker):
-    def __init__(self, competition_yaml, temp_directory, creator):
-        super().__init__()
-        self.competition_yaml = competition_yaml
-        self.temp_directory = temp_directory
-        self.creator = creator
-
     def unpack(self):
         # ---------------------------------------------------------------------
         # Initialize the competition dict
@@ -87,7 +79,6 @@ class V2Unpacker(BaseUnpacker):
                     'description': task.get('description'),
                     'created_by': self.creator.id,
                     'ingestion_only_during_scoring': task.get('ingestion_only_during_scoring', False),
-                    'index': index
                 }
                 for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
                     if file_type in task:
@@ -174,21 +165,6 @@ class V2Unpacker(BaseUnpacker):
 
         self.competition['terms'] = terms_content
 
-    def _unpack_image(self):
-        # ---------------------------------------------------------------------
-        # Logo
-        image_path = os.path.join(self.temp_directory, self.competition_yaml.get('image'))
-
-        try:
-            with open(image_path, "rb") as image:
-                self.competition['logo'] = json.dumps({
-                    "file_name": os.path.basename(self.competition_yaml.get('image')),
-                    # Converts to b64 then to string
-                    "data": base64.b64encode(image.read()).decode()
-                })
-        except FileNotFoundError:
-            raise CompetitionUnpackingException(f"Unable to find image: {self.competition_yaml.get('image')}")
-
     def _unpack_phases(self):
         # ---------------------------------------------------------------------
         # Phases
@@ -222,43 +198,8 @@ class V2Unpacker(BaseUnpacker):
                 new_phase['has_max_submissions'] = True
 
             self.competition['phases'].append(new_phase)
-
-        for i in range(len(self.competition['phases'])):
-            if i == 0:
-                continue
-            phase1 = self.competition['phases'][i - 1]
-            phase2 = self.competition['phases'][i]
-            if phase1['end'] is None:
-                raise CompetitionUnpackingException(
-                    f'Phase: {phase1.get("name", phase1["index"])} must have an end time because it has a phase after it.'
-                )
-            elif phase2['start'] < phase1['end']:
-                raise CompetitionUnpackingException(
-                    f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
-                    f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
-                )
-
-        current_phase = self._get_current_phase(self.competition['phases'])
-        if current_phase:
-            current_index = current_phase['index']
-            previous_index = current_index - 1 if current_index >= 1 else None
-            next_index = current_index + 1 if current_index < len(self.competition['phases']) - 1 else None
-        else:
-            current_index = None
-            next_phase = self._get_next_phase(self.competition['phases'])
-            if next_phase:
-                next_index = next_phase['index']
-                previous_index = next_index - 1 if next_index >= 1 else None
-            else:
-                next_index = None
-                previous_index = None
-
-        if current_index is not None:
-            self.competition['phases'][current_index]['status'] = Phase.CURRENT
-        if next_index is not None:
-            self.competition['phases'][next_index]['status'] = Phase.NEXT
-        if previous_index is not None:
-            self.competition['phases'][previous_index]['status'] = Phase.PREVIOUS
+        self._validate_phase_ordering()
+        self._set_phase_statuses()
 
     def _unpack_leaderboards(self):
         # ---------------------------------------------------------------------

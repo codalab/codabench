@@ -1,254 +1,152 @@
-import logging
-import json
-import copy
+import os
 
-from competitions.unpackers.utils import CompetitionUnpackingException
-
-logger = logging.getLogger(__name__)
+from competitions.unpackers.base_unpacker import BaseUnpacker
+from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
 
 
-LEGACY_DEPRECATED_KEYS = [
-    'force_submission_to_leaderboard',
-    'disallow_leaderboard_modifying',
-    'has_registration',
-    'enable_detailed_results',
-    'enable_forum',
-    'admin_names',
-    'end_date',
-]
+class V15Unpacker(BaseUnpacker):
+    def unpack(self):
+        # ---------------------------------------------------------------------
+        # Initialize the competition dict
+        self.competition = {
+            "title": self.competition_yaml.get('title'),
+            "logo": None,
+            "registration_auto_approve": not self.competition_yaml.get('has_registration', True),
+            "docker_image": self.competition_yaml.get('competition_docker_image', 'codalab/codalab-legacy:py3'),
+            "pages": [],
+            "phases": [],
+            "leaderboards": [],
+            # Holding place for phases to reference. Ignored by competition serializer.
+            "tasks": {},
+            "solutions": [],
+        }
+        self._unpack_pages()
+        self._unpack_image()
+        self._unpack_phases()
+        self._unpack_leaderboards()
 
-LEGACY_COMPETITION_KEY_MAPPING = {
-    'competition_docker_image': 'docker_image',
-}
+    def _unpack_pages(self):
+        try:
+            pages = self.competition_yaml['html']
+        except KeyError:
+            raise CompetitionUnpackingException('HTML pages could not be found in the yaml file')
 
-LEGACY_PHASE_KEY_MAPPING = {
-    'label': 'name',
-    'description': 'description',
-    'start_date': 'start',
-}
+        if 'terms' not in pages:
+            # TODO: SHOULD terms be required? are they required in v1.5? How do we handle this?
+            raise CompetitionUnpackingException(
+                'A file containing the terms of the competition could not be located for this competition'
+            )
 
-PHASE_TASK_COMMON_MAPPING = {
-    'label': 'name',
-    'input_data': 'input_data',
-    'scoring_program': 'scoring_program',
-    'reference_data': 'reference_data',
-    'ingestion_program': 'ingestion_program',
-    'ingestion_program_only_during_scoring': 'ingestion_only_during_scoring',
-    # 'public_data': 'public_data',
-    # 'starting_kit': 'starting_kit',
-}
+        for index, (title, path) in enumerate(pages.items()):
+            try:
+                with open(os.path.join(self.temp_directory, path)) as f:
+                    content = f.read()
+            except FileNotFoundError:
+                raise CompetitionUnpackingException(f'Could not find file for page: {title}')
 
-# TODO: Remove all casts, or smartly handle them based on type(?)
-
-class LegacyBundleConverter:
-    """
-    Bundle converter for v1.5 to v2:
-        - Data: Should be the YAML data from the bundle read to a Python dict
-    """
-    def __init__(self, data={}):
-        # Do a deep copy so we're not modifying the original and can re-check against it
-        self.data = copy.deepcopy(data)
-
-    def __get_next_parent_phase(self, current_index):
-        # Loop through all of our phase objects, and find the first one which is greater than our current phase and is a parallel parent.
-        for phase_index, phase_data in self.data['phases'].items():
-            if phase_data.get('is_parallel_parent') and phase_index > current_index:
-                return phase_index
-        return None
-
-    def __get_parent_phase(self, parent_phase_index, new_temp_phase_list):
-        # Loop through index, phase_data and find whichever one has the matching index. We delete the extra key later.
-        for index, phase_data in enumerate(new_temp_phase_list):
-            if int(phase_data.get('index')) == int(parent_phase_index):
-                return index
-        return None
-
-    def __get_next_index(self, current_index, key_type, has_parent_phases=False):
-        # Handle regular sequential phases
-        if not has_parent_phases:
-            if key_type == int:
-                return current_index + 1
+            if title == 'terms':
+                self.competition['terms'] = content
             else:
-                return str(int(current_index) + 1)
-        # Handle parent/sub/child phases
-        elif has_parent_phases:
-            next_parent_phase_index = self.__get_next_parent_phase(current_index)
-            if next_parent_phase_index:
-                return next_parent_phase_index
-        return None
+                self.competition['pages'].append({
+                    "title": title,
+                    "content": content,
+                    "index": index,
+                })
 
-    def __get_phase_end(self, current_index, next_index):
-        if self.data['phases'].get(next_index):
-            logger.info('Converter: There is a next phase')
-            if self.data['phases'][next_index].get('start_date'):
-                logger.info('Converter: There is a next phase with a start date')
-                # We have a phase after this one with a start date
-                return self.data['phases'][next_index]['start_date']
-        return None
+    def _unpack_phases(self):
+        try:
+            phases = self.competition_yaml['phases']
+        except KeyError:
+            raise CompetitionUnpackingException('No phases could be found for this competition')
+        # convert dict to list, sorted by phasenumber
+        phases = [phase for phase in sorted(phases.values(), key=lambda p: p['phasenumber'])]
+        for index, phase in enumerate(phases):
+            new_phase = {
+                'index': index,
+                'start': get_datetime(phase['start_date']),
+                'name': phase['label'],
+                'description': phase.get('description'),
+                'execution_time_limit': phase.get('execution_time_limit'),
+                'max_submissions_per_day': phase.get('max_submissions_per_day'),
+                'max_submissions_per_person': phase.get('max_submissions'),
+                'auto_migrate_to_this_phase': phase.get('auto_migration', False),
+            }
+            if new_phase['max_submissions_per_person'] or new_phase['max_submissions_per_day']:
+                new_phase['has_max_submissions'] = True
+            try:
+                next_phase = phases[index + 1]
+                new_phase['end'] = get_datetime(next_phase['start_date'])
+            except IndexError:
+                end = self.competition.get('end_date')
+                if end and end != 'null':
+                    new_phase['end'] = get_datetime(end)
+            if not phase.get('is_parallel_parent') and not phase.get('parent_phasenumber'):
+                task_index = len(self.competition['tasks'])
+                new_phase['tasks'] = [task_index]
+                self.competition['phases'].append(new_phase)
 
-    def convert(self, plain=False):
-        if not self._is_legacy_bundle():
-            logger.info("Bundle data does not appear to be legacy. Skipping.")
-            return self.data
-        else:
-            if not self.data.get('competition_docker_image') or not self.data.get('docker_image'):
-                logger.info("Competition is legacy and missing docker image. Setting to ckcollab/codalab-legacy:latest")
-                self.data['docker_image'] = 'ckcollab/codalab-legacy:latest'
-        self._convert_pages()
-        self._convert_phases()
-        self._convert_leaderboard()
-        self._convert_misc_keys()
-        if plain:
-            self.data = json.loads(json.dumps(self.data, default=str))
-        logger.info("Retrning data: {}".format(self.data))
-        return self.data
-
-    def _is_legacy_bundle(self):
-        return any([bool(key in self.data) for key in LEGACY_DEPRECATED_KEYS])
-
-    def _convert_pages(self):
-        new_html_data = []
-        self._key_sanity_check('html')
-        logger.info("Converting HTML to pages")
-        for page_key, page_file in self.data['html'].items():
-            if page_key == 'terms':
-                self.data['terms'] = page_file
-            new_html_data.append({
-                'title': page_key,
-                'file': page_file
-            })
-        del self.data['html']
-        self.data['pages'] = new_html_data
-
-
-    def _convert_phases(self):
-        new_phase_list = []
-        new_task_list = []
-        new_solution_list = []
-
-        self._key_sanity_check('phases')
-        logger.info("Converting phase format")
-
-        has_parent_phases = any('is_parallel_parent' in phase_data for phase_index, phase_data in self.data['phases'].items())
-
-        logger.info("Converter: Has parent phases: {}".format(has_parent_phases))
-
-        for phase_index, phase_data in self.data['phases'].items():
-            new_phase_data = {}
-            new_task_data = {}
-
-            legacy_index_type = type(phase_index)
-            new_task_data['index'] = int(phase_index)
-
-            # Automatic mapping
-            for phase_data_key, phase_data_value in phase_data.items():
-                if phase_data_key in LEGACY_PHASE_KEY_MAPPING:
-                    new_phase_data[LEGACY_PHASE_KEY_MAPPING[phase_data_key]] = phase_data_value
-                if phase_data_key in PHASE_TASK_COMMON_MAPPING:
-                    new_task_data[PHASE_TASK_COMMON_MAPPING[phase_data_key]] = phase_data_value
-
-            # If we're not a child phase, get our next date and set it
-            if not self.data['phases'][phase_index].get('parent_phasenumber'):
-                next_index = self.__get_next_index(
-                    current_index=phase_index,
-                    key_type=legacy_index_type,
-                    has_parent_phases=has_parent_phases
-                )
-                next_end_date = self.__get_phase_end(phase_index, next_index)
-                if next_end_date:
-                    logger.info("Setting end date as {end_date} on phase {phase_index}".format(
-                        end_date=next_end_date,
-                        phase_index=phase_index)
-                    )
-                    new_phase_data['end'] = next_end_date
-
-            new_task_list.append(new_task_data)
-            if phase_data.get('starting_kit'):
-                logger.info("Adding starting kit as solution to task: {}".format(phase_index))
-                new_solution_data = {
-                    'index': int(phase_index),
-                    'tasks': [int(phase_index)],
-                    'path': phase_data.get('starting_kit')
+                new_task = {
+                    'name': f'{new_phase["name"]} Task',
+                    'description': new_phase['description'],
+                    'created_by': self.creator.id,
+                    'ingestion_only_during_scoring': phase.get('ingestion_program_only_during_scoring', False)
                 }
-                new_phase_data['solutions'] = [int(phase_index)]
-                new_solution_list.append(new_solution_data)
 
-            # Handle new task + solution
-            if has_parent_phases and phase_data.get('parent_phasenumber'):
-                parent_phase_index = self.__get_parent_phase(phase_data['parent_phasenumber'], new_phase_list)
-                logger.info("This phase has a parent phase that should be at index {}".format(phase_data['parent_phasenumber']))
-                if parent_phase_index != None:
-                    logger.info("Adding task entry to phase")
-                    if not new_phase_list[parent_phase_index].get('tasks'):
-                        new_phase_list[parent_phase_index]['tasks'] = []
-                    new_phase_list[parent_phase_index]['tasks'].append(int(phase_index))
-            elif has_parent_phases and phase_data.get('is_parallel_parent'):
-                new_phase_data['index'] = phase_index
-                logger.info("This is a parent phase; Adding it's index to help track: {}".format(phase_index))
-                new_phase_list.append(new_phase_data)
-            else:
-                logger.info("Regularly doing phase data, and task data")
-                new_phase_data['tasks'] = [int(phase_index)]
-                # Append our new phase data
-                new_phase_list.append(new_phase_data)
-        del self.data['phases']
-        # Cleanup residual keys we're not using
-        for phase_data in new_phase_list:
-            if phase_data.get('index'):
-                del phase_data['index']
-        self.data['phases'] = new_phase_list
-        self.data['tasks'] = new_task_list
-        self.data['solutions'] = new_solution_list
+                for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
+                    if file_type in phase:
+                        new_task[file_type] = {
+                            'file_name': phase[file_type],
+                            'file_path': os.path.join(self.temp_directory, phase[file_type]),
+                            'file_type': file_type,
+                            'creator': self.creator,
+                        }
+                self.competition['tasks'][task_index] = new_task
 
-    def _convert_leaderboard(self):
-        new_leaderboard_list = []
-        logger.info("Converting leaderboard")
+        self._validate_phase_ordering()
+        self._set_phase_statuses()
 
-        # Combine leaderboard + columns, then process
-        if not self.data['leaderboard'].get('columns') or not self.data['leaderboard'].get('leaderboards'):
-            raise CompetitionUnpackingException("Leaderboard data missing keys: columns, and leaderboards.")
+    def _unpack_leaderboards(self):
+        try:
+            leaderboard = self.competition_yaml['leaderboard']
+        except KeyError:
+            raise CompetitionUnpackingException('Could not find leaderboard in the competition yaml')
+        try:
+            leaderboards = leaderboard['leaderboards']
+        except KeyError:
+            raise CompetitionUnpackingException('Could not find leaderboards declared on the competition leaderboard')
+        try:
+            columns = sorted([{'title': k, **v} for k, v in leaderboard['columns'].items()], key=lambda c: c['rank'])
+        except KeyError:
+            raise CompetitionUnpackingException('Could not find columns declared on the competition leaderboard')
 
-        for ldb_key, ldb_data in self.data['leaderboard']['leaderboards'].items():
+        for ldb_key, ldb_data in leaderboards.items():
             new_ldb_data = {
                 'title': ldb_key,
                 'key': ldb_key,
                 'columns': []
             }
-            new_leaderboard_list.append(new_ldb_data)
+            self.competition['leaderboards'].append(new_ldb_data)
 
-        col_index_counter = 0
-        for col_key, col_data in self.data['leaderboard']['columns'].items():
+        for index, column in enumerate(columns):
             new_col_data = {
-                'title': col_data.get('label'),
-                'key': col_key,
-                'index': col_data.get('rank', col_index_counter),
-                'sorting': 'desc'  # v1.5 doesn't have this at all????
+                'title': column['title'],
+                'key': column['title'],
+                'index': index,
+                'sorting': 'desc'  # TODO: not an option in v1.5?
             }
 
-            col_index_counter += 1
-
-            for leaderboard_data in new_leaderboard_list:
-                if col_data['leaderboard']['label'].lower() == leaderboard_data['key'].lower():
+            for leaderboard_data in self.competition['leaderboards']:
+                if column['leaderboard']['label'].lower() == leaderboard_data['key'].lower():
                     leaderboard_data['columns'].append(new_col_data)
 
-        del self.data['leaderboard']
-        self.data['leaderboards'] = new_leaderboard_list
+    def _unpack_terms(self):
+        # handled by _unpack_pages
+        pass
 
-    def _convert_misc_keys(self):
-        logger.info("Converting misc keys")
-        top_level_keys = list(self.data.keys())
-        for top_level_key in top_level_keys:
-            if top_level_key in LEGACY_COMPETITION_KEY_MAPPING:
-                self.data[LEGACY_COMPETITION_KEY_MAPPING[top_level_key]] = self.data[top_level_key]
-                del self.data[top_level_key]
-        # Do this again so we don't grab any keys we previously deleted
-        top_level_keys = list(self.data.keys())
-        for top_level_key in top_level_keys:
-            if top_level_key in LEGACY_DEPRECATED_KEYS:
-                del self.data[top_level_key]
+    def _unpack_solutions(self):
+        # no solutions to unpack
+        pass
 
-    def _key_sanity_check(self, key):
-        if not self.data.get(key):
-            raise CompetitionUnpackingException("Could not find {} key in data.".format(key))
-        if not isinstance(self.data.get(key), dict):
-            raise CompetitionUnpackingException("Did not receive a dict of {} data, but the key is present".format(key))
+    def _unpack_tasks(self):
+        # handled in _unpack_phases
+        pass

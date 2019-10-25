@@ -29,6 +29,7 @@ from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from competitions.unpackers.utils import CompetitionUnpackingException
+from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
 from tasks.models import Task, Solution
@@ -269,11 +270,19 @@ def unpack_competition(competition_dataset_pk):
             with open(yaml_path) as f:
                 competition_yaml = yaml.load(f.read())
 
-            yaml_version = competition_yaml.get('version', '2')
+            yaml_version = str(competition_yaml.get('version', '1'))
 
             logger.info("The YAML version is: {}".format(yaml_version))
+            if yaml_version == '1':
+                unpacker_class = V15Unpacker
+            elif yaml_version == '2':
+                unpacker_class = V2Unpacker
+            else:
+                raise CompetitionUnpackingException(
+                    'A suitable version could not be found for this competition. Make sure one is supplied in the yaml.'
+                )
 
-            unpacker = V2Unpacker(
+            unpacker = unpacker_class(
                 competition_yaml=competition_yaml,
                 temp_directory=temp_directory,
                 creator=creator,
