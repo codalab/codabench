@@ -7,9 +7,8 @@ from .utils import get_datetime, CompetitionUnpackingException
 
 
 class V2Unpacker(BaseUnpacker):
-    def unpack(self):
-        # ---------------------------------------------------------------------
-        # Initialize the competition dict
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.competition = {
             "title": self.competition_yaml.get('title'),
             "logo": None,
@@ -22,6 +21,8 @@ class V2Unpacker(BaseUnpacker):
             "tasks": {},
             "solutions": [],
         }
+
+    def unpack(self):
         self._unpack_pages()
         self._unpack_tasks()
         self._unpack_solutions()

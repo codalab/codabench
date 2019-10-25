@@ -63,10 +63,13 @@ class BaseUnpacker:
         for phase in phases:
             if phase['start'] < timezone.now():
                 try:
-                    if phase['end'] > timezone.now():
+                    if phase['end'] is not None and phase['end'] > timezone.now():
+                        return phase
+                    elif phase['end'] is None:
+                        # phase is endless, so it is indefinitely current
                         return phase
                 except KeyError:
-                    # phase is endless, so it is indefinitely current
+                    # no phase['end'] so it is endless
                     return phase
 
     def _get_next_phase(self, phases):

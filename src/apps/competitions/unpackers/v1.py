@@ -5,9 +5,8 @@ from competitions.unpackers.utils import CompetitionUnpackingException, get_date
 
 
 class V15Unpacker(BaseUnpacker):
-    def unpack(self):
-        # ---------------------------------------------------------------------
-        # Initialize the competition dict
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.competition = {
             "title": self.competition_yaml.get('title'),
             "logo": None,
@@ -20,6 +19,8 @@ class V15Unpacker(BaseUnpacker):
             "tasks": {},
             "solutions": [],
         }
+
+    def unpack(self):
         self._unpack_pages()
         self._unpack_image()
         self._unpack_phases()
@@ -80,6 +81,8 @@ class V15Unpacker(BaseUnpacker):
                 end = self.competition.get('end_date')
                 if end and end != 'null':
                     new_phase['end'] = get_datetime(end)
+                else:
+                    new_phase['end'] = None
             if not phase.get('is_parallel_parent') and not phase.get('parent_phasenumber'):
                 task_index = len(self.competition['tasks'])
                 new_phase['tasks'] = [task_index]
