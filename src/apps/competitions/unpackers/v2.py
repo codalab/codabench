@@ -2,7 +2,6 @@ import os
 
 from django.utils import timezone
 
-from competitions.models import Phase
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from .utils import get_datetime, CompetitionUnpackingException
 
@@ -86,7 +85,7 @@ class V2Unpacker(BaseUnpacker):
                             'file_name': task[file_type],
                             'file_path': os.path.join(self.temp_directory, task[file_type]),
                             'file_type': file_type,
-                            'creator': self.creator,
+                            'creator': self.creator.id,
                         }
                     elif file_type == 'scoring_program':
                         raise CompetitionUnpackingException(
@@ -139,7 +138,7 @@ class V2Unpacker(BaseUnpacker):
                     'file_path': file_path,
                     'name': solution.get('name') or f"solution @ {timezone.now():%m-%d-%Y %H:%M}",
                     'description': solution.get('description'),
-                    'creator': self.creator,
+                    'creator': self.creator.id,
                 }
             new_solution['tasks'] = tasks
             self.competition['solutions'].append(new_solution)

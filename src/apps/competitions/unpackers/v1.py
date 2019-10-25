@@ -98,9 +98,11 @@ class V15Unpacker(BaseUnpacker):
                             'file_name': phase[file_type],
                             'file_path': os.path.join(self.temp_directory, phase[file_type]),
                             'file_type': file_type,
-                            'creator': self.creator,
+                            'creator': self.creator.id,
                         }
                 self.competition['tasks'][task_index] = new_task
+            else:
+                raise CompetitionUnpackingException('Parallel Parents not supported')
 
         self._validate_phase_ordering()
         self._set_phase_statuses()

@@ -2,7 +2,6 @@ import base64
 import json
 import os
 import uuid
-from uuid import UUID
 
 from django.core.files import File
 from django.utils import timezone
@@ -28,7 +27,7 @@ class BaseUnpacker:
     def _get_data_key(self, file_name, file_path, file_type, creator, *args, **kwargs):
         if os.path.exists(file_path):
             new_dataset = Data(
-                created_by=creator,
+                created_by_id=creator,
                 type=file_type,
                 name=f"{file_type} @ {timezone.now():'%m-%d-%Y %H:%M'}",
                 was_created_by_competition=True,
@@ -273,6 +272,8 @@ class BaseUnpacker:
         return serializer.save()
 
     def _clean(self):
+        # TODO Figure out how to delete from storage, too
+        #   possibly a pre_delete signal on the Data model/on the delete() action.
         for dataset in self.created_datasets:
             dataset.delete()
         for task in self.created_tasks:
