@@ -47,14 +47,15 @@
             <div id="topleft_menu" class="ui secondary inverted menu">
                     <span class="left item">
                         <a href="/" id="home-logo">
-                            <img class="ui mini image" src="/static/img/C_Logo.ico">
+                            <img class="ui mini image" src="/static/img/Cha_Logo.png">
                         </a>
 
                     <div class="ui search">
-                        <div class="ui left icon input">
-                            <input class="prompt" type="text" placeholder="Search Codalab">
+                        <div class="ui left icon input search-width">
+                            <input id="competition-search" class="prompt" type="text" placeholder="Search Competitions">
                             <i class="search icon"></i>
                         </div>
+                        <div class="results search-width scrollable-height-limit"></div>
                     </div>
 
                     </span>
@@ -77,17 +78,18 @@
                             <div class="menu">
                                 {% if request.user.is_staff %}
                                     <div class="header">Admin management</div>
-                                    <a class="item" href="#">Customize Codalab</a>
-                                    <a class="item" href="#">Monitors</a>
+{#                                    <a class="item" href="#">Customize Codalab</a>#}
+{#                                    <a class="item" href="#">Monitors</a>#}
+                                    <a class="item" href="{% url "admin:index" %}">Administration</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
-                                    <a class="item" href="#">Health</a>
-                                    <a class="item" href="#">Users</a>
-                                    <a class="item" href="#">Submissions</a>
+{#                                    <a class="item" href="#">Health</a>#}
+{#                                    <a class="item" href="#">Users</a>#}
+{#                                    <a class="item" href="#">Submissions</a>#}
                                     <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
                                         User</a>
                                 {% endif %}
                                 <div class="ui divider"></div>
-                                <div class="header">You</div>
+                                <div class="header">Account</div>
                                 <a class="item" href="{% url 'profiles:user_profile' %}">
                                     <i class="icon user"></i>
                                     Edit profile
@@ -273,4 +275,14 @@
     {% endblock %}
 
 </body>
+<style>
+    .search-width {
+        width: 25em !important;
+    }
+
+    .scrollable-height-limit {
+        max-height: 25em !important;
+        overflow-y: scroll !important;
+    }
+</style>
 </html>
