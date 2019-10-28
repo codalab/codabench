@@ -47,6 +47,8 @@ jobs:
       - store_artifacts:
           path: artifacts/
 
+      - run: flake8 src/ --ignore E501
+
 workflows:
   version: 2
   build_and_test:
