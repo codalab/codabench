@@ -41,8 +41,5 @@ class TestCompetitions(SeleniumTestCase):
     def test_upload_v15_competition(self):
         self._upload_competition('competition_15.zip')
 
-    def test_upload_v18_competition(self):
-        self._upload_competition('competition_18.zip')
-
     def test_upload_v2_competition(self):
         self._upload_competition('competition.zip')
