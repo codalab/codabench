@@ -272,7 +272,7 @@ def unpack_competition(competition_dataset_pk):
 
             yaml_version = str(competition_yaml.get('version', '1'))
 
-            logger.info("The YAML version is: {}".format(yaml_version))
+            logger.info(f"The YAML version is: {yaml_version}")
             if yaml_version == '1':
                 unpacker_class = V15Unpacker
             elif yaml_version == '2':

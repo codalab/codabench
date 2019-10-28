@@ -294,10 +294,10 @@ class Run:
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
 
-        logger.info("Metadata path is {}".format(os.path.join(program_dir, metadata_path)))
+        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path))}"
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
             metadata = yaml.load(metadata_file.read())
-            logger.info("Metadata contains:\n {}".format(metadata))
+            logger.info(f"Metadata contains:\n {metadata}")
             command = metadata.get("command")
             if not command and kind == "ingestion":
                 raise SubmissionException("Program directory missing 'command' in metadata")
