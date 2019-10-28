@@ -294,7 +294,7 @@ class Run:
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
 
-        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path))}"
+        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
             metadata = yaml.load(metadata_file.read())
             logger.info(f"Metadata contains:\n {metadata}")
