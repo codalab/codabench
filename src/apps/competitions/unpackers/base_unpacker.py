@@ -75,7 +75,7 @@ class BaseUnpacker:
     def _get_next_phase(self, phases):
         future_phases = filter(lambda p: p['start'] > timezone.now(), phases)
         return min(future_phases, key=lambda p: p['index'], default=None)
-    
+
     def _set_phase_statuses(self):
         current_phase = self._get_current_phase(self.competition['phases'])
         if current_phase:
@@ -98,7 +98,7 @@ class BaseUnpacker:
             self.competition['phases'][next_index]['status'] = Phase.NEXT
         if previous_index is not None:
             self.competition['phases'][previous_index]['status'] = Phase.PREVIOUS
-            
+
     def _validate_phase_ordering(self):
         for i in range(len(self.competition['phases'])):
             if i == 0:

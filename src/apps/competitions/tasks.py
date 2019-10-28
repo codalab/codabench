@@ -1,12 +1,8 @@
-import base64
-import datetime
-import json
 import logging
 import os
 import re
 
 import oyaml as yaml
-import shutil
 import zipfile
 
 from io import BytesIO
@@ -15,24 +11,19 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
-from rest_framework.exceptions import ValidationError
 
 from celery_config import app
-from dateutil import parser
-from django.core.files import File
 from django.utils.timezone import now
 
 from tempfile import TemporaryDirectory
 
-from api.serializers.competitions import CompetitionSerializer
-from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
-from tasks.models import Task, Solution
+from tasks.models import Task
 from utils.data import make_url_sassy
 
 logger = logging.getLogger()
