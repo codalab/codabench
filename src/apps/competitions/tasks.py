@@ -233,10 +233,6 @@ def unpack_competition(competition_dataset_pk):
     competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
 
-    # Children datasets are those that are created specifically for this "parent" competition.
-    # They will be deleted if the competition creation fails
-    # TODO: children_datasets = []
-
     status = CompetitionCreationTaskStatus.objects.create(
         dataset=competition_dataset,
         status=CompetitionCreationTaskStatus.STARTING,
@@ -264,7 +260,7 @@ def unpack_competition(competition_dataset_pk):
             yaml_version = str(competition_yaml.get('version', '1'))
 
             logger.info(f"The YAML version is: {yaml_version}")
-            if yaml_version == '1':
+            if yaml_version in ['1', '1.5']:
                 unpacker_class = V15Unpacker
             elif yaml_version == '2':
                 unpacker_class = V2Unpacker
@@ -288,6 +284,8 @@ def unpack_competition(competition_dataset_pk):
             logger.info("Competition saved!")
 
     except Exception as e:
+        # On error, also delete the upload bundle
+        competition_dataset.delete()
         logger.info(str(e))
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
