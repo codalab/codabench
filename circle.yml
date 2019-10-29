@@ -47,7 +47,7 @@ jobs:
       - store_artifacts:
           path: artifacts/
 
-      - run: flake8 src/ --ignore E501
+      - run: docker-compose exec django flake8 src/ --ignore E501
 
 workflows:
   version: 2
