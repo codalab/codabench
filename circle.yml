@@ -37,17 +37,26 @@ jobs:
             sudo mkdir -p var/minio/private
 
       - run:
+          name: Build containers and collect static
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
-            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
-            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
+
+      - run:
+          name: pytest
+          command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
+          no_output_timeout: 60m
+
+      - run:
+          name: e2e tests
+          command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+          no_output_timeout: 60m
+
+      - run: docker-compose exec django flake8 src/ --ignore E501
 
       - store_artifacts:
           path: artifacts/
-
-      - run: docker-compose exec django flake8 src/ --ignore E501
 
 workflows:
   version: 2
