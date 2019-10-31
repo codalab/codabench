@@ -302,7 +302,10 @@ class Run:
             if not command and kind == "ingestion":
                 raise SubmissionException("Program directory missing 'command' in metadata")
             elif not command:
-                logger.info(f"Warning: {program_dir} has no command in metadata, continuing anyway (may be meant to be consumed by an ingestion program)")
+                logger.info(
+                    f"Warning: {program_dir} has no command in metadata, continuing anyway "
+                    f"(may be meant to be consumed by an ingestion program)"
+                )
                 return
 
         docker_cmd = [
@@ -468,8 +471,8 @@ class Run:
             with open(scores_file) as f:
                 try:
                     scores = json.load(f)
-                except json.decoder.JSONDecodeError:
-                    raise SubmissionException("Could not decode scores json properly, it contains an error.")
+                except json.decoder.JSONDecodeError as e:
+                    raise SubmissionException(f"Could not decode scores json properly, it contains an error.\n{e.msg}")
 
         elif os.path.exists(os.path.join(self.output_dir, "scores.txt")):
             scores_file = os.path.join(self.output_dir, "scores.txt")

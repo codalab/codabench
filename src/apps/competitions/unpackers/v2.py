@@ -17,7 +17,7 @@ class V2Unpacker(BaseUnpacker):
             "pages": [],
             "phases": [],
             "leaderboards": [],
-            # Holding place for phases to reference. Ignored by competition serializer.
+            # Holding place for task and solution creation and for phases to reference afterword.
             "tasks": {},
             "solutions": [],
         }

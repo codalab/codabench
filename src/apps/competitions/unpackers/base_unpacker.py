@@ -239,9 +239,7 @@ class BaseUnpacker:
                         continue
                     key = self._get_data_key(**task_file_data)
                     task[file_type] = key
-                serializer = TaskSerializer(
-                    data=task,
-                )
+                serializer = TaskSerializer(data=task)
                 serializer.is_valid(raise_exception=True)
                 new_task = serializer.save()
                 self.created_tasks.append(new_task)
@@ -275,8 +273,6 @@ class BaseUnpacker:
         return serializer.save()
 
     def _clean(self):
-        # TODO Figure out how to delete from storage, too
-        #   possibly a pre_delete signal on the Data model/on the delete() action.
         for dataset in self.created_datasets:
             dataset.delete()
         for task in self.created_tasks:

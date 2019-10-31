@@ -43,7 +43,8 @@ v15_yaml_data = {
         "leaderboards": {
             "Results": {
                 "label": "RESULTS",
-                "rank": 1}
+                "rank": 1
+            }
         },
         "columns": {
             "prediction_score": {

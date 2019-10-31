@@ -15,7 +15,7 @@ class V15Unpacker(BaseUnpacker):
             "pages": [],
             "phases": [],
             "leaderboards": [],
-            # Holding place for phases to reference. Ignored by competition serializer.
+            # Holding place for task and solution creation and for phases to reference afterword.
             "tasks": {},
             "solutions": [],
         }
@@ -33,7 +33,6 @@ class V15Unpacker(BaseUnpacker):
             raise CompetitionUnpackingException('HTML pages could not be found in the yaml file')
 
         if 'terms' not in pages:
-            # TODO: SHOULD terms be required? are they required in v1.5? How do we handle this?
             raise CompetitionUnpackingException(
                 'A file containing the terms of the competition could not be located for this competition'
             )
@@ -139,7 +138,7 @@ class V15Unpacker(BaseUnpacker):
                 'title': column['title'],
                 'key': column['title'],
                 'index': index,
-                'sorting': 'desc'  # TODO: not an option in v1.5?
+                'sorting': column.get('sort') or 'desc'
             }
 
             for leaderboard_data in self.competition['leaderboards']:
