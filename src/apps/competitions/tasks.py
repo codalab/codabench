@@ -283,7 +283,7 @@ def unpack_competition(competition_dataset_pk):
             status.save()
             logger.info("Competition saved!")
 
-    except Exception as e:
+    except CompetitionUnpackingException as e:
         # On error, also delete the upload bundle
         competition_dataset.delete()
         logger.info(str(e))

@@ -171,17 +171,32 @@ TERMS = 'Placeholder terms content for testing\n'
 
 PHASES = [
     {
-        'index': 0, 'start': datetime.datetime(2019, 1, 1, 0, 0, tzinfo=timezone.now().tzinfo),
+        'index': 0,
+        'start': datetime.datetime(2019, 1, 1, 0, 0, tzinfo=timezone.now().tzinfo),
         'name': 'Development Phase',
-        'description': 'Development phase', 'execution_time_limit': 500, 'max_submissions_per_day': 5,
-        'max_submissions_per_person': None, 'auto_migrate_to_this_phase': False, 'has_max_submissions': True,
-        'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo), 'tasks': [0], 'status': 'Previous'
+        'description': 'Development phase',
+        'execution_time_limit': 500,
+        'max_submissions_per_day': 5,
+        'max_submissions_per_person': None,
+        'auto_migrate_to_this_phase': False,
+        'has_max_submissions': True,
+        'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
+        'tasks': [0],
+        'status': 'Previous'
     },
     {
-        'index': 1, 'start': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo), 'name': 'Final Phase',
-        'description': 'Final phase', 'execution_time_limit': 300, 'max_submissions_per_day': 5,
-        'max_submissions_per_person': None, 'auto_migrate_to_this_phase': True, 'has_max_submissions': True,
-        'tasks': [1], 'status': 'Current', 'end': None
+        'index': 1,
+        'start': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
+        'name': 'Final Phase',
+        'description': 'Final phase',
+        'execution_time_limit': 300,
+        'max_submissions_per_day': 5,
+        'max_submissions_per_person': None,
+        'auto_migrate_to_this_phase': True,
+        'has_max_submissions': True,
+        'tasks': [1],
+        'status': 'Current',
+        'end': None
     }
 ]
 
