@@ -72,11 +72,11 @@ def run_wrapper(run_args):
         run.clean_up()
 
 
-def replace_legacy_metadata_command(command, kind, ingestion_only_during_scoring=False):
+def replace_legacy_metadata_command(command, kind, is_scoring, ingestion_only_during_scoring=False):
     vars_to_replace = [
         ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
         ('$output', '/app/output'),
-        ('$program', '/app/program' if not ingestion_only_during_scoring else '/app/ingestion_program'),
+        ('$program', '/app/ingestion_program' if ingestion_only_during_scoring and is_scoring else '/app/program'),
         ('$ingestion_program', '/app/program'),
         ('$hidden', '/app/input/ref'),
         ('$shared', '/app/shared'),
@@ -211,7 +211,6 @@ class Run:
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         logger.info(f"Connecting to {url}")
 
-
         # We should send headers with the secret.
         #     * ``extra_headers`` sets additional HTTP request headers – it can be a
         #       :class:`~websockets.http.Headers` instance, a
@@ -281,11 +280,12 @@ class Run:
         else:
             if can_be_output:
                 # TODO handle ingestion_only_during_scoring! this already does it basically just needs more logic to
-                # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
+                #   check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
                 # Note: Re-enabling this got result submissions working
                 logger.info(
-                    "Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
-                    "program so move it to output")
+                    "Program directory missing metadata, assuming it's going to be handled by ingestion "
+                    "program so move it to output"
+                )
                 # shutil.move(program_dir, self.output_dir)
                 # Copy instead of moving so if something is looking for that ref for v1.5 compatibility, but we may run
                 # into issues later.
@@ -356,6 +356,7 @@ class Run:
         command = replace_legacy_metadata_command(
             command=command,
             kind=kind,
+            is_scoring=self.is_scoring,
             ingestion_only_during_scoring=self.ingestion_only_during_scoring
         )
 
