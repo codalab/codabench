@@ -155,16 +155,25 @@ def _send_submission(submission, task, is_scoring, run_args):
         submission.queue_name = submission.phase.competition.queue.name or ''
         submission.save()
 
-        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app` variable above
+        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
+        # variable above
         celery_app = app_or_default()
         with celery_app.connection() as new_connection:
             new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
-            task = celery_app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
-                                 soft_time_limit=time_limit, connection=new_connection)
+            task = celery_app.send_task(
+                'compute_worker_run',
+                args=(run_args,),
+                queue='compute-worker',
+                soft_time_limit=time_limit,
+                connection=new_connection
+            )
     else:
-        task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
-                             soft_time_limit=time_limit)
-
+        task = app.send_task(
+            'compute_worker_run',
+            args=(run_args,),
+            queue='compute-worker',
+            soft_time_limit=time_limit
+        )
     submission.task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()

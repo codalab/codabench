@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db import models
+from django.utils import timezone
 from pyrabbit.http import HTTPError
 
 from queues import rabbit
@@ -12,7 +13,7 @@ class Queue(models.Model):
     is_public = models.BooleanField(default=False)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         related_name='queues',
         blank=True,
         null=True
@@ -22,7 +23,7 @@ class Queue(models.Model):
         related_name='organized_queues',
         blank=True,
     )
-    created_when = models.DateTimeField(auto_now_add=True)
+    created_when = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
@@ -33,13 +34,13 @@ class Queue(models.Model):
         if self.owner:
             return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{host}/{self.vhost}"
 
-    def delete(self, using=None):
+    def delete(self, *args, **kwargs):
         try:
             rabbit.delete_vhost(str(self.vhost))
         except HTTPError:
             # Vhost not found or something
             pass
-        return super(Queue, self).delete(using)
+        return super().delete(*args, **kwargs)
 
     def save(self, **kwargs):
         if not self.vhost:

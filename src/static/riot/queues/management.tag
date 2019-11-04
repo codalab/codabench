@@ -29,17 +29,17 @@
                 <i class="checkmark box icon green" if="{ queue.is_public }"></i>
             </td>
             <td class="right aligned">
-                <span class="popup" data-tooltip="{queue.broker_url}" data-position="left center">
+                <span data-tooltip="{queue.broker_url}" data-position="left center">
                     <i class="grey icon eye popup-button" if="{ !!queue.broker_url }"></i>
                 </span>
-                <span class="popup" data-tooltip="Copy Broker URL">
+                <span data-tooltip="Copy Broker URL">
                     <i class="icon copy outline popup-button" if="{ !!queue.broker_url }"
                        onclick="{ copy_queue_url.bind(this, queue) }"></i>
                 </span>
-                <span class="popup" data-tooltip="Edit Queue">
+                <span data-tooltip="Edit Queue">
                     <i class="blue icon edit popup-button" if="{ queue.is_owner && !!queue.broker_url }" onclick="{ show_modal.bind(this, queue) }"></i>
                 </span>
-                <span class="popup" data-tooltip="Delete Queue">
+                <span data-tooltip="Delete Queue">
                     <i class="red icon trash alternate outline popup-button" if="{ queue.is_owner && !!queue.broker_url }"
                        onclick="{ delete_queue.bind(this, queue) }"></i>
                 </span>
@@ -47,7 +47,7 @@
         </tr>
 
         <tr if="{queues.length === 0}">
-            <td class="center aligned" colspan="4">
+            <td class="center aligned" colspan="5">
                 <em>No Queues Yet!</em>
             </td>
         </tr>
@@ -56,8 +56,8 @@
         <!-------------------------------------
                   Pagination
         ------------------------------------->
-        <tr if="{queues.length > 0 && _.get(pagination, 'next')}">
-            <th colspan="6">
+        <tr if="{queues.length > 0 && ( _.get(pagination, 'next') || _.get(pagination, 'previous') ) }">
+            <th colspan="5">
                 <div class="ui right floated pagination menu" if="{queues.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -80,25 +80,23 @@
         </div>
         <div class="content">
             <form class="ui form" ref="form">
-                <div class="ui active tab" data-tab="details">
-                    <div class="required field">
-                        <label>Name</label>
-                        <input name="name" placeholder="Name" ref="queue_name" value="{ _.get(selected_queue, 'name', '') }">
+                <div class="required field">
+                    <label>Name</label>
+                    <input name="name" placeholder="Name" ref="queue_name" value="{ _.get(selected_queue, 'name') }">
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <label>Is Public?</label>
+                        <input type="checkbox" ref="queue_public">
                     </div>
-                    <div class="field">
-                        <div class="ui checkbox">
-                            <label>Is Public?</label>
-                            <input type="checkbox" ref="queue_public">
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label>Collaborators</label>
-                        <div class="ui fluid search multiple selection dropdown collab-search">
-                            <input type="hidden" name="collaborators" ref="queue_collaborators">
-                            <i class="dropdown icon"></i>
-                            <div class="default text">Select Collaborator</div>
-                            <div class="menu">
-                            </div>
+                </div>
+                <div class="field">
+                    <label>Collaborators</label>
+                    <div class="ui fluid search multiple selection dropdown" ref="collab_search">
+                        <input type="hidden" name="collaborators" ref="queue_collaborators">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Collaborator</div>
+                        <div class="menu">
                         </div>
                     </div>
                 </div>
@@ -119,27 +117,26 @@
         self.one("mount", function () {
             self.update_queues()
             $(".ui.checkbox", self.root).checkbox()
-            $('.collab-search')
-                .dropdown({
-                    apiSettings: {
-                        url: `${URLS.API}user_lookup/?q={query}`,
-                    },
-                    clearable: true,
-                    preserveHTML: false,
-                    fields: {
-                        remoteValues: 'results',
-                        name: 'username',
-                        value: 'id',
-                    },
-                    cache: false,
-                    maxResults: 5,
-                })
-            ;
+            $(self.refs.collab_search).dropdown({
+                apiSettings: {
+                    url: `${URLS.API}user_lookup/?q={query}`,
+                },
+                clearable: true,
+                preserveHTML: false,
+                fields: {
+                    remoteValues: 'results',
+                    name: 'username',
+                    value: 'id',
+                },
+                cache: false,
+                maxResults: 5,
+            })
+            $(self.refs.modal).modal({
+                onHidden: () => {
+                    self.clear_form()
+                }
+            })
         })
-
-        self.switch_to_form = () => {
-            window.location = '/queues/form/'
-        }
 
         self.update_queues = function (filters) {
             filters = filters || {}
@@ -158,7 +155,7 @@
                     self.update()
                 })
                 .fail(function (response) {
-                    toastr.error("Could not load tasks")
+                    toastr.error("Could not load queues")
                 })
         }
 
@@ -174,11 +171,10 @@
 
         self.close_modal = () => {
             $(self.refs.modal).modal('hide')
-            self.clear_form()
         }
 
         self.clear_form = () => {
-            $('.collab-search').dropdown('clear')
+            $(self.refs.collab_search).dropdown('clear')
             self.refs.queue_name.value = ''
             self.selected_queue = {}
             self.refs.queue_public.checked = false
@@ -186,7 +182,7 @@
 
         self.set_selected_queue = function (queue) {
             self.selected_queue = queue
-            $('.collab-search')
+            $(self.refs.collab_search)
                 .dropdown('setup menu', {values: queue.organizers})
                 .dropdown('set selected',  _.map(queue.organizers, o => o.username))
 
@@ -199,19 +195,22 @@
             let data = {
                 name: self.refs.queue_name.value,
                 is_public: self.refs.queue_public.checked,
-                organizers: _.compact($('.collab-search').dropdown('get value').split(','))
+                organizers: _.compact($(self.refs.collab_search).dropdown('get value').split(','))
             }
             let endpoint = !_.isEmpty(self.selected_queue)
                 ? CODALAB.api.update_queue
                 : CODALAB.api.create_queue
-            endpoint(data, _.get(self, 'selected_queue.id'))
+            endpoint(data, _.get(self.selected_queue, 'id'))
                 .done(function (response) {
-                    toastr.success("Succesfully updated/made queue!")
+                    toastr.success("Success!")
                     self.close_modal()
+                    // Todo: Handle this better
+                    // Necessary to reset page to 1, because we re-grab our results regardless of page after update/create.
+                    self.page = 1
                     self.update_queues()
                 })
                 .fail(function (response) {
-                    toastr.error("Could not update/create queue!")
+                    toastr.error("An error occurred!")
                 })
         }
 
@@ -232,21 +231,17 @@
             if (!!self.pagination.next) {
                 self.page += 1
                 self.filter({page: self.page})
-            } else {
-                alert("No valid page to go to!")
             }
         }
         self.previous_page = function () {
             if (!!self.pagination.previous) {
                 self.page -= 1
                 self.filter({page: self.page})
-            } else {
-                alert("No valid page to go to!")
             }
         }
 
         self.delete_queue = function (queue) {
-            if (confirm("Are you sure you want to delete '" + queue.name + "'?")) {
+            if (confirm(`Are you sure you want to delete the queue: "${queue.name}"?`)) {
                 CODALAB.api.delete_queue(queue.id)
                     .done(function () {
                         self.update_queues()
@@ -256,22 +251,16 @@
                         toastr.error("Could not delete queue!")
                     })
             }
-            event.stopPropagation()
         }
 
         self.copy_queue_url = function (queue) {
             navigator.clipboard.writeText(queue.broker_url).then(function () {
-                /* clipboard successfully set */
+                // clipboard successfully set
                 toastr.success("Successfully copied broker url to clipboard!")
             }, function () {
-                /* clipboard write failed */
+                // clipboard write failed
                 toastr.error("Failed to copy broker url to clipboard!")
             });
-        }
-
-        self.edit_queue = function (queue) {
-            window.location = '/queues/form/' + queue.id
-            event.stopPropagation()
         }
     </script>
     <style>

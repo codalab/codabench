@@ -1,9 +1,9 @@
 from django.urls import path
-from queues import views
+from . import views
 
 app_name = "queues"
 
 
 urlpatterns = [
-    path('', views.QueueManagementView.as_view(), name='list'),
+    path('', views.QueueManagementView.as_view(), name='management'),
 ]

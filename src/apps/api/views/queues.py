@@ -20,25 +20,18 @@ class QueueViewSet(ModelViewSet):
     pagination_class = BasicPagination
 
     def get_queryset(self):
-        show_public = self.request.query_params.get('public')
         qs = self.queryset.prefetch_related('organizers')
-        if show_public:
-            qs = qs.filter(Q(is_public=True) | Q(owner=self.request.user)) | self.request.user.organized_queues.all()
-        else:
-            qs = qs.filter(owner=self.request.user) | self.request.user.organized_queues.all()
-        # Distinct so that we don't get duplicates
-        return qs.order_by('-created_when').distinct()
+        filters = Q(owner=self.request.user)
+        if self.request.query_params.get('public'):
+            filters |= Q(is_public=True)
+        qs = qs.filter(filters) | self.request.user.organized_queues.all()
+        return qs.distinct().order_by('name')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return serializers.QueueDetailSerializer
-        else:
             return serializers.QueueSerializer
-
-    def get_serializer_context(self):
-        return {
-            "owner": self.request.user
-        }
+        else:
+            return serializers.QueueCreationSerializer
 
     def create(self, request, *args, **kwargs):
         temp_data = request.data
@@ -52,11 +45,11 @@ class QueueViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         queue = self.get_object()
         if request.user != queue.owner and not request.user.is_superuser:
-            raise PermissionDenied("Cannot update a task that is not yours")
+            raise PermissionDenied("Cannot update a queue that is not yours")
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user != instance.owner:
-            raise PermissionDenied("Cannot delete a task that is not yours")
+            raise PermissionDenied("Cannot delete a queue that is not yours")
         return super().destroy(request, *args, **kwargs)

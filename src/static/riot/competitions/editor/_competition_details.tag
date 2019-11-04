@@ -26,15 +26,7 @@
         </div>
         <div class="field">
             <label>Queue</label>
-            <div class="ui fluid search selection dropdown queue-search">
-                <input type="hidden" name="queue" ref="queue">
-                <i class="dropdown icon"></i>
-                <div class="default text">Select Queue</div>
-                <div class="menu">
-                    <!-- TODO: Should I just remove this? Select + Search seems to work better without initial values -->
-                    <div each="{queue in avail_queues}" class="item" data-value="{queue.id}">{queue.name}</div>
-                </div>
-            </div>
+            <select class="ui fluid search selection dropdown" ref="queue"></select>
         </div>
 
     </div>
@@ -47,7 +39,6 @@
         ---------------------------------------------------------------------*/
         self.data = {}
         self.is_editing_competition = false
-        self.avail_queues = []
 
         // We temporarily store this to display it nicely to the user, could be a behavior we break out into its own
         // component later!
@@ -71,30 +62,23 @@
                 })
             })
 
-            $('.queue-search')
-                .dropdown({
-                    apiSettings: {
-                        url: `${URLS.API}queues/?search={query}`,
-                    },
-                    clearable: true,
-                    preserveHTML: false,
-                    minCharacters: 2,
-                    fields: {
-                        remoteValues: 'results',
-                        name: 'name',
-                        value: 'id',
-                    },
-                    cache: false,
-                    //cache: false,
-                    maxResults: 5,
-                    onChange: (value, title) => {
-                        self.refs.queue.value = value
-                        self.form_updated()
-                    }
-                })
-            ;
-
-            self.get_available_queues()
+            $(self.refs.queue).dropdown({
+                // Note: Passing `public=true` so default behavior is users can search for public queues
+                apiSettings: {
+                    url: `${URLS.API}queues/?search={query}&public=true`,
+                },
+                clearable: true,
+                minCharacters: 2,
+                fields: {
+                    remoteValues: 'results',
+                    name: 'name',
+                    value: 'id',
+                },
+                maxResults: 5,
+                onChange: (value, title) => {
+                    self.form_updated()
+                }
+            })
         })
 
         /*---------------------------------------------------------------------
@@ -135,20 +119,6 @@
             self.get_available_queues(filters)
         }
 
-        self.get_available_queues = function(filters) {
-            filters = filters || {}
-            filters.public = true
-            CODALAB.api.get_queues(filters)
-                .done(function (data) {
-                    // TODO: What if pagination messes this up?
-                    self.queues = data.results
-                    self.update()
-                })
-                .fail(function (response) {
-                    toastr.error("Could not load tasks")
-                })
-        }
-
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
@@ -157,9 +127,8 @@
 
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')
-            self.refs.queue.value = _.get(competition, 'queue.id', null)
-            $('.queue-search').dropdown('set text', _.get(competition, 'queue.name', null))
-            $('.queue-search').dropdown('set value', _.get(competition, 'queue.id', null))
+            $(self.refs.queue).dropdown('set text', _.get(competition, 'queue.name'))
+            $(self.refs.queue).dropdown('set value', _.get(competition, 'queue.id'))
 
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
             // TODO: Added this because my form was not receiving a logo from compeititon.

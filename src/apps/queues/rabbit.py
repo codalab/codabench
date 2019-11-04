@@ -14,10 +14,9 @@ def _get_rabbit_connection():
     return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS)
 
 
-def check_user_needs_initialization(user):
-    conn = _get_rabbit_connection()
+def check_user_needs_initialization(user, connection):
     try:
-        conn.get_user_permissions(user.rabbitmq_username)
+        connection.get_user_permissions(user.rabbitmq_username)
         # We found the user, no need to initialize
         return False
     except (HTTPError, NetworkError):
@@ -25,17 +24,16 @@ def check_user_needs_initialization(user):
         return True
 
 
-def initialize_user(user):
+def initialize_user(user, connection):
     """Check whether user has a rabbitmq account already, creates it if not."""
     logger.info(f"Making new rabbitmq user for {user}")
     user.rabbitmq_username = str(uuid.uuid4())
     user.rabbitmq_password = str(uuid.uuid4())
 
-    conn = _get_rabbit_connection()
-    conn.create_user(str(user.rabbitmq_username), str(user.rabbitmq_password))
+    connection.create_user(str(user.rabbitmq_username), str(user.rabbitmq_password))
 
     # Give user permissions to send submission updates
-    conn.set_vhost_permissions(
+    connection.set_vhost_permissions(
         '/',
         str(user.rabbitmq_username),
         '.*',
@@ -49,11 +47,11 @@ def initialize_user(user):
 
 def create_queue(user):
     """Create a new queue with a random name and give full permissions to the owner AND our base account"""
-    if check_user_needs_initialization(user):
-        initialize_user(user)
+    conn = _get_rabbit_connection()
+    if check_user_needs_initialization(user, conn):
+        initialize_user(user, conn)
 
     vhost = str(uuid.uuid4())
-    conn = _get_rabbit_connection()
     conn.create_vhost(vhost)
 
     # Set permissions for our end user

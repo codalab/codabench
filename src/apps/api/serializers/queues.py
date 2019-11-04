@@ -7,20 +7,20 @@ from profiles.models import User
 class OrganizerSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [
+        fields = (
             'username',
             'email',
-            'id'
-        ]
+            'id',
+        )
 
 
-class QueueSerializer(serializers.ModelSerializer):
+class QueueCreationSerializer(serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
     class Meta:
         model = Queue
-        fields = [
+        fields = (
             'name',
             'vhost',
             'is_public',
@@ -30,28 +30,26 @@ class QueueSerializer(serializers.ModelSerializer):
             'created_when',
             'is_owner',
             'id',
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             'broker_url',
             'vhost',
             'created_when',
             'is_owner',
-        ]
+        )
 
     def get_is_owner(self, instance):
-        if instance.owner == self.context.get('owner'):
-            return True
-        return False
+        return instance.owner == self.context.get('owner')
 
 
-class QueueDetailSerializer(serializers.ModelSerializer):
+class QueueSerializer(serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)
     organizers = OrganizerSerializer(many=True, read_only=True)
 
     class Meta:
         model = Queue
-        fields = [
+        fields = (
             'name',
             'vhost',
             'is_public',
@@ -61,15 +59,16 @@ class QueueDetailSerializer(serializers.ModelSerializer):
             'created_when',
             'is_owner',
             'id',
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             'broker_url',
             'vhost',
             'created_when',
             'is_owner',
-        ]
+        )
 
     def get_is_owner(self, instance):
-        if instance.owner == self.context.get('owner'):
-            return True
-        return False
+        request = self.context.get('request')
+        if not request:
+            return None
+        return instance.owner == request.user

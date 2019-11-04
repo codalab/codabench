@@ -9,7 +9,7 @@ from competitions.models import Competition, Phase, Page, CompetitionCreationTas
 from profiles.models import User
 from tasks.models import Task
 
-from api.serializers.queues import QueueDetailSerializer
+from api.serializers.queues import QueueSerializer
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -132,7 +132,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_status = serializers.CharField(read_only=True)
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
-    queue = QueueDetailSerializer(read_only=True)
+    queue = QueueSerializer(read_only=True)
 
     class Meta:
         model = Competition
