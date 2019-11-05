@@ -1,15 +1,13 @@
 import os
 import uuid
-
 from datetime import timedelta
 
-from utils.storage import BundleStorage
-
 from azure.storage.blob import BlobPermissions
-
 from django.conf import settings
-from django.utils.timezone import now
 from django.utils.deconstruct import deconstructible
+from django.utils.timezone import now
+
+from utils.storage import BundleStorage
 
 
 @deconstructible
