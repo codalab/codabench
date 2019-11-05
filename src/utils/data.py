@@ -3,9 +3,9 @@ import uuid
 
 from datetime import timedelta
 
-from utils.storage import BundleStorage
-
 from azure.storage.blob import BlobPermissions
+
+from utils.storage import BundleStorage
 
 from django.conf import settings
 from django.utils.timezone import now

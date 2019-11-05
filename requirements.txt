@@ -37,7 +37,8 @@ psycopg2-binary==2.8.3
 # Storage
 #-e git+https://github.com/jschneier/django-storages.git#egg=django-storages[azure,google]
 django-storages[azure,google]==1.7.2
-azure==4.0.0
+azure-storage-blob==2.1.0
+azure-storage-common==2.1.0
 boto3==1.9.68
 whitenoise==3.3.0
 
