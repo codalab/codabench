@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
 from queues.models import Queue
 
 from profiles.models import User
@@ -37,6 +39,13 @@ class QueueCreationSerializer(serializers.ModelSerializer):
             'created_when',
             'is_owner',
         )
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request.user.queues.count() == request.user.rabbitmq_queue_limit and not request.user.is_superuser:
+            # TODO: Do we want to raise a validation error (400, bad request) or something that will raise a 403?
+            raise ValidationError("User has reached queue limit!")
+        return super().validate(attrs)
 
     def get_is_owner(self, instance):
         return instance.owner == self.context.get('owner')

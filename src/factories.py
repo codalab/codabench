@@ -10,6 +10,7 @@ from datasets.models import Data
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User
 from tasks.models import Task
+from queues.models import Queue
 
 
 class UserFactory(DjangoModelFactory):
@@ -76,6 +77,13 @@ class TaskFactory(DjangoModelFactory):
         model = Task
     name = factory.Sequence(lambda n: f'Task {n}')
     created_by = factory.SubFactory(UserFactory)
+
+
+class QueueFactory(DjangoModelFactory):
+    class Meta:
+        model = Queue
+    name = factory.Sequence(lambda n: f'Queue {n}')
+    owner = factory.SubFactory(UserFactory)
 
 
 class PhaseFactory(DjangoModelFactory):
