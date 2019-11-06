@@ -25,9 +25,6 @@ class Task(ChaHubSaveMixin, models.Model):
     def __str__(self):
         return f"Task - {self.name} - ({self.id})"
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
     @staticmethod
     def get_chahub_endpoint():
         return 'tasks/'
