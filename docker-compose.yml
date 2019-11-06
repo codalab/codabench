@@ -13,8 +13,8 @@ services:
       - ./src/staticfiles:/var/www/django/static
       - ./certs/caddy:/etc/caddycerts
     ports:
-      - 80
-      - 443
+      - 80:80
+      - 443:443
     depends_on:
       - django
 
