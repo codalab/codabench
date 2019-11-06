@@ -1,4 +1,6 @@
 import random
+from random import randint
+from datetime import datetime
 
 import factory
 from django.utils.timezone import now
@@ -12,6 +14,11 @@ from profiles.models import User
 from tasks.models import Task
 
 
+def _get_random_date():
+    return max(datetime(2015 + randint(0, 5), randint(1, 12), randint(1, 28), 2, 2, 2, 0),
+               datetime(2015 + randint(0, 5), randint(1, 12), randint(1, 28), 2, 2, 2, 0))
+
+
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
@@ -20,6 +27,8 @@ class UserFactory(DjangoModelFactory):
     username = factory.Faker('user_name')
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
+
+    date_joined = factory.LazyFunction(_get_random_date)
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -43,6 +52,8 @@ class CompetitionFactory(DjangoModelFactory):
     created_by = factory.SubFactory(UserFactory)
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
     description = factory.Faker('paragraph')
+
+    created_when = factory.LazyFunction(_get_random_date)
 
     @post_generation
     def collaborators(self, created, extracted, **kwargs):
@@ -107,7 +118,8 @@ class SubmissionFactory(DjangoModelFactory):
     owner = factory.SubFactory(UserFactory)
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
-    created_when = factory.LazyFunction(now)
+
+    created_when = factory.LazyFunction(_get_random_date)
     data = factory.SubFactory(
         DataFactory,
         type='submission',
