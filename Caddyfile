@@ -2,6 +2,11 @@
   # HTTPS options:
   tls {$TLS_EMAIL}
 
+  # Test HTTPS setup
+  # tls ${TLS_EMAIL} {
+  #   ca https://acme-staging-v02.api.letsencrypt.org/directory
+  # }
+
   # Removing some headers for improved security:
   header / -Server
 
