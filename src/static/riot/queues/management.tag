@@ -86,7 +86,7 @@
                 </div>
                 <div class="field">
                     <div class="ui checkbox">
-                        <label>Is Public?</label>
+                        <label>Make Public?</label>
                         <input type="checkbox" ref="queue_public">
                     </div>
                 </div>

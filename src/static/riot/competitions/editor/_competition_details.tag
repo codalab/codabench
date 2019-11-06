@@ -71,7 +71,6 @@
                 minCharacters: 2,
                 fields: {
                     remoteValues: 'results',
-                    name: 'name',
                     value: 'id',
                 },
                 maxResults: 5,
