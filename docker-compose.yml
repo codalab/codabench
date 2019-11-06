@@ -1,8 +1,20 @@
 version: '3'
 services:
   #-----------------------------------------------
-  #   Web Service
+  #   Web Services
   #-----------------------------------------------
+  caddy:
+    image: abiosoft/caddy:1.0.3
+    volumes:
+      - ./Caddyfile:/etc/Caddyfile
+      - ./src/staticfiles:/var/www/django/static
+      - ./certs/caddy:/etc/caddycerts
+    ports:
+      - 80
+      - 443
+    depends_on:
+      - django
+
   django:
     build: .
     command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80"
@@ -14,7 +26,6 @@ services:
       - .:/app
       - /tmp/codalab-v2/django:/codalab_tmp
     ports:
-      - 80:80
       - 8000:8000
     depends_on:
       - db
