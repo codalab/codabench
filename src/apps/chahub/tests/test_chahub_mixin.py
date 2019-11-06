@@ -8,6 +8,12 @@ from factories import UserFactory, CompetitionFactory, DataFactory, SubmissionFa
     CompetitionParticipantFactory
 
 
+class ChaHubTestResponse(HttpResponseBase):
+    @property
+    def ok(self):
+        return self.status_code < 400
+
+
 class ChaHubTestCase(TestCase):
     def setUp(self):
         settings.PYTEST_FORCE_CHAHUB = True
@@ -20,7 +26,7 @@ class ChaHubTestCase(TestCase):
 
     def mock_chahub_save(self, obj):
         with mock.patch('chahub.models.send_to_chahub') as chahub_mock:
-            chahub_mock.return_value = HttpResponseBase(status=201)
+            chahub_mock.return_value = ChaHubTestResponse(status=201)
             chahub_mock.return_value.content = ''
             obj.save()
             return chahub_mock
