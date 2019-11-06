@@ -6,6 +6,8 @@ services:
   caddy:
     image: abiosoft/caddy:1.0.3
     env_file: .env
+    environment:
+      - ACME_AGREE=true
     volumes:
       - ./Caddyfile:/etc/Caddyfile
       - ./src/staticfiles:/var/www/django/static
