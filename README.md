@@ -28,3 +28,11 @@ $ open vnc://0.0.0.0:5900
 
 # And login with password "secret"
 ```
+
+## Example competitions
+
+_NOTE: Pisano Period competition may be out of date_
+
+https://github.com/codalab/competition-examples/tree/master/v2/pisano_period
+
+_TODO: Wheat Seed competition_
