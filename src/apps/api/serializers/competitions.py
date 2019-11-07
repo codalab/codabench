@@ -154,7 +154,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'description',
             'participant_count',
             'submission_count',
-            'queue'
+            'queue',
         )
 
 

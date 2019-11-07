@@ -84,6 +84,7 @@ class QueueFactory(DjangoModelFactory):
         model = Queue
     name = factory.Sequence(lambda n: f'Queue {n}')
     owner = factory.SubFactory(UserFactory)
+    is_public = False
 
 
 class PhaseFactory(DjangoModelFactory):
