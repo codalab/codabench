@@ -284,8 +284,6 @@ def unpack_competition(competition_dataset_pk):
             logger.info("Competition saved!")
 
     except CompetitionUnpackingException as e:
-        # On error, also delete the upload bundle
-        competition_dataset.delete()
         logger.info(str(e))
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
