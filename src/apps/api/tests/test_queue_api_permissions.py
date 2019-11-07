@@ -42,7 +42,7 @@ class QueuesAPITestCase(TestCase):
                 content_type='application/json'
             )
             # assert rabbit_create_queue.called
-            return response
+            return response, rabbit_create_queue.called
 
     def test_create_queue_through_api(self):
         self.client.login(username='test', password='test')
@@ -53,13 +53,14 @@ class QueuesAPITestCase(TestCase):
             'is_public': False,
             'id': self.created_queue.id
         }
-        response = self.queue_api_request_with_mock('post', 'queues-list', {}, data)
+        response, rabbit_create_queue_called = self.queue_api_request_with_mock('post', 'queues-list', {}, data)
+        assert rabbit_create_queue_called
         assert Queue.objects.count() == 2
         assert response.status_code == 201
 
     def test_organizer_can_perform_all_operations(self):
         self.client.login(username='test', password='test')
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'put',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -68,7 +69,7 @@ class QueuesAPITestCase(TestCase):
         assert response.status_code == 200
         assert Queue.objects.get(pk=self.created_queue.id).name == 'A BRAND NEW NAME'
 
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'delete',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -79,7 +80,7 @@ class QueuesAPITestCase(TestCase):
 
     def test_other_user_cannot_delete_or_edit_queue(self):
         self.client.login(username='another_user', password='another_user')
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'put',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -88,7 +89,7 @@ class QueuesAPITestCase(TestCase):
         assert response.status_code == 403
         assert Queue.objects.get(pk=self.created_queue.id).name != 'A BRAND NEW NAME'
 
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'delete',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -100,7 +101,7 @@ class QueuesAPITestCase(TestCase):
 
     def test_collab_user_cannot_delete_or_edit_queue(self):
         self.client.login(username='organizer_user', password='organizer_user')
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'put',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -109,7 +110,7 @@ class QueuesAPITestCase(TestCase):
         assert response.status_code == 403
         assert Queue.objects.get(pk=self.created_queue.id).name != 'A BRAND NEW NAME'
 
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'delete',
             'queues-detail',
             {'pk': self.created_queue.id},
@@ -122,7 +123,7 @@ class QueuesAPITestCase(TestCase):
     # Test user queue limits
     def test_queue_limits_for_regular_users(self):
         self.user.rabbitmq_queue_limit = 1
-        response = self.queue_api_request_with_mock(
+        response, _ = self.queue_api_request_with_mock(
             'post',
             'queues-list',
             {},
@@ -142,10 +143,11 @@ class QueuesAPITestCase(TestCase):
         assert self.user.queues.count() == self.user.rabbitmq_queue_limit
 
         self.client.login(username='test', password='test')
-        response = self.queue_api_request_with_mock(
+        response, rabbit_create_queue_called = self.queue_api_request_with_mock(
             'post',
             'queues-list',
             {},
             self._get_test_update_data(return_id=False)
         )
+        assert rabbit_create_queue_called
         assert response.status_code == 201
