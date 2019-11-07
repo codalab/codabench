@@ -123,18 +123,17 @@
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
             self.is_editing_competition = true
-
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')
-            $(self.refs.queue).dropdown('set text', _.get(competition, 'queue.name'))
-            $(self.refs.queue).dropdown('set value', _.get(competition, 'queue.id'))
 
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
-            // TODO: Added this because my form was not receiving a logo from compeititon.
-            if (_.get(competition, 'logo')) {
-                self.uploaded_logo_name = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
-                self.uploaded_logo = competition.logo
-            }
+            self.uploaded_logo_name = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
+            self.uploaded_logo = competition.logo
+            if (competition.queue) {
+                $(self.refs.queue)
+                    .dropdown('set text', competition.queue.name)
+                    .dropdown('set value', competition.queue.id)
+            }gst
             self.form_updated()
         })
     </script>
