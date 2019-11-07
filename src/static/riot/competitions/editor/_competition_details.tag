@@ -133,7 +133,7 @@
                 $(self.refs.queue)
                     .dropdown('set text', competition.queue.name)
                     .dropdown('set value', competition.queue.id)
-            }gst
+            }
             self.form_updated()
         })
     </script>
