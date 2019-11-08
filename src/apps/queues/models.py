@@ -42,7 +42,7 @@ class Queue(models.Model):
             pass
         return super().delete(*args, **kwargs)
 
-    def save(self, prevent_queue_creation=False, **kwargs):
-        if not self.vhost and not prevent_queue_creation:
+    def save(self, create_queue=True, **kwargs):
+        if not self.vhost and create_queue:
             self.vhost = rabbit.create_queue(self.owner)
         super().save(**kwargs)
