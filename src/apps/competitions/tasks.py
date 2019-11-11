@@ -366,7 +366,8 @@ def unpack_competition(competition_dataset_pk):
                 try:
                     queue = Queue.objects.get(vhost=competition_yaml.get('queue'))
                     if not queue.is_public:
-                        if queue.owner != creator or creator.username not in queue.organizers.all().values_list('username'):
+                        all_queue_organizer_names = queue.organizers.all().values_list('username', flat=True)
+                        if queue.owner != creator or creator.username not in all_queue_organizer_names:
                             raise CompetitionUnpackingException("You do not have access to the specified queue!")
                     competition['queue'] = queue.id
                 except Queue.DoesNotExist:

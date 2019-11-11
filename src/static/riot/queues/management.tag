@@ -263,9 +263,8 @@
             });
         }
     </script>
-    <style>
-        .popup-button {
-            cursor: pointer;
-        }
+    <style type="text/stylus">
+        .popup-button
+            cursor: pointer
     </style>
 </queues-list>
