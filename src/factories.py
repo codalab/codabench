@@ -14,11 +14,6 @@ from profiles.models import User
 from tasks.models import Task
 
 
-def _get_random_date():
-    return max(datetime(2015 + randint(0, 5), randint(1, 12), randint(1, 28), 2, 2, 2, 0),
-               datetime(2015 + randint(0, 5), randint(1, 12), randint(1, 28), 2, 2, 2, 0))
-
-
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
@@ -28,7 +23,7 @@ class UserFactory(DjangoModelFactory):
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
 
-    date_joined = factory.LazyFunction(_get_random_date)
+    date_joined = factory.Faker('date_between', start_date='-5y', end_date='today')
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -53,7 +48,7 @@ class CompetitionFactory(DjangoModelFactory):
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
     description = factory.Faker('paragraph')
 
-    created_when = factory.LazyFunction(_get_random_date)
+    created_when = factory.Faker('date_between', start_date='-5y', end_date='today')
 
     @post_generation
     def collaborators(self, created, extracted, **kwargs):
@@ -119,7 +114,7 @@ class SubmissionFactory(DjangoModelFactory):
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
 
-    created_when = factory.LazyFunction(_get_random_date)
+    created_when = factory.Faker('date_between', start_date='-5y', end_date='today')
     data = factory.SubFactory(
         DataFactory,
         type='submission',
