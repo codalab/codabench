@@ -60,7 +60,20 @@
             </div>
         </div>
 
-        <show-stats class="ui grid"></show-stats>
+        <div class="ui six column grid" id="general-stats">
+            {% for stat in general_stats %}
+                <div class="column">
+                    <div class="ui statistic">
+                        <div class="value">
+                            {{ stat.count }}
+                        </div>
+                        <div class="label">
+                            {{ stat.label }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
 
         <div id="about-container" class="segment-container ui segment full-width">
             <div class="ui header">

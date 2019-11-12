@@ -154,32 +154,6 @@ def front_page_competitions(request):
     }, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-@permission_classes((AllowAny,))
-def by_the_numbers(request):
-    data = Competition.objects.aggregate(
-        count=Count('*'),
-        published_comps=Count('pk', filter=Q(published=True)),
-        unpublished_comps=Count('pk', filter=Q(published=False)),
-    )
-
-    total_competitions = data['count']
-    public_competitions = data['published_comps']
-    private_competitions = data['unpublished_comps']
-    users = User.objects.all().count()
-    competition_participants = CompetitionParticipant.objects.all().count()
-    submissions = Submission.objects.all().count()
-
-    return Response([
-        {'label': "Total Competitions", 'count': total_competitions},
-        {'label': "Public Competitions", 'count': public_competitions},
-        {'label': "Private Competitions", 'count': private_competitions},
-        {'label': "Users", 'count': users},
-        {'label': "Competition Participants", 'count': competition_participants},
-        {'label': "Submissions", 'count': submissions},
-    ])
-
-
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
