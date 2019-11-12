@@ -314,7 +314,7 @@
                     })
                 })
             })
-            if (self.competition.leaderboards.length > 0) {
+            if (!_.isEmpty(self.competition.leaderboards)) {
                 self.selected_leaderboard_index = self.competition.leaderboards[0].id
             }
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')

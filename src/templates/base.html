@@ -50,7 +50,7 @@
                             <img class="ui mini image" src="/static/img/Cha_Logo.png">
                         </a>
 
-                    <div class="ui search">
+                    <div class="ui search" id="site-wide-competition-search">
                         <div class="ui left icon input search-width">
                             <input id="competition-search" class="prompt" type="text" placeholder="Search Competitions">
                             <i class="search icon"></i>
@@ -244,17 +244,17 @@
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
 
         $(document).ready( function () {
-            $('.ui.search').search({
+            $('#site-wide-competition-search').search({
                 apiSettings: {
                     onResponse: function(codalabResponse) {
                         _.forEach(codalabResponse, (response) => {
-                            response.url = '/competitions/' + response.id
+                            response.url = URLS.COMPETITION_DETAIL(response.id)
                         })
                         return {
                             results: codalabResponse,
                         }
                     },
-                    url: URLS.API + 'competitions/?search={query}'
+                    url: `${URLS.API}competitions/?search={query}`
                 },
             })
         })
@@ -275,14 +275,4 @@
     {% endblock %}
 
 </body>
-<style>
-    .search-width {
-        width: 25em !important;
-    }
-
-    .scrollable-height-limit {
-        max-height: 25em !important;
-        overflow-y: scroll !important;
-    }
-</style>
 </html>
