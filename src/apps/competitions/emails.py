@@ -1,4 +1,4 @@
-from utils.email import codalab_send_mail
+from utils.email import codalab_send_mail, codalab_send_markdown_email
 
 
 def get_organizer_emails(competition):
@@ -71,5 +71,9 @@ def send_participation_denied_emails(participant):
     )
 
 
-def organizer_direct_emails():
-    pass
+def send_direct_participant_email(participant, content):
+    codalab_send_markdown_email(
+        subject=f'A message from the admins of {participant.competition.title}',
+        markdown_content=content,
+        recipient_list=[participant.user.email],
+    )

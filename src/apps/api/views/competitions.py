@@ -12,8 +12,9 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
-    send_participation_denied_emails
+    send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
+from competitions.tasks import batch_send_email
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from profiles.models import User
 from utils.data import make_url_sassy
@@ -135,6 +136,18 @@ class CompetitionViewSet(ModelViewSet):
             files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
         return Response(files)
 
+    @action(detail=True, methods=('POST',))
+    def email_all_participants(self, request, pk):
+        comp = self.get_object()
+        if self.request.user not in comp.all_organizers and not any([self.request.user.is_superuser, self.request.user.is_staff]):
+            raise PermissionDenied('You do not have permission to email these competition participants')
+        try:
+            content = request.data['message']
+        except KeyError:
+            return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
+        batch_send_email.apply_async((comp.pk, content))
+        return Response({}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
@@ -227,3 +240,16 @@ class CompetitionParticipantViewSet(ModelViewSet):
                     emails[participation_status](participant)
 
         return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=('POST',))
+    def send_email(self, request, pk):
+        participant = self.get_object()
+        competition = participant.competition
+        if request.user not in competition.all_organizers and not any([request.user.is_staff, request.user.is_superuser]):
+            raise PermissionDenied('You do not have permission to email participants')
+        try:
+            message = request.data['message']
+        except KeyError:
+            return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
+        send_direct_participant_email(participant=participant, content=message)
+        return Response({}, status=status.HTTP_200_OK)

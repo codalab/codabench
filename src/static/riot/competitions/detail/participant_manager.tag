@@ -12,6 +12,7 @@
             <option value="denied">Denied</option>
             <option value="unknown">Unknown</option>
         </select>
+        <div class="ui blue icon button" onclick="{show_email_modal.bind(this, undefined)}"><i class="envelope icon"></i> Email all participants</div>
         <table class="ui celled striped table">
             <thead>
             <tr>
@@ -47,7 +48,7 @@
                             data-tooltip="Send Message"
                             data-inverted=""
                             data-position="bottom center"
-                            onclick="{show_email_modal}">
+                            onclick="{show_email_modal.bind(this, id)}">
                         <i class="envelope icon"></i>
                     </button>
                 </td>
@@ -56,18 +57,76 @@
         </table>
     </div>
 
+    <div class="ui modal" ref="email_modal">
+        <div class="header">
+            Send Email
+        </div>
+        <div class="content">
+            <div class="ui form">
+                <div class="field">
+                    <label>Subject</label>
+                    <input type="text" value="A message from the admins of {competition_title}" disabled>
+                </div>
+                <div class="field">
+                    <label>Content</label>
+                    <textarea class="markdown-editor" ref="email_content" name="content"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui cancel icon red small button"><i class="trash alternate icon"></i></div>
+            <div class="ui icon small button" onclick="{send_email}"><i class="paper plane icon"></i></div>
+        </div>
+    </div>
+
     <script>
         let self = this
         self.competition_id = undefined
+        self.selected_participant = undefined
+        self.competition_title = undefined
 
         self.on('mount', () => {
             $(self.refs.participant_status).dropdown()
+            self.markdown_editor = create_easyMDE(self.refs.email_content)
+            $(self.refs.email_modal).modal({
+                onHidden: self.clear_form,
+                onShow: () => {
+                    _.delay(() => {self.markdown_editor.codemirror.refresh()}, 5)
+                }
+            })
         })
 
+        self.clear_form = function () {
+            self.markdown_editor.value('')
+            self.update()
+        }
+
         CODALAB.events.on('competition_loaded', function(competition) {
+            self.competition_title = competition.title
             self.competition_id = competition.id
             self.update_participants()
         })
+
+        self.send_email = function () {
+            let content = render_markdown(self.refs.email_content.value)
+            let endpoint;
+            let pk;
+            if (self.selected_participant) {
+                endpoint = CODALAB.api.email_participant
+                pk = self.selected_participant
+            } else {
+                endpoint = CODALAB.api.email_all_participants
+                pk = self.competition_id
+            }
+            endpoint(pk, content)
+                    .done(() => {
+                        toastr.success('Sent')
+                        self.close_email_modal()
+                    })
+                    .fail((resp) => {
+                        toastr.error('Error sending email')
+                    })
+        }
 
         self.update_participants = filters => {
             filters = filters || {}
@@ -110,8 +169,13 @@
             delay(() => self.update_participants({search: filter}), 100)
         }
 
-        self.show_email_modal = () => {
-            // todo: create modal for admins to write & distribute emails to participants
+        self.show_email_modal = (participant_pk) => {
+            self.selected_participant = participant_pk
+            $(self.refs.email_modal).modal('show')
+        }
+
+        self.close_email_modal = () => {
+            $(self.refs.email_modal).modal('hide')
         }
 
     </script>
