@@ -5,7 +5,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
@@ -13,60 +13,70 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from profiles.models import User
 from utils.data import make_url_sassy
+
+from api.permissions import IsOrganizerOrCollaborator
 
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
-    permission_classes = (AllowAny,)
 
     def get_queryset(self):
         qs = super().get_queryset()
-        # Filter to only see competitions you own
-        mine = self.request.query_params.get('mine', None)
 
-        if mine:
-            qs = qs.filter(created_by=self.request.user)
+        if self.request.user.is_authenticated:
+            # Filter to only see competitions you own
+            mine = self.request.query_params.get('mine', None)
 
-        participating_in = self.request.query_params.get('participating_in', None)
+            if mine:
+                qs = qs.filter(created_by=self.request.user)
 
-        if participating_in:
-            qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+            participating_in = self.request.query_params.get('participating_in', None)
+
+            if participating_in:
+                qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+
+            # On GETs lets optimize the query to reduce DB calls
+            if self.request.method == 'GET':
+                qs = qs.select_related('created_by')
+                if self.action != 'list':
+                    qs = qs.select_related('created_by')
+                    qs = qs.prefetch_related(
+                        'phases',
+                        'phases__submissions',
+                        'phases__tasks',
+                        'phases__tasks__solutions',
+                        'phases__tasks__solutions__data',
+                        'pages',
+                        'leaderboards',
+                        'leaderboards__columns',
+                        'collaborators',
+                    )
+                    participant_status_query = CompetitionParticipant.objects.filter(
+                        competition=OuterRef('pk'),
+                        user=self.request.user
+                    ).values_list('status')[:1]
+                    qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
+                    qs = qs.annotate(submission_count=Count('phases__submissions'))
+                    qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
         search_query = self.request.query_params.get('search')
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
-        # On GETs lets optimize the query to reduce DB calls
-        if self.request.method == 'GET':
-            qs = qs.select_related('created_by')
-            if self.action != 'list':
-                qs = qs.select_related('created_by')
-                qs = qs.prefetch_related(
-                    'phases',
-                    'phases__submissions',
-                    'phases__tasks',
-                    'phases__tasks__solutions',
-                    'phases__tasks__solutions__data',
-                    'pages',
-                    'leaderboards',
-                    'leaderboards__columns',
-                    'collaborators',
-                )
-                participant_status_query = CompetitionParticipant.objects.filter(
-                    competition=OuterRef('pk'),
-                    user=self.request.user
-                ).values_list('status')[:1]
-                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                qs = qs.annotate(submission_count=Count('phases__submissions'))
-                qs = qs.annotate(participant_status=Subquery(participant_status_query))
-
         qs = qs.order_by('created_when')
-
         return qs
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOrganizerOrCollaborator]
+        elif self.action in ['create']:
+            self.permission_classes = [IsAuthenticated]
+        elif self.action in ['retrieve', 'list']:
+            self.permission_classes = [AllowAny]
+        return [permission() for permission in self.permission_classes]
 
     def get_serializer_class(self):
         if self.action == 'list':
