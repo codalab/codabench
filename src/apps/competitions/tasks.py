@@ -31,6 +31,7 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
+from utils.email import codalab_send_markdown_email
 
 logger = logging.getLogger()
 
@@ -859,3 +860,18 @@ def do_phase_migrations():
 
     for p in new_phases:
         p.check_future_phase_submissions()
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 5)
+def batch_send_email(comp_id, content):
+    try:
+        competition = Competition.objects.prefetch_related('participants__user').get(id=comp_id)
+    except Competition.DoesNotExist:
+        logger.info(f'Not sending emails because competition with id {comp_id} could not be found')
+        return
+
+    codalab_send_markdown_email(
+        subject=f'A message from the admins of {competition.title}',
+        markdown_content=content,
+        recipient_list=[participant.user.email for participant in competition.participants.all()]
+    )
