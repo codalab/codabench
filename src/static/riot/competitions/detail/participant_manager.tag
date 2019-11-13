@@ -109,23 +109,17 @@
 
         self.send_email = function () {
             let content = render_markdown(self.refs.email_content.value)
-            let endpoint;
-            let pk;
-            if (self.selected_participant) {
-                endpoint = CODALAB.api.email_participant
-                pk = self.selected_participant
-            } else {
-                endpoint = CODALAB.api.email_all_participants
-                pk = self.competition_id
-            }
-            endpoint(pk, content)
-                    .done(() => {
-                        toastr.success('Sent')
-                        self.close_email_modal()
-                    })
-                    .fail((resp) => {
-                        toastr.error('Error sending email')
-                    })
+            let func = self.selected_participant
+                ? _.partial(CODALAB.api.email_participant, self.selected_participant)
+                : _.partial(CODALAB.api.email_all_participants, self.competition_id)
+            func(content)
+                .done(() => {
+                    toastr.success('Sent')
+                    self.close_email_modal()
+                })
+                .fail((resp) => {
+                    toastr.error('Error sending email')
+                })
         }
 
         self.update_participants = filters => {

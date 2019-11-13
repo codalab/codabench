@@ -139,7 +139,7 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=True, methods=('POST',))
     def email_all_participants(self, request, pk):
         comp = self.get_object()
-        if self.request.user not in comp.all_organizers and not any([self.request.user.is_superuser, self.request.user.is_staff]):
+        if not comp.user_has_admin_permission(self.request.user):
             raise PermissionDenied('You do not have permission to email these competition participants')
         try:
             content = request.data['message']
@@ -245,7 +245,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
     def send_email(self, request, pk):
         participant = self.get_object()
         competition = participant.competition
-        if request.user not in competition.all_organizers and not any([request.user.is_staff, request.user.is_superuser]):
+        if not competition.user_has_admin_permission(self.request.user):
             raise PermissionDenied('You do not have permission to email participants')
         try:
             message = request.data['message']
