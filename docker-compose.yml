@@ -50,7 +50,6 @@ services:
     command: server /export
     volumes:
       - ./var/minio:/export
-      - ./docker/run_minio.sh:/app/run_minio.sh
     ports:
       - $MINIO_PORT:9000
     env_file: .env
@@ -60,13 +59,17 @@ services:
     depends_on:
       - minio
     env_file: .env
+#    volumes:
+      # This volume is shared with `minio`, so `z` to share it
+#      - ./var/minio:/export
     entrypoint: >
       /bin/sh -c "
       set -x
-      /usr/bin/mc config host add minio_docker $AWS_S3_ENDPOINT_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
-      /usr/bin/mc mb /export/$AWS_STORAGE_BUCKET_NAME;
-      /usr/bin/mc mb /export/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
-      /usr/bin/mc policy set download /export/$AWS_STORAGE_BUCKET_NAME;
+      while ! nc -z minio 9000; echo 'Waiting for minio to startup...' && sleep 0.1; sleep 3;
+      /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+      /usr/bin/mc policy set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
       exit 0;
       "
 

@@ -330,6 +330,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     def delete(self, **kwargs):
         # Also clean up details on delete
         self.details.all().delete()
+        # Call this here so that the data_file for the submission also gets deleted from storage
+        self.data.delete()
         super().delete(**kwargs)
 
     def save(self, ignore_submission_limit=False, **kwargs):

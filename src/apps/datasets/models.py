@@ -67,6 +67,10 @@ class Data(ChaHubSaveMixin, models.Model):
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        self.data_file.delete()
+        super().delete(*args, **kwargs)
+
     @property
     def in_use(self):
         from competitions.models import Competition

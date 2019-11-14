@@ -13,7 +13,6 @@ import os
 import requests
 import tempfile
 import yaml
-import zipfile
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
 from shutil import make_archive
@@ -73,6 +72,21 @@ def run_wrapper(run_args):
         run.clean_up()
 
 
+def replace_legacy_metadata_command(command, kind, is_scoring, ingestion_only_during_scoring=False):
+    vars_to_replace = [
+        ('$input', '/app/input_data' if kind == 'ingestion' else '/app/input'),
+        ('$output', '/app/output'),
+        ('$program', '/app/ingestion_program' if ingestion_only_during_scoring and is_scoring else '/app/program'),
+        ('$ingestion_program', '/app/program'),
+        ('$hidden', '/app/input/ref'),
+        ('$shared', '/app/shared'),
+        ('$submission_program', '/app/ingested_program'),
+    ]
+    for var_string, var_replacement in vars_to_replace:
+        command = command.replace(var_string, var_replacement)
+    return command
+
+
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -121,6 +135,8 @@ class Run:
 
         self.program_elapsed_time = None
         self.ingestion_elapsed_time = None
+
+        self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring', None)
 
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
@@ -195,7 +211,6 @@ class Run:
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         logger.info(f"Connecting to {url}")
 
-
         # We should send headers with the secret.
         #     * ``extra_headers`` sets additional HTTP request headers – it can be a
         #       :class:`~websockets.http.Headers` instance, a
@@ -258,24 +273,40 @@ class Run:
             logger.info(f"{program_dir} not found, no program to execute")
             return
 
-        try:
-            with open(os.path.join(program_dir, "metadata.yaml"), 'r') as metadata_file:
-                metadata = yaml.load(metadata_file.read())
-                command = metadata.get("command")
-                if not command:
-                    raise SubmissionException("Program directory missing 'command' in metadata")
-        except FileNotFoundError:
+        if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
+            metadata_path = 'metadata.yaml'
+        elif os.path.exists(os.path.join(program_dir, "metadata")):
+            metadata_path = 'metadata'
+        else:
             if can_be_output:
-
-                # TODO handle ingestion_only_during_scoring!!!! this already does it basically just needs more logic to
-                # check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
-                # logger.info("Program directory missing 'metadata.yaml', assuming it's going to be handled by ingestion "
-                #             "program so move it to output")
+                # TODO handle ingestion_only_during_scoring! this already does it basically just needs more logic to
+                #   check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
+                # Note: Re-enabling this got result submissions working
+                logger.info(
+                    "Program directory missing metadata, assuming it's going to be handled by ingestion "
+                    "program so move it to output"
+                )
                 # shutil.move(program_dir, self.output_dir)
-                # return
+                # Copy instead of moving so if something is looking for that ref for v1.5 compatibility, but we may run
+                # into issues later.
+                shutil.copytree(program_dir, self.output_dir)
                 return
             else:
-                raise SubmissionException("Program directory missing 'metadata.yaml'")
+                raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
+
+        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
+        with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
+            metadata = yaml.load(metadata_file.read())
+            logger.info(f"Metadata contains:\n {metadata}")
+            command = metadata.get("command")
+            if not command and kind == "ingestion":
+                raise SubmissionException("Program directory missing 'command' in metadata")
+            elif not command:
+                logger.info(
+                    f"Warning: {program_dir} has no command in metadata, continuing anyway "
+                    f"(may be meant to be consumed by an ingestion program)"
+                )
+                return
 
         docker_cmd = [
             'docker',
@@ -319,6 +350,15 @@ class Run:
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
+
+        # Handle Legacy competitions by replacing anything in the run command
+
+        command = replace_legacy_metadata_command(
+            command=command,
+            kind=kind,
+            is_scoring=self.is_scoring,
+            ingestion_only_during_scoring=self.ingestion_only_during_scoring
+        )
 
         # Append the actual program to run
         docker_cmd += command.split(' ')
@@ -404,6 +444,7 @@ class Run:
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
+        logger.info("Running scoring program, and then ingestion program")
         self._run_program_directory(program_dir, kind='program', can_be_output=True)
         self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
@@ -425,13 +466,22 @@ class Run:
         # {
         #     "correct": 1.0
         # }
-        try:
+        if os.path.exists(os.path.join(self.output_dir, "scores.json")):
+
             scores_file = os.path.join(self.output_dir, "scores.json")
-            scores = json.load(open(scores_file, 'r'))
-        except json.decoder.JSONDecodeError:
-            raise SubmissionException("Could not decode scores json properly, it contains an error.")
-        except FileNotFoundError:
-            raise SubmissionException("Could not find scores.json, did the scoring program output it?")
+            with open(scores_file) as f:
+                try:
+                    scores = json.load(f)
+                except json.decoder.JSONDecodeError as e:
+                    raise SubmissionException(f"Could not decode scores json properly, it contains an error.\n{e.msg}")
+
+        elif os.path.exists(os.path.join(self.output_dir, "scores.txt")):
+            scores_file = os.path.join(self.output_dir, "scores.txt")
+            with open(scores_file) as f:
+                scores = yaml.load(f)
+
+        else:
+            raise SubmissionException("Could not find scores file, did the scoring program output it?")
 
         url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
         logger.info(f"Submitting these scores to {url}: {scores}")
