@@ -237,6 +237,25 @@ CODALAB.api = {
     },
 
     /*---------------------------------------------------------------------
+         Queues
+    ---------------------------------------------------------------------*/
+    get_queues: function (filters) {
+        return CODALAB.api.request('GET', `${URLS.API}queues/`, filters)
+    },
+    get_queue: function (pk) {
+        return CODALAB.api.request('GET', `${URLS.API}queues/${pk}/`)
+    },
+    delete_queue: function (id) {
+        return CODALAB.api.request('DELETE', `${URLS.API}queues/${id}/`)
+    },
+    update_queue: function (data, pk) {
+        return CODALAB.api.request('PATCH', `${URLS.API}queues/${pk}/`, data)
+    },
+    create_queue: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}queues/`, data)
+    },
+
+    /*---------------------------------------------------------------------
          Users
     ---------------------------------------------------------------------*/
     user_lookup: (filters) => {

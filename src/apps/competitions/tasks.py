@@ -11,6 +11,7 @@ import zipfile
 
 from io import BytesIO
 
+from celery._state import app_or_default
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -28,6 +29,7 @@ from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
+from queues.models import Queue
 from datasets.models import Data
 from tasks.models import Task, Solution
 from utils.data import make_url_sassy
@@ -150,8 +152,29 @@ def _send_submission(submission, task, is_scoring, run_args):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
-                         soft_time_limit=time_limit)
+    if submission.phase.competition.queue:
+        submission.queue_name = submission.phase.competition.queue.name or ''
+        submission.save()
+
+        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
+        # variable above
+        celery_app = app_or_default()
+        with celery_app.connection() as new_connection:
+            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
+            task = celery_app.send_task(
+                'compute_worker_run',
+                args=(run_args,),
+                queue='compute-worker',
+                soft_time_limit=time_limit,
+                connection=new_connection
+            )
+    else:
+        task = app.send_task(
+            'compute_worker_run',
+            args=(run_args,),
+            queue='compute-worker',
+            soft_time_limit=time_limit
+        )
     submission.task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
@@ -338,6 +361,18 @@ def unpack_competition(competition_dataset_pk):
                 "tasks": {},
                 "solutions": {},
             }
+
+            # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!
+            if competition_yaml.get('queue'):
+                try:
+                    queue = Queue.objects.get(vhost=competition_yaml.get('queue'))
+                    if not queue.is_public:
+                        all_queue_organizer_names = queue.organizers.all().values_list('username', flat=True)
+                        if queue.owner != creator or creator.username not in all_queue_organizer_names:
+                            raise CompetitionUnpackingException("You do not have access to the specified queue!")
+                    competition['queue'] = queue.id
+                except Queue.DoesNotExist:
+                    raise CompetitionUnpackingException("The specified Queue does not exist!")
 
             # ---------------------------------------------------------------------
             # Terms

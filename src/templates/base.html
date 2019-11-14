@@ -45,11 +45,10 @@
         <div id="bg"></div>
         <div class="ui container">
             <div id="topleft_menu" class="ui secondary inverted menu">
-                    <span class="left item">
-                        <a href="/" id="home-logo">
-                            <img class="ui mini image" src="/static/img/Cha_Logo.png">
-                        </a>
-
+                <span class="left item">
+                    <a href="/" id="home-logo">
+                        <img class="ui mini image" src="/static/img/Cha_Logo.png">
+                    </a>
                     <div class="ui search" id="site-wide-competition-search">
                         <div class="ui left icon input search-width">
                             <input id="competition-search" class="prompt" type="text" placeholder="Search Competitions">
@@ -57,8 +56,7 @@
                         </div>
                         <div class="results search-width scrollable-height-limit"></div>
                     </div>
-
-                    </span>
+                </span>
                 <div class="right menu item">
                     <a class="item" href="{% url "competitions:management" %}">
                         <i class="ui small trophy icon"></i>
@@ -67,6 +65,10 @@
                     <a class="item" href="{% url "tasks:task_management" %}">
                         <i class="ui small file icon"></i>
                         Tasks & Datasets
+                    </a>
+                    <a class="item" href="{% url "queues:management" %}">
+                        <i class="ui small computer icon"></i>
+                        Queue Management
                     </a>
                     {% if user.is_authenticated %}
                         <div id="user_dropdown" class="ui dropdown item">

@@ -28,6 +28,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
 
+    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}"
 
