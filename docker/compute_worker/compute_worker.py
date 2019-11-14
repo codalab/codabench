@@ -1,26 +1,25 @@
-import time
-
-import json
-import shutil
-import uuid
-import websockets
-
 import asyncio
 import glob
+import json
 import logging
 import os
-
-import requests
+import shutil
 import tempfile
-import yaml
-from billiard.exceptions import SoftTimeLimitExceeded
-from celery import Celery, task
+import threading
+import time
+import uuid
 from shutil import make_archive
 from subprocess import CalledProcessError, check_output
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from zipfile import ZipFile
+
+import requests
+import websockets
+import yaml
+from billiard.exceptions import SoftTimeLimitExceeded
+from celery import Celery, task
 
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -121,10 +120,11 @@ class Run:
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
 
-        self.program_data = run_args.get("program_data", None)
-        self.ingestion_program_data = run_args.get("ingestion_program", None)
-        self.input_data = run_args.get("input_data", None)
-        self.reference_data = run_args.get("reference_data", None)
+        self.program_data = run_args.get("program_data")
+        self.ingestion_program_data = run_args.get("ingestion_program")
+        self.input_data = run_args.get("input_data")
+        self.reference_data = run_args.get("reference_data")
+        self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
 
         self.task_pk = run_args.get('task_pk')
 
@@ -135,8 +135,6 @@ class Run:
 
         self.program_elapsed_time = None
         self.ingestion_elapsed_time = None
-
-        self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring', None)
 
         # Socket connection to stream output of submission
         submission_api_url_parsed = urlparse(self.submissions_api_url)
@@ -166,7 +164,10 @@ class Run:
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
-        logger.info(f"Updating status to '{status}' with extra_information = '{extra_information}' for submission = {self.submission_id}")
+        logger.info(
+            f"Updating status to '{status}' with extra_information = '{extra_information}' "
+            f"for submission = {self.submission_id}"
+        )
         data = {
             "secret": self.secret,
             "status": status,
@@ -210,12 +211,6 @@ class Run:
         """
         url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         logger.info(f"Connecting to {url}")
-
-        # We should send headers with the secret.
-        #     * ``extra_headers`` sets additional HTTP request headers – it can be a
-        #       :class:`~websockets.http.Headers` instance, a
-        #       :class:`~collections.abc.Mapping`, or an iterable of ``(name, value)``
-        #       pairs
 
         async with websockets.connect(url) as websocket:
             start = time.time()
@@ -266,8 +261,6 @@ class Run:
                     self._put_file(value["location"], raw_data=value["data"])
 
     def _run_program_directory(self, program_dir, kind, can_be_output=False):
-        # TODO: read Docker image from metadatas??? ** do it in prepare??? **
-
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
@@ -286,10 +279,7 @@ class Run:
                     "Program directory missing metadata, assuming it's going to be handled by ingestion "
                     "program so move it to output"
                 )
-                # shutil.move(program_dir, self.output_dir)
-                # Copy instead of moving so if something is looking for that ref for v1.5 compatibility, but we may run
-                # into issues later.
-                shutil.copytree(program_dir, self.output_dir)
+                shutil.move(program_dir, self.output_dir)
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
@@ -331,11 +321,15 @@ class Run:
             '-e', 'PYTHONUNBUFFERED=1',
         ]
 
-        # TODO: Should pass in reference data if scoring, or something?
-
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "program")}:/app/ingested_program']
+            if self.ingestion_only_during_scoring and self.is_scoring:
+                # submission program moved to 'input/res' with shutil.move() above
+                ingested_program_location = "input/res"
+            else:
+                ingested_program_location = "program"
+
+            docker_cmd += ['-v', f'{os.path.join(self.root_dir, ingested_program_location)}:/app/ingested_program']
 
         if self.input_data:
             docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
@@ -366,6 +360,7 @@ class Run:
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
         # This runs the docker command and asychronously passes data
+        asyncio.set_event_loop(asyncio.new_event_loop())
         asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
 
         logger.info(f"Program finished")
@@ -445,15 +440,18 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
-        self._run_program_directory(program_dir, kind='program', can_be_output=True)
-        self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
-        # Unpack submission and data into some directory
-        # Download docker image
-        # ** When running SCORING PROGRAM ** pass by volume the codalab.py library file so submissions/organizers can use it
-        # Normal things pass all run_args as env vars to submission
-        # Upload submission results
-        # Upload submission stdout/etc.
+        # self._run_program_directory(program_dir, kind='program', can_be_output=True)
+        # self._run_program_directory(ingestion_program_dir, kind='ingestion')
+        asyncio.get_event_loop()
+        asyncio.get_child_watcher()
+        thread1 = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
+        thread2 = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
+
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
 
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
