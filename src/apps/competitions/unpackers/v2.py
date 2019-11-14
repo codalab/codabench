@@ -28,6 +28,7 @@ class V2Unpacker(BaseUnpacker):
         self._unpack_solutions()
         self._unpack_terms()
         self._unpack_image()
+        self._unpack_queue()
         self._unpack_phases()
         self._unpack_leaderboards()
 

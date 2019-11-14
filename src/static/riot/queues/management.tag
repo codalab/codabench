@@ -29,7 +29,7 @@
                 <i class="checkmark box icon green" if="{ queue.is_public }"></i>
             </td>
             <td class="right aligned">
-                <span data-tooltip="(Click to expand) {queue.broker_url}" data-position="left center">
+                <span data-tooltip="View Queue Details">
                     <i class="grey icon eye popup-button" if="{ !!queue.broker_url }" onclick="{ show_broker_modal.bind(this, queue) }"></i>
                 </span>
                 <span data-tooltip="Copy Broker URL">
@@ -109,13 +109,19 @@
     </div>
 
     <div class="ui modal" ref="broker_modal">
+        <div class="header">
+            Queue Details
+        </div>
         <div class="content">
+            <h4>Broker URL:</h4>
             <div class="ui field">
-                <textarea class="broker_url" disabled ref="broker_url"></textarea>
+                <textarea class="broker_url" value="{selected_queue.broker_url}" disabled></textarea>
             </div>
+            <h4>Vhost</h4>
+            {selected_queue.vhost}
         </div>
         <div class="actions">
-            <div class="ui basic red cancel button" onclick="{ close_broker_modal }">Close</div>
+            <div class="ui cancel button" onclick="{ close_broker_modal }">Close</div>
         </div>
     </div>
 
@@ -149,7 +155,8 @@
             })
             $(self.refs.broker_modal).modal({
                 onHidden: () => {
-                    self.clear_broker_form()
+                    self.selected_queue = {}
+                    self.update()
                 }
             })
         })
@@ -201,13 +208,10 @@
         }
 
         self.show_broker_modal = (queue) => {
-            self.refs.broker_url.value = queue.broker_url
+            self.selected_queue = queue
+            console.log(queue)
+            self.update()
             $(self.refs.broker_modal).modal('show')
-        }
-
-        self.clear_broker_form = function() {
-            self.selected_queue = {}
-            self.refs.broker_url.value = null
         }
 
         self.set_selected_queue = function (queue) {

@@ -23,6 +23,7 @@ class V15Unpacker(BaseUnpacker):
     def unpack(self):
         self._unpack_pages()
         self._unpack_image()
+        self._unpack_queue()
         self._unpack_phases()
         self._unpack_leaderboards()
 

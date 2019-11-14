@@ -10,6 +10,7 @@ from api.serializers.competitions import CompetitionSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Phase
 from datasets.models import Data
+from queues.models import Queue
 from tasks.models import Task, Solution
 from .utils import CompetitionUnpackingException, zip_if_directory
 
@@ -185,6 +186,20 @@ class BaseUnpacker:
             raise CompetitionUnpackingException('An image for this competition could not be found in the yaml')
 
         self.competition['logo'] = self._read_image(image_name)
+
+    def _unpack_queue(self):
+        # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!
+        vhost = self.competition_yaml.get('queue')
+        if vhost:
+            try:
+                queue = Queue.objects.get(vhost=vhost)
+                if not queue.is_public:
+                    all_queue_organizer_names = queue.organizers.all().values_list('username', flat=True)
+                    if queue.owner != self.creator and self.creator.username not in all_queue_organizer_names:
+                        raise CompetitionUnpackingException("You do not have access to the specified queue!")
+                self.competition['queue'] = queue.id
+            except Queue.DoesNotExist:
+                raise CompetitionUnpackingException("The specified Queue does not exist!")
 
     def _unpack_phases(self):
         """
