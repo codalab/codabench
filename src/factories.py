@@ -1,6 +1,4 @@
 import random
-from random import randint
-from datetime import datetime
 
 import factory
 from django.utils.timezone import now

@@ -13,7 +13,7 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
 from competitions.tasks import batch_send_email
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from utils.data import make_url_sassy
