@@ -34,6 +34,10 @@ html
     margin-top 0
     width 35%
 
+#home-logo
+    margin-left: 8px;
+    margin-right: 8px;
+
 .right.item
     position absolute !important
     right 0
@@ -43,7 +47,7 @@ html
 .left.item
     position absolute !important
     left 0
-    top 0
+    top 9px
 
 .ui.secondary.inverted.pointing.menu
     border transparent
@@ -51,21 +55,18 @@ html
 .jumbotron
     padding 0 0 2em 0 !important
 
-#style_button
+.style_button
     color #e2e2e2
     background-color rgba(255, 255, 255, .15)
     font-weight 100
 
-#style_button:hover
+.style_button:hover
     color #3f3f3f
     background-color rgba(255, 255, 255, .65)
     .icon
         opacity 1
 
 #user_dropdown
-    position absolute !important
-    right 19px !important
-    top 14px
     color rgba(255,255,255,.7) !important
 
     a
@@ -140,7 +141,7 @@ html
     margin-top 3em
     margin-right 0.5em
 
-.ui.text.container#style_button
+.ui.text.container.style_button
     bottom 0!important
 
 /* --------------------------------------------------------------------------------------
@@ -216,3 +217,17 @@ body.pushable>.pusher
  */
 .ui.menu .ui.dropdown .menu>.item
     margin-top -0.6em !important
+
+
+
+/* --------------------------------------------------------------------------------------
+ For competition-wide search bar
+ */
+.search-width {
+    width: 25em !important;
+}
+
+.scrollable-height-limit {
+    max-height: 25em !important;
+    overflow-y: scroll !important;
+}

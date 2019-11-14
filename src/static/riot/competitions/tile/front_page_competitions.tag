@@ -1,45 +1,42 @@
 <front-page-competitions>
-    <div class="vert-wrap {logged-in: CODALAB.state.user.logged_in}">
-        <div class="segment-container ui segment">
-            <div class="ui header">
+    <div class="ui two column grid">
+        <div class="eight wide column">
+            <div class="ui large header">
                 Popular Competitions
                 <div class="sub-header-link">
                     <a href="#" class="view-all-comps">See more competitions</a>
                 </div>
             </div>
-            <div class="container-content">
-                <div class="loader-container popular">
-                    <div class="lds-ring">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
+            <div class="loader-container popular">
+                <div class="lds-ring">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
                 </div>
-                <competition-tile each="{popular_competitions}"></competition-tile>
             </div>
+            <competition-tile each="{popular_competitions}"></competition-tile>
         </div>
 
-        <div class="segment-container ui segment">
-            <div class="ui header">
+        <div class="eight wide column">
+            <div class="ui large header">
                 Featured Competitions
-            <div class="sub-header-link">
-                <a class="view-all-comps" href="#">See more competitions</a>
-            </div>
-            </div>
-            <div class="container-content">
-                <div class="loader-container popular">
-                    <div class="lds-ring">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </div>
+                <div class="sub-header-link">
+                    <a class="view-all-comps" href="#">See more competitions</a>
                 </div>
-                <competition-tile each="{featured_competitions}"></competition-tile>
             </div>
+            <div class="loader-container popular">
+                <div class="lds-ring">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+            <competition-tile each="{featured_competitions}"></competition-tile>
         </div>
     </div>
+
 
     <script>
         var self = this
@@ -63,6 +60,10 @@
     </script>
 
     <style>
+        front-page-competitions {
+            margin: 3em 1.5em;
+        }
+
         .sub-header-link {
             line-height: 0.25em;
         }
