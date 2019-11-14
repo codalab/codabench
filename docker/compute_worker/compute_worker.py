@@ -244,6 +244,7 @@ class Run:
                         await websocket.send(out.decode())
                     else:
                         value["continue"] = False
+                    await asyncio.sleep(.1)
 
             end = time.time()
 
@@ -272,14 +273,12 @@ class Run:
             metadata_path = 'metadata'
         else:
             if can_be_output:
-                # TODO handle ingestion_only_during_scoring! this already does it basically just needs more logic to
-                #   check that it is turned on, maybe ingestion_only_during_scoring needs to be passed in run args?
-                # Note: Re-enabling this got result submissions working
                 logger.info(
                     "Program directory missing metadata, assuming it's going to be handled by ingestion "
                     "program so move it to output"
                 )
-                shutil.move(program_dir, self.output_dir)
+                # Copying so that we don't move a code submission w/out a metadata command
+                shutil.copytree(program_dir, self.output_dir)
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
@@ -359,11 +358,15 @@ class Run:
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
-        # This runs the docker command and asychronously passes data
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
+        # This runs the docker command and asynchronously passes data
+        if self.ingestion_only_during_scoring and self.is_scoring:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
+            asyncio.get_event_loop().close()
+        else:
+            asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
 
-        logger.info(f"Program finished")
+        logger.info("Program finished")
 
     def _put_dir(self, url, directory):
         logger.info("Putting dir %s in %s" % (directory, url))
@@ -441,17 +444,19 @@ class Run:
 
         logger.info("Running scoring program, and then ingestion program")
 
-        # self._run_program_directory(program_dir, kind='program', can_be_output=True)
-        # self._run_program_directory(ingestion_program_dir, kind='ingestion')
-        asyncio.get_event_loop()
-        asyncio.get_child_watcher()
-        thread1 = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
-        thread2 = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
+        if self.ingestion_only_during_scoring and self.is_scoring:
+            asyncio.get_event_loop()
+            asyncio.get_child_watcher()
+            thread1 = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
+            thread2 = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
 
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
+            thread1.start()
+            thread2.start()
+            thread1.join()
+            thread2.join()
+        else:
+            self._run_program_directory(program_dir, kind='program', can_be_output=True)
+            self._run_program_directory(ingestion_program_dir, kind='ingestion')
 
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
