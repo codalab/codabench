@@ -17,7 +17,7 @@ class CompetitionUpload(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/upload.html'
 
 
-class CompetitionDetail(LoginRequiredMixin, DetailView):
+class CompetitionDetail(DetailView):
     queryset = Competition.objects.all()
     template_name = 'competitions/detail.html'
 

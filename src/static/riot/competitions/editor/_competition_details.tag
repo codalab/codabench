@@ -7,7 +7,6 @@
 
         <div class="field required">
             <label>Logo</label>
-
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
             <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
             <label show="{ uploaded_logo }">Uploaded Logo: <a href="{ uploaded_logo }">{ uploaded_logo_name }</a></label>
@@ -25,6 +24,11 @@
             <label>Description</label>
             <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
         </div>
+        <div class="field">
+            <label>Queue</label>
+            <select class="ui fluid search selection dropdown" ref="queue"></select>
+        </div>
+
     </div>
 
     <script>
@@ -57,6 +61,23 @@
                     self.form_updated()
                 })
             })
+
+            $(self.refs.queue).dropdown({
+                // Note: Passing `public=true` so default behavior is users can search for public queues
+                apiSettings: {
+                    url: `${URLS.API}queues/?search={query}&public=true`,
+                },
+                clearable: true,
+                minCharacters: 2,
+                fields: {
+                    remoteValues: 'results',
+                    value: 'id',
+                },
+                maxResults: 5,
+                onChange: (value, title) => {
+                    self.form_updated()
+                }
+            })
         })
 
         /*---------------------------------------------------------------------
@@ -68,6 +89,7 @@
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
             self.data['title'] = self.refs.title.value
             self.data['description'] = self.markdown_editor.value()
+            self.data['queue'] = self.refs.queue.value
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -86,18 +108,32 @@
             }
         }
 
+        self.filter_queues = function (filters) {
+            filters = filters || {}
+            _.defaults(filters, {
+                search: $(self.refs.queue_search).val(),
+                page: 1,
+            })
+            self.page = filters.page
+            self.get_available_queues(filters)
+        }
+
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function(competition){
             self.is_editing_competition = true
-
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')
 
             // Value comes like c:/fakepath/file_name.txt -- cut out everything but file_name.txt
             self.uploaded_logo_name = competition.logo.replace(/\\/g, '/').replace(/.*\//, '')
             self.uploaded_logo = competition.logo
+            if (competition.queue) {
+                $(self.refs.queue)
+                    .dropdown('set text', competition.queue.name)
+                    .dropdown('set value', competition.queue.id)
+            }
             self.form_updated()
         })
     </script>

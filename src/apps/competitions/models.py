@@ -28,6 +28,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
 
+    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}"
 
@@ -42,6 +44,12 @@ class Competition(ChaHubSaveMixin, models.Model):
     @property
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
+
+    def user_has_admin_permission(self, user):
+        if user.is_staff or user.is_superuser:
+            return True
+        else:
+            return user in self.all_organizers
 
     def apply_phase_migration(self, current_phase, next_phase):
         """

@@ -78,12 +78,11 @@ CODALAB.api = {
     submit_competition_registration: function (pk) {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/register/`)
     },
-
+    email_all_participants: (pk, message) => {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})
+    },
     get_front_page_competitions: function (data) {
         return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
-    },
-    by_the_numbers: function (data) {
-        return CODALAB.api.request('GET', URLS.API + "by_the_numbers/", data)
     },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
@@ -238,6 +237,25 @@ CODALAB.api = {
     },
 
     /*---------------------------------------------------------------------
+         Queues
+    ---------------------------------------------------------------------*/
+    get_queues: function (filters) {
+        return CODALAB.api.request('GET', `${URLS.API}queues/`, filters)
+    },
+    get_queue: function (pk) {
+        return CODALAB.api.request('GET', `${URLS.API}queues/${pk}/`)
+    },
+    delete_queue: function (id) {
+        return CODALAB.api.request('DELETE', `${URLS.API}queues/${id}/`)
+    },
+    update_queue: function (data, pk) {
+        return CODALAB.api.request('PATCH', `${URLS.API}queues/${pk}/`, data)
+    },
+    create_queue: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}queues/`, data)
+    },
+
+    /*---------------------------------------------------------------------
          Users
     ---------------------------------------------------------------------*/
     user_lookup: (filters) => {
@@ -252,7 +270,9 @@ CODALAB.api = {
     update_participant_status: (pk, data) => {
         return CODALAB.api.request('PATCH', `${URLS.API}participants/${pk}/`, data)
     },
-
+    email_participant: (pk, message) => {
+        return CODALAB.api.request('POST', `${URLS.API}participants/${pk}/send_email/`, {message: message})
+    },
     /*---------------------------------------------------------------------
          Analytics
     ---------------------------------------------------------------------*/

@@ -9,6 +9,8 @@ from competitions.models import Competition, Phase, Page, CompetitionCreationTas
 from profiles.models import User
 from tasks.models import Task
 
+from api.serializers.queues import QueueSerializer
+
 
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
@@ -96,6 +98,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'description',
             'terms',
             'registration_auto_approve',
+            'queue',
         )
 
     def validate_leaderboards(self, value):
@@ -127,6 +130,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_status = serializers.CharField(read_only=True)
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
+    queue = QueueSerializer(read_only=True)
 
     class Meta:
         model = Competition
@@ -148,6 +152,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'description',
             'participant_count',
             'submission_count',
+            'queue',
         )
 
 

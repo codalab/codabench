@@ -4,6 +4,7 @@ from unittest import mock
 
 from django.test import TestCase
 from django.utils.timezone import now
+from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
@@ -19,6 +20,7 @@ class SubmissionTestCase(TestCase):
     def make_submission(self, **kwargs):
         kwargs.setdefault('owner', self.user)
         kwargs.setdefault('phase', self.phase)
+        kwargs.setdefault('created_when', timezone.now())
         return SubmissionFactory(**kwargs)
 
 

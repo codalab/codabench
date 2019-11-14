@@ -7,6 +7,7 @@ import zipfile
 
 from io import BytesIO
 
+from celery._state import app_or_default
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -25,6 +26,7 @@ from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
 from tasks.models import Task
 from utils.data import make_url_sassy
+from utils.email import codalab_send_markdown_email
 
 logger = logging.getLogger()
 
@@ -145,8 +147,29 @@ def _send_submission(submission, task, is_scoring, run_args):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    task = app.send_task('compute_worker_run', args=(run_args,), queue='compute-worker',
-                         soft_time_limit=time_limit)
+    if submission.phase.competition.queue:
+        submission.queue_name = submission.phase.competition.queue.name or ''
+        submission.save()
+
+        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
+        # variable above
+        celery_app = app_or_default()
+        with celery_app.connection() as new_connection:
+            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
+            task = celery_app.send_task(
+                'compute_worker_run',
+                args=(run_args,),
+                queue='compute-worker',
+                soft_time_limit=time_limit,
+                connection=new_connection
+            )
+    else:
+        task = app.send_task(
+            'compute_worker_run',
+            args=(run_args,),
+            queue='compute-worker',
+            soft_time_limit=time_limit
+        )
     submission.task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
@@ -560,3 +583,18 @@ def do_phase_migrations():
 
     for p in new_phases:
         p.check_future_phase_submissions()
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 5)
+def batch_send_email(comp_id, content):
+    try:
+        competition = Competition.objects.prefetch_related('participants__user').get(id=comp_id)
+    except Competition.DoesNotExist:
+        logger.info(f'Not sending emails because competition with id {comp_id} could not be found')
+        return
+
+    codalab_send_markdown_email(
+        subject=f'A message from the admins of {competition.title}',
+        markdown_content=content,
+        recipient_list=[participant.user.email for participant in competition.participants.all()]
+    )
