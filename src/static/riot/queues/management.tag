@@ -29,8 +29,8 @@
                 <i class="checkmark box icon green" if="{ queue.is_public }"></i>
             </td>
             <td class="right aligned">
-                <span data-tooltip="{queue.broker_url}" data-position="left center">
-                    <i class="grey icon eye popup-button" if="{ !!queue.broker_url }"></i>
+                <span data-tooltip="(Click to expand) {queue.broker_url}" data-position="left center">
+                    <i class="grey icon eye popup-button" if="{ !!queue.broker_url }" onclick="{ show_broker_modal.bind(this, queue) }"></i>
                 </span>
                 <span data-tooltip="Copy Broker URL">
                     <i class="icon copy outline popup-button" if="{ !!queue.broker_url }"
@@ -82,7 +82,7 @@
             <form class="ui form" ref="form">
                 <div class="required field">
                     <label>Name</label>
-                    <input name="name" placeholder="Name" ref="queue_name" value="{ _.get(selected_queue, 'name') }">
+                    <input name="name" placeholder="Name" ref="queue_name">
                 </div>
                 <div class="field">
                     <div class="ui checkbox">
@@ -105,6 +105,17 @@
         <div class="actions">
             <div class="ui primary button" onclick="{ handle_queue }">Submit</div>
             <div class="ui basic red cancel button" onclick="{ close_modal }">Cancel</div>
+        </div>
+    </div>
+
+    <div class="ui modal" ref="broker_modal">
+        <div class="content">
+            <div class="ui field">
+                <textarea class="broker_url" disabled ref="broker_url"></textarea>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui basic red cancel button" onclick="{ close_broker_modal }">Close</div>
         </div>
     </div>
 
@@ -134,6 +145,11 @@
             $(self.refs.modal).modal({
                 onHidden: () => {
                     self.clear_form()
+                }
+            })
+            $(self.refs.broker_modal).modal({
+                onHidden: () => {
+                    self.clear_broker_form()
                 }
             })
         })
@@ -173,15 +189,30 @@
             $(self.refs.modal).modal('hide')
         }
 
-        self.clear_form = () => {
+        self.close_broker_modal = () => {
+            $(self.refs.broker_modal).modal('hide')
+        }
+
+        self.clear_form = function() {
             $(self.refs.collab_search).dropdown('clear')
-            self.refs.queue_name.value = ''
+            self.refs.queue_name.value = null
             self.selected_queue = {}
             self.refs.queue_public.checked = false
         }
 
+        self.show_broker_modal = (queue) => {
+            self.refs.broker_url.value = queue.broker_url
+            $(self.refs.broker_modal).modal('show')
+        }
+
+        self.clear_broker_form = function() {
+            self.selected_queue = {}
+            self.refs.broker_url.value = null
+        }
+
         self.set_selected_queue = function (queue) {
             self.selected_queue = queue
+            self.refs.queue_name.value = queue.name
             $(self.refs.collab_search)
                 .dropdown('setup menu', {values: queue.organizers})
                 .dropdown('set selected',  _.map(queue.organizers, o => o.username))
@@ -265,6 +296,6 @@
     </script>
     <style type="text/stylus">
         .popup-button
-            cursor: pointer
+            cursor pointer
     </style>
 </queues-list>
