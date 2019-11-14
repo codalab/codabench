@@ -22,6 +22,8 @@ class UserFactory(DjangoModelFactory):
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
 
+    date_joined = factory.Faker('date_time_between', start_date='-5y', end_date='now')
+
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
         """Override the default ``_create`` with our custom call."""
@@ -43,6 +45,9 @@ class CompetitionFactory(DjangoModelFactory):
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
+    description = factory.Faker('paragraph')
+
+    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now')
 
     @post_generation
     def collaborators(self, created, extracted, **kwargs):
@@ -115,7 +120,8 @@ class SubmissionFactory(DjangoModelFactory):
     owner = factory.SubFactory(UserFactory)
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
-    created_when = factory.LazyFunction(now)
+
+    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now')
     data = factory.SubFactory(
         DataFactory,
         type='submission',

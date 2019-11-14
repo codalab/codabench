@@ -314,7 +314,9 @@
                     })
                 })
             })
-            self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            if (!_.isEmpty(self.competition.leaderboards)) {
+                self.selected_leaderboard_index = self.competition.leaderboards[0].id
+            }
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()

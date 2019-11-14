@@ -45,6 +45,12 @@ class Competition(ChaHubSaveMixin, models.Model):
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
 
+    def user_has_admin_permission(self, user):
+        if user.is_staff or user.is_superuser:
+            return True
+        else:
+            return user in self.all_organizers
+
     def apply_phase_migration(self, current_phase, next_phase):
         """
         Does the actual migrating of submissions from current_phase to next_phase

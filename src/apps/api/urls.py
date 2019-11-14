@@ -5,7 +5,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
-from api.views.competitions import front_page_competitions, by_the_numbers
+from api.views.competitions import front_page_competitions
 from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
 
@@ -56,5 +56,4 @@ urlpatterns = [
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(router.urls)),
     path('front_page_competitions/', front_page_competitions, name='front_page_competitions'),
-    path('by_the_numbers/', by_the_numbers, name='by_the_numbers'),
 ]
