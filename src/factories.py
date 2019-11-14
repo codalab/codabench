@@ -4,6 +4,7 @@ import factory
 from django.utils.timezone import now
 from factory import post_generation
 from factory.django import DjangoModelFactory
+from pytz import UTC
 
 from competitions.models import Competition, Phase, Submission, CompetitionParticipant
 from datasets.models import Data
@@ -22,7 +23,7 @@ class UserFactory(DjangoModelFactory):
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
 
-    date_joined = factory.Faker('date_time_between', start_date='-5y', end_date='now')
+    date_joined = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -47,7 +48,7 @@ class CompetitionFactory(DjangoModelFactory):
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
     description = factory.Faker('paragraph')
 
-    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now')
+    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
 
     @post_generation
     def collaborators(self, created, extracted, **kwargs):
@@ -121,7 +122,7 @@ class SubmissionFactory(DjangoModelFactory):
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
 
-    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now')
+    created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
     data = factory.SubFactory(
         DataFactory,
         type='submission',
