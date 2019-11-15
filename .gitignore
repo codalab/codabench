@@ -24,3 +24,5 @@ db.sqlite3
 celerybeat-schedule
 package-lock.json
 artifacts/
+
+docker-compose.override.yml
