@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from storages.backends.azure_storage import AzureStorage
+from whitenoise.storage import CompressedManifestStaticFilesStorage
 
 
 class CodalabAzureStorage(AzureStorage):
@@ -9,6 +10,10 @@ class CodalabAzureStorage(AzureStorage):
         if 'azure_container' in kwargs:
             self.azure_container = kwargs.pop('azure_container')
         super().__init__(*args, **kwargs)
+
+
+class WhiteNoiseStaticFilesStorage(CompressedManifestStaticFilesStorage):
+    manifest_strict = False
 
 
 # Setup actual storage classes we use on the project
