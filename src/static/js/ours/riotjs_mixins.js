@@ -9,21 +9,26 @@
 var ProgressBarMixin = {
     show_progress_bar: function () {
         // The transition delays are for timing the animations, so they're one after the other
-        this.refs.form.style.transitionDelay = '0s'
-        this.refs.form.style.maxHeight = 0
-        this.refs.form.style.overflow = 'hidden'
-
-        this.refs.progress.style.transitionDelay = '.1s'
-        this.refs.progress.style.height = '24px'
+        if (!!this.refs.form) {
+            this.refs.form.style.transitionDelay = '0s'
+            this.refs.form.style.maxHeight = 0
+            this.refs.form.style.overflow = 'hidden'
+        }
+        if (!!this.refs.progress) {
+            this.refs.progress.style.transitionDelay = '.1s'
+            this.refs.progress.style.height = '24px'
+        }
     },
     hide_progress_bar: function () {
         // The transition delays are for timing the animations, so they're one after the other
-        this.refs.progress.style.transitionDelay = '0s'
-        this.refs.progress.style.height = 0
-
-        this.refs.form.style.transitionDelay = '.1s'
-        this.refs.form.style.maxHeight = '1000px'
-
+        if (!!this.refs.progress) {
+            this.refs.progress.style.transitionDelay = '0s'
+            this.refs.progress.style.height = 0
+        }
+        if (!!this.refs.form) {
+            this.refs.form.style.transitionDelay = '.1s'
+            this.refs.form.style.maxHeight = '1000px'
+        }
         // Need to keep track of self for setTimeout
         var self = this
 

@@ -25,12 +25,24 @@
                         <div class="header">Output</div>
                         <div class="content">
                             <!-- We have to have this on a gross line so Pre formatting stays nice -->
-                            <pre class="submission_output" ref="submission_output"><virtual
-                                    if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
-                                    each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
-                            <div class="ui checkbox" ref="autoscroll_checkbox">
-                                <input type="checkbox"/>
-                                <label>Autoscroll output</label>
+                            <div show="{!ingestion_during_scoring}">
+                                <pre class="submission_output" ref="submission_output"><virtual
+                                        if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                        each="{ line in lines[selected_submission.id] }">{ line }</virtual></pre>
+                                <div class="ui checkbox" ref="autoscroll_checkbox">
+                                    <input type="checkbox" checked/>
+                                    <label>Autoscroll Output</label>
+                                </div>
+                            </div>
+                            <div if="{ingestion_during_scoring}">
+                                <div>Scoring</div>
+                                <pre class="submission_output"><virtual
+                                        if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                        each="{ line in _.get(lines[selected_submission.id], 'program', []) }">{ line }</virtual></pre>
+                                <div>Ingestion</div>
+                                <pre class="submission_output"><virtual
+                                        if="{ lines[selected_submission.id] === undefined }">Preparing submission... this may take a few moments..</virtual><virtual
+                                        each="{ line in _.get(lines[selected_submission.id], 'ingestion', []) }">{ line }</virtual></pre>
                             </div>
                             <div class="graph-container">
                                 <canvas class="output-chart" height="200" ref="chart"></canvas>
@@ -53,6 +65,7 @@
         self.selected_submission = {}
         self.display_output = false
         self.autoscroll_selected = true
+        self.ingestion_during_scoring = undefined
 
         self.graph_config = {
             type: 'line',
@@ -145,7 +158,7 @@
             ws.addEventListener("message", function (event) {
                 self.autoscroll_output()
                 try {
-                    var event_data = event.data.split(';')[1]
+                    let event_data = event.data.split(/;(.+)/)[1].split(/;(.+)/)[1]
                     var data = JSON.parse(event_data);
 
                     if (data.type === "error_rate_update") {
@@ -178,15 +191,26 @@
         }
 
         self.add_line = function (line) {
-            var line_parts = line.split(/;(.+)/)
-            var submission_id = line_parts[0]
-            var message = line_parts[1]
-
-            if (!self.lines[submission_id]) {
-                self.lines[submission_id] = []
+            let [submission_id, data] = line.split(/;(.+)/)
+            let [kind, message] = data.split(/;(.+)/)
+            if (!message) {
+                return
             }
+            message += '\n'
 
-            self.lines[submission_id].push(message + "\n")
+            if (self.ingestion_during_scoring) {
+                try {
+                    self.lines[submission_id][kind].push(message)
+                } catch (e) {
+                    _.set(self.lines, `${submission_id}.${kind}`, [message])
+                }
+            } else {
+                try {
+                    self.lines[submission_id].push(message)
+                } catch (e) {
+                    self.lines[submission_id] = [message]
+                }
+            }
             self.update()
             self.autoscroll_output()
         }
@@ -270,6 +294,9 @@
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
+            self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
+            self.update()
+
         })
 
         CODALAB.events.on('submission_selected', function (selected_submission) {

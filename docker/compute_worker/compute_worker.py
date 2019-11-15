@@ -241,7 +241,7 @@ class Run:
                     if out:
                         value["data"] += out
                         print("WS: " + str(out))
-                        await websocket.send(out.decode())
+                        await websocket.send(f"{kind};{out.decode()}")
                     else:
                         value["continue"] = False
                     await asyncio.sleep(.1)
@@ -447,13 +447,13 @@ class Run:
         if self.ingestion_only_during_scoring and self.is_scoring:
             asyncio.get_event_loop()
             asyncio.get_child_watcher()
-            thread1 = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
-            thread2 = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
+            scoring_thread = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
+            ingestion_thread = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
 
-            thread1.start()
-            thread2.start()
-            thread1.join()
-            thread2.join()
+            scoring_thread.start()
+            ingestion_thread.start()
+            scoring_thread.join()
+            ingestion_thread.join()
         else:
             self._run_program_directory(program_dir, kind='program', can_be_output=True)
             self._run_program_directory(ingestion_program_dir, kind='ingestion')
