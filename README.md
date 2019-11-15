@@ -62,6 +62,7 @@ $ curl https://get.docker.com | sudo sh
 $ sudo usermod -aG docker $USER
 
 # >>> reconnect <<<
+
 $ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \

@@ -206,7 +206,7 @@
             },
             API: "/api/",
             STATIC: function (file_name) {
-                return "{% static '!-to-be-replaced-!' %}".replace('!-to-be-replaced-!', file_name)
+                return "{{ STATIC_URL }}" + file_name
             },
             // Websockets
             //WS_SUBMISSION_LISTEN: ""
