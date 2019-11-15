@@ -231,13 +231,13 @@ OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
 }
 
-# =============================================================================
-# OAuth
-# =============================================================================
-CORS_ORIGIN_ALLOW_ALL = True
-
-if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
-    raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
+# # =============================================================================
+# # OAuth
+# # =============================================================================
+# CORS_ORIGIN_ALLOW_ALL = True
+#
+# if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
+#     raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
 
 # =============================================================================
 # Channels
