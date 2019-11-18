@@ -39,29 +39,31 @@ class CompetitionViewSet(ModelViewSet):
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
 
-            # On GETs lets optimize the query to reduce DB calls
-            if self.request.method == 'GET':
+            participant_status_query = CompetitionParticipant.objects.filter(
+                competition=OuterRef('pk'),
+                user=self.request.user
+            ).values_list('status')[:1]
+            qs = qs.annotate(participant_status=Subquery(participant_status_query))
+
+        # On GETs lets optimize the query to reduce DB calls
+        if self.request.method == 'GET':
+            qs = qs.select_related('created_by')
+            if self.action != 'list':
                 qs = qs.select_related('created_by')
-                if self.action != 'list':
-                    qs = qs.select_related('created_by')
-                    qs = qs.prefetch_related(
-                        'phases',
-                        'phases__submissions',
-                        'phases__tasks',
-                        'phases__tasks__solutions',
-                        'phases__tasks__solutions__data',
-                        'pages',
-                        'leaderboards',
-                        'leaderboards__columns',
-                        'collaborators',
-                    )
-                    participant_status_query = CompetitionParticipant.objects.filter(
-                        competition=OuterRef('pk'),
-                        user=self.request.user
-                    ).values_list('status')[:1]
-                    qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                    qs = qs.annotate(submission_count=Count('phases__submissions'))
-                    qs = qs.annotate(participant_status=Subquery(participant_status_query))
+                qs = qs.prefetch_related(
+                    'phases',
+                    'phases__submissions',
+                    'phases__tasks',
+                    'phases__tasks__solutions',
+                    'phases__tasks__solutions__data',
+                    'pages',
+                    'leaderboards',
+                    'leaderboards__columns',
+                    'collaborators',
+                )
+                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
+                qs = qs.annotate(submission_count=Count('phases__submissions'))
+
 
         search_query = self.request.query_params.get('search')
         if search_query:

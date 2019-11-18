@@ -174,22 +174,28 @@
         <!-- Submissions tab-->
         <div class="submission-tab ui tab" data-tab="participate-tab">
             <!-- Tab Content !-->
-            <div if="{competition.participant_status === 'approved'}">
-                <div class="ui button-container">
-                    <div class="ui inline button {active: selected_phase_index == phase.id}"
-                         each="{ phase in competition.phases }"
-                         onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
+            <div show="{loading}">
+                <div class="ui active text loader">Loading</div>
+            </div>
+
+            <div show="{!loading}">
+                <div if="{competition.participant_status === 'approved'}">
+                    <div class="ui button-container">
+                        <div class="ui inline button {active: selected_phase_index == phase.id}"
+                             each="{ phase in competition.phases }"
+                             onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
+                        </div>
+                    </div>
+                    <div>
+                        <submission-upload phases="{ competition.phases }"></submission-upload>
+                    </div>
+                    <div>
+                        <submission-manager competition="{ competition }"></submission-manager>
                     </div>
                 </div>
-                <div>
-                    <submission-upload phases="{ competition.phases }"></submission-upload>
+                <div if="{competition.participant_status !== 'approved'}">
+                    <registration></registration>
                 </div>
-                <div>
-                    <submission-manager competition="{ competition }"></submission-manager>
-                </div>
-            </div>
-            <div if="{competition.participant_status !== 'approved'}">
-                <registration></registration>
             </div>
         </div>
 
@@ -290,6 +296,7 @@
         self.files = {}
         self.selected_phase_index = undefined
         self.selected_leaderboard_index = undefined
+        self.loading = true
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -334,6 +341,9 @@
             _.forEach(competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
+            // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
+            // rather than a weird flicker
+            _.delay(() => {self.loading = false; self.update()}, 5)
         })
 
         self.pretty_date = function (date_string) {

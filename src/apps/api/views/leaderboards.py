@@ -1,9 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from api.permissions import IsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from competitions.models import Submission
@@ -22,6 +23,15 @@ class LeaderboardViewSet(ModelViewSet):
                 'submissions__scores',
             )
         return qs
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOrganizerOrCollaborator]
+        elif self.action in ['create']:
+            self.permission_classes = [IsAuthenticated]
+        elif self.action in ['retrieve', 'list']:
+            self.permission_classes = [AllowAny]
+        return [permission() for permission in self.permission_classes]
 
 
 class SubmissionScoreViewSet(ModelViewSet):
