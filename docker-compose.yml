@@ -146,8 +146,6 @@ services:
     depends_on:
       - rabbit
       - db
-    environment:
-      - DJANGO_SETTINGS_MODULE=settings.base
     env_file: .env
     volumes:
       - .:/app

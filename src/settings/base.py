@@ -29,7 +29,6 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
-    'whitenoise',
     'oauth2_provider',
     'corsheaders',
     'social_django',
@@ -54,7 +53,6 @@ OUR_APPS = (
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
 MIDDLEWARE = (
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -314,7 +312,6 @@ if STORAGE_IS_GCS:
 
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_FINDERS = (
