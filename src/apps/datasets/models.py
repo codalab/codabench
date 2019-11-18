@@ -1,4 +1,3 @@
-import datetime
 import uuid
 
 from django.conf import settings
@@ -93,7 +92,7 @@ class Data(ChaHubSaveMixin, models.Model):
         return self.upload_completed_successfully
 
     def get_chahub_data(self):
-        data = {
+        return {
             'creator_id': self.created_by.id,
             'remote_id': self.pk,
             'created_by': str(self.created_by.username),
@@ -104,7 +103,6 @@ class Data(ChaHubSaveMixin, models.Model):
             'key': str(self.key),
             'is_public': self.is_public
         }
-        return data
 
 
 class DataGroup(models.Model):

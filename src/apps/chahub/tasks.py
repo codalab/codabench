@@ -65,7 +65,7 @@ def batch_send_to_chahub(model, limit=None, retry_only=False):
         qs = qs[:limit]
 
     endpoint = model.get_chahub_endpoint()
-    data = [obj.get_chahub_data() for obj in qs if obj.get_chahub_is_valid()]
+    data = [obj.clean_data(obj.get_chahub_data()) for obj in qs if obj.get_chahub_is_valid()]
     try:
         logger.info(f"Sending all {qs.first().__class__.__name__} data to Chahub")
         resp = _send(endpoint=endpoint, data=data)

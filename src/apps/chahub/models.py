@@ -62,6 +62,13 @@ class ChaHubSaveMixin(models.Model):
         # By default, always push
         return True
 
+    def clean_data(self, data):
+        whitelist_data = ['remote_id', 'published', 'is_public']
+        for key in data.keys():
+            if key not in whitelist_data:
+                data[key] = None
+        return data
+
     # Regular methods
     def save(self, send=True, *args, **kwargs):
         # We do a save here to give us an ID for generating URLs and such
@@ -79,7 +86,8 @@ class ChaHubSaveMixin(models.Model):
             logger.info(f"ChaHub :: {self.__class__.__name__}({self.pk}) is_valid = {is_valid}")
 
             if is_valid:
-                data = [self.get_chahub_data()]
+                data = [self.clean_data(self.get_chahub_data())]
+
                 data_hash = hashlib.md5(json.dumps(data).encode('utf-8')).hexdigest()
 
                 # Send to chahub if we haven't yet, we have new data
