@@ -9,6 +9,8 @@ from competitions.models import Competition, Phase, Page, CompetitionCreationTas
 from profiles.models import User
 from tasks.models import Task
 
+from api.serializers.queues import QueueSerializer
+
 
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
@@ -71,7 +73,7 @@ class PageSerializer(WritableNestedModelSerializer):
 
 
 class CompetitionSerializer(WritableNestedModelSerializer):
-    created_by = serializers.SerializerMethodField(read_only=True)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
     logo = NamedBase64ImageField(required=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
@@ -88,6 +90,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'created_by',
             'created_when',
             'logo',
+            'docker_image',
             'pages',
             'phases',
             'leaderboards',
@@ -95,10 +98,8 @@ class CompetitionSerializer(WritableNestedModelSerializer):
             'description',
             'terms',
             'registration_auto_approve',
+            'queue',
         )
-
-    def get_created_by(self, object):
-        return str(object.created_by)
 
     def validate_leaderboards(self, value):
         if not value:
@@ -129,6 +130,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_status = serializers.CharField(read_only=True)
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
+    queue = QueueSerializer(read_only=True)
 
     class Meta:
         model = Competition
@@ -150,6 +152,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'description',
             'participant_count',
             'submission_count',
+            'queue',
         )
 
 

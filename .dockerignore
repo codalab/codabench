@@ -1,0 +1,6 @@
+var
+docs
+certs
+bin
+artifacts
+.pytest_cache

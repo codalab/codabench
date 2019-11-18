@@ -118,7 +118,6 @@ def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
 
     data = json.loads(request.body)
-    print(request.body)
 
     try:
         if uuid.UUID(data.get("secret")) != submission.secret:
@@ -127,6 +126,7 @@ def upload_submission_scores(request, submission_pk):
         raise ValidationError("Secret not a valid UUID")
 
     competition_columns = submission.phase.competition.leaderboards.values_list('columns__key', flat=True)
+
     for column_key, score in data["scores"].items():
         if column_key not in competition_columns:
             continue

@@ -29,8 +29,7 @@
 <div class="ui thin sidebar left inverted vertical overlay menu">
     <div class="ui container">
         <a href="{% url "pages:home" %}" class="item">Competitions</a>
-        <a class="item">Chagle</a>
-        <a class="item">Chalab</a>
+        <a class="item">Chahub</a>
         <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
     </div>
 </div>
@@ -46,54 +45,69 @@
         <div id="bg"></div>
         <div class="ui container">
             <div id="topleft_menu" class="ui secondary inverted menu">
-                    <span class="left item">
-                    <a href="{% url "pages:home" %}" class="tl item">Competitions</a>
-                    <a class="tl item">Chagle</a>
-                    <a href="http://chahub.org/" class="tl item">Chahub</a>
-                    <a href="https://chagrade.lri.fr/" class="tl item">Chagrade</a>
-                    </span>
-                {% if user.is_authenticated %}
-                    <div id="user_dropdown" class="ui dropdown item">
-                        <div class="text">
-                            <i class="icon user outline"></i>
-                            {{ request.user.username }}
+                <span class="left item">
+                    <a href="/" id="home-logo">
+                        <img class="ui mini image" src="/static/img/Cha_Logo.png">
+                    </a>
+                    <div class="ui search" id="site-wide-competition-search">
+                        <div class="ui left icon input search-width">
+                            <input id="competition-search" class="prompt" type="text" placeholder="Search Competitions">
+                            <i class="search icon"></i>
                         </div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="header">Your management</div>
-                            <a class="item" href="{% url "competitions:management" %}">Competitions</a>
-                            <a class="item" href="{% url "tasks:task_management" %}">Tasks & Datasets</a>
-                            <a class="item" href="#">Teams</a>
-                            {% if request.user.is_staff %}
+                        <div class="results search-width scrollable-height-limit"></div>
+                    </div>
+                </span>
+                <div class="right menu item">
+                    <a class="item" href="{% url "competitions:management" %}">
+                        <i class="ui small trophy icon"></i>
+                        Competitions
+                    </a>
+                    <a class="item" href="{% url "tasks:task_management" %}">
+                        <i class="ui small file icon"></i>
+                        Tasks & Datasets
+                    </a>
+                    <a class="item" href="{% url "queues:management" %}">
+                        <i class="ui small computer icon"></i>
+                        Queue Management
+                    </a>
+                    {% if user.is_authenticated %}
+                        <div id="user_dropdown" class="ui dropdown item">
+                            <div class="text">
+                                <i class="icon user outline"></i>
+                                {{ request.user.username }}
+                            </div>
+                            <i class="dropdown icon"></i>
+                            <div class="menu">
+                                {% if request.user.is_staff %}
+                                    <div class="header">Admin management</div>
+{#                                    <a class="item" href="#">Customize Codalab</a>#}
+{#                                    <a class="item" href="#">Monitors</a>#}
+                                    <a class="item" href="{% url "admin:index" %}">Administration</a>
+                                    <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
+                                    <a class="item" href="{% url "queues:management" %}">Queues</a>
+{#                                    <a class="item" href="#">Health</a>#}
+{#                                    <a class="item" href="#">Users</a>#}
+{#                                    <a class="item" href="#">Submissions</a>#}
+                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
+                                        User</a>
+                                {% endif %}
                                 <div class="ui divider"></div>
-                                <div class="header">Admin management</div>
-                                <a class="item" href="#">Customize Codalab</a>
-                                <a class="item" href="#">Monitors</a>
-                                <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
-                                <a class="item" href="#">Health</a>
-                                <a class="item" href="#">Users</a>
-                                <a class="item" href="#">Submissions</a>
-                                <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch
-                                    User</a>
-                            {% endif %}
-                            <div class="ui divider"></div>
-                            <div class="header">You</div>
-                            <a class="item" href="{% url 'profiles:user_profile' %}">
-                                <i class="icon user"></i>
-                                Edit profile
-                            </a>
-                            <a class="item" href="{% url 'accounts:logout' %}">
-                                <i class="icon sign out"></i>
-                                Logout
-                            </a>
+                                <div class="header">Account</div>
+                                <a class="item" href="{% url 'profiles:user_profile' %}">
+                                    <i class="icon user"></i>
+                                    Edit profile
+                                </a>
+                                <a class="item" href="{% url 'accounts:logout' %}">
+                                    <i class="icon sign out"></i>
+                                    Logout
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                {% else %}
-                    <div class="right item">
-                        <a id="style_button" href="{% url 'accounts:login' %}" class="ui button">Login</a>
-                        <a id="style_button" href="{% url 'accounts:signup' %}" class="ui button">Sign-up</a>
-                    </div>
-                {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
+                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% block top_div_extra_content %}{% endblock %}
@@ -111,6 +125,14 @@
 <div class="ui inverted vertical footer segment">
     <div class="ui container">
         <div class="ui stackable inverted divided equal height stackable grid">
+            <div class="three wide column">
+                <h4 class="ui inverted header">Chasuite</h4>
+                <div class="ui inverted link list">
+                    <a href="#" class="item">Chagle</a>
+                    <a href="http://chahub.org/" class="item">Chahub</a>
+                    <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
+                </div>
+            </div>
             <div class="three wide column">
                 <h4 class="ui inverted header">About</h4>
                 <div class="ui inverted link list">
@@ -223,6 +245,22 @@
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')
+
+        $(document).ready( function () {
+            $('#site-wide-competition-search').search({
+                apiSettings: {
+                    onResponse: function(codalabResponse) {
+                        _.forEach(codalabResponse, (response) => {
+                            response.url = URLS.COMPETITION_DETAIL(response.id)
+                        })
+                        return {
+                            results: codalabResponse,
+                        }
+                    },
+                    url: `${URLS.API}competitions/?search={query}`
+                },
+            })
+        })
     </script>
 
     <script src="{% static "js/ours/client.js" %}"></script>

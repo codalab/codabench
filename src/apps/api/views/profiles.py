@@ -31,7 +31,7 @@ def user_lookup(request):
         filters |= Q(username__icontains=search)
         filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
 
-    users = User.objects.filter(filters)[:5]
+    users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
 
     # Helper to print username with email for admins
     def _get_data(user):

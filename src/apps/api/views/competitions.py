@@ -5,18 +5,20 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
-    send_participation_denied_emails
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, Submission, CompetitionParticipant
+    send_participation_denied_emails, send_direct_participant_email
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
+from competitions.tasks import batch_send_email
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from profiles.models import User
 from utils.data import make_url_sassy
+
+from api.permissions import IsOrganizerOrCollaborator
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -24,44 +26,58 @@ class CompetitionViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        # Filter to only see competitions you own
-        mine = self.request.query_params.get('mine', None)
 
-        if mine:
-            qs = qs.filter(created_by=self.request.user)
+        if self.request.user.is_authenticated:
+            # Filter to only see competitions you own
+            mine = self.request.query_params.get('mine', None)
 
-        participating_in = self.request.query_params.get('participating_in', None)
+            if mine:
+                qs = qs.filter(created_by=self.request.user)
 
-        if participating_in:
-            qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+            participating_in = self.request.query_params.get('participating_in', None)
 
-        # On GETs lets optimize the query to reduce DB calls
-        if self.request.method == 'GET':
-            qs = qs.select_related('created_by')
-            if self.action != 'list':
+            if participating_in:
+                qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+
+            # On GETs lets optimize the query to reduce DB calls
+            if self.request.method == 'GET':
                 qs = qs.select_related('created_by')
-                qs = qs.prefetch_related(
-                    'phases',
-                    'phases__submissions',
-                    'phases__tasks',
-                    'phases__tasks__solutions',
-                    'phases__tasks__solutions__data',
-                    'pages',
-                    'leaderboards',
-                    'leaderboards__columns',
-                    'collaborators',
-                )
-                participant_status_query = CompetitionParticipant.objects.filter(
-                    competition=OuterRef('pk'),
-                    user=self.request.user
-                ).values_list('status')[:1]
-                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                qs = qs.annotate(submission_count=Count('phases__submissions'))
-                qs = qs.annotate(participant_status=Subquery(participant_status_query))
+                if self.action != 'list':
+                    qs = qs.select_related('created_by')
+                    qs = qs.prefetch_related(
+                        'phases',
+                        'phases__submissions',
+                        'phases__tasks',
+                        'phases__tasks__solutions',
+                        'phases__tasks__solutions__data',
+                        'pages',
+                        'leaderboards',
+                        'leaderboards__columns',
+                        'collaborators',
+                    )
+                    participant_status_query = CompetitionParticipant.objects.filter(
+                        competition=OuterRef('pk'),
+                        user=self.request.user
+                    ).values_list('status')[:1]
+                    qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
+                    qs = qs.annotate(submission_count=Count('phases__submissions'))
+                    qs = qs.annotate(participant_status=Subquery(participant_status_query))
+
+        search_query = self.request.query_params.get('search')
+        if search_query:
+            qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
         qs = qs.order_by('created_when')
-
         return qs
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOrganizerOrCollaborator]
+        elif self.action in ['create']:
+            self.permission_classes = [IsAuthenticated]
+        elif self.action in ['retrieve', 'list']:
+            self.permission_classes = [AllowAny]
+        return [permission() for permission in self.permission_classes]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -120,7 +136,7 @@ class CompetitionViewSet(ModelViewSet):
             'dumps__dataset',
         )
         competition = qs_helper.get(id=pk)
-        if request.user != competition.created_by and request.user not in competition.collaborators.all():
+        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
         files = {
@@ -135,6 +151,18 @@ class CompetitionViewSet(ModelViewSet):
             files['dumps'].append({'name': dump.dataset.name, 'url': make_url_sassy(dump.dataset.data_file.name)})
         return Response(files)
 
+    @action(detail=True, methods=('POST',))
+    def email_all_participants(self, request, pk):
+        comp = self.get_object()
+        if not comp.user_has_admin_permission(self.request.user):
+            raise PermissionDenied('You do not have permission to email these competition participants')
+        try:
+            content = request.data['message']
+        except KeyError:
+            return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
+        batch_send_email.apply_async((comp.pk, content))
+        return Response({}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
@@ -147,32 +175,6 @@ def front_page_competitions(request):
         "popular_comps": popular_comps_serializer.data,
         "featured_comps": featured_comps_serializer.data
     }, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes((AllowAny,))
-def by_the_numbers(request):
-    data = Competition.objects.aggregate(
-        count=Count('*'),
-        published_comps=Count('pk', filter=Q(published=True)),
-        unpublished_comps=Count('pk', filter=Q(published=False)),
-    )
-
-    total_competitions = data['count']
-    public_competitions = data['published_comps']
-    private_competitions = data['unpublished_comps']
-    users = User.objects.all().count()
-    competition_participants = CompetitionParticipant.objects.all().count()
-    submissions = Submission.objects.all().count()
-
-    return Response([
-        {'label': "Total Competitions", 'count': total_competitions},
-        {'label': "Public Competitions", 'count': public_competitions},
-        {'label': "Private Competitions", 'count': private_competitions},
-        {'label': "Users", 'count': users},
-        {'label': "Competition Participants", 'count': competition_participants},
-        {'label': "Submissions", 'count': submissions},
-    ])
 
 
 class PhaseViewSet(ModelViewSet):
@@ -227,3 +229,16 @@ class CompetitionParticipantViewSet(ModelViewSet):
                     emails[participation_status](participant)
 
         return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=('POST',))
+    def send_email(self, request, pk):
+        participant = self.get_object()
+        competition = participant.competition
+        if not competition.user_has_admin_permission(self.request.user):
+            raise PermissionDenied('You do not have permission to email participants')
+        try:
+            message = request.data['message']
+        except KeyError:
+            return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
+        send_direct_participant_email(participant=participant, content=message)
+        return Response({}, status=status.HTTP_200_OK)
