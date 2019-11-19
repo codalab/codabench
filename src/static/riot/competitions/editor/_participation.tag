@@ -44,6 +44,7 @@
         }
 
         CODALAB.events.on('competition_loaded', function (competition) {
+            self.refs.registration_auto_approve.checked = competition.registration_auto_approve
             self.markdown_editor.value(competition.terms || '')
             self.markdown_editor.codemirror.refresh()
             self.update()
