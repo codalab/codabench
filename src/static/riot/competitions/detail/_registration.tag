@@ -36,8 +36,8 @@
         </virtual>
         <div class="row" if="{!CODALAB.state.user.logged_in}">
             <div class="column">
-                <a href="{URLS.LOGIN}?next={location.pathname}">Log In </a> or
-                <a href="{URLS.SIGNUP}" target="_blank">Sign Up </a> to register for this competition.
+                <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to register for this competition.
             </div>
         </div>
     </div>
