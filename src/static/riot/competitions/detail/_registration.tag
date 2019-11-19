@@ -6,10 +6,9 @@
                     You have not yet registered for this competition.
                 </p>
                 <p>
-                    To participate in this competition, you must accept its specific <a href=""
-                                                                                        onclick="{show_modal}">terms
-                    and conditions</a>.<span
-                        if="{registration_auto_approve}">This competition <strong>does not</strong>
+                    To participate in this competition, you must accept its specific
+                    <a href="" onclick="{show_modal}">terms and conditions</a>.
+                    <span if="{registration_auto_approve}">This competition <strong>does not</strong>
                     require approval, once you register, you will immediately be able to participate.</span>
                 </p>
 
