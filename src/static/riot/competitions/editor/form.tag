@@ -124,7 +124,12 @@
             // tabs
             $('.menu .item', self.root).tab({
                 history: true,
-                historyType: 'hash'
+                historyType: 'hash',
+                onVisible: (tab_name) => {
+                    if (_.includes(['participation', 'competition_details'], tab_name)) {
+                        CODALAB.events.trigger('update_codemirror')
+                    }
+                }
             })
             if (!!self.opts.competition_id) {
                 self.update_competition_data(self.opts.competition_id)
