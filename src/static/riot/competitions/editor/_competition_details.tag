@@ -136,5 +136,8 @@
             }
             self.form_updated()
         })
+        CODALAB.events.on('update_codemirror', () => {
+            self.markdown_editor.codemirror.refresh()
+        })
     </script>
 </competition-details>

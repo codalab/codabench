@@ -123,6 +123,9 @@
         }
 
         self.update_participants = filters => {
+            if (!CODALAB.state.user.logged_in) {
+                return
+            }
             filters = filters || {}
             filters.competition = self.competition_id
             let status = self.refs.participant_status.value

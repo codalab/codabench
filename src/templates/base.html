@@ -240,7 +240,9 @@
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
             TASK_DETAIL: function (pk) {
                 return "{% url "tasks:detail" pk=0 %}".replace(0, pk)
-            }
+            },
+            LOGIN: "{% url 'accounts:login' %}",
+            SIGNUP: "{% url 'accounts:signup' %}",
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')

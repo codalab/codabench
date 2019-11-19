@@ -64,14 +64,15 @@
                     Submissions
                 </div>
             </div>
-            <div class="ui tiny left labeled button">
+            <!--TODO: plug in once plumbing for prizes has been created-->
+            <!--<div class="ui tiny left labeled button">
                 <a class="ui tiny basic green label">
                     5,500
                 </a>
                 <div class="ui tiny green button">
                     Prize
                 </div>
-            </div>
+            </div>-->
         </div>
     </div>
 
