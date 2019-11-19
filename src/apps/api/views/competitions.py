@@ -64,7 +64,6 @@ class CompetitionViewSet(ModelViewSet):
                 qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
                 qs = qs.annotate(submission_count=Count('phases__submissions'))
 
-
         search_query = self.request.query_params.get('search')
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
