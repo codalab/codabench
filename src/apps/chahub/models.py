@@ -62,7 +62,11 @@ class ChaHubSaveMixin(models.Model):
         # By default, always push
         return True
 
-    def clean_data(self, data):
+    def clean_private_data(self, data):
+        if data.get('published') or data.get('is_public'):
+            return data
+        logger.info(f'Data not public, cleaning,\nData: {data}')
+
         whitelist_data = ['remote_id', 'published', 'is_public']
         for key in data.keys():
             if key not in whitelist_data:
@@ -82,14 +86,12 @@ class ChaHubSaveMixin(models.Model):
         # Make sure we're not sending these in tests
         if settings.CHAHUB_API_URL and send:
             is_valid = self.get_chahub_is_valid()
-
             logger.info(f"ChaHub :: {self.__class__.__name__}({self.pk}) is_valid = {is_valid}")
 
             if is_valid:
-                data = [self.clean_data(self.get_chahub_data())]
+                data = [self.clean_private_data(self.get_chahub_data())]
 
                 data_hash = hashlib.md5(json.dumps(data).encode('utf-8')).hexdigest()
-
                 # Send to chahub if we haven't yet, we have new data
                 if not self.chahub_timestamp or self.chahub_data_hash != data_hash:
                     app_label = f'{self.__class__._meta.app_label}.{self.__class__.__name__}'

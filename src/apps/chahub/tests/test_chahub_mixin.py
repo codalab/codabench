@@ -1,35 +1,8 @@
-from unittest import mock
-from django.conf import settings
-from django.http.response import HttpResponseBase
-from django.test import TestCase
-
+from chahub.tests.utils import ChaHubTestCase
 from competitions.models import Submission
 from factories import UserFactory, CompetitionFactory, DataFactory, SubmissionFactory, PhaseFactory, \
     CompetitionParticipantFactory
-
-
-class ChaHubTestResponse(HttpResponseBase):
-    @property
-    def ok(self):
-        return self.status_code < 400
-
-
-class ChaHubTestCase(TestCase):
-    def setUp(self):
-        settings.PYTEST_FORCE_CHAHUB = True
-        # set the url to localhost for tests
-        settings.CHAHUB_API_URL = 'localhost/'
-
-    def tearDown(self):
-        settings.PYTEST_FORCE_CHAHUB = False
-        settings.CHAHUB_API_URL = None
-
-    def mock_chahub_save(self, obj):
-        with mock.patch('chahub.models.send_to_chahub') as chahub_mock:
-            chahub_mock.return_value = ChaHubTestResponse(status=201)
-            chahub_mock.return_value.content = ''
-            obj.save()
-            return chahub_mock
+from profiles.models import User
 
 
 class SubmissionMixinTests(ChaHubTestCase):
@@ -39,6 +12,7 @@ class SubmissionMixinTests(ChaHubTestCase):
         self.participant = CompetitionParticipantFactory(user=self.user, competition=self.comp)
         self.phase = PhaseFactory(competition=self.comp)
         self.data = DataFactory()
+        # Calling this after initial setup so we don't turn on FORCE_CHAHUB and try and send all our setup objects
         super().setUp()
         self.submission = SubmissionFactory.build(
             owner=self.user,
@@ -56,6 +30,7 @@ class SubmissionMixinTests(ChaHubTestCase):
     def test_submission_save_not_sending_duplicate_data(self):
         resp1 = self.mock_chahub_save(self.submission)
         assert resp1.called
+        self.submission = Submission.objects.get(id=self.submission.id)
         resp2 = self.mock_chahub_save(self.submission)
         assert not resp2.called
 
@@ -101,6 +76,21 @@ class ProfileMixinTests(ChaHubTestCase):
     def test_profile_save_not_sending_on_blacklisted_data_update(self):
         resp1 = self.mock_chahub_save(self.user)
         assert resp1.called
+        self.user = User.objects.get(id=self.user.id)
         self.user.password = 'this_is_different'  # Not using user.set_password() to control when the save happens
         resp2 = self.mock_chahub_save(self.user)
         assert not resp2.called
+
+
+class CompetitionMixinTests(ChaHubTestCase):
+    def setUp(self):
+        self.comp = CompetitionFactory(published=False)
+        super().setUp()
+
+    def test_unpublished_comp_doesnt_send_private_data(self):
+        resp = self.mock_chahub_save(self.comp)
+        # Gross traversal through call args to get the data passed to _send
+        data = resp.call_args[0][1][0]
+        for key, value in data.items():
+            if key not in ['published', 'remote_id']:
+                assert value is None

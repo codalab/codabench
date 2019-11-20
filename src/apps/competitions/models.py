@@ -105,11 +105,6 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return "competitions/"
 
-    def get_chahub_is_valid(self):
-        finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()])
-        has_phases = self.phases.exists()
-        return finished and has_phases
-
     def get_chahub_data(self):
         data = {
             'created_by': self.created_by.username,
@@ -400,9 +395,6 @@ class Submission(ChaHubSaveMixin, models.Model):
             "participant": self.participant.user.username,
             "submitted_at": self.created_when.isoformat(),
         }
-        chahub_id = self.owner.chahub_uid
-        if chahub_id:
-            data['user'] = chahub_id
         return data
 
     def get_chahub_is_valid(self):
