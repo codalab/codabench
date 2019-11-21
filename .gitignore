@@ -12,6 +12,7 @@ venv/
 var/
 var_*/
 certs/
+backups/
 
 src/static/output.css
 src/static/output.js

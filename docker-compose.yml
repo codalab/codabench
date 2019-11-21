@@ -27,6 +27,7 @@ services:
     volumes:
       - .:/app
       - /tmp/codalab-v2/django:/codalab_tmp
+      - ./backups:/app/backups
     ports:
       - 8000:8000
     depends_on:
@@ -100,6 +101,7 @@ services:
       - 5432:5432
     volumes:
       - ./var/postgres:/var/lib/postgresql/data:delegated
+      - ./backups:/app/backups
     logging:
       options:
         max-size: "20k"
