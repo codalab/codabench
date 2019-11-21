@@ -63,14 +63,37 @@ class ChaHubSaveMixin(models.Model):
         return True
 
     def clean_private_data(self, data):
-        if data.get('published') or data.get('is_public'):
-            return data
-        logger.info(f'Data not public, cleaning,\nData: {data}')
+        if not data:
+            return
+        logger.info(f'Cleaning Data: {data}')
 
         whitelist_data = ['remote_id', 'published', 'is_public']
         for key in data.keys():
             if key not in whitelist_data:
-                data[key] = None
+                if isinstance(data[key], list):
+                    if key == 'tasks':
+                        tasks = []
+                        for task in data['tasks']:
+                            if task['is_public']:
+                                tasks.append(task)
+                                continue
+                            temp = {}
+                            for k, v in task.items():
+                                if k.endswith('program') or k.endswith('data'):
+                                    temp[k] = self.clean_private_data(v)
+                                else:
+                                    if k not in whitelist_data:
+                                        temp[k] = None
+                                    else:
+                                        temp[k] = v
+                            tasks.append(temp)
+                        data['tasks'] = tasks
+                    else:
+                        data[key] = [self.clean_private_data(i) for i in data[key]]
+
+                else:
+                    if not data.get('published') and not data.get('is_public'):
+                        data[key] = None
         return data
 
     # Regular methods

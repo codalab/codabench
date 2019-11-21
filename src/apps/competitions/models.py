@@ -105,6 +105,14 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return "competitions/"
 
+    def get_chahub_is_valid(self):
+        if self.creation_statuses.exists():
+            # A comp created through the editor or factories will not have creation statuses,
+            # so only check for them if they exist
+            return all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()])
+        else:
+            return True
+
     def get_chahub_data(self):
         data = {
             'created_by': self.created_by.username,
@@ -221,6 +229,7 @@ class Phase(models.Model):
     def get_chahub_data(self):
         return {
             'remote_id': self.pk,
+            'published': self.competition.published,
             'index': self.index,
             'start': self.start.isoformat(),
             'end': self.end.isoformat() if self.end else None,

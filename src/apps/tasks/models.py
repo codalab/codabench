@@ -44,6 +44,7 @@ class Task(ChaHubSaveMixin, models.Model):
             'ingestion_only_during_scoring': self.ingestion_only_during_scoring,
             'reference_data': self.reference_data.get_chahub_data() if self.reference_data else None,
             'scoring_program': self.scoring_program.get_chahub_data() if self.scoring_program else None,
+            # 'solutions': [solution.get_chahub_data() for solution in self.solutions.all()]
         }
 
 
@@ -64,4 +65,8 @@ class Solution(ChaHubSaveMixin, models.Model):
     def get_chahub_data(self):
         return {
             'remote_id': self.pk,
+            'name': self.name,
+            'description': self.description,
+            'key': str(self.key),
+            'data': self.data.get_chahub_data(),
         }
