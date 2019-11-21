@@ -201,7 +201,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json',)
 CELERY_BEAT_SCHEDULE = {
     'do_phase_migrations': {
-        'task': 'src.apps.competitions.tasks.do_phase_migrations',
+        'task': 'competitions.tasks.do_phase_migrations',
         'schedule': timedelta(seconds=300),
     },
 }
