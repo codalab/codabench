@@ -17,12 +17,16 @@ class Command(BaseCommand):
         backup_path = join("/app/backups", options['backup_path'])
 
         # Upload it
-        print("Uploading backup '{}'".format(backup_path))
-        upload_url = make_url_sassy('backups/{}'.format(backup_file_name), permission='w', content_type=None)
+        upload_url = make_url_sassy(
+            f'backups/{backup_file_name}',
+            permission='w',
+            content_type=None
+        )
+        print(f"Uploading backup '{backup_path}' to '{upload_url}'")
         resp = put_blob(upload_url, backup_path)
 
         if resp.status_code == 200:
-            print("Success! Removing local dump file '{}'".format(backup_path))
+            print(f"Success! Removing local dump file '{backup_path}'")
         else:
             print(f"FAILED TO SEND! Status code: {resp.status_code}\n{resp.content}")
 
