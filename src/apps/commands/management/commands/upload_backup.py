@@ -31,5 +31,5 @@ class Command(BaseCommand):
             print(f"FAILED TO SEND! Result ({resp.status_code}):\n{resp.content}")
 
         # Clean up
-        print("Removing local dump file '{backup_path}'")
+        print(f"Removing local dump file '{backup_path}'")
         remove(backup_path)
