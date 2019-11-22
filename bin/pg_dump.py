@@ -10,9 +10,9 @@ import time
 from subprocess import call
 
 
-dump_name = time.strftime("%Y-%m-%d_%H:%M:%S.dump")
+dump_name = time.strftime("%Y-%m-%d_%H-%M-%S.dump")
 
-print("Making dump {}".format(dump_name))
+print(f"Making dump {dump_name}")
 
 # Make dump
 call([
@@ -21,12 +21,10 @@ call([
     'db',
     'bash',
     '-c',
-    'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{}'.format(
-        dump_name
-    )
+    f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{dump_name}'
 ])
 
 # Push/destroy dump
 call([
-    'docker-compose', 'exec', 'django', 'python', 'manage.py', 'upload_backup', '{}'.format(dump_name)
+    'docker-compose', 'exec', 'django', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
 ])
