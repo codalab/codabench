@@ -7,8 +7,7 @@ Usage, in `crontab -e`:
 """
 import time
 
-from subprocess import call
-
+from subprocess import call, PIPE, STDOUT
 
 dump_name = time.strftime("%Y-%m-%d_%H-%M-%S.dump")
 
@@ -22,11 +21,9 @@ call([
     'bash',
     '-c',
     f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{dump_name}'
-])
-
-print("Pushing dump...")
+], stdout=PIPE, stderr=STDOUT)
 
 # Push/destroy dump
 call([
     'docker-compose', 'exec', 'django', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
-])
+], stdout=PIPE, stderr=STDOUT)
