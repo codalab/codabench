@@ -44,7 +44,7 @@ class Task(ChaHubSaveMixin, models.Model):
             'ingestion_only_during_scoring': self.ingestion_only_during_scoring,
             'reference_data': self.reference_data.get_chahub_data() if self.reference_data else None,
             'scoring_program': self.scoring_program.get_chahub_data() if self.scoring_program else None,
-            # 'solutions': [solution.get_chahub_data() for solution in self.solutions.all()]
+            'solutions': [solution.get_chahub_data() for solution in self.solutions.all()]
         }
 
 
@@ -54,9 +54,10 @@ class Solution(ChaHubSaveMixin, models.Model):
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     tasks = models.ManyToManyField(Task, related_name="solutions")
     data = models.ForeignKey('datasets.Data', null=True, blank=True, on_delete=models.CASCADE)
+    is_public = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Solution - {self.data.name} - ({self.id})"
+        return f"Solution - {self.name} - ({self.id})"
 
     @staticmethod
     def get_chahub_endpoint():

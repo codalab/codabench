@@ -22,6 +22,19 @@ def _send(endpoint, data):
     return requests.post(url=url, data=json.dumps(data), headers=headers)
 
 
+def get_obj(app_label, pk, include_deleted=False):
+    Model = apps.get_model(app_label)
+
+    try:
+        if include_deleted:
+            obj = Model.objects.all_objects().get(pk=pk)
+        else:
+            obj = Model.objects.get(pk=pk)
+    except Model.DoesNotExist:
+        raise ChahubException(f"Could not find {Model.__class__.__name__} with pk: {pk}")
+    return obj
+
+
 @app.task(queue='site-worker')
 def send_to_chahub(app_label, pk, data, data_hash):
     """
@@ -32,12 +45,7 @@ def send_to_chahub(app_label, pk, data, data_hash):
     if not settings.CHAHUB_API_KEY:
         raise ChahubException("No ChaHub API Key provided")
 
-    Model = apps.get_model(app_label)
-
-    try:
-        obj = Model.objects.get(pk=pk)
-    except Model.DoesNotExist:
-        raise ChahubException(f"Could not find {Model.__class__.__name__} with pk: {pk}")
+    obj = get_obj(app_label, pk)
 
     try:
         resp = _send(obj.get_chahub_endpoint(), data)
@@ -55,6 +63,36 @@ def send_to_chahub(app_label, pk, data, data_hash):
         logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
         obj.chahub_needs_retry = True
     obj.save(send=False)
+
+
+@app.task(queue='site-worker')
+def delete_from_chahub(app_label, pk):
+    if not settings.CHAHUB_API_URL:
+        raise ChahubException("CHAHUB_API_URL env var required to send to Chahub")
+    if not settings.CHAHUB_API_KEY:
+        raise ChahubException("No ChaHub API Key provided")
+
+    obj = get_obj(app_label, pk, include_deleted=True)
+
+    url = f"{settings.CHAHUB_API_URL}{obj.get_chahub_endpoint()}{pk}/"
+    logger.info(f"ChaHub :: Sending to ChaHub ({url}) delete message")
+
+    headers = {'X-CHAHUB-API-KEY': settings.CHAHUB_API_KEY}
+
+    try:
+        resp = requests.delete(url=url, headers=headers)
+    except requests.exceptions.RequestException:
+        resp = None
+
+    if resp and resp.status_code == 204:
+        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
+        obj.delete()
+    else:
+        status = getattr(resp, 'status_code', 'N/A')
+        body = getattr(resp, 'content', 'N/A')
+        logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
+        obj.chahub_needs_retry = True
+        obj.save(send=False)
 
 
 def batch_send_to_chahub(model, limit=None, retry_only=False):
@@ -112,6 +150,8 @@ def do_chahub_retries(limit=None):
     logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
         batch_send_to_chahub(model, retry_only=True, limit=limit)
+        for obj in model.objects.get_all_objects().filter(deleted=True):
+            obj.delete()
 
 
 @app.task(queue='site-worker')

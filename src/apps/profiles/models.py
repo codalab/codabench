@@ -12,6 +12,14 @@ PROFILE_DATA_BLACKLIST = [
 ]
 
 
+class ChaHubUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted=False)
+
+    def get_all_objects(self):
+        return super().get_queryset()
+
+
 class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
@@ -44,7 +52,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
 
     # Required for social auth and such to create users
-    objects = UserManager()
+    objects = ChaHubUserManager()
 
     def get_short_name(self):
         return self.name

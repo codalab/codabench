@@ -106,12 +106,9 @@ class Competition(ChaHubSaveMixin, models.Model):
         return "competitions/"
 
     def get_chahub_is_valid(self):
-        if self.creation_statuses.exists():
-            # A comp created through the editor or factories will not have creation statuses,
-            # so only check for them if they exist
-            return all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()])
-        else:
-            return True
+        has_phases = self.phases.exists()
+        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()]) if self.creation_statuses.exists() else True
+        return has_phases and upload_finished
 
     def get_chahub_data(self):
         data = {
@@ -401,13 +398,14 @@ class Submission(ChaHubSaveMixin, models.Model):
             "remote_id": self.id,
             "competition": self.phase.competition_id,
             "phase_index": self.phase.index,
-            "participant": self.participant.user.username,
+            "participant": self.owner.username,
             "submitted_at": self.created_when.isoformat(),
+            "data": self.data.get_chahub_data(),
         }
         return data
 
     def get_chahub_is_valid(self):
-        return self.status == self.FINISHED and self.is_public and self.phase.competition.published
+        return self.status == self.FINISHED
 
 
 class CompetitionParticipant(ChaHubSaveMixin, models.Model):
@@ -426,7 +424,6 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
                              on_delete=models.DO_NOTHING)
     competition = models.ForeignKey(Competition, related_name='participants', on_delete=models.CASCADE)
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, null=False, blank=False, default=UNKNOWN)
-    # TODO:// is this the right logic for status?
     reason = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
