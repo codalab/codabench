@@ -26,9 +26,10 @@ class Command(BaseCommand):
         resp = put_blob(upload_url, backup_path)
 
         if resp.status_code == 200:
-            print(f"Success! Removing local dump file '{backup_path}'")
+            print(f"Success!")
         else:
-            print(f"FAILED TO SEND! Status code: {resp.status_code}\n{resp.content}")
+            print(f"FAILED TO SEND! Result ({resp.status_code}):\n{resp.content}")
 
         # Clean up
+        print("Removing local dump file '{backup_path}'")
         remove(backup_path)
