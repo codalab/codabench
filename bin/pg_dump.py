@@ -2,7 +2,7 @@
 """
 Usage, in `crontab -e`:
 
-    @daily /home/ubuntu/competitions-v2/scripts/pg_dump.py
+    @daily /home/ubuntu/competitions-v2/bin/pg_dump.py
 
 """
 import time
