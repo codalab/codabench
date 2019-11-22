@@ -7,23 +7,23 @@ Usage, in `crontab -e`:
 """
 import time
 
-from subprocess import check_output, PIPE, STDOUT
+from subprocess import call
 
 dump_name = time.strftime("%Y-%m-%d_%H-%M-%S.dump")
 
 print(f"Making dump {dump_name}")
 
 # Make dump
-print(check_output([
-    'docker-compose',
+call([
+    'docker',
     'exec',
-    'db',
+    'competitions-v2_db_1',
     'bash',
     '-c',
     f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{dump_name}'
-], stderr=STDOUT).decode())
+])
 
 # Push/destroy dump
-print(check_output([
-    'docker-compose', 'exec', 'django', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
-], stderr=STDOUT).decode())
+call([
+    'docker', 'exec', 'competitions-v2_django_1', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
+])
