@@ -24,6 +24,8 @@ call([
     f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{dump_name}'
 ])
 
+print("Pushing dump...")
+
 # Push/destroy dump
 call([
     'docker-compose', 'exec', 'django', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
