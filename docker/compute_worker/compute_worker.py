@@ -175,7 +175,6 @@ class Run:
 
         data["secret"] = self.secret
 
-        # TODO: If this fails ... raise SubmissionException?
         resp = requests.patch(url, data)
         if resp.status_code != 200:
             logger.info(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
