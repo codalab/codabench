@@ -39,6 +39,7 @@ class TaskSerializer(WritableNestedModelSerializer):
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    validated = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -51,6 +52,7 @@ class TaskSerializer(WritableNestedModelSerializer):
             'created_when',
             'is_public',
             'ingestion_only_during_scoring',
+            'validated',
 
             # Data pieces
             'input_data',
@@ -58,6 +60,9 @@ class TaskSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
         )
+
+    def get_validated(self, instance):
+        return instance.validated is not None
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
