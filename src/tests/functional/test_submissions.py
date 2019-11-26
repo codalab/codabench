@@ -53,15 +53,9 @@ class TestSubmissions(SeleniumTestCase):
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
         # Check that md5 information was stored correctly
-        # TODO: Why in @$#! does this not work:
-        #   os.path.join("./src/tests/functional", submission_full_path)
-        #   it returns..
-        #   submission_full_path, every time...
         submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
-        assert Submission.objects.get(md5=submission_md5)
-        for solution in Solution.objects.all():
-            print(f"md5: {solution.md5}, path {solution.data.data_file.name}")
-        assert Solution.objects.get(md5=submission_md5)
+        assert Submission.objects.get(md5=submission_md5).exists()
+        assert Solution.objects.get(md5=submission_md5).exists()
 
         submission = self.user.submission.first()
 
