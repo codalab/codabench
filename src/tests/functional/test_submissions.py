@@ -2,7 +2,10 @@ import os
 
 from django.urls import reverse
 
+from competitions.models import Submission
 from factories import UserFactory
+from tasks.models import Solution
+from utils.storage import md5
 from ..utils import SeleniumTestCase
 
 
@@ -27,6 +30,7 @@ class TestSubmissions(SeleniumTestCase):
 
         competition = self.user.competitions.first()
         comp_url = reverse("competitions:detail", kwargs={"pk": competition.id})
+        submission_full_path = os.path.join(self.test_files_dir, submission_zip_path)
         self.find(f'a[href="{comp_url}"]').click()
         self.assert_current_url(comp_url)
 
@@ -35,7 +39,7 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.item[data-tab="participate-tab"]').click()
 
         self.circleci_screenshot("set_submission_file_name.png")
-        self.find('input[ref="file_input"]').send_keys(os.path.join(self.test_files_dir, submission_zip_path))
+        self.find('input[ref="file_input"]').send_keys(submission_full_path)
         self.circleci_screenshot(name='uploading_submission.png')
 
         # The accordion shows "Running submission.zip"
@@ -48,19 +52,37 @@ class TestSubmissions(SeleniumTestCase):
         # The submission table lists our submission!
         assert self.find('submission-manager table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
+        # Check that md5 information was stored correctly
+        # TODO: Why in @$#! does this not work:
+        #   os.path.join("./src/tests/functional", submission_full_path)
+        #   it returns..
+        #   submission_full_path, every time...
+        submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
+        assert Submission.objects.get(md5=submission_md5)
+        for solution in Solution.objects.all():
+            print(f"md5: {solution.md5}, path {solution.data.data_file.name}")
+        assert Solution.objects.get(md5=submission_md5)
+
         submission = self.user.submission.first()
+
+        # TODO: Make this get all tasks and solutions and clean them up properly
         task = competition.phases.first().tasks.first()
+        solution = task.solutions.first()
         created_files = [
             # Competition related files
             competition.bundle_dataset.data_file.name,
             competition.logo.name,
+
+            # Tasks and solutions
             task.scoring_program.data_file.name,
             task.reference_data.data_file.name,
+            solution.data.data_file.name,
 
             # Submission related files
             submission.data.data_file.name,
             submission.prediction_result.name,
             submission.scoring_result.name,
+            # TODO: missing many log deletions?
         ]
         for detail in submission.details.all():
             created_files.append(detail.data_file.name)

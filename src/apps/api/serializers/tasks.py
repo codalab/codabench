@@ -19,6 +19,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'key',
             'tasks',
             'data',
+            'md5',
         ]
 
 

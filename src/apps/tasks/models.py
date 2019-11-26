@@ -55,6 +55,8 @@ class Solution(ChaHubSaveMixin, models.Model):
     tasks = models.ManyToManyField(Task, related_name="solutions")
     data = models.ForeignKey('datasets.Data', null=True, blank=True, on_delete=models.CASCADE)
     is_public = models.BooleanField(default=False)
+    # md5 for solutions is generated during competition unpacking
+    md5 = models.CharField(max_length=32, null=True, blank=True)
 
     def __str__(self):
         return f"Solution - {self.name} - ({self.id})"

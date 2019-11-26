@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import hashlib
 import json
 import logging
 import os
@@ -86,6 +87,15 @@ def replace_legacy_metadata_command(command, kind, is_scoring, ingestion_only_du
     return command
 
 
+def md5(filename):
+    """Given some file return its md5, works well on large files"""
+    hash_md5 = hashlib.md5()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -160,16 +170,25 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
+    def _update_submission(self, data):
+        url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
+
+        data["secret"] = self.secret
+
+        # TODO: If this fails ... raise SubmissionException?
+        resp = requests.patch(url, data)
+        if resp.status_code != 200:
+            logger.info(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
+            raise SubmissionException("Failure updating submission data.")
+
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
-        url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         logger.info(
             f"Updating status to '{status}' with extra_information = '{extra_information}' "
             f"for submission = {self.submission_id}"
         )
         data = {
-            "secret": self.secret,
             "status": status,
             "status_details": extra_information,
         }
@@ -177,7 +196,7 @@ class Run:
             data.update({
                 "task_pk": self.task_pk,
             })
-        requests.patch(url, data)
+        self._update_submission(data)
 
     def _get_docker_image(self, image_name):
         logger.info("Running docker pull for image: {}".format(image_name))
@@ -190,8 +209,11 @@ class Run:
             raise SubmissionException(f"Docker pull for {image_name} failed!")
 
     def _get_bundle(self, url, destination):
+        """Downloads zip from url and unpacks it into destination
+
+        :returns zip file path"""
         logger.info(f"Getting bundle {url} to unpack @{destination}")
-        bundle_file = tempfile.NamedTemporaryFile()
+        bundle_file = tempfile.NamedTemporaryFile(delete=False)
 
         try:
             urlretrieve(url, bundle_file.name)
@@ -200,6 +222,7 @@ class Run:
 
         with ZipFile(bundle_file.file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
+        return bundle_file.name
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
@@ -421,11 +444,20 @@ class Run:
 
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
-            bundles += [(self.prediction_result, os.path.join('input', 'res'))]
+            bundles += [(self.prediction_result, 'input/res')]
 
         for url, path in bundles:
             if url is not None:
-                self._get_bundle(url, path)
+                zip_file = self._get_bundle(url, path)
+
+                # TODO: When we have `is_scoring_only` this needs to change...
+                if url == self.program_data and not self.is_scoring:
+                    # We want to get a checksum of submissions so we can check if they are
+                    # a solution, or maybe match them against other submissions later
+                    logger.info(f"Beginning MD5 checksum of submission: {zip_file}")
+                    checksum = md5(zip_file)
+                    logger.info(f"Checksum result: {checksum}")
+                    self._update_submission({"md5": checksum})
 
         # For logging purposes let's dump file names
         for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):

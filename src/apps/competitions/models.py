@@ -314,6 +314,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
+    md5 = models.CharField(max_length=32, null=True, blank=True)
 
     prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
     scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True, storage=BundleStorage)
