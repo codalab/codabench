@@ -67,23 +67,3 @@ class TaskViewSet(ModelViewSet):
         if request.user != instance.created_by:
             raise PermissionDenied("Cannot delete a task that is not yours")
         return super().destroy(request, *args, **kwargs)
-
-
-class TaskViewSetSimple(ModelViewSet):
-    queryset = Task.objects.all()
-    serializer_class = serializers.TaskSerializerSimple
-    filter_backends = (DjangoFilterBackend, SearchFilter)
-    search_fields = ('name',)
-
-    def get_queryset(self):
-        return Task.objects.filter(Q(is_public=True) | Q(created_by=self.request.user))
-
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        # TODO: what is this doing? do we still need it?
-        if not self.request:
-            return {}
-
-        return {
-            "created_by": self.request.user
-        }

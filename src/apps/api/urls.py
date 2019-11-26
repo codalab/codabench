@@ -19,8 +19,6 @@ router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
 router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submission_scores')
 router.register('tasks', tasks.TaskViewSet)
-# TODO: We don't need a whole separate viewset to filter tasks, also messes up reverse searching 'task-list'
-# router.register('tasksearch', tasks.TaskViewSetSimple)
 router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
 router.register('queues', queues.QueueViewSet, 'queues')
 
