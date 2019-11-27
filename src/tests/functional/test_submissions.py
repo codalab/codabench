@@ -54,8 +54,8 @@ class TestSubmissions(SeleniumTestCase):
 
         # Check that md5 information was stored correctly
         submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
-        assert Submission.objects.get(md5=submission_md5).exists()
-        assert Solution.objects.get(md5=submission_md5).exists()
+        assert Submission.objects.filter(md5=submission_md5).exists()
+        assert Solution.objects.filter(md5=submission_md5).exists()
 
         submission = self.user.submission.first()
 
