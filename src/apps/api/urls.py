@@ -19,7 +19,6 @@ router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
 router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submission_scores')
 router.register('tasks', tasks.TaskViewSet)
-router.register('tasksearch', tasks.TaskViewSetSimple)
 router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
 router.register('queues', queues.QueueViewSet, 'queues')
 

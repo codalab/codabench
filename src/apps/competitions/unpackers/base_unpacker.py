@@ -12,6 +12,7 @@ from competitions.models import Phase
 from datasets.models import Data
 from queues.models import Queue
 from tasks.models import Task, Solution
+from utils.storage import md5
 from .utils import CompetitionUnpackingException, zip_if_directory
 
 
@@ -26,6 +27,9 @@ class BaseUnpacker:
         self.created_datasets = []
 
     def _get_data_key(self, file_name, file_path, file_type, creator, *args, **kwargs):
+        """Takes in a potential UUID or file path
+
+        :returns (file path/uuid key, file path of temp zip)"""
         if os.path.exists(file_path):
             new_dataset = Data(
                 created_by_id=creator,
@@ -36,7 +40,7 @@ class BaseUnpacker:
             file_path = zip_if_directory(file_path)
             new_dataset.data_file.save(os.path.basename(file_path), File(open(file_path, 'rb')))
             self.created_datasets.append(new_dataset)
-            return new_dataset.key
+            return new_dataset.key, file_path
         else:
             try:
                 # checking if file name could be a uuid
@@ -46,7 +50,7 @@ class BaseUnpacker:
 
             if not Data.objects.filter(key=file_name).exists():
                 raise CompetitionUnpackingException(f'Cannot find {file_type} with key: "{file_name}"')
-            return file_name
+            return file_name, None
 
     def _read_image(self, image_name):
         image_path = os.path.join(self.temp_directory, image_name)
@@ -252,7 +256,7 @@ class BaseUnpacker:
                     except KeyError:
                         # file type not here, moving on
                         continue
-                    key = self._get_data_key(**task_file_data)
+                    key, temp_data_path = self._get_data_key(**task_file_data)
                     task[file_type] = key
                 serializer = TaskSerializer(data=task)
                 serializer.is_valid(raise_exception=True)
@@ -271,7 +275,9 @@ class BaseUnpacker:
                     s.add(self.competition['tasks'][task_index])
             else:
                 solution['tasks'] = [self.competition['tasks'][index].key for index in solution['tasks']]
-                solution['data'] = self._get_data_key(**solution, file_type='solution')
+                solution['data'], temp_data_path = self._get_data_key(**solution, file_type='solution')
+                if temp_data_path:
+                    solution['md5'] = md5(temp_data_path)
                 serializer = SolutionSerializer(data=solution)
                 serializer.is_valid(raise_exception=True)
                 new_solution = serializer.save()
