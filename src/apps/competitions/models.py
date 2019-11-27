@@ -1,5 +1,6 @@
 import logging
 import uuid
+
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db import models
@@ -110,6 +111,14 @@ class Competition(ChaHubSaveMixin, models.Model):
         upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()]) if self.creation_statuses.exists() else True
         return has_phases and upload_finished
 
+    def get_whitelist(self):
+        return [
+            'remote_id',
+            'participants',
+            'phases',
+            'published',
+        ]
+
     def get_chahub_data(self):
         data = {
             'created_by': self.created_by.username,
@@ -130,7 +139,7 @@ class Competition(ChaHubSaveMixin, models.Model):
             data['logo_url'] = self.logo.url
             data['logo'] = self.logo.url
 
-        return data
+        return self.clean_private_data(data)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -166,7 +175,7 @@ class CompetitionCreationTaskStatus(models.Model):
         return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
 
 
-class Phase(models.Model):
+class Phase(ChaHubSaveMixin, models.Model):
     PREVIOUS = "Previous"
     CURRENT = "Current"
     NEXT = "Next"
@@ -202,6 +211,10 @@ class Phase(models.Model):
     def __str__(self):
         return f"phase - {self.name} - For comp: {self.competition.title} - ({self.id})"
 
+    @property
+    def published(self):
+        return self.competition.published
+
     def can_user_make_submissions(self, user):
         """Takes a user and checks how many submissions they've made vs the max.
 
@@ -223,10 +236,13 @@ class Phase(models.Model):
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
 
+    def get_whitelist(self):
+        return ['remote_id', 'published', 'tasks']
+
     def get_chahub_data(self):
-        return {
+        data = {
             'remote_id': self.pk,
-            'published': self.competition.published,
+            'published': self.published,
             'index': self.index,
             'start': self.start.isoformat(),
             'end': self.end.isoformat() if self.end else None,
@@ -235,6 +251,7 @@ class Phase(models.Model):
             'is_active': self.is_active,
             'tasks': [task.get_chahub_data() for task in self.tasks.all()]
         }
+        return self.clean_private_data(data)
 
     @property
     def is_active(self):
@@ -394,16 +411,26 @@ class Submission(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return "submissions/"
 
+    def get_whitelist(self):
+        return [
+            'remote_id',
+            'is_public',
+            'competition',
+            'phase_index',
+            'data',
+        ]
+
     def get_chahub_data(self):
         data = {
             "remote_id": self.id,
+            "is_public": self.is_public,
             "competition": self.phase.competition_id,
             "phase_index": self.phase.index,
             "participant": self.owner.username,
             "submitted_at": self.created_when.isoformat(),
-            "data": self.data.get_chahub_data(),
+            "data": self.data.get_chahub_data(),  # Todo: make sure data object is public if submission is public
         }
-        return data
+        return self.clean_private_data(data)
 
     def get_chahub_is_valid(self):
         return self.status == self.FINISHED
@@ -434,12 +461,20 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return 'participants/'
 
+    def get_whitelist(self):
+        return [
+            'remote_id',
+            'competition_id'
+        ]
+
     def get_chahub_data(self):
-        return {
+        data = {
             'remote_id': self.pk,
             'user': self.user.id,
             'status': self.status,
+            'competition_id': self.competition_id
         }
+        return self.clean_private_data(data)
 
 
 class Page(models.Model):

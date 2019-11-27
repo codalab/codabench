@@ -91,8 +91,11 @@ class Data(ChaHubSaveMixin, models.Model):
     def get_chahub_is_valid(self):
         return self.upload_completed_successfully
 
+    def get_whitelist(self):
+        return ['remote_id', 'is_public']
+
     def get_chahub_data(self):
-        return {
+        data = {
             'creator_id': self.created_by.id,
             'remote_id': self.pk,
             'created_by': str(self.created_by.username),
@@ -103,6 +106,7 @@ class Data(ChaHubSaveMixin, models.Model):
             'key': str(self.key),
             'is_public': self.is_public
         }
+        return self.clean_private_data(data)
 
 
 class DataGroup(models.Model):

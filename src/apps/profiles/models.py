@@ -1,4 +1,3 @@
-import datetime
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
@@ -63,29 +62,17 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name if self.name else self.username
 
-    @property
-    def chahub_uid(self):
-        associations = self.social_auth.filter(provider='chahub')
-        if associations.count() > 0:
-            return associations.first().uid
-        return None
-
     @staticmethod
     def get_chahub_endpoint():
         return "profiles/"
 
-    def clean_chahub_data(self, data):
-        validated_data = {}
-        for key, item in data.items():
-            if not item or key in PROFILE_DATA_BLACKLIST:
-                continue
-            elif key == 'details':
-                validated_data[key] = self.clean_chahub_data(item)
-            elif isinstance(item, datetime.datetime):
-                validated_data[key] = item.isoformat()
-            else:
-                validated_data[key] = item
-        return validated_data
+    def get_whitelist(self):
+        # all chahub data is ok to send
+        pass
+
+    def clean_private_data(self, data):
+        # overriding this to filter out blacklist data from above, just to make _sure_ we don't send that info
+        return {k: v for k, v in data.items() if k not in PROFILE_DATA_BLACKLIST}
 
     def get_chahub_data(self):
         data = {
@@ -94,15 +81,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             'remote_id': self.pk,
             'details': {
                 "is_active": self.is_active,
-                "last_login": self.last_login,
-                "date_joined": self.date_joined,
+                "last_login": self.last_login.isoformat(),
+                "date_joined": self.date_joined.isoformat(),
             }
         }
-        chahub_id = self.chahub_uid
-        if chahub_id:
-            data['user'] = chahub_id
-        data = self.clean_chahub_data(data)
-        return data
+        return self.clean_private_data(data)
 
     def get_chahub_is_valid(self):
         # By default, always push

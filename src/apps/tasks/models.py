@@ -29,8 +29,19 @@ class Task(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return 'tasks/'
 
-    def get_chahub_data(self):
-        return {
+    def get_whitelist(self):
+        return [
+            'remote_id',
+            'is_public',
+            'solutions',
+            'ingestion_program',
+            'input_data',
+            'reference_data',
+            'scoring_program',
+        ]
+
+    def get_chahub_data(self, include_solutions=True):
+        data = {
             'remote_id': self.pk,
             'created_by': self.created_by.username,
             'creator_id': self.created_by.pk,
@@ -44,8 +55,10 @@ class Task(ChaHubSaveMixin, models.Model):
             'ingestion_only_during_scoring': self.ingestion_only_during_scoring,
             'reference_data': self.reference_data.get_chahub_data() if self.reference_data else None,
             'scoring_program': self.scoring_program.get_chahub_data() if self.scoring_program else None,
-            'solutions': [solution.get_chahub_data() for solution in self.solutions.all()]
         }
+        if include_solutions:
+            data['solutions'] = [solution.get_chahub_data(include_tasks=False) for solution in self.solutions.all()]
+        return self.clean_private_data(data)
 
 
 class Solution(ChaHubSaveMixin, models.Model):
@@ -65,11 +78,17 @@ class Solution(ChaHubSaveMixin, models.Model):
     def get_chahub_endpoint():
         return 'solutions/'
 
-    def get_chahub_data(self):
-        return {
+    def get_whitelist(self):
+        return ['remote_id', 'is_public', 'data', 'tasks']
+
+    def get_chahub_data(self, include_tasks=True):
+        data = {
             'remote_id': self.pk,
             'name': self.name,
             'description': self.description,
             'key': str(self.key),
-            'data': self.data.get_chahub_data(),
+            'data': self.data.get_chahub_data(),  # Todo: Make sure data is public if solution is public
         }
+        if include_tasks:
+            data['tasks'] = [task.get_chahub_data(include_solutions=False) for task in self.tasks.all()]
+        return self.clean_private_data(data)

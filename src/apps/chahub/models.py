@@ -24,8 +24,10 @@ class ChaHubSaveMixin(models.Model):
     To use:
     1) Override `get_chahub_endpoint()` to return the endpoint on ChaHub API for this model
     2) Override `get_chahub_data()` to return a dictionary to send to ChaHub
-    3) Override `get_chahub_is_valid()` to return True/False on whether or not the object is ready to send to ChaHub
-    4) Data is sent on `save()` and `chahub_timestamp` timestamp is set
+    3) Override `get_whitelist()` to return a whitelist of fields to send to ChaHub if obj not public
+    4) Be sure to call `self.clean_private_data()` inside `get_chahub_data`
+    5) Override `get_chahub_is_valid()` to return True/False on whether or not the object is ready to send to ChaHub
+    6) Data is sent on `save()` and `chahub_timestamp` timestamp is set
 
     To update remove the `chahub_timestamp` timestamp and call `save()`"""
     # Timestamp set whenever a successful update happens
@@ -48,6 +50,13 @@ class ChaHubSaveMixin(models.Model):
     @property
     def app_label(self):
         return f'{self.__class__._meta.app_label}.{self.__class__.__name__}'
+
+    def get_whitelist(self):
+        """Override this to set the return the whitelisted fields for private data
+        Example:
+            return ['remote_id', 'is_public']
+        """
+        raise NotImplementedError()
 
     # -------------------------------------------------------------------------
     # METHODS TO OVERRIDE WHEN USING THIS MIXIN!
@@ -80,45 +89,27 @@ class ChaHubSaveMixin(models.Model):
         return True
 
     def clean_private_data(self, data):
-        if not data:
-            return
-        logger.info(f'Cleaning Data: {data}')
-
-        whitelist_data = ['remote_id', 'published', 'is_public']
-        for key in data.keys():
-            if key == 'data':
-                data[key] = self.clean_private_data(data[key])
-            elif key not in whitelist_data:
-                if isinstance(data[key], list):
-                    if key == 'tasks':
-                        tasks = []
-                        for task in data['tasks']:
-                            if task['is_public']:
-                                tasks.append(task)
-                                continue
-                            temp = {}
-                            for k, v in task.items():
-                                if k.endswith('program') or k.endswith('data'):
-                                    temp[k] = self.clean_private_data(v)
-                                else:
-                                    if k not in whitelist_data:
-                                        temp[k] = None
-                                    else:
-                                        temp[k] = v
-                            tasks.append(temp)
-                        data['tasks'] = tasks
-                    else:
-                        data[key] = [self.clean_private_data(i) for i in data[key]]
-
-                else:
-                    if not data.get('published') and not data.get('is_public'):
-                        data[key] = None
+        """Override this to clean up any data that should not be sent to chahub if the object is not public"""
+        if hasattr(self, 'is_public'):
+            public = self.is_public
+        elif hasattr(self, 'published'):
+            public = self.published
+        else:
+            # assume data is good to push to chahub if there is no field saying otherwise
+            public = True
+        if not public:
+            for key in data.keys():
+                if key not in self.get_whitelist():
+                    data[key] = None
         return data
 
     # Regular methods
     def save(self, send=True, *args, **kwargs):
         # We do a save here to give us an ID for generating URLs and such
         super().save(*args, **kwargs)
+
+        # making sure get whitelist was implemented, making sure we don't send to chahub without cleaning our data
+        self.get_whitelist()
 
         if getattr(settings, 'IS_TESTING', False) and not getattr(settings, 'PYTEST_FORCE_CHAHUB', False):
             # For tests let's just assume Chahub isn't available

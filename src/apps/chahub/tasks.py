@@ -31,7 +31,7 @@ def get_obj(app_label, pk, include_deleted=False):
         else:
             obj = Model.objects.get(pk=pk)
     except Model.DoesNotExist:
-        raise ChahubException(f"Could not find {Model.__class__.__name__} with pk: {pk}")
+        raise ChahubException(f"Could not find {app_label} with pk: {pk}")
     return obj
 
 
