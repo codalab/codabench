@@ -158,8 +158,11 @@ CODALAB.api = {
     get_datasets: function (filters) {
         return CODALAB.api.request('GET', `${URLS.API}datasets/`, filters)
     },
-    delete_dataset: function (id) {
-        return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
+    update_dataset: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}datasets/${pk}/`, data)
+    },
+    delete_dataset: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}datasets/${pk}/`)
     },
     create_dump: function(competition_id) {
         return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")

@@ -25,6 +25,10 @@ class Task(ChaHubSaveMixin, models.Model):
     def __str__(self):
         return f"Task - {self.name} - ({self.id})"
 
+    @property
+    def _validated(self):
+        return self.solutions.filter(md5__in=self.phases.values_list('submissions__md5', flat=True)).exists()
+
     @staticmethod
     def get_chahub_endpoint():
         return 'tasks/'
@@ -59,6 +63,10 @@ class Task(ChaHubSaveMixin, models.Model):
         if include_solutions:
             data['solutions'] = [solution.get_chahub_data(include_tasks=False) for solution in self.solutions.all()]
         return self.clean_private_data(data)
+
+    def save(self, *args, **kwargs):
+        self.is_public = self.is_public and self._validated
+        return super().save(*args, **kwargs)
 
 
 class Solution(ChaHubSaveMixin, models.Model):

@@ -129,7 +129,7 @@ class Competition(ChaHubSaveMixin, models.Model):
             'remote_id': self.pk,
             'published': self.published,
             'participants': [p.get_chahub_data() for p in self.participants.all()],
-            'phases': [phase.get_chahub_data() for phase in self.phases.all()],
+            'phases': [phase.get_chahub_data(send_competition_id=False) for phase in self.phases.all()],
         }
         start = getattr(self.phases.order_by('index').first(), 'start', None)
         data['start'] = start.isoformat() if start is not None else None
@@ -236,13 +236,18 @@ class Phase(ChaHubSaveMixin, models.Model):
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
 
-    def get_whitelist(self):
-        return ['remote_id', 'published', 'tasks']
+    @staticmethod
+    def get_chahub_endpoint():
+        return 'phases/'
 
-    def get_chahub_data(self):
+    def get_whitelist(self):
+        return ['remote_id', 'published', 'tasks', 'index', 'status', 'competition_remote_id']
+
+    def get_chahub_data(self, send_competition_id=True):
         data = {
             'remote_id': self.pk,
             'published': self.published,
+            'status': self.status,
             'index': self.index,
             'start': self.start.isoformat(),
             'end': self.end.isoformat() if self.end else None,
@@ -251,6 +256,8 @@ class Phase(ChaHubSaveMixin, models.Model):
             'is_active': self.is_active,
             'tasks': [task.get_chahub_data() for task in self.tasks.all()]
         }
+        if send_competition_id:
+            data['competition_remote_id'] = self.competition.pk
         return self.clean_private_data(data)
 
     @property

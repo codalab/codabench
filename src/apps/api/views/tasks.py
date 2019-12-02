@@ -7,7 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
 from competitions.models import Submission
-from tasks.models import Task, Solution
+from tasks.models import Task
 
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
@@ -35,6 +35,7 @@ class TaskViewSet(ModelViewSet):
         task_validate_qs = Submission.objects.filter(
             md5__in=OuterRef("solutions__md5"),
             status=Submission.FINISHED,
+            phase__in=OuterRef("phases")
         )
         # We have to grab something from task_validate_qs here, so i grab pk
         qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))

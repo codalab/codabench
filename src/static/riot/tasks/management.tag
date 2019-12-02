@@ -66,13 +66,18 @@
             {selected_task.name}
         </div>
         <div class="content">
-            <div style="font-size: 18px;">{selected_task.description}</div>
+            <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> {selected_task.created_by}</div>
             <div><strong>Key:</strong> {selected_task.key}</div>
-            <div><strong>Is Public:</strong>
-                <span show="{selected_task.is_public}">Yes</span>
-                <span show="{!selected_task.is_public}">No</span>
+            <div><strong>Has Been Validated <span data-inverted=""
+                                                  data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
+                <i class="question circle icon"></i></span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
+            <div><strong>Is Public:</strong> {selected_task.is_public ? "Yes" : "No"}</div>
+            <div if="{selected_task.validated}"
+                 class="ui right floated small green icon button"
+                 onclick="{toggle_task_is_public}">
+                <i class="share icon"></i> {selected_task.is_public ? 'Make Private' : 'Make Public'}
             </div>
             <div class="ui secondary pointing green two item tabular menu">
                 <div class="active item" data-tab="files">Files</div>
@@ -101,7 +106,7 @@
                     </thead>
                     <tbody>
                     <tr each="{solution in selected_task.solutions}">
-                        <td><a href="{URLS.DATASET_DOWNLOAD(solution.key)}">{solution.data}</a></td>
+                        <td><a href="{URLS.DATASET_DOWNLOAD(solution.data)}">{solution.name}</a></td>
                     </tr>
                     </tbody>
                 </table>
@@ -268,6 +273,23 @@
                 .fail((response) => {
                     toastr.error('Error Creating Task')
                 })
+        }
+
+        self.toggle_task_is_public = () => {
+            let message = self.selected_task.is_public
+                ? 'Are you sure you want to make this task private? It will no longer be available to other users.'
+                : 'Are you sure you want to make this task public? It will become visible to everyone'
+            if (confirm(message)) {
+                CODALAB.api.update_task(self.selected_task.id, {id: self.selected_task.id, is_public: !self.selected_task.is_public})
+                    .done(data => {
+                        toastr.success('Task updated')
+                        self.selected_task = data
+                        self.update()
+                    })
+                    .fail(resp => {
+                        toastr.error('Error updating task')
+                    })
+            }
         }
 
         self.form_updated = () => {

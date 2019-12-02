@@ -44,7 +44,7 @@ class TestTasks(APITestCase):
         assert not resp.data["results"][0]["validated"]
 
         # make submission with different Sha -> still invalid
-        new_submission = SubmissionFactory(md5="different", phase=phase, status=Submission.FINISHED)
+        SubmissionFactory(md5="different", phase=phase, status=Submission.FINISHED)
         resp = self.client.get(reverse('task-list'))
         assert resp.status_code == 200
         assert not resp.data["results"][0]["validated"]

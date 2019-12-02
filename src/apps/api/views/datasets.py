@@ -1,31 +1,25 @@
 import os
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
-from rest_framework.decorators import api_view
-from rest_framework.exceptions import PermissionDenied
-
 from django.core.files.base import ContentFile
 from django.db.models import Q
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, status
-from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
-from api.serializers import datasets as serializers
-from datasets.models import Data, DataGroup
-from competitions.models import Competition
 from api.pagination import BasicPagination
+from api.serializers import datasets as serializers
+from competitions.models import Competition
+from datasets.models import Data, DataGroup
 from utils.data import make_url_sassy
 
 
-class DataViewSet(mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
-                  # mixins.UpdateModelMixin,  # We don't update datasets!
-                  mixins.DestroyModelMixin,
-                  mixins.ListModelMixin,
-                  GenericViewSet):
+class DataViewSet(ModelViewSet):
     queryset = Data.objects.all()
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('type', 'name', 'key', 'was_created_by_competition')

@@ -81,8 +81,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             'remote_id': self.pk,
             'details': {
                 "is_active": self.is_active,
-                "last_login": self.last_login.isoformat(),
-                "date_joined": self.date_joined.isoformat(),
+                "last_login": self.last_login.isoformat() if self.last_login else None,
+                "date_joined": self.date_joined.isoformat() if self.date_joined else None,
             }
         }
         return self.clean_private_data(data)

@@ -90,7 +90,7 @@
         <div class="content">
             <h3>Details</h3>
 
-            <table class="ui very basic table">
+            <table class="ui basic table">
                 <thead>
                 <tr>
                     <th>Key</th>
@@ -125,8 +125,12 @@
             </div>
         </div>
         <div class="actions">
-            <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}"
-               class="ui green icon button"><i class="download icon"></i>Download File</a>
+            <button class="ui primary icon button" onclick="{toggle_is_public}">
+                <i class="share icon"></i> {selected_row.is_public ? "Make Private" : "Make Public"}
+            </button>
+            <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}" class="ui green icon button">
+                <i class="download icon"></i>Download File
+            </a>
             <button class="ui cancel button">Close</button>
         </div>
     </div>
@@ -212,7 +216,6 @@
 
         self.show_info_modal = function (row) {
             self.selected_row = row
-            console.table(row)
             self.update()
             $(self.refs.info_modal).modal('show')
         }
@@ -221,9 +224,6 @@
             $(self.refs.dataset_creation_modal).modal('show')
         }
 
-        self.close_modal = function () {
-            $(self.refs.dataset_modal).modal('hide')
-        }
 
         /*---------------------------------------------------------------------
          Methods
@@ -356,11 +356,10 @@
 
             CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
-                    console.log("UPLOAD SUCCESSFUL")
                     toastr.success("Dataset successfully uploaded!")
                     self.update_datasets()
                     self.clear_form()
-                    $('#dataset_modal').modal('hide')
+                    $(self.refs.dataset_creation_modal).modal('hide')
                 })
                 .fail(function (response) {
                     if (response) {
@@ -382,6 +381,22 @@
                 .always(function () {
                     self.hide_progress_bar()
                 })
+        }
+
+        self.toggle_is_public = () => {
+            let message = self.selected_row.is_public
+                ? 'Are you sure you want to make this dataset private? It will no longer be available to other users.'
+                : 'Are you sure you want to make this dataset public? It will become visible to everyone'
+            if (confirm(message)) {
+                CODALAB.api.update_dataset(self.selected_row.id, {id: self.selected_row.id, is_public: !self.selected_row.is_public})
+                    .done(data => {
+                        toastr.success('Dataset updated')
+                        $(self.refs.info_modal).modal('hide')
+                    })
+                    .fail(resp => {
+                        toastr.error('Error updating Dataset')
+                    })
+            }
         }
     </script>
 

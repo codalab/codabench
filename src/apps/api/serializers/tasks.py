@@ -40,7 +40,7 @@ class TaskSerializer(WritableNestedModelSerializer):
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     validated = serializers.SerializerMethodField()
-    value = serializers.CharField(source='key')
+    value = serializers.CharField(source='key', required=False)
 
     class Meta:
         model = Task
@@ -77,6 +77,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     files = serializers.SerializerMethodField(read_only=True)
+    validated = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -88,6 +89,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'created_by',
             'created_when',
             'is_public',
+            'validated',
 
             # Data pieces
             'input_data',
@@ -113,6 +115,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
                     "file_path": make_url_sassy(program.data_file.name),
                 })
         return files
+
+    def get_validated(self, task):
+        return task.validated is not None
 
 
 class TaskListSerializer(serializers.ModelSerializer):
