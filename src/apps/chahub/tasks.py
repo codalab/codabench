@@ -150,7 +150,7 @@ def do_chahub_retries(limit=None):
     logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
         batch_send_to_chahub(model, retry_only=True, limit=limit)
-        for obj in model.objects.get_all_objects().filter(deleted=True):
+        for obj in model.objects.all_objects().filter(deleted=True):
             obj.delete()
 
 

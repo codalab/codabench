@@ -15,7 +15,7 @@ class ChaHubUserManager(UserManager):
     def get_queryset(self):
         return super().get_queryset().filter(deleted=False)
 
-    def get_all_objects(self):
+    def all_objects(self):
         return super().get_queryset()
 
 

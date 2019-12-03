@@ -46,15 +46,13 @@ class SubmissionMixinTests(ChaHubTestCase):
         self.submission.is_public = False
         resp1 = self.mock_chahub_save(self.submission)
         assert not resp1.called
+        self.submission = Submission.objects.get(id=self.submission.id)
         self.submission.status = "Finished"
         resp2 = self.mock_chahub_save(self.submission)
-        assert not resp2.called
-        self.submission.is_public = True
-        resp4 = self.mock_chahub_save(self.submission)
-        assert resp4.called
+        assert resp2.called
 
     def test_retrying_invalid_submission_wont_retry_again(self):
-        self.submission.is_public = False
+        self.submission.status = "Running"
         self.submission.chahub_needs_retry = True
         resp = self.mock_chahub_save(self.submission)
         assert not resp.called
@@ -85,12 +83,15 @@ class ProfileMixinTests(ChaHubTestCase):
 class CompetitionMixinTests(ChaHubTestCase):
     def setUp(self):
         self.comp = CompetitionFactory(published=False)
+        PhaseFactory(competition=self.comp)
         super().setUp()
 
     def test_unpublished_comp_doesnt_send_private_data(self):
         resp = self.mock_chahub_save(self.comp)
         # Gross traversal through call args to get the data passed to _send
+        assert resp.called
         data = resp.call_args[0][1][0]
+        whitelist = self.comp.get_whitelist()
         for key, value in data.items():
-            if key not in ['published', 'remote_id']:
+            if key not in whitelist:
                 assert value is None
