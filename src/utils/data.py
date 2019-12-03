@@ -103,4 +103,3 @@ def put_blob(url, file_path):
             'x-ms-blob-type': 'BlockBlob',
         }
     )
-
