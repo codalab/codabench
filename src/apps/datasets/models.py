@@ -104,7 +104,7 @@ class Data(ChaHubSaveMixin, models.Model):
 
     def get_chahub_data(self):
         ssl = settings.SECURE_SSL_REDIRECT
-        site = Site.objects.get_current()
+        site = Site.objects.get_current().domain
         return self.clean_private_data({
             'creator_id': self.created_by.id,
             'remote_id': self.pk,

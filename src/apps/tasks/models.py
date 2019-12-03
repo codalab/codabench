@@ -87,7 +87,12 @@ class Solution(ChaHubSaveMixin, models.Model):
         return 'solutions/'
 
     def get_whitelist(self):
-        return ['remote_id', 'is_public', 'data', 'tasks']
+        return [
+            'remote_id',
+            'is_public',
+            'data',
+            'tasks'
+        ]
 
     def get_chahub_data(self, include_tasks=True):
         data = {

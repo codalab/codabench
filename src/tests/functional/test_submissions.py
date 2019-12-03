@@ -14,7 +14,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission(self, competition_zip_path, submission_zip_path, expected_submission_output, timeout=999):
+    def _run_submission(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -55,7 +55,8 @@ class TestSubmissions(SeleniumTestCase):
         # Check that md5 information was stored correctly
         submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
         assert Submission.objects.filter(md5=submission_md5).exists()
-        assert Solution.objects.filter(md5=submission_md5).exists()
+        if has_solutions:
+            assert Solution.objects.filter(md5=submission_md5).exists()
 
         submission = self.user.submission.first()
 
@@ -70,7 +71,6 @@ class TestSubmissions(SeleniumTestCase):
             # Tasks and solutions
             task.scoring_program.data_file.name,
             task.reference_data.data_file.name,
-            solution.data.data_file.name,
 
             # Submission related files
             submission.data.data_file.name,
@@ -78,6 +78,8 @@ class TestSubmissions(SeleniumTestCase):
             submission.scoring_result.name,
             # TODO: missing many log deletions?
         ]
+        if has_solutions:
+            created_files.append(solution.data.data_file.name)
         for detail in submission.details.all():
             created_files.append(detail.data_file.name)
 
@@ -85,7 +87,7 @@ class TestSubmissions(SeleniumTestCase):
         self.remove_items_from_storage(*created_files)
 
     def test_v15_submission_appears_in_submissions_table(self):
-        self._run_submission('competition_15.zip', 'submission_15.zip', '*** prediction_score')
+        self._run_submission('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
 
     def test_v2_submission_appears_in_submissions_table(self):
         self._run_submission('competition.zip', 'submission.zip', 'Scores')

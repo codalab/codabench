@@ -433,9 +433,10 @@ class Submission(ChaHubSaveMixin, models.Model):
             "is_public": self.is_public,
             "competition": self.phase.competition_id,
             "phase_index": self.phase.index,
-            "participant": self.owner.username,
+            "owner": self.owner.id,
+            "participant_name": self.owner.username,
             "submitted_at": self.created_when.isoformat(),
-            "data": self.data.get_chahub_data(),  # Todo: make sure data object is public if submission is public
+            "data": self.data.get_chahub_data(),
         }
         return self.clean_private_data(data)
 

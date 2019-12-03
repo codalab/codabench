@@ -103,7 +103,7 @@ def batch_send_to_chahub(model, limit=None, retry_only=False):
         qs = qs[:limit]
 
     endpoint = model.get_chahub_endpoint()
-    data = [obj.clean_private_data(obj.get_chahub_data()) for obj in qs if obj.get_chahub_is_valid()]
+    data = [obj.get_chahub_data() for obj in qs if obj.get_chahub_is_valid()]
     if not data:
         logger.info(f'Nothing to send to Chahub at {endpoint}')
         return
@@ -145,12 +145,14 @@ def get_chahub_models():
 def do_chahub_retries(limit=None):
     if not chahub_is_up():
         return
-    logger.info("ChaHub is online, checking for objects needing to be re-sent to ChaHub")
     chahub_models = get_chahub_models()
     logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
         batch_send_to_chahub(model, retry_only=True, limit=limit)
-        for obj in model.objects.all_objects().filter(deleted=True):
+        qs = model.objects.all_objects().filter(deleted=True)
+        if limit is not None:
+            qs = qs[:limit]
+        for obj in qs:
             obj.delete()
 
 

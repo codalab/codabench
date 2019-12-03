@@ -55,7 +55,7 @@ class TaskSerializer(WritableNestedModelSerializer):
             'ingestion_only_during_scoring',
             'validated',
 
-            # The 'value' field helps select2 work with this stuff
+            # The 'value' field helps semantic multiselect work with this stuff
             'value',
 
             # Data pieces
