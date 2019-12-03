@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import traceback
 
 import oyaml as yaml
 import zipfile
@@ -12,6 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
+from rest_framework.exceptions import ValidationError
 
 from celery_config import app
 from django.utils.timezone import now
@@ -299,7 +301,16 @@ def unpack_competition(competition_dataset_pk):
             )
 
             unpacker.unpack()
-            competition = unpacker.save()
+
+            try:
+                competition = unpacker.save()
+            except ValidationError as e:
+                error_str = ""
+                for key, errors in e.detail.items():
+                    error_str += f'{key}: {"; ".join(errors)}\n'
+                raise CompetitionUnpackingException(
+                    f"Bundle configuration errors. {error_str}"
+                )
 
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
@@ -307,11 +318,20 @@ def unpack_competition(competition_dataset_pk):
             logger.info("Competition saved!")
 
     except CompetitionUnpackingException as e:
+        # We want to catch well handled exceptions and display them to the user
         logger.info(str(e))
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
         status.save()
         raise e
+
+    except Exception as e:
+        # These are critical uncaught exceptions, make sure the end user is at least informed
+        # that unpacking has failed -- do not share unhandled exception details
+        logger.error(traceback.format_exc())
+        status.details = "Contact an administrator, competition failed to unpack in a critical way."
+        status.status = CompetitionCreationTaskStatus.FAILED
+        status.save()
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
