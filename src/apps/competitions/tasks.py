@@ -305,12 +305,21 @@ def unpack_competition(competition_dataset_pk):
             try:
                 competition = unpacker.save()
             except ValidationError as e:
-                error_str = ""
-                for key, errors in e.detail.items():
-                    error_str += f'{key}: {"; ".join(errors)}\n'
-                raise CompetitionUnpackingException(
-                    f"Bundle configuration errors. {error_str}"
-                )
+                def _get_error_string(error_dict):
+                    """Helps us nicely print out a ValidationError"""
+                    for key, errors in error_dict.items():
+                        try:
+                            return f'{key}: {"; ".join(errors)}\n'
+                        except TypeError:
+                            # We ran into a list of nested dictionaries, start recursing!
+                            nested_errors = []
+                            for e in errors:
+                                error_text = _get_error_string(e)
+                                if error_text:
+                                    nested_errors.append(error_text)
+                            return f'{key}: {"; ".join(nested_errors)}\n'
+
+                raise CompetitionUnpackingException(_get_error_string(e.detail))
 
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
