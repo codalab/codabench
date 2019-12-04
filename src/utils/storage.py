@@ -12,10 +12,6 @@ class CodalabAzureStorage(AzureStorage):
         super().__init__(*args, **kwargs)
 
 
-class WhiteNoiseStaticFilesStorage(CompressedManifestStaticFilesStorage):
-    manifest_strict = False
-
-
 # Setup actual storage classes we use on the project
 StorageClass = get_storage_class(settings.DEFAULT_FILE_STORAGE)
 
