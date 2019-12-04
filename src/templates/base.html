@@ -146,7 +146,7 @@
             </div>
             <div class="seven wide column">
                 <h4 class="ui inverted header">Codalab v2</h4>
-                <p>Join us on <a href="https://github.com/codalab/competitions-v2">Github</a> for contact & bug reports</p>
+                <p>Join us on <a href="https://github.com/codalab/competitions-v2">Github</a> for contact &amp; bug reports</p>
             </div>
         </div>
     </div>
@@ -199,7 +199,7 @@
             },
             API: "/api/",
             STATIC: function (file_name) {
-                return "{{ STATIC_URL }}" + file_name
+                return `{{ STATIC_URL }}${file_name}`
             },
             // Websockets
             //WS_SUBMISSION_LISTEN: ""
