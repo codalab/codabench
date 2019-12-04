@@ -1,5 +1,4 @@
-from os import remove
-from os.path import join
+import os
 
 from django.core.management.base import BaseCommand
 
@@ -14,7 +13,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         backup_file_name = options['backup_path']
-        backup_path = join("/app/backups", options['backup_path'])
+        backup_path = os.path.join("/app/backups", options['backup_path'])
 
         # Upload it
         upload_url = make_url_sassy(
@@ -32,4 +31,4 @@ class Command(BaseCommand):
 
         # Clean up
         print(f"Removing local dump file '{backup_path}'")
-        remove(backup_path)
+        os.remove(backup_path)
