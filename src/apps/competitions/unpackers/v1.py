@@ -9,8 +9,8 @@ class V15Unpacker(BaseUnpacker):
         super().__init__(*args, **kwargs)
 
         # Just in case docker image is blank (""), replace with default value
-        docker_image = self.competition_yaml.get('competition_docker_image', 'codalab/codalab-legacy:py3')
-        if docker_image == "":
+        docker_image = self.competition_yaml.get('competition_docker_image')
+        if not docker_image:
             docker_image = "codalab/codalab-legacy:py3"
 
         self.competition = {
