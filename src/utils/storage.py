@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from storages.backends.azure_storage import AzureStorage
-from whitenoise.storage import CompressedManifestStaticFilesStorage
 
 
 class CodalabAzureStorage(AzureStorage):
