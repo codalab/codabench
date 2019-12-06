@@ -1,28 +1,44 @@
 <registration>
     <div if="{!status}" class="ui grid">
         <div class="row">
-            <p>You have not yet registered for this competition.</p>
-            <p>
-                To participate in this competition, you must accept its specific <a href="" onclick="{show_modal}">terms and conditions</a>. After you
-                register, the competition organizer will review your application and notify you when your participation
-                is approved.
-            </p>
-            <p if="!registration_auto_approve">
-                This competition <strong>requires approval</strong> from the competition organizers. After submitting your registration request, an email
-                will be sent to the competition organizers notifying them of your request. Your application will remain pending until they
-                approve or deny it.
-            </p>
-        </div>
-        <div class="row">
-            <div class="ui checkbox">
-                <input type="checkbox" id="accept-terms" onclick="{accept_toggle}">
-                <label for="accept-terms">I accept the terms and conditions of the competition.</label>
+            <div class="column">
+                <p>
+                    You have not yet registered for this competition.
+                </p>
+                <p>
+                    To participate in this competition, you must accept its specific
+                    <a href="" onclick="{show_modal}">terms and conditions</a>.
+                    <span if="{registration_auto_approve}">This competition <strong>does not</strong>
+                    require approval, once you register, you will immediately be able to participate.</span>
+                </p>
+
+                <p if="{!registration_auto_approve}">
+                    This competition <strong>requires approval</strong> from the competition organizers. After
+                    submitting your registration request, an email
+                    will be sent to the competition organizers notifying them of your request. Your application will
+                    remain pending until they
+                    approve or deny it.
+                </p>
             </div>
         </div>
-        <div class="row">
-            <button class="ui primary button {disabled: !accepted}" onclick="{submit_registration}">
-                Register
-            </button>
+        <virtual if="{CODALAB.state.user.logged_in}">
+            <div class="row">
+                <div class="ui checkbox">
+                    <input type="checkbox" id="accept-terms" onclick="{accept_toggle}">
+                    <label for="accept-terms">I accept the terms and conditions of the competition.</label>
+                </div>
+            </div>
+            <div class="row">
+                <button class="ui primary button {disabled: !accepted}" onclick="{submit_registration}">
+                    Register
+                </button>
+            </div>
+        </virtual>
+        <div class="row" if="{!CODALAB.state.user.logged_in}">
+            <div class="column">
+                <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to register for this competition.
+            </div>
         </div>
     </div>
 

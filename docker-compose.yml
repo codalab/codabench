@@ -22,12 +22,12 @@ services:
     build: .
     command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80"
     environment:
-      - DJANGO_SETTINGS_MODULE=settings.base
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
     volumes:
       - .:/app
       - /tmp/codalab-v2/django:/codalab_tmp
+      - ./backups:/app/backups
     ports:
       - 8000:8000
     depends_on:
@@ -101,6 +101,7 @@ services:
       - 5432:5432
     volumes:
       - ./var/postgres:/var/lib/postgresql/data:delegated
+      - ./backups:/app/backups
     logging:
       options:
         max-size: "20k"
@@ -147,8 +148,6 @@ services:
     depends_on:
       - rabbit
       - db
-    environment:
-      - DJANGO_SETTINGS_MODULE=settings.base
     env_file: .env
     volumes:
       - .:/app

@@ -6,7 +6,7 @@
   "env": {
     "USE_SSL": "True",
     "GUNICORN_CMD_ARGS": "--workers=3",
-    "DJANGO_SETTINGS_MODULE": "settings.base",
+    "DJANGO_SETTINGS_MODULE": "settings.develop",
     "TEMP_SUBMISSION_STORAGE": "./temp_submission_storage/",
     "AWS_ACCESS_KEY_ID": {"required": true},
     "AWS_SECRET_ACCESS_KEY": {"required": true},

@@ -5,7 +5,7 @@ import subprocess
 
 if __name__ == "__main__":
     sys.path.append('src')
-    settings_module = os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.base')
+    settings_module = os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.develop')
 
     if 'runserver' in sys.argv:
         subprocess.Popen(["npm-watch"])
