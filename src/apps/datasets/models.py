@@ -61,8 +61,12 @@ class Data(ChaHubSaveMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self.file_size and self.data_file:
-            # save file size as kbs
-            self.file_size = self.data_file.size / 1024
+            try:
+                # save file size as kbs
+                self.file_size = self.data_file.size / 1024
+            except TypeError:
+                # file returns a None size, can't divide None / 1024
+                self.file_size = 0
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)

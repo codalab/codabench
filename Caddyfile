@@ -17,6 +17,7 @@
   proxy / django:8000 {
     except /static /media
     transparent
+    websocket
   }
 
   # Allows to use `.gz` files when available:
