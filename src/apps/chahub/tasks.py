@@ -149,10 +149,10 @@ def do_chahub_retries(limit=None):
     logger.info(f'Retrying for ChaHub models: {chahub_models}')
     for model in chahub_models:
         batch_send_to_chahub(model, retry_only=True, limit=limit)
-        qs = model.objects.all_objects().filter(deleted=True)
+        obj_to_be_deleted = model.objects.all_objects().filter(deleted=True)
         if limit is not None:
-            qs = qs[:limit]
-        for obj in qs:
+            obj_to_be_deleted = obj_to_be_deleted[:limit]
+        for obj in obj_to_be_deleted:
             obj.delete()
 
 
@@ -160,6 +160,5 @@ def do_chahub_retries(limit=None):
 def send_everything_to_chahub(limit=None):
     if not chahub_is_up():
         return
-    chahub_models = get_chahub_models()
-    for model in chahub_models:
+    for model in get_chahub_models():
         batch_send_to_chahub(model, limit=limit)

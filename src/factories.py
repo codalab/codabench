@@ -90,7 +90,6 @@ class TaskFactory(DjangoModelFactory):
             return
 
         if extracted:
-            # A list of groups were passed in, use them
             for solution in extracted:
                 self.solutions.add(solution)
 
