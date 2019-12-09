@@ -134,7 +134,10 @@ class ChaHubSaveMixin(models.Model):
                 self.chahub_needs_retry = False
                 super().save()
 
-    def delete(self, *args, **kwargs):
-        self.deleted = True
-        self.save(send=False)
-        delete_from_chahub.apply_async((self.app_label, self.pk))
+    def delete(self, send=True, *args, **kwargs):
+        if send:
+            self.deleted = True
+            self.save(send=False)
+            delete_from_chahub.apply_async((self.app_label, self.pk))
+        else:
+            super().delete(*args, **kwargs)

@@ -81,7 +81,7 @@
                         <!-- delete submission -->
                     </button>
                 </virtual>
-                <span if="{!submission.leaderboard}"
+                <span if="{!submission.leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
@@ -94,13 +94,13 @@
                      onclick="{do_nothing}">
                     <i class="icon green check"></i>
                 </span>
-                <span if="{!submission.is_public}"
+                <span if="{!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Public"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
                     <i class="icon share teal alternate"></i>
                 </span>
-                <span if="{!!submission.is_public}"
+                <span if="{!!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Private"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">

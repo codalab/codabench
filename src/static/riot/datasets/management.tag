@@ -12,7 +12,7 @@
         <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
     </select>
     <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
-        <label>Show Auto Created?</label>
+        <label>Show Auto Created</label>
         <input type="checkbox" ref="auto_created">
     </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
@@ -392,6 +392,7 @@
                     .done(data => {
                         toastr.success('Dataset updated')
                         $(self.refs.info_modal).modal('hide')
+                        self.filter()
                     })
                     .fail(resp => {
                         toastr.error('Error updating Dataset')

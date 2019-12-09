@@ -86,7 +86,7 @@ def delete_from_chahub(app_label, pk):
 
     if resp and resp.status_code == 204:
         logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
-        obj.delete()
+        obj.delete(send=False)
     else:
         status = getattr(resp, 'status_code', 'N/A')
         body = getattr(resp, 'content', 'N/A')
