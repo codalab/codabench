@@ -12,6 +12,7 @@ venv/
 var/
 var_*/
 certs/
+backups/
 
 src/static/output.css
 src/static/output.js
@@ -24,3 +25,5 @@ db.sqlite3
 celerybeat-schedule
 package-lock.json
 artifacts/
+
+docker-compose.override.yml

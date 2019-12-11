@@ -11,7 +11,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 # NOTE! We cannot use in memory databases at the moment with Channels. If we remove channels,
 # we can turn this back on:
 #     # Use in memory database
-#     DATABASES['default'] = {  # noqa: F405
+#     DATABASES['default'] = {
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': ':memory:',
 #     }
@@ -21,7 +21,7 @@ DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: False
 }
 
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")  # noqa: F405
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
 
 IS_TESTING = True
 

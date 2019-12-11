@@ -36,3 +36,41 @@ _NOTE: Pisano Period competition may be out of date_
 https://github.com/codalab/competition-examples/tree/master/v2/pisano_period
 
 _TODO: Wheat Seed competition_
+
+
+## Building compute worker
+
+To re-build the image:
+
+```bash
+docker build -t competitions-v2-compute-worker -f Dockerfile.compute_worker .
+```
+
+Updating the image
+
+```bash
+docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
+docker push codalab/competitions-v2-compute-worker
+```
+
+## Spinning up a compute worker
+
+
+```bash
+# install docker
+$ curl https://get.docker.com | sudo sh
+$ sudo usermod -aG docker $USER
+
+# >>> reconnect <<<
+
+$ docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -d \
+    --env BROKER_URL=<queue broker url> \
+    --restart unless-stopped \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    codalab/competitions-v2-compute-worker:latest 
+```
+
+

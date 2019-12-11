@@ -29,7 +29,6 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
-    'whitenoise',
     'oauth2_provider',
     'corsheaders',
     'social_django',
@@ -54,7 +53,6 @@ OUR_APPS = (
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
 MIDDLEWARE = (
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -152,7 +150,7 @@ SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 # =============================================================================
 # Debugging
 # =============================================================================
-DEBUG = os.environ.get('DEBUG', True)
+DEBUG = os.environ.get("DEBUG", False)
 
 # =============================================================================
 # Database
@@ -203,7 +201,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json',)
 CELERY_BEAT_SCHEDULE = {
     'do_phase_migrations': {
-        'task': 'src.apps.competitions.tasks.do_phase_migrations',
+        'task': 'competitions.tasks.do_phase_migrations',
         'schedule': timedelta(seconds=300),
     },
 }
@@ -236,8 +234,30 @@ OAUTH2_PROVIDER = {
 # =============================================================================
 CORS_ORIGIN_ALLOW_ALL = True
 
-if not DEBUG and CORS_ORIGIN_ALLOW_ALL:
-    raise Exception("Disable CORS_ORIGIN_ALLOW_ALL if we're not in DEBUG mode")
+
+# =============================================================================
+# Logging
+# =============================================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+    },
+
+}
 
 # =============================================================================
 # Channels
@@ -292,7 +312,6 @@ if STORAGE_IS_GCS:
 
 FILE_UPLOAD_HANDLERS = ("django.core.files.uploadhandler.TemporaryFileUploadHandler",)
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_FINDERS = (
