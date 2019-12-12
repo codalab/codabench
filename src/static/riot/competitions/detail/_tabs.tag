@@ -94,7 +94,10 @@
 
         <!--Get Started tab-->
         <div class="pages-tab ui tab" data-tab="pages-tab">
-            <div class="ui relaxed grid">
+            <div show="{loading}">
+                <loader></loader>
+            </div>
+            <div class="ui relaxed grid" show="{!loading}">
                 <div class="row">
                     <div class="four wide column">
                         <div class="ui side vertical tabular pages-menu menu">
@@ -147,7 +150,10 @@
 
         <!--Phases tab-->
         <div class="phases-tab ui tab" data-tab="phases-tab">
-            <div class="ui relaxed grid">
+            <div show="{loading}">
+                <loader></loader>
+            </div>
+            <div class="ui relaxed grid" show="{!loading}">
                 <div class="row">
                     <div class="sixteen wide centered column">
                         <div class="ui styled accordion">
@@ -175,7 +181,7 @@
         <div class="submission-tab ui tab" data-tab="participate-tab">
             <!-- Tab Content !-->
             <div show="{loading}">
-                <div class="ui active text loader">Loading</div>
+                <loader></loader>
             </div>
 
             <div show="{!loading}">
@@ -201,16 +207,21 @@
 
         <!-- Leaderboard tab-->
         <div class="results-tab ui tab" data-tab="results-tab">
-            <!-- Tab Content !-->
-            <div class="ui button-container">
-                <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
-                     each="{ leaderboard in competition.leaderboards }"
-                     onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
-                </div>
+            <div show="{loading}">
+                <loader></loader>
             </div>
-            <div>
-                <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }">
-                </leaderboards>
+            <!-- Tab Content !-->
+            <div show="{!loading}">
+                <div class="ui button-container">
+                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
+                         each="{ leaderboard in competition.leaderboards }"
+                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
+                    </div>
+                </div>
+                <div>
+                    <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }">
+                    </leaderboards>
+                </div>
             </div>
         </div>
 
@@ -343,7 +354,7 @@
             })
             // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
             // rather than a weird flicker
-            _.delay(() => {self.loading = false; self.update()}, 5)
+            _.delay(() => {self.loading = false; self.update()}, 500)
         })
 
         self.pretty_date = function (date_string) {
