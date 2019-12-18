@@ -153,6 +153,7 @@ def do_chahub_retries(limit=None):
         if limit is not None:
             obj_to_be_deleted = obj_to_be_deleted[:limit]
         for obj in obj_to_be_deleted:
+            # TODO: call celery task here, instead of abstracting.
             obj.delete()
 
 
