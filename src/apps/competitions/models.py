@@ -432,7 +432,7 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
 class Page(models.Model):
     competition = models.ForeignKey(Competition, related_name='pages', on_delete=models.CASCADE)
     title = models.TextField(max_length=255)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
     index = models.PositiveIntegerField()
 
 
