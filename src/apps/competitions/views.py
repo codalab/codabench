@@ -29,15 +29,3 @@ class CompetitionDetail(DetailView):
         if is_creator or is_collaborator or competition.published or valid_secret_key:
             return competition
         raise Http404()
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     # # context['number'] = random.randrange(1, 100)
-    #     # try:
-    #     #     my_pk = kwargs.pop('pk')
-    #     #     comp = Competition.objects.get(pk=my_pk)
-    #     #     context['comp'] = comp
-    #     #     context['comp_pk'] = comp.pk
-    #     # except KeyError:
-    #     #     print("Key error oh no")
-    #     return context

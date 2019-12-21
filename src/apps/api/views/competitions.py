@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, Count, Q, F
+from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -62,7 +62,11 @@ class CompetitionViewSet(ModelViewSet):
                     'collaborators',
                 )
                 qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                qs = qs.annotate(submission_count=Count('phases__submissions'))
+                qs = qs.annotate(submission_count=Count(
+                    Case(
+                        When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
+                    ), distinct=True)
+                )
 
         search_query = self.request.query_params.get('search')
         if search_query:

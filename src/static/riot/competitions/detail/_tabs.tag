@@ -218,7 +218,7 @@
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
                 </div>
-                <div>
+                <div style="overflow: auto">
                     <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }">
                     </leaderboards>
                 </div>

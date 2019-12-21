@@ -41,10 +41,12 @@ class SubmissionScoreViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         comp = instance.submissions.first().phase.competition
-        admin_users = [comp.created_by] + list(comp.collaborators.all())
-        if request.user not in admin_users and not request.user.is_superuser:
+        if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionError('You do not have permission to update submission scores')
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        for submission in instance.submissions.filter(parent__isnull=True):
+            submission.calculate_scores()
+        return response
 
 
 @api_view(['POST'])

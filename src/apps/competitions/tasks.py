@@ -118,7 +118,7 @@ def _send_submission(submission, task, is_scoring, run_args):
         if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
             run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
 
-    if not is_scoring and task.input_data:
+    if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
         run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
     if is_scoring and task.reference_data:

@@ -1,7 +1,7 @@
 from os.path import basename
 
 from django.core.exceptions import ValidationError
-from rest_framework import serializers, fields
+from rest_framework import serializers
 
 from api.serializers import leaderboards
 from competitions.models import Submission, SubmissionDetails
@@ -11,8 +11,8 @@ from utils.data import make_url_sassy
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
-    index = fields.IntegerField(source='column.index', read_only=True)
-    column_key = fields.CharField(source='column.key', read_only=True)
+    index = serializers.IntegerField(source='column.index', read_only=True)
+    column_key = serializers.CharField(source='column.key', read_only=True)
 
     class Meta:
         model = SubmissionScore
@@ -26,9 +26,9 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
-    filename = fields.SerializerMethodField(read_only=True)
-    owner = fields.CharField(source='owner.username')
-    phase_name = fields.CharField(source='phase.name')
+    filename = serializers.SerializerMethodField(read_only=True)
+    owner = serializers.CharField(source='owner.username')
+    phase_name = serializers.CharField(source='phase.name')
 
     class Meta:
         model = Submission
@@ -61,9 +61,22 @@ class SubmissionSerializer(serializers.ModelSerializer):
         return basename(instance.data.data_file.name)
 
 
+class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
+    scores = SubmissionScoreSerializer(many=True)
+
+    class Meta:
+        model = Submission
+        fields = (
+            'scores',
+        )
+        extra_kwargs = {
+            "scores": {"read_only": True},
+        }
+
+
 class SubmissionCreationSerializer(serializers.ModelSerializer):
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    filename = fields.SerializerMethodField(read_only=True)
+    filename = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission

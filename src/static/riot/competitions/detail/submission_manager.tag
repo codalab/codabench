@@ -173,17 +173,17 @@
             }
             filters = filters || {phase: self.selected_phase.id}
             CODALAB.api.get_submissions(filters)
-                .done(function (data) {
+                .done(function (submissions) {
                     // TODO: should be able to do this with a serializer?
                     if (opts.admin) {
-                        self.submissions = data.map((item) => {
+                        self.submissions = submissions.map((item) => {
                             item.phase = opts.competition.phases.filter((phase) => {
                                 return phase.id === item.phase
                             })[0]
                             return item
                         })
                     } else {
-                        self.submissions = data
+                        self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
                     }
                     self.update({csv_link: CODALAB.api.get_submission_csv_URL(filters)})
                 })

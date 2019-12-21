@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
+from leaderboards.models import SubmissionScore
 from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
@@ -366,6 +367,25 @@ class Submission(ChaHubSaveMixin, models.Model):
         if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
             self.status = 'Finished'
             self.save()
+
+    def calculate_scores(self):
+        leaderboards = self.phase.competition.leaderboards.all()
+        for leaderboard in leaderboards:
+            columns = leaderboard.columns.exclude(computation__isnull=True)
+            for column in columns:
+                scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
+                if scores.exists():
+                    score = column.compute(scores)
+                    try:
+                        sub_score = self.scores.get(column=column)
+                        sub_score.score = score
+                        sub_score.save()
+                    except SubmissionScore.DoesNotExist:
+                        sub_score = SubmissionScore.objects.create(
+                            column=column,
+                            score=score
+                        )
+                        self.scores.add(sub_score)
 
     def get_chahub_endpoint(self):
         return "submissions/"

@@ -109,6 +109,9 @@
                                 <div class="menu">
                                     <div class="item" data-index="{index}" data-value="none">None</div>
                                     <div class="item" data-index="{index}" data-value="avg">Average</div>
+                                    <div class="item" data-index="{index}" data-value="sum">Sum</div>
+                                    <div class="item" data-index="{index}" data-value="min">Min</div>
+                                    <div class="item" data-index="{index}" data-value="max">Max</div>
                                 </div>
                             </div>
                             <label if="{column.computation}" style="display: block; padding-top: 10px;">Apply to:</label>

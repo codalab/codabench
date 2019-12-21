@@ -12,36 +12,31 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{_.get(selected_leaderboard.submissions, 'length', 0) === 0}" class="center aligned"><td colspan="3"><em>No submissions have been added to this leaderboard yet!</em></td></tr>
-        <tr each="{ submission in selected_leaderboard.submissions }">
+        <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
+            <td colspan="100%">
+                <em>No submissions have been added to this leaderboard yet!</em>
+            </td>
+        </tr>
+        <tr each="{ submission, index in selected_leaderboard.submissions }">
             <td class="collapsing">
-                #
+                {index + 1}
             </td>
             <td each="{ score_column in submission.scores }">{ score_column.score }</td>
         </tr>
         </tbody>
     </table>
     <script>
-        var self = this
+        let self = this
         self.selected_leaderboard = {}
-        self.selected_leaderboard_index = {}
-
-        self.one("updated", function () {
-            // Get the actual data
-            self.update_leaderboards()
-        })
 
         self.update_leaderboards = function () {
             if (!self.opts.leaderboards) {
                 return
             }
-
-            self.opts.leaderboards.forEach(function (leaderboard) {
+            _.forEach(self.opts.leaderboards, leaderboard => {
                 CODALAB.api.get_leaderboard(leaderboard.id)
                     .done(function (data) {
                         leaderboard.submissions = data.submissions
-                        self.selected_leaderboard = self.opts.leaderboards[0]
-                        self.selected_leaderboard_index = self.selected_leaderboard.id
                         self.update()
                     })
                     .fail(function (response) {
@@ -50,11 +45,16 @@
             })
         }
 
+        CODALAB.events.on('competition_loaded', () => {
+            self.selected_leaderboard = self.opts.leaderboards[0]
+            self.update_leaderboards()
+        })
+
         CODALAB.events.on('leaderboard_selected', function (selected_leaderboard) {
             self.selected_leaderboard = selected_leaderboard
         })
 
-        CODALAB.events.on('submission_added_to_leaderboard', () => self.update_leaderboards())
+        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboards)
 
     </script>
     <style type="text/stylus">
