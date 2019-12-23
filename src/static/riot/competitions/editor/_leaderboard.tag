@@ -1,4 +1,4 @@
-<competition-leaderboards-form>
+<competition-leaderboards>
     <div class="ui center aligned grid">
         <div class="row">
             <div class="fourteen wide column">
@@ -150,6 +150,12 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>Hidden</td>
+                        <td each="{ column, index in columns || [] }" style="text-align: center;">
+                            <input type="checkbox" ref="hidden_{index}" checked="{column.hidden}" onchange="{ modal_updated }">
+                        </td>
+                    </tr>
+                    <tr>
                         <td></td>
                         <td each="{ column, index in columns || [] }" class="center aligned">
                             <a onclick="{move_column.bind(this, index, -1)}" class="icon-button"><i class="chevron left icon {disabled: index === 0 }"></i></a>
@@ -184,11 +190,8 @@
         self.on('mount', () => {
             $(self.refs.modal).modal({
                 closable: false,
-                onHidden: () => self.clear_form(),
-                onShow: () => {
-                    self.initialize_dropdowns()
-                }
-
+                onHidden: self.clear_form,
+                onShow: self.initialize_dropdowns
             })
         })
 
@@ -236,7 +239,6 @@
             // have to clone the leaderboard here so we can interact w/ selected_leaderboard as its own object, not a reference
             self.selected_leaderboard = _.cloneDeep(self.leaderboards[index])
             self.columns = self.selected_leaderboard.columns || []
-            console.log(self.selected_leaderboard_index)
             self.update()
             self.show_modal()
         }
@@ -337,7 +339,7 @@
 
         self.get_leaderboard_data = function () {
             let data = get_form_data(self.refs.leaderboard_form)
-            return {
+            let leaderboard = {
                 title: data.title,
                 key: data.key,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
@@ -347,7 +349,9 @@
                         title: _.get(data, `title_${i}`),
                         key: _.get(data, `column_key_${i}`),
                         sorting: _.get(data, `sorting_${i}`),
+                        hidden: self.refs[`hidden_${i}`].checked,
                     }
+
                     let id = _.get(data, `id_${i}`)
                     if (id) {
                         column.id = id
@@ -360,6 +364,11 @@
                     return column
                 })
             }
+            let id = _.get(self.selected_leaderboard, 'id')
+            if (id) {
+                leaderboard.id = id
+            }
+            return leaderboard
         }
 
         self.update_leaderboard = function () {
@@ -433,4 +442,4 @@
         a.icon-button:hover
             cursor pointer
     </style>
-</competition-leaderboards-form>
+</competition-leaderboards>

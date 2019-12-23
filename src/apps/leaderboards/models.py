@@ -42,6 +42,7 @@ class Column(models.Model):
     sorting = models.TextField(choices=SORTING, default=SORTING[0][0])
     index = models.PositiveIntegerField()
     leaderboard = models.ForeignKey(Leaderboard, on_delete=models.CASCADE, related_name="columns")
+    hidden = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('leaderboard', 'key')
