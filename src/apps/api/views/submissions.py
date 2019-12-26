@@ -56,11 +56,16 @@ class SubmissionViewSet(ModelViewSet):
         if self.request.method == 'GET':
             if not self.request.user.is_superuser and not self.request.user.is_staff:
                 qs = qs.filter(owner=self.request.user)
-            qs = qs.select_related('phase', 'participant')
-            qs = qs.prefetch_related(
+            qs = qs.select_related(
+                'phase',
+                'participant',
+                'participant__user',
+                'owner',
+                'data',
+            ).prefetch_related(
+                'children',
                 'scores',
                 'scores__column',
-                'data'
             )
         return qs
 

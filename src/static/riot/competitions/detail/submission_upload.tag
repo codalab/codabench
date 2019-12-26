@@ -57,8 +57,6 @@
     <script>
         var self = this
 
-        self.mixin(ProgressBarMixin)
-
         self.chart = undefined
         self.errors = {}
         self.lines = {}
@@ -228,7 +226,7 @@
             CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
-                        self.prepare_upload(self.upload())
+                        self.upload()
                     } else {
                         toastr.error(data.reason)
                     }
@@ -332,14 +330,14 @@
             margin-top 15px
 
             .ui.basic.segment
-                max-height 300px
+                min-height 300px
                 display none
                 overflow-y auto
 
         .submission_output
-            max-height 11em
+            max-height 400px
             padding 15px !important
-            overflow-y auto
+            overflow auto
 
         .graph-container
             display block
