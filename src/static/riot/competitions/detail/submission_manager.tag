@@ -47,10 +47,15 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{ _.isEmpty(submissions)}" class="center aligned">
-            <td colspan="6"><em>No submissions found! Please make a submission</em></td>
+        <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
+            <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
         </tr>
-        <tr each="{ submission, index in filter_children(submissions) }"
+        <tr if="{loading}" class="center aligned">
+            <td colspan="100%">
+                <em>Loading Submissions...</em>
+            </td>
+        </tr>
+        <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td>{ index + 1 }</td>
             <td>{ submission.filename }</td>
@@ -133,6 +138,7 @@
         self.selected_phase = undefined
         self.selected_submission = undefined
         self.leaderboards = {}
+        self.loading = true
 
         self.on("mount", function () {
             $(self.refs.search).dropdown();
@@ -145,12 +151,6 @@
             return _.get(self.selected_submission, 'admin', false)
         }
 
-        self.filter_children = (submissions) => {
-            return _.filter(submissions, sub => {
-                return !sub.parent
-            })
-        }
-
         self.do_nothing = event => {
             event.stopPropagation()
         }
@@ -159,13 +159,15 @@
             return _.get(self.selected_submission, 'admin', false)
         }
 
-        self.filter_children = (submissions) => {
+        self.filter_children = submissions => {
             return _.filter(submissions, sub => {
                 return !sub.parent
             })
         }
 
         self.update_submissions = function (filters) {
+            self.loading = true
+            self.update()
             if (opts.admin) {
                 filters = filters || {phase__competition: opts.competition.id}
             } else {
@@ -185,7 +187,14 @@
                     } else {
                         self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
                     }
-                    self.update({csv_link: CODALAB.api.get_submission_csv_URL(filters)})
+                    self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
+                    self.update()
+
+                    // Timeout here so loader doesn't flicker
+                    _.delay(() => {
+                        self.loading = false
+                        self.update()
+                    }, 300)
                 })
                 .fail(function (response) {
                     toastr.error("Error retrieving submissions")

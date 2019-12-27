@@ -1,4 +1,4 @@
-<comp-detail-phases>
+<comp-detail-timeline>
     <section>
         <canvas id="myChart" height="120" width="800"></canvas>
     </section>
@@ -42,9 +42,7 @@
                         },
                         // Grey Line (actual comp timeline)
                         {
-                            data: _.map(self.phase_timeline, phase => {
-                                return {x: self.get_date(phase.time), y: 0}
-                            }),
+                            data: _.map(self.phase_timeline, phase => ({x: self.get_date(phase.time), y: 0})),
                             label: _.map(self.phase_timeline, phase => phase.name),
                             borderWidth: 4,
                             pointBackgroundColor: '#4a4a4a',
@@ -280,4 +278,4 @@
             background-image url('data:image/svg+xmlcharset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%208%208%22%3E%3Cpath%20fill%3D%22%23ed1c24%22%20d%3D%22M4%200l4%208H0z%22%2F%3E%3C%2Fsvg%3E')
 
     </style>
-</comp-detail-phases>
+</comp-detail-timeline>

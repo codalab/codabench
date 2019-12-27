@@ -101,7 +101,11 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied(f'You do not have permission to cancel submissions')
+        if submission.children.exists():
+            for child in submission.children.all():
+                child.cancel()
         canceled = submission.cancel()
+
         return Response({'canceled': canceled})
 
     @action(detail=True, methods=('GET',))

@@ -1,5 +1,5 @@
 <submission-upload>
-    <div class="ui sixteen wide column submission-container">
+    <div class="ui sixteen wide column submission-container" show="{_.get(selected_phase, 'status') === 'Current'}">
         <h1>Submission upload</h1>
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
@@ -7,12 +7,11 @@
         </form>
 
 
-        <!--TODO: Do we want this progress bar? It's not working right now and it's messing with styling-->
-        <!--<div class="ui indicating progress" ref="progress">-->
-            <!--<div class="bar">-->
-                <!--<div class="progress">{ upload_progress }%</div>-->
-            <!--</div>-->
-        <!--</div>-->
+        <div class="ui indicating progress" ref="progress">
+            <div class="bar">
+                <div class="progress">{ upload_progress }%</div>
+            </div>
+        </div>
 
         <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="accordion">
             <div class="title">
@@ -56,6 +55,8 @@
     </div>
     <script>
         var self = this
+
+        self.mixin(ProgressBarMixin)
 
         self.chart = undefined
         self.errors = {}
@@ -226,7 +227,7 @@
             CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
-                        self.upload()
+                        self.prepare_upload(self.upload)()
                     } else {
                         toastr.error(data.reason)
                     }
