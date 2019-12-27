@@ -193,7 +193,7 @@
                         </div>
                     </div>
                     <div>
-                        <submission-upload phases="{ competition.phases }"></submission-upload>
+                        <submission-upload is_admin="{competition.is_admin}" phases="{ competition.phases }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager competition="{ competition }"></submission-manager>
@@ -218,10 +218,11 @@
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
                 </div>
-                <div style="overflow: auto">
-                    <leaderboards competition_pk="{ competition.id }" leaderboards="{ competition.leaderboards }">
-                    </leaderboards>
-                </div>
+
+                <leaderboards class="leaderboard-table"
+                              competition_pk="{ competition.id }"
+                              leaderboards="{ competition.leaderboards }">
+                </leaderboards>
             </div>
         </div>
 
@@ -423,6 +424,9 @@
         $blue = #2c3f4c
         $teal = #00bbbb
         $lightblue = #f2faff
+
+        .leaderboard-table
+            overflow auto
 
         .comp-tabs
             margin-top 1em !important

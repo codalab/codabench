@@ -1,5 +1,5 @@
 <submission-upload>
-    <div class="ui sixteen wide column submission-container" show="{_.get(selected_phase, 'status') === 'Current'}">
+    <div class="ui sixteen wide column submission-container" show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
         <h1>Submission upload</h1>
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
