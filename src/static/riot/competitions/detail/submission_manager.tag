@@ -187,6 +187,9 @@
                     } else {
                         self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
                     }
+                    if (!opts.admin) {
+                        CODALAB.events.trigger('submissions_loaded', self.submissions)
+                    }
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
                     self.update()
 
@@ -342,6 +345,14 @@
         CODALAB.events.on('score_updated', () => {
             $(self.refs.modal).modal('hide')
             self.update_submissions()
+        })
+
+        CODALAB.events.on('submission_status_update', data => {
+            let sub = _.find(self.submissions, submission => submission.id === data.submission_id)
+            if (sub) {
+                sub.status = data.status
+            }
+            self.update()
         })
     </script>
 

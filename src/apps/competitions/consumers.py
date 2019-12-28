@@ -1,3 +1,4 @@
+import json
 import os
 
 import aiofiles
@@ -12,22 +13,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         # Check submission secret perms here?
         await self.accept()
 
-    #     print("joinin group")
-    #     await self.channel_layer.group_add(
-    #         "submission_listening",
-    #         self.channel_name
-    #     )
-    #     await self.accept()
-    #     # TODO! On connection, send contents of the temp file, if any, so they can get caught up
-    #
-    # async def disconnect(self, close_code):
-    #     print("leavin group")
-    #     await self.channel_layer.group_discard(
-    #         "submission_listening",
-    #         self.channel_name
-    #     )
-    #     await self.close(close_code)
-
     async def receive(self, text_data=None, bytes_data=None):
         # await self.send({
         #     "type": "websocket.send",
@@ -39,18 +24,15 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         # Maybe we can just write to a submission_<secret>.txt file
         # However, we need to limit
 
-        print(self.scope)
+        kind = json.loads(text_data).get('kind')
 
         submission_id = self.scope['url_route']['kwargs']['submission_id']
-        submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
-        os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
-        print(f"opening {submission_output_path}")
-        async with aiofiles.open(submission_output_path, 'a+') as f:
-            await f.write(text_data)
-            print(f"writing {text_data}")
-            print(f"{type(text_data)}")
+        if kind != 'status_update':
+            submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
+            os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
 
-        # print(f"We DO have it {getattr(self, 'submission_message', None)}")
+            async with aiofiles.open(submission_output_path, 'a+') as f:
+                await f.write(f'{text_data}\n')
 
         # TODO: Await to broadcast to everyone listening to this submission key or whatever
         await self.channel_layer.group_send("submission_listening", {
@@ -58,52 +40,35 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
             'text': text_data,
             'submission_id': submission_id,
         })
-
         # TODO! Refuse to write to file after 10MB has been received ???
 
 
 class SubmissionOutputConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
-        print("Hey, we're trying to connect2")
-        # TODO! On connection, send contents of the temp file, if any, so they can get caught up
-
-        print(self.channel_name)
-
-        # import ipdb; ipdb.set_trace()
-
         await self.accept()
         await self.channel_layer.group_add("submission_listening", self.channel_name)
-        # await self.send(text_data="Opening test msg")
-        # print("Tried to send text?")
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard("submission_listening", self.channel_name)
         await self.close()
 
-    # async def websocket_receive(self, event):
-    #     pass
+    async def receive(self, text_data=None, bytes_data=None):
+        submission_id = text_data
+        text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
+        if os.path.exists(text_path):
+            with open(text_path) as f:
+                text = f.read()
+            await self.channel_layer.group_send("submission_listening", {
+                'type': 'submission.message',
+                'text': text,
+                'submission_id': submission_id,
+                'full_text': True,
+            })
 
     async def submission_message(self, event):
-        await self.send(f"{event['submission_id']};{event['text']}")
-#
-#
-# class SubmissionOutputConsumer(AsyncConsumer):
-#
-#     async def websocket_connect(self, event):
-#         # TODO! On connection, send contents of the temp file, if any, so they can get caught up
-#         print("OOOOOOOOKAY")
-#
-#         await self.channel_layer.group_add("submission_listening", self.channel_name)
-#         # await self.accept()  # TODO: why is this needed?
-#         await self.send({
-#             "type": "websocket.accept",
-#         })
-#
-#
-#     async def websocket_disconnect(self, event):
-#         await self.channel_layer.group_discard("submission_listening", self.channel_name)
-#         # await self.close()
-#
-#     # async def websocket_receive(self, event):
-#     #     pass
+        data = {
+            "type": "catchup" if event.get('full_text') else "message",
+            "submission_id": event['submission_id'],
+            "data": event['text']
+        }
+        await self.send(json.dumps(data))

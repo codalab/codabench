@@ -160,9 +160,17 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
+    async def _update_websocket_status(self, status):
+        async with websockets.connect(f'{self.websocket_url}submission_input/{self.submission_id}/') as websocket:
+            await websocket.send(json.dumps({
+                "kind": "status_update",
+                "message": status
+            }))
+
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
+        asyncio.get_event_loop().run_until_complete(self._update_websocket_status(status))
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         logger.info(
             f"Updating status to '{status}' with extra_information = '{extra_information}' "
@@ -241,7 +249,10 @@ class Run:
                     if out:
                         value["data"] += out
                         print("WS: " + str(out))
-                        await websocket.send(f"{kind};{out.decode()}")
+                        await websocket.send(json.dumps({
+                            "kind": kind,
+                            "message": out.decode()
+                        }))
                     else:
                         value["continue"] = False
                     await asyncio.sleep(.1)
@@ -407,6 +418,7 @@ class Run:
         logger.info(f'content: {resp.content}')
 
     def prepare(self):
+        # self._update_status(STATUS_PREPARING)
         self._update_status(STATUS_PREPARING)
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate

@@ -13,10 +13,10 @@
             </div>
         </div>
 
-        <div class="ui styled fluid accordion submission-output-container {hidden: !display_output}" ref="accordion">
+        <div class="ui styled fluid accordion submission-output-container {hidden: !status_received}" ref="accordion">
             <div class="title">
                 <i class="dropdown icon"></i>
-                {selected_submission.filename ? "Running " + selected_submission.filename : "Uploading..."}
+                {(status_received && selected_submission.filename) ? "Running " + selected_submission.filename : "Uploading..."}
             </div>
             <div class="ui basic segment">
                 <div class="content">
@@ -62,21 +62,25 @@
         self.errors = {}
         self.lines = {}
         self.selected_submission = {}
+        self.status_received = false
         self.display_output = false
         self.autoscroll_selected = true
         self.ingestion_during_scoring = undefined
 
+        self.graph_data = {
+            labels: [],
+            datasets: [{
+                backgroundColor: 'rgba(0,187,187,0.3)',
+                pointBackgroundColor: 'rgba(0,187,187,0.8)',
+                borderColor: 'rgba(0,187,187,0.8)',
+                data: [],
+                // fill: false,
+            }]
+        }
+
         self.graph_config = {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    backgroundColor: 'red',
-                    borderColor: 'red',
-                    data: [],
-                    fill: false,
-                }]
-            },
+            data: self.graph_data,
             options: {
                 maintainAspectRatio: false,
                 legend: false,
@@ -116,10 +120,20 @@
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
+            let segment = $('.submission-output-container .ui.basic.segment')
             $('.ui.accordion', self.root).accordion({
-                onOpen: () => $('.submission-output-container .ui.basic.segment').show(),
-                onClose: () => $('.submission-output-container .ui.basic.segment').hide(),
+                onOpen: () => segment.show(),
+                onClose: () => segment.hide(),
             })
+
+            // File upload handler
+            $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
+
+            self.setup_autoscroll()
+            self.setup_websocket()
+        })
+
+        self.setup_autoscroll = function () {
 
             $(self.refs.autoscroll_checkbox).checkbox({
                 onChecked: function () {
@@ -139,39 +153,61 @@
                 self.set_checkbox()
             })
 
-            // File upload handler
-            $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-
-
+        }
+        self.setup_websocket = function () {
             // Submission stream handler
             var url = new URL('/submission_output/', window.location.href);
             url.protocol = url.protocol.replace('http', 'ws');
             var options = {
                 automaticOpen: false
             }
-            var ws = new ReconnectingWebSocket(url, null, options)
-            ws.addEventListener("open", function (event) {
-                console.log("open event, again?")
-                console.log(event)
-            })
-            ws.addEventListener("message", function (event) {
+            self.ws = new ReconnectingWebSocket(url, null, options)
+            self.ws.addEventListener("message", function (event) {
                 self.autoscroll_output()
-                try {
-                    let event_data = event.data.split(/;(.+)/)[1].split(/;(.+)/)[1]
-                    var data = JSON.parse(event_data);
+                let event_data = JSON.parse(event.data)
+                switch (event_data.type) {
+                    case 'catchup':
+                        _.forEach(_.compact(event_data.data.split('\n')), data => {
+                            self.handle_websocket(event_data.submission_id, data)
+                        })
+                        break
+                    case 'message':
+                        self.handle_websocket(event_data.submission_id, event_data.data)
+                        break
+                }
+            })
+            self.ws.open()
 
-                    if (data.type === "error_rate_update") {
-                        self.add_graph_data_point(data.error_rate)
-                    } else if (data.type === "message") {
-                        self.add_line(data.message)
+        }
+        self.handle_websocket = function (submission_id, data) {
+            data = JSON.parse(data)
+            let message = data.message
+            let kind = data.kind
+            if (kind === 'status_update') {
+                self.status_received = true
+                self.update()
+                CODALAB.events.trigger('submission_status_update', {submission_id: submission_id, status: message})
+            } else {
+                try {
+                    message = JSON.parse(message);
+                    if (message.type === "plot") {
+                        self.add_graph_data_point(message.value)
+                    } else if (message.type === "message") {
+                        self.add_line(submission_id, kind, message.message)
                     }
                 } catch (e) {
                     // This is the default way to handle socket messages (just print them),  but can be sent as a json message as well
-                    self.add_line(event.data)
+                    self.add_line(submission_id, kind, message)
                 }
-            })
-            ws.open()
-        })
+            }
+
+        }
+
+        self.pull_logs = function () {
+            if (_.isEmpty(self.lines) && !_.isEmpty(self.selected_submission)) {
+                self.ws.send(self.selected_submission.id)
+            }
+        }
 
         self.set_checkbox = function () {
             $(self.refs.autoscroll_checkbox).children('input').prop('checked', self.autoscroll_selected)
@@ -179,23 +215,23 @@
 
 
         self.add_graph_data_point = function (number) {
+            if (!self.chart) {
+                self.chart = new Chart(self.refs.chart, self.graph_config)
+            }
             // Add empty label for the graph, may not be necessary?
-            self.chart.data.labels.push('');
+            self.chart.data.labels.push('')
 
             // Add actual number to dataset
             self.chart.data.datasets.forEach((dataset) => {
-                dataset.data.push(number);
+                dataset.data.push(number)
             });
             self.chart.update();
         }
 
-        self.add_line = function (line) {
-            let [submission_id, data] = line.split(/;(.+)/)
-            let [kind, message] = data.split(/;(.+)/)
-            if (!message) {
-                return
+        self.add_line = function (submission_id, kind, message) {
+            if (message === undefined) {
+                message = '\n'
             }
-            message += '\n'
 
             if (self.ingestion_during_scoring) {
                 try {
@@ -249,8 +285,12 @@
                 .done(function (data) {
                     self.lines = {}
 
-                    // Init chart AFTER modal is shown
-                    self.chart = new Chart(self.refs.chart, self.graph_config)
+                    if (self.chart) {
+                        self.chart.data = self.graph_data
+                        self.chart.update()
+                    } else {
+                        self.chart = new Chart(self.refs.chart, self.graph_config)
+                    }
 
                     console.log("Created submission dataset:")
                     console.log(data)
@@ -296,6 +336,14 @@
             self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
             self.update()
 
+        })
+
+        CODALAB.events.on('submissions_loaded', submissions => {
+            let latest_submission = _.head(submissions)
+            if (latest_submission && !_.includes(['Finished', 'Cancelled', 'Failed', 'Unknown'], latest_submission.status)) {
+                self.selected_submission = latest_submission
+                self.pull_logs()
+            }
         })
 
         CODALAB.events.on('submission_selected', function (selected_submission) {
