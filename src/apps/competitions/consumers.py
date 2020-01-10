@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import aiofiles
 
@@ -52,18 +53,30 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard("submission_listening", self.channel_name)
         await self.close()
 
+    def group_send(self, text, submission_id):
+        return self.channel_layer.group_send("submission_listening", {
+                'type': 'submission.message',
+                'text': text,
+                'submission_id': submission_id,
+                'full_text': True,
+            })
+
     async def receive(self, text_data=None, bytes_data=None):
         submission_id = text_data
         text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
         if os.path.exists(text_path):
             with open(text_path) as f:
                 text = f.read()
-            await self.channel_layer.group_send("submission_listening", {
-                'type': 'submission.message',
-                'text': text,
-                'submission_id': submission_id,
-                'full_text': True,
-            })
+            await self.group_send(text, submission_id)
+            # TODO: fix potential security issue? get other peoples submission logs on page refresh
+            #  if code submission has child id print statements
+            children = re.findall(r'child_id\": (\d+)', text)
+            for child_id in children:
+                child_text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{child_id}.txt")
+                if os.path.exists(child_text_path):
+                    with open(child_text_path) as f:
+                        child_text = f.read()
+                    await self.group_send(child_text, child_id)
 
     async def submission_message(self, event):
         data = {

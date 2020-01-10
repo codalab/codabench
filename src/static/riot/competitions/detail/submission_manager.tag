@@ -38,7 +38,7 @@
     <table class="ui celled selectable table">
         <thead>
         <tr>
-            <th class="index-column">#</th>
+            <th class="collapsing">ID #</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
@@ -57,7 +57,7 @@
         </tr>
         <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
-            <td>{ index + 1 }</td>
+            <td>{ submission.id }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -71,13 +71,6 @@
                         <i class="icon redo"></i>
                         <!-- rerun submission -->
                     </button>
-                    <button class="mini ui button basic yellow icon"
-                            data-tooltip="Cancel Submission"
-                            data-inverted=""
-                            onclick="{ cancel_submission.bind(this, submission) }">
-                        <i class="x icon"></i>
-                        <!-- cancel submission -->
-                    </button>
                     <button class="mini ui button basic red icon"
                             data-tooltip="Delete Submission"
                             data-inverted=""
@@ -86,6 +79,14 @@
                         <!-- delete submission -->
                     </button>
                 </virtual>
+                <button if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
+                        class="mini ui button basic yellow icon"
+                        data-tooltip="Cancel Submission"
+                        data-inverted=""
+                        onclick="{ cancel_submission.bind(this, submission) }">
+                    <i class="x icon"></i>
+                    <!-- cancel submission -->
+                </button>
                 <button if="{!submission.leaderboard}"
                         class="mini ui button basic green icon"
                         data-tooltip="Add to Leaderboard"
@@ -160,9 +161,7 @@
         }
 
         self.filter_children = submissions => {
-            return _.filter(submissions, sub => {
-                return !sub.parent
-            })
+            return _.filter(submissions, sub => !sub.parent)
         }
 
         self.update_submissions = function (filters) {
@@ -376,9 +375,6 @@
 
         .status-column
             width 50px
-
-        .index-column
-            width: 40px
 
         .submission_row
             &:hover

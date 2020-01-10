@@ -1,23 +1,23 @@
+import asyncio
+import json
 import logging
 import os
 import re
+import zipfile
+from io import BytesIO
+from tempfile import TemporaryDirectory
+from urllib.parse import urlparse
 
 import oyaml as yaml
-import zipfile
-
-from io import BytesIO
-
+import websockets
 from celery._state import app_or_default
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
-
-from celery_config import app
 from django.utils.timezone import now
 
-from tempfile import TemporaryDirectory
-
+from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from competitions.unpackers.utils import CompetitionUnpackingException
@@ -186,6 +186,30 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
 
 
+def send_child_id(parent_id, child_id, websocket_url):
+    data = {
+        "kind": 'child_update',
+        "child_id": child_id,
+    }
+    asyncio.get_event_loop().run_until_complete(
+        websocket_send(parent_id, data, websocket_url)
+    )
+
+
+async def websocket_send(submission_id, data, websocket_url):
+    # Socket connection to stream output of submission
+    submission_api_url_parsed = urlparse(websocket_url)
+    websocket_host = submission_api_url_parsed.netloc
+    websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
+    websocket_url = f"{websocket_scheme}://{websocket_host}/"
+
+    url = f'{websocket_url}submission_input/{submission_id}/'
+    logger.info(f"Connecting to {url}")
+
+    async with websockets.connect(url) as websocket:
+        await websocket.send(json.dumps(data))
+
+
 @app.task(queue='site-worker', soft_time_limit=60)
 def _run_submission(submission_pk, task_pk=None, is_scoring=False):
     """This function is wrapped so that when we run tests we can run this function not
@@ -220,6 +244,13 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.has_children = True
             submission.status = 'Running'
             submission.save()
+            status_data = {
+                "kind": "status_update",
+                "message": "Running"
+            }
+            asyncio.get_event_loop().run_until_complete(
+                websocket_send(submission.id, status_data, run_arguments["submissions_api_url"])
+            )
             for task in tasks:
                 # TODO: make a duplicate submission method and use it here
                 sub = Submission(
@@ -230,8 +261,8 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
                     parent=submission,
                 )
                 sub.save(ignore_submission_limit=True)
-                # run_submission.apply_async((sub.id, task.id))
                 run_submission(sub.id, task.id)
+                send_child_id(submission.id, sub.id, run_arguments["submissions_api_url"])
         else:
             # The initial submission object will be the only submission
             task = tasks.first()

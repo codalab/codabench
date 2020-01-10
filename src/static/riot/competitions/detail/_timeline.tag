@@ -13,6 +13,7 @@
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.phases = competition.phases
             self.make_phase_timeline(competition.phases)
+            self.get_competition_progress()
             self.update()
             self.draw_chart()
         })
@@ -26,19 +27,11 @@
                     datasets: [
                         // data for blue line (start of comp to today)
                         {
-                            data: [
-                                {x: self.get_date(self.phase_timeline[0].time), y: 0},
-                                {x: self.get_date(new Date().getTime()), y: 0}
-                            ],
-                            label: [
-                                self.phase_timeline[0].name,
-                                'Today'
-                            ],
+                            ...self.get_competition_progress(),
                             borderWidth: 5,
                             borderColor: '#00bbbb',
                             pointBackgroundColor: '#00bbbb',
                             borderCapStyle: 'round',
-                            pointStyle: ['circle', 'line'],
                         },
                         // Grey Line (actual comp timeline)
                         {
@@ -107,6 +100,25 @@
         self.get_date = function (phase_date) {
             var date = new Date(phase_date)
             return date.toUTCString()
+        }
+
+        self.get_competition_progress = function () {
+
+            let now = new Date()
+            let past_phases = _.filter(self.phase_timeline, phase => phase.time < now)
+
+            let data = {
+                data: _.map(past_phases, phase => ({x: phase.time, y: 0})),
+                label: _.map(past_phases, phase => phase.name),
+                pointStyle: _.map(past_phases, phase => 'circle')
+            }
+            if (past_phases.length < self.phase_timeline.length) {
+                data.data.push({x: new Date().getTime(), y: 0})
+                data.label.push('Today')
+                data.pointStyle.push('line')
+            }
+
+            return data
         }
 
         self.make_phase_timeline = function (phases) {
