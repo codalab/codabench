@@ -1,14 +1,15 @@
 <leaderboards>
-    <table class="ui celled selectable table ">
+    <table class="ui celled selectable table">
         <thead>
         <tr>
-            <th colspan="100%" style="text-align: center;">
+            <th colspan="100%" class="center aligned">
                 { selected_leaderboard.title }
             </th>
         </tr>
         <tr>
-            <th>#</th>
-            <th each="{ column, index in selected_leaderboard.columns }" if="{!_.includes(hidden_column_indexes, index)}">{ column.title }</th>
+            <th class="center aligned">#</th>
+            <th>Username</th>
+            <th each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
         </tr>
         </thead>
         <tbody>
@@ -18,25 +19,31 @@
             </td>
         </tr>
         <tr each="{ submission, index in selected_leaderboard.submissions }">
-            <td class="collapsing">
-                {index + 1}
+            <td class="collapsing index-column center aligned">
+                <gold-medal if="{index + 1 === 1}"></gold-medal>
+                <silver-medal if="{index + 1 === 2}"></silver-medal>
+                <bronze-medal if="{index + 1 === 3}"></bronze-medal>
+                <fourth-place-medal if="{index + 1 === 4}"></fourth-place-medal>
+                <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
+                <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td each="{ score_column, col_index in submission.scores }" if="{!_.includes(hidden_column_indexes, col_index)}">{ score_column.score }</td>
+            <td>{ submission.owner }</td>
+            <td each="{ score_column in submission.scores }" if="{!_.includes(hidden_column_keys, score_column.column_key)}">{ score_column.score }</td>
         </tr>
         </tbody>
     </table>
     <script>
         let self = this
         self.selected_leaderboard = {}
-        self.hidden_column_indexes = []
+        self.hidden_column_keys = []
 
         self.update_leaderboard = () => {
             if (_.isEmpty(self.selected_leaderboard)) {
                 return
             }
-            self.hidden_column_indexes = _.map(self.selected_leaderboard.columns, (col, index) => {
+            self.hidden_column_keys = _.map(self.selected_leaderboard.columns, col => {
                 if (col.hidden) {
-                    return index
+                    return col.key
                 }
             })
             self.update()
@@ -82,5 +89,7 @@
 
         table tbody .center.aligned td
             color #8c8c8c
+        .index-column
+            min-width 55px
     </style>
 </leaderboards>

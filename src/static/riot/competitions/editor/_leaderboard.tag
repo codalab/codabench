@@ -130,7 +130,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Sorting</td>
+                        <td>
+                            Sorting
+                            <span data-tooltip="Asc: smaller is better -- Desc: larger is better" data-position="right center"><i class="circle question icon"></i></span>
+                        </td>
                         <td each="{ column, index in columns || [] }">
                             <div class="ui fluid sorting selection dropdown">
                                 <input type="hidden" name="sorting_{index}" value="{column.sorting || 'desc'}">

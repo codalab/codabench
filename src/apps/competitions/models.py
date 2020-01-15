@@ -304,7 +304,6 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
-    score = models.DecimalField(max_digits=20, decimal_places=10, default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
@@ -314,10 +313,9 @@ class Submission(ChaHubSaveMixin, models.Model):
                                              blank=True)
 
     scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
-    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
+    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted
+    #  past ignored submission limits and not count them against users
 
-    # uber experimental
-    # track = models.IntegerField(default=1)
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')

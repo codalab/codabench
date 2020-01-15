@@ -87,7 +87,7 @@
                     <i class="x icon"></i>
                     <!-- cancel submission -->
                 </button>
-                <button if="{!submission.leaderboard}"
+                <button if="{!submission.leaderboard && submission.status === 'Finished'}"
                         class="mini ui button basic green icon"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""

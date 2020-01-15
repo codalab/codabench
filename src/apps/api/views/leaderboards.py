@@ -15,15 +15,6 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        if self.request.method == 'GET':
-            qs = qs.prefetch_related(
-                'submissions',
-                'submissions__scores',
-            )
-        return qs
-
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsOrganizerOrCollaborator]

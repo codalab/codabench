@@ -3,9 +3,6 @@
         <div class="eight wide column">
             <div class="ui large header">
                 Popular Competitions
-                <div class="sub-header-link">
-                    <a href="#" class="view-all-comps">See more competitions</a>
-                </div>
             </div>
             <div class="loader-container popular">
                 <div class="lds-ring">
@@ -21,9 +18,6 @@
         <div class="eight wide column">
             <div class="ui large header">
                 Featured Competitions
-                <div class="sub-header-link">
-                    <a class="view-all-comps" href="#">See more competitions</a>
-                </div>
             </div>
             <div class="loader-container popular">
                 <div class="lds-ring">

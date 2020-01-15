@@ -63,14 +63,17 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
+    owner = serializers.CharField(source='owner.username')
 
     class Meta:
         model = Submission
         fields = (
             'scores',
+            'owner',
         )
         extra_kwargs = {
             "scores": {"read_only": True},
+            "owner": {"read_only": True},
         }
 
 
