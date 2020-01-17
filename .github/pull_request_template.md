@@ -19,7 +19,7 @@ more information is better.
 
 
 # Any relevant files for testing
-[link]('#') to any relavent files (or drag and drop into github)
+[link]('#') to any relevant files (or drag and drop into github)
 
 
 # Misc. comments
