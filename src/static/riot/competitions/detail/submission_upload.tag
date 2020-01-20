@@ -30,6 +30,7 @@
                             <div if="{!ingestion_during_scoring}">
                                 <div if="{_.isEmpty(children)}">
                                     <log_window lines="{lines[selected_submission.id]}"
+                                                data="{datasets[selected_submission.id]}"
                                                 ref="submission_output"></log_window>
                                     <div class="ui checkbox" ref="autoscroll_checkbox">
                                         <input type="checkbox" checked/>
@@ -40,36 +41,39 @@
                                     <div class="ui secondary menu">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
-                                            Submission ID: { child }
+                                            Submission ID: { child } <i class="blue sync alternate icon" if="{lines[child]}"></i>
                                         </div>
                                     </div>
                                     <div each="{child, index in children}" class="ui tab {active: index === 0}"
                                          data-tab="child{child}_tab">
-                                        <log_window lines="{lines[child]}"></log_window>
+                                        <log_window lines="{lines[child]}"
+                                                    data="{datasets[child]}">
+                                        </log_window>
                                     </div>
                                 </div>
                             </div>
                             <div if="{ingestion_during_scoring}">
                                 <div if="{_.isEmpty(children)}">
                                     <log_window lines="{lines[selected_submission.id]}"
+                                                data="{datasets[selected_submission.id]}"
                                                 split_logs="{true}"></log_window>
                                 </div>
                                 <div if="{children}">
                                     <div class="ui secondary menu">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
-                                            Submission ID: { child }
+                                            Submission ID: { child } <i class="blue sync alternate icon" if="{lines[child]}"></i>
                                         </div>
                                     </div>
                                     <div each="{child, index in children}" class="ui tab {active: index === 0}"
                                          data-tab="child{child}_tab">
-                                        <log_window lines="{lines[child]}" split_logs="{true}"></log_window>
+                                        <log_window lines="{lines[child]}"
+                                                    data="{datasets[child]}"
+                                                    split_logs="{true}"></log_window>
                                     </div>
                                 </div>
                             </div>
-                            <div class="graph-container">
-                                <canvas class="output-chart" height="200" ref="chart"></canvas>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -93,48 +97,7 @@
 
         self.children = []
         self.children_statuses = {}
-        self._colors = [
-            'rgba(0,187,187,0.8)',
-            'rgba(134,26,255,0.8)',
-            'rgba(0,0,255,0.8)',
-            'rgba(34,255,14,0.8)',
-            'rgba(255,21,16,0.8)',
-        ]
-        self.colors = _(self._colors)
         self.datasets = {}
-
-        self.graph_data = {
-            labels: [],
-            datasets: _.values(self.datasets)
-        }
-
-        self.graph_config = {
-            type: 'line',
-            data: self.graph_data,
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                animation: {
-                    duration: 100,
-                    easing: 'easeInCirc'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            maxTicksLimit: 2,
-                            suggestedMin: 0,
-                            suggestedMax: 1,
-                            display: true
-                        }
-                    }]
-                }
-            }
-        }
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
@@ -255,31 +218,19 @@
         }
 
 
-        self.add_graph_data_point = function (submission_id, number) {
-            if (!self.chart) {
-                self.chart = new Chart(self.refs.chart, self.graph_config)
-            }
+        self.add_graph_data_point = function (submission_id, value) {
             if (!self.datasets[submission_id]) {
-                let color = self.colors.next()
-                if (color.done) {
-                    self.colors = _(self._colors)
-                    color = self.colors.next()
-                }
-
                 self.datasets[submission_id] = {
                     label: submission_id,
                     data: [],
-                    backgroundColor: color.value.replace('0.8', '0.3'),
-                    pointBackgroundColor: color.value,
-                    borderColor: color.value,
-                    fill: false,
+                    backgroundColor: 'rgba(0,187,187,0.3)',
+                    pointBackgroundColor: 'rgba(0,187,187,0.8)',
+                    borderColor: 'rgba(0,187,187,0.8)',
+                    fill: true,
                 }
-                self.chart.data.datasets = _.values(self.datasets)
             }
 
-            self.datasets[submission_id].data.push(number)
-            self.chart.data.labels = _.map(_.maxBy(self.chart.data.datasets, 'data.length').data, d => '')
-            self.chart.update()
+            self.datasets[submission_id].data.push({x: value[0], y: value[1]})
         }
 
         self.add_line = function (submission_id, kind, message) {
@@ -341,13 +292,6 @@
                 .done(function (data) {
                     self.lines = {}
 
-                    if (self.chart) {
-                        self.datasets = {}
-                        self.chart.data.datasets = _.values(self.datasets)
-                        self.chart.update()
-                    } else {
-                        self.chart = new Chart(self.refs.chart, self.graph_config)
-                    }
 
                     // Call start_submission with dataset key
                     // start_submission returns submission key
