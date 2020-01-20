@@ -20,13 +20,11 @@
     <script>
         let self = this
 
-        self.graph_data = {
-            datasets: []
-        }
-
         self.graph_config = {
             type: 'line',
-            data: self.graph_data,
+            data: {
+                datasets: []
+            },
             options: {
                 maintainAspectRatio: false,
                 responsive: true,
