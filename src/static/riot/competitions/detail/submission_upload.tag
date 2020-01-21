@@ -41,7 +41,7 @@
                                     <div class="ui secondary menu">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
-                                            Submission ID: { child } <i class="blue sync alternate icon" if="{lines[child]}"></i>
+                                            Submission ID: { child }
                                         </div>
                                     </div>
                                     <div each="{child, index in children}" class="ui tab {active: index === 0}"
@@ -62,7 +62,7 @@
                                     <div class="ui secondary menu">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
-                                            Submission ID: { child } <i class="blue sync alternate icon" if="{lines[child]}"></i>
+                                            Submission ID: { child }
                                         </div>
                                     </div>
                                     <div each="{child, index in children}" class="ui tab {active: index === 0}"

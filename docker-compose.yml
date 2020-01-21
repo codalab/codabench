@@ -116,6 +116,7 @@ services:
     ports:
       - 15672:15672
       - 5672:5672
+      - ${RABBITMQ_PORT}:5672
     volumes:
       # To save rabbit state between container ups/downs
       - ./var/rabbit:/var/lib/rabbit/:delegated
