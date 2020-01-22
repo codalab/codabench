@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import traceback
 import zipfile
 from io import BytesIO
 from tempfile import TemporaryDirectory
@@ -16,6 +17,7 @@ from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
 from django.utils.timezone import now
+from rest_framework.exceptions import ValidationError
 
 from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
@@ -330,7 +332,25 @@ def unpack_competition(competition_dataset_pk):
             )
 
             unpacker.unpack()
-            competition = unpacker.save()
+
+            try:
+                competition = unpacker.save()
+            except ValidationError as e:
+                def _get_error_string(error_dict):
+                    """Helps us nicely print out a ValidationError"""
+                    for key, errors in error_dict.items():
+                        try:
+                            return f'{key}: {"; ".join(errors)}\n'
+                        except TypeError:
+                            # We ran into a list of nested dictionaries, start recursing!
+                            nested_errors = []
+                            for e in errors:
+                                error_text = _get_error_string(e)
+                                if error_text:
+                                    nested_errors.append(error_text)
+                            return f'{key}: {"; ".join(nested_errors)}\n'
+
+                raise CompetitionUnpackingException(_get_error_string(e.detail))
 
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
@@ -338,11 +358,20 @@ def unpack_competition(competition_dataset_pk):
             logger.info("Competition saved!")
 
     except CompetitionUnpackingException as e:
+        # We want to catch well handled exceptions and display them to the user
         logger.info(str(e))
         status.details = str(e)
         status.status = CompetitionCreationTaskStatus.FAILED
         status.save()
         raise e
+
+    except Exception as e:
+        # These are critical uncaught exceptions, make sure the end user is at least informed
+        # that unpacking has failed -- do not share unhandled exception details
+        logger.error(traceback.format_exc())
+        status.details = "Contact an administrator, competition failed to unpack in a critical way."
+        status.status = CompetitionCreationTaskStatus.FAILED
+        status.save()
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)

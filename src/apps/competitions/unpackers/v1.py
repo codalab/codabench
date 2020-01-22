@@ -7,11 +7,17 @@ from competitions.unpackers.utils import CompetitionUnpackingException, get_date
 class V15Unpacker(BaseUnpacker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Just in case docker image is blank (""), replace with default value
+        docker_image = self.competition_yaml.get('competition_docker_image')
+        if not docker_image:
+            docker_image = "codalab/codalab-legacy:py3"
+
         self.competition = {
             "title": self.competition_yaml.get('title'),
             "logo": None,
             "registration_auto_approve": not self.competition_yaml.get('has_registration', True),
-            "docker_image": self.competition_yaml.get('competition_docker_image', 'codalab/codalab-legacy:py3'),
+            "docker_image": docker_image,
             "pages": [],
             "phases": [],
             "leaderboards": [],
