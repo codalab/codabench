@@ -208,7 +208,6 @@ def send_parent_status(submission_id, websocket_url):
     )
 
 
-
 async def websocket_send(submission_id, data, websocket_url):
     # Socket connection to stream output of submission
     submission_api_url_parsed = urlparse(websocket_url)
