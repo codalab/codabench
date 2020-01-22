@@ -61,6 +61,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         })
 
     async def receive(self, text_data=None, bytes_data=None):
+        # Todo: authenticate user has access to submission given the user sent with self.scope['user']
         submission_id = text_data
         text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
         if os.path.exists(text_path):
