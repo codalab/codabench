@@ -198,6 +198,17 @@ def send_child_id(parent_id, child_id, websocket_url):
     )
 
 
+def send_parent_status(submission_id, websocket_url):
+    data = {
+        "kind": "status_update",
+        "message": "Running"
+    }
+    asyncio.get_event_loop().run_until_complete(
+        websocket_send(submission_id, data, websocket_url)
+    )
+
+
+
 async def websocket_send(submission_id, data, websocket_url):
     # Socket connection to stream output of submission
     submission_api_url_parsed = urlparse(websocket_url)
@@ -246,13 +257,9 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.has_children = True
             submission.status = 'Running'
             submission.save()
-            status_data = {
-                "kind": "status_update",
-                "message": "Running"
-            }
-            asyncio.get_event_loop().run_until_complete(
-                websocket_send(submission.id, status_data, run_arguments["submissions_api_url"])
-            )
+
+            send_parent_status(submission.id, run_arguments["submissions_api_url"])
+
             for task in tasks:
                 # TODO: make a duplicate submission method and use it here
                 sub = Submission(
