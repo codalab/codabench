@@ -162,6 +162,7 @@
             self.ws.open()
 
         }
+
         self.handle_websocket = function (submission_id, data) {
             submission_id = _.toNumber(submission_id)
             if (self.selected_submission.id !== submission_id && !_.includes(self.children, submission_id)) {
@@ -175,9 +176,7 @@
             if (kind === 'status_update') {
                 if (submission_id !== self.selected_submission.id) {
                     self.children_statuses[submission_id] = message
-                    if (_.every(self.children, child => {
-                        return _.includes(done_states, self.children_statuses[child])
-                    })) {
+                    if (_.every(self.children, child => _.includes(done_states, self.children_statuses[child]))) {
                         CODALAB.events.trigger('submission_status_update', {
                             submission_id: self.selected_submission.id,
                             status: 'Finished'
@@ -191,7 +190,6 @@
                 self.update()
                 $('.menu .item', self.root).tab()
             } else {
-
                 try {
                     message = JSON.parse(message);
                     if (message.type === "plot") {
@@ -204,7 +202,6 @@
                     self.add_line(submission_id, kind, message)
                 }
             }
-
         }
 
         self.pull_logs = function () {
@@ -216,7 +213,6 @@
         self.set_checkbox = function () {
             $(self.refs.autoscroll_checkbox).children('input').prop('checked', self.autoscroll_selected)
         }
-
 
         self.add_graph_data_point = function (submission_id, value) {
             if (!self.datasets[submission_id]) {
@@ -288,7 +284,6 @@
             var data_file = self.refs.data_file.refs.file_input.files[0]
             self.children = []
             self.children_statuses = {}
-            self.colors = _(self._colors)
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     self.lines = {}

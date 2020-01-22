@@ -452,6 +452,9 @@ class Page(models.Model):
     content = models.TextField(null=True, blank=True)
     index = models.PositiveIntegerField()
 
+    class Meta:
+        ordering = ('index',)
+
 
 class CompetitionDump(models.Model):
     STARTING = "Starting"

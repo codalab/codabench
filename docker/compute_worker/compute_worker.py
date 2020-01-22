@@ -418,7 +418,6 @@ class Run:
         logger.info(f'content: {resp.content}')
 
     def prepare(self):
-        # self._update_status(STATUS_PREPARING)
         self._update_status(STATUS_PREPARING)
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate

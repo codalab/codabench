@@ -347,7 +347,7 @@ def unpack_competition(competition_dataset_pk):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def create_competition_dump(competition_pk, keys_instead_of_files=True):
-    yaml_data = {}
+    yaml_data = {"version": "2"}
     try:
         # -------- SetUp -------
 
