@@ -130,6 +130,8 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.sub = self.make_submission()
         with mock.patch('competitions.tasks.send_parent_status') as parent_websocket_mock:
             with mock.patch('competitions.tasks.send_child_id') as child_websocket_mock:
+                assert parent_websocket_mock.call_count == 1
+                assert child_websocket_mock.call_count == 2
                 resp = self.mock_run_submission(self.sub)
         assert resp.call_count == 2
         sub = Submission.objects.get(id=self.sub.id)
