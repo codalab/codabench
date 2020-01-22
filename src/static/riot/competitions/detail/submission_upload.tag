@@ -223,6 +223,7 @@
                 self.datasets[submission_id] = {
                     label: submission_id,
                     data: [],
+                    steppedLine: true,
                     backgroundColor: 'rgba(0,187,187,0.3)',
                     pointBackgroundColor: 'rgba(0,187,187,0.8)',
                     borderColor: 'rgba(0,187,187,0.8)',

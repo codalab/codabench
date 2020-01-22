@@ -136,6 +136,7 @@
         self.data = {
             data: [],
             backgroundColor: 'rgba(0,187,187,0.3)',
+            steppedLine: true,
             pointBackgroundColor: 'rgba(0,187,187,0.8)',
             borderColor: 'rgba(0,187,187,0.8)',
             fill: true,
