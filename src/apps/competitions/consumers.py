@@ -3,7 +3,6 @@ import os
 import re
 
 import aiofiles
-
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 
@@ -55,11 +54,11 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
 
     def group_send(self, text, submission_id):
         return self.channel_layer.group_send("submission_listening", {
-                'type': 'submission.message',
-                'text': text,
-                'submission_id': submission_id,
-                'full_text': True,
-            })
+            'type': 'submission.message',
+            'text': text,
+            'submission_id': submission_id,
+            'full_text': True,
+        })
 
     async def receive(self, text_data=None, bytes_data=None):
         submission_id = text_data
