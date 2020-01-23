@@ -212,7 +212,7 @@ def send_child_id(submission, child_id):
     """Helper function we can mock in tests, instead of having to do async mocks"""
     send_submission_message(submission, {
         "kind": "child_update",
-        "message": child_id
+        "child_id": child_id
     })
 
 
