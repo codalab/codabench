@@ -16,20 +16,24 @@
                     </thead>
                     <tbody>
                     <tr>
-                        <td class="selectable file-download"><a href="{ data_file }"><i
-                                class="file archive outline icon"></i> Submission File</a></td>
+                        <td class="selectable file-download">
+                            <a href="{ data_file }"><i class="file archive outline icon"></i> Submission File</a>
+                        </td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download"><a href="{ result }"><i class="file outline icon"></i>Output
-                            from prediction step</a></td>
+                        <td class="selectable file-download">
+                            <a href="{ result }"><i class="file outline icon"></i>Output from prediction step</a>
+                        </td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download"><a href="#"><i class="file outline icon"></i>Output from
-                            scoring step</a></td>
+                        <td class="selectable file-download">
+                            <a href="#"><i class="file outline icon"></i>Output from scoring step</a>
+                        </td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download"><a href="#"><i class="file outline icon"></i>Private output
-                            from scoring step</a></td>
+                        <td class="selectable file-download">
+                            <a href="#"><i class="file outline icon"></i>Private output from scoring step</a>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -40,18 +44,23 @@
         <div class="ui grid">
             <div class="three wide column">
                 <div class="ui fluid vertical secondary menu">
-                    <div class="active submission-modal item" data-tab="{admin_: submission.admin}prediction">Prediction
-                        Logs
+                    <div class="active submission-modal item" data-tab="{admin_: submission.admin}prediction">
+                        Prediction Logs
                     </div>
-                    <div class="submission-modal item" data-tab="{admin_: submission.admin}scoring">Scoring Logs</div>
+                    <div class="submission-modal item" data-tab="{admin_: submission.admin}scoring">
+                        Scoring Logs
+                    </div>
                 </div>
             </div>
             <div class="thirteen wide column">
                 <div class="ui active tab" data-tab="{admin_: submission.admin}prediction">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}p_stdout">stdout
+                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}p_stdout">
+                            stdout
                         </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_stderr">
+                            stderr
+                        </div>
                         <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stdout">
                             Ingestion stdout
                         </div>
@@ -87,9 +96,12 @@
                 </div>
                 <div class="ui tab" data-tab="{admin_: submission.admin}scoring">
                     <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}s_stdout">stdout
+                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}s_stdout">
+                            stdout
                         </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_stderr">stderr</div>
+                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_stderr">
+                            stderr
+                        </div>
                         <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stdout">
                             Ingestion stdout
                         </div>

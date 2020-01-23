@@ -63,6 +63,7 @@ class CompetitionViewSet(ModelViewSet):
                 )
                 qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
                 qs = qs.annotate(submission_count=Count(
+                    # Filtering out children submissions so we only count distinct submissions
                     Case(
                         When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
                     ), distinct=True)

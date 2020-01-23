@@ -95,7 +95,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 
         primary_col = instance.columns.get(index=instance.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = instance.submissions.all().annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+        submissions = instance.submissions.all().select_related('owner').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'

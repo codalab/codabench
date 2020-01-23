@@ -189,6 +189,7 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
 
 
 def send_child_id(parent_id, child_id, websocket_url):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
     data = {
         "kind": 'child_update',
         "child_id": child_id,
@@ -199,6 +200,7 @@ def send_child_id(parent_id, child_id, websocket_url):
 
 
 def send_parent_status(submission_id, websocket_url):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
     data = {
         "kind": "status_update",
         "message": "Running"
