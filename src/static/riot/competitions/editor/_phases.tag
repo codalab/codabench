@@ -179,9 +179,9 @@
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
-                    url: `${URLS.API}tasksearch/?search={query}`,
+                    url: `${URLS.API}tasks/?search={query}`,
                     onResponse: (data) => {
-                        return {success: true, results: _.values(data)}
+                        return {success: true, results: _.values(data.results)}
                     },
                 },
                 onAdd: self.task_added,

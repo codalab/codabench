@@ -62,6 +62,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
 
 
 class SubmissionCreationSerializer(serializers.ModelSerializer):
+    """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = fields.SerializerMethodField(read_only=True)
 
@@ -76,6 +77,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             'filename',
             'description',
             'secret',
+            'md5',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -107,7 +109,7 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
         print("Updated to...")
         print(validated_data)
 
-        if validated_data["status"] == Submission.SCORING:
+        if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
             task_id = validated_data.get('task_pk')

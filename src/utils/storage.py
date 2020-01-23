@@ -1,3 +1,5 @@
+import hashlib
+
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from storages.backends.azure_storage import AzureStorage
@@ -25,3 +27,12 @@ elif settings.STORAGE_IS_AZURE:
     PublicStorage = StorageClass(azure_container=settings.AZURE_CONTAINER)
 else:
     raise NotImplementedError()
+
+
+def md5(filename):
+    """Given some file return its md5, works well on large files"""
+    hash_md5 = hashlib.md5()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()

@@ -19,6 +19,7 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'key',
             'tasks',
             'data',
+            'md5',
         ]
 
 
@@ -38,6 +39,8 @@ class TaskSerializer(WritableNestedModelSerializer):
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    validated = serializers.SerializerMethodField()
+    value = serializers.CharField(source='key', required=False)
 
     class Meta:
         model = Task
@@ -50,6 +53,10 @@ class TaskSerializer(WritableNestedModelSerializer):
             'created_when',
             'is_public',
             'ingestion_only_during_scoring',
+            'validated',
+
+            # The 'value' field helps semantic multiselect work with this stuff
+            'value',
 
             # Data pieces
             'input_data',
@@ -57,6 +64,9 @@ class TaskSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
         )
+
+    def get_validated(self, instance):
+        return instance.validated is not None
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
@@ -67,6 +77,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     files = serializers.SerializerMethodField(read_only=True)
+    validated = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -78,6 +89,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'created_by',
             'created_when',
             'is_public',
+            'validated',
 
             # Data pieces
             'input_data',
@@ -104,6 +116,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
                 })
         return files
 
+    def get_validated(self, task):
+        return task.validated is not None
+
 
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
@@ -116,16 +131,3 @@ class TaskListSerializer(serializers.ModelSerializer):
             'solutions',
             'ingestion_only_during_scoring'
         )
-
-
-# TODO:// Simple serializer exists solely for Select2. Has a whole separate view and URL for using it. can this be done
-#   with a get_serializer_call() method instead?
-class TaskSerializerSimple(serializers.ModelSerializer):
-    value = serializers.CharField(source='key')
-
-    class Meta:
-        model = Task
-        fields = [
-            'value',
-            'name',
-        ]

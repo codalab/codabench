@@ -111,6 +111,18 @@ class SubmissionViewSet(ModelViewSet):
         data = SubmissionFilesSerializer(submission).data
         return Response(data)
 
+    @action(detail=True, methods=('GET',))
+    def toggle_public(self, request, pk):
+        submission = super().get_object()
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied(f'You do not have permission to publish this submissions')
+        is_public = not submission.is_public
+        submission.data.is_public = is_public
+        submission.data.save(send=False)
+        submission.is_public = is_public
+        submission.save()
+        return Response({})
+
 
 @api_view(['POST'])
 @permission_classes((AllowAny, ))  # permissions are checked via the submission secret
