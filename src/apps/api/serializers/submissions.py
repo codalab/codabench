@@ -1,3 +1,4 @@
+import asyncio
 from os.path import basename
 
 from django.core.exceptions import ValidationError
@@ -122,6 +123,20 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             raise PermissionError("Submission secret invalid")
         print("Updated to...")
         print(validated_data)
+
+        if "status" in validated_data:
+            # Received a status update, let the frontend know
+            from channels.layers import get_channel_layer
+            channel_layer = get_channel_layer()
+            asyncio.get_event_loop().run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
+                'type': 'submission.message',
+                'text': {
+                    "kind": "status_update",
+                    "status": validated_data["status"],
+                },
+                'submission_id': instance.id,
+                'full_text': True,
+            }))
 
         if validated_data["status"] == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker

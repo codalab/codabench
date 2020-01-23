@@ -9,7 +9,7 @@ application = ProtocolTypeRouter({
     # (http->django views is added by default)
 
     "websocket": AuthMiddlewareStack(URLRouter([
-        path("submission_input/<int:submission_id>/", consumers.SubmissionIOConsumer),
+        path("submission_input/<int:user_pk>/<int:submission_id>/<str:secret>/", consumers.SubmissionIOConsumer),
         path("submission_output/", consumers.SubmissionOutputConsumer),
         # path(r".*", consumers.SubmissionOutputConsumer),
     ])),

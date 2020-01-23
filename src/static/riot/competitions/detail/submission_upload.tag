@@ -206,7 +206,9 @@
 
         self.pull_logs = function () {
             if (_.isEmpty(self.lines) && !_.isEmpty(self.selected_submission)) {
-                self.ws.send(self.selected_submission.id)
+                console.log(self.selected_submission)
+                console.log(self.children)
+                self.ws.send(JSON.stringify({submission_ids: [self.selected_submission.id]}))
             }
         }
 

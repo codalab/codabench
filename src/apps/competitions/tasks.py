@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 import oyaml as yaml
 import websockets
 from celery._state import app_or_default
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -188,40 +189,50 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
 
 
-def send_child_id(parent_id, child_id, websocket_url):
-    """Helper function we can mock in tests, instead of having to do async mocks"""
-    data = {
-        "kind": 'child_update',
-        "child_id": child_id,
-    }
-    asyncio.get_event_loop().run_until_complete(
-        websocket_send(parent_id, data, websocket_url)
-    )
+# def send_child_id(parent_id, child_id, websocket_url):
+#     """Helper function we can mock in tests, instead of having to do async mocks"""
+#     data = {
+#         "kind": 'child_update',
+#         "child_id": child_id,
+#     }
+#     asyncio.get_event_loop().run_until_complete(
+#         websocket_send(parent_id, data, websocket_url)
+#     )
+#
+#
+# def send_parent_status(submission_id, websocket_url):
+#     """Helper function we can mock in tests, instead of having to do async mocks"""
+#     data = {
+#         "kind": "status_update",
+#         "message": "Running"
+#     }
+#     asyncio.get_event_loop().run_until_complete(
+#         websocket_send(submission_id, data, websocket_url)
+#     )
+#
+#
+# async def websocket_send(submission_id, data, websocket_url):
+#     # Socket connection to stream output of submission
+#     submission_api_url_parsed = urlparse(websocket_url)
+#     websocket_host = submission_api_url_parsed.netloc
+#     websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
+#     websocket_url = f"{websocket_scheme}://{websocket_host}/"
+#
+#     url = f'{websocket_url}submission_input/{submission_id}/'
+#     logger.info(f"Connecting to {url}")
+#
+#     async with websockets.connect(url) as websocket:
+#         await websocket.send(json.dumps(data))
 
-
-def send_parent_status(submission_id, websocket_url):
-    """Helper function we can mock in tests, instead of having to do async mocks"""
-    data = {
-        "kind": "status_update",
-        "message": "Running"
-    }
-    asyncio.get_event_loop().run_until_complete(
-        websocket_send(submission_id, data, websocket_url)
-    )
-
-
-async def websocket_send(submission_id, data, websocket_url):
-    # Socket connection to stream output of submission
-    submission_api_url_parsed = urlparse(websocket_url)
-    websocket_host = submission_api_url_parsed.netloc
-    websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
-    websocket_url = f"{websocket_scheme}://{websocket_host}/"
-
-    url = f'{websocket_url}submission_input/{submission_id}/'
-    logger.info(f"Connecting to {url}")
-
-    async with websockets.connect(url) as websocket:
-        await websocket.send(json.dumps(data))
+def send_submission_message(user, submission_id, data):
+    from channels.layers import get_channel_layer
+    channel_layer = get_channel_layer()
+    channel_layer.group_send(f"submission_listening_{user.pk}", {
+        'type': 'submission.message',
+        'text': data,
+        'submission_id': submission_id,
+        'full_text': True,
+    })
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
@@ -243,7 +254,8 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     run_arguments = {
-        "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
+        "user_pk": submission.owner.pk,
+        "submissions_api_url": settings.SUBMISSIONS_API_URL,
         "secret": submission.secret,
         "docker_image": submission.phase.competition.docker_image,
         "execution_time_limit": submission.phase.execution_time_limit,
@@ -259,7 +271,7 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.status = 'Running'
             submission.save()
 
-            send_parent_status(submission.id, run_arguments["submissions_api_url"])
+            # send_parent_status(submission.id, run_arguments["submissions_api_url"])
 
             for task in tasks:
                 # TODO: make a duplicate submission method and use it here
@@ -272,7 +284,7 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
                 )
                 sub.save(ignore_submission_limit=True)
                 run_submission(sub.id, task.id)
-                send_child_id(submission.id, sub.id, run_arguments["submissions_api_url"])
+                # send_child_id(submission.id, sub.id, run_arguments["submissions_api_url"])
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
