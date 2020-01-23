@@ -189,49 +189,30 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
 
 
-# def send_child_id(parent_id, child_id, websocket_url):
-#     """Helper function we can mock in tests, instead of having to do async mocks"""
-#     data = {
-#         "kind": 'child_update',
-#         "child_id": child_id,
-#     }
-#     asyncio.get_event_loop().run_until_complete(
-#         websocket_send(parent_id, data, websocket_url)
-#     )
-#
-#
-# def send_parent_status(submission_id, websocket_url):
-#     """Helper function we can mock in tests, instead of having to do async mocks"""
-#     data = {
-#         "kind": "status_update",
-#         "message": "Running"
-#     }
-#     asyncio.get_event_loop().run_until_complete(
-#         websocket_send(submission_id, data, websocket_url)
-#     )
-#
-#
-# async def websocket_send(submission_id, data, websocket_url):
-#     # Socket connection to stream output of submission
-#     submission_api_url_parsed = urlparse(websocket_url)
-#     websocket_host = submission_api_url_parsed.netloc
-#     websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
-#     websocket_url = f"{websocket_scheme}://{websocket_host}/"
-#
-#     url = f'{websocket_url}submission_input/{submission_id}/'
-#     logger.info(f"Connecting to {url}")
-#
-#     async with websockets.connect(url) as websocket:
-#         await websocket.send(json.dumps(data))
-
-def send_submission_message(user, submission_id, data):
+def send_submission_message(submission, data):
     from channels.layers import get_channel_layer
     channel_layer = get_channel_layer()
-    channel_layer.group_send(f"submission_listening_{user.pk}", {
+    user = submission.owner
+    asyncio.get_event_loop().run_until_complete(channel_layer.group_send(f"submission_listening_{user.pk}", {
         'type': 'submission.message',
         'text': data,
-        'submission_id': submission_id,
-        'full_text': True,
+        'submission_id': submission.pk,
+    }))
+
+
+def send_parent_status(submission):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
+    send_submission_message(submission, {
+        "kind": "status_update",
+        "message": "Running"
+    })
+
+
+def send_child_id(submission, child_id):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
+    send_submission_message(submission, {
+        "kind": "child_update",
+        "message": child_id
     })
 
 
@@ -272,19 +253,21 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.save()
 
             # send_parent_status(submission.id, run_arguments["submissions_api_url"])
+            send_parent_status(submission)
 
             for task in tasks:
                 # TODO: make a duplicate submission method and use it here
-                sub = Submission(
+                child_sub = Submission(
                     owner=submission.owner,
                     phase=submission.phase,
                     data=submission.data,
                     participant=submission.participant,
                     parent=submission,
                 )
-                sub.save(ignore_submission_limit=True)
-                run_submission(sub.id, task.id)
+                child_sub.save(ignore_submission_limit=True)
+                run_submission(child_sub.id, task.id)
                 # send_child_id(submission.id, sub.id, run_arguments["submissions_api_url"])
+                send_child_id(submission, child_sub.id)
         else:
             # The initial submission object will be the only submission
             task = tasks.first()

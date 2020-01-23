@@ -299,7 +299,7 @@ class Run:
 
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
-            metadata = yaml.load(metadata_file.read())
+            metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
             logger.info(f"Metadata contains:\n {metadata}")
             command = metadata.get("command")
             if not command and kind == "ingestion":
