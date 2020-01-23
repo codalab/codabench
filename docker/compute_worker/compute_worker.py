@@ -245,17 +245,19 @@ class Run:
 
             while any(v["continue"] for v in logs.values()):
                 for value in logs.values():
-                    out = await value["stream"].readline()
-                    if out:
-                        value["data"] += out
-                        print("WS: " + str(out))
-                        await websocket.send(json.dumps({
-                            "kind": kind,
-                            "message": out.decode()
-                        }))
-                    else:
-                        value["continue"] = False
-                    await asyncio.sleep(.1)
+                    try:
+                        out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
+                        if out:
+                            value["data"] += out
+                            print("WS: " + str(out))
+                            await websocket.send(json.dumps({
+                                "kind": kind,
+                                "message": out.decode()
+                            }))
+                        else:
+                            value["continue"] = False
+                    except asyncio.TimeoutError:
+                        continue
 
             end = time.time()
 
@@ -272,7 +274,10 @@ class Run:
                     logger.info(f'[{key}]\n{value["data"]}')
                     self._put_file(value["location"], raw_data=value["data"])
 
-    def _run_program_directory(self, program_dir, kind, can_be_output=False):
+            logger.info("Program finished")
+            return proc
+
+    async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
@@ -356,7 +361,6 @@ class Run:
         docker_cmd += [self.docker_image]
 
         # Handle Legacy competitions by replacing anything in the run command
-
         command = replace_legacy_metadata_command(
             command=command,
             kind=kind,
@@ -369,15 +373,8 @@ class Run:
 
         logger.info(f"Running program = {' '.join(docker_cmd)}")
 
-        # This runs the docker command and asynchronously passes data
-        if self.ingestion_only_during_scoring and self.is_scoring:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-            asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
-            asyncio.get_event_loop().close()
-        else:
-            asyncio.get_event_loop().run_until_complete(self._run_docker_cmd(docker_cmd, kind=kind))
-
-        logger.info("Program finished")
+        # This runs the docker command and asynchronously passes data back via websocket
+        return await self._run_docker_cmd(docker_cmd, kind=kind)
 
     def _put_dir(self, url, directory):
         logger.info("Putting dir %s in %s" % (directory, url))
@@ -456,19 +453,14 @@ class Run:
 
         logger.info("Running scoring program, and then ingestion program")
 
-        if self.ingestion_only_during_scoring and self.is_scoring:
-            asyncio.get_event_loop()
-            asyncio.get_child_watcher()
-            scoring_thread = threading.Thread(target=self._run_program_directory, args=(program_dir, 'program', True))
-            ingestion_thread = threading.Thread(target=self._run_program_directory, args=(ingestion_program_dir, 'ingestion'))
+        loop = asyncio.new_event_loop()
 
-            scoring_thread.start()
-            ingestion_thread.start()
-            scoring_thread.join()
-            ingestion_thread.join()
-        else:
-            self._run_program_directory(program_dir, kind='program', can_be_output=True)
-            self._run_program_directory(ingestion_program_dir, kind='ingestion')
+        gathered_tasks = asyncio.gather(
+            self._run_program_directory(program_dir, kind='program', can_be_output=True),
+            self._run_program_directory(ingestion_program_dir, kind='ingestion'),
+            loop=loop,
+        )
+        loop.run_until_complete(gathered_tasks)
 
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
