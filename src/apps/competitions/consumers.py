@@ -65,32 +65,20 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         """We expect to receive a message at this endpoint containing the ID(s) of submissions to get
         details about; typically on page load, looking up the previous submission details"""
-        # Todo: authenticate user has access to submission given the user sent with self.scope['user']
         data = json.loads(text_data)
 
-        for id in data.get("submission_ids", []):
-            text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{id}.txt")
-            if os.path.exists(text_path):
-                with open(text_path) as f:
-                    text = f.read()
-                await self.group_send(text, id)
+        submission_ids = data.get("submission_ids", [])
 
-        # submission_id = text_data
-        # text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
-        # if os.path.exists(text_path):
-        #     with open(text_path) as f:
-        #         text = f.read()
-        #     await self.group_send(text, submission_id)
-        #     # TODO: fix potential security issue? get other peoples submission logs on page refresh
-        #     #  if code submission has child id print statements
-        #     # TODO this feels weird, we could make this all a bit cleaner
-        #     children = re.findall(r'child_id\": (\d+)', text)
-        #     for child_id in children:
-        #         child_text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{child_id}.txt")
-        #         if os.path.exists(child_text_path):
-        #             with open(child_text_path) as f:
-        #                 child_text = f.read()
-        #             await self.group_send(child_text, child_id)
+        if submission_ids:
+            # Filter out submissions not by this user
+            submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+
+            for id in submissions:
+                text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{id}.txt")
+                if os.path.exists(text_path):
+                    with open(text_path) as f:
+                        text = f.read()
+                    await self.group_send(text, id)
 
     async def submission_message(self, event):
         data = {
