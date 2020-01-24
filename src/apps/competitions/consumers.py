@@ -32,7 +32,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         # TODO: Await to broadcast to everyone listening to this submission key or whatever
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
-            'text': text_data,
+            'text': json.loads(text_data),
             'submission_id': submission_id,
         })
         # TODO! Refuse to write to file after 10MB has been received ???

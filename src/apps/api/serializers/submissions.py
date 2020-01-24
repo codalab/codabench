@@ -135,10 +135,10 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
 
             loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
                 'type': 'submission.message',
-                'text': json.dumps({
+                'text': {
                     "kind": "status_update",
                     "status": validated_data["status"],
-                }),
+                },
                 'submission_id': instance.id,
             }))
 

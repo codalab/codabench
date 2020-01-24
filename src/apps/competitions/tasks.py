@@ -200,10 +200,10 @@ def send_submission_message(submission, data):
 
 def send_parent_status(submission):
     """Helper function we can mock in tests, instead of having to do async mocks"""
-    send_submission_message(submission, json.dumps({
+    send_submission_message(submission, {
         "kind": "status_update",
         "status": "Running"
-    }))
+    })
 
 
 def send_child_id(submission, child_id):

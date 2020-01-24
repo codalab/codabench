@@ -151,7 +151,7 @@
                 switch (event_data.type) {
                     case 'catchup':
                         _.forEach(_.compact(event_data.data.split('\n')), data => {
-                            self.handle_websocket(event_data.submission_id, data)
+                            self.handle_websocket(event_data.submission_id, JSON.parse(data))
                         })
                         break
                     case 'message':
@@ -170,11 +170,6 @@
                 return
             }
             let done_states = ['Finished', 'Cancelled', 'Unknown', 'Failed']
-            try {
-                data = JSON.parse(data)
-            } catch (e) {
-                // data was already an object
-            }
             let message = data.message
             let kind = data.kind
             if (kind === 'status_update') {
