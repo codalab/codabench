@@ -1,5 +1,4 @@
 import asyncio
-import json
 from os.path import basename
 
 from django.core.exceptions import ValidationError
