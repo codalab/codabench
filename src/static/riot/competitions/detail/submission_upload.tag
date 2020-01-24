@@ -188,7 +188,7 @@
                     }
                 }
                 self.status_received = true
-                CODALAB.events.trigger('submission_status_update', {submission_id: submission_id, status: message})
+                CODALAB.events.trigger('submission_status_update', {submission_id: submission_id, status: data.status})
             } else if (kind === 'child_update') {
                 self.children.push(data.child_id)
                 self.update()
@@ -210,8 +210,6 @@
 
         self.pull_logs = function () {
             if (_.isEmpty(self.lines) && !_.isEmpty(self.selected_submission)) {
-                console.log(self.selected_submission)
-                console.log(self.children)
                 self.ws.send(JSON.stringify({
                     submission_ids: _.concat(self.selected_submission.id, _.get(self.selected_submission, 'children', []))
                 }))
@@ -341,6 +339,11 @@
             let latest_submission = _.head(_.filter(submissions, {parent: null}))
             if (latest_submission && !_.includes(['Finished', 'Cancelled', 'Failed', 'Unknown'], latest_submission.status)) {
                 self.selected_submission = latest_submission
+                self.children = _.sortBy(latest_submission.children)
+                if (self.children) {
+                    self.update()
+                    $('.menu .item', self.root).tab()
+                }
                 self.pull_logs()
             }
         })

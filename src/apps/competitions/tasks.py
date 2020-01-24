@@ -7,10 +7,8 @@ import traceback
 import zipfile
 from io import BytesIO
 from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 
 import oyaml as yaml
-import websockets
 from celery._state import app_or_default
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -202,10 +200,10 @@ def send_submission_message(submission, data):
 
 def send_parent_status(submission):
     """Helper function we can mock in tests, instead of having to do async mocks"""
-    send_submission_message(submission, {
+    send_submission_message(submission, json.dumps({
         "kind": "status_update",
-        "message": "Running"
-    })
+        "status": "Running"
+    }))
 
 
 def send_child_id(submission, child_id):
@@ -252,7 +250,6 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.status = 'Running'
             submission.save()
 
-            # send_parent_status(submission.id, run_arguments["submissions_api_url"])
             send_parent_status(submission)
 
             for task in tasks:
@@ -266,7 +263,6 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
                 )
                 child_sub.save(ignore_submission_limit=True)
                 run_submission(child_sub.id, task.id)
-                # send_child_id(submission.id, sub.id, run_arguments["submissions_api_url"])
                 send_child_id(submission, child_sub.id)
         else:
             # The initial submission object will be the only submission

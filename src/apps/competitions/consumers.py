@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 import aiofiles
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -15,18 +14,15 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         secret = self.scope['url_route']['kwargs']['secret']
         try:
-            submission = Submission.objects.get(pk=submission_id, secret=secret)
+            Submission.objects.get(pk=submission_id, secret=secret)
         except Submission.DoesNotExist:
             return await self.close()
 
         await self.accept()
 
     async def receive(self, text_data=None, bytes_data=None):
-        # kind = json.loads(text_data).get('kind')
-
         user_pk = self.scope['url_route']['kwargs']['user_pk']
         submission_id = self.scope['url_route']['kwargs']['submission_id']
-        # if kind != 'status_update':
         submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
         os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
 
@@ -54,12 +50,12 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(f"submission_listening_{self.scope['user'].pk}", self.channel_name)
         await self.close()
 
-    def group_send(self, text, submission_id):
+    def group_send(self, text, submission_id, full_text=False):
         return self.channel_layer.group_send(f"submission_listening_{self.scope['user'].pk}", {
             'type': 'submission.message',
             'text': text,
             'submission_id': submission_id,
-            'full_text': True,
+            'full_text': full_text,
         })
 
     async def receive(self, text_data=None, bytes_data=None):
@@ -71,14 +67,14 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
 
         if submission_ids:
             # Filter out submissions not by this user
-            submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+            submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"]).values_list('pk', flat=True)
 
-            for id in submissions:
-                text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{id}.txt")
+            for sub_id in submissions:
+                text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{sub_id}.txt")
                 if os.path.exists(text_path):
                     with open(text_path) as f:
                         text = f.read()
-                    await self.group_send(text, id)
+                    await self.group_send(text, sub_id, full_text=True)
 
     async def submission_message(self, event):
         data = {

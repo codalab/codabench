@@ -1,4 +1,5 @@
 import asyncio
+import json
 from os.path import basename
 
 from django.core.exceptions import ValidationError
@@ -121,8 +122,6 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
             raise PermissionError("Submission secret invalid")
-        print("Updated to...")
-        print(validated_data)
 
         if "status" in validated_data:
             # Received a status update, let the frontend know
@@ -136,12 +135,11 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
 
             loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
                 'type': 'submission.message',
-                'text': {
+                'text': json.dumps({
                     "kind": "status_update",
                     "status": validated_data["status"],
-                },
+                }),
                 'submission_id': instance.id,
-                'full_text': True,
             }))
 
         if validated_data["status"] == Submission.SCORING:
