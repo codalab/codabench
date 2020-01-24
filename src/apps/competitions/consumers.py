@@ -63,12 +63,10 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         })
 
     async def receive(self, text_data=None, bytes_data=None):
-        """We expect to receive a message at this endpoint containing the ID of a submission"""
+        """We expect to receive a message at this endpoint containing the ID(s) of submissions to get
+        details about; typically on page load, looking up the previous submission details"""
         # Todo: authenticate user has access to submission given the user sent with self.scope['user']
         data = json.loads(text_data)
-
-        print("ws received summin")
-        print(data)
 
         for id in data.get("submission_ids", []):
             text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{id}.txt")

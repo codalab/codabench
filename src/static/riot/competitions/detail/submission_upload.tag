@@ -170,7 +170,11 @@
                 return
             }
             let done_states = ['Finished', 'Cancelled', 'Unknown', 'Failed']
-            data = JSON.parse(data)
+            try {
+                data = JSON.parse(data)
+            } catch (e) {
+                // data was already an object
+            }
             let message = data.message
             let kind = data.kind
             if (kind === 'status_update') {
@@ -208,7 +212,9 @@
             if (_.isEmpty(self.lines) && !_.isEmpty(self.selected_submission)) {
                 console.log(self.selected_submission)
                 console.log(self.children)
-                self.ws.send(JSON.stringify({submission_ids: [self.selected_submission.id]}))
+                self.ws.send(JSON.stringify({
+                    submission_ids: _.concat(self.selected_submission.id, _.get(self.selected_submission, 'children', []))
+                }))
             }
         }
 

@@ -128,7 +128,13 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
             # Received a status update, let the frontend know
             from channels.layers import get_channel_layer
             channel_layer = get_channel_layer()
-            asyncio.get_event_loop().run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
+
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+
+            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
                 'type': 'submission.message',
                 'text': {
                     "kind": "status_update",
