@@ -431,7 +431,6 @@ class Submission(ChaHubSaveMixin, models.Model):
                         )
                         self.scores.add(sub_score)
 
-
     @staticmethod
     def get_chahub_endpoint():
         return "submissions/"
