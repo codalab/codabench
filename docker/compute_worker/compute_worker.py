@@ -110,6 +110,7 @@ class Run:
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
+        self.user_pk = run_args["user_pk"]
         self.submission_id = run_args["id"]
         self.submissions_api_url = run_args["submissions_api_url"]
         self.docker_image = run_args["docker_image"]
@@ -160,17 +161,9 @@ class Run:
             ]
         return [run_args[name] for name in DETAILED_OUTPUT_NAMES]
 
-    async def _update_websocket_status(self, status):
-        async with websockets.connect(f'{self.websocket_url}submission_input/{self.submission_id}/') as websocket:
-            await websocket.send(json.dumps({
-                "kind": "status_update",
-                "message": status
-            }))
-
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
-        asyncio.get_event_loop().run_until_complete(self._update_websocket_status(status))
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
         logger.info(
             f"Updating status to '{status}' with extra_information = '{extra_information}' "
@@ -217,7 +210,7 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        url = f'{self.websocket_url}submission_input/{self.submission_id}/'
+        url = f'{self.websocket_url}submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/'
         logger.info(f"Connecting to {url}")
 
         async with websockets.connect(url) as websocket:
@@ -296,7 +289,7 @@ class Run:
 
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
-            metadata = yaml.load(metadata_file.read())
+            metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
             logger.info(f"Metadata contains:\n {metadata}")
             command = metadata.get("command")
             if not command and kind == "ingestion":
