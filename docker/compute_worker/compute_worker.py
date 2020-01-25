@@ -210,7 +210,6 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        # url = f'{self.websocket_url}submission_input/{self.submission_id}/'
         url = f'{self.websocket_url}submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/'
         logger.info(f"Connecting to {url}")
 
