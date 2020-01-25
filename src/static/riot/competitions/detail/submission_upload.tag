@@ -174,7 +174,7 @@
             let kind = data.kind
             if (kind === 'status_update') {
                 if (submission_id !== self.selected_submission.id) {
-                    self.children_statuses[submission_id] = message
+                    self.children_statuses[submission_id] = data.status
                     if (_.every(self.children, child => _.includes(done_states, self.children_statuses[child]))) {
                         CODALAB.events.trigger('submission_status_update', {
                             submission_id: self.selected_submission.id,
