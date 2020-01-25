@@ -79,14 +79,13 @@
                         <!-- delete submission -->
                     </button>
                 </virtual>
-                <button if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
-                        class="mini ui button basic yellow icon"
+                <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
                         data-tooltip="Cancel Submission"
                         data-inverted=""
                         onclick="{ cancel_submission.bind(this, submission) }">
-                    <i class="x icon"></i>
+                    <i class="grey minus circle icon"></i>
                     <!-- cancel submission -->
-                </button>
+                </span>
                 <span if="{!submission.leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
