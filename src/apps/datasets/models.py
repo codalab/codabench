@@ -1,9 +1,10 @@
-import datetime
 import uuid
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
@@ -59,6 +60,9 @@ class Data(ChaHubSaveMixin, models.Model):
     # TODO: add Model manager that automatically filters out upload_completed_successfully=False from queries
     # TODO: remove upload_completed_successfully=False after 3 days ???
 
+    def get_download_url(self):
+        return reverse('datasets:download', kwargs={'key': self.key})
+
     def save(self, *args, **kwargs):
         if not self.file_size and self.data_file:
             try:
@@ -89,39 +93,34 @@ class Data(ChaHubSaveMixin, models.Model):
     def __str__(self):
         return self.name or ''
 
-    def get_chahub_endpoint(self):
+    @staticmethod
+    def get_chahub_endpoint():
         return "datasets/"
 
-    def clean_chahub_data(self, data):
-        validated_data = {}
-        for key, item in data.items():
-            if not item:
-                continue
-            elif isinstance(item, datetime.datetime):
-                validated_data[key] = item.isoformat()
-            elif isinstance(item, uuid.UUID):
-                validated_data[key] = str(item)
-            else:
-                validated_data[key] = item
-        return validated_data
+    def get_chahub_is_valid(self):
+        if not self.was_created_by_competition:
+            return self.upload_completed_successfully
+        else:
+            return True
+
+    def get_whitelist(self):
+        return ['remote_id', 'is_public']
 
     def get_chahub_data(self):
-        data = {
+        ssl = settings.SECURE_SSL_REDIRECT
+        site = Site.objects.get_current().domain
+        return self.clean_private_data({
             'creator_id': self.created_by.id,
             'remote_id': self.pk,
             'created_by': str(self.created_by.username),
-            'created_when': self.created_when,
+            'created_when': self.created_when.isoformat(),
             'name': self.name,
             'type': self.type,
             'description': self.description,
-            'key': self.key,
-            'is_public': self.is_public
-        }
-        chahub_id = self.created_by.chahub_uid
-        if chahub_id:
-            data['user'] = chahub_id
-        data = self.clean_chahub_data(data)
-        return [data]
+            'key': str(self.key),
+            'is_public': self.is_public,
+            'download_url': f'http{"s" if ssl else ""}://{site}{self.get_download_url()}'
+        })
 
 
 class DataGroup(models.Model):

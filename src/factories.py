@@ -10,7 +10,7 @@ from competitions.models import Competition, Phase, Submission, CompetitionParti
 from datasets.models import Data
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User
-from tasks.models import Task
+from tasks.models import Task, Solution
 from queues.models import Queue
 
 
@@ -83,6 +83,21 @@ class TaskFactory(DjangoModelFactory):
         model = Task
     name = factory.Sequence(lambda n: f'Task {n}')
     created_by = factory.SubFactory(UserFactory)
+
+    @factory.post_generation
+    def solutions(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for solution in extracted:
+                self.solutions.add(solution)
+
+
+class SolutionFactory(DjangoModelFactory):
+    class Meta:
+        model = Solution
+    name = factory.Sequence(lambda n: f'Solution {n}')
 
 
 class QueueFactory(DjangoModelFactory):

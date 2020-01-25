@@ -87,21 +87,31 @@
                     <i class="x icon"></i>
                     <!-- cancel submission -->
                 </button>
-                <button if="{!submission.leaderboard && submission.status === 'Finished'}"
-                        class="mini ui button basic green icon"
+                <span if="{!submission.leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
-                    <i class="icon share"></i>
+                    <i class="icon green columns"></i>
                     <!-- send submission to leaderboard-->
-                </button>
-                <div if="{!!submission.leaderboard}"
-                     class="mini ui green button icon on-leaderboard"
+                </span>
+                <span if="{!!submission.leaderboard}"
                      data-tooltip="On the Leaderboard"
                      data-inverted=""
                      onclick="{do_nothing}">
-                    <i class="icon check"></i>
-                </div>
+                    <i class="icon green check"></i>
+                </span>
+                <span if="{!submission.is_public && submission.status === 'Finished'}"
+                      data-tooltip="Make Public"
+                      data-inverted=""
+                      onclick="{toggle_submission_is_public.bind(this, submission)}">
+                    <i class="icon share teal alternate"></i>
+                </span>
+                <span if="{!!submission.is_public && submission.status === 'Finished'}"
+                      data-tooltip="Make Private"
+                      data-inverted=""
+                      onclick="{toggle_submission_is_public.bind(this, submission)}">
+                    <i class="icon share grey alternate"></i>
+                </span>
             </td>
         </tr>
         </tbody>
@@ -289,6 +299,24 @@
                 return ['', '']
             }
         }
+
+        self.toggle_submission_is_public = function (submission) {
+            event.stopPropagation()
+            let message = submission.is_public
+                ? 'Are you sure you want to make this submission private? It will no longer be visible to other users.'
+                : 'Are you sure you want to make this submission public? It will become visible to everyone'
+            if (confirm(message)) {
+                CODALAB.api.toggle_submission_is_public(submission.id)
+                    .done(data => {
+                        toastr.success('Submission updated')
+                        self.update_submissions()
+                    })
+                    .fail(resp => {
+                        toastr.error('Error updating submission')
+                    })
+            }
+        }
+
 
         self.submission_clicked = function (submission) {
             // stupid workaround to not modify the original submission object

@@ -67,11 +67,13 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}can_make_submission/${phase_id}`)
     },
     get_submissions: function (filters) {
-        // return CODALAB.api.request('GET', URLS.API + `submissions/?q=${query || ''}&type=${type || ''}`)
         return CODALAB.api.request('GET', `${URLS.API}submissions/`, filters)
     },
-    delete_submission: function (id) {
-        return CODALAB.api.request('DELETE', URLS.API + "submissions/" + id + "/")
+    delete_submission: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
+    },
+    toggle_submission_is_public: function (pk) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/toggle_public/`)
     },
     cancel_submission: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
@@ -111,8 +113,11 @@ CODALAB.api = {
     get_datasets: function (filters) {
         return CODALAB.api.request('GET', `${URLS.API}datasets/`, filters)
     },
-    delete_dataset: function (id) {
-        return CODALAB.api.request('DELETE', URLS.API + "datasets/" + id + "/")
+    update_dataset: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}datasets/${pk}/`, data)
+    },
+    delete_dataset: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}datasets/${pk}/`)
     },
     create_dump: function(competition_id) {
         return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")

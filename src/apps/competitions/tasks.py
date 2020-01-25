@@ -353,6 +353,9 @@ def unpack_competition(competition_dataset_pk):
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
             status.save()
+            # call again, to make sure phases get sent to chahub
+            competition.save()
+
             logger.info("Competition saved!")
 
     except CompetitionUnpackingException as e:
