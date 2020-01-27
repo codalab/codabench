@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.8
 
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
