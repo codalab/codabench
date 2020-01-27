@@ -1,4 +1,4 @@
-<comp-detail-phases>
+<comp-detail-timeline>
     <section>
         <canvas id="myChart" height="120" width="800"></canvas>
     </section>
@@ -13,6 +13,7 @@
             competition.admin_privilege = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.phases = competition.phases
             self.make_phase_timeline(competition.phases)
+            self.get_competition_progress()
             self.update()
             self.draw_chart()
         })
@@ -26,25 +27,15 @@
                     datasets: [
                         // data for blue line (start of comp to today)
                         {
-                            data: [
-                                {x: self.get_date(self.phase_timeline[0].time), y: 0},
-                                {x: self.get_date(new Date().getTime()), y: 0}
-                            ],
-                            label: [
-                                self.phase_timeline[0].name,
-                                'Today'
-                            ],
+                            ...self.get_competition_progress(),
                             borderWidth: 5,
                             borderColor: '#00bbbb',
                             pointBackgroundColor: '#00bbbb',
                             borderCapStyle: 'round',
-                            pointStyle: ['circle', 'line'],
                         },
                         // Grey Line (actual comp timeline)
                         {
-                            data: _.map(self.phase_timeline, phase => {
-                                return {x: self.get_date(phase.time), y: 0}
-                            }),
+                            data: _.map(self.phase_timeline, phase => ({x: self.get_date(phase.time), y: 0})),
                             label: _.map(self.phase_timeline, phase => phase.name),
                             borderWidth: 4,
                             pointBackgroundColor: '#4a4a4a',
@@ -109,6 +100,25 @@
         self.get_date = function (phase_date) {
             var date = new Date(phase_date)
             return date.toUTCString()
+        }
+
+        self.get_competition_progress = function () {
+
+            let now = new Date()
+            let past_phases = _.filter(self.phase_timeline, phase => phase.time < now)
+
+            let data = {
+                data: _.map(past_phases, phase => ({x: phase.time, y: 0})),
+                label: _.map(past_phases, phase => phase.name),
+                pointStyle: _.map(past_phases, phase => 'circle')
+            }
+            if (past_phases.length < self.phase_timeline.length) {
+                data.data.push({x: new Date().getTime(), y: 0})
+                data.label.push('Today')
+                data.pointStyle.push('line')
+            }
+
+            return data
         }
 
         self.make_phase_timeline = function (phases) {
@@ -280,4 +290,4 @@
             background-image url('data:image/svg+xmlcharset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%208%208%22%3E%3Cpath%20fill%3D%22%23ed1c24%22%20d%3D%22M4%200l4%208H0z%22%2F%3E%3C%2Fsvg%3E')
 
     </style>
-</comp-detail-phases>
+</comp-detail-timeline>

@@ -38,7 +38,7 @@
     <table class="ui celled selectable table">
         <thead>
         <tr>
-            <th class="index-column">#</th>
+            <th class="collapsing">ID #</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
@@ -47,12 +47,17 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{ _.isEmpty(submissions)}" class="center aligned">
-            <td colspan="6"><em>No submissions found! Please make a submission</em></td>
+        <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
+            <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
         </tr>
-        <tr each="{ submission, index in filter_children(submissions) }"
+        <tr if="{loading}" class="center aligned">
+            <td colspan="100%">
+                <em>Loading Submissions...</em>
+            </td>
+        </tr>
+        <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
-            <td>{ index + 1 }</td>
+            <td>{ submission.id }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
@@ -66,13 +71,6 @@
                         <i class="icon redo"></i>
                         <!-- rerun submission -->
                     </button>
-                    <button class="mini ui button basic yellow icon"
-                            data-tooltip="Cancel Submission"
-                            data-inverted=""
-                            onclick="{ cancel_submission.bind(this, submission) }">
-                        <i class="x icon"></i>
-                        <!-- cancel submission -->
-                    </button>
                     <button class="mini ui button basic red icon"
                             data-tooltip="Delete Submission"
                             data-inverted=""
@@ -81,6 +79,13 @@
                         <!-- delete submission -->
                     </button>
                 </virtual>
+                <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
+                        data-tooltip="Cancel Submission"
+                        data-inverted=""
+                        onclick="{ cancel_submission.bind(this, submission) }">
+                    <i class="grey minus circle icon"></i>
+                    <!-- cancel submission -->
+                </span>
                 <span if="{!submission.leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
@@ -143,6 +148,7 @@
         self.selected_phase = undefined
         self.selected_submission = undefined
         self.leaderboards = {}
+        self.loading = true
 
         self.on("mount", function () {
             $(self.refs.search).dropdown();
@@ -155,12 +161,6 @@
             return _.get(self.selected_submission, 'admin', false)
         }
 
-        self.filter_children = (submissions) => {
-            return _.filter(submissions, sub => {
-                return !sub.parent
-            })
-        }
-
         self.do_nothing = event => {
             event.stopPropagation()
         }
@@ -169,13 +169,13 @@
             return _.get(self.selected_submission, 'admin', false)
         }
 
-        self.filter_children = (submissions) => {
-            return _.filter(submissions, sub => {
-                return !sub.parent
-            })
+        self.filter_children = submissions => {
+            return _.filter(submissions, sub => !sub.parent)
         }
 
         self.update_submissions = function (filters) {
+            self.loading = true
+            self.update()
             if (opts.admin) {
                 filters = filters || {phase__competition: opts.competition.id}
             } else {
@@ -183,19 +183,29 @@
             }
             filters = filters || {phase: self.selected_phase.id}
             CODALAB.api.get_submissions(filters)
-                .done(function (data) {
+                .done(function (submissions) {
                     // TODO: should be able to do this with a serializer?
                     if (opts.admin) {
-                        self.submissions = data.map((item) => {
+                        self.submissions = submissions.map((item) => {
                             item.phase = opts.competition.phases.filter((phase) => {
                                 return phase.id === item.phase
                             })[0]
                             return item
                         })
                     } else {
-                        self.submissions = data
+                        self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
                     }
-                    self.update({csv_link: CODALAB.api.get_submission_csv_URL(filters)})
+                    if (!opts.admin) {
+                        CODALAB.events.trigger('submissions_loaded', self.submissions)
+                    }
+                    self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
+                    self.update()
+
+                    // Timeout here so loader doesn't flicker
+                    _.delay(() => {
+                        self.loading = false
+                        self.update()
+                    }, 300)
                 })
                 .fail(function (response) {
                     toastr.error("Error retrieving submissions")
@@ -362,6 +372,14 @@
             $(self.refs.modal).modal('hide')
             self.update_submissions()
         })
+
+        CODALAB.events.on('submission_status_update', data => {
+            let sub = _.find(self.submissions, submission => submission.id === data.submission_id)
+            if (sub) {
+                sub.status = data.status
+            }
+            self.update()
+        })
     </script>
 
     <style type="text/stylus">
@@ -384,9 +402,6 @@
 
         .status-column
             width 50px
-
-        .index-column
-            width: 40px
 
         .submission_row
             &:hover

@@ -1,6 +1,6 @@
 <competition-detail>
     <comp-detail-title class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-title>
-    <comp-detail-phases class="comp-detail-phases" competition="{ competition }"></comp-detail-phases>
+    <comp-detail-timeline class="comp-detail-phases" competition="{ competition }"></comp-detail-timeline>
     <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
     <script>
         var self = this
@@ -21,7 +21,8 @@
                 .done(function (data) {
                     self.competition = data
                     CODALAB.events.trigger('competition_loaded', self.competition)
-                    CODALAB.events.trigger('phase_selected', self.competition.phases[0])
+                    let phase = _.find(self.competition.phases, p => p.status === 'Current')
+                    CODALAB.events.trigger('phase_selected', phase ? phase : self.competition.phases[0])
                     self.update()
                 })
                 .fail(function (response) {

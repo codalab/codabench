@@ -41,7 +41,6 @@
         }
 
         #header {
-            /*background: url("http://{{ site.domain }}{% static "img/slider_exmp_comp.gif" %}");*/
             padding-bottom: 20px;
         }
         #signature {
@@ -55,12 +54,6 @@
     </style>
 </head>
 <body>
-
-<!--
-<div id="header">
-    <img src="http://{{ site.domain }}{% static "img/codalab-logo-white.png" %}" alt="CodaLab Logo">
-</div>
--->
 
 <div id="header">
     <h1>Hello{% if user %} {{ user.username }}{% endif %},</h1>

@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
+from leaderboards.models import SubmissionScore
 from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
@@ -350,7 +351,6 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     # Experimental
     name = models.CharField(max_length=120, default="", null=True, blank=True)
-    score = models.DecimalField(max_digits=20, decimal_places=10, default=None, null=True, blank=True)
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
@@ -360,10 +360,8 @@ class Submission(ChaHubSaveMixin, models.Model):
                                              blank=True)
 
     scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
-    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted past ignored submission limits and not count them against users
-
-    # uber experimental
-    # track = models.IntegerField(default=1)
+    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted
+    #  past ignored submission limits and not count them against users
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
@@ -413,6 +411,25 @@ class Submission(ChaHubSaveMixin, models.Model):
         if all([status in done_statuses for status in self.children.values_list('status', flat=True)]):
             self.status = 'Finished'
             self.save()
+
+    def calculate_scores(self):
+        leaderboards = self.phase.competition.leaderboards.all()
+        for leaderboard in leaderboards:
+            columns = leaderboard.columns.exclude(computation__isnull=True)
+            for column in columns:
+                scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
+                if scores.exists():
+                    score = column.compute(scores)
+                    try:
+                        sub_score = self.scores.get(column=column)
+                        sub_score.score = score
+                        sub_score.save()
+                    except SubmissionScore.DoesNotExist:
+                        sub_score = SubmissionScore.objects.create(
+                            column=column,
+                            score=score
+                        )
+                        self.scores.add(sub_score)
 
     @staticmethod
     def get_chahub_endpoint():
@@ -490,6 +507,9 @@ class Page(models.Model):
     title = models.TextField(max_length=255)
     content = models.TextField(null=True, blank=True)
     index = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ('index',)
 
 
 class CompetitionDump(models.Model):

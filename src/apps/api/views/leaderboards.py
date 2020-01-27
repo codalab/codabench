@@ -15,15 +15,6 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        if self.request.method == 'GET':
-            qs = qs.prefetch_related(
-                'submissions',
-                'submissions__scores',
-            )
-        return qs
-
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsOrganizerOrCollaborator]
@@ -41,10 +32,12 @@ class SubmissionScoreViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         comp = instance.submissions.first().phase.competition
-        admin_users = [comp.created_by] + list(comp.collaborators.all())
-        if request.user not in admin_users and not request.user.is_superuser:
+        if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionError('You do not have permission to update submission scores')
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        for submission in instance.submissions.filter(parent__isnull=True):
+            submission.calculate_scores()
+        return response
 
 
 @api_view(['POST'])

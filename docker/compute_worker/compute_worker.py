@@ -120,6 +120,7 @@ class Run:
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
+        self.user_pk = run_args["user_pk"]
         self.submission_id = run_args["id"]
         self.submissions_api_url = run_args["submissions_api_url"]
         self.docker_image = run_args["docker_image"]
@@ -231,7 +232,7 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        url = f'{self.websocket_url}submission_input/{self.submission_id}/'
+        url = f'{self.websocket_url}submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/'
         logger.info(f"Connecting to {url}")
 
         async with websockets.connect(url) as websocket:
@@ -263,7 +264,10 @@ class Run:
                     if out:
                         value["data"] += out
                         print("WS: " + str(out))
-                        await websocket.send(f"{kind};{out.decode()}")
+                        await websocket.send(json.dumps({
+                            "kind": kind,
+                            "message": out.decode()
+                        }))
                     else:
                         value["continue"] = False
                     await asyncio.sleep(.1)
@@ -307,7 +311,7 @@ class Run:
 
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
-            metadata = yaml.load(metadata_file.read())
+            metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
             logger.info(f"Metadata contains:\n {metadata}")
             command = metadata.get("command")
             if not command and kind == "ingestion":

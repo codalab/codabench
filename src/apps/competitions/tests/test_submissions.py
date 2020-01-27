@@ -128,7 +128,9 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
 
     def test_making_submission_creates_parent_sub_and_additional_sub_per_task(self):
         self.sub = self.make_submission()
-        resp = self.mock_run_submission(self.sub)
+        with mock.patch('competitions.tasks.send_parent_status'):
+            with mock.patch('competitions.tasks.send_child_id'):
+                resp = self.mock_run_submission(self.sub)
         assert resp.call_count == 2
         sub = Submission.objects.get(id=self.sub.id)
         assert sub.has_children

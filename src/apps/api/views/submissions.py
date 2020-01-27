@@ -54,11 +54,18 @@ class SubmissionViewSet(ModelViewSet):
         # On GETs lets optimize the query to reduce DB calls
         qs = super().get_queryset()
         if self.request.method == 'GET':
-            qs = qs.select_related('phase', 'participant')
-            qs = qs.prefetch_related(
+            if not self.request.user.is_superuser and not self.request.user.is_staff:
+                qs = qs.filter(owner=self.request.user)
+            qs = qs.select_related(
+                'phase',
+                'participant',
+                'participant__user',
+                'owner',
+                'data',
+            ).prefetch_related(
+                'children',
                 'scores',
                 'scores__column',
-                'data'
             )
         return qs
 
@@ -94,7 +101,10 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied(f'You do not have permission to cancel submissions')
+        for child in submission.children.all():
+            child.cancel()
         canceled = submission.cancel()
+
         return Response({'canceled': canceled})
 
     @action(detail=True, methods=('GET',))
@@ -149,6 +159,9 @@ def upload_submission_scores(request, submission_pk):
         submission.scores.add(score)
         if submission.parent:
             submission.parent.scores.add(score)
+            submission.parent.calculate_scores()
+        else:
+            submission.calculate_scores()
 
     return Response()
 

@@ -1,25 +1,23 @@
+import asyncio
 import logging
 import os
 import re
 import traceback
+import zipfile
+from io import BytesIO
+from tempfile import TemporaryDirectory
 
 import oyaml as yaml
-import zipfile
-
-from io import BytesIO
-
 from celery._state import app_or_default
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
 from django.utils.text import slugify
+from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
 from celery_config import app
-from django.utils.timezone import now
-
-from tempfile import TemporaryDirectory
-
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
 from competitions.unpackers.utils import CompetitionUnpackingException
@@ -120,7 +118,7 @@ def _send_submission(submission, task, is_scoring, run_args):
         if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
             run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
 
-    if not is_scoring and task.input_data:
+    if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
         run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
 
     if is_scoring and task.reference_data:
@@ -188,6 +186,33 @@ def run_submission(submission_pk, task_pk=None, is_scoring=False):
     return _run_submission.apply_async((submission_pk, task_pk, is_scoring))
 
 
+def send_submission_message(submission, data):
+    from channels.layers import get_channel_layer
+    channel_layer = get_channel_layer()
+    user = submission.owner
+    asyncio.get_event_loop().run_until_complete(channel_layer.group_send(f"submission_listening_{user.pk}", {
+        'type': 'submission.message',
+        'text': data,
+        'submission_id': submission.pk,
+    }))
+
+
+def send_parent_status(submission):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
+    send_submission_message(submission, {
+        "kind": "status_update",
+        "status": "Running"
+    })
+
+
+def send_child_id(submission, child_id):
+    """Helper function we can mock in tests, instead of having to do async mocks"""
+    send_submission_message(submission, {
+        "kind": "child_update",
+        "child_id": child_id
+    })
+
+
 @app.task(queue='site-worker', soft_time_limit=60)
 def _run_submission(submission_pk, task_pk=None, is_scoring=False):
     """This function is wrapped so that when we run tests we can run this function not
@@ -207,7 +232,8 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
     submission = qs.get(pk=submission_pk)
 
     run_arguments = {
-        "submissions_api_url": os.environ.get('SUBMISSIONS_API_URL', "http://django/api"),
+        "user_pk": submission.owner.pk,
+        "submissions_api_url": settings.SUBMISSIONS_API_URL,
         "secret": submission.secret,
         "docker_image": submission.phase.competition.docker_image,
         "execution_time_limit": submission.phase.execution_time_limit,
@@ -222,18 +248,21 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
             submission.has_children = True
             submission.status = 'Running'
             submission.save()
+
+            send_parent_status(submission)
+
             for task in tasks:
                 # TODO: make a duplicate submission method and use it here
-                sub = Submission(
+                child_sub = Submission(
                     owner=submission.owner,
                     phase=submission.phase,
                     data=submission.data,
                     participant=submission.participant,
                     parent=submission,
                 )
-                sub.save(ignore_submission_limit=True)
-                # run_submission.apply_async((sub.id, task.id))
-                run_submission(sub.id, task.id)
+                child_sub.save(ignore_submission_limit=True)
+                run_submission(child_sub.id, task.id)
+                send_child_id(submission, child_sub.id)
         else:
             # The initial submission object will be the only submission
             task = tasks.first()
@@ -348,7 +377,7 @@ def unpack_competition(competition_dataset_pk):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
 def create_competition_dump(competition_pk, keys_instead_of_files=True):
-    yaml_data = {}
+    yaml_data = {"version": "2"}
     try:
         # -------- SetUp -------
 

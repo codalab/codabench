@@ -15,4 +15,4 @@ class CharacterSeparatedField(serializers.CharField):
         return value.split(self.separator)
 
     def to_internal_value(self, data):
-        return self.separator.join(data)
+        return self.separator.join([str(x) for x in data])

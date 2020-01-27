@@ -1,7 +1,8 @@
+from django.db.models import Sum, Q
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
-from api.serializers.submissions import SubmissionSerializer
+from api.serializers.submissions import SubmissionLeaderBoardSerializer
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
@@ -20,6 +21,7 @@ class ColumnSerializer(WritableNestedModelSerializer):
             'key',
             'sorting',
             'index',
+            'hidden',
         )
 
     def validate(self, attrs):
@@ -76,11 +78,32 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
         return columns
 
 
-class LeaderboardEntriesSerializer(serializers.Serializer):
-    submissions = SubmissionSerializer(many=True, read_only=True)
+class LeaderboardEntriesSerializer(serializers.ModelSerializer):
+    submissions = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Leaderboard
         fields = (
             'submissions',
         )
+
+    def get_submissions(self, instance):
+        # desc == -colname
+        # asc == colname
+        # todo: this should all probably get optimized at some point
+        #  prefect/select relateds make no difference in query count
+
+        primary_col = instance.columns.get(index=instance.primary_index)
+        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        submissions = instance.submissions.all().select_related('owner').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+
+        for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
+            col_name = f'col{column.index}'
+            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+            kwargs = {
+                col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+            }
+            submissions = submissions.annotate(**kwargs)
+
+        submissions = submissions.order_by(*ordering, 'created_when')
+        return SubmissionLeaderBoardSerializer(submissions, many=True).data

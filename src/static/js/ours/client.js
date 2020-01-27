@@ -1,31 +1,4 @@
-// CODALAB.URLS = []  // Set in base.html
-// CODALAB.state = {} // Set in base.html
 CODALAB.events = riot.observable()
-
-// Private function, shouldn't be directly used
-var _upload_ajax = function(endpoint, form_data, progress_update_callback) {
-    return $.ajax({
-        type: 'PUT',
-        url: endpoint,
-        data: form_data,
-        processData: false,
-        contentType: false,
-        xhr: function (xhr) {
-            var request = new window.XMLHttpRequest();
-
-            // Upload progress
-            request.upload.addEventListener("progress", function (event) {
-                if (event.lengthComputable) {
-                    var percent_complete = event.loaded / event.total;
-                    if (progress_update_callback) {
-                        progress_update_callback(percent_complete * 100);
-                    }
-                }
-            }, false);
-            return request;
-        }
-    })
-}
 
 CODALAB.api = {
     request: function (method, url, data) {
@@ -112,26 +85,6 @@ CODALAB.api = {
         filters.format = "csv"
         return `${URLS.API}submissions/?${$.param(filters)}`
     },
-    // create_submission: function (form_data, progress_update_callback) {
-    //     // NOTE: this function takes a special "form_data" not like the normal
-    //     // dictionary other methods take
-    //
-    //
-    //     /*
-    //         Set variable CODALAB.IS_SERVER_LOCAL_STORAGE = true or false via context variable
-    //
-    //         Local storage:
-    //             * POST to server
-    //
-    //         Remote storage:
-    //             * POST to server
-    //             * Server returns SAS URL
-    //             * PUT to SAS URL
-    //             * POST to mark upload as done, so un-finished uploads can be pruned later
-    //
-    //     */
-    //     return _upload_ajax(URLS.API + "submissions/", form_data, progress_update_callback)
-    // },
     create_submission: function(submission_metadata) {
         return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
     },

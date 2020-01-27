@@ -76,7 +76,7 @@
                     <competition-phases errors="{ errors.phases }"></competition-phases>
                 </div>
                 <div class="ui tab" data-tab="leaderboard">
-                    <competition-leaderboards-form errors="{ errors.details }"></competition-leaderboards-form>
+                    <competition-leaderboards errors="{ errors.details }"></competition-leaderboards>
                 </div>
                 <div class="ui tab" data-tab="collaborators">
                     <competition-collaborators errors="{ errors.details }"></competition-collaborators>

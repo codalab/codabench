@@ -1,7 +1,8 @@
+import asyncio
 from os.path import basename
 
 from django.core.exceptions import ValidationError
-from rest_framework import serializers, fields
+from rest_framework import serializers
 
 from api.serializers import leaderboards
 from competitions.models import Submission, SubmissionDetails
@@ -11,8 +12,8 @@ from utils.data import make_url_sassy
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
-    index = fields.IntegerField(source='column.index', read_only=True)
-    column_key = fields.CharField(source='column.key', read_only=True)
+    index = serializers.IntegerField(source='column.index', read_only=True)
+    column_key = serializers.CharField(source='column.key', read_only=True)
 
     class Meta:
         model = SubmissionScore
@@ -26,9 +27,9 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
 
 class SubmissionSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
-    filename = fields.SerializerMethodField(read_only=True)
-    owner = fields.CharField(source='owner.username')
-    phase_name = fields.CharField(source='phase.name')
+    filename = serializers.SerializerMethodField(read_only=True)
+    owner = serializers.CharField(source='owner.username')
+    phase_name = serializers.CharField(source='phase.name')
 
     class Meta:
         model = Submission
@@ -61,10 +62,26 @@ class SubmissionSerializer(serializers.ModelSerializer):
         return basename(instance.data.data_file.name)
 
 
+class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
+    scores = SubmissionScoreSerializer(many=True)
+    owner = serializers.CharField(source='owner.username')
+
+    class Meta:
+        model = Submission
+        fields = (
+            'scores',
+            'owner',
+        )
+        extra_kwargs = {
+            "scores": {"read_only": True},
+            "owner": {"read_only": True},
+        }
+
+
 class SubmissionCreationSerializer(serializers.ModelSerializer):
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    filename = fields.SerializerMethodField(read_only=True)
+    filename = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -106,8 +123,25 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if instance.secret != validated_data.get('secret'):
             raise PermissionError("Submission secret invalid")
-        print("Updated to...")
-        print(validated_data)
+
+        if "status" in validated_data:
+            # Received a status update, let the frontend know
+            from channels.layers import get_channel_layer
+            channel_layer = get_channel_layer()
+
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+
+            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
+                'type': 'submission.message',
+                'text': {
+                    "kind": "status_update",
+                    "status": validated_data["status"],
+                },
+                'submission_id': instance.id,
+            }))
 
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
