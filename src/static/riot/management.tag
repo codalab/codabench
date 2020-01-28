@@ -4,6 +4,7 @@
     <div class="ui top attached tabular menu">
         <div class="active item" data-tab="datasets">Datasets</div>
         <div class="item" data-tab="tasks">Tasks</div>
+        <a class="item" href="" target="_blank"><i class="question icon"></i>Help</a>
     </div>
     <div class="ui active bottom attached tab segment" data-tab="datasets">
         <data-management></data-management>

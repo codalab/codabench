@@ -31,7 +31,7 @@
                     <errors errors="{errors}"></errors>
                 </div>
 
-                <div class="ui pointing six item secondary menu">
+                <div class="ui pointing seven item secondary menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ valid_sections.details && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
@@ -61,6 +61,10 @@
                         <i class="checkmark box icon green" show="{ valid_sections.collaborators && !errors.collaborators }"></i>
                         <i class="minus circle icon red" show="{ errors.collaborators }"></i>
                         Collaborators
+                    </a>
+                    <a class="item" target="_blank" href="">
+                        <i class="question icon"></i>
+                        Help
                     </a>
                 </div>
                 <div class="ui active tab" data-tab="competition_details">

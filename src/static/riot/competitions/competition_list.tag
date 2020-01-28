@@ -3,9 +3,13 @@
         <div class="ui middle aligned stackable grid container centered">
             <div class="row">
                 <div class="fourteen wide column">
-                    <div class="ui fluid four secondary pointing tabular menu">
+                    <div class="ui fluid six secondary pointing tabular menu">
                         <a class="active item" data-tab="running">Competitions I'm Running</a>
                         <a class="item" data-tab="participating">Competitions I'm In</a>
+                        <a class="item" href="" target="_blank">
+                            <i class="question icon"></i>
+                            Help
+                        </a>
                     </div>
                     <div class="ui active tab" data-tab="running">
                         <table class="ui celled compact table participation">

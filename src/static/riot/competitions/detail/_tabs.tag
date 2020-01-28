@@ -8,6 +8,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
+            <a class="item" href="" target="_blank"><i class="question icon"></i>Help</a>
         </div>
 
         <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
