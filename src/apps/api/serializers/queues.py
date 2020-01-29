@@ -11,7 +11,8 @@ class OrganizerSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'username',
-            'email',
+            # TODO: Ask jimmy, we don't want to be giving out emails.. right?
+            # 'email',
             'id',
         )
 
