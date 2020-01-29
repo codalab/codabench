@@ -174,6 +174,19 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
+    def _insure_organizer_participants_accepted(self, instance):
+        CompetitionParticipant.objects.filter(
+            user__in=instance.collaborators.all()
+        ).update(status=CompetitionParticipant.APPROVED)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._accept_organizer_participants(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._accept_organizer_participants(instance)
+
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
