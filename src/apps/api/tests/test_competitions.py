@@ -3,7 +3,6 @@ import json
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from api.serializers.competitions import CompetitionSerializer
 from competitions.models import CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory
@@ -29,7 +28,6 @@ class CompetitionParticipantTests(APITestCase):
         data.pop('logo')
 
         # Just get the key from the task and pass that instead of the object
-        print(json.dumps(data["phases"][0]))
         data["phases"][0]["tasks"] = [data["phases"][0]["tasks"][0]["key"]]
         return data
 
