@@ -1,5 +1,6 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
@@ -74,7 +75,8 @@ class PageSerializer(WritableNestedModelSerializer):
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
-    logo = NamedBase64ImageField(required=True)
+    # TODO: Leave this as default image field drf handler?
+    # logo = NamedBase64ImageField()
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
@@ -103,19 +105,22 @@ class CompetitionSerializer(WritableNestedModelSerializer):
 
     def validate_leaderboards(self, value):
         if not value:
-            raise serializers.ValidationError("Competitions require at least 1 leaderboard")
+            raise ValidationError("Competitions require at least 1 leaderboard")
         return value
 
     def validate_phases(self, phases):
         if not phases or len(phases) <= 0:
-            raise serializers.ValidationError("Competitions must have at least one phase")
+            raise ValidationError("Competitions must have at least one phase")
         if len(phases) == 1 and phases[0].get('auto_migrate_to_this_phase'):
-            raise serializers.ValidationError("You cannot auto migrate in a competition with one phase")
+            raise ValidationError("You cannot auto migrate in a competition with one phase")
         if phases[0].get('auto_migrate_to_this_phase') is True:
-            raise serializers.ValidationError("You cannot auto migrate to the first phase of a competition")
+            raise ValidationError("You cannot auto migrate to the first phase of a competition")
         return phases
 
     def create(self, validated_data):
+        if 'logo' not in validated_data:
+            raise ValidationError("Competitions require a logo upon creation")
+
         validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
 

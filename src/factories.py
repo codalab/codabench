@@ -45,6 +45,7 @@ class CompetitionFactory(DjangoModelFactory):
 
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
+    logo = factory.django.ImageField()
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
     description = factory.Faker('paragraph')
 
@@ -159,6 +160,7 @@ class LeaderboardFactory(DjangoModelFactory):
     class Meta:
         model = Leaderboard
 
+    title = factory.Faker('word')
     competition = factory.SubFactory(CompetitionFactory)
     key = factory.Faker('word')
 

@@ -181,11 +181,11 @@ class CompetitionViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         instance = serializer.save()
-        self._accept_organizer_participants(instance)
+        self._insure_organizer_participants_accepted(instance)
 
     def perform_update(self, serializer):
         instance = serializer.save()
-        self._accept_organizer_participants(instance)
+        self._insure_organizer_participants_accepted(instance)
 
 
 @api_view(['GET'])
