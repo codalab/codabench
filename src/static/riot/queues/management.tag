@@ -218,9 +218,12 @@
             self.selected_queue = queue
             self.refs.queue_name.value = queue.name
             $(self.refs.collab_search)
-                .dropdown('setup menu', {values: _.map(queue.organizers, o => {
+                .dropdown('setup menu',
+                {
+                    values: _.map(queue.organizers, function(o) {
                         return {id: o.id, name: o.username}
-                })})
+                    })
+                })
                 .dropdown('set selected', _.map(queue.organizers, o => o.id.toString()))
 
             if (queue.is_public) {
