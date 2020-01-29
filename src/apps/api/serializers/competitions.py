@@ -2,7 +2,6 @@ from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskListSerializer
@@ -75,8 +74,6 @@ class PageSerializer(WritableNestedModelSerializer):
 
 class CompetitionSerializer(WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
-    # TODO: Leave this as default image field drf handler?
-    # logo = NamedBase64ImageField()
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
@@ -127,7 +124,6 @@ class CompetitionSerializer(WritableNestedModelSerializer):
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
-    logo = NamedBase64ImageField(required=True)
     pages = PageSerializer(many=True)
     phases = PhaseDetailSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
@@ -164,7 +160,6 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
     participant_count = serializers.CharField(read_only=True)
-    logo = NamedBase64ImageField(required=False)
 
     class Meta:
         model = Competition

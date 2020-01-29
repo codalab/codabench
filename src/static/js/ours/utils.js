@@ -104,11 +104,8 @@ function get_form_data(base_element) {
     var data = {}
     fields.each(function (i, field) {
         if (!!field.name) {
-            //console.log("@@@@@")
-            //console.log(field)
             data[field.name] = $(field).val()
         }
-        //console.log(field.name + " -> " + $(field).val())
     })
     return data
 }
@@ -117,12 +114,40 @@ function set_form_data(data, base_element) {
     var fields = get_form_fields(base_element)
     fields.each(function (i, field) {
         if (!!field.name) {
-            //console.log("@@@@@")
-            //console.log(field)
-            console.log(field.name + " -> " + data[field.name])
             $(field).val(data[field.name])
         }
     })
+}
+
+function objectToFormData(obj, form, namespace) {
+    var fd = form || new FormData()
+    var formKey
+
+    for (var property in obj) {
+        if (obj.hasOwnProperty(property)) {
+
+            if (namespace) {
+                formKey = namespace + '[' + property + ']'
+            } else {
+                formKey = property
+            }
+
+            // if the property is an object, but not a File,
+            // use recursivity.
+            if (typeof obj[property] === 'object' && !(obj[property] instanceof File)) {
+
+                objectToFormData(obj[property], fd, property)
+
+            } else {
+
+                // if it's a string or a File object
+                fd.append(formKey, obj[property])
+            }
+
+        }
+    }
+
+    return fd
 }
 
 function create_easyMDE(element) {

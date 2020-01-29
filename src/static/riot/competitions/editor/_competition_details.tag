@@ -52,14 +52,11 @@
                 this.addEventListener('keyup', self.form_updated)
             })
 
-            // Capture and convert logo to base64 for easy uploading
+            // Draw in logo filename as it's changed
             $(self.refs.logo).change(function() {
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
-                getBase64(this.files[0]).then(function(data) {
-                    self.data['logo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
-                    self.form_updated()
-                })
+                self.form_updated()
             })
 
             $(self.refs.queue).dropdown({
@@ -90,6 +87,8 @@
             self.data['title'] = self.refs.title.value
             self.data['description'] = self.markdown_editor.value()
             self.data['queue'] = self.refs.queue.value
+            //self.data['logo'] = $("#form_file_logo")[0].files[0] //self.refs.logo.value
+            self.data['logo'] = self.refs.logo.files[0]
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
