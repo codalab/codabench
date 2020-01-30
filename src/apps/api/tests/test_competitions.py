@@ -18,10 +18,6 @@ class CompetitionParticipantTests(APITestCase):
         ColumnFactory(leaderboard=self.leaderboard)
 
     def _prepare_competition_data(self, url):
-        # data = CompetitionSerializer(comp).data
-        # data.pop('id')
-        # data.pop('logo')
-        # return data
         resp = self.client.get(url)
         data = resp.data
         data.pop('id')
@@ -49,4 +45,4 @@ class CompetitionParticipantTests(APITestCase):
         data["collaborators"] = [self.other_user.pk]
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
-        assert CompetitionParticipant.objects.get(user=self.other_user, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        assert CompetitionParticipant.objects.filter(user=self.other_user, competition=self.comp, status=CompetitionParticipant.APPROVED).count() == 1

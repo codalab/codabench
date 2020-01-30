@@ -53,8 +53,9 @@ class CompetitionParticipantTests(APITransactionTestCase):
         self.client.login(username='norm', password='norm')
         resp = self.client.post(reverse('competition-register', kwargs={"pk": self.comp.pk}))
         assert resp.status_code == 201
-        CompetitionParticipant.objects.get(user=self.norm)
+        assert CompetitionParticipant.objects.filter(user=self.norm).count() == 1
         resp = self.client.post(reverse('competition-register', kwargs={"pk": self.comp.pk}))
         assert resp.status_code == 400
         assert "You already applied for participation in this competition!" in resp.data[0]
-        assert len(CompetitionParticipant.objects.filter(user=self.norm)) == 1
+        assert CompetitionParticipant.objects.filter(user=self.norm, competition=self.comp).count() == 1
+
