@@ -120,8 +120,8 @@ function set_form_data(data, base_element) {
 }
 
 function objectToFormData(obj, form, namespace) {
-    var fd = form || new FormData()
-    var formKey
+    let fd = form || new FormData()
+    let formKey
 
     for (var property in obj) {
         if (obj.hasOwnProperty(property)) {

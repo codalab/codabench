@@ -184,12 +184,10 @@
         Modal Methods
         ----------------------------------------------------------------------*/
         self.show_modal = (queue) => {
-            // Show modal THEN update!
-            $(self.refs.modal).modal('show')
-
             if (queue !== undefined && queue !== null) {
                 self.set_selected_queue(queue)
             }
+            $(self.refs.modal).modal('show')
         }
 
         self.close_modal = () => {
