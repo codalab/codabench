@@ -58,4 +58,3 @@ class CompetitionParticipantTests(APITransactionTestCase):
         assert resp.status_code == 400
         assert "You already applied for participation in this competition!" in resp.data[0]
         assert CompetitionParticipant.objects.filter(user=self.norm, competition=self.comp).count() == 1
-
