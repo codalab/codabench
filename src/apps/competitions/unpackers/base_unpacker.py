@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 import uuid
 
@@ -49,6 +51,18 @@ class BaseUnpacker:
             if not Data.objects.filter(key=file_name).exists():
                 raise CompetitionUnpackingException(f'Cannot find {file_type} with key: "{file_name}"')
             return file_name, None
+
+    def _read_image(self, image_name):
+        image_path = os.path.join(self.temp_directory, image_name)
+        try:
+            with open(image_path, "rb") as image:
+                return json.dumps({
+                    "file_name": image_name,
+                    # Converts to b64 then to string
+                    "data": base64.b64encode(image.read()).decode()
+                })
+        except FileNotFoundError:
+            raise CompetitionUnpackingException(f"Unable to find image: {self.competition_yaml.get('image')}")
 
     def _get_current_phase(self, phases):
         for phase in phases:
@@ -171,13 +185,11 @@ class BaseUnpacker:
 
     def _unpack_image(self):
         try:
-            path = os.path.join(self.temp_directory, self.competition_yaml['image'])
-            # DRF wants to consume this as a Django File, so doing that!
-            logo = File(open(path, 'rb'))
+            image_name = self.competition_yaml['image']
         except KeyError:
             raise CompetitionUnpackingException('An image for this competition could not be found in the yaml')
 
-        self.competition['logo'] = logo
+        self.competition['logo'] = self._read_image(image_name)
 
     def _unpack_queue(self):
         # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!

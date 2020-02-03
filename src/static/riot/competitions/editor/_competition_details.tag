@@ -56,6 +56,10 @@
             $(self.refs.logo).change(function() {
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
+                getBase64(this.files[0]).then(function(data) {
+                    self.data['logo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
+                    self.form_updated()
+                })
                 self.form_updated()
             })
 
@@ -87,7 +91,6 @@
             self.data['title'] = self.refs.title.value
             self.data['description'] = self.markdown_editor.value()
             self.data['queue'] = self.refs.queue.value
-            self.data['logo'] = self.refs.logo.files[0]
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -98,7 +101,8 @@
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
 
             if(is_valid) {
-                // If we don't have logo data AND we're editing, put in empty data
+                // If we don't have logo data AND we're editing, put in empty data (otherwise
+                // we send garbage to the backend)
                 if(!self.data['logo'] && self.is_editing_competition){
                     self.data['logo'] = undefined
                 }

@@ -2,6 +2,7 @@ from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from api.fields import NamedBase64ImageField
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskListSerializer
@@ -78,6 +79,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+    logo = NamedBase64ImageField(required=True)
 
     class Meta:
         model = Competition

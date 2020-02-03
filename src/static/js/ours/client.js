@@ -15,21 +15,6 @@ CODALAB.api = {
         })
     },
 
-    // Multipart requests are used to send files and such, cannot do JSON here so we make
-    // a FormData object from our normal js object
-    multipart_request: function (method, url, data) {
-        var form_data = objectToFormData(data)
-
-        return $.ajax({
-            type: method,
-            url: url,
-            data: form_data,
-            cache: false,
-            contentType: false,
-            processData: false
-        })
-    },
-
     search: function (query) {
         // Todo This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
@@ -45,13 +30,13 @@ CODALAB.api = {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
     create_competition: function (data) {
-        return CODALAB.api.multipart_request('POST', URLS.API + "competitions/", data)
+        return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
     get_competition_creation_status: function (key) {
         return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
     },
     update_competition: function (data, pk) {
-        return CODALAB.api.multipart_request('PATCH', URLS.API + "competitions/" + pk + "/", data)
+        return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
     delete_competition: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}competitions/${pk}/`)

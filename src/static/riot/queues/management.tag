@@ -207,7 +207,6 @@
 
         self.show_broker_modal = (queue) => {
             self.selected_queue = queue
-            console.log(queue)
             self.update()
             $(self.refs.broker_modal).modal('show')
         }

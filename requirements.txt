@@ -48,7 +48,7 @@ djangorestframework==3.8.2
 djangorestframework-csv==2.1.0
 markdown==2.6.11
 pygments==2.2.0
-drf-writable-nested==0.4.1
+drf-writable-nested==0.5.4
 django-filter==2.0.0
 drf-yasg[validation]==1.11.0
 flex==6.12.0
