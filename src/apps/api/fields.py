@@ -11,6 +11,11 @@ from rest_framework.relations import SlugRelatedField
 
 
 class NamedBase64ImageField(Base64ImageField):
+    """This class takes in JSON with keys file_name (eg, "image.png") and data (base 64 string representing image data)
+    and turns it into a file of the given name containing the given data.
+
+    We're using this so we can easily send image data along with normal JSON requests, instead of having to use
+    FormData on the frontend.."""
 
     def to_internal_value(self, named_json_data):
         # Check if this is a base64 string
