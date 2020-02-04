@@ -33,7 +33,7 @@ class CompetitionParticipantTests(APITestCase):
     # TODO: Do we have competition permissions tests?
     # def test_cant_edit_someone_elses_competition?
 
-    def test_adding_organizer_accepts_creates_accepted_participant(self):
+    def test_adding_organizer_creates_accepted_participant(self):
         self.client.login(username='creator', password='creator')
         url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
 
@@ -43,7 +43,11 @@ class CompetitionParticipantTests(APITestCase):
         data["collaborators"] = [self.other_user.pk]
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
-        assert CompetitionParticipant.objects.filter(user=self.other_user, competition=self.comp, status=CompetitionParticipant.APPROVED).count() == 1
+        assert CompetitionParticipant.objects.filter(
+            user=self.other_user,
+            competition=self.comp,
+            status=CompetitionParticipant.APPROVED
+        ).count() == 1
 
     def test_adding_organizer_accepts_them_if_they_were_existing_participant(self):
         CompetitionParticipantFactory(
@@ -60,4 +64,8 @@ class CompetitionParticipantTests(APITestCase):
         data["collaborators"] = [self.other_user.pk]
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
-        assert CompetitionParticipant.objects.filter(user=self.other_user, competition=self.comp, status=CompetitionParticipant.APPROVED).count() == 1
+        assert CompetitionParticipant.objects.filter(
+            user=self.other_user,
+            competition=self.comp,
+            status=CompetitionParticipant.APPROVED
+        ).count() == 1
