@@ -87,6 +87,7 @@
                     minCharacters: 2,
                     fields: {
                         title: 'name',
+                        value: 'id',
                     },
                     cache: false,
                     maxResults: 5,

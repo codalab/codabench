@@ -142,14 +142,14 @@
 
         self.update_competition_data = (id) => {
             CODALAB.api.get_competition(id)
-                    .done(function (data) {
-                        self.competition = data
-                        CODALAB.events.trigger('competition_loaded', self.competition)
-                        self.update()
-                    })
-                    .fail(function (response) {
-                        toastr.error("Could not find competition");
-                    });
+                .done(function (data) {
+                    self.competition = data
+                    CODALAB.events.trigger('competition_loaded', self.competition)
+                    self.update()
+                })
+                .fail(function (response) {
+                    toastr.error("Could not find competition");
+                });
             self.update()
         }
 
@@ -207,8 +207,8 @@
                 return phase
             })
 
-
             self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
+
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             // Send competition_id for either create or update, won't hurt anything but is
@@ -222,7 +222,8 @@
                         window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
                     } else {
                         toastr.success("Competition saved!")
-                        self.update_competition_data(response.id)
+                        self.competition = response
+                        CODALAB.events.trigger('competition_loaded', self.competition)
                     }
                 })
                 .fail(function (response) {

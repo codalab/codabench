@@ -37,8 +37,7 @@ def user_lookup(request):
     def _get_data(user):
         return {
             "id": user.id,
-            "username": user.username,
-            "name": f"{user.name} ({user.email})" if is_admin else user.username,
+            "name": f"{user.name or user.username} ({user.email})" if is_admin else user.username,
         }
 
     return HttpResponse(

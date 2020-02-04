@@ -37,7 +37,6 @@
         self.update_scores = function (event) {
             event.preventDefault()
             let data = get_form_data($('#score_update_form', self.root))
-            console.log(data)
             _.forEach(_.keys(data), (key) => {
                 CODALAB.api.update_submission_score(key, {score: data[key]})
                     .done(function (data) {

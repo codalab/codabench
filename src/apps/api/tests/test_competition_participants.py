@@ -1,11 +1,13 @@
 from django.urls import reverse
-from rest_framework.test import APITestCase
+from rest_framework.test import APITransactionTestCase
 
 from competitions.models import CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory
 
 
-class CompetitionParticipantTests(APITestCase):
+# Note: Using APITransactionTestCase because we are raising an integrity error on purpose
+# trying to create duplicate participants. This class handles it appropriately.
+class CompetitionParticipantTests(APITransactionTestCase):
     def setUp(self):
         self.admin = UserFactory(username='admin', password='admin', super_user=True)
         self.user = UserFactory(username='creator', password='creator')
@@ -46,3 +48,13 @@ class CompetitionParticipantTests(APITestCase):
         resp = self.get_participants()
         assert CompetitionParticipant.objects.filter(competition=self.comp).count() > 0
         assert len(resp.json()) == 0
+
+    def test_cant_participate_multiple_times(self):
+        self.client.login(username='norm', password='norm')
+        resp = self.client.post(reverse('competition-register', kwargs={"pk": self.comp.pk}))
+        assert resp.status_code == 201
+        assert CompetitionParticipant.objects.filter(user=self.norm).count() == 1
+        resp = self.client.post(reverse('competition-register', kwargs={"pk": self.comp.pk}))
+        assert resp.status_code == 400
+        assert "You already applied for participation in this competition!" in resp.data[0]
+        assert CompetitionParticipant.objects.filter(user=self.norm, competition=self.comp).count() == 1

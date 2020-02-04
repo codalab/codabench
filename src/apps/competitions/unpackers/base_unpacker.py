@@ -286,6 +286,7 @@ class BaseUnpacker:
     def _save_competition(self):
         for phase in self.competition['phases']:
             phase['tasks'] = [self.competition['tasks'][index].key for index in phase['tasks']]
+
         serializer = CompetitionSerializer(
             data=self.competition,
             context={'created_by': self.creator}

@@ -92,13 +92,12 @@
                 </div>
                 <div class="field">
                     <label>Collaborators</label>
-                    <div class="ui fluid search multiple selection dropdown" ref="collab_search">
-                        <input type="hidden" name="collaborators" ref="queue_collaborators">
+                    <select name="collaborators" class="ui fluid search multiple selection dropdown" multiple ref="collab_search">
                         <i class="dropdown icon"></i>
                         <div class="default text">Select Collaborator</div>
                         <div class="menu">
                         </div>
-                    </div>
+                    </select>
                 </div>
             </form>
         </div>
@@ -141,8 +140,7 @@
                 clearable: true,
                 preserveHTML: false,
                 fields: {
-                    remoteValues: 'results',
-                    name: 'username',
+                    title: 'name',
                     value: 'id',
                 },
                 cache: false,
@@ -209,7 +207,6 @@
 
         self.show_broker_modal = (queue) => {
             self.selected_queue = queue
-            console.log(queue)
             self.update()
             $(self.refs.broker_modal).modal('show')
         }
@@ -218,8 +215,13 @@
             self.selected_queue = queue
             self.refs.queue_name.value = queue.name
             $(self.refs.collab_search)
-                .dropdown('setup menu', {values: queue.organizers})
-                .dropdown('set selected',  _.map(queue.organizers, o => o.username))
+                .dropdown('setup menu',
+                {
+                    values: _.map(queue.organizers, function(o) {
+                        return {id: o.id, name: o.username}
+                    })
+                })
+                .dropdown('set selected', _.map(queue.organizers, o => o.id.toString()))
 
             if (queue.is_public) {
                 self.refs.queue_public.checked = true
@@ -230,7 +232,7 @@
             let data = {
                 name: self.refs.queue_name.value,
                 is_public: self.refs.queue_public.checked,
-                organizers: _.compact($(self.refs.collab_search).dropdown('get value').split(','))
+                organizers: $(self.refs.collab_search).dropdown('get value')
             }
             let endpoint = !_.isEmpty(self.selected_queue)
                 ? CODALAB.api.update_queue

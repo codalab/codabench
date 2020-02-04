@@ -362,7 +362,7 @@
             $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
 
             // Setting description in markdown editor
-            self.simple_markdown_editor.value(self.phases[index].description)
+            self.simple_markdown_editor.value(self.phases[index].description || '')
 
             // Setting Tasks
             $(self.refs.multiselect)

@@ -90,7 +90,6 @@
             CODALAB.api.get_task(self.opts.task_pk)
                 .done((data) => {
                     self.task = data
-                    console.log(data)
                     self.update()
                 })
         }
@@ -105,7 +104,6 @@
             let data = get_form_data(self.refs.form)
             data.is_public = $('[name="is_public"]', self.refs.form).is(':checked')
             // ^ used to actually get correct checkbox data
-            console.log(data)
             CODALAB.api.update_task(self.task.id, data)
                 .done(() => {
                     toastr.success('Changes Saved')

@@ -91,9 +91,6 @@
 
             var data_file = self.refs.data_file.refs.file_input.value
 
-            console.log("data_file")
-            console.log(data_file)
-
             if(data_file === undefined || !data_file.endsWith('.zip')) {
                 toastr.warning("Please select a .zip file to upload")
                 setTimeout(self.clear_form, 1)

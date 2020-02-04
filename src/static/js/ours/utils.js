@@ -104,11 +104,8 @@ function get_form_data(base_element) {
     var data = {}
     fields.each(function (i, field) {
         if (!!field.name) {
-            //console.log("@@@@@")
-            //console.log(field)
             data[field.name] = $(field).val()
         }
-        //console.log(field.name + " -> " + $(field).val())
     })
     return data
 }
@@ -117,9 +114,6 @@ function set_form_data(data, base_element) {
     var fields = get_form_fields(base_element)
     fields.each(function (i, field) {
         if (!!field.name) {
-            //console.log("@@@@@")
-            //console.log(field)
-            console.log(field.name + " -> " + data[field.name])
             $(field).val(data[field.name])
         }
     })

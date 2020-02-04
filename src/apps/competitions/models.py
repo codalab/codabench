@@ -479,6 +479,9 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, null=False, blank=False, default=UNKNOWN)
     reason = models.CharField(max_length=100, null=True, blank=True)
 
+    class Meta:
+        unique_together = ('user', 'competition')
+
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
 

@@ -1,8 +1,9 @@
+from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -103,6 +104,36 @@ class CompetitionViewSet(ModelViewSet):
             "created_by": self.request.user
         }
 
+    def create(self, request, *args, **kwargs):
+        """Mostly a copy of the underlying base create, however we return some additional data
+        in the response to remove a GET from the frontend"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        # Re-do serializer in detail version (i.e. for Collaborator data)
+        serializer = CompetitionDetailSerializer(serializer.instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        """Mostly a copy of the underlying base update, however we return some additional data
+        in the response to remove a GET from the frontend"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        # Re-do serializer in detail version (i.e. for Collaborator data)
+        serializer = CompetitionDetailSerializer(serializer.instance)
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         if request.user != self.get_object().created_by:
             raise PermissionDenied("You cannot delete competitions that you didn't create")
@@ -121,7 +152,11 @@ class CompetitionViewSet(ModelViewSet):
     def register(self, request, pk):
         competition = self.get_object()
         user = request.user
-        participant = CompetitionParticipant.objects.create(competition=competition, user=user)
+        try:
+            participant = CompetitionParticipant.objects.create(competition=competition, user=user)
+        except IntegrityError:
+            raise ValidationError("You already applied for participation in this competition!")
+
         if user in competition.all_organizers:
             participant.status = 'approved'
         elif competition.registration_auto_approve:
@@ -168,6 +203,19 @@ class CompetitionViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
+
+    def _ensure_organizer_participants_accepted(self, instance):
+        CompetitionParticipant.objects.filter(
+            user__in=instance.collaborators.all()
+        ).update(status=CompetitionParticipant.APPROVED)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._ensure_organizer_participants_accepted(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._ensure_organizer_participants_accepted(instance)
 
 
 @api_view(['GET'])

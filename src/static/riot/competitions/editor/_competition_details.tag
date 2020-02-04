@@ -52,7 +52,7 @@
                 this.addEventListener('keyup', self.form_updated)
             })
 
-            // Capture and convert logo to base64 for easy uploading
+            // Draw in logo filename as it's changed
             $(self.refs.logo).change(function() {
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
@@ -60,6 +60,7 @@
                     self.data['logo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
                     self.form_updated()
                 })
+                self.form_updated()
             })
 
             $(self.refs.queue).dropdown({
@@ -100,7 +101,8 @@
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
 
             if(is_valid) {
-                // If we don't have logo data AND we're editing, put in empty data
+                // If we don't have logo data AND we're editing, put in empty data (otherwise
+                // we send garbage to the backend)
                 if(!self.data['logo'] && self.is_editing_competition){
                     self.data['logo'] = undefined
                 }

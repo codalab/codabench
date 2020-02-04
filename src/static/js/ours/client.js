@@ -2,7 +2,7 @@ CODALAB.events = riot.observable()
 
 CODALAB.api = {
     request: function (method, url, data) {
-        if(method.toLowerCase() !== "get") {
+        if (method.toLowerCase() !== "get") {
             data = JSON.stringify(data)
         }
 
@@ -85,7 +85,7 @@ CODALAB.api = {
         filters.format = "csv"
         return `${URLS.API}submissions/?${$.param(filters)}`
     },
-    create_submission: function(submission_metadata) {
+    create_submission: function (submission_metadata) {
         return CODALAB.api.request('POST', URLS.API + "submissions/", submission_metadata)
     },
     get_submission_details: function (id) {
@@ -95,13 +95,13 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/
-    add_submission_to_leaderboard: function(submission_pk) {
+    add_submission_to_leaderboard: function (submission_pk) {
         return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
     },
-    get_leaderboard: function(leaderboard_pk) {
+    get_leaderboard: function (leaderboard_pk) {
         return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
     },
-    update_submission_score: function(pk, data) {
+    update_submission_score: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
     },
     /*---------------------------------------------------------------------
@@ -119,7 +119,7 @@ CODALAB.api = {
     delete_dataset: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}datasets/${pk}/`)
     },
-    create_dump: function(competition_id) {
+    create_dump: function (competition_id) {
         return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
     },
     /**
@@ -139,7 +139,7 @@ CODALAB.api = {
 
         return CODALAB.api.request('POST', URLS.API + "datasets/", metadata)
             // We have an upload URL, so upload now..
-            .then(function(result) {
+            .then(function (result) {
                 dataset = result
                 return $.ajax({
                     type: 'PUT',
@@ -147,8 +147,8 @@ CODALAB.api = {
                     data: data_file,
                     processData: false,
                     contentType: false,
-                    beforeSend: function(request) {
-                        if(STORAGE_TYPE === 'azure') {
+                    beforeSend: function (request) {
+                        if (STORAGE_TYPE === 'azure') {
                             request.setRequestHeader('x-ms-blob-type', 'BlockBlob')
                             request.setRequestHeader('x-ms-version', '2018-03-28')
                         }
@@ -170,7 +170,7 @@ CODALAB.api = {
                 })
             })
             // Now we should complete the upload by telling Codalab! (so competition unpacking and such can start)
-            .then(function() {
+            .then(function () {
                 return CODALAB.api.request('PUT', URLS.API + "datasets/completed/" + dataset.key + "/")
             })
     },
