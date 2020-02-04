@@ -31,7 +31,7 @@
                     <errors errors="{errors}"></errors>
                 </div>
 
-                <div class="ui pointing seven item secondary menu">
+                <div class="ui six item secondary pointing menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ valid_sections.details && !errors.details }"></i>
                         <i class="minus circle icon red" show="{ errors.details }"></i>
@@ -62,10 +62,6 @@
                         <i class="minus circle icon red" show="{ errors.collaborators }"></i>
                         Collaborators
                     </a>
-                    <a class="item" target="_blank" href="">
-                        <i class="question icon"></i>
-                        Help
-                    </a>
                 </div>
                 <div class="ui active tab" data-tab="competition_details">
                     <competition-details errors="{ errors.details }"></competition-details>
@@ -89,6 +85,7 @@
         </div>
 
         <div class="row centered">
+            <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
             <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save_and_publish }">
                 Save and Publish
             </button>

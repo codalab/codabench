@@ -4,7 +4,13 @@
     <div class="ui top attached tabular menu">
         <div class="active item" data-tab="datasets">Datasets</div>
         <div class="item" data-tab="tasks">Tasks</div>
-        <a class="item" href="" target="_blank"><i class="question icon"></i>Help</a>
+        <div class="right menu">
+            <div class="item">
+                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
+                             tooltip_position="left center">
+                </help_button>
+            </div>
+        </div>
     </div>
     <div class="ui active bottom attached tab segment" data-tab="datasets">
         <data-management></data-management>

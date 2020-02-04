@@ -8,7 +8,12 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
-            <a class="item" href="" target="_blank"><i class="question icon"></i>Help</a>
+            <div class="right menu">
+                <div class="item">
+                    <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
+                                 tooltip_position="left center"></help_button>
+                </div>
+            </div>
         </div>
 
         <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->

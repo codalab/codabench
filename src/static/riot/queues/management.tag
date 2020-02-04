@@ -14,12 +14,9 @@
                 <input type="checkbox" ref="public">
             </div>
         </div>
-
-        <a class="item" href="" target="_blank">
-            <i class="question icon"></i>
-            Help
-        </a>
-
+        <div class="item">
+            <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle" tooltip_position="right center"></help_button>
+        </div>
     </div>
 
     <div class="ui green right floated labeled icon button" onclick="{ show_modal.bind(this, undefined) }"><i
