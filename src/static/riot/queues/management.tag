@@ -2,7 +2,9 @@
     <div class="ui horizontal list">
         <div class="item">
             <div class="ui icon input">
-                <input type="text" placeholder="Search by name..." ref="search"
+                <input type="text"
+                       placeholder="Search by name..."
+                       ref="search"
                        onkeyup="{filter.bind(this, undefined)}">
                 <i class="search icon"></i>
             </div>
@@ -15,7 +17,9 @@
             </div>
         </div>
         <div class="item">
-            <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle" tooltip_position="right center"></help_button>
+            <help_button href="https://github.com/codalab/competitions-v2/wiki/Queue-Management"
+                         tooltip_position="right center">
+            </help_button>
         </div>
     </div>
 

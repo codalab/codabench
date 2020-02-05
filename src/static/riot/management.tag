@@ -6,7 +6,7 @@
         <div class="item" data-tab="tasks">Tasks</div>
         <div class="right menu">
             <div class="item">
-                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
+                <help_button href="https://github.com/codalab/competitions-v2/wiki/Task-&-Dataset-Management"
                              tooltip_position="left center">
                 </help_button>
             </div>

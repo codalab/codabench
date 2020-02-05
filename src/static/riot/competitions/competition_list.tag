@@ -39,8 +39,9 @@
                                 </td>
                                 <td class="center aligned">
                                     <a href="{ URLS.COMPETITION_EDIT(competition.id) }"
-                                       class="mini ui button blue icon"><i
-                                        class="icon edit"></i> </a>
+                                       class="mini ui button blue icon">
+                                        <i class="icon edit"></i>
+                                    </a>
                                 </td>
                                 <td class="center aligned">
                                     <button class="mini ui button red icon"
