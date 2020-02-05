@@ -1,15 +1,31 @@
 <queues-list>
-    <div class="ui icon input">
-        <input type="text" placeholder="Search by name..." ref="search" onkeyup="{filter.bind(this, undefined)}">
-        <i class="search icon"></i>
+    <div class="ui horizontal list">
+        <div class="item">
+            <div class="ui icon input">
+                <input type="text"
+                       placeholder="Search by name..."
+                       ref="search"
+                       onkeyup="{filter.bind(this, undefined)}">
+                <i class="search icon"></i>
+            </div>
+        </div>
+        <div class="item">
+            <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
+                <label>Show Public Queues</label>
+                <input type="checkbox" ref="public">
+            </div>
+        </div>
+        <div class="item">
+            <help_button href="https://github.com/codalab/competitions-v2/wiki/Queue-Management"
+                         tooltip_position="right center">
+            </help_button>
+        </div>
     </div>
-    <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
-        <label>Show Public Queues</label>
-        <input type="checkbox" ref="public">
+
+    <div class="ui green right floated labeled icon button" onclick="{ show_modal.bind(this, undefined) }">
+        <i class="add circle icon"></i> Create Queue
     </div>
-    <div class="ui green right floated labeled icon button" onclick="{ show_modal.bind(this, undefined) }"><i class="add circle icon"></i>
-        Create Queue
-    </div>
+
     <table class="ui {selectable: queues.length > 0} celled compact table">
         <thead>
         <tr>

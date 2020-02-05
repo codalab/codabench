@@ -3,9 +3,14 @@
         <div class="ui middle aligned stackable grid container centered">
             <div class="row">
                 <div class="fourteen wide column">
-                    <div class="ui fluid four secondary pointing tabular menu">
+                    <div class="ui fluid secondary pointing tabular menu">
                         <a class="active item" data-tab="running">Competitions I'm Running</a>
                         <a class="item" data-tab="participating">Competitions I'm In</a>
+                        <div class="right menu">
+                            <div class="item">
+                                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Management-&-List"></help_button>
+                            </div>
+                        </div>
                     </div>
                     <div class="ui active tab" data-tab="running">
                         <table class="ui celled compact table participation">
@@ -26,13 +31,16 @@
                                     <!--<button class="mini ui button green icon" show="{ !competition.published }" onclick="{ publish_competition.bind(this, competition) }">
                                         <i class="icon external alternate"></i>
                                     </button>-->
-                                    <button class="mini ui button published icon { grey: !competition.published, green: competition.published }" onclick="{ toggle_competition_publish.bind(this, competition) }">
+                                    <button class="mini ui button published icon { grey: !competition.published, green: competition.published }"
+                                            onclick="{ toggle_competition_publish.bind(this, competition) }">
                                         <i class="icon file"></i>
                                     </button>
                                 </td>
                                 <td class="center aligned">
-                                    <a href="{ URLS.COMPETITION_EDIT(competition.id) }" class="mini ui button blue icon"><i
-                                            class="icon edit"></i> </a>
+                                    <a href="{ URLS.COMPETITION_EDIT(competition.id) }"
+                                       class="mini ui button blue icon">
+                                        <i class="icon edit"></i>
+                                    </a>
                                 </td>
                                 <td class="center aligned">
                                     <button class="mini ui button red icon"
@@ -76,7 +84,7 @@
             $('.tabular.menu .item').tab();
         })
 
-        self.update_competitions = function() {
+        self.update_competitions = function () {
             self.get_participating_in_competitions()
             self.get_running_competitions()
         }
@@ -90,7 +98,7 @@
 
         self.get_participating_in_competitions = function () {
             self.get_competitions_wrapper({participating_in: true})
-                .done(function(data){
+                .done(function (data) {
                     self.participating_competitions = data
                     self.update()
                 })
@@ -98,7 +106,7 @@
 
         self.get_running_competitions = function () {
             self.get_competitions_wrapper({mine: true})
-                .done(function(data){
+                .done(function (data) {
                     self.running_competitions = data
                     self.update()
                 })
@@ -133,6 +141,7 @@
             .published.icon.grey
                 opacity 0.65
                 transition 0.25s all ease-in-out
+
                 &:hover
                     background-color #21ba45
 

@@ -2,12 +2,13 @@
     <div class="ui grid container">
         <div class="eight wide column centered form-empty">
             <div class="ui segment">
-                <h1 class="ui header">
-                    Competition upload
-                    <div class="sub header">
-                        For more information on creating bundles, please visit the <a href="https://github.com/codalab/competitions-v2/wiki">Wiki</a>!
-                    </div>
-                </h1>
+                <div class="flex-header">
+                    <h1 class="ui header">Competition upload</h1>
+                    <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
+                                 tooltip="More information on bundle creation">
+                    </help_button>
+                </div>
+
 
                 <!-- File selection state view -->
                 <form hide="{ listening_for_status || resulting_competition || resulting_details }" class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
@@ -180,5 +181,10 @@
 
         .loader
             padding-bottom 20px
+
+        .flex-header
+            display flex
+            flex-direction row
+            justify-content space-between
     </style>
 </competition-upload>

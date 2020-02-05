@@ -146,11 +146,6 @@
                                  each="{file_field in ['scoring_program', 'ingestion_program']}">
                                 <label>
                                     {_.startCase(file_field)}
-                                    <span data-tooltip="Something useful to know...!"
-                                          data-inverted=""
-                                          data-position="bottom center">
-                                        <i class=" grey help icon circle"></i>
-                                    </span>
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
@@ -164,11 +159,6 @@
                             <div class="field" each="{file_field in ['reference_data', 'input_data']}">
                                 <label>
                                     {_.startCase(file_field)}
-                                    <span data-tooltip="Something useful to know...!"
-                                          data-inverted=""
-                                          data-position="bottom center">
-                                        <i class="grey help icon circle"></i>
-                                    </span>
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
