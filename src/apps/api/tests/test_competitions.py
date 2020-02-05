@@ -8,7 +8,7 @@ from factories import UserFactory, CompetitionFactory, CompetitionParticipantFac
     ColumnFactory
 
 
-class CompetitionParticipantTests(APITestCase):
+class CompetitionTests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')
         self.other_user = UserFactory(username='other_user', password='other')
