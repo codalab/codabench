@@ -92,7 +92,6 @@ class SubmissionManagerTests(SubmissionTestCase):
         assert subs[0].phase == subs[1].phase
         assert subs[0].data == subs[1].data
 
-    # TODO: Figure out why this test causes CircleCI to freeze
     def test_cancel_submission_sets_status(self):
         sub = self.make_submission()
         assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
