@@ -19,7 +19,7 @@ class UserFactory(DjangoModelFactory):
         model = User
         django_get_or_create = ('username',)
 
-    username = factory.Faker('user_name')
+    username = factory.Sequence(lambda n: f"{factory.Faker('user_name')}{n}")
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
 
