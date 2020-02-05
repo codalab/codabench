@@ -58,34 +58,6 @@ class TestSubmissions(SeleniumTestCase):
         if has_solutions:
             assert Solution.objects.filter(md5=submission_md5).exists()
 
-        submission = self.user.submission.first()
-
-        # TODO: Make this get all tasks and solutions and clean them up properly
-        task = competition.phases.first().tasks.first()
-        solution = task.solutions.first()
-        created_files = [
-            # Competition related files
-            competition.bundle_dataset.data_file.name,
-            competition.logo.name,
-
-            # Tasks and solutions
-            task.scoring_program.data_file.name,
-            task.reference_data.data_file.name,
-
-            # Submission related files
-            submission.data.data_file.name,
-            submission.prediction_result.name,
-            submission.scoring_result.name,
-            # TODO: missing many log deletions?
-        ]
-        if has_solutions:
-            created_files.append(solution.data.data_file.name)
-        for detail in submission.details.all():
-            created_files.append(detail.data_file.name)
-
-        self.assert_storage_items_exist(*created_files)
-        self.remove_items_from_storage(*created_files)
-
     def test_v15_submission_appears_in_submissions_table(self):
         self._run_submission('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
 

@@ -18,6 +18,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from twisted.internet import reactor
 
+from competitions.models import Competition, Submission
+from tasks.models import Solution, Task
 from utils.storage import BundleStorage, PublicStorage
 
 
@@ -70,7 +72,6 @@ class CodalabDaphneProcess(DaphneProcess):
 
 @pytest.mark.e2e
 class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
-    urls = 'urls'  # TODO: what the F is this???
     serialized_rollback = True
 
     ProtocolServerProcess = CodalabDaphneProcess
@@ -81,6 +82,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Note: setUpClass is only ran once at the start of testing, not before each test"""
         super().setUpClass()
         cls.host = socket.gethostbyname(socket.gethostname())
         cls.circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
@@ -96,19 +98,14 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Note: tearDown is ran at the end of all testing"""
         cls.selenium.quit()
-
-        # TODO: Saving logs is not working, gets HTTP 405 not allowed. Maybe our `desired_capabilities` need to change
-        # to reflect specific firefox stuff? NOTE: From Jimmy Sept 27 2019 (Austen's birthday!): Chrome is the only
-        # browser this will work in (and we're currently using firefox)
-        #
-        # Save console.log output
-        # output_path = os.path.join(cls.circle_dir, "console.log.txt")
-        # with open(output_path, 'w') as f:
-        #     f.write("Selenium browser logs:\n")
-        #     f.writelines(cls.selenium.get_log('browser'))
-
         super().tearDownClass()
+
+    def tearDown(self):
+        """Note: tearDown is ran after _every_ test"""
+        self.remove_all_competition_data()
+        super().tearDown()
 
     def wait(self, seconds):
         return sleep(seconds)
@@ -167,6 +164,41 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
     # ===========================================================
     # Cleanup Helpers
     # ===========================================================
+    def remove_all_competition_data(self):
+        created_files = []
+
+        # starting with competitions, then..
+        for competition in Competition.objects.all():
+            created_files += [
+                competition.bundle_dataset.data_file.name,
+                competition.logo.name,
+            ]
+
+        # submissions
+        for submission in Submission.objects.all():
+            created_files += [
+                submission.data.data_file.name,
+                submission.prediction_result.name,
+                submission.scoring_result.name,
+            ]
+            # submission logs
+            for output in submission.details.all():
+                created_files.append(output.data_file.name)
+
+        # tasks and solutions
+        for task in Task.objects.all():
+            created_files += [
+                task.ingestion_program.data_file.name,
+                task.scoring_program.data_file.name,
+                task.input_data.data_file.name,
+                task.reference_data.data_file.name,
+            ]
+        for solution in Solution.objects.all():
+            created_files.append(solution.data.data_file.name)
+
+        self.assert_storage_items_exist(*created_files)
+        self.remove_items_from_storage(*created_files)
+
     @staticmethod
     def remove_items_from_storage(*args):
         for item in args:

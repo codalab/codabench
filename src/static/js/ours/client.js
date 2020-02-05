@@ -16,7 +16,6 @@ CODALAB.api = {
     },
 
     search: function (query) {
-        // Todo This should call chahub??
         return CODALAB.api.request('GET', URLS.API + "query/?q=" + query)
     },
 
@@ -129,8 +128,6 @@ CODALAB.api = {
      * @param {function} progress_update_callback
      */
     create_dataset: function (metadata, data_file, progress_update_callback) {
-        // TODO: CHECK WHAT KIND OF STORAGE WE ARE! ???
-
         // Pass the requested file name for the SAS url
         metadata.request_sassy_file_name = data_file.name
 
