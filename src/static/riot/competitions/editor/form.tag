@@ -86,8 +86,7 @@
 
         <div class="center aligned row">
             <div class="column">
-                <help_button
-                    href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
+                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
                 <button class="ui primary button { disabled: !are_all_sections_valid() }"
                         onclick="{ save_and_publish }">
                     Save and Publish

@@ -9,7 +9,6 @@
                 <i class="search icon"></i>
             </div>
         </div>
-
         <div class="item">
             <div class="ui checkbox" onclick="{ filter.bind(this, undefined) }">
                 <label>Show Public Queues</label>
@@ -23,9 +22,8 @@
         </div>
     </div>
 
-    <div class="ui green right floated labeled icon button" onclick="{ show_modal.bind(this, undefined) }"><i
-            class="add circle icon"></i>
-        Create Queue
+    <div class="ui green right floated labeled icon button" onclick="{ show_modal.bind(this, undefined) }">
+        <i class="add circle icon"></i> Create Queue
     </div>
 
     <table class="ui {selectable: queues.length > 0} celled compact table">

@@ -31,9 +31,8 @@
                                     <!--<button class="mini ui button green icon" show="{ !competition.published }" onclick="{ publish_competition.bind(this, competition) }">
                                         <i class="icon external alternate"></i>
                                     </button>-->
-                                    <button
-                                        class="mini ui button published icon { grey: !competition.published, green: competition.published }"
-                                        onclick="{ toggle_competition_publish.bind(this, competition) }">
+                                    <button class="mini ui button published icon { grey: !competition.published, green: competition.published }"
+                                            onclick="{ toggle_competition_publish.bind(this, competition) }">
                                         <i class="icon file"></i>
                                     </button>
                                 </td>
