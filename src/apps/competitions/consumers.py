@@ -29,7 +29,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         async with aiofiles.open(submission_output_path, 'a+') as f:
             await f.write(f'{text_data}\n')
 
-        # TODO: Await to broadcast to everyone listening to this submission key or whatever
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
             'text': json.loads(text_data),
