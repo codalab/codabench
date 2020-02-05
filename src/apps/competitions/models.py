@@ -360,8 +360,6 @@ class Submission(ChaHubSaveMixin, models.Model):
                                              blank=True)
 
     scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
-    # TODO: Maybe a field named 'ignored_submission_limits' so we can see which submissions were manually submitted
-    #  past ignored submission limits and not count them against users
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')

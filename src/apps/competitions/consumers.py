@@ -34,7 +34,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
             'text': json.loads(text_data),
             'submission_id': submission_id,
         })
-        # TODO! Refuse to write to file after 10MB has been received ???
 
 
 class SubmissionOutputConsumer(AsyncWebsocketConsumer):
