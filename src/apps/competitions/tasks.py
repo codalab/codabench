@@ -30,7 +30,6 @@ from utils.email import codalab_send_markdown_email
 
 logger = logging.getLogger()
 
-# TODO: Double check fields; computation, computation_indexes, etc will be implemented in the future
 COMPETITION_FIELDS = [
     "title"
 ]
@@ -242,6 +241,7 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
     }
 
     tasks = submission.phase.tasks.all()
+    # TODO: Make the following code DRY!
     if task_pk is None:  # This is the initial submission object
         if len(tasks) > 1:
             # The initial submission object becomes the parent submission and we create children for each task

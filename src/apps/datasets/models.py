@@ -57,9 +57,6 @@ class Data(ChaHubSaveMixin, models.Model):
     # are NOT marked True, since they are not created by unpacking!
     was_created_by_competition = models.BooleanField(default=False)
 
-    # TODO: add Model manager that automatically filters out upload_completed_successfully=False from queries
-    # TODO: remove upload_completed_successfully=False after 3 days ???
-
     def get_download_url(self):
         return reverse('datasets:download', kwargs={'key': self.key})
 

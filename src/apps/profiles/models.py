@@ -34,7 +34,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     company = models.CharField(max_length=100, null=True, blank=True)
     bio = models.CharField(max_length=300, null=True, blank=True)
 
-    # Todo: See if we should just make this into a Postgres JSON field.
     github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True, on_delete=models.CASCADE)
 
     # Any User Attributes

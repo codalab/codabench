@@ -4,7 +4,6 @@ from django.db import models
 
 
 class Leaderboard(models.Model):
-    # TODO: Check null and blank attributes
     competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE, related_name="leaderboards",
                                     null=True, blank=True)
     primary_index = models.PositiveIntegerField(default=0)

@@ -53,6 +53,7 @@ class TaskViewSet(ModelViewSet):
         if not self.request:
             return {}
 
+        # TODO: CurrentUserDefault or what-have-you?
         return {
             "created_by": self.request.user
         }
