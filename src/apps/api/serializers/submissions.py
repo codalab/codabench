@@ -36,7 +36,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = (
-            'phase',
             'phase_name',
             'name',
             'filename',
@@ -47,17 +46,15 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'is_public',
             'status',
             'status_details',
-            'scores',
-            'leaderboard',
             'owner',
             'has_children',
             'parent',
             'children',
         )
-        extra_kwargs = {
-            "phase": {"read_only": True},
-            "scores": {"read_only": True},
-            "leaderboard": {"read_only": True},
+        read_only_fields = {
+            'phase',
+            'scores',
+            'leaderboard',
         }
 
     def get_filename(self, instance):

@@ -12,29 +12,30 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         model = Data
         user_field = 'created_by'
         fields = (
-            'id',
-            'created_by',
             'created_when',
             'name',
             'type',
             'description',
-            'data_file',
             'is_public',
-            'key',
             'request_sassy_file_name',
-            'was_created_by_competition',
-            'in_use'
+            'in_use',
         )
-        extra_kwargs = {
-            "id": {"read_only": True},
-            "key": {"read_only": True},
-            "created_by": {"read_only": True},
-        }
+        read_only_fields = (
+            'id',
+            'key',
+            'created_by',
+            'data_file',
+            'was_created_by_competition',
+        )
 
-    def validate_name(self, name):
-        if name and Data.objects.filter(name=name, created_by=self.context['created_by']).exists():
-            raise ValidationError("You already have a dataset by this name, please delete that dataset or rename this one")
-        return name
+    def validate(self, attrs):
+        if 'name' in attrs:
+            existing_lookup = Data.objects.filter(name=attrs['name'], created_by=self.context['request'].user)
+            if self.instance:
+                existing_lookup = existing_lookup.exclude(pk=self.instance.pk)
+            if existing_lookup.exists():
+                raise ValidationError("You already have a dataset by this name, please delete that dataset or rename this one")
+        return attrs
 
     def create(self, validated_data):
         # Pop this non-model field before we create the model using all validated_data

@@ -62,6 +62,7 @@ class DataViewSet(ModelViewSet):
         return Response(context, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
+        # TODO: Confirm this has a test
         if request.user != self.get_object().created_by:
             raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
@@ -70,6 +71,7 @@ class DataViewSet(ModelViewSet):
 class DataGroupViewSet(ModelViewSet):
     queryset = DataGroup.objects.all()
     serializer_class = serializers.DataGroupSerializer
+    # TODO: Anyone can delete these?
 
 
 @api_view(['PUT'])
