@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
+from api.mixins import DefaultUserCreateMixin
 from queues.models import Queue
 
 from profiles.models import User
@@ -23,12 +24,13 @@ class QueueOwnerMixin:
         return instance.owner and instance.owner == request.user
 
 
-class QueueCreationSerializer(QueueOwnerMixin, serializers.ModelSerializer):
+class QueueCreationSerializer(QueueOwnerMixin, DefaultUserCreateMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
     class Meta:
         model = Queue
+        user_field = 'owner'
         fields = (
             'name',
             'is_public',
