@@ -19,6 +19,11 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'is_public',
             'request_sassy_file_name',
             'in_use',
+            'id',
+            'key',
+            'created_by',
+            'data_file',
+            'was_created_by_competition',
         )
         read_only_fields = (
             'id',

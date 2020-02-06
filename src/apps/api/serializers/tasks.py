@@ -51,6 +51,7 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
             'name',
             'description',
             'key',
+            'created_by',
             'created_when',
             'is_public',
             'ingestion_only_during_scoring',

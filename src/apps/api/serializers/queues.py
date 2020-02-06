@@ -15,7 +15,15 @@ class OrganizerSerializer(serializers.ModelSerializer):
         )
 
 
-class QueueCreationSerializer(serializers.ModelSerializer):
+class QueueOwnerMixin:
+    def get_is_owner(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
+        return instance.owner and instance.owner == request.user
+
+
+class QueueCreationSerializer(QueueOwnerMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     organizers = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
@@ -23,20 +31,22 @@ class QueueCreationSerializer(serializers.ModelSerializer):
         model = Queue
         fields = (
             'name',
-            'vhost',
             'is_public',
-            'owner',
             'organizers',
+            'owner',
             'broker_url',
+            'vhost',
             'created_when',
             'is_owner',
             'id',
         )
         read_only_fields = (
+            'owner',
             'broker_url',
             'vhost',
             'created_when',
             'is_owner',
+            'id',
         )
 
     def validate(self, attrs):
@@ -45,14 +55,8 @@ class QueueCreationSerializer(serializers.ModelSerializer):
             raise PermissionDenied("User has reached queue limit!")
         return super().validate(attrs)
 
-    def get_is_owner(self, instance):
-        request = self.context.get('request')
-        if not request:
-            return None
-        return instance.owner and instance.owner == request.user
 
-
-class QueueSerializer(serializers.ModelSerializer):
+class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)
     organizers = OrganizerSerializer(many=True, read_only=True)
@@ -70,15 +74,15 @@ class QueueSerializer(serializers.ModelSerializer):
             'is_owner',
             'id',
         )
+        # This serializer is read only, basically..
         read_only_fields = (
-            'broker_url',
+            'name',
             'vhost',
+            'is_public',
+            'owner',
+            'organizers',
+            'broker_url',
             'created_when',
             'is_owner',
+            'id',
         )
-
-    def get_is_owner(self, instance):
-        request = self.context.get('request')
-        if not request:
-            return None
-        return instance.owner and instance.owner == request.user

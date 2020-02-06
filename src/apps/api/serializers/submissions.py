@@ -40,8 +40,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'name',
             'filename',
             'description',
-            'pk',
-            'id',
             'created_when',
             'is_public',
             'status',
@@ -50,12 +48,19 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'has_children',
             'parent',
             'children',
-        )
-        read_only_fields = {
+            'pk',
+            'id',
             'phase',
             'scores',
             'leaderboard',
-        }
+        )
+        read_only_fields = (
+            'pk',
+            'id',
+            'phase',
+            'scores',
+            'leaderboard',
+        )
 
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
@@ -113,12 +118,13 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     def validate(self, attrs):
         data = super().validate(attrs)
 
-        is_in_competition = data["phase"].competition.participants.filter(
-            user=self.context["request"].user,
-            status=CompetitionParticipant.APPROVED
-        ).exists()
-        if not is_in_competition:
-            raise PermissionDenied("You do not have access to this competition to make a submission")
+        if not self.instance:
+            is_in_competition = data["phase"].competition.participants.filter(
+                user=self.context["request"].user,
+                status=CompetitionParticipant.APPROVED
+            ).exists()
+            if not is_in_competition:
+                raise PermissionDenied("You do not have access to this competition to make a submission")
 
         # TODO: Explain what this is doing? I think it's setting task_pk for nested writable stuff to work well?
         task_pk = self._kwargs.get('data', {}).get('task_pk')
