@@ -1,10 +1,7 @@
-import json
-
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from competitions.models import CompetitionParticipant
-from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
+from factories import UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionFactory
 
 
