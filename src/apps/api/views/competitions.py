@@ -94,16 +94,6 @@ class CompetitionViewSet(ModelViewSet):
         else:
             return CompetitionSerializer
 
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        # TODO: what is this doing? do we still need it?
-        if not self.request:
-            return {}
-
-        return {
-            "created_by": self.request.user
-        }
-
     def create(self, request, *args, **kwargs):
         """Mostly a copy of the underlying base create, however we return some additional data
         in the response to remove a GET from the frontend"""

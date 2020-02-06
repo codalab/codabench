@@ -43,15 +43,6 @@ class DataViewSet(ModelViewSet):
         else:
             return serializers.DataSerializer
 
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        if not self.request:
-            return {}
-
-        return {
-            "created_by": self.request.user
-        }
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

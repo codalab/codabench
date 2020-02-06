@@ -1,14 +1,16 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from api.mixins import DefaultUserCreateMixin
 from datasets.models import Data, DataGroup
 
 
-class DataSerializer(serializers.ModelSerializer):
+class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
     request_sassy_file_name = serializers.CharField(required=True, max_length=255, write_only=True)
 
     class Meta:
         model = Data
+        user_field = 'created_by'
         fields = (
             'id',
             'created_by',
@@ -38,7 +40,6 @@ class DataSerializer(serializers.ModelSerializer):
         # Pop this non-model field before we create the model using all validated_data
         request_sassy_file_name = validated_data.pop('request_sassy_file_name', None)
 
-        validated_data["created_by"] = self.context['created_by']
         instance = super().create(validated_data)
         instance.request_sassy_file_name = request_sassy_file_name
         return instance

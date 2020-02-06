@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.fields import NamedBase64ImageField
+from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskListSerializer
@@ -73,7 +74,7 @@ class PageSerializer(WritableNestedModelSerializer):
         )
 
 
-class CompetitionSerializer(WritableNestedModelSerializer):
+class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
@@ -86,6 +87,7 @@ class CompetitionSerializer(WritableNestedModelSerializer):
 
     class Meta:
         model = Competition
+        user_field = 'created_by'
         fields = (
             'id',
             'title',
@@ -122,8 +124,6 @@ class CompetitionSerializer(WritableNestedModelSerializer):
     def create(self, validated_data):
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
-
-        validated_data["created_by"] = self.context['created_by']
         return super().create(validated_data)
 
 
