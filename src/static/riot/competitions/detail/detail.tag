@@ -1,5 +1,5 @@
 <competition-detail>
-    <comp-detail-title class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-title>
+    <comp-detail-header class="comp-detail-paragraph-text" competition="{ competition }"></comp-detail-header>
     <comp-detail-timeline class="comp-detail-phases" competition="{ competition }"></comp-detail-timeline>
     <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
     <script>

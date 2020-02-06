@@ -54,25 +54,28 @@ class Competition(ChaHubSaveMixin, models.Model):
         else:
             return user in self.all_organizers
 
-    def apply_phase_migration(self, current_phase, next_phase):
+    def apply_phase_migration(self, current_phase, next_phase, force_migration=False):
         """
         Does the actual migrating of submissions from current_phase to next_phase
 
+        :param force_migration: overrides check for currently running submissions
         :param current_phase: The phase object to transfer submissions from
         :param next_phase: The new phase object we are entering
         """
-        logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
-        status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
 
-        if current_phase.submissions.exclude(status__in=status_list).exists():
-            logger.info(f"Some submissions still marked as processing for competition pk={self.pk}")
-            self.is_migrating_delayed = True
-            self.save()
-            return
+        if not force_migration:
+            logger.info(f"Checking for submissions that may still be running competition pk={self.pk}")
+            status_list = [Submission.CANCELLED, Submission.FINISHED, Submission.FAILED, Submission.NONE]
+            if current_phase.submissions.exclude(status__in=status_list).exists():
+                logger.info(f"Some submissions still marked as processing for competition pk={self.pk}")
+                self.is_migrating_delayed = True
+                self.save()
+                return
+            else:
+                logger.info(f"No submissions running for competition pk={self.pk}")
 
-        logger.info(f"No submissions running for competition pk={self.pk}")
-        logger.info(
-            f"Doing phase migration on competition pk={self.pk} from phase: {current_phase.index} to phase: {next_phase.index}")
+        logger.info(f"Doing phase migration on competition pk={self.pk} "
+                    f"from phase: {current_phase.index} to phase: {next_phase.index}")
 
         self.is_migrating = True
         self.save()
