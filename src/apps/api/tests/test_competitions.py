@@ -1,11 +1,12 @@
 import json
+from unittest import mock
 
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from competitions.models import CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory
+    ColumnFactory, SubmissionFactory
 
 
 class CompetitionParticipantTests(APITestCase):
@@ -69,3 +70,46 @@ class CompetitionParticipantTests(APITestCase):
             competition=self.comp,
             status=CompetitionParticipant.APPROVED
         ).count() == 1
+
+
+class PhaseMigrationTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.other_user = UserFactory(username='other_user', password='other')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase_1 = PhaseFactory(competition=self.comp, index=0)
+        self.phase_2 = PhaseFactory(competition=self.comp, index=1)
+        self.leaderboard = LeaderboardFactory(competition=self.comp)
+        ColumnFactory(leaderboard=self.leaderboard)
+
+    def test_automigration_checks_permissions_must_be_collaborator_to_migrate(self):
+        self.client.login(username='other_user', password='other')
+
+        url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "You do not administrative permissions for this competition"
+
+        # add user as a collaborator and check they can do it
+        self.comp.collaborators.add(self.other_user)
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+
+    def test_automigration_makes_submissions_from_one_phase_in_another(self):
+        self.client.login(username='creator', password='creator')
+
+        # make 5 submissions in phase 1
+        for _ in range(5):
+            SubmissionFactory(owner=self.creator, phase=self.phase_1)
+        assert self.phase_1.submissions.count() == 5
+        assert self.phase_2.submissions.count() == 0
+
+        # call "migrate" from phase 1 -> 2
+        with mock.patch("competitions.tasks._run_submission") as _run_submission_mock:
+            url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
+            resp = self.client.post(url)
+            assert resp.status_code == 200
+
+        # check phase 2 has the 5 submissions
+        assert self.phase_1.submissions.count() == 5
+        assert self.phase_2.submissions.count() == 5

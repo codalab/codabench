@@ -236,7 +236,7 @@ class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
 
-    @action(detail=True, methods=('POST',))
+    @action(detail=True, methods=('POST',), url_name='manually_migrate')
     def manually_migrate(self, request, pk):
         """Manually migrates _from_ this phase. The destination phase does not need auto migration set to True"""
         phase = self.get_object()
