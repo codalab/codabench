@@ -1,10 +1,12 @@
-import factory
-
 from django.urls import reverse
+from faker import Factory
 from rest_framework.test import APITestCase
 
 from datasets.models import Data
 from factories import UserFactory, DataFactory
+
+
+faker = Factory.create()
 
 
 class DatasetAPITests(APITestCase):
@@ -20,8 +22,9 @@ class DatasetAPITests(APITestCase):
         resp = self.client.post(reverse("data-list"), {
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': factory.Faker('file_name'),
+            'request_sassy_file_name': faker.file_name(),
         })
+
         assert resp.status_code == 400
         assert resp.data["non_field_errors"][0] == 'You already have a dataset by this name, please delete that dataset or rename this one'
 
@@ -29,7 +32,7 @@ class DatasetAPITests(APITestCase):
         resp = self.client.put(reverse("data-detail", args=(self.existing_dataset.pk,)), {
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': factory.Faker('file_name'),
+            'request_sassy_file_name': faker.file_name(),
         })
         assert resp.status_code == 200
 
