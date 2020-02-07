@@ -82,7 +82,7 @@ class PhaseMigrationTests(APITestCase):
         self.leaderboard = LeaderboardFactory(competition=self.comp)
         ColumnFactory(leaderboard=self.leaderboard)
 
-    def test_automigration_checks_permissions_must_be_collaborator_to_migrate(self):
+    def test_manual_migration_checks_permissions_must_be_collaborator_to_migrate(self):
         self.client.login(username='other_user', password='other')
 
         url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
@@ -95,7 +95,7 @@ class PhaseMigrationTests(APITestCase):
         resp = self.client.post(url)
         assert resp.status_code == 200
 
-    def test_automigration_makes_submissions_from_one_phase_in_another(self):
+    def test_manual_migration_makes_submissions_from_one_phase_in_another(self):
         self.client.login(username='creator', password='creator')
 
         # make 5 submissions in phase 1
