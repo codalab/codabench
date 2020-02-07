@@ -109,6 +109,7 @@ class PhaseMigrationTests(APITestCase):
             url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
             resp = self.client.post(url)
             assert resp.status_code == 200
+            assert _run_submission_mock.call_count == 5
 
         # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
