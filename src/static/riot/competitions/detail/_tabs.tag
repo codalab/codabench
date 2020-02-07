@@ -202,7 +202,7 @@
                         <submission-upload is_admin="{competition.is_admin}" phases="{ competition.phases }"></submission-upload>
                     </div>
                     <div>
-                        <submission-manager competition="{ competition }"></submission-manager>
+                        <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
                     </div>
                 </div>
                 <div if="{competition.participant_status !== 'approved'}">

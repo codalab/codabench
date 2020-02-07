@@ -17,10 +17,18 @@
                     </div>
                     <div if="{competition.admin}">
                         <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui button">Edit</a>
-                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-participants.modal')}">Participants</button>
-                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-submissions.modal')}">Submissions</button>
-                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-competition.modal')}">Dumps</button>
-                        <button class="ui small button" onclick="{show_modal.bind(this, '.migration.modal')}">Migrate</button>
+                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-participants.modal')}">
+                            Participants
+                        </button>
+                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-submissions.modal')}">
+                            Submissions
+                        </button>
+                        <button class="ui small button" onclick="{show_modal.bind(this, '.manage-competition.modal')}">
+                            Dumps
+                        </button>
+                        <button class="ui small button" onclick="{show_modal.bind(this, '.migration.modal')}">
+                            Migrate
+                        </button>
                     </div>
                     <div class="row">
                         <div class="column">
@@ -35,8 +43,9 @@
                             <div class="competition-secret-key" if="{ competition.admin }">
                                 <span class="secret-label">Secret url:</span>
                                 <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
-                                <span onclick="{copy_secret_url}" class="ui send-pop" data-content="Copied!"><i
-                                    class="ui copy icon"></i></span>
+                                <span onclick="{copy_secret_url}" class="ui send-pop" data-content="Copied!">
+                                    <i class="ui copy icon"></i>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -44,6 +53,7 @@
             </div>
             <div class="three wide column">
                 <div class="stat-buttons">
+                    <!--todo: turn cursor: pointer and hover off on these buttons since they are not clickable-->
                     <div class="ui tiny left labeled fluid button">
                         <a class="ui tiny basic red label">{competition.participant_count}</a>
                         <div class="ui tiny red button">Participants</div>
@@ -59,12 +69,11 @@
     <!-- Manage Competition Modal -->
     <div class="ui manage-competition modal" ref="files_modal">
         <div class="content">
-            <button class="ui button icon" onclick="{create_dump}">
+            <button class="ui icon button" onclick="{create_dump}">
                 <i class="download icon"></i> Create Competition Dump
             </button>
             <button class="ui icon button" onclick="{update_files}">
-                <i class="sync alternate icon"></i>
-                Refresh Table
+                <i class="sync alternate icon"></i> Refresh Table
             </button>
             <table class="ui table">
                 <thead>
@@ -108,7 +117,7 @@
     <!-- Manage Participants Modal -->
     <div class="ui manage-participants modal" ref="participant_modal">
         <div class="content">
-            <participant-manager competition_id="{competition}"></participant-manager>
+            <participant-manager></participant-manager>
         </div>
     </div>
 
@@ -125,22 +134,26 @@
         </div>
     </div>
 
-
+    <!-- Manual Migration Modal -->
     <div class="ui migration modal" ref="migration_modal">
         <div class="content">
             <table class="ui table">
                 <thead>
-                    <tr>
-                        <th colspan="100%">
-                            Please Choose a phase to migrate
-                        </th>
-                    </tr>
+                <tr>
+                    <th colspan="100%">
+                        Please Choose a phase to migrate
+                    </th>
+                </tr>
                 </thead>
                 <tbody>
                 <tr each="{phase, index in competition.phases}">
                     <td>{phase.name}</td>
                     <td class="collapsing">
-                        <button if="{index !== competition.phases.length - 1}" class="ui button" onclick="{migrate_phase.bind(this, phase.id)}">Migrate</button>
+                        <button if="{index !== competition.phases.length - 1}"
+                                class="ui button"
+                                onclick="{migrate_phase.bind(this, phase.id)}">
+                            Migrate
+                        </button>
                     </td>
                 </tr>
                 </tbody>

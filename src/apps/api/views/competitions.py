@@ -238,9 +238,7 @@ class PhaseViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST',))
     def manually_migrate(self, request, pk):
-        """
-        Manually migrates _from_ this phase. The destination phase does not need auto migration set to True
-        """
+        """Manually migrates _from_ this phase. The destination phase does not need auto migration set to True"""
         phase = self.get_object()
         if not phase.competition.user_has_admin_permission(request.user):
             return Response(
