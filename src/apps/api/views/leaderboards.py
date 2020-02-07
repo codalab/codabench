@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.permissions import IsOrganizerOrCollaborator
+from api.permissions import IsOrganizerOrCollaborator, LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from competitions.models import Submission
@@ -17,11 +17,11 @@ class LeaderboardViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsOrganizerOrCollaborator]
+            self.permission_classes = [LeaderboardIsOrganizerOrCollaborator]
         elif self.action in ['create']:
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [LeaderboardNotHidden]
         return [permission() for permission in self.permission_classes]
 
 

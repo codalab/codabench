@@ -36,13 +36,9 @@ class SubmissionViewSet(ModelViewSet):
                 raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
 
     def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        if not self.request:
-            return {}
-
-        return {
-            "owner": self.request.user
-        }
+        context = super().get_serializer_context()
+        context['owner'] = self.request.user
+        return context
 
     def get_serializer_class(self):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -54,6 +50,8 @@ class SubmissionViewSet(ModelViewSet):
         # On GETs lets optimize the query to reduce DB calls
         qs = super().get_queryset()
         if self.request.method == 'GET':
+            if not self.request.user.is_authenticated:
+                return Submission.objects.none()
             if not self.request.user.is_superuser and not self.request.user.is_staff:
                 qs = qs.filter(owner=self.request.user)
             qs = qs.select_related(
@@ -100,7 +98,8 @@ class SubmissionViewSet(ModelViewSet):
     def cancel_submission(self, request, pk):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to cancel submissions')
+            if submission.owner != request.user:
+                raise PermissionDenied(f'You do not have permission to cancel submissions')
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
@@ -118,7 +117,7 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
-        data = SubmissionFilesSerializer(submission).data
+        data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
         return Response(data)
 
     @action(detail=True, methods=('GET',))

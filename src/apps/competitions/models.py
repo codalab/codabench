@@ -49,6 +49,11 @@ class Competition(ChaHubSaveMixin, models.Model):
         return [self.created_by] + list(self.collaborators.all())
 
     def user_has_admin_permission(self, user):
+        if isinstance(user, int):
+            try:
+                user = User.objects.get(id=user)
+            except User.DoesNotExist:
+                return False
         if user.is_staff or user.is_superuser:
             return True
         else:
@@ -199,6 +204,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
     auto_migrate_to_this_phase = models.BooleanField(default=False)
     has_been_migrated = models.BooleanField(default=False)
+    hide_output = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
