@@ -105,11 +105,11 @@ class PhaseMigrationTests(APITestCase):
         assert self.phase_2.submissions.count() == 0
 
         # call "migrate" from phase 1 -> 2
-        with mock.patch("competitions.tasks._run_submission") as _run_submission_mock:
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
             url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
             resp = self.client.post(url)
             assert resp.status_code == 200
-            assert _run_submission_mock.call_count == 5
+            assert run_submission_mock.call_count == 5
 
         # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
