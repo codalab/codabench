@@ -88,7 +88,7 @@ class PhaseMigrationTests(APITestCase):
         url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
         resp = self.client.post(url)
         assert resp.status_code == 403
-        assert resp.data["detail"] == "You do not administrative permissions for this competition"
+        assert resp.data["detail"] == "You do not have administrative permissions for this competition"
 
         # add user as a collaborator and check they can do it
         self.comp.collaborators.add(self.other_user)

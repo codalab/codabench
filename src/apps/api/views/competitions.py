@@ -242,7 +242,7 @@ class PhaseViewSet(ModelViewSet):
         phase = self.get_object()
         if not phase.competition.user_has_admin_permission(request.user):
             return Response(
-                {"detail": "You do not administrative permissions for this competition"},
+                {"detail": "You do not have administrative permissions for this competition"},
                 status=status.HTTP_403_FORBIDDEN
             )
         manual_migration.apply_async((pk,))
