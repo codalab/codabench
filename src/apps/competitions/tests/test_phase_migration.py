@@ -58,7 +58,7 @@ class PhaseToPhaseMigrationTests(TestCase):
         kwargs.setdefault('owner', self.owner)
         kwargs.setdefault('participant', self.competition_participant)
         kwargs.setdefault('phase', self.phase1)
-        kwargs.setdefault('status', 'None')
+        kwargs.setdefault('status', Submission.FINISHED)
         sub = SubmissionFactory(**kwargs)
         return sub
 

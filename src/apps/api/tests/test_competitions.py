@@ -4,9 +4,9 @@ from unittest import mock
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from competitions.models import CompetitionParticipant
+from competitions.models import CompetitionParticipant, Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory
+    ColumnFactory, SubmissionFactory, TaskFactory
 
 
 class CompetitionParticipantTests(APITestCase):
@@ -100,7 +100,7 @@ class PhaseMigrationTests(APITestCase):
 
         # make 5 submissions in phase 1
         for _ in range(5):
-            SubmissionFactory(owner=self.creator, phase=self.phase_1)
+            SubmissionFactory(owner=self.creator, phase=self.phase_1, status=Submission.FINISHED)
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 0
 
@@ -114,3 +114,28 @@ class PhaseMigrationTests(APITestCase):
         # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 5
+
+    def test_manual_migration_makes_submissions_out_of_only_parents_not_children(self):
+        self.client.login(username='creator', password='creator')
+
+        # make 1 submission with 4 children
+        parent = SubmissionFactory(owner=self.creator, phase=self.phase_1, has_children=True, status=Submission.FINISHED)
+        for _ in range(4):
+            # Make a submission _and_ new Task for phase 2
+            self.phase_2.tasks.add(TaskFactory())
+            SubmissionFactory(owner=self.creator, phase=self.phase_1, parent=parent, status=Submission.FINISHED)
+
+        assert self.phase_1.submissions.count() == 5
+        assert self.phase_2.submissions.count() == 0
+
+        # call "migrate" from phase 1 -> 2
+        with mock.patch("competitions.tasks.run_submission") as run_submission_mock:
+            url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
+            resp = self.client.post(url)
+            assert resp.status_code == 200
+            # Only 1 run here because parent has to create children
+            assert run_submission_mock.call_count == 1
+
+        # check phase 2 has the 1 parent submission
+        assert self.phase_1.submissions.count() == 5
+        assert self.phase_2.submissions.count() == 1
