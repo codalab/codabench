@@ -26,7 +26,6 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
         )
         read_only_fields = (
-            'id',
             'key',
             'created_by',
             'data_file',

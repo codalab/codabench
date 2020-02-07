@@ -48,7 +48,6 @@ class QueueCreationSerializer(QueueOwnerMixin, DefaultUserCreateMixin, serialize
             'vhost',
             'created_when',
             'is_owner',
-            'id',
         )
 
     def validate(self, attrs):
@@ -86,5 +85,4 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
             'broker_url',
             'created_when',
             'is_owner',
-            'id',
         )

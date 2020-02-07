@@ -56,7 +56,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             'pk',
-            'id',
             'phase',
             'scores',
             'leaderboard',
