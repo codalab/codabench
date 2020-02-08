@@ -47,17 +47,6 @@ class TaskViewSet(ModelViewSet):
         else:
             return serializers.TaskDetailSerializer
 
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        # TODO: what is this doing? do we still need it?
-        if not self.request:
-            return {}
-
-        # TODO: CurrentUserDefault or what-have-you?
-        return {
-            "created_by": self.request.user
-        }
-
     def update(self, request, *args, **kwargs):
         task = self.get_object()
         if request.user != task.created_by and not request.user.is_superuser:

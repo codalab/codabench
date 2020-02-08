@@ -3,9 +3,11 @@ from os.path import basename
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
+from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from competitions.models import Submission, SubmissionDetails
+from competitions.models import Submission, SubmissionDetails, CompetitionParticipant
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
@@ -34,29 +36,30 @@ class SubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = (
-            'phase',
             'phase_name',
             'name',
             'filename',
             'description',
-            'pk',
-            'id',
             'created_when',
             'is_public',
             'status',
             'status_details',
-            'scores',
-            'leaderboard',
             'owner',
             'has_children',
             'parent',
             'children',
+            'pk',
+            'id',
+            'phase',
+            'scores',
+            'leaderboard',
         )
-        extra_kwargs = {
-            "phase": {"read_only": True},
-            "scores": {"read_only": True},
-            "leaderboard": {"read_only": True},
-        }
+        read_only_fields = (
+            'pk',
+            'phase',
+            'scores',
+            'leaderboard',
+        )
 
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
@@ -78,13 +81,14 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
         }
 
 
-class SubmissionCreationSerializer(serializers.ModelSerializer):
+class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
+        user_field = 'owner'
         fields = (
             'id',
             'data',
@@ -105,24 +109,32 @@ class SubmissionCreationSerializer(serializers.ModelSerializer):
     def get_filename(self, instance):
         return basename(instance.data.data_file.name)
 
-    # TODO: Validate the user is a participant in this competition.phase
-
     def create(self, validated_data):
-        validated_data["owner"] = self.context['owner']
         sub = super().create(validated_data)
         sub.start()
         return sub
 
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        # Only on create (when we don't have instance set) check permissions
+        if not self.instance:
+            is_in_competition = data["phase"].competition.participants.filter(
+                user=self.context["request"].user,
+                status=CompetitionParticipant.APPROVED
+            ).exists()
+            if not is_in_competition:
+                raise PermissionDenied("You do not have access to this competition to make a submission")
+
         task_pk = self._kwargs.get('data', {}).get('task_pk')
         if task_pk:
             data['task_pk'] = task_pk
         return data
 
     def update(self, instance, validated_data):
+        # TODO: Test, could you change the phase of a submission?
         if instance.secret != validated_data.get('secret'):
-            raise PermissionError("Submission secret invalid")
+            raise PermissionDenied("Submission secret invalid")
 
         if "status" in validated_data:
             # Received a status update, let the frontend know

@@ -1,6 +1,7 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
+from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer
 from datasets.models import Data
 from tasks.models import Task, Solution
@@ -34,7 +35,7 @@ class SolutionListSerializer(serializers.ModelSerializer):
         )
 
 
-class TaskSerializer(WritableNestedModelSerializer):
+class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
@@ -44,6 +45,7 @@ class TaskSerializer(WritableNestedModelSerializer):
 
     class Meta:
         model = Task
+        user_field = 'created_by'
         fields = (
             'id',
             'name',
@@ -63,6 +65,9 @@ class TaskSerializer(WritableNestedModelSerializer):
             'ingestion_program',
             'reference_data',
             'scoring_program',
+        )
+        read_only_fields = (
+            'created_by',
         )
 
     def get_validated(self, instance):

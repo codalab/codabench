@@ -35,15 +35,6 @@ class SubmissionViewSet(ModelViewSet):
             except TypeError:
                 raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
 
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        if not self.request:
-            return {}
-
-        return {
-            "owner": self.request.user
-        }
-
     def get_serializer_class(self):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             return SubmissionCreationSerializer

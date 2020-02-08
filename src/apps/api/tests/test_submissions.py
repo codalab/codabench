@@ -26,3 +26,13 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(reverse("can_make_submission", args=(self.phase.pk,)))
         assert resp.status_code == 200
         assert resp.data["can"]
+
+    def test_making_a_submission_checks_if_you_are_a_participant(self):
+        # You should get a message back if you aren't registered in this competition
+        self.client.login(username="other_user", password="other")
+
+        resp = self.client.post(reverse("submission-list"), {"phase": self.phase.pk})
+        assert resp.status_code == 403
+        assert "You do not have access to this competition to make a submission" in resp.data["detail"]
+
+    # TODO: Invalid secret screams?
