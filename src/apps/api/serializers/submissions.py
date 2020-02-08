@@ -125,7 +125,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if not is_in_competition:
                 raise PermissionDenied("You do not have access to this competition to make a submission")
 
-        # TODO: Explain what this is doing? I think it's setting task_pk for nested writable stuff to work well?
         task_pk = self._kwargs.get('data', {}).get('task_pk')
         if task_pk:
             data['task_pk'] = task_pk
