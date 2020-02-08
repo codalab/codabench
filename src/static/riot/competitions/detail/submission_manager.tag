@@ -1,9 +1,9 @@
 <submission-manager class="submission-manager">
     <div if="{ opts.admin }" class="admin-buttons">
-        <a class="ui green button" href="{csv_link}">
+        <a class="ui button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
         </a>
-        <div class="ui dropdown blue button" ref="rerun_button">
+        <div class="ui dropdown button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
@@ -64,20 +64,18 @@
             <td class="right aligned">{ submission.status }</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
-                    <button class="mini ui button basic blue icon"
-                            data-tooltip="Rerun Submission"
-                            data-inverted=""
-                            onclick="{ rerun_submission.bind(this, submission) }">
-                        <i class="icon redo"></i>
+                    <span data-tooltip="Rerun Submission"
+                          data-inverted=""
+                          onclick="{ rerun_submission.bind(this, submission) }">
+                        <i class="icon blue redo"></i>
                         <!-- rerun submission -->
-                    </button>
-                    <button class="mini ui button basic red icon"
-                            data-tooltip="Delete Submission"
-                            data-inverted=""
-                            onclick="{ delete_submission.bind(this, submission) }">
-                        <i class="icon trash alternate"></i>
+                    </span>
+                    <span data-tooltip="Delete Submission"
+                          data-inverted=""
+                          onclick="{ delete_submission.bind(this, submission) }">
+                        <i class="icon red trash alternate"></i>
                         <!-- delete submission -->
-                    </button>
+                    </span>
                 </virtual>
                 <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
                         data-tooltip="Cancel Submission"

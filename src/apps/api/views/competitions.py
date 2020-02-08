@@ -15,7 +15,7 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
-from competitions.tasks import batch_send_email
+from competitions.tasks import batch_send_email, manual_migration
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from utils.data import make_url_sassy
 
@@ -235,6 +235,18 @@ class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
     # TODO! Security, who can access/delete/etc this?
+
+    @action(detail=True, methods=('POST',), url_name='manually_migrate')
+    def manually_migrate(self, request, pk):
+        """Manually migrates _from_ this phase. The destination phase does not need auto migration set to True"""
+        phase = self.get_object()
+        if not phase.competition.user_has_admin_permission(request.user):
+            return Response(
+                {"detail": "You do not have administrative permissions for this competition"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        manual_migration.apply_async((pk,))
+        return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, url_name='rerun_submissions')
     def rerun_submissions(self, request, pk):

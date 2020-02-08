@@ -47,6 +47,9 @@ CODALAB.api = {
     re_run_phase_submissions: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/rerun_submissions/`)
     },
+    manual_migration: function (phase_pk) {
+        return CODALAB.api.request('POST', `${URLS.API}phases/${phase_pk}/manually_migrate/`)
+    },
     submit_competition_registration: function (pk) {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/register/`)
     },
