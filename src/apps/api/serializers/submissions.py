@@ -117,6 +117,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     def validate(self, attrs):
         data = super().validate(attrs)
 
+        # Only on create (when we don't have instance set) check permissions
         if not self.instance:
             is_in_competition = data["phase"].competition.participants.filter(
                 user=self.context["request"].user,
