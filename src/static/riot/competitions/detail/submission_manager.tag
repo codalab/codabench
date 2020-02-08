@@ -147,6 +147,7 @@
 
         self.selected_phase = undefined
         self.selected_submission = undefined
+        self.hide_output = false
         self.leaderboards = {}
         self.loading = true
 
@@ -360,6 +361,7 @@
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
+            self.selected_phase.hide_output = selected_phase.hide_output && !CODALAB.state.user.has_competition_admin_privileges(self.opts.competition)
             self.update_submissions()
         })
 

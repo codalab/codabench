@@ -1,8 +1,8 @@
 <submission-modal>
     <div class="ui large green pointing menu">
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output && !submission.admin}">LOGS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" hide="{opts.hide_output && !submission.admin}">GRAPH</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">LOGS</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" hide="{opts.hide_output}">GRAPH</div>
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
@@ -35,7 +35,7 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output && !submission.admin}">
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
         <div class="ui grid">
             <div class="three wide column">
                 <div class="ui fluid vertical secondary menu">
