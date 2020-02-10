@@ -112,3 +112,7 @@ class HiddenLeaderboardTests(APITestCase):
         resp = self.get_leaderboard()
         assert resp.status_code == 403
         assert 'Authentication credentials were not provided.' in resp.json().get('detail')
+        self.lb.hidden = False
+        self.lb.save()
+        resp = self.get_leaderboard()
+        assert resp.status_code == 200
