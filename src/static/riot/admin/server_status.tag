@@ -1,39 +1,5 @@
 <server_status>
-    <h1>Server Status</h1>
-    <div class="ui horizontal divider"></div>
-    <div class="ui relaxed three column stackable grid">
-        <div class="four wide column">
-            <div id="alert_box" class="ui segment">
-                <i class="bell outline icon"></i><span class="ui tiny header">Jobs Currently Active</span>
-                <h1 class="massive header">4</h1>
-            </div>
-        </div>
-        <div id="server_status" class="four wide column">
-            <div class="ui segment">
-                <i class="server icon"></i><span class="ui tiny header">Server Idle Status</span>
-                <div>
-                    <canvas id="gauge_canvas"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="eight wide column">
-            <div class="ui segment">
-                <div class="ui small header">Last 10 Jobs Completed</div>
-                <ol>
-                    <li>Traffic Light Algorithm</li>
-                    <li>Self-Checkout Button Placement</li>
-                    <li>Dark Souls Speed Runner</li>
-                    <li>Self-Driving Go-Kart</li>
-                    <li>Video Encoder</li>
-                    <li>Steins;Gate [ver. 2.74]</li>
-                    <li>Advertisement Placement Algorithm</li>
-                    <li>Military Drone Recon</li>
-                    <li>Ad Click-Through Algorithm</li>
-                    <li>Radio DJ Algorithm</li>
-                </ol>
-            </div>
-        </div>
-    </div>
+    <!--
     <div class="ui grid">
         <div class="column">
             <table class="ui celled table">
@@ -54,14 +20,33 @@
             </table>
         </div>
     </div>
-    <div id="external_monitors" class="ui two column centered grid">
-        <div class="ui cards">
+    -->
+    <div class="">
+        <h1>Recent submissions</h1>
+        <table>
+            <thead>
+            <th>Competition</th>
+            <th>Submission file</th>
+            <th>Submitter</th>
+            </thead>
+            <tbody>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="external_monitors" class="ui two column grid">
+        <h1>Monitor queues</h1>
+        <div class="ui centered cards">
             <div class="ui card">
                 <a class="image" href="#">
                     <img class="ui large image" src="/static/img/RabbitMQ.png">
                 </a>
                 <div class="content">
-                    <a class="header" href="#">RabbitMQ</a>
+                    <a class="header" href="//{`${window.location.hostname}:${RABBITMQ_MANAGEMENT_PORT}`}/" target="_blank">RabbitMQ</a>
                     <div class="meta">
                         <a href="#">
                             This page allows admins to view connections, queued messages, message rates, channels,
@@ -76,7 +61,7 @@
                     <img class="ui large image" src="/static/img/Flower.png">
                 </a>
                 <div class="content">
-                    <a class="header" href="#">Flower</a>
+                    <a class="header" href="//{`${window.location.hostname}:${FLOWER_PORT}`}/" target="_blank">Flower</a>
                     <div class="meta">
                         <a href="#">
                             Flower is a powerful web-based Celery monitoring tool designed to keep track of our tasks.

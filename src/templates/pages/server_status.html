@@ -2,8 +2,71 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-    <script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
 {% endblock %}
+
 {% block content %}
-    <server_status></server_status>
+    {#    <!--<server_status></server_status>-->#}
+    <div class="ui container">
+        <h1>Recent submissions (up to 250 or 2 days old)</h1>
+        <table class="ui table">
+            <thead>
+            <th>Competition</th>
+            <th>Submitter</th>
+            <th>Submitted at</th>
+            <th>Status</th>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr>
+                    <td>{{ sub.phase.competition }}</td>
+                    <td>{{ sub.owner.username }}</td>
+                    <td>{{ sub.created_when|timesince }} ago</td>
+                    <td>{{ sub.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h1>Monitor queues</h1>
+        <div id="external_monitors" class="ui two column grid">
+            <div class="column">
+                <div class="ui fluid card">
+                    <a class="image" href="#">
+                        <img class="ui large image" src="/static/img/RabbitMQ.png">
+                    </a>
+                    <div class="content">
+                        <a class="header" href="//{{RABBITMQ_MANAGEMENT_URL}}" target="_blank">RabbitMQ</a>
+                        <div class="meta">
+                            <a href="#">
+                                This page allows admins to view connections, queued messages, message rates, channels,
+                                exchanges, and other administrative features relating to RabbitMQ e.g. Creating users,
+                                adding v-hosts, and creating policies.
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="ui fluid card">
+                    <a class="image" href="#">
+                        <img class="ui large image" src="/static/img/Flower.png">
+                    </a>
+                    <div class="content">
+                        <a class="header" href="//{{ FLOWER_URL }}" target="_blank">Flower</a>
+                        <div class="meta">
+                            <a href="#">
+                                Flower is a powerful web-based Celery monitoring tool designed to keep track of our
+                                tasks.
+                                Admins may view the state of which tasks were run, with what arguments, and many more
+                                features. Here you may also view which queues your celery workers are consuming, and the
+                                state of any tasks in them. At last, there is also a great monitoring page for viewing
+                                the
+                                systemic impact of your workers.
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
