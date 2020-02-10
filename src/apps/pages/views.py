@@ -62,4 +62,3 @@ class ServerStatusView(TemplateView):
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
         return context
-
