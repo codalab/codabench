@@ -109,7 +109,7 @@ services:
         max-file: "10"
 
   #-----------------------------------------------
-  #   Rabbitmq Service
+  #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
     image: rabbitmq:3.6-management
@@ -124,6 +124,14 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
+
+  flower:
+    env_file: .env
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+    ports:
+      - 5555:5555
 
   #-----------------------------------------------
   #   Redis
@@ -178,30 +186,3 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
-  #-----------------------------------------------
-  #   Flower Service
-  #-----------------------------------------------
-#  flower:
-#    env_file: .env
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.flower
-#    environment:
-#      # These aren't set in .env
-#      - AMQP_USERNAME=${RABBITMQ_DEFAULT_USER}
-#      - AMQP_PASSWORD=${RABBITMQ_DEFAULT_PASS}
-#      - AMQP_HOST=rabbit
-#      - AMQP_ADMIN_HOST=rabbit
-#      - AMQP_PORT=${RABBITMQ_PORT}
-#    ports:
-#      - 5555:5555
-#    depends_on:
-#      - rabbit
-  flower:
-    env_file: .env
-    image: mher/flower
-    environment:
-      #- CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
-    ports:
-      - 5555:5555
