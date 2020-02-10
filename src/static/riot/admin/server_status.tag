@@ -1,3 +1,4 @@
+<!-- Old unused tag, we could pull this back at some point? had a gauge and such -->
 <server_status>
     <!--
     <div class="ui grid">
