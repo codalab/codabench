@@ -18,11 +18,16 @@ def common_settings(request):
     else:
         user_json_data = {"logged_in": False}
 
+    if 'HTTP_HOST' in request.META:
+        host = request.META['HTTP_HOST'].split(':')[0]
+    else:
+        host = 'localhost'
+
     return {
         'STORAGE_TYPE': settings.STORAGE_TYPE,
         'USER_JSON_DATA': json.dumps(user_json_data),
         'RABBITMQ_MANAGEMENT_PORT': settings.RABBITMQ_MANAGEMENT_PORT,
-        'RABBITMQ_MANAGEMENT_URL': f"{request.META['HTTP_HOST'].split(':')[0]}:{settings.RABBITMQ_MANAGEMENT_PORT}",
+        'RABBITMQ_MANAGEMENT_URL': f"{host}:{settings.RABBITMQ_MANAGEMENT_PORT}",
         'FLOWER_PORT': settings.FLOWER_PORT,
-        'FLOWER_URL': f"{request.META['HTTP_HOST'].split(':')[0]}:{settings.FLOWER_PORT}",
+        'FLOWER_URL': f"{host}:{settings.FLOWER_PORT}",
     }
