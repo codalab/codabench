@@ -4,6 +4,7 @@ import os
 import uuid
 
 from django.core.files import File
+from django.test import RequestFactory
 from django.utils import timezone
 
 from api.serializers.competitions import CompetitionSerializer
@@ -25,6 +26,10 @@ class BaseUnpacker:
         self.created_tasks = []
         self.created_solutions = []
         self.created_datasets = []
+
+        # We'll make a fake request to pass to DRF serializers for request.user context
+        self.fake_request = RequestFactory()
+        self.fake_request.user = self.creator
 
     def _get_data_key(self, file_name, file_path, file_type, creator, *args, **kwargs):
         """Takes in a potential UUID or file path
@@ -258,7 +263,7 @@ class BaseUnpacker:
                         continue
                     key, temp_data_path = self._get_data_key(**task_file_data)
                     task[file_type] = key
-                serializer = TaskSerializer(data=task)
+                serializer = TaskSerializer(data=task, context={'request': self.fake_request})
                 serializer.is_valid(raise_exception=True)
                 new_task = serializer.save()
                 self.created_tasks.append(new_task)
@@ -278,7 +283,7 @@ class BaseUnpacker:
                 solution['data'], temp_data_path = self._get_data_key(**solution, file_type='solution')
                 if temp_data_path:
                     solution['md5'] = md5(temp_data_path)
-                serializer = SolutionSerializer(data=solution)
+                serializer = SolutionSerializer(data=solution, context={'request': self.fake_request})
                 serializer.is_valid(raise_exception=True)
                 new_solution = serializer.save()
                 self.created_solutions.append(new_solution)
@@ -289,7 +294,7 @@ class BaseUnpacker:
 
         serializer = CompetitionSerializer(
             data=self.competition,
-            context={'created_by': self.creator}
+            context={'request': self.fake_request}
         )
         serializer.is_valid(raise_exception=True)
         return serializer.save()

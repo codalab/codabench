@@ -18,8 +18,14 @@ class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
         django_get_or_create = ('username',)
+        exclude = (
+            '_username',
+            '_i',
+        )
 
-    username = factory.Sequence(lambda n: f"{factory.Faker('user_name')}{n}")
+    _username = factory.Faker('user_name')
+    _i = factory.Sequence(lambda n: n)
+    username = factory.LazyAttribute(lambda o: f"{o._username}-{o._i}")
     email = factory.LazyAttribute(lambda o: f"{o.username}@example.com")
     password = "test"
 

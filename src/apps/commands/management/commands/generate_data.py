@@ -1,6 +1,8 @@
 import random
 
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
+
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
     TaskFactory
 
@@ -31,7 +33,11 @@ class Command(BaseCommand):
             for _ in range(size):
                 comp = CompetitionFactory(created_by=user)
                 for u in users:
-                    CompetitionParticipantFactory(competition=comp, user=u, status='approved')
+                    try:
+                        CompetitionParticipantFactory(competition=comp, user=u, status='approved')
+                    except IntegrityError:
+                        # User already a participant in the competition
+                        pass
                 for i in range(size):
                     phase = PhaseFactory(competition=comp, index=i, tasks=[TaskFactory(created_by=user)])
                     for _ in range(size):

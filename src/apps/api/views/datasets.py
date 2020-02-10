@@ -43,15 +43,6 @@ class DataViewSet(ModelViewSet):
         else:
             return serializers.DataSerializer
 
-    def get_serializer_context(self):
-        # Have to do this because of docs sending blank requests (?)
-        if not self.request:
-            return {}
-
-        return {
-            "created_by": self.request.user
-        }
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -71,6 +62,7 @@ class DataViewSet(ModelViewSet):
         return Response(context, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
+        # TODO: Confirm this has a test
         if request.user != self.get_object().created_by:
             raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
@@ -79,6 +71,7 @@ class DataViewSet(ModelViewSet):
 class DataGroupViewSet(ModelViewSet):
     queryset = DataGroup.objects.all()
     serializer_class = serializers.DataGroupSerializer
+    # TODO: Anyone can delete these?
 
 
 @api_view(['PUT'])
