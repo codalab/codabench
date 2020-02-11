@@ -158,7 +158,9 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        to_create = User.objects.filter(Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))).distinct()
+        to_create = User.objects.filter(
+            Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))
+        ).exclude(id__in=self.participants.values_list('user_id', flat=True)).distinct()
         new_participants = []
         for user in to_create:
             new_participants.append(CompetitionParticipant(user=user, competition=self, status='approved'))
