@@ -81,8 +81,8 @@
                                 {% if request.user.is_staff %}
                                     <div class="header">Admin management</div>
 {#                                    <a class="item" href="#">Customize Codalab</a>#}
-{#                                    <a class="item" href="#">Monitors</a>#}
-                                    <a class="item" href="{% url "admin:index" %}">Administration</a>
+                                    <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
+                                    <a class="item" href="{% url "admin:index" %}">Django admin</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
                                     <a class="item" href="{% url "queues:management" %}">Queues</a>
 {#                                    <a class="item" href="#">Health</a>#}
@@ -193,6 +193,9 @@
             return user.username === competition.created_by || collabs.includes(user.username)
         }
 
+        RABBITMQ_MANAGEMENT_PORT = {{ RABBITMQ_MANAGEMENT_PORT }}
+        FLOWER_PORT = {{ FLOWER_PORT }}
+
         // Load in URLs or other django generated goodies
         URLS = {
             assets: {
@@ -272,6 +275,5 @@
     {% endblock %}
     {% block extra_body %}
     {% endblock %}
-
 </body>
 </html>

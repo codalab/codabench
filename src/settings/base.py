@@ -49,6 +49,7 @@ OUR_APPS = (
     'tasks',
     'commands',
     'queues',
+    'health',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -190,6 +191,7 @@ RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+FLOWER_PORT = os.environ.get('FLOWER_PORT', '5555')
 
 # ============================================================================
 # Celery
