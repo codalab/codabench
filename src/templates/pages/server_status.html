@@ -16,6 +16,11 @@
             <th>Status</th>
             </thead>
             <tbody>
+                {% if not submissions %}
+                <tr>
+                    <td colspan="5"><i>No submissions, yet!</i></td>
+                </tr>
+                {% endif %}
                 {% for submission in submissions %}
                 <tr>
                     <td>{{ submission.phase.competition }}</td>
