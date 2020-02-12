@@ -5,8 +5,8 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
-import threading
 import time
 import uuid
 from shutil import make_archive
@@ -136,6 +136,8 @@ class Run:
         self.input_data = run_args.get("input_data")
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
+        self.detailed_results_url = run_args.get('detailed_results_url')
+        self.watcher = None
 
         self.task_pk = run_args.get('task_pk')
 
@@ -279,6 +281,8 @@ class Run:
             if kind == 'program':
                 self.program_exit_code = proc.returncode
                 self.program_elapsed_time = end - start
+                if self.watcher:
+                    self.watcher.terminate()
             elif kind == 'ingestion':
                 self.ingestion_program_exit_code = proc.returncode
                 self.ingestion_elapsed_time = end - start
@@ -371,6 +375,26 @@ class Run:
 
             # Input from submission (or submission + ingestion combo)
             docker_cmd += ['-v', f'{self.input_dir}:/app/input']
+            if self.detailed_results_url and self.is_scoring and kind == 'program':
+                # we have a detailed results url, we are in the scoring step, and we aren't the ingestion program
+                detail_path = os.path.join(self.output_dir, "detailed_results.html")
+                _command = [
+                    'watchmedo',
+                    'shell-command',
+                    '--patterns="*.html"',
+                    '--recursive',
+                    f"--command=\"python /app/put_detailed_results.py '{self.detailed_results_url}' '{detail_path}'\"",
+                    self.root_dir,
+                ]
+                if not os.path.exists(detail_path):
+                    if not os.path.exists(self.output_dir):
+                        os.mkdir(self.output_dir)
+                    open(detail_path, 'a').close()
+                    os.chmod(detail_path, 0o777)
+                # Leaving these for debug stuff right now. pull later
+                print(' '.join(_command))
+                time.sleep(10)
+                self.watcher = subprocess.Popen(_command, stderr=subprocess.STDOUT)
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
