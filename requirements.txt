@@ -51,11 +51,11 @@ flex==6.12.0
 Click==7.0
 
 # Greenlet/Gevent Workers
-gevent==1.4.0
-gevent-eventemitter==2.0
-greenlet==0.4.15
+#gevent==1.4.0
+#gevent-eventemitter==2.0
+#greenlet==0.4.15
 
-urllib3<1.25,>=1.21.1
-tornado>=4.2.0,<6.0.0
+#urllib3<1.25,>=1.21.1
+#tornado>=4.2.0,<6.0.0
 
 pyrabbit==1.1.0
