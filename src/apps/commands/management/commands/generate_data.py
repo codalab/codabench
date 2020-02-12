@@ -36,9 +36,7 @@ class Command(BaseCommand):
         for i in range(size):
             if i == 0 and not no_admin:
                 try:
-                    user = UserFactory(username='admin', super_user=True)
-                    user.set_password('admin')
-                    user.save()
+                    user = UserFactory(username='admin', password='admin', super_user=True)
                 except IntegrityError:
                     # admin user already exists
                     user = User.objects.get(username='admin')
