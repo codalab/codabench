@@ -2,7 +2,7 @@
     <div class="ui large green pointing menu">
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}logs">LOGS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph">GRAPH</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{opts.show_graph}">GRAPH</div>
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
@@ -133,9 +133,8 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph">
-<!--        <canvas ref="graph"></canvas>-->
-        <iframe src="{detailed_result}" if="{detailed_result}" style="width: 100%; height: 100%; overflow: scroll;"></iframe>
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_graph}">
+        <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>
@@ -146,51 +145,6 @@
         self.logs = {}
         self.leaderboards = []
         self.columns = []
-        self.data = {
-            data: [],
-            backgroundColor: 'rgba(0,187,187,0.3)',
-            steppedLine: true,
-            pointBackgroundColor: 'rgba(0,187,187,0.8)',
-            borderColor: 'rgba(0,187,187,0.8)',
-            fill: true,
-        }
-        self.graph_config = {
-            type: 'line',
-            data: {
-                datasets: [self.data]
-            },
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                animation: {
-                    duration: 100,
-                    easing: 'easeInCirc'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                legend: false,
-                scales: {
-                    xAxes: [{
-                        type: 'time',
-                    }],
-                    yAxes: [{
-                        ticks: {
-                            suggestedMin: 0,
-                            suggestedMax: 1,
-                            display: true
-                        }
-                    }]
-                }
-            }
-        }
-        self.on('mount', function () {
-            // self.chart = new Chart(self.refs.graph, self.graph_config)
-        })
-        self.on('update', () => {
-            // self.chart.update()
-        })
 
         self.get_score_details = function (column) {
             try {
@@ -237,7 +191,6 @@
             let path = self.submission.admin ? 'admin_downloads' : 'downloads'
             $('.menu .submission-modal.item').tab('change tab', path)
         })
-
     </script>
 
     <style type="text/stylus">
@@ -256,6 +209,10 @@
         .file-download
             margin-top 25px !important
             margin-botton 25px !important
+        .graph-frame
+            height 100%
+            width 100%
+            overflow scroll
 
         #downloads thead tr th, #downloads tbody tr td
             font-size 16px !important

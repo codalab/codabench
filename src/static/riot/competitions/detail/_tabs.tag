@@ -199,7 +199,7 @@
                         </div>
                     </div>
                     <div>
-                        <submission-upload is_admin="{competition.is_admin}" phases="{ competition.phases }"></submission-upload>
+                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>

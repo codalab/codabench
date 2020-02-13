@@ -153,7 +153,7 @@ class Run:
         submission_api_url_parsed = urlparse(self.submissions_api_url)
         websocket_host = submission_api_url_parsed.netloc
         websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
-        self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
+        self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -234,10 +234,9 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        url = f'{self.websocket_url}submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/'
-        logger.info(f"Connecting to {url}")
+        logger.info(f"Connecting to {self.websocket_url}")
 
-        async with websockets.connect(url) as websocket:
+        async with websockets.connect(self.websocket_url) as websocket:
             start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
@@ -384,7 +383,7 @@ class Run:
                     open(detail_path, 'a').close()
                     os.chmod(detail_path, 0o777)
 
-                _command = ['./watch.sh', self.detailed_results_url, detail_path, self.output_dir]
+                _command = ['./watch.sh', self.detailed_results_url, detail_path, self.websocket_url, self.output_dir]
                 self.watcher = subprocess.Popen(_command, stderr=subprocess.STDOUT)
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container

@@ -28,7 +28,16 @@
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
         </div>
-
+        <div class="field">
+            <label>Competition Docker Image</label>
+            <input type="text" ref="docker_image">
+        </div>
+        <div class="field">
+            <div class="ui checkbox">
+                <label>Enable Detailed Results</label>
+                <input type="checkbox" ref="detailed_results">
+            </div>
+        </div>
     </div>
 
     <script>
@@ -46,7 +55,7 @@
 
         self.one("mount", function () {
             self.markdown_editor = create_easyMDE(self.refs.comp_description)
-
+            $('.ui.checkbox', self.root).checkbox()
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
@@ -88,13 +97,17 @@
             var is_valid = true
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
-            self.data['title'] = self.refs.title.value
-            self.data['description'] = self.markdown_editor.value()
-            self.data['queue'] = self.refs.queue.value
+            self.data = {
+                title: self.refs.title.value,
+                description: self.markdown_editor.value(),
+                queue: self.refs.queue.value,
+                enable_detailed_results: self.refs.detailed_results.checked,
+                docker_image: $(self.refs.docker_image).val()
+            }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
-            if(!self.data['title'] || (!self.data['logo'] && !self.is_editing_competition)) {
+            if(!self.data['title'] || !self.data['docker_image'] || (!self.data['logo'] && !self.is_editing_competition)) {
                 is_valid = false
             }
 
@@ -136,6 +149,8 @@
                     .dropdown('set text', competition.queue.name)
                     .dropdown('set value', competition.queue.id)
             }
+            self.refs.detailed_results.checked = competition.enable_detailed_results
+            $(self.refs.docker_image).val(competition.docker_image)
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {
