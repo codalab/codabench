@@ -126,7 +126,10 @@ services:
         max-file: "10"
 
   flower:
-    image: mher/flower
+    # image: mher/flower
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
     env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
