@@ -115,7 +115,7 @@ services:
     image: rabbitmq:3.6-management
     env_file: .env
     ports:
-      - 15672:15672
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
     volumes:
       # To save rabbit state between container ups/downs
