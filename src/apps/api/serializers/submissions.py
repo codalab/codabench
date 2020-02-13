@@ -187,6 +187,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     data_file = serializers.SerializerMethodField()
     prediction_result = serializers.SerializerMethodField()
     scoring_result = serializers.SerializerMethodField()
+    detailed_result = serializers.SerializerMethodField()
     leaderboards = serializers.SerializerMethodField()
 
     class Meta:
@@ -195,6 +196,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'logs',
             'data_file',
             'prediction_result',
+            'detailed_result',
             'scoring_result',
             'leaderboards',
         )
@@ -208,6 +210,10 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     def get_prediction_result(self, instance):
         if instance.prediction_result.name:
             return make_url_sassy(instance.prediction_result.name)
+
+    def get_detailed_result(self, instance):
+        if instance.detailed_result.name:
+            return make_url_sassy(instance.detailed_result.name)
 
     def get_scoring_result(self, instance):
         if instance.scoring_result.name:

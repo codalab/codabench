@@ -378,22 +378,13 @@ class Run:
             if self.detailed_results_url and self.is_scoring and kind == 'program':
                 # we have a detailed results url, we are in the scoring step, and we aren't the ingestion program
                 detail_path = os.path.join(self.output_dir, "detailed_results.html")
-                _command = [
-                    'watchmedo',
-                    'shell-command',
-                    '--patterns="*.html"',
-                    '--recursive',
-                    f"--command=\"python /app/put_detailed_results.py '{self.detailed_results_url}' '{detail_path}'\"",
-                    self.root_dir,
-                ]
                 if not os.path.exists(detail_path):
                     if not os.path.exists(self.output_dir):
                         os.mkdir(self.output_dir)
                     open(detail_path, 'a').close()
                     os.chmod(detail_path, 0o777)
-                # Leaving these for debug stuff right now. pull later
-                print(' '.join(_command))
-                time.sleep(10)
+
+                _command = ['./watch.sh', self.detailed_results_url, detail_path, self.output_dir]
                 self.watcher = subprocess.Popen(_command, stderr=subprocess.STDOUT)
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container

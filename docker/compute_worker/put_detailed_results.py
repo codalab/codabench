@@ -17,5 +17,3 @@ with open(args.file_path, 'rb') as f:
             'x-ms-version': '2018-03-28',
         }
     )
-    print(resp.content)
-    print(resp.status_code)

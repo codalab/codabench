@@ -134,7 +134,8 @@
         </div>
     </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph">
-        <canvas ref="graph"></canvas>
+<!--        <canvas ref="graph"></canvas>-->
+        <iframe src="{detailed_result}" if="{detailed_result}" style="width: 100%; height: 100%; overflow: scroll;"></iframe>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>
@@ -185,10 +186,10 @@
             }
         }
         self.on('mount', function () {
-            self.chart = new Chart(self.refs.graph, self.graph_config)
+            // self.chart = new Chart(self.refs.graph, self.graph_config)
         })
         self.on('update', () => {
-            self.chart.update()
+            // self.chart.update()
         })
 
         self.get_score_details = function (column) {
@@ -207,23 +208,11 @@
                     self.leaderboards = data.leaderboards
                     self.result = data.result
                     self.data_file = data.data_file
+                    self.detailed_result = data.detailed_result
                     _.forEach(data.logs, (item) => {
                         $.get(item.data_file)
                             .done(function (content) {
-                                let lines = []
-                                _.forEach(content.split('\n'), line => {
-                                    try {
-                                        line = JSON.parse(line)
-                                        if (line.type === "plot") {
-                                            self.data.data.push({x: line.value[0], y: line.value[1]})
-                                        }
-                                    } catch (e) {
-                                        lines.push(line)
-                                    }
-                                })
-                                self.logs[item.name] = _.join(lines, '\n')
-                                // TODO: pull this when we fix autodl scoring program to not output the same points multiple times
-                                self.data.data = _.uniqBy(self.data.data, 'x')
+                                self.logs[item.name] = content
                                 self.update()
                             })
                     })
