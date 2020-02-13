@@ -126,10 +126,11 @@ services:
         max-file: "10"
 
   flower:
-    env_file: .env
     image: mher/flower
+    env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+      - FLOWER_BROKER_API=http://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_MANAGEMENT_PORT}/api/
     ports:
       - ${FLOWER_PUBLIC_PORT:-5555}:5555
 
