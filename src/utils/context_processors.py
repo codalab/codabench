@@ -27,5 +27,5 @@ def common_settings(request):
         'STORAGE_TYPE': settings.STORAGE_TYPE,
         'USER_JSON_DATA': json.dumps(user_json_data),
         'RABBITMQ_MANAGEMENT_URL': f"{host}:{settings.RABBITMQ_MANAGEMENT_PORT}",
-        'FLOWER_URL': f"{host}:{settings.FLOWER_PORT}",
+        'FLOWER_URL': f"{host}:{settings.FLOWER_PUBLIC_PORT}",
     }
