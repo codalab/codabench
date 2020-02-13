@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 
-# Make a superuser
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@admin.com', 'admin')" | python manage.py shell
+# Make some dummy data, including making an admin user:
+#   email: admin@admin.com
+#   username: admin
+#   password: admin
+python manage.py generate_data
