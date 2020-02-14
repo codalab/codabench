@@ -108,7 +108,6 @@ def _send_submission(submission, task, is_scoring, run_args):
         )
     else:
         if submission.phase.competition.enable_detailed_results:
-            # TODO: do we need to overwrite content type here? will investigate later.
             run_args['detailed_results_url'] = make_url_sassy(
                 path=submission.detailed_result.name,
                 permission='w',

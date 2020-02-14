@@ -29,6 +29,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         if data['kind'] == 'detailed_result':
             data['result_url'] = make_url_sassy(Submission.objects.get(id=submission_id).detailed_result.name)
+            # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
         async with aiofiles.open(submission_output_path, 'a+') as f:
@@ -73,8 +74,6 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
             submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
 
             for sub in submissions:
-                if sub.detailed_result:
-                    await self.group_send({'kind': 'detailed_result', 'result_url': make_url_sassy(sub.detailed_result.name)}, sub.id)
                 text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{sub.id}.txt")
                 if os.path.exists(text_path):
                     with open(text_path) as f:

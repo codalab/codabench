@@ -213,6 +213,7 @@
             height 100%
             width 100%
             overflow scroll
+            border none
 
         #downloads thead tr th, #downloads tbody tr td
             font-size 16px !important

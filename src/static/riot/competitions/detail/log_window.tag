@@ -16,12 +16,12 @@
             each="{ line in _.get(opts.lines, 'ingestion', []) }">{ line }</virtual></pre>
     </div>
     <div class="graph-container" show="{opts.show_graph && opts.detailed_result_url}">
-        <iframe src="{opts.detailed_result_url}" frameborder="0" class="graph-frame"></iframe>
+        <iframe src="{opts.detailed_result_url}" class="graph-frame"></iframe>
         <!--<canvas class="output-chart" height="200" ref="chart"></canvas>-->
     </div>
     <script>
         let self = this
-
+        // TODO: Decide what to do with this code relevant to chart.js settings. Not being used. Pull?
         // self.graph_config = {
         //     type: 'line',
         //     data: {
@@ -64,6 +64,8 @@
         .graph-frame
             width 100%
             height 70vh
+            border none
+            overflow scroll
 
         .submission_output
             height 400px
