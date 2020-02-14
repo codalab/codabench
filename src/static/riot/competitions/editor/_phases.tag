@@ -97,7 +97,7 @@
                     </select>
                 </div>
 
-                <div class="field required smaller-mde">
+                <div class="field smaller-mde">
                     <label>Description</label>
                     <textarea class="markdown-editor" ref="description" name="description"></textarea>
                 </div>
@@ -274,7 +274,7 @@
             } else {
                 // Make sure each phase has the proper details
                 self.phases.forEach(function (phase) {
-                    if (!phase.name || !phase.start || !phase.description || phase.tasks.length === 0) {
+                    if (!phase.name || !phase.start || phase.tasks.length === 0) {
                         is_valid = false
                     }
                 })

@@ -18,6 +18,7 @@ class V15Unpacker(BaseUnpacker):
             "logo": None,
             "registration_auto_approve": not self.competition_yaml.get('has_registration', True),
             "docker_image": docker_image,
+            "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "pages": [],
             "phases": [],
             "leaderboards": [],

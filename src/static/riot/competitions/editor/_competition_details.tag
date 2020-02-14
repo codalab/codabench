@@ -55,7 +55,9 @@
 
         self.one("mount", function () {
             self.markdown_editor = create_easyMDE(self.refs.comp_description)
-            $('.ui.checkbox', self.root).checkbox()
+            $('.ui.checkbox', self.root).checkbox({
+                onChange: self.form_updated
+            })
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
@@ -84,9 +86,7 @@
                     value: 'id',
                 },
                 maxResults: 5,
-                onChange: (value, title) => {
-                    self.form_updated()
-                }
+                onChange: self.form_updated
             })
         })
 
