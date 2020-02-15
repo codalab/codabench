@@ -137,7 +137,6 @@ class Run:
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
         self.detailed_results_url = run_args.get('detailed_results_url')
-        self.watcher = None
 
         self.task_pk = run_args.get('task_pk')
 
@@ -154,6 +153,33 @@ class Run:
         websocket_host = submission_api_url_parsed.netloc
         websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
+
+    async def watch_file(self):
+        file_path = os.path.join(self.output_dir, 'detailed_results.html')
+        last_modified_time = None
+        while True:
+            if os.path.exists(file_path):
+                new_time = os.path.getmtime(file_path)
+                if new_time != last_modified_time:
+                    last_modified_time = new_time
+
+                    with open(file_path, 'rb') as f:
+                        requests.put(
+                            self.detailed_results_url,
+                            data=f,
+                            headers={
+                                'x-ms-blob-type': 'BlockBlob',
+                                'x-ms-version': '2018-03-28',
+                            }
+                        )
+
+                    async with websockets.connect(self.websocket_url) as websocket:
+                        await websocket.send(json.dumps({
+                            "kind": 'detailed_result',
+                        }))
+                await asyncio.sleep(5)
+            else:
+                await asyncio.sleep(5)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -280,8 +306,6 @@ class Run:
             if kind == 'program':
                 self.program_exit_code = proc.returncode
                 self.program_elapsed_time = end - start
-                if self.watcher:
-                    self.watcher.terminate()
             elif kind == 'ingestion':
                 self.ingestion_program_exit_code = proc.returncode
                 self.ingestion_elapsed_time = end - start
@@ -387,9 +411,6 @@ class Run:
                     # Change perms so we can read the file to send to the sas URL
                     os.chmod(detail_path, 0o777)
 
-                _command = ['./watch.sh', self.detailed_results_url, detail_path, self.websocket_url, self.output_dir]
-                self.watcher = subprocess.Popen(_command, stderr=subprocess.STDOUT)
-
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]
 
@@ -493,16 +514,21 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
+        watcher_loop = None
+        if self.detailed_results_url:
+            watcher_loop = asyncio.new_event_loop()
+            asyncio.ensure_future(self.watch_file())
+            watcher_loop.run_forever()
 
-        loop = asyncio.new_event_loop()
-
+        program_loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
-            loop=loop,
+            loop=program_loop,
         )
-        loop.run_until_complete(gathered_tasks)
-
+        program_loop.run_until_complete(gathered_tasks)
+        if watcher_loop is not None:
+            watcher_loop.stop()
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:
