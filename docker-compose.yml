@@ -132,7 +132,7 @@ services:
       dockerfile: Dockerfile.flower
     env_file: .env
     environment:
-      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     ports:
       - ${FLOWER_PUBLIC_PORT:-5555}:5555
     logging:
@@ -188,7 +188,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     environment:
-      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     logging:
       options:
         max-size: "20k"
