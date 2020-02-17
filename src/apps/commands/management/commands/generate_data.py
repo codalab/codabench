@@ -1,10 +1,14 @@
 import random
 
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
     TaskFactory
+
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -28,7 +32,18 @@ class Command(BaseCommand):
         size = kwargs.get('size') or 3
         no_admin = kwargs.get('no_admin')
         print(f'Creating data of size {size} {"without an admin account." if no_admin else "with an admin account." }')
-        users = [UserFactory(username='admin', super_user=True) if i == 0 and not no_admin else UserFactory() for i in range(size)]
+        users = []
+        for i in range(size):
+            if i == 0 and not no_admin:
+                try:
+                    user = UserFactory(username='admin', password='admin', super_user=True)
+                except IntegrityError:
+                    # admin user already exists
+                    user = User.objects.get(username='admin')
+            else:
+                user = UserFactory()
+            users.append(user)
+
         for user in users:
             for _ in range(size):
                 comp = CompetitionFactory(created_by=user)

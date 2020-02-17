@@ -109,7 +109,7 @@ services:
         max-file: "10"
 
   #-----------------------------------------------
-  #   Rabbitmq Service
+  #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
     image: rabbitmq:3.6-management
@@ -124,6 +124,14 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
+
+  flower:
+    env_file: .env
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+    ports:
+      - 5555:5555
 
   #-----------------------------------------------
   #   Redis
@@ -158,7 +166,7 @@ services:
         max-file: "10"
 
   compute_worker:
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1 --without-gossip --without-mingle --without-heartbeat"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair --concurrency=1"
     working_dir: /app
     build:
       context: .
@@ -178,22 +186,3 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
-  #-----------------------------------------------
-  #   Flower Service
-  #-----------------------------------------------
-  flower:
-    env_file: .env
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
-    environment:
-      # These aren't set in .env
-      - AMQP_USERNAME=${RABBITMQ_DEFAULT_USER}
-      - AMQP_PASSWORD=${RABBITMQ_DEFAULT_PASS}
-      - AMQP_HOST=rabbit
-      - AMQP_ADMIN_HOST=rabbit
-      - AMQP_PORT=${RABBITMQ_PORT}
-    ports:
-      - 5555:5555
-    depends_on:
-      - rabbit
