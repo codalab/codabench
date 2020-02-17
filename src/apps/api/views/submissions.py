@@ -70,12 +70,12 @@ class SubmissionViewSet(ModelViewSet):
         return qs
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+        submission = self.get_object()
 
-        if request.user != instance.owner:
+        if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
             raise PermissionDenied("Cannot interact with submission you did not make")
 
-        self.perform_destroy(instance)
+        self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_renderer_context(self):
@@ -121,10 +121,7 @@ class SubmissionViewSet(ModelViewSet):
         submission = super().get_object()
 
         if submission.phase.hide_output:
-            is_superuser = self.request.user.is_staff or self.request.user.is_superuser
-            is_organizer = self.request.user in submission.phase.competition.all_organizers
-
-            if not is_superuser and not is_organizer:
+            if not self.has_admin_permission(self.request.user, submission):
                 raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
 
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data

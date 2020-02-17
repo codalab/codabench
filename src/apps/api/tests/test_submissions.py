@@ -93,6 +93,20 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 204
         assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
 
+        # As superuser (re-making submission since it has been destroyed)
+        self.existing_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-90c8-bbe91f42d875'
+        )
+        url = reverse('submission-detail', args=(self.existing_submission.pk,))
+
+        self.client.force_login(self.superuser)
+        resp = self.client.delete(url)
+        assert resp.status_code == 204
+        assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
+
     def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
         url = reverse('submission-get-details', args=(self.existing_submission.pk,))
 
