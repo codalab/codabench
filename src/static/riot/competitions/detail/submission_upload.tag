@@ -194,7 +194,7 @@
                 self.children.push(data.child_id)
                 self.update()
                 $('.menu .item', self.root).tab()
-            } else if (kind === 'detailed_result') {
+            } else if (kind === 'detailed_result_update') {
                 self.detailed_result_urls[submission_id] = data.result_url
                 self.update()
             } else {

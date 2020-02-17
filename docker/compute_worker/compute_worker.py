@@ -184,7 +184,7 @@ class Run:
             )
         async with websockets.connect(self.websocket_url) as websocket:
             await websocket.send(json.dumps({
-                "kind": 'detailed_result',
+                "kind": 'detailed_result_update',
             }))
 
     def _get_stdout_stderr_file_names(self, run_args):
@@ -407,18 +407,6 @@ class Run:
 
             # Input from submission (or submission + ingestion combo)
             docker_cmd += ['-v', f'{self.input_dir}:/app/input']
-            if self.detailed_results_url and self.is_scoring and kind == 'program':
-                # we have a detailed results url, we are in the scoring step, and we aren't the ingestion program
-                detail_path = os.path.join(self.output_dir, "detailed_results.html")
-
-                # Is there a better way to create the entire path without having to mkdir each incremental step?
-                if not os.path.exists(detail_path):
-                    if not os.path.exists(self.output_dir):
-                        os.mkdir(self.output_dir)
-                    open(detail_path, 'a').close()
-
-                    # Change perms so we can read the file to send to the sas URL
-                    os.chmod(detail_path, 0o777)
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]

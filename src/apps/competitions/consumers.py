@@ -27,7 +27,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
         os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
         data = json.loads(text_data)
-        if data['kind'] == 'detailed_result':
+        if data['kind'] == 'detailed_result_update':
             data['result_url'] = make_url_sassy(Submission.objects.get(id=submission_id).detailed_result.name)
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
