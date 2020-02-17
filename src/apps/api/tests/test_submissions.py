@@ -124,3 +124,38 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.superuser)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+    def test_hidden_details_actually_stops_submission_creator_from_seeing_output(self):
+        self.phase.hide_output = True
+        self.phase.save()
+        url = reverse('submission-get-details', args=(self.existing_submission.pk,))
+
+        # Non logged in user can't even see this
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user can't see this
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user cannot see their submission details
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "Cannot access submission details while phase marked to hide output."
+
+        # Competition creator can see download details
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see download details
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see download details
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200

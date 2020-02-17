@@ -57,6 +57,7 @@ class SubmissionViewSet(ModelViewSet):
                 )
             qs = qs.select_related(
                 'phase',
+                'phase__competition',
                 'participant',
                 'participant__user',
                 'owner',
@@ -118,6 +119,14 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
+
+        if submission.phase.hide_output:
+            is_superuser = self.request.user.is_staff or self.request.user.is_superuser
+            is_organizer = self.request.user in submission.phase.competition.all_organizers
+
+            if not is_superuser and not is_organizer:
+                raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
+
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
         return Response(data)
 
