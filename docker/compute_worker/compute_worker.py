@@ -113,7 +113,7 @@ class Run:
 
     def __init__(self, run_args):
         # Directories for the run
-        self.message_queue = asyncio.Queue()
+        self.watch = True
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -159,7 +159,7 @@ class Run:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
         last_modified_time = None
-        while self.message_queue.empty():
+        while self.watch:
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
@@ -325,7 +325,7 @@ class Run:
             logger.info("Program finished")
             if self.detailed_results_url and kind == 'program':
                 # Only the scoring program should be able to tell the watcher we are done.
-                await self.message_queue.put('Finished!')
+                self.watch = False
             return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
