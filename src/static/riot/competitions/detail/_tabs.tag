@@ -217,7 +217,7 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading}">
+            <div show="{!loading && !_.isEmpty(competition.leaderboards)}">
                 <div class="ui button-container">
                     <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
                          each="{ leaderboard in competition.leaderboards }"
@@ -229,6 +229,9 @@
                               competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }">
                 </leaderboards>
+            </div>
+            <div show="{!loading && _.isEmpty(competition.leaderboards)}">
+                <div class="center aligned"><h2>No Visible Leaderboards for this competition</h2></div>
             </div>
         </div>
     </div>

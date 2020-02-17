@@ -115,7 +115,7 @@ services:
     image: rabbitmq:3.6-management
     env_file: .env
     ports:
-      - 15672:15672
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
     volumes:
       # To save rabbit state between container ups/downs
@@ -126,12 +126,19 @@ services:
         max-file: "10"
 
   flower:
+    # image: mher/flower
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
     env_file: .env
-    image: mher/flower
     environment:
-      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     ports:
-      - 5555:5555
+      - ${FLOWER_PUBLIC_PORT:-5555}:5555
+    logging:
+        options:
+            max-size: "20k"
+            max-file: "10"
 
   #-----------------------------------------------
   #   Redis
@@ -181,7 +188,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     environment:
-      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbit:${RABBITMQ_PORT}//
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     logging:
       options:
         max-size: "20k"

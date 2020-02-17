@@ -1,8 +1,8 @@
 <submission-modal>
     <div class="ui large green pointing menu">
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}logs">LOGS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph">GRAPH</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">LOGS</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" hide="{opts.hide_output}">GRAPH</div>
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
@@ -21,18 +21,13 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download">
-                            <a href="{ result }"><i class="file outline icon"></i>Output from prediction step</a>
+                        <td class="selectable file-download {disabled: !prediction_result}">
+                            <a href="{ prediction_result }"><i class="file outline icon"></i>Output from prediction step</a>
                         </td>
                     </tr>
                     <tr>
-                        <td class="selectable file-download">
-                            <a href="#"><i class="file outline icon"></i>Output from scoring step</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="selectable file-download">
-                            <a href="#"><i class="file outline icon"></i>Private output from scoring step</a>
+                        <td class="selectable file-download {disabled: !scoring_result}">
+                            <a href="{ scoring_result }"><i class="file outline icon"></i>Output from scoring step</a>
                         </td>
                     </tr>
                     </tbody>
@@ -40,7 +35,7 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs">
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
         <div class="ui grid">
             <div class="three wide column">
                 <div class="ui fluid vertical secondary menu">
@@ -133,7 +128,7 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph">
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" hide="{opts.hide_output && !submission.admin}">
         <canvas ref="graph"></canvas>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
@@ -205,7 +200,8 @@
             CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
-                    self.result = data.result
+                    self.prediction_result = data.prediction_result
+                    self.scoring_result = data.scoring_result
                     self.data_file = data.data_file
                     _.forEach(data.logs, (item) => {
                         $.get(item.data_file)

@@ -63,20 +63,31 @@
                 </ul>
             </div>
             <div ref="leaderboard_form" class="ui form">
-                <div class="two fields">
-                    <div class="field required">
-                        <label>Title</label>
-                        <input name="title" value="{_.get(selected_leaderboard, 'title')}" onchange="{ modal_updated }">
+                <div class="field">
+                    <label>Leaderboard Settings</label>
+                    <div class="two fields">
+                        <div class="field required">
+                            <label>Title</label>
+                            <input name="title" value="{_.get(selected_leaderboard, 'title')}"
+                                   onchange="{ modal_updated }">
+                        </div>
+                        <div class="field required">
+                            <label>
+                                Key
+                                <span data-tooltip="This is the key you will use to assign scores to leaderboards in your scoring program"
+                                      data-inverted=""
+                                      data-position="right center">
+                                    <i class="help icon circle"></i>
+                                </span>
+                            </label>
+                            <input name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
+                        </div>
                     </div>
-                    <div class="field required">
-                        <label>
-                            Key
-                            <span data-tooltip="This is the key you will use to assign scores to leaderboards in your scoring program"
-                                  data-inverted="" data-position="right center">
-                            <i class="help icon circle"></i>
-                        </span>
-                        </label>
-                        <input name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" ref="hidden_leaderboard">
+                            <label>Leaderboard is Hidden</label>
+                        </div>
                     </div>
                 </div>
                 <table class="ui celled definition table">
@@ -241,6 +252,7 @@
             self.selected_leaderboard_index = index
             // have to clone the leaderboard here so we can interact w/ selected_leaderboard as its own object, not a reference
             self.selected_leaderboard = _.cloneDeep(self.leaderboards[index])
+            self.refs.hidden_leaderboard.checked = self.selected_leaderboard.hidden
             self.columns = self.selected_leaderboard.columns || []
             self.update()
             self.show_modal()
@@ -345,6 +357,7 @@
             let leaderboard = {
                 title: data.title,
                 key: data.key,
+                hidden: self.refs.hidden_leaderboard.checked,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
                 columns: _.map(_.range(_.get(self.selected_leaderboard, 'columns.length', 0)), i => {
                     let column = {

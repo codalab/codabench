@@ -34,6 +34,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'max_submissions_per_day',
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
+            'hide_output',
         )
 
 
@@ -56,6 +57,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'max_submissions_per_day',
             'max_submissions_per_person',
             'execution_time_limit',
+            'hide_output',
         )
 
 
@@ -131,7 +133,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
     phases = PhaseDetailSerializer(many=True)
-    leaderboards = LeaderboardSerializer(many=True)
+    leaderboards = serializers.SerializerMethodField()
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
     participant_count = serializers.IntegerField(read_only=True)
@@ -160,6 +162,16 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'submission_count',
             'queue',
         )
+
+    def get_leaderboards(self, instance):
+        try:
+            if instance.user_has_admin_permission(self.context['request'].user):
+                qs = instance.leaderboards.all()
+            else:
+                qs = instance.leaderboards.filter(hidden=False)
+        except KeyError:
+            raise Exception(f'KeyError on context. Context: {self.context}')
+        return LeaderboardSerializer(qs, many=True).data
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):

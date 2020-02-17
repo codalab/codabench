@@ -193,9 +193,6 @@
             return user.username === competition.created_by || collabs.includes(user.username)
         }
 
-        RABBITMQ_MANAGEMENT_PORT = {{ RABBITMQ_MANAGEMENT_PORT }}
-        FLOWER_PORT = {{ FLOWER_PORT }}
-
         // Load in URLs or other django generated goodies
         URLS = {
             assets: {

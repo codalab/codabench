@@ -23,6 +23,13 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         user_pk = self.scope['url_route']['kwargs']['user_pk']
         submission_id = self.scope['url_route']['kwargs']['submission_id']
+        try:
+            sub = Submission.objects.get(pk=submission_id)
+        except Submission.DoesNotExist:
+            return await self.close()
+
+        if sub.phase.hide_output and not sub.phase.competition.user_has_admin_permission(user_pk):
+            return
         submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
         os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
 
