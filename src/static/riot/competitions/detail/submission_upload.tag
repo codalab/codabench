@@ -26,12 +26,13 @@
                     <div id="submission-output" class="ui" ref="submission-output">
                         <div class="header">Output</div>
                         <div class="content">
-                            <!-- We have to have this on a gross line so Pre formatting stays nice -->
                             <div if="{!ingestion_during_scoring}">
                                 <div if="{_.isEmpty(children)}">
                                     <log_window lines="{lines[selected_submission.id]}"
                                                 data="{datasets[selected_submission.id]}"
-                                                ref="submission_output"></log_window>
+                                                ref="submission_output"
+                                                detailed_result_url="{detailed_result_urls[selected_submission.id]}"
+                                                show_graph="{opts.competition.enable_detailed_results}"></log_window>
                                     <div class="ui checkbox" ref="autoscroll_checkbox">
                                         <input type="checkbox" checked/>
                                         <label>Autoscroll Output</label>
@@ -47,7 +48,9 @@
                                     <div each="{child, index in children}" class="ui tab {active: index === 0}"
                                          data-tab="child{child}_tab">
                                         <log_window lines="{lines[child]}"
-                                                    data="{datasets[child]}">
+                                                    data="{datasets[child]}"
+                                                    detailed_result_url="{detailed_result_urls[child]}"
+                                                    show_graph="{opts.competition.enable_detailed_results}">
                                         </log_window>
                                     </div>
                                 </div>
@@ -56,7 +59,9 @@
                                 <div if="{_.isEmpty(children)}">
                                     <log_window lines="{lines[selected_submission.id]}"
                                                 data="{datasets[selected_submission.id]}"
-                                                split_logs="{true}"></log_window>
+                                                split_logs="{true}"
+                                                detailed_result_url="{detailed_result_urls[selected_submission.id]}"
+                                                show_graph="{opts.competition.enable_detailed_results}"></log_window>
                                 </div>
                                 <div if="{children}">
                                     <div class="ui secondary menu">
@@ -69,17 +74,17 @@
                                          data-tab="child{child}_tab">
                                         <log_window lines="{lines[child]}"
                                                     data="{datasets[child]}"
-                                                    split_logs="{true}"></log_window>
+                                                    split_logs="{true}"
+                                                    detailed_result_url="{detailed_result_urls[child]}"
+                                                    show_graph="{opts.competition.enable_detailed_results}"></log_window>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
     <script>
         var self = this
@@ -89,6 +94,7 @@
         self.chart = undefined
         self.errors = {}
         self.lines = {}
+        self.detailed_result_urls = {}
         self.selected_submission = {}
         self.status_received = false
         self.display_output = false
@@ -188,6 +194,9 @@
                 self.children.push(data.child_id)
                 self.update()
                 $('.menu .item', self.root).tab()
+            } else if (kind === 'detailed_result_update') {
+                self.detailed_result_urls[submission_id] = data.result_url
+                self.update()
             } else {
                 try {
                     message = JSON.parse(message);

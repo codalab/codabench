@@ -6,7 +6,6 @@ import logging
 import os
 import shutil
 import tempfile
-import threading
 import time
 import uuid
 from shutil import make_archive
@@ -114,6 +113,7 @@ class Run:
 
     def __init__(self, run_args):
         # Directories for the run
+        self.watch = True
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -136,6 +136,7 @@ class Run:
         self.input_data = run_args.get("input_data")
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
+        self.detailed_results_url = run_args.get('detailed_results_url')
 
         self.task_pk = run_args.get('task_pk')
 
@@ -151,7 +152,30 @@ class Run:
         submission_api_url_parsed = urlparse(self.submissions_api_url)
         websocket_host = submission_api_url_parsed.netloc
         websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
-        self.websocket_url = f"{websocket_scheme}://{websocket_host}/"
+        self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
+
+    async def watch_file(self):
+        if not self.detailed_results_url:
+            return
+        file_path = os.path.join(self.output_dir, 'detailed_results.html')
+        last_modified_time = None
+        while self.watch:
+            if os.path.exists(file_path):
+                new_time = os.path.getmtime(file_path)
+                if new_time != last_modified_time:
+                    last_modified_time = new_time
+                    await self.send_detailed_results(file_path)
+            await asyncio.sleep(5)
+        else:
+            # make sure we always send the final version of the file
+            await self.send_detailed_results(file_path)
+
+    async def send_detailed_results(self, file_path):
+        self._put_file(self.detailed_results_url, file=file_path, content_type='')
+        async with websockets.connect(self.websocket_url) as websocket:
+            await websocket.send(json.dumps({
+                "kind": 'detailed_result_update',
+            }))
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -232,10 +256,9 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        url = f'{self.websocket_url}submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/'
-        logger.info(f"Connecting to {url}")
+        logger.info(f"Connecting to {self.websocket_url}")
 
-        async with websockets.connect(url) as websocket:
+        async with websockets.connect(self.websocket_url) as websocket:
             start = time.time()
             proc = await asyncio.create_subprocess_exec(
                 *docker_cmd,
@@ -290,6 +313,9 @@ class Run:
                     self._put_file(value["location"], raw_data=value["data"])
 
             logger.info("Program finished")
+            if self.detailed_results_url and kind == 'program':
+                # Only the scoring program should be able to tell the watcher we are done.
+                self.watch = False
             return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
@@ -397,18 +423,19 @@ class Run:
         zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
         self._put_file(url, file=zip_path)
 
-    def _put_file(self, url, file=None, raw_data=None):
+    def _put_file(self, url, file=None, raw_data=None, content_type='application/zip'):
 
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
 
         headers = {
-            'Content-Type': 'application/zip',
-
-            # For Azure only, should turn on/off based on storage...
+            # For Azure only, other systems ignore these headers
             'x-ms-blob-type': 'BlockBlob',
             'x-ms-version': '2018-03-28',
         }
+
+        if content_type:
+            headers['Content-Type'] = content_type
 
         if file:
             logger.info("Putting file %s in %s" % (file, url))
@@ -475,16 +502,14 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
-
         loop = asyncio.new_event_loop()
-
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
+            self.watch_file(),
             loop=loop,
         )
         loop.run_until_complete(gathered_tasks)
-
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:

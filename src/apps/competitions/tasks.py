@@ -90,6 +90,9 @@ COLUMN_FIELDS = [
 
 
 def _send_submission(submission, task, is_scoring, run_args):
+    if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
+        submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))  # must encode here for GCS
+        submission.save(update_fields=['detailed_result'])
     if not submission.prediction_result.name:
         submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         submission.save(update_fields=['prediction_result'])
@@ -104,6 +107,12 @@ def _send_submission(submission, task, is_scoring, run_args):
             permission='w'
         )
     else:
+        if submission.phase.competition.enable_detailed_results:
+            run_args['detailed_results_url'] = make_url_sassy(
+                path=submission.detailed_result.name,
+                permission='w',
+                content_type=''
+            )
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
             permission='r'

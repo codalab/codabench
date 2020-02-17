@@ -31,6 +31,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     is_migrating = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
+    enable_detailed_results = models.BooleanField(default=False)
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
 
@@ -358,6 +359,7 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
     scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True, storage=BundleStorage)
+    detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
     task_id = models.UUIDField(null=True, blank=True)
