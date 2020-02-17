@@ -135,7 +135,7 @@ class ChaHubSaveMixin(models.Model):
                 super().save()
 
     def delete(self, send=True, *args, **kwargs):
-        if send:
+        if settings.CHAHUB_API_URL and send:
             self.deleted = True
             self.save(send=False)
             delete_from_chahub.apply_async((self.app_label, self.pk))

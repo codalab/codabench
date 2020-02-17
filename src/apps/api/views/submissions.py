@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
@@ -25,7 +26,6 @@ class SubmissionViewSet(ModelViewSet):
     filter_fields = ('phase__competition', 'phase', 'status')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
-    # TODO! Security, who can access/delete/etc this?
 
     def check_object_permissions(self, request, obj):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -47,8 +47,14 @@ class SubmissionViewSet(ModelViewSet):
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
                 return Submission.objects.none()
+
             if not self.request.user.is_superuser and not self.request.user.is_staff:
-                qs = qs.filter(owner=self.request.user)
+                # if you're the creator of the submission or a collaborator on the competition
+                qs = qs.filter(
+                    Q(owner=self.request.user) |
+                    Q(phase__competition__created_by=self.request.user) |
+                    Q(phase__competition__collaborators__in=[self.request.user.pk])
+                )
             qs = qs.select_related(
                 'phase',
                 'participant',
