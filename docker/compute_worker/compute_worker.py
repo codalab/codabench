@@ -164,24 +164,14 @@ class Run:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
-                    await self.send_file(file_path)
-                await asyncio.sleep(5)
-            else:
-                await asyncio.sleep(5)
+                    await self.send_detailed_results(file_path)
+            await asyncio.sleep(5)
         else:
             # make sure we always send the final version of the file
-            await self.send_file(file_path)
+            await self.send_detailed_results(file_path)
 
-    async def send_file(self, file_path):
-        with open(file_path, 'rb') as f:
-            requests.put(
-                self.detailed_results_url,
-                data=f,
-                headers={
-                    'x-ms-blob-type': 'BlockBlob',
-                    'x-ms-version': '2018-03-28',
-                }
-            )
+    async def send_detailed_results(self, file_path):
+        self._put_file(self.detailed_results_url, file=file_path, content_type='')
         async with websockets.connect(self.websocket_url) as websocket:
             await websocket.send(json.dumps({
                 "kind": 'detailed_result_update',
@@ -433,18 +423,19 @@ class Run:
         zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
         self._put_file(url, file=zip_path)
 
-    def _put_file(self, url, file=None, raw_data=None):
+    def _put_file(self, url, file=None, raw_data=None, content_type='application/zip'):
 
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
 
         headers = {
-            'Content-Type': 'application/zip',
-
-            # For Azure only, should turn on/off based on storage...
+            # For Azure only, other systems ignore these headers
             'x-ms-blob-type': 'BlockBlob',
             'x-ms-version': '2018-03-28',
         }
+
+        if content_type:
+            headers['Content-Type'] = content_type
 
         if file:
             logger.info("Putting file %s in %s" % (file, url))
