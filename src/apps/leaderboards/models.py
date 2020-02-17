@@ -9,6 +9,7 @@ class Leaderboard(models.Model):
     primary_index = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
+    hidden = models.BooleanField(default=False)
 
 
 class Column(models.Model):

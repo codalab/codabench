@@ -4,6 +4,7 @@ import uuid
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 
@@ -50,6 +51,11 @@ class Competition(ChaHubSaveMixin, models.Model):
         return [self.created_by] + list(self.collaborators.all())
 
     def user_has_admin_permission(self, user):
+        if isinstance(user, int):
+            try:
+                user = User.objects.get(id=user)
+            except User.DoesNotExist:
+                return False
         if user.is_staff or user.is_superuser:
             return True
         else:
@@ -153,9 +159,9 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        to_create = (self.collaborators.all() | User.objects.filter(id=self.created_by_id)).exclude(
-            id__in=self.participants.values_list('user_id', flat=True)
-        )
+        to_create = User.objects.filter(
+            Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))
+        ).exclude(id__in=self.participants.values_list('user_id', flat=True)).distinct()
         new_participants = []
         for user in to_create:
             new_participants.append(CompetitionParticipant(user=user, competition=self, status='approved'))
@@ -208,6 +214,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     execution_time_limit = models.PositiveIntegerField(default=60 * 10)
     auto_migrate_to_this_phase = models.BooleanField(default=False)
     has_been_migrated = models.BooleanField(default=False)
+    hide_output = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)

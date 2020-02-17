@@ -140,6 +140,12 @@
                                 <input type="number" name="max_submissions_per_person">
                             </div>
                         </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Submission Output</label>
+                                <input type="checkbox" ref="hide_output">
+                            </div>
+                        </div>
 
                         <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
                             <div class="ui checkbox">
@@ -174,6 +180,8 @@
         self.warnings = []
 
         self.one("mount", function () {
+            $('.ui.checkbox', self.root).checkbox()
+
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
             // semantic multiselect
@@ -204,7 +212,6 @@
                     self.clear_form()
                 }
             })
-            $('.ui.checkbox', self.root).checkbox()
             $(self.refs.advanced_settings).accordion()
         })
 
@@ -360,6 +367,7 @@
             self.update()
             set_form_data(phase, self.refs.form)
             $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
+            self.refs.hide_output.checked = phase.hide_output
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -398,6 +406,7 @@
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
+            data.hide_output = self.refs.hide_output.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {

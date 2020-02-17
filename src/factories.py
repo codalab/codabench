@@ -1,6 +1,7 @@
 import random
 
 import factory
+from django.core.files.base import ContentFile
 from django.utils.timezone import now
 from factory import post_generation
 from factory.django import DjangoModelFactory
@@ -148,6 +149,7 @@ class SubmissionFactory(DjangoModelFactory):
     data = factory.SubFactory(
         DataFactory,
         type='submission',
+        data_file=factory.LazyAttribute(lambda _: ContentFile('', 'submission.zip')),
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
     )

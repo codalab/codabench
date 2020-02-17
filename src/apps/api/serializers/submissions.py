@@ -202,6 +202,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
         )
 
     def get_logs(self, instance):
+        if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+            return []
         return SubmissionDetailSerializer(instance.details.all(), many=True).data
 
     def get_data_file(self, instance):
@@ -209,6 +211,8 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_prediction_result(self, instance):
         if instance.prediction_result.name:
+            if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+                return None
             return make_url_sassy(instance.prediction_result.name)
 
     def get_detailed_result(self, instance):
@@ -217,8 +221,12 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_scoring_result(self, instance):
         if instance.scoring_result.name:
+            if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+                return None
             return make_url_sassy(instance.scoring_result.name)
 
     def get_leaderboards(self, instance):
+        if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+            return None
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))
         return [leaderboards.LeaderboardSerializer(lb).data for lb in boards]

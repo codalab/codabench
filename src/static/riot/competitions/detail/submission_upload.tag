@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission)}"
+        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output}"
              ref="accordion">
             <div class="title">
                 <i class="dropdown icon"></i>

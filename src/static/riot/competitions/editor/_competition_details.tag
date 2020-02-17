@@ -9,7 +9,9 @@
             <label>Logo</label>
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
             <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
-            <label show="{ uploaded_logo }">Uploaded Logo: <a href="{ uploaded_logo }">{ uploaded_logo_name }</a></label>
+            <label show="{ uploaded_logo }">
+                Uploaded Logo: <a href="{ uploaded_logo }">{ uploaded_logo_name }</a>
+            </label>
             <div class="ui left action file input">
                 <button class="ui icon button" onclick="document.getElementById('form_file_logo').click()">
                     <i class="attach icon"></i>
@@ -64,10 +66,10 @@
             })
 
             // Draw in logo filename as it's changed
-            $(self.refs.logo).change(function() {
+            $(self.refs.logo).change(function () {
                 self.logo_file_name = self.refs.logo.value.replace(/\\/g, '/').replace(/.*\//, '')
                 self.update()
-                getBase64(this.files[0]).then(function(data) {
+                getBase64(this.files[0]).then(function (data) {
                     self.data['logo'] = JSON.stringify({file_name: self.logo_file_name, data: data})
                     self.form_updated()
                 })
@@ -107,16 +109,16 @@
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
-            if(!self.data['title'] || !self.data['docker_image'] || (!self.data['logo'] && !self.is_editing_competition)) {
+            if (!self.data['title'] || !self.data['docker_image'] || (!self.data['logo'] && !self.is_editing_competition)) {
                 is_valid = false
             }
 
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
 
-            if(is_valid) {
+            if (is_valid) {
                 // If we don't have logo data AND we're editing, put in empty data (otherwise
                 // we send garbage to the backend)
-                if(!self.data['logo'] && self.is_editing_competition){
+                if (!self.data['logo'] && self.is_editing_competition) {
                     self.data['logo'] = undefined
                 }
                 CODALAB.events.trigger('competition_data_update', self.data)
@@ -136,7 +138,7 @@
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
-        CODALAB.events.on('competition_loaded', function(competition){
+        CODALAB.events.on('competition_loaded', function (competition) {
             self.is_editing_competition = true
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')

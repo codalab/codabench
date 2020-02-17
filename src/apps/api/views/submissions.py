@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
@@ -25,7 +26,6 @@ class SubmissionViewSet(ModelViewSet):
     filter_fields = ('phase__competition', 'phase', 'status')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
-    # TODO! Security, who can access/delete/etc this?
 
     def check_object_permissions(self, request, obj):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -45,10 +45,19 @@ class SubmissionViewSet(ModelViewSet):
         # On GETs lets optimize the query to reduce DB calls
         qs = super().get_queryset()
         if self.request.method == 'GET':
+            if not self.request.user.is_authenticated:
+                return Submission.objects.none()
+
             if not self.request.user.is_superuser and not self.request.user.is_staff:
-                qs = qs.filter(owner=self.request.user)
+                # if you're the creator of the submission or a collaborator on the competition
+                qs = qs.filter(
+                    Q(owner=self.request.user) |
+                    Q(phase__competition__created_by=self.request.user) |
+                    Q(phase__competition__collaborators__in=[self.request.user.pk])
+                )
             qs = qs.select_related(
                 'phase',
+                'phase__competition',
                 'participant',
                 'participant__user',
                 'owner',
@@ -61,12 +70,12 @@ class SubmissionViewSet(ModelViewSet):
         return qs
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+        submission = self.get_object()
 
-        if request.user != instance.owner:
+        if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
             raise PermissionDenied("Cannot interact with submission you did not make")
 
-        self.perform_destroy(instance)
+        self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_renderer_context(self):
@@ -91,7 +100,8 @@ class SubmissionViewSet(ModelViewSet):
     def cancel_submission(self, request, pk):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to cancel submissions')
+            if submission.owner != request.user:
+                raise PermissionDenied(f'You do not have permission to cancel submissions')
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
@@ -109,7 +119,12 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
-        data = SubmissionFilesSerializer(submission).data
+
+        if submission.phase.hide_output:
+            if not self.has_admin_permission(self.request.user, submission):
+                raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
+
+        data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
         return Response(data)
 
     @action(detail=True, methods=('GET',))
