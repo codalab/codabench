@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 import uuid
@@ -114,6 +113,7 @@ class Run:
 
     def __init__(self, run_args):
         # Directories for the run
+        self.message_queue = asyncio.Queue()
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -155,31 +155,37 @@ class Run:
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
 
     async def watch_file(self):
+        if not self.detailed_results_url:
+            return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
         last_modified_time = None
-        while True:
+        while self.message_queue.empty():
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
-
-                    with open(file_path, 'rb') as f:
-                        requests.put(
-                            self.detailed_results_url,
-                            data=f,
-                            headers={
-                                'x-ms-blob-type': 'BlockBlob',
-                                'x-ms-version': '2018-03-28',
-                            }
-                        )
-
-                    async with websockets.connect(self.websocket_url) as websocket:
-                        await websocket.send(json.dumps({
-                            "kind": 'detailed_result',
-                        }))
+                    await self.send_file(file_path)
                 await asyncio.sleep(5)
             else:
                 await asyncio.sleep(5)
+        else:
+            # make sure we always send the final version of the file
+            await self.send_file(file_path)
+
+    async def send_file(self, file_path):
+        with open(file_path, 'rb') as f:
+            requests.put(
+                self.detailed_results_url,
+                data=f,
+                headers={
+                    'x-ms-blob-type': 'BlockBlob',
+                    'x-ms-version': '2018-03-28',
+                }
+            )
+        async with websockets.connect(self.websocket_url) as websocket:
+            await websocket.send(json.dumps({
+                "kind": 'detailed_result',
+            }))
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -317,6 +323,9 @@ class Run:
                     self._put_file(value["location"], raw_data=value["data"])
 
             logger.info("Program finished")
+            if self.detailed_results_url and kind == 'program':
+                # Only the scoring program should be able to tell the watcher we are done.
+                await self.message_queue.put('Finished!')
             return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
@@ -514,21 +523,14 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
-        watcher_loop = None
-        if self.detailed_results_url:
-            watcher_loop = asyncio.new_event_loop()
-            asyncio.ensure_future(self.watch_file())
-            watcher_loop.run_forever()
-
-        program_loop = asyncio.new_event_loop()
+        loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
-            loop=program_loop,
+            self.watch_file(),
+            loop=loop,
         )
-        program_loop.run_until_complete(gathered_tasks)
-        if watcher_loop is not None:
-            watcher_loop.stop()
+        loop.run_until_complete(gathered_tasks)
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:
