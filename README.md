@@ -40,16 +40,20 @@ _TODO: Wheat Seed competition_
 
 ## Building compute worker
 
-To re-build the image:
+To build the normal image:
 
 ```bash
-docker build -t competitions-v2-compute-worker -f Dockerfile.compute_worker .
+docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
+```
+
+To build the GPU version:
+```bash
+docker build -t codalab/competitions-v2-compute-worker:nvidia -f Dockerfile.compute_worker_gpu .
 ```
 
 Updating the image
 
 ```bash
-docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
 docker push codalab/competitions-v2-compute-worker
 ```
 
@@ -63,6 +67,9 @@ $ sudo usermod -aG docker $USER
 
 # >>> reconnect <<<
 
+# If you're using GPUs make sure you also volume in the nvidia-docker socket:
+#    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock 
+
 $ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
@@ -72,5 +79,3 @@ $ docker run \
     --log-opt max-file=3 \
     codalab/competitions-v2-compute-worker:latest 
 ```
-
-
