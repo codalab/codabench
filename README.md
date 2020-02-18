@@ -95,5 +95,5 @@ $ nvidia-docker run \
     --restart unless-stopped \
     --log-opt max-size=50m \
     --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:latest 
+    codalab/competitions-v2-compute-worker:nvidia 
 ```
