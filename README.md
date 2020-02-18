@@ -57,8 +57,8 @@ Updating the image
 docker push codalab/competitions-v2-compute-worker
 ```
 
-## Spinning up a CPU compute worker
 
+# Worker setup
 
 ```bash
 # install docker
@@ -66,7 +66,11 @@ $ curl https://get.docker.com | sudo sh
 $ sudo usermod -aG docker $USER
 
 # >>> reconnect <<<
+```
 
+## Start CPU worker
+
+```bash
 $ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
@@ -78,17 +82,11 @@ $ docker run \
 ```
 
 
-## Spinning up a GPU worker
+## Start GPU worker
+
+[nvidia installation instructions](https://github.com/NVIDIA/nvidia-docker#quickstart)
 
 ```bash
-# install docker
-$ curl https://get.docker.com | sudo sh
-$ sudo usermod -aG docker $USER
-
-# >>> reconnect <<<
-
-# Install nvidia-docker
-
 $ nvidia-docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
