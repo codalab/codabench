@@ -1,0 +1,29 @@
+FROM python:3.8.1-buster
+
+# We need curl to get docker/nvidia-docker
+RUN apt-get update &&  apt-get install curl wget -y
+
+# This makes output not buffer and return immediately, nice for seeing results in stdout
+ENV PYTHONUNBUFFERED 1
+
+# Install a specific version of docker
+RUN curl -sSL https://get.docker.com/ | sed 's/docker-ce/docker-ce=18.03.0~ce-0~debian/' | sh
+
+# nvidia-docker jazz
+RUN curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
+RUN curl -s -L https://nvidia.github.io/nvidia-docker/$(. /etc/os-release;echo $ID$VERSION_ID)/nvidia-docker.list | \
+  tee /etc/apt/sources.list.d/nvidia-docker.list
+RUN apt-get update && apt-get install -y nvidia-docker2
+
+# Python reqs and actual worker stuff
+ADD docker/compute_worker/compute_worker_requirements.txt .
+RUN pip3 install -r compute_worker_requirements.txt
+ADD docker/compute_worker .
+
+CMD celery -A compute_worker worker \
+    -l info \
+    -Q compute-worker \
+    -n compute-worker@%n \
+    -Ofast \
+    -Ofair \
+    --concurrency=1
