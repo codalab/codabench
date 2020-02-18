@@ -57,7 +57,7 @@ Updating the image
 docker push codalab/competitions-v2-compute-worker
 ```
 
-## Spinning up a compute worker
+## Spinning up a CPU compute worker
 
 
 ```bash
@@ -67,11 +67,31 @@ $ sudo usermod -aG docker $USER
 
 # >>> reconnect <<<
 
-# If you're using GPUs make sure you also volume in the nvidia-docker socket:
-#    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock 
-
 $ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -d \
+    --env BROKER_URL=<queue broker url> \
+    --restart unless-stopped \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    codalab/competitions-v2-compute-worker:latest 
+```
+
+
+## Spinning up a GPU worker
+
+```bash
+# install docker
+$ curl https://get.docker.com | sudo sh
+$ sudo usermod -aG docker $USER
+
+# >>> reconnect <<<
+
+# Install nvidia-docker
+
+$ nvidia-docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
     -d \
     --env BROKER_URL=<queue broker url> \
     --restart unless-stopped \

@@ -354,8 +354,13 @@ class Run:
                 )
                 return
 
+        if os.environ.get("NVIDIA_DOCKER"):
+            docker_process_name = "nvidia-docker"
+        else:
+            docker_process_name = "docker"
+
         docker_cmd = [
-            'docker',
+            docker_process_name,
             'run',
             # Remove it after run
             '--rm',

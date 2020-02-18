@@ -15,6 +15,9 @@ RUN curl -s -L https://nvidia.github.io/nvidia-docker/$(. /etc/os-release;echo $
   tee /etc/apt/sources.list.d/nvidia-docker.list
 RUN apt-get update && apt-get install -y nvidia-docker2
 
+# make it explicit that we're using GPUs
+ENV NVIDIA_DOCKER 1
+
 # Python reqs and actual worker stuff
 ADD docker/compute_worker/compute_worker_requirements.txt .
 RUN pip3 install -r compute_worker_requirements.txt
