@@ -72,6 +72,7 @@ $ sudo usermod -aG docker $USER
 
 ```bash
 $ docker run \
+    -v /tmp/codalab-v2:/tmp/codalab-v2 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
     --env BROKER_URL=<queue broker url> \
@@ -88,6 +89,7 @@ $ docker run \
 
 ```bash
 $ nvidia-docker run \
+    -v /tmp/codalab-v2:/tmp/codalab-v2 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
     -d \
