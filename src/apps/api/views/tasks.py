@@ -52,13 +52,11 @@ class TaskViewSet(ModelViewSet):
         return qs.order_by('-created_when')
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
-            # is a GET request w/ a PK
+        if self.request.method == 'GET':
+            if self.action == 'list':
+                return serializers.TaskListSerializer
             return serializers.TaskDetailSerializer
-        elif self.action == 'list':
-            return serializers.TaskListSerializer
-        else:
-            return serializers.TaskSerializer
+        return serializers.TaskSerializer
 
     def update(self, request, *args, **kwargs):
         task = self.get_object()
