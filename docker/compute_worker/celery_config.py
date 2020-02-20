@@ -1,9 +1,8 @@
 import os
 
 
-BROKER_URL = os.environ.get('BROKER_URL')
-BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
-# CELERY_IMPORTS = ('worker',)
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ('json',)
-CELERY_PREFETCH_MULTIPLIER = 1
+broker_url = os.environ.get('BROKER_URL')
+broker_use_ssl = os.environ.get('BROKER_USE_SSL', False)
+worker_concurrency = 1
+worker_prefetch_multiplier = 1
+task_acks_late = True
