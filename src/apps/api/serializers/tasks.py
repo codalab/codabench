@@ -5,7 +5,6 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from datasets.models import Data
 from tasks.models import Task, Solution
-from utils.data import make_url_sassy
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
