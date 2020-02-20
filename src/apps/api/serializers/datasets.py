@@ -50,6 +50,17 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         return instance
 
 
+class DataSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Data
+        fields = (
+            'id',
+            'type',
+            'name',
+            'key',
+        )
+
+
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
 

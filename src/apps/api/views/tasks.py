@@ -23,29 +23,42 @@ class TaskViewSet(ModelViewSet):
     pagination_class = BasicPagination
 
     def get_queryset(self):
-        show_public = self.request.query_params.get('public')
-        qs = Task.objects.prefetch_related('solutions', 'solutions__data')
-        if show_public:
-            qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
-        else:
-            qs = qs.filter(created_by=self.request.user)
+        qs = super().get_queryset()
+        if self.request.method == 'GET':
+            qs = qs.select_related(
+                'input_data',
+                'reference_data',
+                'ingestion_program',
+                'scoring_program'
+            ).prefetch_related(
+                'solutions',
+                'solutions__data'
+            )
+            if self.request.query_params.get('public'):
+                qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
+            else:
+                qs = qs.filter(created_by=self.request.user)
 
-        # Determine whether a task is "valid" by finding some solution with a
-        # passing submission
-        task_validate_qs = Submission.objects.filter(
-            md5__in=OuterRef("solutions__md5"),
-            status=Submission.FINISHED,
-            phase__in=OuterRef("phases")
-        )
-        # We have to grab something from task_validate_qs here, so i grab pk
-        qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
+            # Determine whether a task is "valid" by finding some solution with a
+            # passing submission
+            task_validate_qs = Submission.objects.filter(
+                md5__in=OuterRef("solutions__md5"),
+                status=Submission.FINISHED,
+                phase__in=OuterRef("phases")
+            )
+            # We have to grab something from task_validate_qs here, so i grab pk
+            qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
+
         return qs.order_by('-created_when')
 
     def get_serializer_class(self):
-        if self.action == 'list':
-            return serializers.TaskSerializer
-        else:
+        if self.action == 'retrieve':
+            # is a GET request w/ a PK
             return serializers.TaskDetailSerializer
+        elif self.action == 'list':
+            return serializers.TaskListSerializer
+        else:
+            return serializers.TaskSerializer
 
     def update(self, request, *args, **kwargs):
         task = self.get_object()
