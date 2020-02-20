@@ -584,5 +584,5 @@ class Run:
             logger.info(f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}")
             return
 
-        logger.info(f"Destoring submission temp dir: {self.root_dir}")
+        logger.info(f"Destroying submission temp dir: {self.root_dir}")
         shutil.rmtree(self.root_dir)
