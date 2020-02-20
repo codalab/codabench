@@ -382,8 +382,13 @@ class Run:
                 )
                 return
 
+        if os.environ.get("NVIDIA_DOCKER"):
+            docker_process_name = "nvidia-docker"
+        else:
+            docker_process_name = "docker"
+
         docker_cmd = [
-            'docker',
+            docker_process_name,
             'run',
             # Remove it after run
             '--rm',
@@ -603,5 +608,9 @@ class Run:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
-        logger.info("We're not cleaning up yet... TODO: cleanup!")
-        pass
+        if os.environ.get("CODALAB_IGNORE_CLEANUP_STEP"):
+            logger.info(f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}")
+            return
+
+        logger.info(f"Destroying submission temp dir: {self.root_dir}")
+        shutil.rmtree(self.root_dir)
