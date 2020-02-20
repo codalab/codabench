@@ -40,21 +40,25 @@ _TODO: Wheat Seed competition_
 
 ## Building compute worker
 
-To re-build the image:
+To build the normal image:
 
 ```bash
-docker build -t competitions-v2-compute-worker -f Dockerfile.compute_worker .
+docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
+```
+
+To build the GPU version:
+```bash
+docker build -t codalab/competitions-v2-compute-worker:nvidia -f Dockerfile.compute_worker_gpu .
 ```
 
 Updating the image
 
 ```bash
-docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
 docker push codalab/competitions-v2-compute-worker
 ```
 
-## Spinning up a compute worker
 
+# Worker setup
 
 ```bash
 # install docker
@@ -62,8 +66,13 @@ $ curl https://get.docker.com | sudo sh
 $ sudo usermod -aG docker $USER
 
 # >>> reconnect <<<
+```
 
+## Start CPU worker
+
+```bash
 $ docker run \
+    -v /tmp/codalab-v2:/tmp/codalab-v2 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
     --env BROKER_URL=<queue broker url> \
@@ -74,3 +83,19 @@ $ docker run \
 ```
 
 
+## Start GPU worker
+
+[nvidia installation instructions](https://github.com/NVIDIA/nvidia-docker#quickstart)
+
+```bash
+$ nvidia-docker run \
+    -v /tmp/codalab-v2:/tmp/codalab-v2 \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
+    -d \
+    --env BROKER_URL=<queue broker url> \
+    --restart unless-stopped \
+    --log-opt max-size=50m \
+    --log-opt max-file=3 \
+    codalab/competitions-v2-compute-worker:nvidia 
+```
