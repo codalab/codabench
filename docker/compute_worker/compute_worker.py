@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shutil
+import socket
 import tempfile
 import time
 import uuid
@@ -20,6 +21,7 @@ import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
+from urllib3 import Retry
 
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -154,6 +156,15 @@ class Run:
         websocket_scheme = 'ws' if submission_api_url_parsed.scheme == 'http' else 'wss'
         self.websocket_url = f"{websocket_scheme}://{websocket_host}/submission_input/{self.user_pk}/{self.submission_id}/{self.secret}/"
 
+        # Nice requests adapter with generous retries/etc.
+        self.requests_session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=Retry(
+            total=10,
+            backoff_factor=1,
+        ))
+        self.requests_session.mount('http://', adapter)
+        self.requests_session.mount('https://', adapter)
+
     async def watch_file(self):
         if not self.detailed_results_url:
             return
@@ -200,7 +211,7 @@ class Run:
 
         data["secret"] = self.secret
 
-        resp = requests.patch(url, data)
+        resp = self.requests_session.patch(url, data)
         if resp.status_code != 200:
             logger.info(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
             raise SubmissionException("Failure updating submission data.")
@@ -258,30 +269,34 @@ class Run:
         """
         logger.info(f"Connecting to {self.websocket_url}")
 
-        async with websockets.connect(self.websocket_url) as websocket:
-            start = time.time()
-            proc = await asyncio.create_subprocess_exec(
-                *docker_cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+        start = time.time()
+        proc = await asyncio.create_subprocess_exec(
+            *docker_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
 
-            logs = {
-                "stdout": {
-                    "data": b'',
-                    "stream": proc.stdout,
-                    "continue": True,
-                    "location": self.stdout if kind == 'program' else self.ingestion_stdout
-                },
-                "stderr": {
-                    "data": b'',
-                    "stream": proc.stderr,
-                    "continue": True,
-                    "location": self.stderr if kind == 'program' else self.ingestion_stderr
-                },
-            }
+        logs = {
+            "stdout": {
+                "data": b'',
+                "stream": proc.stdout,
+                "continue": True,
+                "location": self.stdout if kind == 'program' else self.ingestion_stdout
+            },
+            "stderr": {
+                "data": b'',
+                "stream": proc.stderr,
+                "continue": True,
+                "location": self.stderr if kind == 'program' else self.ingestion_stderr
+            },
+        }
 
-            while any(v["continue"] for v in logs.values()):
+        # Start websocket, it will reconnect in the stdout/stderr listener loop below
+        websocket = await websockets.connect(self.websocket_url)
+        websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
+
+        while any(v["continue"] for v in logs.values()):
+            try:
                 for value in logs.values():
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
@@ -296,27 +311,48 @@ class Run:
                             value["continue"] = False
                     except asyncio.TimeoutError:
                         continue
+            except websocket_errors:
+                try:
+                    # do we need to await websocket.close() on the old socket? before making a new one probably not?
+                    await websocket.close()
+                except Exception as e:
+                    logger.error(e)
+                    logger.info(e)
+                    # TODO: catch proper exceptions here..! What can go wrong failing to close?
+                    pass
 
-            end = time.time()
+                # try to reconnect a few times
+                tries = 0
+                while tries < 3 and not websocket.open:
+                    try:
+                        websocket = await websockets.connect(self.websocket_url)
+                    except websocket_errors:
+                        await asyncio.sleep(2)
+                        tries += 1
 
-            if kind == 'program':
-                self.program_exit_code = proc.returncode
-                self.program_elapsed_time = end - start
-            elif kind == 'ingestion':
-                self.ingestion_program_exit_code = proc.returncode
-                self.ingestion_elapsed_time = end - start
+        end = time.time()
 
-            logger.info(f'[exited with {proc.returncode}]')
-            for key, value in logs.items():
-                if value["data"]:
-                    logger.info(f'[{key}]\n{value["data"]}')
-                    self._put_file(value["location"], raw_data=value["data"])
+        # Cleanup websocket connection manually
+        await websocket.close()
 
-            logger.info("Program finished")
-            if self.detailed_results_url and kind == 'program':
-                # Only the scoring program should be able to tell the watcher we are done.
-                self.watch = False
-            return proc
+        if kind == 'program':
+            self.program_exit_code = proc.returncode
+            self.program_elapsed_time = end - start
+        elif kind == 'ingestion':
+            self.ingestion_program_exit_code = proc.returncode
+            self.ingestion_elapsed_time = end - start
+
+        logger.info(f'[exited with {proc.returncode}]')
+        for key, value in logs.items():
+            if value["data"]:
+                logger.info(f'[{key}]\n{value["data"]}')
+                self._put_file(value["location"], raw_data=value["data"])
+
+        logger.info("Program finished")
+        if self.detailed_results_url and kind == 'program':
+            # Only the scoring program should be able to tell the watcher we are done.
+            self.watch = False
+        return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
@@ -452,7 +488,7 @@ class Run:
         else:
             raise SubmissionException('Must provide data, both file and raw_data cannot be empty')
 
-        resp = requests.put(
+        resp = self.requests_session.put(
             url,
             data=data,
             headers=headers,
@@ -545,7 +581,7 @@ class Run:
 
         url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
         logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = requests.post(url, json={
+        resp = self.requests_session.post(url, json={
             "secret": self.secret,
             "scores": scores,
         })
