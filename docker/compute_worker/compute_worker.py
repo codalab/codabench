@@ -293,6 +293,7 @@ class Run:
 
         # Start websocket, it will reconnect in the stdout/stderr listener loop below
         websocket = await websockets.connect(self.websocket_url)
+        websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
         while any(v["continue"] for v in logs.values()):
             try:
@@ -310,7 +311,7 @@ class Run:
                             value["continue"] = False
                     except asyncio.TimeoutError:
                         continue
-            except (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError):
+            except websocket_errors:
                 try:
                     # do we need to await websocket.close() on the old socket? before making a new one probably not?
                     await websocket.close()
@@ -320,7 +321,14 @@ class Run:
                     # TODO: catch proper exceptions here..! What can go wrong failing to close?
                     pass
 
-                websocket = await websockets.connect(self.websocket_url)
+                # try to reconnect a few times
+                tries = 0
+                while tries < 3 and not websocket.open:
+                    try:
+                        websocket = await websockets.connect(self.websocket_url)
+                    except websocket_errors:
+                        await asyncio.sleep(2)
+                        tries += 1
 
         end = time.time()
 
