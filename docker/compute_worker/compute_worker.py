@@ -310,7 +310,7 @@ class Run:
                             value["continue"] = False
                     except asyncio.TimeoutError:
                         continue
-            except (socket.gaierror, websockets.WebSocketException, ConnectionRefusedError):
+            except (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError):
                 try:
                     # do we need to await websocket.close() on the old socket? before making a new one probably not?
                     await websocket.close()
