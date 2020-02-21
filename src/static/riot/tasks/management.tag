@@ -70,9 +70,10 @@
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> {selected_task.created_by}</div>
             <div><strong>Key:</strong> {selected_task.key}</div>
-            <div><strong>Has Been Validated <span data-inverted=""
-                                                  data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
-                <i class="question circle icon"></i></span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
+            <div><strong>Has Been Validated
+                <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
+                    <i class="question circle icon"></i>
+                </span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
             <div><strong>Is Public:</strong> {selected_task.is_public ? "Yes" : "No"}</div>
             <div if="{selected_task.validated}"
                  class="ui right floated small green icon button"
@@ -87,12 +88,22 @@
                 <table class="ui table">
                     <thead>
                     <tr>
-                        <th>Files</th>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th></th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr each="{file in selected_task.files}">
-                        <td><a href="{URLS.DATASET_DOWNLOAD(file.key)}">{file.name}</a></td>
+                    <tr each="{file in file_types}" if="{selected_task[file]}">
+                        <td>{selected_task[file].type}</td>
+                        <td>{selected_task[file].name}</td>
+                        <td class="collapsing">
+                            <span data-tooltip="Download this dataset">
+                                <a href="{URLS.DATASET_DOWNLOAD(selected_task[file].key)}">
+                                    <i class="download green icon"></i>
+                                </a>
+                            </span>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -189,6 +200,12 @@
         self.form_datasets = {}
         self.selected_task = {}
         self.page = 1
+        self.file_types = [
+            'input_data',
+            'reference_data',
+            'scoring_program',
+            'ingestion_program'
+        ]
 
 
         self.one("mount", function () {

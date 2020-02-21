@@ -13,38 +13,37 @@ class TestTasks(APITestCase):
         competition = CompetitionFactory(created_by=user)
         phase = PhaseFactory(competition=competition, tasks=[task])
         submission = SubmissionFactory(md5="12345", phase=phase, status=Submission.FINISHED)
-
+        url = reverse('task-detail', kwargs={'pk': task.id})
         self.client.login(username=user.username, password='test')
 
         # task should be validated because we have a successful submission matching
         # our solution
-        resp = self.client.get(reverse('task-list'))
+        resp = self.client.get(url)
         assert resp.status_code == 200
-        assert resp.data["count"] == 1
-        assert resp.data["results"][0]["validated"]
+        assert resp.data["validated"]
 
         # make submission anything but Submission.FINISHED, task -> invalidated
         submission.status = Submission.FAILED
         submission.save()
-        resp = self.client.get(reverse('task-list'))
+        resp = self.client.get(url)
         assert resp.status_code == 200
-        assert not resp.data["results"][0]["validated"]
+        assert not resp.data["validated"]
 
         # make submission Submission.Finished, task -> re-validated
         submission.status = Submission.FINISHED
         submission.save()
-        resp = self.client.get(reverse('task-list'))
+        resp = self.client.get(url)
         assert resp.status_code == 200
-        assert resp.data["results"][0]["validated"]
+        assert resp.data["validated"]
 
         # delete submission, task -> re-invalidated
         submission.delete()
-        resp = self.client.get(reverse('task-list'))
+        resp = self.client.get(url)
         assert resp.status_code == 200
-        assert not resp.data["results"][0]["validated"]
+        assert not resp.data["validated"]
 
         # make submission with different Sha -> still invalid
         SubmissionFactory(md5="different", phase=phase, status=Submission.FINISHED)
-        resp = self.client.get(reverse('task-list'))
+        resp = self.client.get(url)
         assert resp.status_code == 200
-        assert not resp.data["results"][0]["validated"]
+        assert not resp.data["validated"]
