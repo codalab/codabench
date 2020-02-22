@@ -277,24 +277,23 @@ class Run:
 
     def _get_bundle(self, url, destination, cache=True):
         """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
-        against existence in CACHE_DIR/<hashed_url>, and only downloaded if needed. Cache size is checked
+        against existence in CACHE_DIR/<hashed_url> and only downloaded if needed. Cache size is checked
         during the prepare step and cleared if it's over MAX_CACHE_DIR_SIZE_GB.
 
         :returns zip file path"""
         logger.info(f"Getting bundle {url} to unpack @{destination}")
+        download_needed = True
 
         if cache:
             # Hash url and download it if it doesn't exist
             url_without_params = url.split("?")[0]
             url_hash = hashlib.sha256(url_without_params.encode('utf8')).hexdigest()
             bundle_file = os.path.join(CACHE_DIR, url_hash)
-            if not os.path.exists(bundle_file):
-                try:
-                    urlretrieve(url, bundle_file)
-                except HTTPError:
-                    raise SubmissionException(f"Problem fetching {url} to put in {destination}")
+            download_needed = not os.path.exists(bundle_file)
         else:
             bundle_file = tempfile.NamedTemporaryFile(delete=False).name
+
+        if download_needed:
             try:
                 urlretrieve(url, bundle_file)
             except HTTPError:
