@@ -31,9 +31,6 @@ logger = logging.getLogger()
 # Setup base directories used by all submissions
 BASE_DIR = "/tmp/codalab-v2"
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
-if not os.path.exists(CACHE_DIR):
-    os.mkdir(CACHE_DIR)
-
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
 # Status options for submissions
@@ -547,7 +544,9 @@ class Run:
     def prepare(self):
         self._update_status(STATUS_PREPARING)
 
-        # Before downloading any new data, let's make sure CACHE_DIR size isn't getting out of control
+        # Setup cache and prune if it's out of control
+        if not os.path.exists(CACHE_DIR):
+            os.mkdir(CACHE_DIR)
         self._prune_cache_dir()
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
