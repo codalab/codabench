@@ -28,6 +28,13 @@ app.config_from_object('celery_config')  # grabs celery_config.py
 
 logger = logging.getLogger()
 
+# Setup base directories used by all submissions
+BASE_DIR = "/tmp/codalab-v2"
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+if not os.path.exists(CACHE_DIR):
+    os.mkdir(CACHE_DIR)
+
+MAX_CACHE_DIR_SIZE_GB = 10
 
 # Status options for submissions
 STATUS_NONE = "None"
@@ -54,6 +61,10 @@ class SubmissionException(Exception):
     pass
 
 
+# -----------------------------------------------------------------------------
+# The main compute worker entrypoint, this is how a job is ran at the highest
+# level.
+# -----------------------------------------------------------------------------
 @task(name="compute_worker_run")
 def run_wrapper(run_args):
     logger.info(f"Received run arguments: {run_args}")
@@ -95,6 +106,28 @@ def md5(filename):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def get_folder_size_in_gb(folder):
+    if not os.path.exists(folder):
+        return 0
+    total_size = os.path.getsize(folder)
+    for item in os.listdir(folder):
+        itempath = os.path.join(folder, item)
+        if os.path.isfile(itempath):
+            total_size += os.path.getsize(itempath)
+        elif os.path.isdir(itempath):
+            total_size += get_folder_size_in_gb(itempath)
+    return total_size / 1024 / 1024 / 1024
+
+
+def delete_files_in_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
 
 
 class Run:
@@ -166,6 +199,8 @@ class Run:
         self.requests_session.mount('https://', adapter)
 
     async def watch_file(self):
+        """Watches files alongside scoring + program docker containers, currently only used
+        for detailed_results.html"""
         if not self.detailed_results_url:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
@@ -244,20 +279,28 @@ class Run:
             raise SubmissionException(f"Docker pull for {image_name} failed!")
 
     def _get_bundle(self, url, destination):
-        """Downloads zip from url and unpacks it into destination
+        """Downloads zip from url into CACHE_DIR (unless it already exists) and unpacks it into destination
 
         :returns zip file path"""
         logger.info(f"Getting bundle {url} to unpack @{destination}")
-        bundle_file = tempfile.NamedTemporaryFile(delete=False)
 
-        try:
-            urlretrieve(url, bundle_file.name)
-        except HTTPError:
-            raise SubmissionException(f"Problem fetching {url} to put in {destination}")
+        # Hash url and download it if it doesn't exist
+        url_without_params = url.split("?")[0]
+        url_hash = hashlib.sha256(url_without_params.encode('utf8')).hexdigest()
+        cached_bundle_file_path = os.path.join(CACHE_DIR, url_hash)
+        if not os.path.exists(cached_bundle_file_path):
+            # Also make sure cache dir exists
+            try:
+                urlretrieve(url, cached_bundle_file_path)
+            except HTTPError:
+                raise SubmissionException(f"Problem fetching {url} to put in {destination}")
 
-        with ZipFile(bundle_file.file, 'r') as z:
+        # Extract the contents to destination directory
+        with ZipFile(cached_bundle_file_path, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
-        return bundle_file.name
+
+        # Give back zip file path for other uses, i.e. md5'ing the zip to ID it
+        return cached_bundle_file_path
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
@@ -497,8 +540,15 @@ class Run:
         logger.info(f'response: {resp}')
         logger.info(f'content: {resp.content}')
 
+    def _prune_cache_dir(self, max_size=MAX_CACHE_DIR_SIZE_GB):
+        if get_folder_size_in_gb(CACHE_DIR) > max_size:
+            delete_files_in_folder(CACHE_DIR)
+
     def prepare(self):
         self._update_status(STATUS_PREPARING)
+
+        # Before downloading any new data, let's make sure CACHE_DIR size isn't getting out of control
+        self._prune_cache_dir()
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
         # sub folder.
