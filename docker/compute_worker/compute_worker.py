@@ -34,7 +34,7 @@ CACHE_DIR = os.path.join(BASE_DIR, "cache")
 if not os.path.exists(CACHE_DIR):
     os.mkdir(CACHE_DIR)
 
-MAX_CACHE_DIR_SIZE_GB = 10
+MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
 # Status options for submissions
 STATUS_NONE = "None"

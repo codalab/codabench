@@ -191,6 +191,7 @@ services:
       - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
       # Make the worker leave behind the submission so we can examine it
       - CODALAB_IGNORE_CLEANUP_STEP=1
+      - MAX_CACHE_DIR_SIZE_GB=.1
     logging:
       options:
         max-size: "20k"
