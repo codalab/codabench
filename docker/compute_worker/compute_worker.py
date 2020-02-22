@@ -113,11 +113,11 @@ def get_folder_size_in_gb(folder):
         return 0
     total_size = os.path.getsize(folder)
     for item in os.listdir(folder):
-        itempath = os.path.join(folder, item)
-        if os.path.isfile(itempath):
-            total_size += os.path.getsize(itempath)
-        elif os.path.isdir(itempath):
-            total_size += get_folder_size_in_gb(itempath)
+        path = os.path.join(folder, item)
+        if os.path.isfile(path):
+            total_size += os.path.getsize(path)
+        elif os.path.isdir(path):
+            total_size += get_folder_size_in_gb(path)
     return total_size / 1024 / 1024 / 1024
 
 
