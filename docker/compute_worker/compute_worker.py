@@ -571,6 +571,7 @@ class Run:
 
         for url, path in bundles:
             if url is not None:
+                # At the moment let's just cache input & reference data
                 cache_this_bundle = path in ('input_data', 'input/ref')
                 zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
