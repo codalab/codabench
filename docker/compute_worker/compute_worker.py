@@ -275,29 +275,37 @@ class Run:
             logger.info("Docker pull for image: {} returned a non-zero exit code!")
             raise SubmissionException(f"Docker pull for {image_name} failed!")
 
-    def _get_bundle(self, url, destination):
-        """Downloads zip from url into CACHE_DIR (unless it already exists) and unpacks it into destination
+    def _get_bundle(self, url, destination, cache=True):
+        """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
+        against existence in CACHE_DIR/<hashed_url>, and only downloaded if needed. Cache size is checked
+        during the prepare step and cleared if it's over MAX_CACHE_DIR_SIZE_GB.
 
         :returns zip file path"""
         logger.info(f"Getting bundle {url} to unpack @{destination}")
 
-        # Hash url and download it if it doesn't exist
-        url_without_params = url.split("?")[0]
-        url_hash = hashlib.sha256(url_without_params.encode('utf8')).hexdigest()
-        cached_bundle_file_path = os.path.join(CACHE_DIR, url_hash)
-        if not os.path.exists(cached_bundle_file_path):
-            # Also make sure cache dir exists
+        if cache:
+            # Hash url and download it if it doesn't exist
+            url_without_params = url.split("?")[0]
+            url_hash = hashlib.sha256(url_without_params.encode('utf8')).hexdigest()
+            bundle_file = os.path.join(CACHE_DIR, url_hash)
+            if not os.path.exists(bundle_file):
+                try:
+                    urlretrieve(url, bundle_file)
+                except HTTPError:
+                    raise SubmissionException(f"Problem fetching {url} to put in {destination}")
+        else:
+            bundle_file = tempfile.NamedTemporaryFile(delete=False).name
             try:
-                urlretrieve(url, cached_bundle_file_path)
+                urlretrieve(url, bundle_file)
             except HTTPError:
                 raise SubmissionException(f"Problem fetching {url} to put in {destination}")
 
         # Extract the contents to destination directory
-        with ZipFile(cached_bundle_file_path, 'r') as z:
+        with ZipFile(bundle_file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
 
         # Give back zip file path for other uses, i.e. md5'ing the zip to ID it
-        return cached_bundle_file_path
+        return bundle_file
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
@@ -558,14 +566,14 @@ class Run:
             (self.input_data, 'input_data'),
             (self.reference_data, 'input/ref'),
         ]
-
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
             bundles += [(self.prediction_result, 'input/res')]
 
         for url, path in bundles:
             if url is not None:
-                zip_file = self._get_bundle(url, path)
+                cache_this_bundle = path in ('input_data', 'input/ref')
+                zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
                 # TODO: When we have `is_scoring_only` this needs to change...
                 if url == self.program_data and not self.is_scoring:
