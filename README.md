@@ -99,3 +99,44 @@ $ nvidia-docker run \
     --log-opt max-file=3 \
     codalab/competitions-v2-compute-worker:nvidia 
 ```
+
+# Worker management
+
+Outside of docker containers install [Fabric](http://fabfile.org/) like so:
+
+```bash
+pip install fab-classic
+```
+
+and create a `server_config.yaml` in the root of this respository:
+
+```yaml
+comp-gpu:
+  hosts:
+    - ubuntu@12.34.56.78
+    - ubuntu@12.34.56.79
+  broker_url: pyamqp://user:pass@host:port/vhost-gpu
+  is_gpu: true
+
+comp-cpu:
+  hosts:
+    - ubuntu@12.34.56.80
+  broker_url: pyamqp://user:pass@host:port/vhost-cpu
+  is_gpu: false
+```
+
+then you can execute commands against a group of servers:
+
+```bash
+❯ fab -R comp-gpu status
+..
+[ubuntu@12.34.56.78] out: CONTAINER ID        IMAGE                                           COMMAND                  CREATED             STATUS              PORTS               NAMES
+[ubuntu@12.34.56.78] out: 1d318268bee1        codalab/competitions-v2-compute-worker:nvidia   "/bin/sh -c 'celery …"   2 hours ago         Up 2 hours                              hardcore_greider
+..
+
+❯ fab -R comp-gpu update
+..
+(updates workers)
+```
+
+See available commands with `fab -l`
