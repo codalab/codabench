@@ -23,14 +23,13 @@ def update():
     role = env.effective_roles[0]
     broker_url = env.roledefs[role]["broker_url"]
     is_gpu = env.roledefs[role]["is_gpu"]
+    docker_image = env.roledefs[role]["docker_image"]
 
     if is_gpu:
         docker_process = "nvidia-docker"
-        docker_image = "codalab/competitions-v2-compute-worker:nvidia"
         nvidia_sock = "-v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock"
     else:
         docker_process = "docker"
-        docker_image = "codalab/competitions-v2-compute-worker:latest"
         nvidia_sock = ""
 
     docker_command = f"""{docker_process} run \
