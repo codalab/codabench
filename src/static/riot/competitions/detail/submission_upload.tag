@@ -156,9 +156,17 @@
                 let event_data = JSON.parse(event.data)
                 switch (event_data.type) {
                     case 'catchup':
+                        let detailed_result_url = ''
                         _.forEach(_.compact(event_data.data.split('\n')), data => {
-                            self.handle_websocket(event_data.submission_id, JSON.parse(data))
+                            data = JSON.parse(data)
+                            if (data.kind === 'detailed_result_update') {
+                                detailed_result_url = data.result_url
+                            } else {
+                                self.handle_websocket(event_data.submission_id, JSON.parse(data), true)
+                            }
                         })
+                        self.detailed_result_urls[submission_id] = detailed_result_url
+                        self.update()
                         break
                     case 'message':
                         self.handle_websocket(event_data.submission_id, event_data.data)
