@@ -14,8 +14,7 @@ from fabric.api import env, run
 #
 # You select the role to run with like s:
 #   $ fab -R role_name <command>
-host_types = yaml.load(open('server_config.yaml').read())
-env.roledefs = host_types
+env.roledefs = yaml.load(open('server_config.yaml').read())
 
 
 def status():
