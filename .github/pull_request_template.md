@@ -10,6 +10,10 @@ more information is better.
 ...
 
 
+# Issues this PR resolves
+...
+
+
 # Known issues to be addressed in a separate PR
 ...
 
