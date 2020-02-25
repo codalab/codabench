@@ -117,12 +117,14 @@ comp-gpu:
     - ubuntu@12.34.56.79
   broker_url: pyamqp://user:pass@host:port/vhost-gpu
   is_gpu: true
+  docker_image: codalab/competitions-v2-compute-worker:nvidia
 
 comp-cpu:
   hosts:
     - ubuntu@12.34.56.80
   broker_url: pyamqp://user:pass@host:port/vhost-cpu
   is_gpu: false
+  docker_image: codalab/competitions-v2-compute-worker:latest
 ```
 
 then you can execute commands against a group of servers:
