@@ -31,11 +31,21 @@ $ open vnc://0.0.0.0:5900
 
 ## Example competitions
 
-_NOTE: Pisano Period competition may be out of date_
+The repo comes with a couple examples that are used during tests:
 
-https://github.com/codalab/competition-examples/tree/master/v2/pisano_period
-
-_TODO: Wheat Seed competition_
+### v2 test data
+ ```
+ src/tests/functional/test_files/submission.zip
+ src/tests/functional/test_files/competition.zip
+ ```
+### v1.5 legacy test data
+ ```
+ src/tests/functional/test_files/submission15.zip
+ src/tests/functional/test_files/competition15.zip
+ ```
+ 
+### Other Codalab Competition examples
+https://github.com/codalab/competition-examples/tree/master/v2/
 
 
 ## Building compute worker
