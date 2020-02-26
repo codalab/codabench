@@ -109,8 +109,12 @@ pip install fab-classic==1.17.0
 ```
 
 Create a `server_config.yaml` in the root of this repository using:
-`cp server_config_sample.yaml server_config.yaml`
-as a template
+```
+cp server_config_sample.yaml server_config.yaml
+```
+
+Below is an example `server_config.yaml` that defines 2 roles `comp-gpu` and `comp-cpu`,
+one with gpu style workers (`is_gpu` and the nvidia `docker_image`) and one with cpu style workers
 
 ```yaml
 comp-gpu:
@@ -129,7 +133,9 @@ comp-cpu:
   docker_image: codalab/competitions-v2-compute-worker:latest
 ```
 
-then you can execute commands against a group of servers:
+You can of course create your own `docker_image` and specify it here.
+
+You can execute commands against a role:
 
 ```bash
 ❯ fab -R comp-gpu status
