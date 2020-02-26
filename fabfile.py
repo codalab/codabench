@@ -19,7 +19,7 @@ env.roledefs = yaml.load(open('server_config.yaml').read())
 
 def status():
     """Gets status of all docker containers on server"""
-    run("docker ps")
+    run("docker ps -a")
 
 
 def update():
