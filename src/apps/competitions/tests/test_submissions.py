@@ -3,7 +3,6 @@ from datetime import timedelta
 from unittest import mock
 
 from django.test import TestCase
-from django.utils.timezone import now
 from django.utils import timezone
 
 from competitions.models import Submission
@@ -52,7 +51,7 @@ class MaxSubmissionsTests(SubmissionTestCase):
 
     def test_max_per_day_not_counting_previous_days_submissions(self):
         self.set_max_submissions(per_day=1)
-        yesterday = now() - timedelta(days=1)
+        yesterday = timezone.now() - timedelta(days=1)
         self.make_submission(created_when=yesterday)
         try:
             self.make_submission()
@@ -134,6 +133,22 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         sub = Submission.objects.get(id=self.sub.id)
         assert sub.has_children
         assert sub.children.count() == 2
+
+    def test_children_always_created_in_the_same_order(self):
+        self.sub = self.make_submission()
+        with mock.patch('competitions.tasks.send_parent_status'):
+            with mock.patch('competitions.tasks.send_child_id'):
+                resp = self.mock_run_submission(self.sub)
+        assert resp.call_count == 2
+
+        self.sub = Submission.objects.get(id=self.sub.id)
+        children = self.sub.children.order_by('id').values_list('id', flat=True)
+        tasks = self.phase.tasks.order_by('id').values_list('id', flat=True)
+        child_task_pairs = list(zip(children, tasks))
+        first_call_args = resp.call_args_list[0][1]['args'][0]
+        second_call_args = resp.call_args_list[1][1]['args'][0]
+        assert (first_call_args['id'], first_call_args['task_pk']) == child_task_pairs[0]
+        assert (second_call_args['id'], second_call_args['task_pk']) == child_task_pairs[1]
 
     def test_making_submission_to_phase_with_one_task_does_not_create_parents_or_children(self):
         self.single_phase = PhaseFactory(competition=self.comp)

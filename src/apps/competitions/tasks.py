@@ -249,7 +249,7 @@ def _run_submission(submission_pk, task_pk=None, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
-    tasks = submission.phase.tasks.all()
+    tasks = submission.phase.tasks.all().order_by('pk')
     # TODO: Make the following code DRY!
     if task_pk is None:  # This is the initial submission object
         if len(tasks) > 1:
