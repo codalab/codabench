@@ -105,7 +105,7 @@ $ nvidia-docker run \
 Outside of docker containers install [Fabric](http://fabfile.org/) like so:
 
 ```bash
-pip install fab-classic
+pip install fab-classic==1.17.0
 ```
 
 and create a `server_config.yaml` in the root of this respository:
