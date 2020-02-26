@@ -162,7 +162,7 @@
                             if (data.kind === 'detailed_result_update') {
                                 detailed_result_url = data.result_url
                             } else {
-                                self.handle_websocket(event_data.submission_id, JSON.parse(data))
+                                self.handle_websocket(event_data.submission_id, data)
                             }
                         })
                         self.detailed_result_urls[submission_id] = detailed_result_url
