@@ -27,3 +27,5 @@ package-lock.json
 artifacts/
 
 docker-compose.override.yml
+
+server_config.yaml
