@@ -108,7 +108,9 @@ Outside of docker containers install [Fabric](http://fabfile.org/) like so:
 pip install fab-classic==1.17.0
 ```
 
-and create a `server_config.yaml` in the root of this respository:
+Create a `server_config.yaml` in the root of this repository using:
+`cp server_config_sample.yaml server_config.yaml`
+as a template
 
 ```yaml
 comp-gpu:
