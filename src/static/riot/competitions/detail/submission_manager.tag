@@ -134,7 +134,7 @@
                      class="ui tab"
                      data-tab="{admin_: is_admin()}child_{i}">
                     <submission-modal hide_output="{selected_phase.hide_output}"
-                                      show_graph="{opts.competition.enable_detailed_results}" 
+                                      show_graph="{opts.competition.enable_detailed_results}"
                                       submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
@@ -324,9 +324,9 @@
             // stupid workaround to not modify the original submission object
             submission = _.defaultsDeep({}, submission)
             if (submission.has_children) {
-                submission.children = _.sortBy(_.map(submission.children, child => {
+                submission.children = _.map(_.sortBy(submission.children), child => {
                     return {id: child}
-                }), 'id')
+                })
                 CODALAB.api.get_submission_details(submission.id)
                     .done(function (data) {
                         self.leaderboards = data.leaderboards
