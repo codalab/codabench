@@ -324,9 +324,9 @@
             // stupid workaround to not modify the original submission object
             submission = _.defaultsDeep({}, submission)
             if (submission.has_children) {
-                submission.children = _.map(submission.children, child => {
+                submission.children = _.sortBy(_.map(submission.children, child => {
                     return {id: child}
-                })
+                }), 'id')
                 CODALAB.api.get_submission_details(submission.id)
                     .done(function (data) {
                         self.leaderboards = data.leaderboards
