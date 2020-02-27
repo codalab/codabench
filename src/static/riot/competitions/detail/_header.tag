@@ -40,6 +40,10 @@
                                 <span class="detail-label">Current phase ends:</span>
                                 <span class="detail-item">{get_end_date(competition)}</span>
                             </div>
+                            <div>
+                                <span class="detail-label">Current server time:</span>
+                                <span class="detail-item">{server_time}</span>
+                            </div>
                             <div class="competition-secret-key" if="{ competition.admin }">
                                 <span class="secret-label">Secret url:</span>
                                 <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
@@ -164,7 +168,12 @@
         let self = this
 
         self.competition = {}
+        self.server_time = ''
         self.files = []
+
+        self.one("mount", function () {
+          self.get_current_server_time()
+        })
 
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
@@ -214,6 +223,14 @@
             document.execCommand("copy");
             window.getSelection().removeAllRanges();// to deselect
             $('.send-pop').popup('toggle')
+        }
+
+        self.get_current_server_time = function () {
+            CODALAB.api.get_current_server_time()
+                .done((data) => {
+                    self.server_time = data
+                    self.update()
+                })
         }
 
         self.get_end_date = function (competition) {

@@ -62,6 +62,9 @@ CODALAB.api = {
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
     },
+    get_current_server_time: () => {
+        return CODALAB.api.request('GET', `${URLS.API}server_time/`)
+    },
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/

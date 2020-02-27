@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,6 +10,7 @@ from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.views import APIView
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
@@ -300,3 +302,11 @@ class CompetitionParticipantViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         send_direct_participant_email(participant=participant, content=message)
         return Response({}, status=status.HTTP_200_OK)
+
+
+class ServerTimeView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, format=None):
+        time = timezone.now()
+        return Response(time.strftime("%b. %d, %Y, %I:%M %p %Z"))
