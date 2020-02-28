@@ -530,7 +530,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                     elif field == 'max_submissions_per_person':
                         temp_phase_data['max_submissions'] = getattr(phase, field)
                     elif field == 'execution_time_limit':
-                        temp_phase_data['execution_time_limit_ms'] = getattr(phase, field)
+                        temp_phase_data['execution_time_limit'] = getattr(phase, field)
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
             task_indexes = [task_solution_pairs[task.id]['index'] for task in phase.tasks.all()]

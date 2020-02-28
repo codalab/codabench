@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shutil
+import signal
 import socket
 import tempfile
 import time
@@ -127,6 +128,14 @@ def delete_files_in_folder(folder):
             shutil.rmtree(file_path)
 
 
+class ExecutionTimeLimitExceeded(Exception):
+    pass
+
+
+def alarm_handler(signum, frame):
+    raise ExecutionTimeLimitExceeded
+
+
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -149,6 +158,7 @@ class Run:
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
+        self.logs = {}
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -323,7 +333,7 @@ class Run:
             stderr=asyncio.subprocess.PIPE
         )
 
-        logs = {
+        self.logs[kind] = {
             "stdout": {
                 "data": b'',
                 "stream": proc.stdout,
@@ -342,9 +352,9 @@ class Run:
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
-        while any(v["continue"] for v in logs.values()):
+        while any(v["continue"] for v in self.logs[kind].values()):
             try:
-                for value in logs.values():
+                for value in self.logs[kind].values():
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
                         if out:
@@ -390,16 +400,18 @@ class Run:
             self.ingestion_elapsed_time = end - start
 
         logger.info(f'[exited with {proc.returncode}]')
-        for key, value in logs.items():
+        for key, value in self.logs[kind].items():
             if value["data"]:
                 logger.info(f'[{key}]\n{value["data"]}')
                 self._put_file(value["location"], raw_data=value["data"])
 
-        logger.info("Program finished")
         if self.detailed_results_url and kind == 'program':
             # Only the scoring program should be able to tell the watcher we are done.
             self.watch = False
-        return proc
+
+        # set logs of this kind to None, since we handled them already
+        self.logs[kind] = None
+        logger.info("Program finished")
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
@@ -447,9 +459,6 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
-
-            # Try the new timeout feature
-            '--stop-timeout={}'.format(self.execution_time_limit),
 
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
@@ -607,7 +616,20 @@ class Run:
             self.watch_file(),
             loop=loop,
         )
-        loop.run_until_complete(gathered_tasks)
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(self.execution_time_limit)
+        try:
+            loop.run_until_complete(gathered_tasks)
+        except ExecutionTimeLimitExceeded:
+            self.watch = False
+            for kind, logs in self.logs.items():
+                if logs is not None:
+                    for key, value in logs.items():
+                        if value["data"]:
+                            logger.info(f'[{key}]\n{value["data"]}')
+                            self._put_file(value["location"], raw_data=value["data"])
+        signal.alarm(0)
+
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:
