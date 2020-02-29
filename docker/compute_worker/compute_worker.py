@@ -334,6 +334,9 @@ class Run:
         )
 
         self.logs[kind] = {
+            "proc": proc,
+            "start": start,
+            "end": None,
             "stdout": {
                 "data": b'',
                 "stream": proc.stdout,
@@ -352,9 +355,12 @@ class Run:
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
-        while any(v["continue"] for v in self.logs[kind].values()):
+        while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
             try:
-                for value in self.logs[kind].values():
+                for key, value in self.logs[kind].items():
+                    # todo: just grab the keys we care about instead of "continuing" from keys we don't care about
+                    if key not in ['stdout', 'stderr']:
+                        continue
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
                         if out:
@@ -387,31 +393,8 @@ class Run:
                         await asyncio.sleep(2)
                         tries += 1
 
-        end = time.time()
-
-        # Cleanup websocket connection manually
+        self.logs[kind]["end"] = time.time()
         await websocket.close()
-
-        if kind == 'program':
-            self.program_exit_code = proc.returncode
-            self.program_elapsed_time = end - start
-        elif kind == 'ingestion':
-            self.ingestion_program_exit_code = proc.returncode
-            self.ingestion_elapsed_time = end - start
-
-        logger.info(f'[exited with {proc.returncode}]')
-        for key, value in self.logs[kind].items():
-            if value["data"]:
-                logger.info(f'[{key}]\n{value["data"]}')
-                self._put_file(value["location"], raw_data=value["data"])
-
-        if self.detailed_results_url and kind == 'program':
-            # Only the scoring program should be able to tell the watcher we are done.
-            self.watch = False
-
-        # set logs of this kind to None, since we handled them already
-        self.logs[kind] = None
-        logger.info("Program finished")
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
@@ -621,13 +604,34 @@ class Run:
         try:
             loop.run_until_complete(gathered_tasks)
         except ExecutionTimeLimitExceeded:
+            pass
+        finally:
             self.watch = False
             for kind, logs in self.logs.items():
-                if logs is not None:
-                    for key, value in logs.items():
-                        if value["data"]:
-                            logger.info(f'[{key}]\n{value["data"]}')
-                            self._put_file(value["location"], raw_data=value["data"])
+                elapsed_time = logs["end"] - logs["start"] if logs["end"] is not None else self.execution_time_limit
+                return_code = logs["proc"].returncode
+                if return_code is None:
+                    # procedure is still running, kill it
+                    logger.info('No return code from Process. Killing it')
+                    # Fixme: this doesn't kill the process. Need to grab the docker hash and call docker kill <hash> ?
+                    logs["proc"].kill()
+                if kind == 'program':
+                    self.program_exit_code = return_code
+                    self.program_elapsed_time = elapsed_time
+                elif kind == 'ingestion':
+                    self.ingestion_program_exit_code = return_code
+                    self.ingestion_elapsed_time = elapsed_time
+
+                logger.info(f'[exited with {logs["proc"].returncode}]')
+                for key, value in logs.items():
+                    if key not in ['stdout', 'stderr']:
+                        continue
+                    if value["data"]:
+                        logger.info(f'[{key}]\n{value["data"]}')
+                        self._put_file(value["location"], raw_data=value["data"])
+
+                # set logs of this kind to None, since we handled them already
+                logger.info("Program finished")
         signal.alarm(0)
 
         if self.is_scoring:
