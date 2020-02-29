@@ -41,7 +41,6 @@ urlpatterns = [
     path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
-    path('server_time/', competitions.ServerTimeView.as_view()),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
