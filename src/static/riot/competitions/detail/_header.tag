@@ -42,7 +42,7 @@
                             </div>
                             <div>
                                 <span class="detail-label">Current server time:</span>
-                                <span class="detail-item">{pretty_date(CURRENT_DATE_TIME)}</span>
+                                <span class="detail-item" id="server_time">{pretty_date(CURRENT_DATE_TIME)}</span>
                             </div>
                             <div class="competition-secret-key" if="{ competition.admin }">
                                 <span class="secret-label">Secret url:</span>
