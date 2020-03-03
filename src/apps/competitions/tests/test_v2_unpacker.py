@@ -25,7 +25,7 @@ class V2UnpackerTests(TestCase):
 
     def test_phase_unpacking(self):
         self.unpacker._unpack_phases()
-        assert self.unpacker.competition['phases'] == test_data.PHASES
+        assert self.unpacker.competition['phases'] == test_data.PHASES2
 
     def test_terms_unpacking(self):
         self.unpacker._unpack_terms()
