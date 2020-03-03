@@ -7,6 +7,7 @@ import os
 import shutil
 import signal
 import socket
+import subprocess
 import tempfile
 import time
 import uuid
@@ -172,7 +173,8 @@ class Run:
         self.execution_time_limit = run_args["execution_time_limit"]
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
-
+        self.ingestion_container_name = uuid.uuid4()
+        self.program_container_name = uuid.uuid4()
         self.program_data = run_args.get("program_data")
         self.ingestion_program_data = run_args.get("ingestion_program")
         self.input_data = run_args.get("input_data")
@@ -442,6 +444,7 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
+            f'--name={self.ingestion_container_name if kind == "ingestion" else self.program_container_name}',
 
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
@@ -613,8 +616,8 @@ class Run:
                 if return_code is None:
                     # procedure is still running, kill it
                     logger.info('No return code from Process. Killing it')
-                    # Fixme: this doesn't kill the process. Need to grab the docker hash and call docker kill <hash> ?
-                    logs["proc"].kill()
+                    kill_code = subprocess.call(['docker', 'kill', str(self.ingestion_container_name if kind == "ingestion" else self.program_container_name)])
+                    logger.info(f'Kill process returned {kill_code}')
                 if kind == 'program':
                     self.program_exit_code = return_code
                     self.program_elapsed_time = elapsed_time
