@@ -34,6 +34,7 @@ COMPETITION_FIELDS = [
     "title",
     "docker_image",
     "queue",
+    "description",
     "registration_auto_approve",
     "enable_detailed_results"
 ]
@@ -60,6 +61,8 @@ PHASE_FIELDS = [
     'max_submissions_per_day',
     'max_submissions_per_person',
     'execution_time_limit',
+    'auto_migrate_to_this_phase',
+    'hide_output',
 ]
 PHASE_FILES = [
     "input_data",
@@ -75,6 +78,7 @@ PAGE_FIELDS = [
 LEADERBOARD_FIELDS = [
     'title',
     'key',
+    'hidden',
 
     # For later
     # 'force_submission_to_leaderboard',
@@ -89,7 +93,7 @@ COLUMN_FIELDS = [
     'sorting',
     'computation',
     'computation_indexes',
-    'decimal_count',
+    'hidden',
 ]
 
 
@@ -404,7 +408,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         for field in COMPETITION_FIELDS:
             if hasattr(comp, field):
                 value = getattr(comp, field, "")
-                if field == 'queue':
+                if field == 'queue' and value is not None:
                     value = str(value.vhost)
                 yaml_data[field] = value
         if comp.logo:
@@ -539,12 +543,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                         temp_date = getattr(phase, field)
                         if not temp_date:
                             continue
-                        temp_date = temp_date.strftime("%m-%d-%Y")
+                        temp_date = temp_date.strftime("%Y-%m-%d")
                         temp_phase_data[field] = temp_date
                     elif field == 'max_submissions_per_person':
                         temp_phase_data['max_submissions'] = getattr(phase, field)
-                    elif field == 'execution_time_limit':
-                        temp_phase_data['execution_time_limit_ms'] = getattr(phase, field)
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
             task_indexes = [task_solution_pairs[task.id]['index'] for task in phase.tasks.all()]
