@@ -263,6 +263,7 @@ class BaseUnpacker:
                         continue
                     key, temp_data_path = self._get_data_key(**task_file_data)
                     task[file_type] = key
+                # TODO: Pass created_by explicitly here instead of request
                 serializer = TaskSerializer(data=task, context={'request': self.fake_request})
                 serializer.is_valid(raise_exception=True)
                 new_task = serializer.save()
