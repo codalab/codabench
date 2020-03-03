@@ -180,6 +180,7 @@ PHASES = [
         'max_submissions_per_person': None,
         'auto_migrate_to_this_phase': False,
         'has_max_submissions': True,
+        'hide_output': False,
         'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
         'tasks': [0],
         'status': 'Previous'
@@ -194,6 +195,7 @@ PHASES = [
         'max_submissions_per_person': None,
         'auto_migrate_to_this_phase': True,
         'has_max_submissions': True,
+        'hide_output': False,
         'tasks': [1],
         'status': 'Current',
         'end': None
