@@ -12,6 +12,8 @@ $ docker-compose exec django ./manage.py generate_data
 
 You can now login as username "admin" with password "admin" at http://localhost:8000
 
+If you ever need to reset the database, use the script `./reset_db.sh`
+
 ## Running tests
 
 ```
