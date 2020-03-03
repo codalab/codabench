@@ -6,12 +6,11 @@
 ```
 $ cp .env_sample .env
 $ docker-compose up -d
-
-# TODO: add how to generate dummy data
-
-# and if you'd like to make a user for testing...
-$ docker-compose exec django python manage.py createsuperuser
+$ docker-compose exec django ./manage.py migrate
+$ docker-compose exec django ./manage.py generate_data
 ```
+
+You can now login as username "admin" with password "admin" at http://localhost:8000
 
 ## Running tests
 
