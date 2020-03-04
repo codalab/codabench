@@ -275,10 +275,13 @@ class BaseUnpacker:
             if 'key' in solution:
                 try:
                     s = Solution.objects.get(key=solution['key'])
+                    solution_tasks = s.tasks.all().values_list('pk', flat=True)
                 except Solution.DoesNotExist:
                     raise CompetitionUnpackingException(f'Could not find solution with key: {solution["key"]}')
                 for task_index in solution['tasks']:
-                    s.add(self.competition['tasks'][task_index])
+                    task = self.competition['tasks'][task_index]
+                    if task.id not in solution_tasks:
+                        s.tasks.add(task)
             else:
                 solution['tasks'] = [self.competition['tasks'][index].key for index in solution['tasks']]
                 solution['data'], temp_data_path = self._get_data_key(**solution, file_type='solution')
