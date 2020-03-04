@@ -359,10 +359,8 @@ class Run:
 
         while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
             try:
-                for key, value in self.logs[kind].items():
-                    # todo: just grab the keys we care about instead of "continuing" from keys we don't care about
-                    if key not in ['stdout', 'stderr']:
-                        continue
+                logs = [self.logs[kind][key] for key in ('stdout', 'stderr')]
+                for value in logs:
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
                         if out:
@@ -607,16 +605,23 @@ class Run:
         try:
             loop.run_until_complete(gathered_tasks)
         except ExecutionTimeLimitExceeded:
-            pass
+            raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
         finally:
             self.watch = False
             for kind, logs in self.logs.items():
-                elapsed_time = logs["end"] - logs["start"] if logs["end"] is not None else self.execution_time_limit
+                if logs["end"] is not None:
+                    elapsed_time = logs["end"] - logs["start"]
+                else:
+                    elapsed_time = self.execution_time_limit
                 return_code = logs["proc"].returncode
                 if return_code is None:
                     # procedure is still running, kill it
                     logger.info('No return code from Process. Killing it')
-                    kill_code = subprocess.call(['docker', 'kill', str(self.ingestion_container_name if kind == "ingestion" else self.program_container_name)])
+                    if kind == 'ingestion':
+                        program_to_kill = self.ingestion_container_name
+                    else:
+                        program_to_kill = self.program_container_name
+                    kill_code = subprocess.call(['docker', 'kill', str(program_to_kill)])
                     logger.info(f'Kill process returned {kill_code}')
                 if kind == 'program':
                     self.program_exit_code = return_code
