@@ -615,13 +615,13 @@ class Run:
                     elapsed_time = self.execution_time_limit
                 return_code = logs["proc"].returncode
                 if return_code is None:
-                    # procedure is still running, kill it
                     logger.info('No return code from Process. Killing it')
                     if kind == 'ingestion':
                         program_to_kill = self.ingestion_container_name
                     else:
                         program_to_kill = self.program_container_name
-                    kill_code = subprocess.call(['docker', 'kill', str(program_to_kill)])
+                    # Try and stop the program. If stop does not succeed
+                    kill_code = subprocess.call(['docker', 'stop', str(program_to_kill)])
                     logger.info(f'Kill process returned {kill_code}')
                 if kind == 'program':
                     self.program_exit_code = return_code
