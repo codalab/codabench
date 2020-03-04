@@ -263,7 +263,7 @@ class BaseUnpacker:
                         continue
                     key, temp_data_path = self._get_data_key(**task_file_data)
                     task[file_type] = key
-                # TODO: Pass created_by explicitly here instead of request
+                # because created_by is a read only field, we need to grab it from the context and can't pass it in data
                 serializer = TaskSerializer(data=task, context={'request': self.fake_request})
                 serializer.is_valid(raise_exception=True)
                 new_task = serializer.save()
@@ -287,6 +287,7 @@ class BaseUnpacker:
                 solution['data'], temp_data_path = self._get_data_key(**solution, file_type='solution')
                 if temp_data_path:
                     solution['md5'] = md5(temp_data_path)
+                # because created_by is a read only field, we need to grab it from the context and can't pass it in data
                 serializer = SolutionSerializer(data=solution, context={'request': self.fake_request})
                 serializer.is_valid(raise_exception=True)
                 new_solution = serializer.save()
