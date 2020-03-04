@@ -169,7 +169,7 @@ PAGES = [{
 }]
 TERMS = 'Placeholder terms content for testing\n'
 
-PHASES1 = [
+PHASES = [
     {
         'index': 0,
         'start': datetime.datetime(2019, 1, 1, 0, 0, tzinfo=timezone.now().tzinfo),
@@ -200,38 +200,23 @@ PHASES1 = [
     }
 ]
 
-PHASES2 = [
-    {
-        'index': 0,
-        'start': datetime.datetime(2019, 1, 1, 0, 0, tzinfo=timezone.now().tzinfo),
-        'name': 'Development Phase',
-        'description': 'Development phase',
-        'execution_time_limit': 500,
-        'max_submissions_per_day': 5,
-        'max_submissions_per_person': None,
-        'auto_migrate_to_this_phase': False,
-        'has_max_submissions': True,
-        'hide_output': False,
-        'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
-        'tasks': [0],
-        'status': 'Previous'
-    },
-    {
-        'index': 1,
-        'start': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
-        'name': 'Final Phase',
-        'description': 'Final phase',
-        'execution_time_limit': 300,
-        'max_submissions_per_day': 5,
-        'max_submissions_per_person': None,
-        'auto_migrate_to_this_phase': True,
-        'has_max_submissions': True,
-        'hide_output': False,
-        'tasks': [1],
-        'status': 'Current',
-        'end': None
-    }
+V2_SPECIFIC_PHASE_DATA = [
+    # Tuples of (key, value) of data specific to v2 unpacker.
+    ('hide_output', False)
 ]
+
+
+def get_phases(version):
+    if version == 1:
+        return PHASES
+    elif version == 2:
+        # Make a copy of the list so we aren't mutating the original phases object. May not be strictly necessary,
+        # but if we ever write a test comparing v1 to v2 or something, this would avoid bugs.
+        v2 = [{k: v for k, v in phase.items()} for phase in PHASES]
+        for phase in v2:
+            for key, value in V2_SPECIFIC_PHASE_DATA:
+                phase[key] = value
+        return v2
 
 
 def get_tasks(user_id):
