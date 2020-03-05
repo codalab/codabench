@@ -5,10 +5,14 @@
                 <table class="ui padded table">
                     <thead>
                     <tr>
-                        <th colspan="2">Collaborators</th>
+                        <th colspan="2">Administrators</th>
                     </tr>
                     </thead>
                     <tbody>
+                    <tr>
+                        <td>{created_by}</td>
+                        <td class="right aligned">Creator</td>
+                    </tr>
                     <tr each="{collab, index in collabs}">
                         <td>{collab.name || collab.username}</td>
                         <td class="right aligned">
@@ -16,11 +20,6 @@
                                onclick="{ remove_collaborator.bind(this, index, (collab.name || collab.username)) }">
                                 <i class="red trash alternate outline icon"></i>
                             </a>
-                        </td>
-                    </tr>
-                    <tr show="{collabs.length === 0}">
-                        <td colspan="2" class="center aligned">
-                            <em>No collaborators yet!</em>
                         </td>
                     </tr>
                     </tbody>

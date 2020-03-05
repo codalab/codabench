@@ -118,7 +118,7 @@
         <div class="content">
             <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
                 <submission-modal hide_output="{selected_phase.hide_output}"
-                                  show_graph="{opts.competition.enable_detailed_results}"
+                                  show_visualization="{opts.competition.enable_detailed_results}"
                                   submission="{selected_submission}"></submission-modal>
             </div>
             <div if="{!!selected_submission && _.get(selected_submission, 'has_children', false)}">
@@ -134,7 +134,7 @@
                      class="ui tab"
                      data-tab="{admin_: is_admin()}child_{i}">
                     <submission-modal hide_output="{selected_phase.hide_output}"
-                                      show_graph="{opts.competition.enable_detailed_results}"
+                                      show_visualization="{opts.competition.enable_detailed_results}"
                                       submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
