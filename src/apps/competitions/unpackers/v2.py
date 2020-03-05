@@ -15,6 +15,7 @@ class V2Unpacker(BaseUnpacker):
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py3'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
+            "description": self.competition_yaml.get("description", ""),
             "pages": [],
             "phases": [],
             "leaderboards": [],
@@ -186,6 +187,7 @@ class V2Unpacker(BaseUnpacker):
                 'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
                 'max_submissions_per_person': phase_data.get('max_submissions'),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
+                'hide_output': phase_data.get('hide_output', False),
             }
             try:
                 new_phase['tasks'] = phase_data['tasks']

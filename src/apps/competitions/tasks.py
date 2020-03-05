@@ -31,7 +31,12 @@ from utils.email import codalab_send_markdown_email
 logger = logging.getLogger()
 
 COMPETITION_FIELDS = [
-    "title"
+    "title",
+    "docker_image",
+    "queue",
+    "description",
+    "registration_auto_approve",
+    "enable_detailed_results"
 ]
 
 TASK_FIELDS = [
@@ -56,6 +61,8 @@ PHASE_FIELDS = [
     'max_submissions_per_day',
     'max_submissions_per_person',
     'execution_time_limit',
+    'auto_migrate_to_this_phase',
+    'hide_output',
 ]
 PHASE_FILES = [
     "input_data",
@@ -71,6 +78,7 @@ PAGE_FIELDS = [
 LEADERBOARD_FIELDS = [
     'title',
     'key',
+    'hidden',
 
     # For later
     # 'force_submission_to_leaderboard',
@@ -85,7 +93,7 @@ COLUMN_FIELDS = [
     'sorting',
     'computation',
     'computation_indexes',
-    'decimal_count',
+    'hidden',
 ]
 
 
@@ -399,7 +407,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         # -------- Main Competition Details -------
         for field in COMPETITION_FIELDS:
             if hasattr(comp, field):
-                yaml_data[field] = getattr(comp, field, "")
+                value = getattr(comp, field, "")
+                if field == 'queue' and value is not None:
+                    value = str(value.vhost)
+                yaml_data[field] = value
         if comp.logo:
             logger.info("Checking logo")
             try:
@@ -410,6 +421,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 logger.warning(
                     f"Competition {comp.pk} has no file associated with the logo, even though the logo field is set."
                 )
+
+        # -------- Competition Terms -------
+        yaml_data['terms'] = 'terms.md'
+        zip_file.writestr('terms.md', comp.terms)
 
         # -------- Competition Pages -------
         yaml_data['pages'] = []
@@ -457,14 +472,17 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                     temp_dataset = getattr(task, file_type)
                     if temp_dataset:
                         if temp_dataset.data_file:
-                            try:
-                                temp_task_data[file_type] = f"{file_type}-{task.pk}.zip"
-                                zip_file.writestr(temp_task_data[file_type], temp_dataset.data_file.read())
-                            except OSError:
-                                logger.error(
-                                    f"The file field is set, but no actual"
-                                    f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
-                                )
+                            if keys_instead_of_files:
+                                temp_task_data[file_type] = str(temp_dataset.key)
+                            else:
+                                try:
+                                    temp_task_data[file_type] = f"{file_type}-{task.pk}.zip"
+                                    zip_file.writestr(temp_task_data[file_type], temp_dataset.data_file.read())
+                                except OSError:
+                                    logger.error(
+                                        f"The file field is set, but no actual"
+                                        f" file was found for dataset: {temp_dataset.pk} with name {temp_dataset.name}"
+                                    )
                         else:
                             logger.warning(f"Could not find data file for dataset object: {temp_dataset.pk}")
             # Now for all of our solutions for the tasks, write those too
@@ -525,12 +543,10 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                         temp_date = getattr(phase, field)
                         if not temp_date:
                             continue
-                        temp_date = temp_date.strftime("%m-%d-%Y")
+                        temp_date = temp_date.strftime("%Y-%m-%d")
                         temp_phase_data[field] = temp_date
                     elif field == 'max_submissions_per_person':
                         temp_phase_data['max_submissions'] = getattr(phase, field)
-                    elif field == 'execution_time_limit':
-                        temp_phase_data['execution_time_limit'] = getattr(phase, field)
                     else:
                         temp_phase_data[field] = getattr(phase, field, "")
             task_indexes = [task_solution_pairs[task.id]['index'] for task in phase.tasks.all()]
@@ -557,7 +573,11 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 col_data = {}
                 for field in COLUMN_FIELDS:
                     if hasattr(column, field):
-                        col_data[field] = getattr(column, field, "")
+                        value = getattr(column, field, "")
+                        if field == 'computation_indexes' and value is not None:
+                            value = value.split(',')
+                        if value is not None:
+                            col_data[field] = value
                 ldb_data['columns'].append(col_data)
             yaml_data['leaderboards'].append(ldb_data)
 

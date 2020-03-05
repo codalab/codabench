@@ -49,7 +49,7 @@ class TaskViewSet(ModelViewSet):
             # We have to grab something from task_validate_qs here, so i grab pk
             qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
 
-        return qs.order_by('-created_when')
+        return qs.order_by('-created_when').distinct()
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

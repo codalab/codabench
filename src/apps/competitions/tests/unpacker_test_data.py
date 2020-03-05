@@ -200,6 +200,24 @@ PHASES = [
     }
 ]
 
+V2_SPECIFIC_PHASE_DATA = [
+    # Tuples of (key, value) of data specific to v2 unpacker.
+    ('hide_output', False)
+]
+
+
+def get_phases(version):
+    if version == 1:
+        return PHASES
+    elif version == 2:
+        # Make a copy of the list so we aren't mutating the original phases object. May not be strictly necessary,
+        # but if we ever write a test comparing v1 to v2 or something, this would avoid bugs.
+        v2 = [{k: v for k, v in phase.items()} for phase in PHASES]
+        for phase in v2:
+            for key, value in V2_SPECIFIC_PHASE_DATA:
+                phase[key] = value
+        return v2
+
 
 def get_tasks(user_id):
     return {
