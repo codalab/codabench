@@ -5,7 +5,9 @@ import json
 import logging
 import os
 import shutil
+import signal
 import socket
+import subprocess
 import tempfile
 import time
 import uuid
@@ -127,6 +129,14 @@ def delete_files_in_folder(folder):
             shutil.rmtree(file_path)
 
 
+class ExecutionTimeLimitExceeded(Exception):
+    pass
+
+
+def alarm_handler(signum, frame):
+    raise ExecutionTimeLimitExceeded
+
+
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -149,6 +159,7 @@ class Run:
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
+        self.logs = {}
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -162,7 +173,8 @@ class Run:
         self.execution_time_limit = run_args["execution_time_limit"]
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
-
+        self.ingestion_container_name = uuid.uuid4()
+        self.program_container_name = uuid.uuid4()
         self.program_data = run_args.get("program_data")
         self.ingestion_program_data = run_args.get("ingestion_program")
         self.input_data = run_args.get("input_data")
@@ -323,7 +335,10 @@ class Run:
             stderr=asyncio.subprocess.PIPE
         )
 
-        logs = {
+        self.logs[kind] = {
+            "proc": proc,
+            "start": start,
+            "end": None,
             "stdout": {
                 "data": b'',
                 "stream": proc.stdout,
@@ -342,9 +357,10 @@ class Run:
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
-        while any(v["continue"] for v in logs.values()):
+        while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
             try:
-                for value in logs.values():
+                logs = [self.logs[kind][key] for key in ('stdout', 'stderr')]
+                for value in logs:
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
                         if out:
@@ -377,29 +393,8 @@ class Run:
                         await asyncio.sleep(2)
                         tries += 1
 
-        end = time.time()
-
-        # Cleanup websocket connection manually
+        self.logs[kind]["end"] = time.time()
         await websocket.close()
-
-        if kind == 'program':
-            self.program_exit_code = proc.returncode
-            self.program_elapsed_time = end - start
-        elif kind == 'ingestion':
-            self.ingestion_program_exit_code = proc.returncode
-            self.ingestion_elapsed_time = end - start
-
-        logger.info(f'[exited with {proc.returncode}]')
-        for key, value in logs.items():
-            if value["data"]:
-                logger.info(f'[{key}]\n{value["data"]}')
-                self._put_file(value["location"], raw_data=value["data"])
-
-        logger.info("Program finished")
-        if self.detailed_results_url and kind == 'program':
-            # Only the scoring program should be able to tell the watcher we are done.
-            self.watch = False
-        return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
@@ -447,9 +442,7 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
-
-            # Try the new timeout feature
-            '--stop-timeout={}'.format(self.execution_time_limit),
+            f'--name={self.ingestion_container_name if kind == "ingestion" else self.program_container_name}',
 
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
@@ -607,7 +600,48 @@ class Run:
             self.watch_file(),
             loop=loop,
         )
-        loop.run_until_complete(gathered_tasks)
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(self.execution_time_limit)
+        try:
+            loop.run_until_complete(gathered_tasks)
+        except ExecutionTimeLimitExceeded:
+            raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
+        finally:
+            self.watch = False
+            for kind, logs in self.logs.items():
+                if logs["end"] is not None:
+                    elapsed_time = logs["end"] - logs["start"]
+                else:
+                    elapsed_time = self.execution_time_limit
+                return_code = logs["proc"].returncode
+                if return_code is None:
+                    logger.info('No return code from Process. Killing it')
+                    if kind == 'ingestion':
+                        program_to_kill = self.ingestion_container_name
+                    else:
+                        program_to_kill = self.program_container_name
+                    # Try and stop the program. If stop does not succeed
+                    kill_code = subprocess.call(['docker', 'stop', str(program_to_kill)])
+                    logger.info(f'Kill process returned {kill_code}')
+                if kind == 'program':
+                    self.program_exit_code = return_code
+                    self.program_elapsed_time = elapsed_time
+                elif kind == 'ingestion':
+                    self.ingestion_program_exit_code = return_code
+                    self.ingestion_elapsed_time = elapsed_time
+
+                logger.info(f'[exited with {logs["proc"].returncode}]')
+                for key, value in logs.items():
+                    if key not in ['stdout', 'stderr']:
+                        continue
+                    if value["data"]:
+                        logger.info(f'[{key}]\n{value["data"]}')
+                        self._put_file(value["location"], raw_data=value["data"])
+
+                # set logs of this kind to None, since we handled them already
+                logger.info("Program finished")
+        signal.alarm(0)
+
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:
