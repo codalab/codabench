@@ -31,9 +31,7 @@
                     <errors errors="{errors}"></errors>
                 </div>
                 
-                <button class="ui primary button">
-                    <a style="color: #fff" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
-                </button>
+                <a class="ui primary button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
                 
                 <div class="ui six item secondary pointing menu">
                     <a class="active item" data-tab="competition_details">
@@ -100,9 +98,6 @@
                 </button>
                 <button class="ui basic red button discard" onclick="{ discard }">
                     Discard Changes
-                </button>
-                <button class="ui primary button">
-                    <a style="color: #fff" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
                 </button>
             </div>
         </div>
