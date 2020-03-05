@@ -103,7 +103,7 @@ v2_yaml_data = {
         {
             "name": "Development Phase",
             "description": "Development phase",
-            "execution_time_limit_ms": 500,
+            "execution_time_limit": 500,
             "max_submissions_per_day": 5,
             "start": "2019-01-01",
             "end": "2019-09-30",
@@ -112,7 +112,7 @@ v2_yaml_data = {
         {
             "name": "Final Phase",
             "description": "Final phase",
-            "execution_time_limit_ms": 300,
+            "execution_time_limit": 300,
             "max_submissions_per_day": 5,
             "auto_migrate_to_this_phase": True,
             "start": "2019-09-30",

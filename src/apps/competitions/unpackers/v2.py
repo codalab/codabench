@@ -194,7 +194,7 @@ class V2Unpacker(BaseUnpacker):
             except KeyError:
                 raise CompetitionUnpackingException(f'Phases must contain at least one task to be valid')
 
-            execution_time_limit = phase_data.get('execution_time_limit_ms')
+            execution_time_limit = phase_data.get('execution_time_limit')
             if execution_time_limit:
                 new_phase['execution_time_limit'] = execution_time_limit
 
