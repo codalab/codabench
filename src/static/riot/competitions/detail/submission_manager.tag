@@ -61,7 +61,12 @@
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
-            <td class="right aligned">{ submission.status }</td>
+            <td class="right aligned">
+            { submission.status }
+            <span class="sub-question-icon" data-tooltip="{submission.status_details}">
+                <i if="{submission.status === 'Failed'}" class="circular question icon"></i>
+            </span>
+            </td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <span data-tooltip="Rerun Submission"
@@ -414,5 +419,10 @@
 
         table tbody .center.aligned td
             color #8c8c8c
+
+        i.circular.icon
+            font-size .6em
+            background #e0e1e2
+            color rgba(0,0,0,.6);
     </style>
 </submission-manager>
