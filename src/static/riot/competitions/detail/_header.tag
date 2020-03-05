@@ -115,6 +115,7 @@
     </div>
 
     <!-- Manage Participants Modal -->
+    <!--
     <div class="ui manage-participants modal" ref="participant_modal">
         <div class="content">
             <participant-manager></participant-manager>
@@ -133,6 +134,7 @@
             <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
+    -->
 
     <!-- Manual Migration Modal -->
     <div class="ui migration modal" ref="migration_modal">
@@ -182,8 +184,9 @@
         self.create_dump = () => {
             CODALAB.api.create_dump(self.competition.id)
                 .done(data => {
-                    $(self.refs.dump_modal).modal('show')
-                    setTimeout(self.update_files, 2000)
+                    toastr.success("Success! Your competition dump is being created.")
+                    //$(self.refs.dump_modal).modal('show')
+                    //setTimeout(self.update_files, 2000)
                 })
                 .fail(response => {
                     toastr.error("Error trying to create competition dump.")
