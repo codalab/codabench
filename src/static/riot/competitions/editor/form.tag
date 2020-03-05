@@ -30,9 +30,7 @@
                     </div>
                     <errors errors="{errors}"></errors>
                 </div>
-                
-                <a class="ui primary button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
-                
+
                 <div class="ui six item secondary pointing menu">
                     <a class="active item" data-tab="competition_details">
                         <i class="checkmark box icon green" show="{ valid_sections.details && !errors.details }"></i>
@@ -99,6 +97,7 @@
                 <button class="ui basic red button discard" onclick="{ discard }">
                     Discard Changes
                 </button>
+                <a class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
             </div>
         </div>
     </div>
@@ -285,6 +284,9 @@
     <style type="text/stylus">
         .ui.basic.red.button.discard:hover
             background-color #db2828 !important
+            color white !important
+        .ui.basic.secondary.button:hover
+            background-color #1b1c1d !important
             color white !important
     </style>
 </competition-form>
