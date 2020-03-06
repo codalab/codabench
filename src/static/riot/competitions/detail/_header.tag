@@ -80,6 +80,9 @@
                 <tr>
                     <th>Files</th>
                 </tr>
+                <tr>
+                    <th if="{tr_show}">Generating Dump, Please Refresh</th>
+                </tr>
                 </thead>
                 <tbody>
                 <tr show="{files.bundle}">
@@ -153,6 +156,8 @@
         self.competition = {}
         self.files = []
 
+        self.tr_show= false
+
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
@@ -169,8 +174,9 @@
         self.create_dump = () => {
             CODALAB.api.create_dump(self.competition.id)
                 .done(data => {
+                    self.tr_show = true
                     toastr.success("Success! Your competition dump is being created.")
-                    setTimeout(self.update_files, 2000)
+                    setTimeout(self.update_files, 100)
                 })
                 .fail(response => {
                     toastr.error("Error trying to create competition dump.")
@@ -182,6 +188,9 @@
                 .done(data => {
                     self.files = data
                     self.update()
+
+                    this.tr_show = false
+
                     if (e) {
                         // Only display toast if activated from button, not CODALAB.event
                         toastr.success('Table Updated')
