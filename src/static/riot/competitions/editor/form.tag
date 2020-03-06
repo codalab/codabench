@@ -97,6 +97,7 @@
                 <button class="ui basic red button discard" onclick="{ discard }">
                     Discard Changes
                 </button>
+                <a class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
             </div>
         </div>
     </div>
@@ -283,6 +284,9 @@
     <style type="text/stylus">
         .ui.basic.red.button.discard:hover
             background-color #db2828 !important
+            color white !important
+        .ui.basic.secondary.button:hover
+            background-color #1b1c1d !important
             color white !important
     </style>
 </competition-form>
