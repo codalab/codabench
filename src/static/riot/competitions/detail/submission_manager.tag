@@ -62,10 +62,10 @@
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
             <td class="right aligned">
-            { submission.status }
-            <span class="sub-question-icon" data-tooltip="{submission.status_details}">
-                <i if="{submission.status === 'Failed'}" class="circular question icon"></i>
-            </span>
+                { submission.status }
+                <sup data-tooltip="{submission.status_details}">
+                    <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
+                </sup>
             </td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
@@ -420,9 +420,7 @@
         table tbody .center.aligned td
             color #8c8c8c
 
-        i.circular.icon
-            font-size .6em
-            background #e0e1e2
-            color rgba(0,0,0,.6);
+        .failed.question.circle.icon
+            color #2c3f4c
     </style>
 </submission-manager>
