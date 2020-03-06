@@ -115,26 +115,11 @@
     </div>
 
     <!-- Manage Participants Modal -->
-    <!--
     <div class="ui manage-participants modal" ref="participant_modal">
         <div class="content">
             <participant-manager></participant-manager>
         </div>
     </div>
-
-    <div class="ui basic modal" ref="dump_modal">
-        <div class="header">
-            Creating Competition Dump
-        </div>
-        <div class="content">
-            Success! Your competition dump is being created. This may take some time.
-            If the files table does not update with the new dump, try refreshing the table.
-        </div>
-        <div class="actions">
-            <div class="ui primary inverted ok button">Dismiss</div>
-        </div>
-    </div>
-    -->
 
     <!-- Manual Migration Modal -->
     <div class="ui migration modal" ref="migration_modal">
@@ -185,8 +170,7 @@
             CODALAB.api.create_dump(self.competition.id)
                 .done(data => {
                     toastr.success("Success! Your competition dump is being created.")
-                    //$(self.refs.dump_modal).modal('show')
-                    //setTimeout(self.update_files, 2000)
+                    setTimeout(self.update_files, 2000)
                 })
                 .fail(response => {
                     toastr.error("Error trying to create competition dump.")
