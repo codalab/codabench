@@ -80,9 +80,6 @@
                 <tr>
                     <th>Files</th>
                 </tr>
-                <tr>
-                    <th if="{tr_show}">Generating Dump, Please Refresh</th>
-                </tr>
                 </thead>
                 <tbody>
                 <tr show="{files.bundle}">
@@ -105,6 +102,9 @@
                     <td show="{!files.dumps && !files.bundle}">
                         <em>No Files Yet</em>
                     </td>
+                </tr>
+                <tr>
+                    <td class="dump-td" if="{tr_show}">Generating Dump, Please Refresh</td>
                 </tr>
                 </tbody>
             </table>
@@ -274,6 +274,9 @@
             border-bottom 1px solid $teal
             display inline-block
             line-height 0.9em
+
+        .dump-td
+            text-align center !important
 
         .tiny.left.labeled.button
             display flex
