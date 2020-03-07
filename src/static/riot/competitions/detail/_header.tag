@@ -104,7 +104,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="dump-td" if="{tr_show}">Generating Dump, Please Refresh</td>
+                    <td class="center aligned" if="{tr_show}">Generating Dump, Please Refresh</td>
                 </tr>
                 </tbody>
             </table>
@@ -274,9 +274,6 @@
             border-bottom 1px solid $teal
             display inline-block
             line-height 0.9em
-
-        .dump-td
-            text-align center !important
 
         .tiny.left.labeled.button
             display flex
