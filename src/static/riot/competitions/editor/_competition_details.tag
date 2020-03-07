@@ -39,11 +39,13 @@
                 <label>Enable Visualizations</label>
                 <input type="checkbox" ref="detailed_results">
             </div>
-            <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
-               target="_blank"
-               data-tooltip="What's this?">
-                <i class="small grey circular question mark icon"></i>
-            </a>
+            <sup>
+                <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
+                   target="_blank"
+                   data-tooltip="What's this?">
+                    <i class="grey question circle icon"></i>
+                </a>
+            </sup>
         </div>
     </div>
 
