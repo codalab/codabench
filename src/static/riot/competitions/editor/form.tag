@@ -60,7 +60,7 @@
                     <a class="item" data-tab="collaborators">
                         <i class="checkmark box icon green" show="{ valid_sections.collaborators && !errors.collaborators }"></i>
                         <i class="minus circle icon red" show="{ errors.collaborators }"></i>
-                        Collaborators
+                        Administrators
                     </a>
                 </div>
                 <div class="ui active tab" data-tab="competition_details">
@@ -86,18 +86,18 @@
 
         <div class="center aligned row">
             <div class="column">
-                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
-                <button class="ui primary button { disabled: !are_all_sections_valid() }"
-                        onclick="{ save_and_publish }">
-                    Save and Publish
-                </button>
-                <button class="ui grey button { disabled: !are_all_sections_valid() }" onclick="{ save_as_draft }">
-                    Save as Draft
+                <div class="ui checkbox publish-checkbox">
+                    <input type="checkbox" ref="publish">
+                    <label>Publish</label>
+                </div>
+                <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
+                    Save
                 </button>
                 <button class="ui basic red button discard" onclick="{ discard }">
                     Discard Changes
                 </button>
                 <a class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
+                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
             </div>
         </div>
     </div>
@@ -149,6 +149,7 @@
             CODALAB.api.get_competition(id)
                 .done(function (data) {
                     self.competition = data
+                    self.refs.publish.checked = self.competition.published
                     CODALAB.events.trigger('competition_loaded', self.competition)
                     self.update()
                 })
@@ -168,7 +169,8 @@
             }
         }
 
-        self._save = function (publish) {
+        self.save = function () {
+            self.competition.published = self.refs.publish.checked
             let previous_index, current_index, next_index;
             let now = new Date()
 
@@ -222,14 +224,8 @@
                 .done(function (response) {
                     self.errors = {}
                     self.update()
-                    if (publish) {
-                        toastr.success("Competition published!")
-                        window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
-                    } else {
-                        toastr.success("Competition saved!")
-                        self.competition = response
-                        CODALAB.events.trigger('competition_loaded', self.competition)
-                    }
+                    toastr.success("Competition saved!")
+                    window.location.href = window.URLS.COMPETITION_DETAIL(response.id)
                 })
                 .fail(function (response) {
                     if (response) {
@@ -258,17 +254,6 @@
                 })
 
         }
-
-        self.save_and_publish = () => {
-            self.competition.published = true
-            self._save(self.competition.published)
-        }
-
-        self.save_as_draft = () => {
-            self.competition.published = false
-            self._save(self.competition.published)
-        }
-
         /*---------------------------------------------------------------------
          Events
         ---------------------------------------------------------------------*/
@@ -282,6 +267,8 @@
         })
     </script>
     <style type="text/stylus">
+        .publish-checkbox
+            margin-right 10px
         .ui.basic.red.button.discard:hover
             background-color #db2828 !important
             color white !important

@@ -2,7 +2,7 @@
     <div class="ui large green pointing menu">
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" show="{!opts.hide_output}">LOGS</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{!opts.hide_output && opts.show_graph}">GRAPH</div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{!opts.hide_output && opts.show_visualization}">VISUALIZATION</div>
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
@@ -128,7 +128,7 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_graph && (!opts.hide_output || submission.admin)}">
+    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
         <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
