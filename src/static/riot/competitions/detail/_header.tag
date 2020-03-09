@@ -176,7 +176,7 @@
                 .done(data => {
                     self.tr_show = true
                     toastr.success("Success! Your competition dump is being created.")
-                    setTimeout(self.update_files, 100)
+                    self.update()
                 })
                 .fail(response => {
                     toastr.error("Error trying to create competition dump.")
@@ -187,9 +187,8 @@
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
                     self.files = data
+                    self.tr_show = false
                     self.update()
-
-                    this.tr_show = false
 
                     if (e) {
                         // Only display toast if activated from button, not CODALAB.event
