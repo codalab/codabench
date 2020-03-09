@@ -156,7 +156,7 @@
         self.competition = {}
         self.files = []
 
-        self.tr_show= false
+        self.tr_show = false
 
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
