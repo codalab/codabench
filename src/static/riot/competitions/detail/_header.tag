@@ -103,6 +103,9 @@
                         <em>No Files Yet</em>
                     </td>
                 </tr>
+                <tr>
+                    <td class="center aligned" if="{tr_show}">Generating Dump, Please Refresh</td>
+                </tr>
                 </tbody>
             </table>
         </div>
@@ -118,19 +121,6 @@
     <div class="ui manage-participants modal" ref="participant_modal">
         <div class="content">
             <participant-manager></participant-manager>
-        </div>
-    </div>
-
-    <div class="ui basic modal" ref="dump_modal">
-        <div class="header">
-            Creating Competition Dump
-        </div>
-        <div class="content">
-            Success! Your competition dump is being created. This may take some time.
-            If the files table does not update with the new dump, try refreshing the table.
-        </div>
-        <div class="actions">
-            <div class="ui primary inverted ok button">Dismiss</div>
         </div>
     </div>
 
@@ -166,6 +156,8 @@
         self.competition = {}
         self.files = []
 
+        self.tr_show = false
+
         CODALAB.events.on('competition_loaded', function (competition) {
             competition.admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.competition = competition
@@ -182,8 +174,9 @@
         self.create_dump = () => {
             CODALAB.api.create_dump(self.competition.id)
                 .done(data => {
-                    $(self.refs.dump_modal).modal('show')
-                    setTimeout(self.update_files, 2000)
+                    self.tr_show = true
+                    toastr.success("Success! Your competition dump is being created.")
+                    self.update()
                 })
                 .fail(response => {
                     toastr.error("Error trying to create competition dump.")
@@ -194,7 +187,9 @@
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
                     self.files = data
+                    self.tr_show = false
                     self.update()
+
                     if (e) {
                         // Only display toast if activated from button, not CODALAB.event
                         toastr.success('Table Updated')
