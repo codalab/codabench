@@ -60,7 +60,7 @@
                     <a class="item" data-tab="collaborators">
                         <i class="checkmark box icon green" show="{ valid_sections.collaborators && !errors.collaborators }"></i>
                         <i class="minus circle icon red" show="{ errors.collaborators }"></i>
-                        Collaborators
+                        Administrators
                     </a>
                 </div>
                 <div class="ui active tab" data-tab="competition_details">

@@ -27,7 +27,7 @@
                     <tr>
                         <th colspan="2" class="right aligned">
                             <button class="ui tiny inverted green icon button" ref="modal_button">
-                                <i class="add icon"></i> Add collaborator
+                                <i class="add icon"></i> Add administrator
                             </button>
                         </th>
                     </tr>
