@@ -103,7 +103,7 @@ v2_yaml_data = {
         {
             "name": "Development Phase",
             "description": "Development phase",
-            "execution_time_limit_ms": 500,
+            "execution_time_limit": 500,
             "max_submissions_per_day": 5,
             "start": "2019-01-01",
             "end": "2019-09-30",
@@ -112,7 +112,7 @@ v2_yaml_data = {
         {
             "name": "Final Phase",
             "description": "Final phase",
-            "execution_time_limit_ms": 300,
+            "execution_time_limit": 300,
             "max_submissions_per_day": 5,
             "auto_migrate_to_this_phase": True,
             "start": "2019-09-30",
@@ -199,6 +199,24 @@ PHASES = [
         'end': None
     }
 ]
+
+V2_SPECIFIC_PHASE_DATA = [
+    # Tuples of (key, value) of data specific to v2 unpacker.
+    ('hide_output', False)
+]
+
+
+def get_phases(version):
+    if version == 1:
+        return PHASES
+    elif version == 2:
+        # Make a copy of the list so we aren't mutating the original phases object. May not be strictly necessary,
+        # but if we ever write a test comparing v1 to v2 or something, this would avoid bugs.
+        v2 = [{k: v for k, v in phase.items()} for phase in PHASES]
+        for phase in v2:
+            for key, value in V2_SPECIFIC_PHASE_DATA:
+                phase[key] = value
+        return v2
 
 
 def get_tasks(user_id):

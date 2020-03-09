@@ -10,7 +10,7 @@
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
             <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
             <label show="{ uploaded_logo }">
-                Uploaded Logo: <a href="{ uploaded_logo }">{ uploaded_logo_name }</a>
+                Uploaded Logo: <a href="{ uploaded_logo }" target="_blank">{ uploaded_logo_name }</a>
             </label>
             <div class="ui left action file input">
                 <button class="ui icon button" onclick="document.getElementById('form_file_logo').click()">
@@ -36,9 +36,16 @@
         </div>
         <div class="field">
             <div class="ui checkbox">
-                <label>Enable Detailed Results</label>
+                <label>Enable Visualizations</label>
                 <input type="checkbox" ref="detailed_results">
             </div>
+            <sup>
+                <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
+                   target="_blank"
+                   data-tooltip="What's this?">
+                    <i class="grey question circle icon"></i>
+                </a>
+            </sup>
         </div>
     </div>
 

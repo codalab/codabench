@@ -28,7 +28,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ score_column in submission.scores }" if="{!_.includes(hidden_column_keys, score_column.column_key)}">{ score_column.score }</td>
+            <td each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission) } </td>
         </tr>
         </tbody>
     </table>
@@ -36,6 +36,10 @@
         let self = this
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
+
+        self.get_score = function(column, submission) {
+             return _.get(_.find(submission.scores, {column_key: column.key}), 'score', 'N/A')
+        }
 
         self.update_leaderboard = () => {
             if (_.isEmpty(self.selected_leaderboard)) {

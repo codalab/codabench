@@ -5,7 +5,9 @@ import json
 import logging
 import os
 import shutil
+import signal
 import socket
+import subprocess
 import tempfile
 import time
 import uuid
@@ -28,6 +30,10 @@ app.config_from_object('celery_config')  # grabs celery_config.py
 
 logger = logging.getLogger()
 
+# Setup base directories used by all submissions
+BASE_DIR = "/tmp/codalab-v2"
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
 # Status options for submissions
 STATUS_NONE = "None"
@@ -54,6 +60,10 @@ class SubmissionException(Exception):
     pass
 
 
+# -----------------------------------------------------------------------------
+# The main compute worker entrypoint, this is how a job is ran at the highest
+# level.
+# -----------------------------------------------------------------------------
 @task(name="compute_worker_run")
 def run_wrapper(run_args):
     logger.info(f"Received run arguments: {run_args}")
@@ -97,6 +107,36 @@ def md5(filename):
     return hash_md5.hexdigest()
 
 
+def get_folder_size_in_gb(folder):
+    if not os.path.exists(folder):
+        return 0
+    total_size = os.path.getsize(folder)
+    for item in os.listdir(folder):
+        path = os.path.join(folder, item)
+        if os.path.isfile(path):
+            total_size += os.path.getsize(path)
+        elif os.path.isdir(path):
+            total_size += get_folder_size_in_gb(path)
+    return total_size / 1024 / 1024 / 1024
+
+
+def delete_files_in_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+
+class ExecutionTimeLimitExceeded(Exception):
+    pass
+
+
+def alarm_handler(signum, frame):
+    raise ExecutionTimeLimitExceeded
+
+
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -119,6 +159,7 @@ class Run:
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
+        self.logs = {}
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -132,7 +173,8 @@ class Run:
         self.execution_time_limit = run_args["execution_time_limit"]
         # stdout and stderr
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = self._get_stdout_stderr_file_names(run_args)
-
+        self.ingestion_container_name = uuid.uuid4()
+        self.program_container_name = uuid.uuid4()
         self.program_data = run_args.get("program_data")
         self.ingestion_program_data = run_args.get("ingestion_program")
         self.input_data = run_args.get("input_data")
@@ -166,6 +208,8 @@ class Run:
         self.requests_session.mount('https://', adapter)
 
     async def watch_file(self):
+        """Watches files alongside scoring + program docker containers, currently only used
+        for detailed_results.html"""
         if not self.detailed_results_url:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
@@ -243,21 +287,36 @@ class Run:
             logger.info("Docker pull for image: {} returned a non-zero exit code!")
             raise SubmissionException(f"Docker pull for {image_name} failed!")
 
-    def _get_bundle(self, url, destination):
-        """Downloads zip from url and unpacks it into destination
+    def _get_bundle(self, url, destination, cache=True):
+        """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
+        against existence in CACHE_DIR/<hashed_url> and only downloaded if needed. Cache size is checked
+        during the prepare step and cleared if it's over MAX_CACHE_DIR_SIZE_GB.
 
         :returns zip file path"""
         logger.info(f"Getting bundle {url} to unpack @{destination}")
-        bundle_file = tempfile.NamedTemporaryFile(delete=False)
+        download_needed = True
 
-        try:
-            urlretrieve(url, bundle_file.name)
-        except HTTPError:
-            raise SubmissionException(f"Problem fetching {url} to put in {destination}")
+        if cache:
+            # Hash url and download it if it doesn't exist
+            url_without_params = url.split("?")[0]
+            url_hash = hashlib.sha256(url_without_params.encode('utf8')).hexdigest()
+            bundle_file = os.path.join(CACHE_DIR, url_hash)
+            download_needed = not os.path.exists(bundle_file)
+        else:
+            bundle_file = tempfile.NamedTemporaryFile(delete=False).name
 
-        with ZipFile(bundle_file.file, 'r') as z:
+        if download_needed:
+            try:
+                urlretrieve(url, bundle_file)
+            except HTTPError:
+                raise SubmissionException(f"Problem fetching {url} to put in {destination}")
+
+        # Extract the contents to destination directory
+        with ZipFile(bundle_file, 'r') as z:
             z.extractall(os.path.join(self.root_dir, destination))
-        return bundle_file.name
+
+        # Give back zip file path for other uses, i.e. md5'ing the zip to ID it
+        return bundle_file
 
     async def _run_docker_cmd(self, docker_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
@@ -276,7 +335,10 @@ class Run:
             stderr=asyncio.subprocess.PIPE
         )
 
-        logs = {
+        self.logs[kind] = {
+            "proc": proc,
+            "start": start,
+            "end": None,
             "stdout": {
                 "data": b'',
                 "stream": proc.stdout,
@@ -295,9 +357,10 @@ class Run:
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
-        while any(v["continue"] for v in logs.values()):
+        while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
             try:
-                for value in logs.values():
+                logs = [self.logs[kind][key] for key in ('stdout', 'stderr')]
+                for value in logs:
                     try:
                         out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
                         if out:
@@ -330,29 +393,8 @@ class Run:
                         await asyncio.sleep(2)
                         tries += 1
 
-        end = time.time()
-
-        # Cleanup websocket connection manually
+        self.logs[kind]["end"] = time.time()
         await websocket.close()
-
-        if kind == 'program':
-            self.program_exit_code = proc.returncode
-            self.program_elapsed_time = end - start
-        elif kind == 'ingestion':
-            self.ingestion_program_exit_code = proc.returncode
-            self.ingestion_elapsed_time = end - start
-
-        logger.info(f'[exited with {proc.returncode}]')
-        for key, value in logs.items():
-            if value["data"]:
-                logger.info(f'[{key}]\n{value["data"]}')
-                self._put_file(value["location"], raw_data=value["data"])
-
-        logger.info("Program finished")
-        if self.detailed_results_url and kind == 'program':
-            # Only the scoring program should be able to tell the watcher we are done.
-            self.watch = False
-        return proc
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
@@ -400,9 +442,7 @@ class Run:
             'run',
             # Remove it after run
             '--rm',
-
-            # Try the new timeout feature
-            '--stop-timeout={}'.format(self.execution_time_limit),
+            f'--name={self.ingestion_container_name if kind == "ingestion" else self.program_container_name}',
 
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
@@ -497,8 +537,17 @@ class Run:
         logger.info(f'response: {resp}')
         logger.info(f'content: {resp.content}')
 
+    def _prune_cache_dir(self, max_size=MAX_CACHE_DIR_SIZE_GB):
+        if get_folder_size_in_gb(CACHE_DIR) > max_size:
+            delete_files_in_folder(CACHE_DIR)
+
     def prepare(self):
         self._update_status(STATUS_PREPARING)
+
+        # Setup cache and prune if it's out of control
+        if not os.path.exists(CACHE_DIR):
+            os.mkdir(CACHE_DIR)
+        self._prune_cache_dir()
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
         # sub folder.
@@ -509,14 +558,15 @@ class Run:
             (self.input_data, 'input_data'),
             (self.reference_data, 'input/ref'),
         ]
-
         if self.is_scoring:
             # Send along submission result so scoring_program can get access
             bundles += [(self.prediction_result, 'input/res')]
 
         for url, path in bundles:
             if url is not None:
-                zip_file = self._get_bundle(url, path)
+                # At the moment let's just cache input & reference data
+                cache_this_bundle = path in ('input_data', 'input/ref')
+                zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
                 # TODO: When we have `is_scoring_only` this needs to change...
                 if url == self.program_data and not self.is_scoring:
@@ -550,7 +600,48 @@ class Run:
             self.watch_file(),
             loop=loop,
         )
-        loop.run_until_complete(gathered_tasks)
+        signal.signal(signal.SIGALRM, alarm_handler)
+        signal.alarm(self.execution_time_limit)
+        try:
+            loop.run_until_complete(gathered_tasks)
+        except ExecutionTimeLimitExceeded:
+            raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
+        finally:
+            self.watch = False
+            for kind, logs in self.logs.items():
+                if logs["end"] is not None:
+                    elapsed_time = logs["end"] - logs["start"]
+                else:
+                    elapsed_time = self.execution_time_limit
+                return_code = logs["proc"].returncode
+                if return_code is None:
+                    logger.info('No return code from Process. Killing it')
+                    if kind == 'ingestion':
+                        program_to_kill = self.ingestion_container_name
+                    else:
+                        program_to_kill = self.program_container_name
+                    # Try and stop the program. If stop does not succeed
+                    kill_code = subprocess.call(['docker', 'stop', str(program_to_kill)])
+                    logger.info(f'Kill process returned {kill_code}')
+                if kind == 'program':
+                    self.program_exit_code = return_code
+                    self.program_elapsed_time = elapsed_time
+                elif kind == 'ingestion':
+                    self.ingestion_program_exit_code = return_code
+                    self.ingestion_elapsed_time = elapsed_time
+
+                logger.info(f'[exited with {logs["proc"].returncode}]')
+                for key, value in logs.items():
+                    if key not in ['stdout', 'stderr']:
+                        continue
+                    if value["data"]:
+                        logger.info(f'[{key}]\n{value["data"]}')
+                        self._put_file(value["location"], raw_data=value["data"])
+
+                # set logs of this kind to None, since we handled them already
+                logger.info("Program finished")
+        signal.alarm(0)
+
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:

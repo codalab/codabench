@@ -42,7 +42,7 @@
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
-            <th class="right aligned status-column">Status</th>
+            <th class="right aligned">Status</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
@@ -61,7 +61,12 @@
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
-            <td class="right aligned">{ submission.status }</td>
+            <td class="right aligned collapsing">
+                { submission.status }
+                <sup data-tooltip="{submission.status_details}">
+                    <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
+                </sup>
+            </td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <span data-tooltip="Rerun Submission"
@@ -118,7 +123,7 @@
         <div class="content">
             <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
                 <submission-modal hide_output="{selected_phase.hide_output}"
-                                  show_graph="{opts.competition.enable_detailed_results}"
+                                  show_visualization="{opts.competition.enable_detailed_results}"
                                   submission="{selected_submission}"></submission-modal>
             </div>
             <div if="{!!selected_submission && _.get(selected_submission, 'has_children', false)}">
@@ -134,7 +139,7 @@
                      class="ui tab"
                      data-tab="{admin_: is_admin()}child_{i}">
                     <submission-modal hide_output="{selected_phase.hide_output}"
-                                      show_graph="{opts.competition.enable_detailed_results}" 
+                                      show_visualization="{opts.competition.enable_detailed_results}"
                                       submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
@@ -324,7 +329,7 @@
             // stupid workaround to not modify the original submission object
             submission = _.defaultsDeep({}, submission)
             if (submission.has_children) {
-                submission.children = _.map(submission.children, child => {
+                submission.children = _.map(_.sortBy(submission.children), child => {
                     return {id: child}
                 })
                 CODALAB.api.get_submission_details(submission.id)
@@ -404,9 +409,6 @@
         .action-column
             width 100px
 
-        .status-column
-            width 50px
-
         .submission_row
             &:hover
                 cursor: pointer
@@ -414,5 +416,8 @@
 
         table tbody .center.aligned td
             color #8c8c8c
+
+        .failed.question.circle.icon
+            color #2c3f4c
     </style>
 </submission-manager>

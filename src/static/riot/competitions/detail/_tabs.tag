@@ -111,9 +111,9 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
-                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <!--<div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
-                            </div>
+                            </div>-->
                         </div>
                     </div>
                     <div class="twelve wide column">
@@ -122,7 +122,7 @@
                             <div class="ui" id="page_{i}">
                             </div>
                         </div>
-                        <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
+                        <!--<div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
                                 <table class="ui celled table">
                                     <thead>
@@ -148,7 +148,7 @@
                                 </table>
 
                             </div>
-                        </div>
+                        </div>-->
                     </div>
                 </div>
             </div>

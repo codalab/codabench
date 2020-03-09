@@ -15,7 +15,14 @@ class NamedBase64ImageField(Base64ImageField):
     and turns it into a file of the given name containing the given data.
 
     We're using this so we can easily send image data along with normal JSON requests, instead of having to use
-    FormData on the frontend.."""
+    FormData on the frontend..
+
+    Example data:
+        {
+            "file_name": "jim.jpg",
+            "data": "/9j/4AAQSkZJRgABAQAASABIAA..."
+        }
+    """
 
     def to_internal_value(self, named_json_data):
         # Check if this is a base64 string
