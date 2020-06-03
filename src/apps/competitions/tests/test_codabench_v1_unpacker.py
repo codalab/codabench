@@ -3,7 +3,7 @@ import os
 from django.test import TestCase
 
 import competitions.tests.unpacker_test_data as test_data
-from competitions.unpackers.codabench_v1 import CodabenchV1Unpacker
+from competitions.unpackers.codabench_v1 import CodabenchV1ToCompetitionUnpacker
 from factories import UserFactory
 
 
@@ -12,7 +12,7 @@ class CodabenchV1UnpackerTests(TestCase):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_dir = os.path.join(self.base_dir, 'files')
         self.user = UserFactory()
-        self.unpacker = CodabenchV1Unpacker(
+        self.unpacker = CodabenchV1ToCompetitionUnpacker(
             competition_yaml=test_data.codabench_v1_yaml_data,
             temp_directory=self.temp_dir,
             creator=self.user,
