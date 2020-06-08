@@ -10,6 +10,8 @@ from .views import analytics, competitions, datasets, profiles, leaderboards, su
 
 
 router = SimpleRouter()
+router.register('benchmarks', benchmarks.BenchmarkViewSet)
+router.register('benchmarks_status', benchmarks.BenchmarkCreationTaskStatusViewSet)
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
 router.register('phases', competitions.PhaseViewSet, 'phases')
@@ -21,8 +23,6 @@ router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submi
 router.register('tasks', tasks.TaskViewSet)
 router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
 router.register('queues', queues.QueueViewSet, 'queues')
-router.register('benchmarks', benchmarks.BenchmarkViewSet)
-router.register('benchmarks_status', benchmarks.BenchmarkCreationTaskStatusViewSet)
 
 schema_view = get_schema_view(
     openapi.Info(
