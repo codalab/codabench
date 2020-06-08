@@ -13,7 +13,6 @@ class CompetitionTests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')
         self.other_user = UserFactory(username='other_user', password='other')
-        self.comp = CompetitionFactory(created_by=self.creator)
         PhaseFactory(competition=self.comp)
         self.leaderboard = LeaderboardFactory(competition=self.comp)
         ColumnFactory(leaderboard=self.leaderboard)
@@ -26,7 +25,6 @@ class CompetitionTests(APITestCase):
         # We don't want to post back the logo url, since it's expecting JSON data with
         # the base64 of the logo in it
         data["logo"] = None
-
         # Just get the key from the task and pass that instead of the object
         data["phases"][0]["tasks"] = [data["phases"][0]["tasks"][0]["key"]]
         return data

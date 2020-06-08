@@ -18,7 +18,7 @@ class CompetitionUpload(LoginRequiredMixin, TemplateView):
 
 
 class CompetitionDetail(DetailView):
-    queryset = Competition.objects.all()
+    queryset = Competition.objects.filter(type=Competition.COMPETITION)
     template_name = 'competitions/detail.html'
 
     def get_object(self, *args, **kwargs):

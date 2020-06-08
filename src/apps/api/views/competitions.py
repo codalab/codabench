@@ -23,7 +23,7 @@ from api.permissions import IsOrganizerOrCollaborator
 
 
 class CompetitionViewSet(ModelViewSet):
-    queryset = Competition.objects.all()
+    queryset = Competition.objects.filter(type=Competition.COMPETITION)
 
     def get_queryset(self):
         qs = super().get_queryset()

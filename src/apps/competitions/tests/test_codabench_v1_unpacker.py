@@ -3,8 +3,9 @@ import os
 from django.test import TestCase
 
 import competitions.tests.unpacker_test_data as test_data
-from competitions.unpackers.codabench_v1 import CodabenchV1ToCompetitionUnpacker
+from competitions.unpackers.codabench_v1 import CodabenchV1Unpacker
 from factories import UserFactory
+from ..models import Competition
 
 
 class CodabenchV1UnpackerTests(TestCase):
@@ -12,7 +13,7 @@ class CodabenchV1UnpackerTests(TestCase):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_dir = os.path.join(self.base_dir, 'files')
         self.user = UserFactory()
-        self.unpacker = CodabenchV1ToCompetitionUnpacker(
+        self.unpacker = CodabenchV1Unpacker(
             competition_yaml=test_data.codabench_v1_yaml_data,
             temp_directory=self.temp_dir,
             creator=self.user,
@@ -40,3 +41,7 @@ class CodabenchV1UnpackerTests(TestCase):
     def test_leaderboard_unpacking(self):
         self.unpacker._unpack_leaderboard()
         assert self.unpacker.competition['leaderboards'] == test_data.LEADERBOARDS
+
+    def test_set_competition_type(self):
+        self.unpacker._set_competition_type()
+        assert  self.unpacker.competition['type'] == Competition.BENCHMARK

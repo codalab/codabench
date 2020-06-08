@@ -3,11 +3,20 @@ from django.utils import timezone
 
 from competitions.unpackers.v2 import V2Unpacker
 from .utils import CompetitionUnpackingException
+from ..models import Competition
 
 
-class CodabenchV1ToCompetitionUnpacker(V2Unpacker):
+class CodabenchV1Unpacker(V2Unpacker):
     """
-    transform a benchmarks bundle to competition
+    this unpacker mainly focus on unpack benchmark bundle and create correspond model in order to create benchmark.
+    from benchmark bundle transfer to competition v2 bundle is not support here, it will raise ambiguity,
+    reason is:
+
+    1. user upload bundle from benchmark page to create bench mark
+    2. user upload bundle from competition page to create competition by using benchmark bundle
+
+    how could we distinguish the path user upload from? because we will use same api upload_completed()..
+    If we insist on it, there will be more code changes and the readability will be greatly reduced.
     """
     def unpack(self):
         self._unpack_pages()
@@ -18,6 +27,7 @@ class CodabenchV1ToCompetitionUnpacker(V2Unpacker):
         self._unpack_queue()
         self._set_default_phase()
         self._unpack_leaderboard()
+        self._set_competition_type()
 
     def _set_default_phase(self):
         # ---------------------------------------------------------------------
@@ -49,6 +59,14 @@ class CodabenchV1ToCompetitionUnpacker(V2Unpacker):
         # convert the dict type to an element in the list
         self.competition['leaderboards'] = [leaderboard]
 
+    def _set_competition_type(self):
+        """
+        we set competition type to `Competition.BENCHMARK` here, so the front end could use this type to implement
+        UI special logic
+        by default this type is `Competition.COMPETITION`
+        """
+        self.competition['type'] = Competition.BENCHMARK
+
     @staticmethod
     def _generate_default_phase_start_time():
         from datetime import datetime
@@ -56,4 +74,3 @@ class CodabenchV1ToCompetitionUnpacker(V2Unpacker):
 
     def _collect_task_index_from_yaml(self):
         return [item['index'] for item in self.competition_yaml['tasks']]
-

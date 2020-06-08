@@ -55,7 +55,6 @@ class CompetitionFactory(DjangoModelFactory):
     logo = factory.django.ImageField()
     published = factory.LazyAttribute(lambda n: random.choice([True, False]))
     description = factory.Faker('paragraph')
-
     created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
 
     @post_generation
