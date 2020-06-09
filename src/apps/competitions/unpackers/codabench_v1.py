@@ -65,7 +65,7 @@ class CodabenchV1Unpacker(V2Unpacker):
         UI special logic
         by default this type is `Competition.COMPETITION`
         """
-        self.competition['type'] = Competition.BENCHMARK
+        self.competition['competition_type'] = Competition.BENCHMARK
 
     @staticmethod
     def _generate_default_phase_start_time():

@@ -44,4 +44,4 @@ class CodabenchV1UnpackerTests(TestCase):
 
     def test_set_competition_type(self):
         self.unpacker._set_competition_type()
-        assert  self.unpacker.competition['type'] == Competition.BENCHMARK
+        assert  self.unpacker.competition['competition_type'] == Competition.BENCHMARK
