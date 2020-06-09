@@ -47,7 +47,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION, blank=True)
 
     def __str__(self):
-        return f"competition-{self.title}-{self.pk}-{self.type}"
+        return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
     @property
     def bundle_dataset(self):
