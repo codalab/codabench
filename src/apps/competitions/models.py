@@ -44,7 +44,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
 
     # we use filed type to distinguish 'competition' and 'benchmark'
-    competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION, blank=True)
+    competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
