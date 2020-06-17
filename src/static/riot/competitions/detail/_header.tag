@@ -40,6 +40,10 @@
                                 <span class="detail-label">Current phase ends:</span>
                                 <span class="detail-item">{get_end_date(competition)}</span>
                             </div>
+                            <div>
+                                <span class="detail-label">Current server time:</span>
+                                <span class="detail-item" id="server_time">{pretty_date(CURRENT_DATE_TIME)}</span>
+                            </div>
                             <div class="competition-secret-key" if="{ competition.admin }">
                                 <span class="secret-label">Secret url:</span>
                                 <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
