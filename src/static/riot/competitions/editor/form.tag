@@ -136,11 +136,6 @@
                     }
                 }
             })
-            CODALAB.api.get_competition(10)
-                .done((data) => {
-                    console.log('original')
-                    console.log(data)
-                })
             if (!!self.opts.competition_id) {
                 self.update_competition_data(self.opts.competition_id)
             }
@@ -153,8 +148,6 @@
         self.update_competition_data = (id) => {
             CODALAB.api.get_competition(id)
                 .done(function (data) {
-                    console.log('update')
-                    console.log(data)
                     self.competition = data
                     self.refs.publish.checked = self.competition.published
                     CODALAB.events.trigger('competition_loaded', self.competition)
