@@ -166,6 +166,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'allow_robot_submissions',
         )
 
     def get_leaderboards(self, instance):
