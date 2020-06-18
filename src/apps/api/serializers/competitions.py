@@ -109,6 +109,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'allow_robot_submissions',
         )
 
     def validate_leaderboards(self, value):

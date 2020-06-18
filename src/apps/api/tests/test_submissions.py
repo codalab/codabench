@@ -173,3 +173,14 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.superuser)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
+        self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
+        self.bot_comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator], allow_robot_submissions=True)
+        self.bot_phase = PhaseFactory(competition=self.bot_comp)
+        self.client.login(username="bot_user", password="other")
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data["can"]
