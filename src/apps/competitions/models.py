@@ -35,6 +35,8 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
 
+    allow_robot_submissions = models.BooleanField(default=False)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}"
 
