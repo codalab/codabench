@@ -6,7 +6,7 @@ from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
 from api.views.competitions import front_page_competitions
-from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues, benchmarks
+from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
 
 router = SimpleRouter()
