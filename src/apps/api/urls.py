@@ -10,8 +10,6 @@ from .views import analytics, competitions, datasets, profiles, leaderboards, su
 
 
 router = SimpleRouter()
-router.register('benchmarks', benchmarks.BenchmarkViewSet)
-router.register('benchmarks_status', benchmarks.BenchmarkCreationTaskStatusViewSet)
 router.register('competitions', competitions.CompetitionViewSet)
 router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
 router.register('phases', competitions.PhaseViewSet, 'phases')
