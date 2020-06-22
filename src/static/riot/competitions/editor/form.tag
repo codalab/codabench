@@ -143,7 +143,6 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-
         self.update_competition_data = (id) => {
             CODALAB.api.get_competition(id)
                 .done(function (data) {
@@ -169,6 +168,9 @@
         }
 
         self.save = function () {
+            if (typeof(self.competition["queue"]) === "string" ) {
+                self.competition["queue"] = null
+            }
             self.competition.published = self.refs.publish.checked
             let previous_index, current_index, next_index;
             let now = new Date()
