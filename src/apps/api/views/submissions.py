@@ -176,14 +176,14 @@ def upload_submission_scores(request, submission_pk):
 @api_view(('GET',))
 def can_make_submission(request, phase_id):
     phase = get_object_or_404(Phase, id=phase_id)
-    user = get_object_or_404(User, username=request.user)
     user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
 
-    if user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
+    if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
         new_participant = CompetitionParticipant(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
         new_participant.save()
+        user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
 
-    if phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists():
+    if user_is_approved:
         can_make_submission, reason_why_not = phase.can_user_make_submissions(request.user)
     else:
         can_make_submission, reason_why_not = False, "User not approved to participate in this competition"

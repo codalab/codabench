@@ -240,7 +240,7 @@ class Phase(ChaHubSaveMixin, models.Model):
         Returns:
             (can_make_submissions, reason_if_not)
         """
-        if not self.has_max_submissions:
+        if not self.has_max_submissions or (user.is_bot and self.competition.allow_robot_submissions):
             return True, None
 
         qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
