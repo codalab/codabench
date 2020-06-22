@@ -17,7 +17,6 @@ from rest_framework_csv import renderers
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
 from leaderboards.models import SubmissionScore, Column
-from profiles.models import User
 
 
 class SubmissionViewSet(ModelViewSet):
