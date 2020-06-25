@@ -1,10 +1,14 @@
 import os
 from datetime import datetime
+from time import sleep
 
 from django.urls import reverse
 
 from factories import UserFactory
+from selenium.webdriver.common.keys import Keys
+
 from ..utils import SeleniumTestCase
+from tasks.models import Task
 
 
 class TestCompetitions(SeleniumTestCase):
@@ -44,3 +48,56 @@ class TestCompetitions(SeleniumTestCase):
 
     def test_upload_v2_competition(self):
         self._upload_competition('competition.zip')
+
+    def test_manual_competition_creation(self):
+        # Uploaded here to have taks to chose from on the phase page.
+        self._upload_competition('competition.zip')
+        tasks = Task.objects.all()
+        import random
+        random_task = random.choice(tasks)
+        task = random_task.key
+        self.get(reverse('competitions:create'))
+        self.find('input[ref="title"]').send_keys('Title')
+
+        self.find('input[ref="docker_image"]').send_keys('docker_image')
+
+        self.find('a[data-tab="participation"]').click()
+        self.execute_script('$("textarea[ref=\'terms\']")[0].EASY_MDE.value("pArTiCiPaTe")')
+
+
+        self.find('a[data-tab="pages"]').click()
+        self.find('i[class="add icon"]').click()
+        self.find('input[selenium="title"]').send_keys('Title')
+        self.execute_script('$("textarea[ref=\'content\']")[0].EASY_MDE.value("Testing123")')
+        self.find('div[selenium="save1"]').click()
+        sleep(1)
+
+        self.find('a[data-tab="phases"]').click()
+        self.find('i[selenium="add-phase"]').click()
+        sleep(2)
+        self.find('input[selenium="name1"]').send_keys('Name')
+        sleep(2)
+        self.find('input[name="start"]').click()
+        self.find('input[name="start"]').send_keys(2)
+        self.find('input[name="start"]').send_keys(Keys.ENTER)
+        self.find('input[name="end"]').send_keys(3)
+        self.find('input[name="end"]').send_keys(Keys.ENTER)
+
+        s = f'$("form[selenium=\'phase-form\'] select[ref=\'multiselect\']").dropdown(\'set selected\', \'{task}\')'
+        m = f'$("form[selenium=\'phase-form\'] select[ref=\'multiselect\']").dropdown(\'refresh\')'
+
+        print(s)
+        print(m)
+        self.execute_script(s)
+        self.execute_script(m)
+        self.execute_script(f'toastr.error("{task}")')
+        sleep(600)
+
+        # self.execute_script('$("textarea[ref=\'description\']")[0].EASY_MDE.value("Testing123")')
+
+        sleep(1)
+
+        # self.find('a[data-tab="leaderboard"]').click()
+        sleep(1)
+
+        assert False
