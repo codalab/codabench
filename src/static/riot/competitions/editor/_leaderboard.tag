@@ -22,7 +22,7 @@
                             </a>
                             <a class="icon-button"
                                onclick="{ delete_leaderboard.bind(this, index) }">
-                                <i class="red trash alternate outline icon"></i>
+                                <i selenium="delete-column" class="red trash alternate outline icon"></i>
                             </a>
                         </td>
                     </tr>
@@ -36,7 +36,7 @@
                     <tr>
                         <th colspan="2" class="right aligned">
                             <button class="ui tiny inverted green icon button" onclick="{ add }">
-                                <i class="add icon"></i> Add leaderboard
+                                <i selenium='add-leaderboard' class="add icon"></i> Add leaderboard
                             </button>
                         </th>
                     </tr>
@@ -68,7 +68,7 @@
                     <div class="two fields">
                         <div class="field required">
                             <label>Title</label>
-                            <input name="title" value="{_.get(selected_leaderboard, 'title')}"
+                            <input selenium="title1" name="title" value="{_.get(selected_leaderboard, 'title')}"
                                    onchange="{ modal_updated }">
                         </div>
                         <div class="field required">
@@ -80,7 +80,7 @@
                                     <i class="help icon circle"></i>
                                 </span>
                             </label>
-                            <input name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
+                            <input selenium="key" name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
                         </div>
                     </div>
                     <div class="field">
@@ -160,13 +160,13 @@
                     <tr>
                         <td>Column Key <span style="color: red;">*</span></td>
                         <td each="{ column, index in columns || [] }">
-                            <input type="text" class="ui field" name="column_key_{index}" value="{_.get(column, 'key')}" onchange="{ modal_updated }">
+                            <input selenium="column-key" type="text" class="ui field" name="column_key_{index}" value="{_.get(column, 'key')}" onchange="{ modal_updated }">
                         </td>
                     </tr>
                     <tr>
                         <td>Hidden</td>
                         <td each="{ column, index in columns || [] }" style="text-align: center;">
-                            <input type="checkbox" ref="hidden_{index}" checked="{column.hidden}" onchange="{ modal_updated }">
+                            <input selenium="hidden" type="checkbox" ref="hidden_{index}" checked="{column.hidden}" onchange="{ modal_updated }">
                         </td>
                     </tr>
                     <tr>
@@ -182,9 +182,9 @@
             </div>
         </div>
         <div class="actions">
-            <div class="ui inverted green icon button" onclick="{ add_column }"><i class="ui plus icon"></i> Add column</div>
+            <div selenium="add-column" class="ui inverted green icon button" onclick="{ add_column }"><i class="ui plus icon"></i> Add column</div>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <div class="ui button primary {disabled: !modal_is_valid}" onclick="{ save }">Save</div>
+            <div selenium="save3" class="ui button primary {disabled: !modal_is_valid}" onclick="{ save }">Save</div>
         </div>
     </div>
 

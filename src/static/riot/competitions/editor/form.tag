@@ -90,7 +90,7 @@
                     <input type="checkbox" ref="publish">
                     <label>Publish</label>
                 </div>
-                <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
+                <button selenium="save4" class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
                     Save
                 </button>
                 <button class="ui basic red button discard" onclick="{ discard }">

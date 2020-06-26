@@ -169,10 +169,11 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
         # starting with competitions, then..
         for competition in Competition.objects.all():
-            created_files += [
-                competition.bundle_dataset.data_file.name,
-                competition.logo.name,
-            ]
+            if competition.bundle_dataset is not None:
+                created_files += [
+                    competition.bundle_dataset.data_file.name,
+                    competition.logo.name,
+                ]
 
         # submissions
         for submission in Submission.objects.all():

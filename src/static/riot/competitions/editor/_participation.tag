@@ -6,7 +6,7 @@
         </div>
         <div class="field">
             <div class="ui checkbox">
-                <input type="checkbox" name="registration_auto_approve" ref="registration_auto_approve" onchange="{form_updated}">
+                <input selenium="auto-approve" type="checkbox" name="registration_auto_approve" ref="registration_auto_approve" onchange="{form_updated}">
                 <label>Auto approve registration requests
                     <span data-tooltip="If left unchecked, registration requests must be manually approved by the competition creator or collaborators"
                           data-inverted=""

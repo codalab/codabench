@@ -162,7 +162,7 @@
                 <i class="logout icon"></i>Manage Tasks / Datasets
             </a>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
+            <div selenium="save2" class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
     </div>
 
