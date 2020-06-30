@@ -180,7 +180,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         # submissions
         for submission in Submission.objects.all():
             created_files += [
-                submission.'data.data_file'.name,
+                submission.data.data_file.name,
                 submission.prediction_result.name,
                 submission.scoring_result.name,
             ]
