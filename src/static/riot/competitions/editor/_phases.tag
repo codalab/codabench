@@ -65,7 +65,7 @@
             <form selenium="phase-form" class="ui form" ref="form">
                 <div class="field required">
                     <label>Name</label>
-                    <input selenium="name1" name="name">
+                    <input name="name">
                 </div>
 
                 <div class="two fields">

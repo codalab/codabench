@@ -12,7 +12,6 @@ from tasks.models import Task
 from ..utils import SeleniumTestCase
 
 
-
 class TestCompetitions(SeleniumTestCase):
     def setUp(self):
         super().setUp()
@@ -100,7 +99,7 @@ class TestCompetitions(SeleniumTestCase):
         self.find('a[data-tab="phases"]').click()
         self.find('i[selenium="add-phase"]').click()
         sleep(1)
-        self.find('input[selenium="name1"]').send_keys('Name')
+        self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
         sleep(.1)
         self.find('input[name="start"]').click()
         self.find('input[name="start"]').send_keys(2)
@@ -117,7 +116,7 @@ class TestCompetitions(SeleniumTestCase):
         task = random_task.key
         self.find(f"form[selenium='phase-form'] .menu .item[data-value='{task}']").click()
         self.execute_script('$("textarea[ref=\'description\']")[0].EASY_MDE.value("Testing123")')
-        self.find('input[selenium="name1"]').send_keys('Name')
+        self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
         sleep(1)
         self.find('div[selenium="save2"]').click()
         sleep(1)

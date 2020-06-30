@@ -168,16 +168,19 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
         # starting with competitions, then..
         for competition in Competition.objects.all():
-            if competition.bundle_dataset is not None:
-                created_files += [
-                    competition.bundle_dataset.data_file.name,
-                    competition.logo.name,
-                ]
+            data_types = [
+                'bundle_dataset',
+                'logo',
+            ]
+            for data_type in data_types:
+                file = getattr(competition, data_type, None)
+                if file is not None:
+                    created_files.append(file.name)
 
         # submissions
         for submission in Submission.objects.all():
             created_files += [
-                submission.data.data_file.name,
+                submission.'data.data_file'.name,
                 submission.prediction_result.name,
                 submission.scoring_result.name,
             ]
@@ -187,13 +190,17 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
         # tasks and solutions
         for task in Task.objects.all():
-            if competition.bundle_dataset is not None:
-                created_files += [
-                    task.ingestion_program.data_file.name,
-                    task.scoring_program.data_file.name,
-                    task.input_data.data_file.name,
-                    task.reference_data.data_file.name,
-                ]
+            data_types = [
+                'scoring_program',
+                'ingestion_program',
+                'input_data',
+                'reference_data',
+            ]
+            for data_type in data_types:
+                file = getattr(task, data_type, None)
+                if file is not None:
+                    created_files.append(file.data_file.name)
+
         for solution in Solution.objects.all():
             created_files.append(solution.data.data_file.name)
 
