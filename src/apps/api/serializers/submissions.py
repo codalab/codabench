@@ -24,6 +24,7 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
             'index',
             'score',
             'column_key',
+            'task_pk',
         )
 
 

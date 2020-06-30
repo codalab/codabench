@@ -675,6 +675,7 @@ class Run:
         resp = self.requests_session.post(url, json={
             "secret": self.secret,
             "scores": scores,
+            "task_pk": self.task_pk,
         })
         logger.info(resp)
         logger.info(str(resp.content))
