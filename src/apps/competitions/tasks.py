@@ -336,7 +336,7 @@ def unpack_competition(competition_dataset_pk):
                 unpacker_class = V15Unpacker
             elif yaml_version == '2':
                 unpacker_class = V2Unpacker
-            elif yaml_version == 'codabench/v1':
+            elif  yaml_version == 'codabench/v1':
                 unpacker_class = CodabenchV1Unpacker
             else:
                 raise CompetitionUnpackingException(

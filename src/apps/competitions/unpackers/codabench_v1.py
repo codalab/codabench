@@ -8,7 +8,7 @@ from .utils import CompetitionUnpackingException
 
 class CodabenchV1Unpacker(BaseUnpacker):
     """
-    transform a benchmarks bundle to competition
+    transform a benchmark bundle to competition
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,7 +20,7 @@ class CodabenchV1Unpacker(BaseUnpacker):
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "description": self.competition_yaml.get("description", ""),
             "pages": [],
-            "phases": [], # benchmarks did not have concept of phase, we set phase by default in backend.
+            "phases": [], # benchmark did not have concept of phase, we set phase by default in backend.
             "leaderboards": [],
             # Holding place for task and solution creation and for phases to reference afterword.
             "tasks": {},

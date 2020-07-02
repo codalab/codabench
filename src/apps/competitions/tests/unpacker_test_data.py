@@ -139,56 +139,6 @@ v2_yaml_data = {
     }]
 }
 
-codabench_v1_yaml_data = {
-    "title": "Sample time series competition",
-    "description": "Sample competition for time series prediction",
-    "image": "logo.jpg",
-    "terms": "terms.txt",
-    "pages": [{
-        "title": "data",
-        "file": "data.txt"
-    }],
-    "tasks": [
-        {
-            "index": 0,
-            "name": "Development Phase Task",
-            "description": "Development phase",
-            "ingestion_program": "ingestion_program.zip",
-            "input_data": "evaluation_data.zip",
-            "scoring_program": "scoring_program.zip",
-            "reference_data": "evaluation_data.zip"
-        },
-        {
-            "index": 1,
-            "name": "Final Phase Task",
-            "description": "Final phase",
-            "ingestion_program": "ingestion_program.zip",
-            "input_data": "evaluation_data.zip",
-            "scoring_program": "scoring_program.zip",
-            "reference_data": "evaluation_data.zip"
-        }
-    ],
-
-    "leaderboard": {
-        "title": "Results",
-        "key": "Results",
-        "columns": [
-            {
-                "title": "prediction_score",
-                "key": "prediction_score",
-                "index": 0,
-                "sorting": "desc"
-            },
-            {
-                "title": "Duration",
-                "key": "Duration",
-                "index": 1,
-                "sorting": "desc"
-            }
-        ]
-    }
-}
-
 # -------------------------------------------------
 # Truth Data
 # -------------------------------------------------
@@ -255,21 +205,6 @@ V2_SPECIFIC_PHASE_DATA = [
     ('hide_output', False)
 ]
 
-CODABENCH_V1_PHASE_DATA = [
-{
-        'index': 0,
-        'start': datetime.datetime(2020, 6, 2, 0, 0, tzinfo=timezone.now().tzinfo),
-        'name': 'DEFAULT',
-        'description': 'None',
-        'execution_time_limit': 600,
-        'max_submissions_per_day': None,
-        'max_submissions_per_person': None,
-        'auto_migrate_to_this_phase': False,
-        'has_max_submissions': True,
-        'tasks': [0, 1],
-        'status': 'Previous'
-    }
-]
 
 def get_phases(version):
     if version == 1:
@@ -282,8 +217,6 @@ def get_phases(version):
             for key, value in V2_SPECIFIC_PHASE_DATA:
                 phase[key] = value
         return v2
-    elif version == 'codabench/v1':
-        return CODABENCH_V1_PHASE_DATA
 
 
 def get_tasks(user_id):
