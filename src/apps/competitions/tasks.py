@@ -23,7 +23,6 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
-from competitions.unpackers.codabench_v1 import CodabenchV1Unpacker
 from datasets.models import Data
 from tasks.models import Task
 from utils.data import make_url_sassy
@@ -336,8 +335,6 @@ def unpack_competition(competition_dataset_pk):
                 unpacker_class = V15Unpacker
             elif yaml_version == '2':
                 unpacker_class = V2Unpacker
-            elif yaml_version == 'codabench/v1':
-                unpacker_class = CodabenchV1Unpacker
             else:
                 raise CompetitionUnpackingException(
                     'A suitable version could not be found for this competition. Make sure one is supplied in the yaml.'
