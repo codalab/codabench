@@ -14,6 +14,8 @@ from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
+from tasks.models import Task
+
 logger = logging.getLogger()
 
 
@@ -362,7 +364,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
-    task_id = models.UUIDField(null=True, blank=True)
+    task_id = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True)
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
                                     null=True, blank=True)
 
@@ -403,13 +405,15 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         super().save(**kwargs)
 
-    def start(self):
+    def start(self, tasks=None):
         from .tasks import run_submission
-        run_submission(self.pk)
+        run_submission(self.pk, tasks=tasks)
 
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
+        children = self.children
+        print(children)
         sub.start()
 
     def cancel(self):

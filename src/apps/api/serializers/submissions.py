@@ -7,10 +7,12 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from competitions.models import Submission, SubmissionDetails, CompetitionParticipant
+from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
+
+from tasks.models import Task
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
@@ -85,6 +87,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = serializers.SerializerMethodField(read_only=True)
+    tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True)
+    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
 
     class Meta:
         model = Submission
@@ -99,6 +103,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'description',
             'secret',
             'md5',
+            'tasks',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -111,7 +116,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
 
     def create(self, validated_data):
         sub = super().create(validated_data)
-        sub.start()
+        sub.start(validated_data.tasks)
         return sub
 
     def validate(self, attrs):
@@ -130,6 +135,10 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         if task_pk:
             data['task_pk'] = task_pk
         return data
+
+    def validate_tasks(self, tasks):
+        if not all(_ in self.phase.tasks.objects.all().values_list('id', flat=True) for _ in tasks):
+            raise ValidationError("All tasks must be part of the current phase.")
 
     def update(self, instance, validated_data):
         # TODO: Test, could you change the phase of a submission?

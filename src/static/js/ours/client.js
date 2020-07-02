@@ -140,6 +140,8 @@ CODALAB.api = {
         return CODALAB.api.request('POST', URLS.API + "datasets/", metadata)
             // We have an upload URL, so upload now..
             .then(function (result) {
+                console.log('result')
+                console.log(result)
                 dataset = result
                 return $.ajax({
                     type: 'PUT',

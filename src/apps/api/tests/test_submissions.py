@@ -1,8 +1,11 @@
+import random
+from unittest import mock
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission
-from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
 
 
 class SubmissionAPITests(APITestCase):
@@ -14,6 +17,7 @@ class SubmissionAPITests(APITestCase):
         self.collaborator = UserFactory(username='collab', password='collab')
         self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
         self.phase = PhaseFactory(competition=self.comp)
+        self.phase.tasks.add(TaskFactory.create())
 
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
@@ -173,3 +177,30 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.superuser)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+    def test_can_select_tasks_when_making_submissions(self):
+        from pprint import pprint
+        self.client.login(username="participant", password="other")
+        # get list of tasks
+        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 1)
+        url = reverse('submission-list')
+        # pprint(tasks)
+        data = {
+            'phase': self.phase.id,
+            'data': 'abcde',
+            'tasks': tasks
+        }
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+            pprint(resp.__dict__)
+            assert resp.status_code == 200
+
+        # self.task_selection_submission.selected_tasks.set(selected_tasks)
+        #
+        # # assert that only the existing submission exists
+        # assert len(self.task_selection_submission.children.all()) == 0
+        #
+        # self.task_selection_submission.start()
+        # pprint(self.task_selection_submission.children.filter(task=selected_tasks))
+        # assert self.task_selection_submission.children.filter(task=selected_tasks)
+        assert False
