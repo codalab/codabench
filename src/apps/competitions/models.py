@@ -20,6 +20,14 @@ logger = logging.getLogger()
 
 
 class Competition(ChaHubSaveMixin, models.Model):
+    COMPETITION = "competition"
+    BENCHMARK = "benchmark"
+
+    COMPETITION_TYPE = (
+        (COMPETITION, "competition"),
+        (BENCHMARK, "benchmark"),
+    )
+
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
@@ -37,8 +45,11 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
 
+    # we use filed type to distinguish 'competition' and 'benchmark'
+    competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
+
     def __str__(self):
-        return f"competition-{self.title}-{self.pk}"
+        return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
     @property
     def bundle_dataset(self):
