@@ -55,6 +55,8 @@ class Column(models.Model):
 class SubmissionScore(models.Model):
     column = models.ForeignKey(Column, on_delete=models.CASCADE)
     score = models.DecimalField(max_digits=20, decimal_places=10)
+    # task_pk to specify which task run the submission
+    task_pk = models.PositiveIntegerField()
 
     class Meta:
-        ordering = ('column__index',)
+        ordering = ('task_pk',)
