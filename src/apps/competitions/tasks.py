@@ -186,7 +186,7 @@ def _send_submission(submission, task, is_scoring, run_args):
             queue='compute-worker',
             soft_time_limit=time_limit
         )
-    submission.task_id = task.id
+    submission.task = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
 
@@ -198,8 +198,8 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, selected_tasks=None, task_pk=None, is_scoring=False):
-    return _run_submission.apply_async((submission_pk, selected_tasks, task_pk, is_scoring))
+def run_submission(submission_pk, tasks=None, is_scoring=False):
+    return _run_submission.apply_async((submission_pk, tasks, is_scoring))
 
 
 def send_submission_message(submission, data):
@@ -260,6 +260,15 @@ def _run_submission(submission_pk, tasks=None, is_scoring=False):
     if tasks is None:
         tasks = submission.phase.tasks.all().order_by('pk')
 
+    if not all(type(_) == Task for _ in tasks):
+        task_incorrect_type = None
+        for task in tasks:
+            if type(task) != Task:
+                task_incorrect_type = type(task)
+                break
+
+        raise TypeError(f'Tasks must be of the type: Task, not {task_incorrect_type}')
+
     # TODO: Make the following code DRY!
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
@@ -277,14 +286,17 @@ def _run_submission(submission_pk, tasks=None, is_scoring=False):
                 data=submission.data,
                 participant=submission.participant,
                 parent=submission,
-                task_id=task
+                task=task
             )
             child_sub.save(ignore_submission_limit=True)
-            run_submission(child_sub.id, task.id)
+            run_submission(child_sub.id, [task])
             send_child_id(submission, child_sub.id)
     else:
         # The initial submission object will be the only submission
-        task = tasks.first()
+        task = tasks[0]
+        if not submission.task:
+            submission.task = task
+            submission.save()
         _send_submission(
             submission=submission,
             task=task,

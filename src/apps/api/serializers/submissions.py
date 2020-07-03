@@ -87,7 +87,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = serializers.SerializerMethodField(read_only=True)
-    tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True)
+    tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True, many=True)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
 
     class Meta:
@@ -115,12 +115,19 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         return basename(instance.data.data_file.name)
 
     def create(self, validated_data):
+        tasks = validated_data.pop('tasks')
+
         sub = super().create(validated_data)
-        sub.start(validated_data.tasks)
+        sub.start(tasks=tasks)
         return sub
 
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        # Make sure selected tasks are part of the phase
+        if attrs.get('tasks'):
+            if not all(_ in attrs['phase'].tasks.all() for _ in attrs['tasks']):
+                raise ValidationError("All tasks must be part of the current phase.")
 
         # Only on create (when we don't have instance set) check permissions
         if not self.instance:
@@ -134,11 +141,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         task_pk = self._kwargs.get('data', {}).get('task_pk')
         if task_pk:
             data['task_pk'] = task_pk
-        return data
 
-    def validate_tasks(self, tasks):
-        if not all(_ in self.phase.tasks.objects.all().values_list('id', flat=True) for _ in tasks):
-            raise ValidationError("All tasks must be part of the current phase.")
+        return data
 
     def update(self, instance, validated_data):
         # TODO: Test, could you change the phase of a submission?
@@ -167,10 +171,10 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
-            task_id = validated_data.get('task_pk')
-            if not task_id:
+            task = validated_data.get('task_pk')
+            if not task:
                 raise ValidationError('Cannot update submission. Task pk was not provided')
-            run_submission(instance.pk, task_pk=task_id, is_scoring=True)
+            run_submission(instance.pk, task_pk=task, is_scoring=True)
         resp = super().update(instance, validated_data)
         if instance.parent:
             instance.parent.check_child_submission_statuses()

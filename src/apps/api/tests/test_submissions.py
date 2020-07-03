@@ -7,6 +7,8 @@ from rest_framework.test import APITestCase
 from competitions.models import Submission
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
 
+from datasets.models import Data
+
 
 class SubmissionAPITests(APITestCase):
     def setUp(self):
@@ -17,7 +19,10 @@ class SubmissionAPITests(APITestCase):
         self.collaborator = UserFactory(username='collab', password='collab')
         self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
         self.phase = PhaseFactory(competition=self.comp)
-        self.phase.tasks.add(TaskFactory.create())
+        for _ in range(2):
+            self.phase.tasks.add(TaskFactory.create())
+
+        self.other_phase = PhaseFactory(competition=self.comp)
 
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
@@ -179,28 +184,56 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 200
 
     def test_can_select_tasks_when_making_submissions(self):
-        from pprint import pprint
-        self.client.login(username="participant", password="other")
+        self.client.login(username="creator", password="creator")
         # get list of tasks
-        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 1)
+        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
         url = reverse('submission-list')
-        # pprint(tasks)
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
         data = {
             'phase': self.phase.id,
-            'data': 'abcde',
+            'data': self.submission_data.key,
             'tasks': tasks
         }
         with mock.patch('competitions.tasks._send_submission'):
             resp = self.client.post(url, data)
-            pprint(resp.__dict__)
-            assert resp.status_code == 200
+            assert resp.status_code == 201
+            tasks.sort()
+            assert list(self.phase.submissions.get(id=resp.json().get('id')).children.all().order_by('task__pk').values_list('task', flat=True)) == tasks
 
-        # self.task_selection_submission.selected_tasks.set(selected_tasks)
-        #
-        # # assert that only the existing submission exists
-        # assert len(self.task_selection_submission.children.all()) == 0
-        #
-        # self.task_selection_submission.start()
-        # pprint(self.task_selection_submission.children.filter(task=selected_tasks))
-        # assert self.task_selection_submission.children.filter(task=selected_tasks)
-        assert False
+    def test_cannot_select_tasks_on_wrong_phase(self):
+        self.client.login(username="creator", password="creator")
+        # get list of tasks
+        tasks = [*random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2), self.other_phase.tasks.first().pk]
+        url = reverse('submission-list')
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
+        data = {
+            'phase': self.phase.id,
+            'data': self.submission_data.key,
+            'tasks': tasks
+        }
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+            assert resp.status_code == 400
+            assert resp.json() == {'non_field_errors': ['All tasks must be part of the current phase.']}
+
+    def test_can_re_run_submissions_with_multiple_tasks(self):
+        self.client.login(username="creator", password="creator")
+        # get list of tasks
+        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
+        url = reverse('submission-list')
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
+        data = {
+            'phase': self.phase.id,
+            'data': self.submission_data.key,
+            'tasks': tasks
+        }
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+
+            sub = Submission.objects.get(id=resp.json().get('id'))
+            sub.re_run()
+
+            sub_copy = Submission.objects.filter(has_children=True).order_by('created_when').last()
+            assert sub.pk != sub_copy.pk
+            tasks.sort()
+            assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == tasks
