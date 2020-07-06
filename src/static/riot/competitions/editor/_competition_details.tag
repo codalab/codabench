@@ -30,7 +30,7 @@
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
         </div>
-        <div class="field">
+        <div class="field required">
             <label>Competition Docker Image</label>
             <input type="text" ref="docker_image">
         </div>
@@ -57,7 +57,6 @@
         ---------------------------------------------------------------------*/
         self.data = {}
         self.is_editing_competition = false
-
         // We temporarily store this to display it nicely to the user, could be a behavior we break out into its own
         // component later!
         self.logo_file_name = ''
@@ -106,20 +105,17 @@
             var is_valid = true
 
             // NOTE: logo is excluded here because it is converted to 64 upon changing and set that way
-            self.data = {
-                title: self.refs.title.value,
-                description: self.markdown_editor.value(),
-                queue: self.refs.queue.value,
-                enable_detailed_results: self.refs.detailed_results.checked,
-                docker_image: $(self.refs.docker_image).val()
-            }
+            self.data["title"] = self.refs.title.value
+            self.data["description"] = self.markdown_editor.value()
+            self.data["queue"] = self.refs.queue.value
+            self.data["enable_detailed_results"] = self.refs.detailed_results.checked
+            self.data["docker_image"] = $(self.refs.docker_image).val()
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
             if (!self.data['title'] || !self.data['docker_image'] || (!self.data['logo'] && !self.is_editing_competition)) {
                 is_valid = false
             }
-
             CODALAB.events.trigger('competition_is_valid_update', 'details', is_valid)
 
             if (is_valid) {

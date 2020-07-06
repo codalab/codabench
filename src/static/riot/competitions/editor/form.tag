@@ -90,7 +90,7 @@
                     <input type="checkbox" ref="publish">
                     <label>Publish</label>
                 </div>
-                <button class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
+                <button selenium="save4" class="ui primary button { disabled: !are_all_sections_valid() }" onclick="{ save }">
                     Save
                 </button>
                 <button class="ui basic red button discard" onclick="{ discard }">
@@ -104,7 +104,6 @@
 
     <script>
         var self = this
-
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
@@ -144,7 +143,6 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
-
         self.update_competition_data = (id) => {
             CODALAB.api.get_competition(id)
                 .done(function (data) {
@@ -170,6 +168,9 @@
         }
 
         self.save = function () {
+            if (typeof(self.competition["queue"]) === "string" ) {
+                self.competition["queue"] = null
+            }
             self.competition.published = self.refs.publish.checked
             let previous_index, current_index, next_index;
             let now = new Date()
