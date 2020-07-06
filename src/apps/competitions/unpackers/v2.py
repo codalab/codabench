@@ -16,6 +16,7 @@ class V2Unpacker(BaseUnpacker):
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py3'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "description": self.competition_yaml.get("description", ""),
+            "competition_type": self.competition_yaml.get("competition_type", "competition"),
             "pages": [],
             "phases": [],
             "leaderboards": [],
