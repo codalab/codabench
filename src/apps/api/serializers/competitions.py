@@ -110,6 +110,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'enable_detailed_results',
             'docker_image',
             'allow_robot_submissions',
+            'competition_type',
         )
 
     def validate_leaderboards(self, value):
@@ -167,6 +168,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'enable_detailed_results',
             'docker_image',
             'allow_robot_submissions',
+            'competition_type',
         )
 
     def get_leaderboards(self, instance):
@@ -195,6 +197,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'participant_count',
             'logo',
             'description',
+            'competition_type',
         )
 
 
