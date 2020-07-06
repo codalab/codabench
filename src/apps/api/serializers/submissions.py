@@ -115,7 +115,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         return basename(instance.data.data_file.name)
 
     def create(self, validated_data):
-        tasks = validated_data.pop('tasks')
+        tasks = validated_data.pop('tasks', None)
 
         sub = super().create(validated_data)
         sub.start(tasks=tasks)
@@ -174,7 +174,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             task = validated_data.get('task_pk')
             if not task:
                 raise ValidationError('Cannot update submission. Task pk was not provided')
-            run_submission(instance.pk, task_pk=task, is_scoring=True)
+            run_submission(instance.pk, tasks=[task], is_scoring=True)
         resp = super().update(instance, validated_data)
         if instance.parent:
             instance.parent.check_child_submission_statuses()
