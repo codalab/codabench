@@ -177,6 +177,7 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        CURRENT_DATE_TIME = "{% now "c" %}"
         CODALAB = {
             state: {
                 user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")

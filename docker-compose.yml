@@ -12,6 +12,7 @@ services:
       - ./Caddyfile:/etc/Caddyfile
       - ./src/staticfiles:/var/www/django/static
       - ./certs/caddy:/etc/caddycerts
+    restart: unless-stopped
     ports:
       - 80:80
       - 443:443
@@ -29,6 +30,7 @@ services:
       - .:/app
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
+    restart: unless-stopped
     ports:
       - 8000:8000
     depends_on:
@@ -51,6 +53,7 @@ services:
     command: server /export
     volumes:
       - ./var/minio:/export
+    restart: unless-stopped
     ports:
       - $MINIO_PORT:9000
     env_file: .env
@@ -83,6 +86,7 @@ services:
       dockerfile: Dockerfile.builder
     volumes:
       - .:/app
+    restart: unless-stopped
     logging:
       options:
         max-size: "20k"
@@ -103,6 +107,7 @@ services:
     volumes:
       - ./var/postgres:/var/lib/postgresql/data:delegated
       - ./backups:/app/backups
+    restart: unless-stopped
     logging:
       options:
         max-size: "20k"
@@ -120,6 +125,7 @@ services:
     volumes:
       # To save rabbit state between container ups/downs
       - ./var/rabbit:/var/lib/rabbit/:delegated
+    restart: unless-stopped
     logging:
       options:
         max-size: "20k"
@@ -133,6 +139,7 @@ services:
     env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+    restart: unless-stopped
     ports:
       - ${FLOWER_PUBLIC_PORT:-5555}:5555
     logging:
@@ -147,6 +154,7 @@ services:
     image: redis
     ports:
       - 6379:6379
+    restart: unless-stopped
     logging:
       options:
         max-size: "20k"
@@ -167,6 +175,7 @@ services:
     env_file: .env
     volumes:
       - .:/app
+    restart: unless-stopped
     logging:
       options:
         max-size: "20k"

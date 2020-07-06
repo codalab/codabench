@@ -119,20 +119,22 @@ function set_form_data(data, base_element) {
     })
 }
 
+const easyMDE_rendering_config = {
+    markedOptions: {
+        sanitize: true,
+        sanitizer: function (input) {
+            return sanitize_HTML(input)
+        }
+    }
+}
+
 function create_easyMDE(element) {
     return new EasyMDE({
         element: element,
         autoRefresh: true,
         forceSync: true,
         hideIcons: ["side-by-side", "fullscreen"],
-        renderingConfig: {
-            markedOptions: {
-                sanitize: true,
-                sanitizer: function (input) {
-                    return sanitize_HTML(input)
-                }
-            }
-        }
+        renderingConfig: easyMDE_rendering_config
     })
 }
 
@@ -148,6 +150,11 @@ function sanitize_HTML(input, extra_settings) {
 function render_markdown(input, extra_settings) {
     extra_settings = extra_settings || {}
     input = input || ''
+    if(EasyMDE.prototype.options === undefined) {
+        EasyMDE.prototype.options = {
+            renderingConfig: easyMDE_rendering_config
+        }
+    }
     return sanitize_HTML(EasyMDE.prototype.markdown(input), extra_settings)
 }
 
