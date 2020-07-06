@@ -16,7 +16,7 @@
         <input type="checkbox" ref="auto_created">
     </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
-        <i class="plus icon"></i>
+        <i selenium="add-dataset" class="plus icon"></i>
         Add Dataset
     </button>
 
@@ -152,19 +152,19 @@
             </div>
 
             <form class="ui form coda-animated {error: errors}" ref="form">
-                <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
-                <input-text name="description" ref="description" error="{errors.description}"
+                <input-text selenium="scoring-name" name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                <input-text selenium="scoring-desc" name="description" ref="description" error="{errors.description}"
                             placeholder="Description"></input-text>
 
                 <div class="field {error: errors.type}">
-                    <select id="type_of_data" name="type" ref="type" class="ui dropdown">
+                    <select selenium="type" id="type_of_data" name="type" ref="type" class="ui dropdown">
                         <option value="">Type</option>
                         <option value="-">----</option>
                         <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
                     </select>
                 </div>
 
-                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                <input-file selenium="file" name="data_file" ref="data_file" error="{errors.data_file}"
                             accept=".zip"></input-file>
             </form>
 
@@ -177,7 +177,7 @@
         </div>
         <div class="actions">
             <button class="ui blue icon button" onclick="{check_form}">
-                <i class="upload icon"></i>
+                <i selenium="upload" class="upload icon"></i>
                 Upload
             </button>
             <button class="ui basic red cancel button">Cancel</button>

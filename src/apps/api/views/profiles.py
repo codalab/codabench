@@ -38,6 +38,7 @@ def user_lookup(request):
         return {
             "id": user.id,
             "name": f"{user.name or user.username} ({user.email})" if is_admin else user.username,
+            "username": user.username,
         }
 
     return HttpResponse(

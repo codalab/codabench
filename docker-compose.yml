@@ -27,7 +27,7 @@ services:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
     volumes:
-      - .:/app
+      - .:/app:delegated
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
     restart: unless-stopped
@@ -85,7 +85,7 @@ services:
       context: .
       dockerfile: Dockerfile.builder
     volumes:
-      - .:/app
+      - .:/app:delegated
     restart: unless-stopped
     logging:
       options:

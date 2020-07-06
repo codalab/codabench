@@ -51,7 +51,7 @@
                     <label>
                         Username
                     </label>
-                    <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
+                    <div class="ui fluid left icon labeled input search dataset" data-name="{file-field}">
                         <i class="search icon"></i>
                         <input type="text" class="prompt" ref="email">
                         <div class="results"></div>

@@ -7,7 +7,7 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
-    <div class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
+    <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
     <table class="ui {selectable: tasks.length > 0} celled compact table">
@@ -142,11 +142,11 @@
                 <div class="ui active tab" data-tab="details">
                     <div class="required field">
                         <label>Name</label>
-                        <input name="name" placeholder="Name" ref="name" onkeyup="{ form_updated }">
+                        <input selenium="name2" name="name" placeholder="Name" ref="name" onkeyup="{ form_updated }">
                     </div>
                     <div class="required field">
                         <label>Description</label>
-                        <textarea rows="4" name="description" placeholder="Description" ref="description"
+                        <textarea selenium="task-desc" rows="4" name="description" placeholder="Description" ref="description"
                                   onkeyup="{ form_updated }"></textarea>
                     </div>
                 </div>
@@ -160,8 +160,8 @@
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt">
-                                    <div class="results"></div>
+                                    <input  type="text" class="prompt" id="{file_field}">
+                                    <div selenium="scoring-program" class="results"></div>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +183,7 @@
             </form>
         </div>
         <div class="actions">
-            <div class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
+            <div selenium="save-task" class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
             <div class="ui basic red cancel button">Cancel</div>
         </div>
     </div>

@@ -60,7 +60,7 @@
             <form class="ui form" onsubmit="{ save }">
                 <div class="field required">
                     <label>Title</label>
-                    <input ref="title"/>
+                    <input selenium="title" ref="title"/>
                 </div>
 
                 <div class="field required">
@@ -71,7 +71,7 @@
         </div>
         <div class="actions">
             <div class="ui button" onclick="{ close_edit }">Cancel</div>
-            <div class="ui button primary" onclick="{ save }">Save</div>
+            <div class="ui button primary" selenium="save1" onclick="{ save }">Save</div>
         </div>
     </div>
 
