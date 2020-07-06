@@ -45,10 +45,10 @@ class SubmissionScoreViewSet(ModelViewSet):
 def add_submission_to_leaderboard(request, submission_pk):
     # TODO: rebuild this to look somewhere else for what leaderboard to post to?
     submission = get_object_or_404(Submission, pk=submission_pk)
+    competition = submission.phase.competition
 
     # Removing any existing submissions on leaderboard
-    Submission.objects.filter(phase__competition=submission.phase.competition, owner=request.user).update(leaderboard=None)
-        leaderboard=None).update(leaderboard=None)
+    Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
     # toggle submission on or off, if it was already on leaderboard
     if not submission.leaderboard:
