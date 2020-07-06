@@ -1,3 +1,4 @@
+import operator
 import os
 import socket
 import traceback
@@ -167,13 +168,19 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         created_files = []
 
         # starting with competitions, then..
+
+        # Adds all bundle_datasets and logos to created_files
         for competition in Competition.objects.all():
             data_types = [
-                'bundle_dataset',
+                'bundle_dataset.data_file',
                 'logo',
             ]
             for data_type in data_types:
-                file = getattr(competition, data_type, None)
+                try:
+                    # attrgetter will traverse the data_type string through the competition object
+                    file = operator.attrgetter(data_type)(competition)
+                except AttributeError:
+                    continue
                 if file is not None:
                     created_files.append(file.name)
 
