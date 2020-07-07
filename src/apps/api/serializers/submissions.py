@@ -139,15 +139,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if not is_in_competition:
                 raise PermissionDenied("You do not have access to this competition to make a submission")
 
-        task_pk = self._kwargs.get('data', {}).get('task_pk')
-        if task_pk:
-            data['task_pk'] = task_pk
-
         return data
 
-    def update(self, instance, validated_data):
+    def update(self, submission, validated_data):
         # TODO: Test, could you change the phase of a submission?
-        if instance.secret != validated_data.get('secret'):
+        if submission.secret != validated_data.get('secret'):
             raise PermissionDenied("Submission secret invalid")
 
         if "status" in validated_data:
@@ -160,26 +156,26 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             except RuntimeError:
                 loop = asyncio.new_event_loop()
 
-            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
+            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{submission.owner.pk}", {
                 'type': 'submission.message',
                 'text': {
                     "kind": "status_update",
                     "status": validated_data["status"],
                 },
-                'submission_id': instance.id,
+                'submission_id': submission.id,
             }))
 
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
-            task = validated_data.get('task_pk')
-            if not task:
-                raise ValidationError('Cannot update submission. Task pk was not provided')
-            task = Task.objects.get(id=task)
-            run_submission(instance.pk, tasks=[task], is_scoring=True)
-        resp = super().update(instance, validated_data)
-        if instance.parent:
-            instance.parent.check_child_submission_statuses()
+            # task = validated_data.get('task_pk')
+            # if not task:
+            #     raise ValidationError('Cannot update submission. Task pk was not provided')
+            # task = Task.objects.get(id=task)
+            run_submission(submission.pk, tasks=[submission.task], is_scoring=True)
+        resp = super().update(submission, validated_data)
+        if submission.parent:
+            submission.parent.check_child_submission_statuses()
         return resp
 
 

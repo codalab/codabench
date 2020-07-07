@@ -78,7 +78,7 @@ class TestCompetitions(SeleniumTestCase):
         competition_title = "selenium_test_comp"
         self.get(reverse('competitions:create'))
         self.find('input[ref="title"]').send_keys(competition_title)
-        self.find('input[ref="logo"]').send_keys(os.path.join(self.test_files_dir, '3.png'))
+        self.find('input[ref="logo"]').send_keys(os.path.join(self.test_files_dir, 'test_logo.png'))
         self.find('input[ref="docker_image"]').send_keys('docker_image')
 
         # Participation Tab

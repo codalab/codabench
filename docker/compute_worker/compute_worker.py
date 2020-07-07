@@ -182,8 +182,6 @@ class Run:
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
         self.detailed_results_url = run_args.get('detailed_results_url')
 
-        self.task_pk = run_args.get('task_pk')
-
         # During prediction program will be the submission program, during scoring it will be the
         # scoring program
         self.program_exit_code = None
@@ -271,10 +269,12 @@ class Run:
             "status": status,
             "status_details": extra_information,
         }
-        if status == STATUS_SCORING:
-            data.update({
-                "task_pk": self.task_pk,
-            })
+
+        # When we start
+        # if status == STATUS_SCORING:
+        #     data.update({
+        #         "task_pk": self.task_pk,
+        #     })
         self._update_submission(data)
 
     def _get_docker_image(self, image_name):
@@ -394,6 +394,8 @@ class Run:
                         tries += 1
 
         self.logs[kind]["end"] = time.time()
+
+        logger.info(f"Disconnecting from websocket {self.websocket_url}")
         await websocket.close()
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
@@ -600,10 +602,14 @@ class Run:
             self.watch_file(),
             loop=loop,
         )
+
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
+        print(f"alarm should be going off after {self.execution_time_limit}")
         try:
+            print("sterting")
             loop.run_until_complete(gathered_tasks)
+            print("sterping")
         except ExecutionTimeLimitExceeded:
             raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
         finally:
@@ -666,7 +672,6 @@ class Run:
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
                 scores = yaml.load(f)
-
         else:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 

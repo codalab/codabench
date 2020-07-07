@@ -146,8 +146,6 @@ def _send_submission(submission, task, is_scoring, run_args):
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
     )
 
-    run_args['task_pk'] = task.id
-
     if not is_scoring:
         detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
     else:
@@ -156,7 +154,7 @@ def _send_submission(submission, task, is_scoring, run_args):
     for detail_name in detail_names:
         run_args[detail_name] = create_detailed_output_file(detail_name, submission)
 
-    logger.info("Task data:")
+    logger.info(f"Task data for submission id = {submission.id}")
     logger.info(run_args)
 
     # Pad timelimit so worker has time to cleanup
