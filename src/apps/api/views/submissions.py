@@ -161,7 +161,7 @@ def upload_submission_scores(request, submission_pk):
         score = SubmissionScore.objects.create(
             score=score,
             column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key),
-            task_pk=data["task_pk"],
+            task=data["task_pk"],
         )
         submission.scores.add(score)
         if submission.parent:

@@ -16,6 +16,7 @@ from utils.data import make_url_sassy
 class SubmissionScoreSerializer(serializers.ModelSerializer):
     index = serializers.IntegerField(source='column.index', read_only=True)
     column_key = serializers.CharField(source='column.key', read_only=True)
+    task_pk = serializers.IntegerField(source='task', read_only=True)
 
     class Meta:
         model = SubmissionScore
