@@ -375,6 +375,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
+    celery_task_id = models.UUIDField(null=True, blank=True)
     task = models.ForeignKey(Task, on_delete=models.PROTECT, null=True, blank=True)
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
                                     null=True, blank=True)
@@ -425,9 +426,9 @@ class Submission(ChaHubSaveMixin, models.Model):
         sub.save(ignore_submission_limit=True)
         if not self.has_children:
             self.refresh_from_db()
-            sub.start(tasks=[self.task])
+            sub.start(tasks=[self.task.pk])
         else:
-            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True)).values_list('pk', flat=True)
             sub.start(tasks=child_tasks)
 
 

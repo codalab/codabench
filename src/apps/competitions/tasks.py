@@ -156,8 +156,8 @@ def _send_submission(submission, task, is_scoring, run_args):
     for detail_name in detail_names:
         run_args[detail_name] = create_detailed_output_file(detail_name, submission)
 
-    print("Task data:")
-    print(run_args)
+    logger.info("Task data:")
+    logger.info(run_args)
 
     # Pad timelimit so worker has time to cleanup
     time_padding = 60 * 20  # 20 minutes
@@ -186,7 +186,7 @@ def _send_submission(submission, task, is_scoring, run_args):
             queue='compute-worker',
             soft_time_limit=time_limit
         )
-    submission.task = task.id
+    submission.celery_task_id = task.id
     submission.status = Submission.SUBMITTED
     submission.save()
 
@@ -230,7 +230,7 @@ def send_child_id(submission, child_id):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def _run_submission(submission_pk, tasks=None, is_scoring=False):
+def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     """This function is wrapped so that when we run tests we can run this function not
     via celery"""
     select_models = (
@@ -257,17 +257,10 @@ def _run_submission(submission_pk, tasks=None, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
-    if tasks is None:
+    if task_pks is None:
         tasks = submission.phase.tasks.all().order_by('pk')
-
-    if not all(type(_) == Task for _ in tasks):
-        task_incorrect_type = None
-        for task in tasks:
-            if type(task) != Task:
-                task_incorrect_type = type(task)
-                break
-
-        raise TypeError(f'Tasks must be of the type: Task, not {task_incorrect_type}')
+    else:
+        tasks = submission.phase.tasks.filter(pk__in=task_pks).order_by('pk')
 
     # TODO: Make the following code DRY!
     if len(tasks) > 1:

@@ -118,7 +118,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         tasks = validated_data.pop('tasks', None)
 
         sub = super().create(validated_data)
-        sub.start(tasks=tasks)
+        if tasks is not None:
+            sub.start(tasks=[t.pk for t in tasks])
+        else:
+            sub.start()
+
         return sub
 
     def validate(self, attrs):
