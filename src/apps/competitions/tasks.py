@@ -199,7 +199,8 @@ def create_detailed_output_file(detail_name, submission):
 
 
 def run_submission(submission_pk, tasks=None, is_scoring=False):
-    return _run_submission.apply_async((submission_pk, tasks, is_scoring))
+    task_ids = [t.id for t in tasks] if tasks else None
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
 
 
 def send_submission_message(submission, data):

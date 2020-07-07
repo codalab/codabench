@@ -424,18 +424,20 @@ class Submission(ChaHubSaveMixin, models.Model):
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
+        print('re_run task')
+        from pprint import pprint
+        pprint(self.task)
         if not self.has_children:
             self.refresh_from_db()
-            sub.start(tasks=[self.task.pk])
+            sub.start(tasks=[self.task])
         else:
-            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True)).values_list('pk', flat=True)
+            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
             sub.start(tasks=child_tasks)
-
 
     def cancel(self):
         from celery_config import app
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
-            app.control.revoke(self.task, terminate=True)
+            app.control.revoke(self.celery_task_id, terminate=True)
             self.status = Submission.CANCELLED
             self.save()
             return True
