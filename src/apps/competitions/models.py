@@ -394,7 +394,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 
     class Meta:
-        unique_together = ('owner', 'leaderboard')
+        unique_together = ('owner', 'leaderboard', 'phase')
 
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
