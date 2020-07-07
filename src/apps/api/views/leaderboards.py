@@ -48,7 +48,6 @@ def add_submission_to_leaderboard(request, submission_pk):
 
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=submission.phase.competition, owner=request.user).update(leaderboard=None)
-        leaderboard=None).update(leaderboard=None)
 
     # toggle submission on or off, if it was already on leaderboard
     if not submission.leaderboard:
