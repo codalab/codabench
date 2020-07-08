@@ -17,6 +17,7 @@ from rest_framework_csv import renderers
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
 from leaderboards.models import SubmissionScore, Column
+from tasks.models import Task
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -154,6 +155,7 @@ def upload_submission_scores(request, submission_pk):
         raise ValidationError("Secret not a valid UUID")
 
     competition_columns = submission.phase.competition.leaderboards.values_list('columns__key', flat=True)
+    task = Task.objects.get(pk=data["task_pk"])
 
     for column_key, score in data["scores"].items():
         if column_key not in competition_columns:
@@ -161,7 +163,7 @@ def upload_submission_scores(request, submission_pk):
         score = SubmissionScore.objects.create(
             score=score,
             column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key),
-            task_pk=data["task_pk"],
+            task=task,
         )
         submission.scores.add(score)
         if submission.parent:
