@@ -205,6 +205,7 @@ class Run:
         self.requests_session.mount('http://', adapter)
         self.requests_session.mount('https://', adapter)
 
+    # TODO: Rename watch_file to "detailed_results_watcher" or some such
     async def watch_file(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
@@ -212,12 +213,20 @@ class Run:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
         last_modified_time = None
+        start = time.time()
+        expiration_seconds = 60
         while self.watch:
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
                     await self.send_detailed_results(file_path)
+            else:
+                logger.info(time.time() - start)
+                if time.time() - start > expiration_seconds:
+                    timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
+                    logger.warning(timeout_error_message)
+                    raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
         else:
             # make sure we always send the final version of the file
@@ -395,6 +404,7 @@ class Run:
 
         self.logs[kind]["end"] = time.time()
 
+        logger.info(f"Process exited with {proc.returncode}")
         logger.info(f"Disconnecting from websocket {self.websocket_url}")
         await websocket.close()
 
@@ -605,11 +615,8 @@ class Run:
 
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
-        print(f"alarm should be going off after {self.execution_time_limit}")
         try:
-            print("sterting")
             loop.run_until_complete(gathered_tasks)
-            print("sterping")
         except ExecutionTimeLimitExceeded:
             raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
         finally:
