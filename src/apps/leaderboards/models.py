@@ -59,4 +59,3 @@ class SubmissionScore(models.Model):
 
     class Meta:
         ordering = ('task__pk',)
-
