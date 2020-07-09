@@ -279,6 +279,7 @@ class Run:
             "status_details": extra_information,
         }
 
+        # TODO: figure out if we should pull this task code later(submission.task should always be set)
         # When we start
         # if status == STATUS_SCORING:
         #     data.update({
