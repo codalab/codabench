@@ -9,16 +9,19 @@ website: student submissions are made and scores returned via robot submissions.
 Usage
 =====
 
-Get into a python3 environment with requests installed
+1. Create a competition that allows robots, and create a user marked as a robot
+   user. Use that username and password below.
 
-Review this script and edit the applicable variables, like...
+2. Get into a python3 environment with requests installed
+
+3. Review this script and edit the applicable variables, like...
 
     CODALAB_URL
     USERNAME
     PASSWORD
     ...
 
-Then execute the contents of this script:
+4. Then execute the contents of this script:
 
     ./robot_submissions.py
 """
