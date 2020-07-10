@@ -4,6 +4,8 @@ from rest_framework.test import APITestCase
 from competitions.models import Submission
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory
 
+from src.apps.competitions.models import CompetitionParticipant
+
 
 class SubmissionAPITests(APITestCase):
     def setUp(self):
@@ -185,11 +187,11 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 200
         assert resp.data["can"]
 
-    def test_bot_can_make_more_than_max_submissions_per_day(self):
+    def test_max_submissions_per_day_limits_normal_users_and_not_bots(self):
         self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
         self.bot_comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator], allow_robot_submissions=True)
         self.bot_phase = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1, max_submissions_per_person=1)
-        self.client.login(username="bot_user", password="other")
+        self.client.login(username='bot_user', password='other')
 
         resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
 
@@ -206,3 +208,22 @@ class SubmissionAPITests(APITestCase):
 
         assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase).count() > self.bot_phase.max_submissions_per_day
         assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase).count() > self.bot_phase.max_submissions_per_person
+
+        self.client.logout()
+
+        CompetitionParticipant(user=self.participant, competition=self.bot_comp, status=CompetitionParticipant.APPROVED).save()
+
+        self.client.login(username='participant', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data["can"]
+
+        for _ in range(2):
+            SubmissionFactory(
+                phase=self.bot_phase,
+                owner=self.bot_user,
+                status=Submission.SUBMITTED,
+                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            )
