@@ -14,6 +14,8 @@ from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
+from tasks.models import Task
+
 logger = logging.getLogger()
 
 
@@ -373,7 +375,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
-    task_id = models.UUIDField(null=True, blank=True)
+    celery_task_id = models.UUIDField(null=True, blank=True)
+    task = models.ForeignKey(Task, on_delete=models.PROTECT, null=True, blank=True, related_name="submissions")
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
                                     null=True, blank=True)
 
@@ -414,19 +417,27 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         super().save(**kwargs)
 
-    def start(self):
+    def start(self, tasks=None):
         from .tasks import run_submission
-        run_submission(self.pk)
+        run_submission(self.pk, tasks=tasks)
 
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
-        sub.start()
+        print('re_run task')
+        from pprint import pprint
+        pprint(self.task)
+        if not self.has_children:
+            self.refresh_from_db()
+            sub.start(tasks=[self.task])
+        else:
+            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+            sub.start(tasks=child_tasks)
 
     def cancel(self):
         from celery_config import app
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
-            app.control.revoke(self.task_id, terminate=True)
+            app.control.revoke(self.celery_task_id, terminate=True)
             self.status = Submission.CANCELLED
             self.save()
             return True

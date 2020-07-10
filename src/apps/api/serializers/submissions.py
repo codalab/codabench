@@ -7,10 +7,12 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from competitions.models import Submission, SubmissionDetails, CompetitionParticipant
+from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
+
+from tasks.models import Task
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
@@ -85,6 +87,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     """Used for creation _and_ status updates..."""
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     filename = serializers.SerializerMethodField(read_only=True)
+    tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True, many=True)
+    phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
 
     class Meta:
         model = Submission
@@ -99,6 +103,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'description',
             'secret',
             'md5',
+            'tasks',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -110,12 +115,20 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         return basename(instance.data.data_file.name)
 
     def create(self, validated_data):
+        tasks = validated_data.pop('tasks', None)
+
         sub = super().create(validated_data)
-        sub.start()
+        sub.start(tasks=tasks)
+
         return sub
 
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        # Make sure selected tasks are part of the phase
+        if attrs.get('tasks'):
+            if not all(_ in attrs['phase'].tasks.all() for _ in attrs['tasks']):
+                raise ValidationError("All tasks must be part of the current phase.")
 
         # Only on create (when we don't have instance set) check permissions
         if not self.instance:
@@ -126,14 +139,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if not is_in_competition:
                 raise PermissionDenied("You do not have access to this competition to make a submission")
 
-        task_pk = self._kwargs.get('data', {}).get('task_pk')
-        if task_pk:
-            data['task_pk'] = task_pk
         return data
 
-    def update(self, instance, validated_data):
+    def update(self, submission, validated_data):
         # TODO: Test, could you change the phase of a submission?
-        if instance.secret != validated_data.get('secret'):
+        if submission.secret != validated_data.get('secret'):
             raise PermissionDenied("Submission secret invalid")
 
         if "status" in validated_data:
@@ -146,25 +156,26 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             except RuntimeError:
                 loop = asyncio.new_event_loop()
 
-            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{instance.owner.pk}", {
+            loop.run_until_complete(channel_layer.group_send(f"submission_listening_{submission.owner.pk}", {
                 'type': 'submission.message',
                 'text': {
                     "kind": "status_update",
                     "status": validated_data["status"],
                 },
-                'submission_id': instance.id,
+                'submission_id': submission.id,
             }))
 
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
-            task_id = validated_data.get('task_pk')
-            if not task_id:
-                raise ValidationError('Cannot update submission. Task pk was not provided')
-            run_submission(instance.pk, task_pk=task_id, is_scoring=True)
-        resp = super().update(instance, validated_data)
-        if instance.parent:
-            instance.parent.check_child_submission_statuses()
+            # task = validated_data.get('task_pk')
+            # if not task:
+            #     raise ValidationError('Cannot update submission. Task pk was not provided')
+            # task = Task.objects.get(id=task)
+            run_submission(submission.pk, tasks=[submission.task], is_scoring=True)
+        resp = super().update(submission, validated_data)
+        if submission.parent:
+            submission.parent.check_child_submission_statuses()
         return resp
 
 
