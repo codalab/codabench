@@ -2,6 +2,7 @@ import random
 from unittest import mock
 
 from django.urls import reverse
+from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
@@ -247,13 +248,11 @@ class BotUserSubmissionTests(APITestCase):
             phase=self.bot_phase_day_limited,
             owner=self.non_bot_user,
             status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            created_when=now(),
         )
 
         resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
-
-        from pprint import pprint
-        pprint(resp.data)
 
         assert resp.status_code == 200
         assert not resp.data['can']
