@@ -9,7 +9,7 @@ website: student submissions are made and scores returned via robot submissions.
 Usage
 =====
 
-Get into a python3 environemnt with requests installed
+Get into a python3 environment with requests installed
 
 Review this script and edit the applicable variables, like...
 
@@ -28,7 +28,6 @@ Then execute the contents of this script:
 CODALAB_URL = 'http://localhost/'
 USERNAME = 'admin'
 PASSWORD = 'admin'
-# COMPETITION_ID = 11
 PHASE_ID = 12
 SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 
