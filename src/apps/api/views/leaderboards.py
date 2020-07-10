@@ -53,7 +53,7 @@ def add_submission_to_leaderboard(request, submission_pk):
     # toggle submission on or off, if it was already on leaderboard
     if not submission.leaderboard:
         print(f"Adding {submission} to {submission.leaderboard}")
-        submission.leaderboard = submission.phase.competition.leaderboards.all()[0]
+        submission.leaderboard = competition.leaderboards.all()[0]
     else:
         print(f"Removing {submission} from {submission.leaderboard}")
         submission.leaderboard = None
