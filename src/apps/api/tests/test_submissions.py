@@ -4,7 +4,7 @@ from unittest import mock
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from competitions.models import Submission
+from competitions.models import Submission, CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
 
 from datasets.models import Data
@@ -179,10 +179,19 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
+
+class BotUserSubmissionTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
         self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
-        self.bot_comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator], allow_robot_submissions=True)
+        self.non_bot_user = UserFactory(username='non_bot', password='other')
+        self.bot_comp = CompetitionFactory(created_by=self.creator, allow_robot_submissions=True)
         self.bot_phase = PhaseFactory(competition=self.bot_comp)
+        self.bot_phase_day_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1)
+        self.bot_phase_person_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_person=1)
+        CompetitionParticipant(user=self.non_bot_user, competition=self.bot_comp, status=CompetitionParticipant.APPROVED).save()
+
+    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
         self.client.login(username="bot_user", password="other")
 
         resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
@@ -190,27 +199,85 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 200
         assert resp.data["can"]
 
-    def test_max_submissions_per_day_limits_normal_users_and_not_bots(self):
-        self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
-        self.bot_comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator], allow_robot_submissions=True)
-        self.bot_phase = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1, max_submissions_per_person=1)
+    def test_bots_can_exceed_max_submissions_per_day(self):
         self.client.login(username='bot_user', password='other')
 
-        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
 
         assert resp.status_code == 200
-        assert resp.data["can"]
+        assert resp.data['can']
 
         for _ in range(2):
             SubmissionFactory(
-                phase=self.bot_phase,
+                phase=self.bot_phase_day_limited,
                 owner=self.bot_user,
                 status=Submission.SUBMITTED,
                 secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
             )
 
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase).count() > self.bot_phase.max_submissions_per_day
-        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase).count() > self.bot_phase.max_submissions_per_person
+        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_day_limited).count() > self.bot_phase_day_limited.max_submissions_per_day
+
+    def test_bots_can_exceed_max_submissions_per_person(self):
+        self.client.login(username='bot_user', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        for _ in range(2):
+            SubmissionFactory(
+                phase=self.bot_phase_person_limited,
+                owner=self.bot_user,
+                status=Submission.SUBMITTED,
+                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            )
+
+        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_person_limited).count() > self.bot_phase_person_limited.max_submissions_per_person
+
+    def test_non_bot_users_cannot_exceed_max_submissions_per_day(self):
+        self.client.login(username='non_bot', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        SubmissionFactory(
+            phase=self.bot_phase_day_limited,
+            owner=self.non_bot_user,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+        )
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
+
+        from pprint import pprint
+        pprint(resp.data)
+
+        assert resp.status_code == 200
+        assert not resp.data['can']
+
+    def test_non_bot_users_cannot_exceed_max_submissions_per_person(self):
+        self.client.login(username='non_bot', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        SubmissionFactory(
+            phase=self.bot_phase_person_limited,
+            owner=self.non_bot_user,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+        )
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert not resp.data['can']
+
 
 class TaskSelectionTests(APITestCase):
     def setUp(self):
