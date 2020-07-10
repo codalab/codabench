@@ -2,6 +2,7 @@ from django.conf.urls import include
 from django.urls import path, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
@@ -43,6 +44,7 @@ urlpatterns = [
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-token-auth/', obtain_auth_token),
 
     # path('docs/', include_docs_urls(
     #     title='Codalab Competitions V2',
