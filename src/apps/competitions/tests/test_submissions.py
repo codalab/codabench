@@ -83,8 +83,10 @@ class MaxSubmissionsTests(SubmissionTestCase):
 class SubmissionManagerTests(SubmissionTestCase):
     def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
         sub = self.make_submission()
-        assert Submission.objects.all().count() == 1
-        sub.re_run()
+        with mock.patch('competitions.tasks._send_submission'):
+            sub.start()
+            assert Submission.objects.all().count() == 1
+            sub.re_run()
         assert Submission.objects.all().count() == 2
         subs = Submission.objects.all()
         assert subs[0].owner == subs[1].owner
@@ -143,12 +145,10 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
 
         self.sub = Submission.objects.get(id=self.sub.id)
         children = self.sub.children.order_by('id').values_list('id', flat=True)
-        tasks = self.phase.tasks.order_by('id').values_list('id', flat=True)
-        child_task_pairs = list(zip(children, tasks))
         first_call_args = resp.call_args_list[0][1]['args'][0]
         second_call_args = resp.call_args_list[1][1]['args'][0]
-        assert (first_call_args['id'], first_call_args['task_pk']) == child_task_pairs[0]
-        assert (second_call_args['id'], second_call_args['task_pk']) == child_task_pairs[1]
+        assert first_call_args['id'] == children[0]
+        assert second_call_args['id'] == children[1]
 
     def test_making_submission_to_phase_with_one_task_does_not_create_parents_or_children(self):
         self.single_phase = PhaseFactory(competition=self.comp)

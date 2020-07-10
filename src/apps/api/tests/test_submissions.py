@@ -1,8 +1,13 @@
+import random
+from unittest import mock
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission
-from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
+
+from datasets.models import Data
 
 from src.apps.competitions.models import CompetitionParticipant
 
@@ -16,6 +21,11 @@ class SubmissionAPITests(APITestCase):
         self.collaborator = UserFactory(username='collab', password='collab')
         self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
         self.phase = PhaseFactory(competition=self.comp)
+        for _ in range(2):
+            self.phase.tasks.add(TaskFactory.create())
+
+        # Extra phase for testing tasks can't be run on the wrong phase
+        self.other_phase = PhaseFactory(competition=self.comp)
 
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
@@ -227,3 +237,71 @@ class SubmissionAPITests(APITestCase):
                 status=Submission.SUBMITTED,
                 secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
             )
+    def test_can_select_tasks_when_making_submissions(self):
+        self.client.login(username="creator", password="creator")
+
+        # Make a new submission with a random set of tasks
+        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
+        url = reverse('submission-list')
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
+        data = {
+            'phase': self.phase.id,
+            'data': self.submission_data.key,
+            'tasks': tasks
+        }
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+            # Check that the submission was created
+            assert resp.status_code == 201
+            tasks.sort()
+            # Make sure only the selected tasks are run
+            assert list(self.phase.submissions.get(id=resp.json().get('id')).children.all().order_by('task__pk').values_list('task', flat=True)) == tasks
+
+    def test_cannot_select_tasks_on_wrong_phase(self):
+        self.client.login(username="creator", password="creator")
+
+        # Make a new submission with a random set of tasks
+        tasks = [*random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2), self.other_phase.tasks.first().pk]
+        url = reverse('submission-list')
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
+        data = {
+            'phase': self.phase.id,
+            'data': self.submission_data.key,
+            'tasks': tasks
+        }
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+            # Don't run any tasks if any task isn't a part of the phase
+            assert resp.status_code == 400
+            assert resp.json() == {'non_field_errors': ['All tasks must be part of the current phase.']}
+
+    def test_can_re_run_submissions_with_multiple_tasks(self):
+        self.client.login(username="creator", password="creator")
+
+        # Make a new submission with a random set of tasks
+        tasks = random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
+        url = reverse('submission-list')
+        self.submission_data = Data.objects.create(created_by=self.participant, type=Data.SUBMISSION)
+        data = {
+            'phase': self.phase.id,
+            'data': self.submission_data.key,
+            'tasks': tasks
+        }
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url, data)
+
+            sub = Submission.objects.get(id=resp.json().get('id'))
+            sub.re_run()
+
+            sub_copy = Submission.objects.filter(has_children=True).order_by('created_when').last()
+            # Check sub_copy is a new submission
+            assert sub.pk != sub_copy.pk
+            tasks.sort()
+            # Make sure the selected tasks were run in the duplicate submission's children
+            assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == tasks

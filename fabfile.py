@@ -1,4 +1,3 @@
-import os
 import yaml
 
 from fabric.api import env, run
