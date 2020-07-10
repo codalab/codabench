@@ -24,7 +24,6 @@ from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
-from tasks.models import Task
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
