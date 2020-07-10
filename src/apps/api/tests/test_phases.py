@@ -18,8 +18,11 @@ class ReRunPhaseSubmissionTests(APITestCase):
         self.competition.collaborators.add(self.collab)
         self.phase = PhaseFactory(competition=self.competition)
 
-        for _ in range(4):
+        submission_count = 4
+        for _ in range(submission_count):
             self.make_submission()
+        for sub in self.phase.submissions.all():
+            sub.start()
 
     def make_submission(self, **kwargs):
         kwargs.setdefault('owner', self.user)

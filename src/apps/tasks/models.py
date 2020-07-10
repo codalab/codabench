@@ -27,6 +27,7 @@ class Task(ChaHubSaveMixin, models.Model):
 
     @property
     def _validated(self):
+        # TODO: Should only include submissions that are successful, not any!
         return self.solutions.filter(md5__in=self.phases.values_list('submissions__md5', flat=True)).exists()
 
     @staticmethod
