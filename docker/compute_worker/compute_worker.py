@@ -206,7 +206,7 @@ class Run:
         self.requests_session.mount('https://', adapter)
 
     # TODO: Rename watch_file to "detailed_results_watcher" or some such
-    async def watch_file(self):
+    async def watch_detailed_results(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
         if not self.detailed_results_url:
@@ -610,7 +610,7 @@ class Run:
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
-            self.watch_file(),
+            self.watch_detailed_results(),
             loop=loop,
         )
 
