@@ -38,8 +38,8 @@ SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 # ----------------------------------------------------------------------------
 # Script start..
 # ----------------------------------------------------------------------------
-from urllib.parse import urljoin
-import requests
+from urllib.parse import urljoin # noqa: E402
+import requests                  # noqa: E402,E261  # Ignore E261 to line up these noqa
 
 # Login
 login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
