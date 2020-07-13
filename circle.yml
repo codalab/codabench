@@ -45,7 +45,7 @@ jobs:
           command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
 
-      - run: docker-compose exec django flake8 src/ --ignore E501,F405
+      - run: docker-compose exec django flake8 src/ --ignore E501,F405,E402
 
       - store_artifacts:
           path: artifacts/
