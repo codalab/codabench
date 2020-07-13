@@ -1,9 +1,14 @@
 import os
 from datetime import datetime
+from time import sleep
 
 from django.urls import reverse
 
 from factories import UserFactory
+from selenium.webdriver.common.keys import Keys
+
+from competitions.models import Competition
+from tasks.models import Task
 from ..utils import SeleniumTestCase
 
 
@@ -44,3 +49,91 @@ class TestCompetitions(SeleniumTestCase):
 
     def test_upload_v2_competition(self):
         self._upload_competition('competition.zip')
+
+    def test_manual_competition_creation(self):
+
+        # Dataset Creation
+        self.find('i[selenium="tasks"]').click()
+        self.find('div[data-tab="datasets"]').click()
+        self.find('i[selenium="add-dataset"]').click()
+        self.find('input-text[selenium="scoring-name"] input').send_keys('sCoRiNg NaMe')
+        self.find('input-text[selenium="scoring-desc"] input').send_keys('sCoRiNg DeScRiPtItIoN')
+        self.execute_script('$("select[selenium=\'type\']").dropdown("set selected", "scoring_program")')
+        self.find('input-file[selenium="file"] input').send_keys(os.path.join(self.test_files_dir, 'scoring_program.zip'))
+        self.find('i[selenium="upload"]').click()
+
+        sleep(2)
+        # Task Creation
+        self.find('div[data-tab="tasks"]').click()
+        self.find('div[selenium="create-task"]').click()
+        self.find('input[selenium="name2"]').send_keys('nAmE')
+        self.find('textarea[selenium="task-desc"]').send_keys('textbox')
+        self.find('div[data-tab="data"]').click()
+        self.find('input[id="scoring_program"]').send_keys('sco')
+        sleep(.5)
+        self.execute_script('$("div[selenium=\'scoring-program\'] a")[0].click()')
+        self.find('div[selenium="save-task"]').click()
+
+        # Details Tab
+        competition_title = "selenium_test_comp"
+        self.get(reverse('competitions:create'))
+        self.find('input[ref="title"]').send_keys(competition_title)
+        self.find('input[ref="logo"]').send_keys(os.path.join(self.test_files_dir, 'test_logo.png'))
+        self.find('input[ref="docker_image"]').send_keys('docker_image')
+
+        # Participation Tab
+        self.find('a[data-tab="participation"]').click()
+        self.execute_script('$("textarea[ref=\'terms\']")[0].EASY_MDE.value("pArTiCiPaTe")')
+        sleep(2)
+        self.find('input[selenium="auto-approve"]').click()
+
+        # Pages Tab
+        self.find('a[data-tab="pages"]').click()
+        self.find('i[class="add icon"]').click()
+        self.find('input[selenium="title"]').send_keys('Title')
+        self.execute_script('$("textarea[ref=\'content\']")[0].EASY_MDE.value("Testing123")')
+        self.find('div[selenium="save1"]').click()
+        sleep(1)
+
+        # Phases Tab
+        self.find('a[data-tab="phases"]').click()
+        self.find('i[selenium="add-phase"]').click()
+        sleep(1)
+        self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
+        sleep(.1)
+        self.find('input[name="start"]').click()
+        self.find('input[name="start"]').send_keys(2)
+        self.find('input[name="start"]').send_keys(Keys.ENTER)
+        self.find('input[name="end"]').send_keys(3)
+        self.find('input[name="end"]').send_keys(Keys.ENTER)
+        self.find('label[for="tasks"]').click()
+        sleep(.1)
+        self.find("form[selenium='phase-form'] input.search").send_keys("Wheat")
+        sleep(.1)
+        tasks = Task.objects.all()
+        import random
+        random_task = random.choice(tasks)
+        task = random_task.key
+        self.find(f"form[selenium='phase-form'] .menu .item[data-value='{task}']").click()
+        self.execute_script('$("textarea[ref=\'description\']")[0].EASY_MDE.value("Testing123")')
+        self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
+        sleep(1)
+        self.find('div[selenium="save2"]').click()
+        sleep(1)
+
+        # Leaderboard Tab
+        leaderboard_title = 'tItLe'
+        self.find('a[data-tab="leaderboard"]').click()
+        self.find('i[selenium="add-leaderboard"]').click()
+        self.find('input[selenium="title1"]').send_keys(leaderboard_title)
+        self.find('input[selenium="key"]').send_keys('kEy')
+        self.find('div[selenium="add-column"]').click()
+        sleep(1)
+        self.find('input[selenium="column-key"]').send_keys('cOlUmN kEy')
+        self.find('input[selenium="hidden"]').click()
+        self.find('div[selenium="save3"]').click()
+        sleep(2)
+        assert not Competition.objects.filter(title=competition_title).exists()
+        self.find('button[selenium="save4"]').click()
+        sleep(1)
+        assert Competition.objects.filter(title=competition_title).exists()

@@ -182,8 +182,6 @@ class Run:
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
         self.detailed_results_url = run_args.get('detailed_results_url')
 
-        self.task_pk = run_args.get('task_pk')
-
         # During prediction program will be the submission program, during scoring it will be the
         # scoring program
         self.program_exit_code = None
@@ -207,6 +205,7 @@ class Run:
         self.requests_session.mount('http://', adapter)
         self.requests_session.mount('https://', adapter)
 
+    # TODO: Rename watch_file to "detailed_results_watcher" or some such
     async def watch_file(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
@@ -214,12 +213,20 @@ class Run:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
         last_modified_time = None
+        start = time.time()
+        expiration_seconds = 60
         while self.watch:
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
                     await self.send_detailed_results(file_path)
+            else:
+                logger.info(time.time() - start)
+                if time.time() - start > expiration_seconds:
+                    timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
+                    logger.warning(timeout_error_message)
+                    raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
         else:
             # make sure we always send the final version of the file
@@ -271,10 +278,13 @@ class Run:
             "status": status,
             "status_details": extra_information,
         }
-        if status == STATUS_SCORING:
-            data.update({
-                "task_pk": self.task_pk,
-            })
+
+        # TODO: figure out if we should pull this task code later(submission.task should always be set)
+        # When we start
+        # if status == STATUS_SCORING:
+        #     data.update({
+        #         "task_pk": self.task_pk,
+        #     })
         self._update_submission(data)
 
     def _get_docker_image(self, image_name):
@@ -394,6 +404,9 @@ class Run:
                         tries += 1
 
         self.logs[kind]["end"] = time.time()
+
+        logger.info(f"Process exited with {proc.returncode}")
+        logger.info(f"Disconnecting from websocket {self.websocket_url}")
         await websocket.close()
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
@@ -600,6 +613,7 @@ class Run:
             self.watch_file(),
             loop=loop,
         )
+
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
@@ -666,7 +680,6 @@ class Run:
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
                 scores = yaml.load(f)
-
         else:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 

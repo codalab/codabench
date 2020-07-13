@@ -46,7 +46,7 @@
                     <tr>
                         <th colspan="2" class="right aligned">
                             <button class="ui tiny inverted green icon button" onclick="{ add }">
-                                <i class="add circle icon"></i> Add phase
+                                <i selenium="add-phase" class="add circle icon"></i> Add phase
                             </button>
                         </th>
                     </tr>
@@ -62,7 +62,7 @@
             Edit phase
         </div>
         <div class="content">
-            <form class="ui form" ref="form">
+            <form selenium="phase-form" class="ui form" ref="form">
                 <div class="field required">
                     <label>Name</label>
                     <input name="name">
@@ -92,7 +92,7 @@
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
-                    <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
+                    <select  name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
                             multiple="multiple">
                     </select>
                 </div>
@@ -162,7 +162,7 @@
                 <i class="logout icon"></i>Manage Tasks / Datasets
             </a>
             <div class="ui button" onclick="{ close_modal }">Cancel</div>
-            <div class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
+            <div selenium="save2" class="ui button primary { disabled: !form_is_valid }" onclick="{ save }">Save</div>
         </div>
     </div>
 
@@ -181,6 +181,8 @@
 
         self.one("mount", function () {
             $('.ui.checkbox', self.root).checkbox()
+
+            $.get(`${URLS.API}tasks/`).done(d => toastr.error(_.values(d.results)))
 
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)

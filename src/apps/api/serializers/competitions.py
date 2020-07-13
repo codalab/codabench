@@ -82,7 +82,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     phases = PhaseSerializer(many=True)
     leaderboards = LeaderboardSerializer(many=True)
     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
-
+    queue = QueueSerializer(required=False, allow_null=True)
     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
     # include the logo as a _file_ then we would need to use FormData _not_ JSON.
     logo = NamedBase64ImageField(required=True, allow_null=True)
@@ -109,6 +109,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'competition_type',
         )
 
     def validate_leaderboards(self, value):
@@ -165,6 +166,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'competition_type',
         )
 
     def get_leaderboards(self, instance):
@@ -193,6 +195,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'participant_count',
             'logo',
             'description',
+            'competition_type',
         )
 
 

@@ -129,13 +129,15 @@ const easyMDE_rendering_config = {
 }
 
 function create_easyMDE(element) {
-    return new EasyMDE({
+    var markdown_editor = new EasyMDE({
         element: element,
         autoRefresh: true,
         forceSync: true,
         hideIcons: ["side-by-side", "fullscreen"],
         renderingConfig: easyMDE_rendering_config
     })
+    element.EASY_MDE = markdown_editor
+    return markdown_editor
 }
 
 function sanitize_HTML(input, extra_settings) {
