@@ -156,6 +156,7 @@ class Run:
     def __init__(self, run_args):
         # Directories for the run
         self.watch = True
+        self.completed_program_counter = 0
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -205,22 +206,31 @@ class Run:
         self.requests_session.mount('http://', adapter)
         self.requests_session.mount('https://', adapter)
 
-    # TODO: Rename watch_file to "detailed_results_watcher" or some such
     async def watch_detailed_results(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
         if not self.detailed_results_url:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
+        v15_file_path = None
         last_modified_time = None
         start = time.time()
         expiration_seconds = 60
+
         while self.watch:
+            if self.completed_program_counter >= 2:
+                self.watch = False
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
                     await self.send_detailed_results(file_path)
+            elif glob.glob(os.path.join(self.output_dir, '*.html')):
+                v15_file_path = glob.glob(os.path.join(self.output_dir, '*.html'))[0]
+                new_time = os.path.getmtime(v15_file_path)
+                if new_time != last_modified_time:
+                    last_modified_time = new_time
+                    await self.send_detailed_results(v15_file_path)
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
@@ -230,7 +240,10 @@ class Run:
             await asyncio.sleep(5)
         else:
             # make sure we always send the final version of the file
-            await self.send_detailed_results(file_path)
+            if os.path.exists(file_path):
+                await self.send_detailed_results(file_path)
+            elif os.path.exists(v15_file_path):
+                await self.send_detailed_results(v15_file_path)
 
     async def send_detailed_results(self, file_path):
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
@@ -407,12 +420,20 @@ class Run:
 
         logger.info(f"Process exited with {proc.returncode}")
         logger.info(f"Disconnecting from websocket {self.websocket_url}")
+
+        # Communicate that the program is closing
+        self.completed_program_counter += 1
+
         await websocket.close()
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
+
+            # Communicate that the program is closing
+            self.completed_program_counter += 1
+
             return
 
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
