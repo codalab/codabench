@@ -178,9 +178,8 @@ def can_make_submission(request, phase_id):
     user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
 
     if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        new_participant = CompetitionParticipant(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
-        new_participant.save()
-        user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
+        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
+        user_is_approved = True
 
     if user_is_approved:
         can_make_submission, reason_why_not = phase.can_user_make_submissions(request.user)
