@@ -29,6 +29,7 @@ THIRD_PARTY_APPS = (
     'django.contrib.postgres',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'oauth2_provider',
     'corsheaders',
     'social_django',
@@ -215,6 +216,7 @@ CELERY_TIMEZONE = 'UTC'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
