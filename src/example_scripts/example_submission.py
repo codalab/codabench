@@ -31,7 +31,7 @@ Usage
 CODALAB_URL = 'http://localhost/'
 USERNAME = 'admin'
 PASSWORD = 'admin'
-PHASE_ID = 0
+PHASE_ID = 30
 SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 
 
@@ -59,30 +59,30 @@ headers = {
 can_make_sub_url = urljoin(CODALAB_URL, f'/api/can_make_submission/{PHASE_ID}/')
 resp = requests.get(can_make_sub_url, headers=headers)
 
-if resp.json()['can']:
-    # Create + Upload our dataset
-    datasets_url = urljoin(CODALAB_URL, '/api/datasets/')
-    datasets_payload = {
-        "type": "submission",
-        "request_sassy_file_name": "submission.zip",
-    }
-    resp = requests.post(datasets_url, datasets_payload, headers=headers)
-    if resp.status_code != 201:
-        print(f"Failed to create dataset: {resp.content}")
-        exit(-2)
-
-    dataset_data = resp.json()
-    sassy_url = dataset_data["sassy_url"].replace('docker.for.mac.localhost', 'localhost')  # switch URLs for local testing
-    resp = requests.put(sassy_url, data=open(SUBMISSION_ZIP_PATH, 'rb'), headers={'Content-Type': 'application/zip'})
-    if resp.status_code != 200:
-        print(f"Failed to upload dataset: {resp.content} to {sassy_url}")
-        exit(-3)
-
-    # Submit it to the competition
-    submission_url = urljoin(CODALAB_URL, '/api/submissions/')
-    submission_payload = {"phase": PHASE_ID, "data": dataset_data["key"]}
-    print(f"Making submission using data: {submission_payload}")
-    requests.post(submission_url, submission_payload, headers=headers)
-
-else:
+if not resp.json()['can']:
     print(f"Failed to create submission: {resp.json()['reason']}")
+    exit(-2)
+
+# Create + Upload our dataset
+datasets_url = urljoin(CODALAB_URL, '/api/datasets/')
+datasets_payload = {
+    "type": "submission",
+    "request_sassy_file_name": "submission.zip",
+}
+resp = requests.post(datasets_url, datasets_payload, headers=headers)
+if resp.status_code != 201:
+    print(f"Failed to create dataset: {resp.content}")
+    exit(-3)
+
+dataset_data = resp.json()
+sassy_url = dataset_data["sassy_url"].replace('docker.for.mac.localhost', 'localhost')  # switch URLs for local testing
+resp = requests.put(sassy_url, data=open(SUBMISSION_ZIP_PATH, 'rb'), headers={'Content-Type': 'application/zip'})
+if resp.status_code != 200:
+    print(f"Failed to upload dataset: {resp.content} to {sassy_url}")
+    exit(-4)
+
+# Submit it to the competition
+submission_url = urljoin(CODALAB_URL, '/api/submissions/')
+submission_payload = {"phase": PHASE_ID, "data": dataset_data["key"]}
+print(f"Making submission using data: {submission_payload}")
+requests.post(submission_url, submission_payload, headers=headers)
