@@ -35,9 +35,13 @@ if len(argv) > 1:
 
 if PHASE_MODE:
     comp_detail_url = urljoin(CODALAB_URL, f'/api/competitions/{COMPETITION_ID}')
-    resp = requests.get(comp_detail_url).json()
-    comp_title = resp['title']
-    phases = sorted(resp['phases'], key=itemgetter('id'))
+    resp = requests.get(comp_detail_url)
+    if resp.status_code != 200:
+        print(f"Failed to get competitions: {resp.content}")
+        exit(-1)
+    data = resp.json()
+    comp_title = data['title']
+    phases = sorted(data['phases'], key=itemgetter('id'))
 
     print(f"\nCompetition: {comp_title}\n")
     print('---------- Phases ----------')
@@ -49,7 +53,11 @@ if PHASE_MODE:
 
 else:
     comp_list_url = urljoin(CODALAB_URL, f'/api/competitions/')
-    competitions = sorted(requests.get(comp_list_url).json(), key=itemgetter('id'))
+    resp = requests.get(comp_list_url)
+    if resp.status_code != 200:
+        print(f"Failed to get competitions: {resp.content}")
+        exit(-2)
+    competitions = sorted(resp.json(), key=itemgetter('id'))
 
     print('\n------------------ Competitions ------------------')
     print('  id  |  creator               |  name')
