@@ -24,6 +24,7 @@ from operator import itemgetter   # noqa: E402,E261
 from urllib.parse import urljoin  # noqa: E402,E261
 import requests                   # noqa: E402,E261
 
+
 CODALAB_URL = 'http://localhost/'
 COMPETITION_ID = None
 PHASE_MODE = False
@@ -31,8 +32,6 @@ PHASE_MODE = False
 if len(argv) > 1:
     COMPETITION_ID = int(argv[1])
     PHASE_MODE = True
-
-
 
 if PHASE_MODE:
     comp_detail_url = urljoin(CODALAB_URL, f'/api/competitions/{COMPETITION_ID}')
