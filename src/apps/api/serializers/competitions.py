@@ -109,6 +109,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'allow_robot_submissions',
             'competition_type',
         )
 
@@ -166,6 +167,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'queue',
             'enable_detailed_results',
             'docker_image',
+            'allow_robot_submissions',
             'competition_type',
         )
 

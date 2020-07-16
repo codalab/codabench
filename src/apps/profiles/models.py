@@ -49,6 +49,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
 
+    is_bot = models.BooleanField(default=False)
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 
