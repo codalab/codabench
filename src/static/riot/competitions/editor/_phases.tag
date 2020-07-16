@@ -182,8 +182,6 @@
         self.one("mount", function () {
             $('.ui.checkbox', self.root).checkbox()
 
-            $.get(`${URLS.API}tasks/`).done(d => toastr.error(_.values(d.results)))
-
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
             // semantic multiselect
