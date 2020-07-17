@@ -212,25 +212,19 @@ class Run:
         if not self.detailed_results_url:
             return
         file_path = os.path.join(self.output_dir, 'detailed_results.html')
-        v15_file_path = None
         last_modified_time = None
         start = time.time()
         expiration_seconds = 60
 
-        while self.watch:
-            if self.completed_program_counter >= 2:
-                self.watch = False
+        while self.watch and self.completed_program_counter < 2:
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
                     await self.send_detailed_results(file_path)
+            # v1.5 compatibility - get the first html file if detailed_results.html doesn't exists
             elif glob.glob(os.path.join(self.output_dir, '*.html')):
-                v15_file_path = glob.glob(os.path.join(self.output_dir, '*.html'))[0]
-                new_time = os.path.getmtime(v15_file_path)
-                if new_time != last_modified_time:
-                    last_modified_time = new_time
-                    await self.send_detailed_results(v15_file_path)
+                file_path = glob.glob(os.path.join(self.output_dir, '*.html'))[0]
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
@@ -242,8 +236,6 @@ class Run:
             # make sure we always send the final version of the file
             if os.path.exists(file_path):
                 await self.send_detailed_results(file_path)
-            elif os.path.exists(v15_file_path):
-                await self.send_detailed_results(v15_file_path)
 
     async def send_detailed_results(self, file_path):
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
