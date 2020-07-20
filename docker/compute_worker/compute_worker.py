@@ -234,11 +234,10 @@ class Run:
                     logger.warning(timeout_error_message)
                     raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
-                if self.watch and self.completed_program_counter:
-                    last_run = True
+            if self.watch and self.completed_program_counter:
+                last_run = True
             else:
                 last_run = False
-
         else:
             # make sure we always send the final version of the file
             if os.path.exists(file_path):
