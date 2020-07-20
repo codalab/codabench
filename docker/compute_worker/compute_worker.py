@@ -216,7 +216,9 @@ class Run:
         start = time.time()
         expiration_seconds = 60
 
-        while self.watch and self.completed_program_counter < 2:
+        last_run = False
+
+        while self.watch and self.completed_program_counter < 2 or last_run:
             if os.path.exists(file_path):
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
@@ -232,6 +234,11 @@ class Run:
                     logger.warning(timeout_error_message)
                     raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
+                if self.watch and self.completed_program_counter:
+                    last_run = True
+            else:
+                last_run = False
+
         else:
             # make sure we always send the final version of the file
             if os.path.exists(file_path):
