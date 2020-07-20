@@ -234,6 +234,7 @@ class Run:
                     logger.warning(timeout_error_message)
                     raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
+            # Run this while block one time after the conditions are false
             if self.watch and self.completed_program_counter:
                 last_run = True
             else:
