@@ -48,6 +48,9 @@ class Column(models.Model):
         unique_together = ('leaderboard', 'key')
         ordering = ('index',)
 
+    def __str__(self):
+        return f'{self.title} ({self.index})'
+
     def compute(self, scores):
         return self.COMPUTATION_FUNCTIONS[self.computation](scores)
 
