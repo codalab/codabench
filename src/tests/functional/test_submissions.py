@@ -48,7 +48,7 @@ class TestSubmissions(SeleniumTestCase):
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
-        self.wait(1)
+        self.wait(10)
         assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
         # The submission table lists our submission!
@@ -65,9 +65,10 @@ class TestSubmissions(SeleniumTestCase):
 
         # Add the submission to the leaderboard and go to results tab
         self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(4)').click()
+        self.wait(1)
         self.find('.item[data-tab="results-tab"]').click()
 
-        self.wait(1)
+        self.wait(10)
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
