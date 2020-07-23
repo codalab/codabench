@@ -1,5 +1,7 @@
 from django.db.models import Q, OuterRef, Subquery
+from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -68,4 +70,9 @@ class TaskViewSet(ModelViewSet):
         instance = self.get_object()
         if request.user != instance.created_by:
             raise PermissionDenied("Cannot delete a task that is not yours")
+        if instance.phases.exists():
+            return Response(
+                {'message': 'Cannot delete task: task is being used by a phase'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return super().destroy(request, *args, **kwargs)
