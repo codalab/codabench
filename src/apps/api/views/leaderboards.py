@@ -47,9 +47,6 @@ def add_submission_to_leaderboard(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
     competition = submission.phase.competition
 
-    from pprint import pprint
-    print("DATA @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    print(Submission.objects.filter(parent=submission_pk))
 
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
@@ -64,7 +61,7 @@ def add_submission_to_leaderboard(request, submission_pk):
             s.leaderboard = s.scores.first().column.leaderboard
             s.save()
     else:
-        print(f"Adding {s} to {s.scores.first().column.leaderboard}")
+        print(f"Adding {submission} to {submission.scores.first().column.leaderboard}")
         submission.leaderboard = submission.scores.first().column.leaderboard
         submission.save()
 
