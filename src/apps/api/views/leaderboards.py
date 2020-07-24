@@ -47,17 +47,35 @@ def add_submission_to_leaderboard(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
     competition = submission.phase.competition
 
+    from pprint import pprint
+    print("DATA @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    print(Submission.objects.filter(parent=submission_pk))
+
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
-    # toggle submission on or off, if it was already on leaderboard
-    if not submission.leaderboard:
-        print(f"Adding {submission} to {submission.leaderboard}")
-        submission.leaderboard = competition.leaderboards.all()[0]
+    # TODO: probably could be written more efficiently
+    if submission.has_children:
+        print("SUBMISSION HAS CHILDREN @@@@@@@@@@@@@@@@@@@@@")
+        for s in Submission.objects.filter(parent=submission_pk):
+            print("ADDDING LEADERBOARD TO CHILD SUBMISSIONS @@@@@@@@@@@@")
+            #assume that Submission -> Scores -> Column will always have the correct column
+            print(f"Adding {s} to {s.scores.first().column.leaderboard}")
+            s.leaderboard = s.scores.first().column.leaderboard
+            s.save()
     else:
-        print(f"Removing {submission} from {submission.leaderboard}")
-        submission.leaderboard = None
+        print(f"Adding {s} to {s.scores.first().column.leaderboard}")
+        submission.leaderboard = submission.scores.first().column.leaderboard
+        submission.save()
 
-    submission.save()
+    # toggle submission on or off, if it was already on leaderboard
+    # if not submission.leaderboard:
+    #     print(f"Adding {submission} to {submission.leaderboard}")
+    #     submission.leaderboard = competition.leaderboards.all()[0]
+    # else:
+    #     print(f"Removing {submission} from {submission.leaderboard}")
+    #     submission.leaderboard = None
+
+    # submission.save()
 
     return Response({})
