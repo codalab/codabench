@@ -471,6 +471,15 @@ class Submission(ChaHubSaveMixin, models.Model):
                         )
                         self.scores.add(sub_score)
 
+    @property
+    def on_leaderboard(self):
+        on_leaderboard = False
+        if self.leaderboard:
+            on_leaderboard = True
+        elif self.has_children:
+            on_leaderboard = bool(self.children.first().leaderboard)
+        return on_leaderboard
+
     @staticmethod
     def get_chahub_endpoint():
         return "submissions/"

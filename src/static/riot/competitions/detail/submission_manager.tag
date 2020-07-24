@@ -89,14 +89,14 @@
                     <i class="grey minus circle icon"></i>
                     <!-- cancel submission -->
                 </span>
-                <span if="{!submission.leaderboard && submission.status === 'Finished'}"
+                <span if="{!submission.on_leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
                     <i class="icon green columns"></i>
                     <!-- send submission to leaderboard-->
                 </span>
-                <span if="{!!submission.leaderboard}"
+                <span if="{ submission.on_leaderboard }"
                      data-tooltip="On the Leaderboard"
                      data-inverted=""
                      onclick="{do_nothing}">

@@ -3,11 +3,14 @@ from datetime import timedelta
 from unittest import mock
 
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory
+from leaderboards.models import SubmissionScore
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
+    ColumnFactory, SubmissionScoreFactory
 
 
 class SubmissionTestCase(TestCase):
@@ -104,6 +107,22 @@ class SubmissionManagerTests(SubmissionTestCase):
             sub.status = status
             assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
             assert sub.status == status, 'Status was changed and should not have been'
+
+    def test_adding_submission_to_leaderboard_adds_all_children(self):
+        parent_sub = self.make_submission(has_children=True)
+        for _ in range(10):
+            leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
+            column = ColumnFactory(leaderboard=leaderboard)
+            sub = self.make_submission(parent=parent_sub)
+            score = SubmissionScoreFactory(column=column, submissions=sub)
+
+        self.client.force_login(parent_sub.owner)
+        url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        for submission in Submission.objects.filter(parent=parent_sub):
+            assert submission.leaderboard
+
 
 
 class MultipleTasksPerPhaseTests(SubmissionTestCase):

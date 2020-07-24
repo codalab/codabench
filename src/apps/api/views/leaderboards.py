@@ -46,9 +46,13 @@ def add_submission_to_leaderboard(request, submission_pk):
     # TODO: rebuild this to look somewhere else for what leaderboard to post to?
     submission = get_object_or_404(Submission, pk=submission_pk)
     competition = submission.phase.competition
+    print("Inside of view @@@@@@@@@@@@@@@@@@@@@@@@@@")
+    print(submission)
 
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
+    print(Submission.objects.filter(parent=submission_pk))
+    print(Submission.objects.filter(parent=submission_pk).count())
 
     if submission.has_children:
         for s in Submission.objects.filter(parent=submission_pk):
@@ -56,6 +60,7 @@ def add_submission_to_leaderboard(request, submission_pk):
             print(f"Adding {s} to {s.scores.first().column.leaderboard}")
             s.leaderboard = s.scores.first().column.leaderboard
             s.save()
+            print(s.leaderboard)
     else:
         submission.leaderboard = submission.scores.first().column.leaderboard
         submission.save()

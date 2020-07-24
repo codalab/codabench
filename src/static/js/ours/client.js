@@ -71,6 +71,9 @@ CODALAB.api = {
     get_submissions: function (filters) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/`, filters)
     },
+    get_submission: function (pk) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/`)
+    },
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },
