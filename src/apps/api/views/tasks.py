@@ -72,7 +72,7 @@ class TaskViewSet(ModelViewSet):
             raise PermissionDenied("Cannot delete a task that is not yours")
         if instance.phases.exists():
             return Response(
-                {'message': 'Cannot delete task: task is being used by a phase'},
+                {'error': 'Cannot delete task: task is being used by a phase'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         return super().destroy(request, *args, **kwargs)

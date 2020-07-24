@@ -63,8 +63,27 @@ class DataViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         # TODO: Confirm this has a test
-        if request.user != self.get_object().created_by:
+        instance = self.get_object()
+        if request.user != instance.created_by:
             raise PermissionDenied()
+
+        if instance.in_use.exists():
+            return Response(
+                {'error': 'Cannot delete dataset: dataset is in use'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        phase = None
+        if instance.submission.first():
+            sub = instance.submission.first()
+            if sub.phase:
+                phase = sub.phase
+        if phase:
+            return Response(
+                {'error': 'Cannot delete submission: submission belongs to an existing competition'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         return super().destroy(request, *args, **kwargs)
 
 

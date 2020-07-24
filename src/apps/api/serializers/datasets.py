@@ -32,6 +32,12 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
         )
 
+    def validate_is_public(self, is_public):
+        md5 = self.instance.submission.first().md5
+        if is_public and md5 is None:
+            raise ValidationError('Submission must be validated before it can be published')
+        return is_public
+
     def validate(self, attrs):
         if 'name' in attrs:
             existing_lookup = Data.objects.filter(name=attrs['name'], created_by=self.context['request'].user)
