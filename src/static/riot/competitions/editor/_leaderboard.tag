@@ -367,7 +367,6 @@
                         sorting: _.get(data, `sorting_${i}`),
                         hidden: self.refs[`hidden_${i}`].checked,
                     }
-
                     let id = _.get(data, `id_${i}`)
                     if (id) {
                         column.id = id
