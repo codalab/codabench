@@ -425,10 +425,6 @@ class Submission(ChaHubSaveMixin, models.Model):
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
-        print('re_run task')
-
-        from pprint import pprint
-        pprint(self.task)
 
         if not self.has_children:
             self.refresh_from_db()
