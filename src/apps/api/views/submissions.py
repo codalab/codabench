@@ -67,7 +67,6 @@ class SubmissionViewSet(ModelViewSet):
                 'scores',
                 'scores__column',
             )
-        print('\n\n\n\n\n\n\n\n\nGET QUERYSET\n\n\n\n\n\n\n\n\n')
         return qs
 
     def destroy(self, request, *args, **kwargs):
