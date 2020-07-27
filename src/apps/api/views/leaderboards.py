@@ -53,7 +53,6 @@ def add_submission_to_leaderboard(request, submission_pk):
     if submission.has_children:
         for s in Submission.objects.filter(parent=submission_pk):
             #assume that Submission -> Scores -> Column.leaderboard will always have the correct leaderboard
-            # print(f"Adding {s} to {s.scores.first().column.leaderboard}")
             s.leaderboard = s.scores.first().column.leaderboard
             s.save()
     else:

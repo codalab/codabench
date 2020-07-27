@@ -8,7 +8,6 @@ from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from leaderboards.models import SubmissionScore
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionScoreFactory
 
@@ -122,7 +121,6 @@ class SubmissionManagerTests(SubmissionTestCase):
         assert resp.status_code == 200
         for submission in Submission.objects.filter(parent=parent_sub):
             assert submission.leaderboard
-
 
 
 class MultipleTasksPerPhaseTests(SubmissionTestCase):

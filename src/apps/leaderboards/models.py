@@ -14,6 +14,7 @@ class Leaderboard(models.Model):
     def __str__(self):
         return f'{self.title} - {self.competition}'
 
+
 class Column(models.Model):
     AVERAGE = 'avg'
     SUM = 'sum'
