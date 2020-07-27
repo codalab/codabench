@@ -10,6 +10,11 @@
     <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
+    <button class="ui red right floated labeled icon button {disabled: marked_tasks.length === 0}" onclick="{delete_tasks}">
+        <i class="icon delete"></i>
+        Delete Selected Tasks
+    </button>
+
     <table class="ui {selectable: tasks.length > 0} celled compact table">
         <thead>
         <tr>
@@ -17,6 +22,7 @@
             <th width="125px">Uploaded...</th>
             <th width="50px">Public</th>
             <th width="50px">Delete?</th>
+            <th width="25px"></th>
         </tr>
         </thead>
         <tbody>
@@ -31,6 +37,12 @@
                     <i class="icon delete"></i>
                 </button>
             </td>
+            <td class="center aligned">
+                <div class="ui fitted checkbox">
+                    <input type="checkbox" name="delete_checkbox" onclick="{ mark_task_for_deletion.bind(this, task) }">
+                    <label></label>
+                </div>
+            </td>
         </tr>
 
         <tr if="{tasks.length === 0}">
@@ -44,7 +56,7 @@
                   Pagination
         ------------------------------------->
         <tr if="{tasks.length > 0}">
-            <th colspan="4">
+            <th colspan="5">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -196,6 +208,7 @@
          Init
         ---------------------------------------------------------------------*/
 
+        self.marked_tasks = []
         self.tasks = []
         self.form_datasets = {}
         self.selected_task = {}
@@ -304,7 +317,10 @@
             self.update()
         }
 
-        self.show_detail_modal = (task) => {
+        self.show_detail_modal = (task, e) => {
+            if (e.target.type === 'checkbox') {
+                return
+            }
             CODALAB.api.get_task(task.id)
                 .done((data) => {
                     self.selected_task = data
@@ -372,7 +388,6 @@
             delay(() => self.update_tasks({search: filter}), 100)
         }
 
-
         self.delete_task = function (task) {
             if (confirm("Are you sure you want to delete '" + task.name + "'?")) {
                 CODALAB.api.delete_task(task.id)
@@ -385,6 +400,31 @@
                     })
             }
             event.stopPropagation()
+        }
+
+        self.delete_tasks = function () {
+            if (confirm(`Are you sure you want to delete multiple tasks?`)) {
+                for (d in self.marked_tasks) {
+                    CODALAB.api.delete_task(self.marked_tasks[d].id)
+                        .done(function () {
+                            self.update_tasks()
+                            toastr.success("Task deleted successfully!")
+                        })
+                        .fail(function (response) {
+                            toastr.error("Could not delete task!")
+                        })
+                }
+            }
+            event.stopPropagation()
+        }
+
+        self.mark_task_for_deletion = function(task, e) {
+            if (e.target.checked) {
+                self.marked_tasks.push(task)
+            }
+            else {
+                self.marked_tasks.splice(self.marked_tasks.indexOf(task), 1)
+            }
         }
     </script>
     <style type="text/stylus">
