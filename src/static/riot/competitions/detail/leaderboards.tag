@@ -1,5 +1,6 @@
 <leaderboards>
-    <table class="ui celled selectable table">
+    <button id="csvButton" class="ui small button" onclick="{exportLeaderboardtoCSV}">Download as CSV</button>
+    <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
@@ -69,6 +70,31 @@
             })
         }
 
+        self.exportLeaderboardtoCSV = function () {
+            var leaderboardTitle = self.selected_leaderboard.title
+            var csv = []
+            var rows = $("#leadboardTable tr");
+            for (var i = 1; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+                for (var j = 0; j < cols.length; j++)
+                    row.push(cols[j].innerText);
+                csv.push(row.join(","));
+            }
+            self.downloadCSV(csv.join("\n"), leaderboardTitle);
+        }
+
+        self.downloadCSV =  function (csv, filename) {
+            var csvFile;
+            var downloadLink;
+            csvFile = new Blob([csv], {type: "text/csv"});
+            downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+        }
+
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
             self.update_leaderboards()
@@ -95,5 +121,7 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        #csvButton
+            margin-top 10px
     </style>
 </leaderboards>
