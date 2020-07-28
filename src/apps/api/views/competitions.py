@@ -1,5 +1,12 @@
+import csv
+import os
+import string
+import random
+import zipfile
+import StringIO
+
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
+from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When, FileField
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -8,6 +15,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.http import FileResponse
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
@@ -200,6 +208,19 @@ class CompetitionViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['GET',],)
+    def get_csv(self, request, pk,):
+        buffer = StringIO.StringIO()
+        z = zipfile.ZipFile( buffer, "w")
+        z.write("idletest")
+        z.close()
+        
+
+    def get_random_string(self, length):
+        letters = string.ascii_letters
+        return ''.join(random.choice(letters) for i in range(length))
+
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(

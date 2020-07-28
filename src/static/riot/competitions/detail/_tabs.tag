@@ -223,6 +223,7 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
+                    <div class="ui inline button right" onclick="{downloadCSV}">CSV</div>
                 </div>
 
                 <leaderboards class="leaderboard-table"
@@ -314,6 +315,11 @@
             self.update()
 
             CODALAB.events.trigger('leaderboard_selected', data)
+        }
+
+        self.downloadCSV =  function () {
+            let compId = self.competition.id;
+            CODALAB.api.get_competition_results_csv(compId)
         }
 
     </script>
