@@ -1,5 +1,6 @@
 from django.db.models import Q, OuterRef, Subquery
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -68,11 +69,37 @@ class TaskViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if request.user != instance.created_by:
-            raise PermissionDenied("Cannot delete a task that is not yours")
-        if instance.phases.exists():
+
+        error = self.check_delete_permissions(request, instance)
+
+        if error:
             return Response(
-                {'error': 'Cannot delete task: task is being used by a phase'},
+                {'error': error},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=('POST',))
+    def delete_many(self, request):
+        qs = Task.objects.filter(id__in=request.data)
+        errors = {}
+
+        for task in qs:
+            error = self.check_delete_permissions(request, task)
+            if error:
+                errors[task.name] = error
+
+        if not errors:
+            qs.delete()
+
+        return Response(
+            errors if errors else {'detail': 'Tasks deleted successfully'},
+            status=status.HTTP_400_BAD_REQUEST if errors else status.HTTP_200_OK
+        )
+
+    def check_delete_permissions(self, request, task):
+        if request.user != task.created_by:
+            return "Cannot delete a task that is not yours"
+        if task.phases.exists():
+            return 'Cannot delete task: task is being used by a phase'

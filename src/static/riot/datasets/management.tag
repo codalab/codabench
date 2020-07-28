@@ -198,6 +198,7 @@
         var self = this
         self.mixin(ProgressBarMixin)
 
+        console.dir(toastr)
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
@@ -311,16 +312,17 @@
 
         self.delete_datasets = function () {
             if (confirm(`Are you sure you want to delete multiple datasets?`)) {
-                for (d in self.marked_datasets) {
-                    CODALAB.api.delete_dataset(self.marked_datasets[d].id)
-                        .done(function () {
-                            self.update_datasets()
-                            toastr.success("Dataset deleted successfully!")
-                        })
-                        .fail(function (response) {
-                            toastr.error("Could not delete dataset!")
-                        })
-                }
+                CODALAB.api.delete_datasets(self.marked_datasets)
+                    .done(function () {
+                        self.update_datasets()
+                        toastr.success("Dataset deleted successfully!")
+                        self.marked_datasets = []
+                    })
+                    .fail(function (response) {
+                        for (e in response.responseJSON) {
+                            toastr.error(`${e}: '${response.responseJSON[e]}'`)
+                        }
+                    })
             }
             event.stopPropagation()
         }
@@ -433,10 +435,10 @@
 
         self.mark_dataset_for_deletion = function(dataset, e) {
             if (e.target.checked) {
-                self.marked_datasets.push(dataset)
+                self.marked_datasets.push(dataset.id)
             }
             else {
-                self.marked_datasets.splice(self.marked_datasets.indexOf(dataset), 1)
+                self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
             }
         }
 

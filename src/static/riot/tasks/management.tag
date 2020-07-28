@@ -404,26 +404,27 @@
 
         self.delete_tasks = function () {
             if (confirm(`Are you sure you want to delete multiple tasks?`)) {
-                for (d in self.marked_tasks) {
-                    CODALAB.api.delete_task(self.marked_tasks[d].id)
-                        .done(function () {
-                            self.update_tasks()
-                            toastr.success("Task deleted successfully!")
-                        })
-                        .fail(function (response) {
-                            toastr.error("Could not delete task!")
-                        })
-                }
+                CODALAB.api.delete_tasks(self.marked_tasks)
+                    .done(function () {
+                        self.update_tasks()
+                        toastr.success("Tasks deleted successfully!")
+                        self.marked_tasks = []
+                    })
+                    .fail(function (response) {
+                        for (e in response.responseJSON) {
+                            toastr.error(`${e}: '${response.responseJSON[e]}'`)
+                        }
+                    })
             }
             event.stopPropagation()
         }
 
         self.mark_task_for_deletion = function(task, e) {
             if (e.target.checked) {
-                self.marked_tasks.push(task)
+                self.marked_tasks.push(task.id)
             }
             else {
-                self.marked_tasks.splice(self.marked_tasks.indexOf(task), 1)
+                self.marked_tasks.splice(self.marked_tasks.indexOf(task.id), 1)
             }
         }
     </script>

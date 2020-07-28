@@ -121,6 +121,9 @@ CODALAB.api = {
     delete_dataset: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}datasets/${pk}/`)
     },
+    delete_datasets: function(pk_list) {
+        return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
+    },
     create_dump: function (competition_id) {
         return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
     },
@@ -186,6 +189,9 @@ CODALAB.api = {
     },
     delete_task: function (id) {
         return CODALAB.api.request('DELETE', URLS.API + 'tasks/' + id + '/')
+    },
+    delete_tasks: function (pk_list) {
+        return CODALAB.api.request('POST', URLS.API + 'tasks/delete_many/', pk_list)
     },
     update_task: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
