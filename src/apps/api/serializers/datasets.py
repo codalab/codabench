@@ -33,9 +33,11 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         )
 
     def validate_is_public(self, is_public):
-        md5 = self.instance.submission.first().md5
-        if is_public and md5 is None:
-            raise ValidationError('Submission must be validated before it can be published')
+        if self.instance:
+            if self.instance.submission.exists():
+                md5 = self.instance.submission.first().md5
+                if is_public and md5 is None:
+                    raise ValidationError('Submission must be validated before it can be published')
         return is_public
 
     def validate(self, attrs):
