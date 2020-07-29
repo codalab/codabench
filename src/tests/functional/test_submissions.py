@@ -43,12 +43,13 @@ class TestSubmissions(SeleniumTestCase):
         self.find('input[ref="file_input"]').send_keys(submission_full_path)
         self.circleci_screenshot(name='uploading_submission.png')
 
+        self.wait(5)
         # The accordion shows "Running submission.zip"
         assert self.find_text_in_class('.submission-output-container .title', f"Running {submission_zip_path}", timeout=timeout)
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
-        self.wait(10)
+        self.wait(5)
         assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
         # The submission table lists our submission!
@@ -67,7 +68,7 @@ class TestSubmissions(SeleniumTestCase):
         self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(4) span[data-tooltip="Add to Leaderboard"]').click()
         self.find('.item[data-tab="results-tab"]').click()
 
-        self.wait(10)
+        self.wait(5)
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
