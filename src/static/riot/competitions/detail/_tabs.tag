@@ -223,7 +223,7 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
-                    <div class="ui inline button right" onclick="{downloadCSV}">CSV</div>
+                    <button class="ui inline button right" onclick="{downloadCSV}">CSV</button>
                 </div>
 
                 <leaderboards class="leaderboard-table"

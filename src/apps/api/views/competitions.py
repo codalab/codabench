@@ -1,9 +1,9 @@
-import csv
-import os
 import string
 import random
 import zipfile
-import StringIO
+from django.http import HttpResponse
+from tempfile import SpooledTemporaryFile, NamedTemporaryFile
+from wsgiref.util import FileWrapper
 
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When, FileField
@@ -211,16 +211,19 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=True, methods=['GET',],)
     def get_csv(self, request, pk,):
-        buffer = StringIO.StringIO()
-        z = zipfile.ZipFile( buffer, "w")
-        z.write("idletest")
-        z.close()
-        
-
-    def get_random_string(self, length):
-        letters = string.ascii_letters
-        return ''.join(random.choice(letters) for i in range(length))
-
+        comp = Competition.objects.get(pk=pk)
+        with SpooledTemporaryFile() as tmp:
+            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for i in range(5):
+                    tempFile = (NamedTemporaryFile())
+                    input = "file,name,hello\n{},logan,heyooo".format(i)
+                    tempFile.write(str.encode(input))
+                    tempFile.seek(0)
+                    archive.write(tempFile.name, "{}-test.csv".format(i))
+            tmp.seek(0)
+            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
+            response['Content-Disposition'] = 'attachment; filename={}'.format(comp.title)
+            return response
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
