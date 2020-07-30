@@ -318,6 +318,7 @@
         }
 
         self.show_detail_modal = (task, e) => {
+            // Return here so the detail modal doesn't pop up when a checkbox is clicked
             if (e.target.type === 'checkbox') {
                 return
             }

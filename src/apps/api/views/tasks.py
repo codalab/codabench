@@ -98,6 +98,7 @@ class TaskViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST if errors else status.HTTP_200_OK
         )
 
+    # This function allows for multiple errors when deleting multiple objects
     def check_delete_permissions(self, request, task):
         if request.user != task.created_by:
             return "Cannot delete a task that is not yours"

@@ -227,6 +227,7 @@
         })
 
         self.show_info_modal = function (row, e) {
+            // Return here so the info modal doesn't pop up when a checkbox is clicked
             if (e.target.type === 'checkbox') {
                 return
             }
