@@ -210,8 +210,10 @@ class CompetitionViewSet(ModelViewSet):
         return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['GET',],)
-    def get_csv(self, request, pk,):
-        comp = Competition.objects.get(pk=pk)
+    def get_csv(self, request, pk):
+        # if not request.user.is_authenticated:
+        #     return PermissionDenied("You need to be logged in in to download the leaderboard")
+        comp = self.get_object()
         with SpooledTemporaryFile() as tmp:
             with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                 for i in range(5):
