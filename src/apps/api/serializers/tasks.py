@@ -1,5 +1,6 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
@@ -64,6 +65,12 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
         read_only_fields = (
             'created_by',
         )
+
+    def validate_is_public(self, is_public):
+        validated = Task.objects.get(id=self.instance.id)._validated
+        if is_public and not validated:
+            raise ValidationError('Task must be validated before it can be published')
+        return is_public
 
     def get_validated(self, instance):
         return hasattr(instance, 'validated') and instance.validated is not None

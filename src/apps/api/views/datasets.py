@@ -6,8 +6,7 @@ from django.db.models import Q
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import api_view, action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -63,9 +62,48 @@ class DataViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         # TODO: Confirm this has a test
-        if request.user != self.get_object().created_by:
-            raise PermissionDenied()
+        instance = self.get_object()
+
+        error = self.check_delete_permissions(request, instance)
+
+        if error:
+            return Response(
+                {'error': error},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=('POST',))
+    def delete_many(self, request):
+        qs = Data.objects.filter(id__in=request.data)
+        errors = {}
+
+        for dataset in qs:
+            error = self.check_delete_permissions(request, dataset)
+            if error:
+                errors[dataset.name] = error
+
+        if not errors:
+            qs.delete()
+
+        return Response(
+            errors if errors else {'detail': 'Datasets deleted successfully'},
+            status=status.HTTP_400_BAD_REQUEST if errors else status.HTTP_200_OK
+        )
+
+    # This function allows for multiple errors when deleting multiple objects
+    def check_delete_permissions(self, request, dataset):
+        if request.user != dataset.created_by:
+            return 'Cannot delete a dataset that is not yours'
+
+        if dataset.in_use.exists():
+            return 'Cannot delete dataset: dataset is in use'
+
+        if dataset.submission.first():
+            sub = dataset.submission.first()
+            if sub.phase:
+                return 'Cannot delete submission: submission belongs to an existing competition'
 
 
 class DataGroupViewSet(ModelViewSet):

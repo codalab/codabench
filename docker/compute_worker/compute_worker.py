@@ -245,7 +245,6 @@ class Run:
             if html_files:
                 return html_files[0]
 
-
     async def send_detailed_results(self, file_path):
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
         async with websockets.connect(self.websocket_url) as websocket:
