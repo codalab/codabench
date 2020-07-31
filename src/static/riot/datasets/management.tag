@@ -304,7 +304,7 @@
                         toastr.success("Dataset deleted successfully!")
                     })
                     .fail(function (response) {
-                        toastr.error("Could not delete dataset!")
+                        toastr.error(response.responseJSON['error'])
                     })
             }
             event.stopPropagation()
@@ -428,7 +428,7 @@
                         self.filter()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating Dataset')
+                        toastr.error(resp.responseJSON['is_public'])
                     })
             }
         }

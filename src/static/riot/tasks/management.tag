@@ -307,7 +307,7 @@
                         self.update()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating task')
+                        toastr.error(resp.responseJSON['is_public'])
                     })
             }
         }
@@ -397,7 +397,7 @@
                         toastr.success("Task deleted successfully!")
                     })
                     .fail(function (response) {
-                        toastr.error("Could not delete task!")
+                        toastr.error(response.responseJSON['error'])
                     })
             }
             event.stopPropagation()
