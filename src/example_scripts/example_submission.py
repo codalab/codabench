@@ -47,6 +47,7 @@ login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
 resp = requests.post(login_url, {"username": USERNAME, "password": PASSWORD})
 if resp.status_code != 200:
     print(f"Failed to login: {resp.content}")
+    print('Is the url correct? (http vs https)')
     exit(-1)
 
 # Setup auth headers for the rest of communication

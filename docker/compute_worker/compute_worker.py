@@ -156,6 +156,7 @@ class Run:
     def __init__(self, run_args):
         # Directories for the run
         self.watch = True
+        self.completed_program_counter = 0
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -205,18 +206,18 @@ class Run:
         self.requests_session.mount('http://', adapter)
         self.requests_session.mount('https://', adapter)
 
-    # TODO: Rename watch_file to "detailed_results_watcher" or some such
-    async def watch_file(self):
+    async def watch_detailed_results(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
         if not self.detailed_results_url:
             return
-        file_path = os.path.join(self.output_dir, 'detailed_results.html')
+        file_path = self.get_detailed_results_file_path()
         last_modified_time = None
         start = time.time()
         expiration_seconds = 60
-        while self.watch:
-            if os.path.exists(file_path):
+
+        while self.watch and self.completed_program_counter < 2:
+            if file_path:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
@@ -228,9 +229,21 @@ class Run:
                     logger.warning(timeout_error_message)
                     raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
+            file_path = self.get_detailed_results_file_path()
         else:
             # make sure we always send the final version of the file
-            await self.send_detailed_results(file_path)
+            if file_path:
+                await self.send_detailed_results(file_path)
+
+    def get_detailed_results_file_path(self):
+        default_detailed_results_path = os.path.join(self.output_dir, 'detailed_results.html')
+        if os.path.exists(default_detailed_results_path):
+            return default_detailed_results_path
+        else:
+            # v1.5 compatibility - get the first html file if detailed_results.html doesn't exists
+            html_files = glob.glob(os.path.join(self.output_dir, '*.html'))
+            if html_files:
+                return html_files[0]
 
     async def send_detailed_results(self, file_path):
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
@@ -407,12 +420,20 @@ class Run:
 
         logger.info(f"Process exited with {proc.returncode}")
         logger.info(f"Disconnecting from websocket {self.websocket_url}")
+
+        # Communicate that the program is closing
+        self.completed_program_counter += 1
+
         await websocket.close()
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
+
+            # Communicate that the program is closing
+            self.completed_program_counter += 1
+
             return
 
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
@@ -610,7 +631,7 @@ class Run:
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
-            self.watch_file(),
+            self.watch_detailed_results(),
             loop=loop,
         )
 

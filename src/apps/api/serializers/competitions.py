@@ -216,6 +216,7 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
 
 class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
+    is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
 
     class Meta:
@@ -223,6 +224,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'username',
+            'is_bot',
             'email',
             'status',
         )
