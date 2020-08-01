@@ -50,14 +50,13 @@ def add_submission_to_leaderboard(request, submission_pk):
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
-    # toggle submission on or off, if it was already on leaderboard
-    if not submission.leaderboard:
-        print(f"Adding {submission} to {submission.leaderboard}")
-        submission.leaderboard = competition.leaderboards.all()[0]
+    if submission.has_children:
+        for s in Submission.objects.filter(parent=submission_pk):
+            # Assume that Submission -> Scores -> Column.leaderboard will always have the correct leaderboard
+            s.leaderboard = s.scores.first().column.leaderboard
+            s.save()
     else:
-        print(f"Removing {submission} from {submission.leaderboard}")
-        submission.leaderboard = None
-
-    submission.save()
+        submission.leaderboard = submission.scores.first().column.leaderboard
+        submission.save()
 
     return Response({})

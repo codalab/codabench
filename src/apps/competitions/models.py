@@ -425,9 +425,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
-        print('re_run task')
-        from pprint import pprint
-        pprint(self.task)
+
         if not self.has_children:
             self.refresh_from_db()
             sub.start(tasks=[self.task])
@@ -468,6 +466,15 @@ class Submission(ChaHubSaveMixin, models.Model):
                             score=score
                         )
                         self.scores.add(sub_score)
+
+    @property
+    def on_leaderboard(self):
+        on_leaderboard = False
+        if self.leaderboard:
+            on_leaderboard = True
+        elif self.has_children:
+            on_leaderboard = bool(self.children.first().leaderboard)
+        return on_leaderboard
 
     @staticmethod
     def get_chahub_endpoint():

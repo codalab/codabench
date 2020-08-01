@@ -34,6 +34,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     filename = serializers.SerializerMethodField(read_only=True)
     owner = serializers.CharField(source='owner.username')
     phase_name = serializers.CharField(source='phase.name')
+    on_leaderboard = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Submission
@@ -55,12 +56,14 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'phase',
             'scores',
             'leaderboard',
+            'on_leaderboard',
         )
         read_only_fields = (
             'pk',
             'phase',
             'scores',
             'leaderboard',
+            'on_leaderboard',
         )
 
     def get_filename(self, instance):
