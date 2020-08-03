@@ -208,19 +208,19 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET',],)
+    @action(detail=True, methods=['GET', ], )
     def get_csv(self, request, pk):
 
-        #TODO: Add authentication check to see if user is competition admin or superuser
+        # TODO: Add authentication check to see if user is competition admin or superuser
 
-        #Query Needed data and filter to what is needed.
+        # Query Needed data and filter to what is needed.
         comp = self.get_object()
-        phase_pks = [x.id for x in Phase.objects.filter(competition_id=11)]
+        phase_pks = [x.id for x in Phase.objects.filter(competition_id=comp.id)]
         submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False))
         filtered_submission_query = [x for x in submission_query if x.on_leaderboard]
-        users = {x.id:x.username for x in User.objects.all()}
+        users = {x.id: x.username for x in User.objects.all()}
 
-        #Build the data needed for the csv's into a dictionary
+        # Build the data needed for the csv's into a dictionary
         csv = {}
         for sub in filtered_submission_query:
             if sub.leaderboard_id not in csv.keys():
@@ -233,7 +233,7 @@ class CompetitionViewSet(ModelViewSet):
                 csv[sub.leaderboard_id][score.column_id].append(float(score.score))
             csv[sub.leaderboard_id]["user"].append(users[sub.owner_id])
 
-        #Take the data from the dict, put them into csv files and add them to the archive
+        # Take the data from the dict, put them into csv files and add them to the archive
         with SpooledTemporaryFile() as tmp:
             with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                 for lb_id in csv.keys():
@@ -243,7 +243,7 @@ class CompetitionViewSet(ModelViewSet):
                         line = ""
                         for col in csvCols:
                             line += "{},".format(csv[lb_id][col][entry])
-                        line = line[:-1]+"\n"
+                        line = line[:-1] + "\n"
                         tempFile.write(str.encode(line))
                     tempFile.seek(0)
                     archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
@@ -282,6 +282,7 @@ def front_page_competitions(request):
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
+
     # TODO! Security, who can access/delete/etc this?
 
     @action(detail=True, methods=('POST',), url_name='manually_migrate')
