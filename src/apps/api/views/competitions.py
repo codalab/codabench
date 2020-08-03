@@ -1,12 +1,10 @@
-import string
-import random
 import zipfile
+
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
-from wsgiref.util import FileWrapper
 
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When, FileField
+from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -15,16 +13,17 @@ from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.http import FileResponse
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from competitions.tasks import batch_send_email, manual_migration
 from competitions.utils import get_popular_competitions, get_featured_competitions
+from leaderboards.models import Column, Leaderboard, SubmissionScore
+from profiles.models import User
 from utils.data import make_url_sassy
 
 from api.permissions import IsOrganizerOrCollaborator
@@ -211,20 +210,46 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=True, methods=['GET',],)
     def get_csv(self, request, pk):
-        # if not request.user.is_authenticated:
-        #     return PermissionDenied("You need to be logged in in to download the leaderboard")
+
+        #TODO: Add authentication check to see if user is competition admin or superuser
+
+        #Query Needed data and filter to what is needed.
         comp = self.get_object()
+        phase_pks = [x.id for x in Phase.objects.filter(competition_id=11)]
+        submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False))
+        filtered_submission_query = [x for x in submission_query if x.on_leaderboard]
+        users = {x.id:x.username for x in User.objects.all()}
+
+        #Build the data needed for the csv's into a dictionary
+        csv = {}
+        for sub in filtered_submission_query:
+            if sub.leaderboard_id not in csv.keys():
+                csv[sub.leaderboard_id] = {}
+                csv[sub.leaderboard_id]["user"] = ["Username"]
+                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
+                for col in columns:
+                    csv[sub.leaderboard_id][col.id] = [col.title]
+            for score in sub.scores.all():
+                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
+            csv[sub.leaderboard_id]["user"].append(users[sub.owner_id])
+
+        #Take the data from the dict, put them into csv files and add them to the archive
         with SpooledTemporaryFile() as tmp:
             with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-                for i in range(5):
-                    tempFile = (NamedTemporaryFile())
-                    input = "file,name,hello\n{},logan,heyooo".format(i)
-                    tempFile.write(str.encode(input))
+                for lb_id in csv.keys():
+                    tempFile = NamedTemporaryFile()
+                    csvCols = [x for x in csv[lb_id].keys()]
+                    for entry in range(len(csv[lb_id][csvCols[0]])):
+                        line = ""
+                        for col in csvCols:
+                            line += "{},".format(csv[lb_id][col][entry])
+                        line = line[:-1]+"\n"
+                        tempFile.write(str.encode(line))
                     tempFile.seek(0)
-                    archive.write(tempFile.name, "{}-test.csv".format(i))
+                    archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
             tmp.seek(0)
             response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}'.format(comp.title)
+            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(comp.title)
             return response
 
     def _ensure_organizer_participants_accepted(self, instance):

@@ -95,7 +95,5 @@
             color #8c8c8c
         .index-column
             min-width 55px
-        #csvButton
-            margin-top 10px
     </style>
 </leaderboards>
