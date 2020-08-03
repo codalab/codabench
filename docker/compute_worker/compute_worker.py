@@ -92,6 +92,8 @@ def replace_legacy_metadata_command(command, kind, is_scoring, ingestion_only_du
         ('$hidden', '/app/input/ref'),
         ('$shared', '/app/shared'),
         ('$submission_program', '/app/ingested_program'),
+        ('$tmp', '/app/output'),
+        ('$predictions', '/app/input/res'),
     ]
     for var_string, var_replacement in vars_to_replace:
         command = command.replace(var_string, var_replacement)
