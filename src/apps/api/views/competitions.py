@@ -208,10 +208,11 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET', ], )
+    @action(detail=True, methods=['GET'] )
     def get_csv(self, request, pk):
 
         # TODO: Add authentication check to see if user is competition admin or superuser
+        # TODO: Need to differentiate between leaderboards on different phases
 
         # Query Needed data and filter to what is needed.
         comp = self.get_object()
@@ -232,6 +233,8 @@ class CompetitionViewSet(ModelViewSet):
             for score in sub.scores.all():
                 csv[sub.leaderboard_id][score.column_id].append(float(score.score))
             csv[sub.leaderboard_id]["user"].append(users[sub.owner_id])
+
+        # TODO: Instead of calling for all users above, add all user_id's to a set and use that to create a dictionary of filtered users
 
         # Take the data from the dict, put them into csv files and add them to the archive
         with SpooledTemporaryFile() as tmp:
