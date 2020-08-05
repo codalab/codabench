@@ -113,7 +113,7 @@ class SubmissionManagerTests(SubmissionTestCase):
             leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
             column = ColumnFactory(leaderboard=leaderboard)
             sub = self.make_submission(parent=parent_sub)
-            score = SubmissionScoreFactory(column=column, submissions=sub)
+            SubmissionScoreFactory(column=column, submissions=sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})
