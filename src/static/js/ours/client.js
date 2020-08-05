@@ -34,16 +34,12 @@ CODALAB.api = {
     get_competition_creation_status: function (key) {
         return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
     },
-    get_competition_results_csv: function (key) {
-        return CODALAB.api.request('GET', `${URLS.API}competitions/${key}/get_csv`)
-    },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
     },
     delete_competition: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}competitions/${pk}/`)
     },
-
     toggle_competition_publish: function (pk) {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/toggle_publish/`)
     },

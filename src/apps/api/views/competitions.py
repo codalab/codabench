@@ -208,21 +208,23 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET'] )
+    @action(detail=True, methods=['GET'])
     def get_csv(self, request, pk):
-
-        # TODO: Add authentication check to see if user is competition admin or superuser
         # TODO: Need to differentiate between leaderboards on different phases
+        #  (after there are different leaderboards on each phase)
+
+        competition = self.get_object()
+        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
+            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
 
         # Query Needed data and filter to what is needed.
-        comp = self.get_object()
-        phase_pks = [x.id for x in Phase.objects.filter(competition_id=comp.id)]
+        phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
         submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False))
-        filtered_submission_query = [x for x in submission_query if x.on_leaderboard]
-        users = {x.id: x.username for x in User.objects.all()}
+        filtered_submission_query = [sub for sub in submission_query if sub.on_leaderboard]
 
         # Build the data needed for the csv's into a dictionary
         csv = {}
+        user_id = set()
         for sub in filtered_submission_query:
             if sub.leaderboard_id not in csv.keys():
                 csv[sub.leaderboard_id] = {}
@@ -232,9 +234,13 @@ class CompetitionViewSet(ModelViewSet):
                     csv[sub.leaderboard_id][col.id] = [col.title]
             for score in sub.scores.all():
                 csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-            csv[sub.leaderboard_id]["user"].append(users[sub.owner_id])
+            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
+            user_id.add(sub.owner_id)
 
-        # TODO: Instead of calling for all users above, add all user_id's to a set and use that to create a dictionary of filtered users
+        # Replace user_id with usernames
+        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
+        for leaderboard in csv:
+            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
 
         # Take the data from the dict, put them into csv files and add them to the archive
         with SpooledTemporaryFile() as tmp:
@@ -252,7 +258,7 @@ class CompetitionViewSet(ModelViewSet):
                     archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
             tmp.seek(0)
             response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(comp.title)
+            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
     def _ensure_organizer_participants_accepted(self, instance):
