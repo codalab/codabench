@@ -22,7 +22,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from competitions.tasks import batch_send_email, manual_migration
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from leaderboards.models import Column, Leaderboard, SubmissionScore
+from leaderboards.models import Column, Leaderboard
 from profiles.models import User
 from utils.data import make_url_sassy
 
