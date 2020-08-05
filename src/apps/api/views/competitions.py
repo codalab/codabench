@@ -220,7 +220,7 @@ class CompetitionViewSet(ModelViewSet):
         # Query Needed data and filter to what is needed.
         phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
         submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
-        if submission_query.first() is None:
+        if not submission_query.exists():
             raise ValidationError("There are no submissions on the leaderboard")
 
         # Build the data needed for the csv's into a dictionary
