@@ -1,5 +1,5 @@
 <leaderboards>
-    <table class="ui celled selectable table">
+    <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
