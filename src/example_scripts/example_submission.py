@@ -32,6 +32,7 @@ CODALAB_URL = 'http://localhost/'
 USERNAME = 'admin'
 PASSWORD = 'admin'
 PHASE_ID = None
+TASK_LIST = []
 SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 
 
@@ -84,6 +85,11 @@ if resp.status_code != 200:
 
 # Submit it to the competition
 submission_url = urljoin(CODALAB_URL, '/api/submissions/')
-submission_payload = {"phase": PHASE_ID, "data": dataset_data["key"]}
+submission_payload = {
+    "phase": PHASE_ID,
+    "tasks": TASK_LIST,
+    "data": dataset_data["key"],
+}
+
 print(f"Making submission using data: {submission_payload}")
 requests.post(submission_url, submission_payload, headers=headers)
