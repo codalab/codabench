@@ -10,7 +10,7 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key) && filterLeaderboard(column.key)}">{ column.title }</th>
+            <th each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
         </tr>
         </thead>
         <tbody>
@@ -29,7 +29,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key) && filterLeaderboard(column.key)}">{ get_score(column, submission) } </td>
+            <td each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission) } </td>
         </tr>
         </tbody>
     </table>
@@ -71,29 +71,22 @@
             })
         }
 
-        self.filterLeaderboard = function (key) {
-            if(self.refs.leaderboardFilter.value == ""){return true}
-            return self.filtered_column_keys.has(key)
+        self.filterLeaderboard = function () {
+            let tempStr = self.refs.leaderboardFilter.value.toLowerCase()
+            let finalArray = tempStr.match(/[a-z]+[:][a-z,0-9]+/g)
+            if(finalArray == null){return false}
+            for(i =0; i < finalArray.length; i++) {
+                console.log(finalArray[i])
+            }
         }
 
-// If I use self instead of this the cursor doesn't show up
         self.on("mount", function () {
-            this.refs.leaderboardFilter.onkeyup = function (e) {
-                let searchValue = self.refs.leaderboardFilter.value
-                self.filtered_column_keys.clear()
-                if(searchValue != ""){
-                    for (i = 0; i < self.selected_leaderboard.columns.length; i++) {
-                        if (self.selected_leaderboard.columns[i].title.includes(searchValue) ||
-                            self.selected_leaderboard.columns[i].key.includes(searchValue)) {
-                            self.filtered_column_keys.add(self.selected_leaderboard.columns[i].key)
-                        }
-                    }
-                }
-                self.update()
-                return false
-                };
-            }
-        );
+            this.refs.leaderboardFilter.onkeyup = _.debounce(self.filterLeaderboard, 250, {
+                'leading': true,
+                'trailing': true,
+                'maxWait': 500
+            })
+        })
 
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
