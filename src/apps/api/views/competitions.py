@@ -1,8 +1,3 @@
-import zipfile
-
-from django.http import HttpResponse
-from tempfile import SpooledTemporaryFile, NamedTemporaryFile
-
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,11 +14,9 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
 from competitions.tasks import batch_send_email, manual_migration
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from leaderboards.models import Column, Leaderboard
-from profiles.models import User
 from utils.data import make_url_sassy
 
 from api.permissions import IsOrganizerOrCollaborator
@@ -208,60 +201,6 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET'])
-    def get_csv(self, request, pk):
-        # TODO: Need to differentiate between leaderboards on different phases
-        #  (after there are different leaderboards on each phase)
-
-        competition = self.get_object()
-        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
-
-        # Query Needed data and filter to what is needed.
-        phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
-        submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
-        if not submission_query.exists():
-            raise ValidationError("There are no submissions on the leaderboard")
-
-        # Build the data needed for the csv's into a dictionary
-        csv = {}
-        user_id = set()
-        for sub in submission_query:
-            if sub.leaderboard_id not in csv.keys():
-                csv[sub.leaderboard_id] = {}
-                csv[sub.leaderboard_id]["user"] = ["Username"]
-                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-                for col in columns:
-                    csv[sub.leaderboard_id][col.id] = [col.title]
-            for score in sub.scores.all():
-                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
-            user_id.add(sub.owner_id)
-
-        # Replace user_id with usernames
-        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-        for leaderboard in csv:
-            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
-
-        # Take the data from the dict, put them into csv files and add them to the archive
-        with SpooledTemporaryFile() as tmp:
-            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-                for lb_id in csv.keys():
-                    tempFile = NamedTemporaryFile()
-                    csvCols = [x for x in csv[lb_id].keys()]
-                    for entry in range(len(csv[lb_id][csvCols[0]])):
-                        line = ""
-                        for col in csvCols:
-                            line += "{},".format(csv[lb_id][col][entry])
-                        line = line[:-1] + "\n"
-                        tempFile.write(str.encode(line))
-                    tempFile.seek(0)
-                    archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
-            tmp.seek(0)
-            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
-            return response
-
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
             user__in=instance.collaborators.all()
@@ -292,7 +231,6 @@ def front_page_competitions(request):
 class PhaseViewSet(ModelViewSet):
     queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
-
     # TODO! Security, who can access/delete/etc this?
 
     @action(detail=True, methods=('POST',), url_name='manually_migrate')

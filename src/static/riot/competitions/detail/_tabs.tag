@@ -223,7 +223,7 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
-                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>                </div>
+                </div>
 
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
@@ -244,7 +244,6 @@
         self.selected_phase_index = undefined
         self.selected_leaderboard_index = undefined
         self.loading = true
-        self.csvURL = '{% url competitions.views.get_csv %}'
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -302,6 +301,7 @@
             }
         }
 
+
         self.phase_selected = function (data, event) {
             self.selected_phase_index = data.id
             self.update()
@@ -315,6 +315,7 @@
 
             CODALAB.events.trigger('leaderboard_selected', data)
         }
+
     </script>
 
     <style type="text/stylus">
