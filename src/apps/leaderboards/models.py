@@ -66,4 +66,4 @@ class SubmissionScore(models.Model):
         ordering = ('column__index',)
 
     def __str__(self):
-        return f'{self.column} - {self.score}'
+        return f'Score: ID={self.id} - Column={self.column}'
