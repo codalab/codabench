@@ -43,6 +43,9 @@ from urllib.parse import urljoin  # noqa: E402
 import requests                   # noqa: E402,E261  # Ignore E261 to line up these noqa
 
 
+# Check someone updated PHASE_ID argument!
+assert PHASE_ID, "PHASE_ID must be set at the top of this script"
+
 # Login
 login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
 resp = requests.post(login_url, {"username": USERNAME, "password": PASSWORD})
@@ -92,4 +95,9 @@ submission_payload = {
 }
 
 print(f"Making submission using data: {submission_payload}")
-requests.post(submission_url, submission_payload, headers=headers)
+resp = requests.post(submission_url, submission_payload, headers=headers)
+
+if resp.status_code in (200, 201):
+    print(f"Successfully submitted: {resp.content}")
+else:
+    print(f"Error submitting ({resp.status_code}): {resp.content}")
