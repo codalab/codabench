@@ -50,7 +50,7 @@ if len(argv) > 2:
     PHASE_ID = int(argv[2])
     MODE = 2
 
-if MODE == 1:
+if COMPETITION_ID and not PHASE_ID:
     comp_detail_url = urljoin(CODALAB_URL, f'/api/competitions/{COMPETITION_ID}')
     resp = requests.get(comp_detail_url)
     if resp.status_code != 200:
@@ -68,7 +68,7 @@ if MODE == 1:
         print(f"{p['id']:>4}  |  {p['name']}")
     print()
 
-elif MODE == 2:
+elif PHASE_ID:
     comp_detail_url = urljoin(CODALAB_URL, f'/api/competitions/{COMPETITION_ID}')
     resp = requests.get(comp_detail_url)
     if resp.status_code != 200:
@@ -93,7 +93,7 @@ elif MODE == 2:
         print(f"{t['id']:>4}  |  {t['name']}")
     print()
 
-else:
+elif not COMPETITION_ID and not PHASE_ID:
     comp_list_url = urljoin(CODALAB_URL, f'/api/competitions/')
     resp = requests.get(comp_list_url)
     if resp.status_code != 200:

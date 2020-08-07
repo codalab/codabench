@@ -63,12 +63,12 @@ headers = {
     "Authorization": f"Token {token}"
 }
 
-if MODE == 1:
+if PHASE_ID and not SUBMISSION_ID:
     submissions_list_url = urljoin(CODALAB_URL, f'/api/submissions/')
     resp = requests.get(submissions_list_url, {"phase": PHASE_ID}, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to get submissions: {resp.content}")
-        exit(-3)
+        exit(-2)
 
     submissions = sorted(resp.json(), key=itemgetter('id'))
 
@@ -79,7 +79,7 @@ if MODE == 1:
         print(f"{s['id']:>4}  |  {s['owner']:<20}  |  {s['created_when']}")
     print()
 
-elif MODE == 2:
+elif SUBMISSION_ID:
     submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}')
     resp = requests.get(submissions_detail_url, headers=headers)
     if resp.status_code != 200:
@@ -103,3 +103,6 @@ elif MODE == 2:
     print('-------------------------------\n')
     pprint(resp.json())
     print()
+
+else:
+    print('ERROR: Phase ID missing! Phase ID is required as a command line argument.')
