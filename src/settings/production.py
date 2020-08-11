@@ -6,12 +6,18 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
 CORS_ORIGIN_ALLOW_ALL = False
 DEBUG = False
 
+# =============================================================================
+# Staticfiles (whitenoise)
+# =============================================================================
+INSTALLED_APPS += ('whitenoise',)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
+
 # =========================================================================
 # SSL
 # =========================================================================
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
-
 
 # =========================================================================
 # Email
