@@ -8,6 +8,7 @@ from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
+from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
 
@@ -35,6 +36,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
+            'leaderboard',
         )
 
 
@@ -174,9 +176,11 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     def get_leaderboards(self, instance):
         try:
             if instance.user_has_admin_permission(self.context['request'].user):
-                qs = instance.leaderboards.all()
+                # qs = instance.leaderboards.all()
+                qs = Leaderboard.objects.filter(phases__competition=instance)
             else:
-                qs = instance.leaderboards.filter(hidden=False)
+                # qs = instance.leaderboards.filter(hidden=False)
+                qs = Leaderboard.objects.filter(phases__competition=instance, hidden=False)
         except KeyError:
             raise Exception(f'KeyError on context. Context: {self.context}')
         return LeaderboardSerializer(qs, many=True).data

@@ -236,6 +236,8 @@ class Phase(ChaHubSaveMixin, models.Model):
 
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
 
+    leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True, related_name="phases")
+
     class Meta:
         ordering = ('index',)
 
@@ -449,23 +451,23 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.save()
 
     def calculate_scores(self):
-        leaderboards = self.phase.competition.leaderboards.all()
-        for leaderboard in leaderboards:
-            columns = leaderboard.columns.exclude(computation__isnull=True)
-            for column in columns:
-                scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
-                if scores.exists():
-                    score = column.compute(scores)
-                    try:
-                        sub_score = self.scores.get(column=column)
-                        sub_score.score = score
-                        sub_score.save()
-                    except SubmissionScore.DoesNotExist:
-                        sub_score = SubmissionScore.objects.create(
-                            column=column,
-                            score=score
-                        )
-                        self.scores.add(sub_score)
+        # leaderboards = self.phase.competition.leaderboards.all()
+        # for leaderboard in leaderboards:
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        for column in columns:
+            scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
+            if scores.exists():
+                score = column.compute(scores)
+                try:
+                    sub_score = self.scores.get(column=column)
+                    sub_score.score = score
+                    sub_score.save()
+                except SubmissionScore.DoesNotExist:
+                    sub_score = SubmissionScore.objects.create(
+                        column=column,
+                        score=score
+                    )
+                    self.scores.add(sub_score)
 
     @property
     def on_leaderboard(self):

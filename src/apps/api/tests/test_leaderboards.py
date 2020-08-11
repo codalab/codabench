@@ -33,7 +33,8 @@ class HiddenLeaderboardTests(APITestCase):
         self.collab = factories.UserFactory(username='collab', password='test')
         self.norm = factories.UserFactory(username='norm', password='test')
         self.comp = factories.CompetitionFactory(created_by=self.creator, collaborators=[self.collab])
-        self.lb = factories.LeaderboardFactory(competition=self.comp, hidden=True)
+        self.lb = factories.LeaderboardFactory(hidden=True)
+        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.lb)
         factories.ColumnFactory(leaderboard=self.lb, index=0)
 
     def get_comp(self):

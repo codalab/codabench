@@ -14,8 +14,8 @@ class SubmissionScoreChangeTests(APITestCase):
         self.normal_user = UserFactory(username='norm')
         self.competition = CompetitionFactory(created_by=self.user)
         self.competition.collaborators.add(self.collab)
-        self.phase = PhaseFactory(competition=self.competition)
-        self.leaderboard = LeaderboardFactory(competition=self.competition)
+        self.leaderboard = LeaderboardFactory()
+        self.phase = PhaseFactory(competition=self.competition, leaderboard=self.leaderboard)
         self.column = ColumnFactory(leaderboard=self.leaderboard, key='test')
         self.submission = self.make_submission()
 

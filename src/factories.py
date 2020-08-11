@@ -169,7 +169,7 @@ class LeaderboardFactory(DjangoModelFactory):
         model = Leaderboard
 
     title = factory.Faker('word')
-    competition = factory.SubFactory(CompetitionFactory)
+    # competition = factory.SubFactory(CompetitionFactory)
     key = factory.Faker('word')
 
 

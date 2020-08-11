@@ -70,8 +70,8 @@ class CompetitionViewSet(ModelViewSet):
                     'phases__tasks__solutions',
                     'phases__tasks__solutions__data',
                     'pages',
-                    'leaderboards',
-                    'leaderboards__columns',
+                    'phases__leaderboard',
+                    'phases__leaderboard__columns',
                     'collaborators',
                 )
                 qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
