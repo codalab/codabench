@@ -91,7 +91,6 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
     def get_submissions(self, instance):
         # desc == -colname
         # asc == colname
-        print("\n\n\n\nhere\n\n\n\n")
         primary_col = instance.columns.get(index=instance.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
         submissions = instance.submissions.all().select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
