@@ -1,8 +1,14 @@
+import random
+from unittest import mock
+
 from django.urls import reverse
+from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
-from competitions.models import Submission
-from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory
+from competitions.models import Submission, CompetitionParticipant
+from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
+
+from datasets.models import Data
 
 
 class SubmissionAPITests(APITestCase):
@@ -173,3 +179,163 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.superuser)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+
+class BotUserSubmissionTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.bot_user = UserFactory(username='bot_user', password='other', is_bot=True)
+        self.non_bot_user = UserFactory(username='non_bot', password='other')
+        self.bot_comp = CompetitionFactory(created_by=self.creator, allow_robot_submissions=True)
+        self.bot_phase = PhaseFactory(competition=self.bot_comp)
+        self.bot_phase_day_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_day=1)
+        self.bot_phase_person_limited = PhaseFactory(competition=self.bot_comp, has_max_submissions=True, max_submissions_per_person=1)
+        CompetitionParticipant(user=self.non_bot_user, competition=self.bot_comp, status=CompetitionParticipant.APPROVED).save()
+
+    def test_bot_users_are_automatically_added_to_participants_on_submission(self):
+        self.client.login(username="bot_user", password="other")
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data["can"]
+
+    def test_bots_can_exceed_max_submissions_per_day(self):
+        self.client.login(username='bot_user', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        for _ in range(2):
+            SubmissionFactory(
+                phase=self.bot_phase_day_limited,
+                owner=self.bot_user,
+                status=Submission.SUBMITTED,
+                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            )
+
+        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_day_limited).count() > self.bot_phase_day_limited.max_submissions_per_day
+
+    def test_bots_can_exceed_max_submissions_per_person(self):
+        self.client.login(username='bot_user', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        for _ in range(2):
+            SubmissionFactory(
+                phase=self.bot_phase_person_limited,
+                owner=self.bot_user,
+                status=Submission.SUBMITTED,
+                secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            )
+
+        assert Submission.objects.filter(owner=self.bot_user, phase=self.bot_phase_person_limited).count() > self.bot_phase_person_limited.max_submissions_per_person
+
+    def test_non_bot_users_cannot_exceed_max_submissions_per_day(self):
+        self.client.login(username='non_bot', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        SubmissionFactory(
+            phase=self.bot_phase_day_limited,
+            owner=self.non_bot_user,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            created_when=now(),
+        )
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_day_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert not resp.data['can']
+
+    def test_non_bot_users_cannot_exceed_max_submissions_per_person(self):
+        self.client.login(username='non_bot', password='other')
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert resp.data['can']
+
+        SubmissionFactory(
+            phase=self.bot_phase_person_limited,
+            owner=self.non_bot_user,
+            status=Submission.SUBMITTED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+        )
+
+        resp = self.client.get(reverse("can_make_submission", args=(self.bot_phase_person_limited.pk,)))
+
+        assert resp.status_code == 200
+        assert not resp.data['can']
+
+
+class TaskSelectionTests(APITestCase):
+    def setUp(self):
+        # Competition and creator
+        self.creator = UserFactory(username='creator', password='creator')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase = PhaseFactory(competition=self.comp)
+        for _ in range(2):
+            self.phase.tasks.add(TaskFactory.create())
+
+        # Extra phase for testing tasks can't be run on the wrong phase
+        self.other_phase = PhaseFactory(competition=self.comp)
+
+        # URL and data for making submissions
+        self.submission_url = reverse('submission-list')
+        self.submission_data = {
+            'phase': self.phase.id,
+            'data': Data.objects.create(created_by=self.creator, type=Data.SUBMISSION).key,
+            'tasks': random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
+        }
+        self.sorted_tasks = sorted(self.submission_data['tasks'])
+
+    def test_can_select_tasks_when_making_submissions(self):
+        self.client.login(username="creator", password="creator")
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(self.submission_url, self.submission_data)
+            # Check that the submission was created
+            assert resp.status_code == 201
+            # Make sure only the selected tasks are run
+            assert list(self.phase.submissions.get(id=resp.json().get('id')).children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
+
+    def test_cannot_select_tasks_on_wrong_phase(self):
+        self.client.login(username="creator", password="creator")
+
+        # Add a task from another phase to the task list
+        submission_data = self.submission_data
+        submission_data['tasks'] = [*self.submission_data['tasks'], self.other_phase.tasks.first().pk]
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(self.submission_url, submission_data)
+            # Don't run any tasks if any task isn't a part of the phase
+            assert resp.status_code == 400
+            assert resp.json() == {'non_field_errors': ['All tasks must be part of the current phase.']}
+
+    def test_can_re_run_submissions_with_multiple_tasks(self):
+        self.client.login(username="creator", password="creator")
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(self.submission_url, self.submission_data)
+
+            sub = Submission.objects.get(id=resp.json().get('id'))
+            sub.re_run()
+
+            sub_copy = Submission.objects.filter(has_children=True).order_by('created_when').last()
+            # Check sub_copy is a new submission
+            assert sub.pk != sub_copy.pk
+            # Make sure the selected tasks were run in the duplicate submission's children
+            assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks

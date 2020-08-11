@@ -3,11 +3,16 @@ from datetime import timedelta
 from unittest import mock
 
 from django.test import TestCase
+<<<<<<< HEAD
+=======
+from django.urls import reverse
+>>>>>>> develop
 from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
+    ColumnFactory, SubmissionScoreFactory
 
 
 class SubmissionTestCase(TestCase):
@@ -83,8 +88,10 @@ class MaxSubmissionsTests(SubmissionTestCase):
 class SubmissionManagerTests(SubmissionTestCase):
     def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
         sub = self.make_submission()
-        assert Submission.objects.all().count() == 1
-        sub.re_run()
+        with mock.patch('competitions.tasks._send_submission'):
+            sub.start()
+            assert Submission.objects.all().count() == 1
+            sub.re_run()
         assert Submission.objects.all().count() == 2
         subs = Submission.objects.all()
         assert subs[0].owner == subs[1].owner
@@ -102,6 +109,21 @@ class SubmissionManagerTests(SubmissionTestCase):
             sub.status = status
             assert not sub.cancel(), "Cancel returned True, meaning submission could be cancelled when it shouldn\'t"
             assert sub.status == status, 'Status was changed and should not have been'
+
+    def test_adding_submission_to_leaderboard_adds_all_children(self):
+        parent_sub = self.make_submission(has_children=True)
+        for _ in range(10):
+            leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
+            column = ColumnFactory(leaderboard=leaderboard)
+            sub = self.make_submission(parent=parent_sub)
+            SubmissionScoreFactory(column=column, submissions=sub)
+
+        self.client.force_login(parent_sub.owner)
+        url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        for submission in Submission.objects.filter(parent=parent_sub):
+            assert submission.leaderboard
 
 
 class MultipleTasksPerPhaseTests(SubmissionTestCase):
@@ -143,12 +165,19 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
 
         self.sub = Submission.objects.get(id=self.sub.id)
         children = self.sub.children.order_by('id').values_list('id', flat=True)
+<<<<<<< HEAD
         tasks = self.phase.tasks.order_by('id').values_list('id', flat=True)
         child_task_pairs = list(zip(children, tasks))
         first_call_args = resp.call_args_list[0][1]['args'][0]
         second_call_args = resp.call_args_list[1][1]['args'][0]
         assert (first_call_args['id'], first_call_args['task_pk']) == child_task_pairs[0]
         assert (second_call_args['id'], second_call_args['task_pk']) == child_task_pairs[1]
+=======
+        first_call_args = resp.call_args_list[0][1]['args'][0]
+        second_call_args = resp.call_args_list[1][1]['args'][0]
+        assert first_call_args['id'] == children[0]
+        assert second_call_args['id'] == children[1]
+>>>>>>> develop
 
     def test_making_submission_to_phase_with_one_task_does_not_create_parents_or_children(self):
         self.single_phase = PhaseFactory(competition=self.comp)

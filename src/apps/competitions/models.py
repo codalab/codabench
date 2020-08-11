@@ -14,10 +14,20 @@ from profiles.models import User
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
+from tasks.models import Task
+
 logger = logging.getLogger()
 
 
 class Competition(ChaHubSaveMixin, models.Model):
+    COMPETITION = "competition"
+    BENCHMARK = "benchmark"
+
+    COMPETITION_TYPE = (
+        (COMPETITION, "competition"),
+        (BENCHMARK, "benchmark"),
+    )
+
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
@@ -35,8 +45,12 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
 
+    allow_robot_submissions = models.BooleanField(default=False)
+    # we use filed type to distinguish 'competition' and 'benchmark'
+    competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
+
     def __str__(self):
-        return f"competition-{self.title}-{self.pk}"
+        return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
     @property
     def bundle_dataset(self):
@@ -238,7 +252,7 @@ class Phase(ChaHubSaveMixin, models.Model):
         Returns:
             (can_make_submissions, reason_if_not)
         """
-        if not self.has_max_submissions:
+        if not self.has_max_submissions or (user.is_bot and self.competition.allow_robot_submissions):
             return True, None
 
         qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
@@ -354,7 +368,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
-    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE)
+    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE, related_name='submission')
     md5 = models.CharField(max_length=32, null=True, blank=True)
 
     prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
@@ -362,7 +376,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
-    task_id = models.UUIDField(null=True, blank=True)
+    celery_task_id = models.UUIDField(null=True, blank=True)
+    task = models.ForeignKey(Task, on_delete=models.PROTECT, null=True, blank=True, related_name="submissions")
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.CASCADE, related_name="submissions",
                                     null=True, blank=True)
 
@@ -382,7 +397,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 
     class Meta:
-        unique_together = ('owner', 'leaderboard')
+        unique_together = ('owner', 'leaderboard', 'phase')
 
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
@@ -403,19 +418,25 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         super().save(**kwargs)
 
-    def start(self):
+    def start(self, tasks=None):
         from .tasks import run_submission
-        run_submission(self.pk)
+        run_submission(self.pk, tasks=tasks)
 
     def re_run(self):
         sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
         sub.save(ignore_submission_limit=True)
-        sub.start()
+
+        if not self.has_children:
+            self.refresh_from_db()
+            sub.start(tasks=[self.task])
+        else:
+            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+            sub.start(tasks=child_tasks)
 
     def cancel(self):
         from celery_config import app
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
-            app.control.revoke(self.task_id, terminate=True)
+            app.control.revoke(self.celery_task_id, terminate=True)
             self.status = Submission.CANCELLED
             self.save()
             return True
@@ -445,6 +466,15 @@ class Submission(ChaHubSaveMixin, models.Model):
                             score=score
                         )
                         self.scores.add(sub_score)
+
+    @property
+    def on_leaderboard(self):
+        on_leaderboard = False
+        if self.leaderboard:
+            on_leaderboard = True
+        elif self.has_children:
+            on_leaderboard = bool(self.children.first().leaderboard)
+        return on_leaderboard
 
     @staticmethod
     def get_chahub_endpoint():

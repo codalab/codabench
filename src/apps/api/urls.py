@@ -2,6 +2,7 @@ from django.conf.urls import include
 from django.urls import path, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 
@@ -37,12 +38,13 @@ urlpatterns = [
     path('my_profile/', profiles.GetMyProfile.as_view()),
     path('datasets/completed/<uuid:key>/', datasets.upload_completed),
     path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
-    path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard),
+    path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard, name='add_submission_to_leaderboard'),
     path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-token-auth/', obtain_auth_token),
 
     # path('docs/', include_docs_urls(
     #     title='Codalab Competitions V2',

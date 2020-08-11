@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from django.urls import reverse
 
@@ -14,7 +15,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -58,8 +59,19 @@ class TestSubmissions(SeleniumTestCase):
         if has_solutions:
             assert Solution.objects.filter(md5=submission_md5).exists()
 
-    def test_v15_submission_appears_in_submissions_table(self):
-        self._run_submission('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
+        # Get the submission ID for later comparison
+        submission_id = int(self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(1)').text)
 
-    def test_v2_submission_appears_in_submissions_table(self):
-        self._run_submission('competition.zip', 'submission.zip', 'Scores')
+        # Add the submission to the leaderboard and go to results tab
+        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(4) span[data-tooltip="Add to Leaderboard"]').click()
+        self.find('.item[data-tab="results-tab"]').click()
+
+        # The leaderboard table lists our submission
+        prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
+
+    def test_v15_submission_end_to_end(self):
+        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
+
+    def test_v2_submission_end_to_end(self):
+        self._run_submission_and_add_to_leaderboard('competition.zip', 'submission.zip', 'Scores')

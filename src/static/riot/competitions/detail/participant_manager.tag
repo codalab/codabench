@@ -18,6 +18,7 @@
             <tr>
                 <th>Username</th>
                 <th>Email</th>
+                <th>Is Bot?</th>
                 <th>Status</th>
                 <th class="center aligned">Actions</th>
             </tr>
@@ -26,6 +27,7 @@
             <tr each="{participants}">
                 <td>{username}</td>
                 <td>{email}</td>
+                <td>{is_bot}</td>
                 <td>{_.startCase(status)}</td>
                 <td class="right aligned">
                     <button class="mini ui red button icon"

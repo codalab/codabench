@@ -26,7 +26,6 @@ class CompetitionTests(APITestCase):
         # We don't want to post back the logo url, since it's expecting JSON data with
         # the base64 of the logo in it
         data["logo"] = None
-
         # Just get the key from the task and pass that instead of the object
         data["phases"][0]["tasks"] = [data["phases"][0]["tasks"][0]["key"]]
         return data

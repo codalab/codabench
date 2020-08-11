@@ -16,8 +16,12 @@
         <input type="checkbox" ref="auto_created">
     </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
-        <i class="plus icon"></i>
+        <i selenium="add-dataset" class="plus icon"></i>
         Add Dataset
+    </button>
+    <button class="ui red right floated labeled icon button {disabled: marked_datasets.length === 0}" onclick="{delete_datasets}">
+        <i class="icon delete"></i>
+        Delete Selected Datasets
     </button>
 
     <!-------------------------------------
@@ -32,6 +36,7 @@
             <th width="60px">In Use</th>
             <th width="60px">Public</th>
             <th width="50px">Delete?</th>
+            <th width="25px"></th>
         </tr>
         </thead>
         <tbody>
@@ -52,6 +57,12 @@
                     <i class="icon delete"></i>
                 </button>
             </td>
+            <td class="center aligned">
+                <div class="ui fitted checkbox">
+                    <input type="checkbox" name="delete_checkbox" onclick="{ mark_dataset_for_deletion.bind(this, dataset) }">
+                    <label></label>
+                </div>
+            </td>
         </tr>
 
         <tr if="{datasets.length === 0}">
@@ -66,7 +77,7 @@
                       Pagination
         ------------------------------------->
         <tr>
-            <th colspan="6" if="{datasets.length > 0}">
+            <th colspan="7" if="{datasets.length > 0}">
                 <div class="ui right floated pagination menu" if="{datasets.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -152,19 +163,19 @@
             </div>
 
             <form class="ui form coda-animated {error: errors}" ref="form">
-                <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
-                <input-text name="description" ref="description" error="{errors.description}"
+                <input-text selenium="scoring-name" name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                <input-text selenium="scoring-desc" name="description" ref="description" error="{errors.description}"
                             placeholder="Description"></input-text>
 
                 <div class="field {error: errors.type}">
-                    <select id="type_of_data" name="type" ref="type" class="ui dropdown">
+                    <select selenium="type" id="type_of_data" name="type" ref="type" class="ui dropdown">
                         <option value="">Type</option>
                         <option value="-">----</option>
                         <option each="{type in types}" value="{type}">{_.startCase(type)}</option>
                     </select>
                 </div>
 
-                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                <input-file selenium="file" name="data_file" ref="data_file" error="{errors.data_file}"
                             accept=".zip"></input-file>
             </form>
 
@@ -177,7 +188,7 @@
         </div>
         <div class="actions">
             <button class="ui blue icon button" onclick="{check_form}">
-                <i class="upload icon"></i>
+                <i selenium="upload" class="upload icon"></i>
                 Upload
             </button>
             <button class="ui basic red cancel button">Cancel</button>
@@ -202,6 +213,7 @@
         self.errors = []
         self.datasets = []
         self.selected_row = {}
+        self.marked_datasets = []
 
 
         self.upload_progress = undefined
@@ -214,7 +226,11 @@
             self.update_datasets()
         })
 
-        self.show_info_modal = function (row) {
+        self.show_info_modal = function (row, e) {
+            // Return here so the info modal doesn't pop up when a checkbox is clicked
+            if (e.target.type === 'checkbox') {
+                return
+            }
             self.selected_row = row
             self.update()
             $(self.refs.info_modal).modal('show')
@@ -280,15 +296,32 @@
                 })
         }
 
-        self.delete_dataset = function (dataset) {
-            if (confirm("Are you sure you want to delete '" + dataset.name + "'?")) {
+        self.delete_dataset = function (dataset, e) {
+            if (confirm(`Are you sure you want to delete '${dataset.name}'?`)) {
                 CODALAB.api.delete_dataset(dataset.id)
                     .done(function () {
                         self.update_datasets()
                         toastr.success("Dataset deleted successfully!")
                     })
                     .fail(function (response) {
-                        toastr.error("Could not delete dataset!")
+                        toastr.error(response.responseJSON['error'])
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.delete_datasets = function () {
+            if (confirm(`Are you sure you want to delete multiple datasets?`)) {
+                CODALAB.api.delete_datasets(self.marked_datasets)
+                    .done(function () {
+                        self.update_datasets()
+                        toastr.success("Dataset deleted successfully!")
+                        self.marked_datasets = []
+                    })
+                    .fail(function (response) {
+                        for (e in response.responseJSON) {
+                            toastr.error(`${e}: '${response.responseJSON[e]}'`)
+                        }
                     })
             }
             event.stopPropagation()
@@ -395,10 +428,20 @@
                         self.filter()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating Dataset')
+                        toastr.error(resp.responseJSON['is_public'])
                     })
             }
         }
+
+        self.mark_dataset_for_deletion = function(dataset, e) {
+            if (e.target.checked) {
+                self.marked_datasets.push(dataset.id)
+            }
+            else {
+                self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
+            }
+        }
+
     </script>
 
     <style type="text/stylus">

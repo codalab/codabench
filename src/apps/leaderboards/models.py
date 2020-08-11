@@ -11,6 +11,9 @@ class Leaderboard(models.Model):
     key = models.CharField(max_length=36)
     hidden = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'{self.title} - {self.competition}'
+
 
 class Column(models.Model):
     AVERAGE = 'avg'
@@ -48,6 +51,9 @@ class Column(models.Model):
         unique_together = ('leaderboard', 'key')
         ordering = ('index',)
 
+    def __str__(self):
+        return f'{self.title} ({self.index})'
+
     def compute(self, scores):
         return self.COMPUTATION_FUNCTIONS[self.computation](scores)
 
@@ -58,3 +64,6 @@ class SubmissionScore(models.Model):
 
     class Meta:
         ordering = ('column__index',)
+
+    def __str__(self):
+        return f'{self.column} - {self.score}'

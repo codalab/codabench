@@ -1,3 +1,4 @@
+import operator
 import os
 import socket
 import traceback
@@ -34,7 +35,6 @@ class CodalabTestHelpersMixin(object):
 
 
 class CodalabDaphneProcess(DaphneProcess):
-
     # have to set port in this hidden way so we can override it later (Daphne uses
     # fancy multiprocessing shared memory vars we have to work around
     _port = 36475
@@ -168,11 +168,21 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         created_files = []
 
         # starting with competitions, then..
+
+        # Adds all bundle_datasets and logos to created_files
         for competition in Competition.objects.all():
-            created_files += [
-                competition.bundle_dataset.data_file.name,
-                competition.logo.name,
+            data_types = [
+                'bundle_dataset.data_file',
+                'logo',
             ]
+            for data_type in data_types:
+                try:
+                    # attrgetter will traverse the data_type string through the competition object
+                    file = operator.attrgetter(data_type)(competition)
+                except AttributeError:
+                    continue
+                if file is not None:
+                    created_files.append(file.name)
 
         # submissions
         for submission in Submission.objects.all():
@@ -187,12 +197,17 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
 
         # tasks and solutions
         for task in Task.objects.all():
-            created_files += [
-                task.ingestion_program.data_file.name,
-                task.scoring_program.data_file.name,
-                task.input_data.data_file.name,
-                task.reference_data.data_file.name,
+            data_types = [
+                'scoring_program',
+                'ingestion_program',
+                'input_data',
+                'reference_data',
             ]
+            for data_type in data_types:
+                file = getattr(task, data_type, None)
+                if file is not None:
+                    created_files.append(file.data_file.name)
+
         for solution in Solution.objects.all():
             created_files.append(solution.data.data_file.name)
 

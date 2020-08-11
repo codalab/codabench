@@ -63,8 +63,8 @@
                         Competitions
                     </a>
                     <a class="item" href="{% url "tasks:task_management" %}">
-                        <i class="ui small file icon"></i>
-                        Tasks & Datasets
+                        <i selenium="tasks" class="ui small file icon"></i>
+                        Resources
                     </a>
                     <a class="item" href="{% url "queues:management" %}">
                         <i class="ui small computer icon"></i>
@@ -177,6 +177,7 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        CURRENT_DATE_TIME = "{% now "c" %}"
         CODALAB = {
             state: {
                 user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
@@ -223,6 +224,9 @@
             SECRET_KEY_URL: function (pk, secret_key) {
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+            },
+            COMPETITION_GET_CSV: function (pk) {
+                return "{% url "competition-get-csv" pk=0 %}".replace(0, pk)
             },
 
             // Datasets

@@ -156,6 +156,7 @@ class Run:
     def __init__(self, run_args):
         # Directories for the run
         self.watch = True
+        self.completed_program_counter = 0
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -182,8 +183,6 @@ class Run:
         self.ingestion_only_during_scoring = run_args.get('ingestion_only_during_scoring')
         self.detailed_results_url = run_args.get('detailed_results_url')
 
-        self.task_pk = run_args.get('task_pk')
-
         # During prediction program will be the submission program, during scoring it will be the
         # scoring program
         self.program_exit_code = None
@@ -207,23 +206,44 @@ class Run:
         self.requests_session.mount('http://', adapter)
         self.requests_session.mount('https://', adapter)
 
-    async def watch_file(self):
+    async def watch_detailed_results(self):
         """Watches files alongside scoring + program docker containers, currently only used
         for detailed_results.html"""
         if not self.detailed_results_url:
             return
-        file_path = os.path.join(self.output_dir, 'detailed_results.html')
+        file_path = self.get_detailed_results_file_path()
         last_modified_time = None
-        while self.watch:
-            if os.path.exists(file_path):
+        start = time.time()
+        expiration_seconds = 60
+
+        while self.watch and self.completed_program_counter < 2:
+            if file_path:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
                     last_modified_time = new_time
                     await self.send_detailed_results(file_path)
+            else:
+                logger.info(time.time() - start)
+                if time.time() - start > expiration_seconds:
+                    timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
+                    logger.warning(timeout_error_message)
+                    raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
+            file_path = self.get_detailed_results_file_path()
         else:
             # make sure we always send the final version of the file
-            await self.send_detailed_results(file_path)
+            if file_path:
+                await self.send_detailed_results(file_path)
+
+    def get_detailed_results_file_path(self):
+        default_detailed_results_path = os.path.join(self.output_dir, 'detailed_results.html')
+        if os.path.exists(default_detailed_results_path):
+            return default_detailed_results_path
+        else:
+            # v1.5 compatibility - get the first html file if detailed_results.html doesn't exists
+            html_files = glob.glob(os.path.join(self.output_dir, '*.html'))
+            if html_files:
+                return html_files[0]
 
     async def send_detailed_results(self, file_path):
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
@@ -271,10 +291,13 @@ class Run:
             "status": status,
             "status_details": extra_information,
         }
-        if status == STATUS_SCORING:
-            data.update({
-                "task_pk": self.task_pk,
-            })
+
+        # TODO: figure out if we should pull this task code later(submission.task should always be set)
+        # When we start
+        # if status == STATUS_SCORING:
+        #     data.update({
+        #         "task_pk": self.task_pk,
+        #     })
         self._update_submission(data)
 
     def _get_docker_image(self, image_name):
@@ -394,12 +417,23 @@ class Run:
                         tries += 1
 
         self.logs[kind]["end"] = time.time()
+
+        logger.info(f"Process exited with {proc.returncode}")
+        logger.info(f"Disconnecting from websocket {self.websocket_url}")
+
+        # Communicate that the program is closing
+        self.completed_program_counter += 1
+
         await websocket.close()
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
+
+            # Communicate that the program is closing
+            self.completed_program_counter += 1
+
             return
 
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
@@ -597,9 +631,10 @@ class Run:
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind='program', can_be_output=True),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
-            self.watch_file(),
+            self.watch_detailed_results(),
             loop=loop,
         )
+
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
@@ -666,7 +701,6 @@ class Run:
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
                 scores = yaml.load(f)
-
         else:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 

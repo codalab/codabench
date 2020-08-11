@@ -7,9 +7,14 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
-    <div class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
+    <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
+    <button class="ui red right floated labeled icon button {disabled: marked_tasks.length === 0}" onclick="{delete_tasks}">
+        <i class="icon delete"></i>
+        Delete Selected Tasks
+    </button>
+
     <table class="ui {selectable: tasks.length > 0} celled compact table">
         <thead>
         <tr>
@@ -17,6 +22,7 @@
             <th width="125px">Uploaded...</th>
             <th width="50px">Public</th>
             <th width="50px">Delete?</th>
+            <th width="25px"></th>
         </tr>
         </thead>
         <tbody>
@@ -31,6 +37,12 @@
                     <i class="icon delete"></i>
                 </button>
             </td>
+            <td class="center aligned">
+                <div class="ui fitted checkbox">
+                    <input type="checkbox" name="delete_checkbox" onclick="{ mark_task_for_deletion.bind(this, task) }">
+                    <label></label>
+                </div>
+            </td>
         </tr>
 
         <tr if="{tasks.length === 0}">
@@ -44,7 +56,7 @@
                   Pagination
         ------------------------------------->
         <tr if="{tasks.length > 0}">
-            <th colspan="4">
+            <th colspan="5">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -142,11 +154,11 @@
                 <div class="ui active tab" data-tab="details">
                     <div class="required field">
                         <label>Name</label>
-                        <input name="name" placeholder="Name" ref="name" onkeyup="{ form_updated }">
+                        <input selenium="name2" name="name" placeholder="Name" ref="name" onkeyup="{ form_updated }">
                     </div>
                     <div class="required field">
                         <label>Description</label>
-                        <textarea rows="4" name="description" placeholder="Description" ref="description"
+                        <textarea selenium="task-desc" rows="4" name="description" placeholder="Description" ref="description"
                                   onkeyup="{ form_updated }"></textarea>
                     </div>
                 </div>
@@ -160,8 +172,8 @@
                                 </label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="{file_field}">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt">
-                                    <div class="results"></div>
+                                    <input  type="text" class="prompt" id="{file_field}">
+                                    <div selenium="scoring-program" class="results"></div>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +195,7 @@
             </form>
         </div>
         <div class="actions">
-            <div class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
+            <div selenium="save-task" class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
             <div class="ui basic red cancel button">Cancel</div>
         </div>
     </div>
@@ -196,6 +208,7 @@
          Init
         ---------------------------------------------------------------------*/
 
+        self.marked_tasks = []
         self.tasks = []
         self.form_datasets = {}
         self.selected_task = {}
@@ -294,7 +307,7 @@
                         self.update()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating task')
+                        toastr.error(resp.responseJSON['is_public'])
                     })
             }
         }
@@ -304,7 +317,11 @@
             self.update()
         }
 
-        self.show_detail_modal = (task) => {
+        self.show_detail_modal = (task, e) => {
+            // Return here so the detail modal doesn't pop up when a checkbox is clicked
+            if (e.target.type === 'checkbox') {
+                return
+            }
             CODALAB.api.get_task(task.id)
                 .done((data) => {
                     self.selected_task = data
@@ -372,7 +389,6 @@
             delay(() => self.update_tasks({search: filter}), 100)
         }
 
-
         self.delete_task = function (task) {
             if (confirm("Are you sure you want to delete '" + task.name + "'?")) {
                 CODALAB.api.delete_task(task.id)
@@ -381,10 +397,36 @@
                         toastr.success("Task deleted successfully!")
                     })
                     .fail(function (response) {
-                        toastr.error("Could not delete task!")
+                        toastr.error(response.responseJSON['error'])
                     })
             }
             event.stopPropagation()
+        }
+
+        self.delete_tasks = function () {
+            if (confirm(`Are you sure you want to delete multiple tasks?`)) {
+                CODALAB.api.delete_tasks(self.marked_tasks)
+                    .done(function () {
+                        self.update_tasks()
+                        toastr.success("Tasks deleted successfully!")
+                        self.marked_tasks = []
+                    })
+                    .fail(function (response) {
+                        for (e in response.responseJSON) {
+                            toastr.error(`${e}: '${response.responseJSON[e]}'`)
+                        }
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.mark_task_for_deletion = function(task, e) {
+            if (e.target.checked) {
+                self.marked_tasks.push(task.id)
+            }
+            else {
+                self.marked_tasks.splice(self.marked_tasks.indexOf(task.id), 1)
+            }
         }
     </script>
     <style type="text/stylus">
