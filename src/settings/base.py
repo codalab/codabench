@@ -174,15 +174,16 @@ else:
         }
     }
 
-# =============================================================================
-# SSL
-# =============================================================================
-if os.environ.get('USE_SSL'):
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
-    # Allows us to use with django-oauth-toolkit on localhost sans https
-    SESSION_COOKIE_SECURE = False
+# TODO: Pull this, leaving in case django-oauth-toolkit problems
+# # =============================================================================
+# # SSL
+# # =============================================================================
+# if os.environ.get('USE_SSL'):
+#     SECURE_SSL_REDIRECT = True
+#     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# else:
+#     # Allows us to use with django-oauth-toolkit on localhost sans https
+#     SESSION_COOKIE_SECURE = False
 
 # =========================================================================
 # RabbitMQ
