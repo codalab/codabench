@@ -227,6 +227,7 @@
 
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
+                              tasks="{ competition.phases ? competition.phases[0].tasks : [] }"
                               leaderboards="{ competition.leaderboards }">
                 </leaderboards>
             </div>
@@ -269,6 +270,7 @@
                     })
                 })
             })
+            console.log('competition loaded: ', self.competition.phases[0])
             if (!_.isEmpty(self.competition.leaderboards)) {
                 self.selected_leaderboard_index = self.competition.leaderboards[0].id
             }

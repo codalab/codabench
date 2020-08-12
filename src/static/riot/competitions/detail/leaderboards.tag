@@ -9,7 +9,7 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
+            <th each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
         </tr>
         </thead>
         <tbody>
@@ -18,7 +18,7 @@
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission, index in selected_leaderboard.submissions }">
+        <tr each="{ submission_element, index in Object.entries(organized_submissions) }">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -27,8 +27,8 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission.owner }</td>
-            <td each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission) } </td>
+            <td>{ submission_element[0] }</td>
+            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission_element[1] ) } </td>
         </tr>
         </tbody>
     </table>
@@ -37,8 +37,15 @@
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
 
+
         self.get_score = function(column, submission) {
-             return _.get(_.find(submission.scores, {column_key: column.key}), 'score', 'N/A')
+            for (i in submission) {
+                let score = _.get(_.find(submission[i].scores, {column_key: column.key}), 'score')
+                if (score) {
+                    return score
+                }
+            }
+            return 'n/a'
         }
 
         self.update_leaderboard = () => {
@@ -50,6 +57,32 @@
                     return col.key
                 }
             })
+            self.generated_columns = []
+            _.forEach(self.opts.tasks, task => {
+                _.forEach(self.selected_leaderboard.columns, col => {
+                    col = Object.assign({}, col)
+                    col['task'] =  task['id']
+                    col['title'] += ` ${task['id']}`
+                    col['key'] += `_${task['id']}`
+                    self.generated_columns.push(col)
+                })
+            })
+            console.log(self.generated_columns)
+
+            self.organized_submissions = {}
+            _.forEach(self.selected_leaderboard.submissions, submission => {
+                _.forEach(submission['scores'], score => {
+                    score['column_key'] += `_${submission['task']}`
+                })
+                if (!self.organized_submissions[submission['owner']]) {
+                    self.organized_submissions[submission['owner']] = [submission]
+                } else {
+                    self.organized_submissions[submission['owner']].push(submission)
+                }
+            })
+
+            console.log('self.organized_submissions', self.organized_submissions)
+
             self.update()
         }
 
