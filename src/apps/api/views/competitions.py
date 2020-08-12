@@ -285,9 +285,9 @@ class CompetitionViewSet(ModelViewSet):
         for submission in submission_query:
             if submission.leaderboard_id not in leaderboard_data.keys():
                 leaderboard_data[submission.leaderboard_id] = {}
-            leaderboard_data[submission.leaderboard_id][submission.owner] = {}
+            leaderboard_data[submission.leaderboard_id][submission.owner.username] = {}
             for score in submission.scores.all():
-                leaderboard_data[submission.leaderboard_id][submission.owner].add((score.column_id, float(score.score)))
+                leaderboard_data[submission.leaderboard_id][submission.owner.username].update({score.column_id: float(score.score)})
 
         # for sub in submission_query:
         #     if sub.leaderboard_id not in leaderboard_data.keys():
@@ -306,6 +306,7 @@ class CompetitionViewSet(ModelViewSet):
         # users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
         # for leaderboard in leaderboard_data:
         #     leaderboard_data[leaderboard]['user'] = leaderboard_data[leaderboard]["user"][:1] + [users[x] for x in leaderboard_data[leaderboard]["user"][1:]]
+        print(f'\n\n\n{leaderboard_data}\n\n\n')
         return leaderboard_data
 
     @action(detail=True, methods=['GET'])
