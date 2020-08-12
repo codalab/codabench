@@ -1,4 +1,3 @@
-from django.db.models import OuterRef, Subquery
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +9,6 @@ from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from competitions.models import Submission
 from leaderboards.models import Leaderboard, SubmissionScore
-from tasks.models import Task
 
 
 class LeaderboardViewSet(ModelViewSet):
@@ -30,17 +28,6 @@ class LeaderboardViewSet(ModelViewSet):
 class SubmissionScoreViewSet(ModelViewSet):
     queryset = SubmissionScore.objects.all()
     serializer_class = SubmissionScoreSerializer
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        hero_qs = Task.objects.filter(
-            submissions__scores__in=[OuterRef("pk")]
-        ).order_by("-benevolence_factor")
-        qs = qs.annotate(
-            task = Subquery(hero_qs)[:1]
-
-        )
-        return qs
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -63,9 +50,9 @@ def add_submission_to_leaderboard(request, submission_pk):
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
-    # Assume that Submission -> Scores -> Column.leaderboard will always have the correct leaderboard
-    leaderboard = submission.scores.first().column.leaderboard
     if submission.has_children:
+        # Assume that Submission -> Scores -> Column.leaderboard will always have the correct leaderboard
+        leaderboard = submission.children.first().scores.first().column.leaderboard
         for s in Submission.objects.filter(parent=submission_pk):
             s.leaderboard = leaderboard
             from pprint import pprint
@@ -73,6 +60,7 @@ def add_submission_to_leaderboard(request, submission_pk):
             pprint(s)
             s.save()
     else:
+        leaderboard = submission.scores.first().column.leaderboard
         submission.leaderboard = leaderboard
         submission.save()
 

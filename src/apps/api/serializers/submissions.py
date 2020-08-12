@@ -18,7 +18,6 @@ from tasks.models import Task
 class SubmissionScoreSerializer(serializers.ModelSerializer):
     index = serializers.IntegerField(source='column.index', read_only=True)
     column_key = serializers.CharField(source='column.key', read_only=True)
-    task = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = SubmissionScore
@@ -27,7 +26,6 @@ class SubmissionScoreSerializer(serializers.ModelSerializer):
             'index',
             'score',
             'column_key',
-            'task',
         )
 
 
