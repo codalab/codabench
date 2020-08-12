@@ -279,29 +279,37 @@ class CompetitionViewSet(ModelViewSet):
         if not submission_query.exists():
             raise ValidationError("There are no submissions on the leaderboard")
 
-        # Build the data needed for the csv's into a dictionary
-        csv = {}
+        # Build the data needed for the leaderboard_data's into a dictionary
+        leaderboard_data = {}
         user_id = set()
-        for sub in submission_query:
-            if sub.leaderboard_id not in csv.keys():
-                csv[sub.leaderboard_id] = {}
-                csv[sub.leaderboard_id]["user"] = ["Username"]
-                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-                for col in columns:
-                    csv[sub.leaderboard_id][col.id] = [col.title]
-            for score in sub.scores.all():
-                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
-            user_id.add(sub.owner_id)
+        for submission in submission_query:
+            if submission.leaderboard_id not in leaderboard_data.keys():
+                leaderboard_data[submission.leaderboard_id] = {}
+            leaderboard_data[submission.leaderboard_id][submission.owner] = {}
+            for score in submission.scores.all():
+                leaderboard_data[submission.leaderboard_id][submission.owner].add((score.column_id, float(score.score)))
+
+        # for sub in submission_query:
+        #     if sub.leaderboard_id not in leaderboard_data.keys():
+        #         leaderboard_data[sub.leaderboard_id] = {}
+        #         leaderboard_data[sub.leaderboard_id]["user"] = ["Username"]
+        #         columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
+        #         for col in columns:
+        #             leaderboard_data[sub.leaderboard_id][col.id] = [col.title]
+        #     for score in sub.scores.all():
+        #         print(f'\n\n\n{score.__dict__}\n\n\n')
+        #         leaderboard_data[sub.leaderboard_id][score.column_id].append(float(score.score))
+        #     leaderboard_data[sub.leaderboard_id]["user"].append(sub.owner_id)
+        #     user_id.add(sub.owner_id)
 
         # Replace user_id with usernames
-        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-        for leaderboard in csv:
-            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
-        return csv
+        # users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
+        # for leaderboard in leaderboard_data:
+        #     leaderboard_data[leaderboard]['user'] = leaderboard_data[leaderboard]["user"][:1] + [users[x] for x in leaderboard_data[leaderboard]["user"][1:]]
+        return leaderboard_data
 
     @action(detail=True, methods=['GET'])
-    def get_json(self, request, pk):
+    def json(self, request, pk):
         self.collect_leaderboard_check_permissions(request)
         data = self.collect_leaderboard_data(pk)
         return Response(data)
