@@ -1,10 +1,8 @@
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
 from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
@@ -15,9 +13,6 @@ from leaderboards.models import Leaderboard, SubmissionScore
 class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('submissions__scores__column__key',)
-    # search_fields =    ('submission__scores__column_key',)
 
 
     def get_permissions(self):
