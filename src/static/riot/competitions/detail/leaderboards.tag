@@ -18,7 +18,7 @@
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission_element, index in Object.entries(organized_submissions) }">
+        <tr each="{ submission, index in organized_submissions }">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -27,8 +27,8 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission_element[0] }</td>
-            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission_element[1] ) } </td>
+            <td>{ submission[0].owner }</td>
+            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission ) } </td>
         </tr>
         </tbody>
     </table>
@@ -67,21 +67,24 @@
                     self.generated_columns.push(col)
                 })
             })
-            console.log(self.generated_columns)
 
-            self.organized_submissions = {}
+            let organized_submissions = {}
             _.forEach(self.selected_leaderboard.submissions, submission => {
                 _.forEach(submission['scores'], score => {
                     score['column_key'] += `_${submission['task']}`
                 })
-                if (!self.organized_submissions[submission['owner']]) {
-                    self.organized_submissions[submission['owner']] = [submission]
+
+                if (!organized_submissions[submission['owner']]) {
+                    organized_submissions[submission['owner']] = [submission]
                 } else {
-                    self.organized_submissions[submission['owner']].push(submission)
+                    organized_submissions[submission['owner']].push(submission)
                 }
             })
 
-            console.log('self.organized_submissions', self.organized_submissions)
+            self.organized_submissions = []
+            _.forEach(organized_submissions, submission_list => {
+                self.organized_submissions.push(submission_list)
+            })
 
             self.update()
         }
