@@ -1,5 +1,5 @@
 import zipfile
-
+import csv
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 
@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, renderer_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.renderers import JSONRenderer
-from rest_framework_csv import renderers as csv_renderers
+from rest_framework_csv.renderers import CSVRenderer
 from rest_framework.views import APIView
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
@@ -266,7 +266,6 @@ class CompetitionViewSet(ModelViewSet):
             return response
 
     def collect_leaderboard_check_permissions(self, request, competition):
-        competition = self.get_object()
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
 
@@ -295,6 +294,7 @@ class CompetitionViewSet(ModelViewSet):
         return leaderboard_data
 
     @action(detail=True, methods=['GET'])
+    @renderer_classes((JSONRenderer,))
     def json(self, request, pk):
         competition = self.get_object()
         self.collect_leaderboard_check_permissions(request, competition)
@@ -304,8 +304,8 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'])
     def zip(self, request, pk):
         competition = self.get_object()
-        self.collect_leaderboard_check_permissions(request)
-        data = self.collect_leaderboard_data(pk)
+        self.collect_leaderboard_check_permissions(request, competition)
+        data = self.collect_leaderboard_data(competition)
         with SpooledTemporaryFile() as tmp:
             with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                 for leaderboard in data:
@@ -329,6 +329,33 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
+
+    #TODO: Currently only returns first leaderboard. Need to add a selection for what leaderboard should be returned in the csv
+    @action(detail=True, methods=['GET'])
+    @renderer_classes((CSVRenderer,))
+    def csv(self, request, pk):
+        competition = self.get_object()
+        self.collect_leaderboard_check_permissions(request, competition)
+        data = self.collect_leaderboard_data(competition)
+        leaderboard = list(data.keys())[0]
+        columns = list(data[leaderboard][list(data[leaderboard].keys())[0]].keys())
+        csv = f'{leaderboard}\n'
+        csv += "Username"
+        for col in columns:
+            csv += f',{col}'
+        csv += '\n'
+        for submission in data[leaderboard]:
+            csv += submission
+            for col in columns:
+                csv += f',{data[leaderboard][submission][col]}'
+            csv += '\n'
+        response = HttpResponse(str.encode(csv), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{leaderboard}.csv"'
+        return response
+
+
+        return
+
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
