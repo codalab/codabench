@@ -14,6 +14,8 @@ from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.renderers import JSONRenderer
+from rest_framework.views import APIView
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
@@ -262,6 +264,7 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
+
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
             user__in=instance.collaborators.all()
@@ -274,6 +277,15 @@ class CompetitionViewSet(ModelViewSet):
     def perform_update(self, serializer):
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
+
+
+class CompetitionDownload(APIView):
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, format=None):
+        content = {"testcontent": 150,
+                   "asdf": 1234}
+        return Response(content)
 
 
 @api_view(['GET'])

@@ -57,4 +57,5 @@ urlpatterns = [
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
     path('', include(router.urls)),
     path('front_page_competitions/', front_page_competitions, name='front_page_competitions'),
+    path(r'download_competition.json', competitions.CompetitionDownload.as_view(), name='download_competition')
 ]
