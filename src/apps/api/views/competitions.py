@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.renderers import JSONRenderer
+from rest_framework_csv import renderers as csv_renderers
 from rest_framework.views import APIView
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
@@ -264,6 +265,46 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
+    def collect_leaderboard_check_permissions(self, request):
+        competition = self.get_object()
+        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
+            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
+
+    def collect_leaderboard_data(self, pk):
+        competition = self.get_object()
+        # Query Needed data and filter to what is needed.
+        phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
+        submission_query = Submission.objects.filter(
+            Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
+        if not submission_query.exists():
+            raise ValidationError("There are no submissions on the leaderboard")
+
+        # Build the data needed for the csv's into a dictionary
+        csv = {}
+        user_id = set()
+        for sub in submission_query:
+            if sub.leaderboard_id not in csv.keys():
+                csv[sub.leaderboard_id] = {}
+                csv[sub.leaderboard_id]["user"] = ["Username"]
+                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
+                for col in columns:
+                    csv[sub.leaderboard_id][col.id] = [col.title]
+            for score in sub.scores.all():
+                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
+            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
+            user_id.add(sub.owner_id)
+
+        # Replace user_id with usernames
+        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
+        for leaderboard in csv:
+            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
+        return csv
+
+    @action(detail=True, methods=['GET'])
+    def get_json(self, request, pk):
+        self.collect_leaderboard_check_permissions(request)
+        data = self.collect_leaderboard_data(pk)
+        return Response(data)
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
@@ -277,16 +318,6 @@ class CompetitionViewSet(ModelViewSet):
     def perform_update(self, serializer):
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
-
-
-class CompetitionDownload(APIView):
-    renderer_classes = [JSONRenderer]
-
-    def get(self, request, format=None):
-        content = {"testcontent": 150,
-                   "asdf": 1234}
-        return Response(content)
-
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
