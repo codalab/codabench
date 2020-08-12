@@ -37,7 +37,6 @@
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
 
-
         self.get_score = function(column, submission) {
             for (i in submission) {
                 let score = _.get(_.find(submission[i].scores, {column_key: column.key}), 'score')

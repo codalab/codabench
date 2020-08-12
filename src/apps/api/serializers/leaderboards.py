@@ -82,7 +82,6 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
 class LeaderboardEntriesSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
 
-
     class Meta:
         model = Leaderboard
         fields = (
