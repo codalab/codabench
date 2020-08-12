@@ -265,13 +265,12 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
-    def collect_leaderboard_check_permissions(self, request):
+    def collect_leaderboard_check_permissions(self, request, competition):
         competition = self.get_object()
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
 
-    def collect_leaderboard_data(self, pk):
-        competition = self.get_object()
+    def collect_leaderboard_data(self, competition):
         # Query Needed data and filter to what is needed.
         phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
         submission_query = Submission.objects.filter(
@@ -281,39 +280,55 @@ class CompetitionViewSet(ModelViewSet):
 
         # Build the data needed for the leaderboard_data's into a dictionary
         leaderboard_data = {}
-        user_id = set()
+        leaderboardTitles = {}
+        columnsTitles = {}
         for submission in submission_query:
-            if submission.leaderboard_id not in leaderboard_data.keys():
-                leaderboard_data[submission.leaderboard_id] = {}
-            leaderboard_data[submission.leaderboard_id][submission.owner.username] = {}
+            leaderID = submission.leaderboard_id
+            if leaderID not in leaderboardTitles.keys():
+                leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
+                columnsTitles.update({leaderID: {col.id: col.title for col in leaderboard.columns.all()}})
+                leaderboardTitles.update({leaderID: leaderboard.title})
+                leaderboard_data[leaderboardTitles[leaderID]] = {}
+            leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username] = {}
             for score in submission.scores.all():
-                leaderboard_data[submission.leaderboard_id][submission.owner.username].update({score.column_id: float(score.score)})
-
-        # for sub in submission_query:
-        #     if sub.leaderboard_id not in leaderboard_data.keys():
-        #         leaderboard_data[sub.leaderboard_id] = {}
-        #         leaderboard_data[sub.leaderboard_id]["user"] = ["Username"]
-        #         columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-        #         for col in columns:
-        #             leaderboard_data[sub.leaderboard_id][col.id] = [col.title]
-        #     for score in sub.scores.all():
-        #         print(f'\n\n\n{score.__dict__}\n\n\n')
-        #         leaderboard_data[sub.leaderboard_id][score.column_id].append(float(score.score))
-        #     leaderboard_data[sub.leaderboard_id]["user"].append(sub.owner_id)
-        #     user_id.add(sub.owner_id)
-
-        # Replace user_id with usernames
-        # users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-        # for leaderboard in leaderboard_data:
-        #     leaderboard_data[leaderboard]['user'] = leaderboard_data[leaderboard]["user"][:1] + [users[x] for x in leaderboard_data[leaderboard]["user"][1:]]
-        print(f'\n\n\n{leaderboard_data}\n\n\n')
+                leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username].update({columnsTitles[leaderID][score.column_id]: float(score.score)})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'])
     def json(self, request, pk):
+        competition = self.get_object()
+        self.collect_leaderboard_check_permissions(request, competition)
+        data = self.collect_leaderboard_data(competition)
+        return Response(data)
+
+    @action(detail=True, methods=['GET'])
+    def zip(self, request, pk):
+        competition = self.get_object()
         self.collect_leaderboard_check_permissions(request)
         data = self.collect_leaderboard_data(pk)
-        return Response(data)
+        with SpooledTemporaryFile() as tmp:
+            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                for leaderboard in data:
+                    temp_file = NamedTemporaryFile()
+                    line = "Username"
+                    columns = data[leaderboard][list(data[leaderboard].keys())[0]]
+                    for column_title in columns:
+                        line += f',{column_title}'
+                    line += '\n'
+                    temp_file.write(str.encode(line))
+                    for submission in data[leaderboard]:
+                        line = submission
+                        for column_title in columns:
+                            print(f'\n\n{data[leaderboard]}\n\n')
+                            line += f",{data[leaderboard][submission][column_title]}"
+                        line +="\n"
+                        temp_file.write(str.encode(line))
+                    temp_file.seek(0)
+                    archive.write(temp_file.name, f"{leaderboard}.csv")
+            tmp.seek(0)
+            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
+            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+            return response
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
