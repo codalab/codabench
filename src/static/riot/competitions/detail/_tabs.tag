@@ -223,7 +223,7 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
-                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>                </div>
+                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_ZIP(competition.id)}" target="new"><button class="ui inline button right">Download ZIP</button></a>                </div>
 
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"

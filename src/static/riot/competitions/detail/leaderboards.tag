@@ -1,5 +1,4 @@
 <leaderboards>
-    <input ref="leaderboardFilter" type="text" onkeyup="self.filterLeaderboard">
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
