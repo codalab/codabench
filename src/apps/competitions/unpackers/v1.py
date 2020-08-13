@@ -128,11 +128,7 @@ class V15Unpacker(BaseUnpacker):
         Determine if the current version is 1.8
         :return:
         """
-        for index, phase in enumerate(phases):
-            if phase.get('is_parallel_parent') or phase.get('parent_phasenumber'):
-                return True
-
-        return False
+        return any(p.get('is_parallel_parent') or p.get('parent_phasenumber') for p in phases)
 
     def _unpack_leaderboards(self):
         try:

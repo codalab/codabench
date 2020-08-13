@@ -92,6 +92,7 @@ def replace_legacy_metadata_command(command, kind, is_scoring, ingestion_only_du
         ('$hidden', '/app/input/ref'),
         ('$shared', '/app/shared'),
         ('$submission_program', '/app/ingested_program'),
+        # for v1.8 compatibility
         ('$tmp', '/app/output'),
         ('$predictions', '/app/input/res' if is_scoring else '/app/output'),
     ]
