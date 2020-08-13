@@ -21,7 +21,7 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
-from competitions.tasks import batch_send_email, manual_migration
+from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Column, Leaderboard
 from profiles.models import User
@@ -182,6 +182,7 @@ class CompetitionViewSet(ModelViewSet):
             'dumps__dataset',
         )
         competition = qs_helper.get(id=pk)
+        # TODO: Replace this auth check with user_has_admin_permission
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
@@ -215,6 +216,7 @@ class CompetitionViewSet(ModelViewSet):
         #  (after there are different leaderboards on each phase)
 
         competition = self.get_object()
+        # TODO: Replace this auth check with user_has_admin_permission
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
 
@@ -284,6 +286,14 @@ class CompetitionViewSet(ModelViewSet):
             "popular_comps": popular_comps_serializer.data,
             "featured_comps": featured_comps_serializer.data
         })
+
+    @action(detail=True, methods=('POST',))
+    def create_dump(self, request, pk=None):
+        competition = self.get_object()
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You don't have access")
+        create_competition_dump.delay(pk)
+        return Response({"status": "Success. Competition dump is being created."})
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(

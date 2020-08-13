@@ -61,6 +61,9 @@ CODALAB.api = {
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
     },
+    create_competition_dump: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/create_dump/`)
+    },
     /*---------------------------------------------------------------------
          Submissions
     ---------------------------------------------------------------------*/
@@ -125,9 +128,6 @@ CODALAB.api = {
     },
     delete_datasets: function(pk_list) {
         return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
-    },
-    create_dump: function (competition_id) {
-        return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
     },
     /**
      * Creates a dataset

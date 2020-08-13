@@ -130,20 +130,3 @@ def upload_completed(request, key):
         unpack_competition.apply_async((dataset.pk,))
 
     return Response({"key": dataset.key})
-
-
-@api_view(['POST'])
-def create_competition_dump(request, competition_id):
-    try:
-        comp = Competition.objects.get(pk=competition_id)
-        if not request.user == comp.created_by:
-            return Response({"error": "Denied. You do not have access"}, status=status.HTTP_403_FORBIDDEN)
-        from competitions.tasks import create_competition_dump
-        create_competition_dump.delay(competition_id)
-        return Response(
-            {
-                "status": "Success. Competition dump is being created."
-            },
-            status=status.HTTP_202_ACCEPTED)
-    except ObjectDoesNotExist:
-        return Response({"error": "Competition not found!"}, status=status.HTTP_403_FORBIDDEN)

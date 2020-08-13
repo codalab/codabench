@@ -419,8 +419,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 )
 
         # -------- Competition Terms -------
-        yaml_data['terms'] = 'terms.md'
-        zip_file.writestr('terms.md', comp.terms)
+        if comp.terms:
+            yaml_data['terms'] = 'terms.md'
+            zip_file.writestr('terms.md', comp.terms)
 
         # -------- Competition Pages -------
         yaml_data['pages'] = []
