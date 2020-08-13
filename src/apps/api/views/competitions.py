@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -262,6 +263,17 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
+    @action(detail=False, methods=('GET',), serializer_class=[CompetitionCreationTaskStatusSerializer], url_path='creation_status/(?P<dataset_key>.+)')
+    def creation_status(self, request, dataset_key=None):
+        """This endpoint gets the creation status for a competition during upload"""
+        competition_creation_status = get_object_or_404(
+            CompetitionCreationTaskStatus,
+            dataset__created_by=request.user,  # make sure user owns this
+            dataset__key=dataset_key  # lookup dataset by key, we have no competition ID yet
+        )
+        serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
+        return Response(serializer.data)
+
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
             user__in=instance.collaborators.all()
@@ -318,12 +330,6 @@ class PhaseViewSet(ModelViewSet):
             submission.re_run()
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
-
-
-class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
-    queryset = CompetitionCreationTaskStatus.objects.all()
-    serializer_class = CompetitionCreationTaskStatusSerializer
-    lookup_field = 'dataset__key'
 
 
 class CompetitionParticipantViewSet(ModelViewSet):

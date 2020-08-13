@@ -32,7 +32,7 @@ CODALAB.api = {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
     get_competition_creation_status: function (key) {
-        return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
+        return CODALAB.api.request('GET', `${URLS.API}competitions/creation_status/${key}/`)
     },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
