@@ -239,7 +239,7 @@ class CompetitionViewSet(ModelViewSet):
             if leaderID not in leaderboardTitles.keys():
                 leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
                 columnsTitles.update({leaderID: {col.id: col.title for col in leaderboard.columns.all()}})
-                leaderboardTitles.update({leaderID: leaderboard.title})
+                leaderboardTitles.update({leaderID: f"{leaderboard.title}({leaderID})"})
                 leaderboard_data[leaderboardTitles[leaderID]] = {}
             leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username] = {}
             for score in submission.scores.all():
@@ -251,40 +251,11 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         self.collect_leaderboard_check_permissions(request, competition)
         data = self.collect_leaderboard_data(competition)
-        selected_leaderboard = request.GET.get('leaderboard')
+        selected_data = {}
+        selected_id = request.GET.get('id')
+        selected_leaderboard = request.GET.get('title')
 
-        print(f'\n\n\n{selected_leaderboard}\n\n\n')
-
-        if format == 'json':
-            if selected_leaderboard is None:
-                return HttpResponse(json.dumps(data, indent=4), content_type="application/json",)
-            elif selected_leaderboard in data.keys():
-                return HttpResponse(json.dumps({selected_leaderboard: data[selected_leaderboard]}, indent=4), content_type="application/json")
-            else:
-                raise ValidationError("Selected leaderboard does not exist in this competition.")
-
-        elif format == 'csv':
-            if selected_leaderboard not in data.keys() and len(data) != 1:
-                raise ValidationError("Selected leaderboard does not exist in this competition.")
-            elif len(data) == 1:
-                selected_leaderboard = list(data.keys())[0]
-
-            columns = list(data[selected_leaderboard][list(data[selected_leaderboard].keys())[0]].keys())
-            csv = f'{selected_leaderboard}\n'
-            csv += "Username"
-            for col in columns:
-                csv += f',{col}'
-            csv += '\n'
-            for submission in data[selected_leaderboard]:
-                csv += submission
-                for col in columns:
-                    csv += f',{data[selected_leaderboard][submission][col]}'
-                csv += '\n'
-            response = HttpResponse(str.encode(csv), content_type='text/csv')
-            response['Content-Disposition'] = f'attachment; filename="{selected_leaderboard}.csv"'
-            return response
-
-        elif format == 'zip':
+        if format == 'zip':
             with SpooledTemporaryFile() as tmp:
                 with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                     for leaderboard in data:
@@ -309,8 +280,41 @@ class CompetitionViewSet(ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
                 return response
 
-        else:
-            raise ValidationError("Valid data type needed")
+        if selected_leaderboard is not None or selected_id is not None:
+            matched_keys = []
+            for key in data.keys():
+                title, id = key.rsplit("(", 1)
+                if selected_id is not None and id[0: -1] == selected_id:
+                    matched_keys.append(key)
+                elif selected_leaderboard is not None and selected_leaderboard in title:
+                    matched_keys.append(key)
+            if not matched_keys:
+                raise ValidationError("Selected leaderboard does not exist in this competition.")
+            for key in matched_keys:
+                selected_data.update({key: data[key]})
+
+        if format == 'json':
+            if not selected_data:
+                return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+            return HttpResponse(json.dumps(selected_data, indent=4), content_type="application/json")
+
+        elif format == 'csv':
+            if len(selected_data) > 1:
+                raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
+            leaderboard_title = list(selected_data.keys())[0]
+            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
+            csv = "Username"
+            for col in columns:
+                csv += f',{col}'
+            csv += '\n'
+            for submission in selected_data[leaderboard_title]:
+                csv += submission
+                for col in columns:
+                    csv += f',{data[leaderboard_title][submission][col]}'
+                csv += '\n'
+            response = HttpResponse(str.encode(csv), content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
+            return response
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
