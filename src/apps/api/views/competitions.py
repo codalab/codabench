@@ -215,7 +215,7 @@ class CompetitionViewSet(ModelViewSet):
 
     def collect_leaderboard_check_permissions(self, request, competition):
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
+            raise PermissionDenied("You are not a competition admin or superuser")
 
     def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
