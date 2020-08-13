@@ -335,27 +335,32 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
-    #TODO: Currently only returns first leaderboard. Need to add a selection for what leaderboard should be returned in the csv
     @action(detail=True, methods=['GET'])
     @renderer_classes((CSVRenderer,))
     def csv(self, request, pk):
         competition = self.get_object()
         self.collect_leaderboard_check_permissions(request, competition)
         data = self.collect_leaderboard_data(competition)
-        leaderboard = list(data.keys())[0]
-        columns = list(data[leaderboard][list(data[leaderboard].keys())[0]].keys())
-        csv = f'{leaderboard}\n'
+
+        selected_leaderboard = request.GET.get('leaderboard')
+        if selected_leaderboard not in data.keys() and len(data) != 1:
+            raise ValidationError("Selected leaderboard does not exist in this competition.")
+        elif len(data) == 1:
+            selected_leaderboard = list(data.keys())[0]
+
+        columns = list(data[selected_leaderboard][list(data[selected_leaderboard].keys())[0]].keys())
+        csv = f'{selected_leaderboard}\n'
         csv += "Username"
         for col in columns:
             csv += f',{col}'
         csv += '\n'
-        for submission in data[leaderboard]:
+        for submission in data[selected_leaderboard]:
             csv += submission
             for col in columns:
-                csv += f',{data[leaderboard][submission][col]}'
+                csv += f',{data[selected_leaderboard][submission][col]}'
             csv += '\n'
         response = HttpResponse(str.encode(csv), content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="{leaderboard}.csv"'
+        response['Content-Disposition'] = f'attachment; filename="{selected_leaderboard}.csv"'
         return response
 
     def _ensure_organizer_participants_accepted(self, instance):

@@ -226,7 +226,7 @@
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
             },
             COMPETITION_GET_CSV: function (pk) {
-                return "{% url "competition-get-csv" pk=0 %}".replace(0, pk)
+                return "{% url "competition-csv" pk=0 %}".replace(0, pk)
             },
 
             // Datasets
