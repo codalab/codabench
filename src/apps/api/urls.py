@@ -23,7 +23,7 @@ router.register('queues', queues.QueueViewSet, 'queues')
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Codalab Competitions API",
+        title="Codabench API",
         default_version='v1',
     ),
     validators=['flex', 'ssv'],

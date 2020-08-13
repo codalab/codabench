@@ -6,6 +6,8 @@ from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -17,7 +19,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
+    FrontPageCompetitionsSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
@@ -265,7 +268,8 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
 
-    @action(detail=False, methods=('GET',), serializer_class=[CompetitionCreationTaskStatusSerializer], url_path='creation_status/(?P<dataset_key>.+)')
+    @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')
     def creation_status(self, request, dataset_key=None):
         """This endpoint gets the creation status for a competition during upload"""
         competition_creation_status = get_object_or_404(
@@ -276,24 +280,27 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
         return Response(serializer.data)
 
+    @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
     @action(detail=False, methods=('GET',))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
         featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
         featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
-        return Response(data={
+        return Response(data=FrontPageCompetitionsSerializer({
             "popular_comps": popular_comps_serializer.data,
             "featured_comps": featured_comps_serializer.data
-        })
+        }).data)
 
-    @action(detail=True, methods=('POST',))
+    @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
     def create_dump(self, request, pk=None):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You don't have access")
         create_competition_dump.delay(pk)
-        return Response({"status": "Success. Competition dump is being created."})
+        serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
+        return Response(serializer.data, status=201)
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
