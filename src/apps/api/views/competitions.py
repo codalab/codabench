@@ -220,7 +220,7 @@ class CompetitionViewSet(ModelViewSet):
     def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
-        #TODO: Pass PKs or other additional information to differentiate between tasks and leaderboards with same names
+        #TODO: Pass PKs or other additional information to differentiate between tasks with the same names
         #Maybe: Add the ability to sort submissions by score
 
         # Query Needed data and filter to what is needed.
@@ -238,7 +238,7 @@ class CompetitionViewSet(ModelViewSet):
             leaderID = submission.leaderboard_id
             if leaderID not in leaderboardTitles.keys():
                 leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
-                columnsTitles.update({leaderID: {col.id: col.title for col in leaderboard.columns.all()}})
+                columnsTitles.update({leaderID: {col.id: f'{col.title}({col.id})' for col in leaderboard.columns.all()}})
                 leaderboardTitles.update({leaderID: f"{leaderboard.title}({leaderID})"})
                 leaderboard_data[leaderboardTitles[leaderID]] = {}
             leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username] = {}
