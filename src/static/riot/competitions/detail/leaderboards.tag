@@ -4,6 +4,8 @@
         <tr>
             <th colspan="100%" class="center aligned">
                 { selected_leaderboard.title }
+                <a  href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new"><button class="ui inline button right">CSV</button></a>
+                <a  href="{URLS.COMPETITION_GET_JSON(competition_id, selected_leaderboard.id)}" target="new"><button class="ui inline button right">JSON</button></a>
             </th>
         </tr>
         <tr>
@@ -37,6 +39,7 @@
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
         self.filtered_column_keys = new Set()
+        self.competition_id = 0
 
         self.get_score = function(column, submission) {
              return _.get(_.find(submission.scores, {column_key: column.key}), 'score', 'N/A')
@@ -89,6 +92,7 @@
         //
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
+            self.competition_id = self.opts.competition_pk
             self.update_leaderboards()
         })
 
