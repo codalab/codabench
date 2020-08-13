@@ -9,7 +9,12 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
+            <th class="center aligned" each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
+        </tr>
+        <tr>
+            <th>Task:</th>
+            <th></th>
+            <th each="{ column, index in generated_columns }" colspan="2" class="center aligned" if="{!_.includes(hidden_column_keys, column.key) && index % 2 == 0}">{ column.task.name } - { column.task.id }</th>
         </tr>
         </thead>
         <tbody>
@@ -60,8 +65,7 @@
             _.forEach(self.opts.tasks, task => {
                 _.forEach(self.selected_leaderboard.columns, col => {
                     col = Object.assign({}, col)
-                    col['task'] =  task['id']
-                    col['title'] += ` ${task['id']}`
+                    col['task'] =  task
                     col['key'] += `_${task['id']}`
                     self.generated_columns.push(col)
                 })

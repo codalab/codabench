@@ -296,7 +296,6 @@
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
-            console.log('self.selected_phase tabs', self.selected_phase)
             self.update()
         })
 
