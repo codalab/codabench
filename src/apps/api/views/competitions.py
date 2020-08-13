@@ -1,5 +1,6 @@
 import zipfile
 import csv
+import json
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 
@@ -16,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
+from api.renderers import ZipRenderer
 from rest_framework.views import APIView
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
@@ -211,60 +213,6 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    # @action(detail=True, methods=['GET'])
-    # def get_csv(self, request, pk):
-    #     # TODO: Need to differentiate between leaderboards on different phases
-    #     #  (after there are different leaderboards on each phase)
-    #
-    #     competition = self.get_object()
-    #     if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-    #         raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
-    #
-    #     # Query Needed data and filter to what is needed.
-    #     phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
-    #     submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
-    #     if not submission_query.exists():
-    #         raise ValidationError("There are no submissions on the leaderboard")
-    #
-    #     # Build the data needed for the csv's into a dictionary
-    #     csv = {}
-    #     user_id = set()
-    #     for sub in submission_query:
-    #         if sub.leaderboard_id not in csv.keys():
-    #             csv[sub.leaderboard_id] = {}
-    #             csv[sub.leaderboard_id]["user"] = ["Username"]
-    #             columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-    #             for col in columns:
-    #                 csv[sub.leaderboard_id][col.id] = [col.title]
-    #         for score in sub.scores.all():
-    #             csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-    #         csv[sub.leaderboard_id]["user"].append(sub.owner_id)
-    #         user_id.add(sub.owner_id)
-    #
-    #     # Replace user_id with usernames
-    #     users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-    #     for leaderboard in csv:
-    #         csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
-    #
-    #     # Take the data from the dict, put them into csv files and add them to the archive
-    #     with SpooledTemporaryFile() as tmp:
-    #         with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-    #             for lb_id in csv.keys():
-    #                 tempFile = NamedTemporaryFile()
-    #                 csvCols = [x for x in csv[lb_id].keys()]
-    #                 for entry in range(len(csv[lb_id][csvCols[0]])):
-    #                     line = ""
-    #                     for col in csvCols:
-    #                         line += "{},".format(csv[lb_id][col][entry])
-    #                     line = line[:-1] + "\n"
-    #                     tempFile.write(str.encode(line))
-    #                 tempFile.seek(0)
-    #                 archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
-    #         tmp.seek(0)
-    #         response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-    #         response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
-    #         return response
-
     def collect_leaderboard_check_permissions(self, request, competition):
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
@@ -298,83 +246,71 @@ class CompetitionViewSet(ModelViewSet):
                 leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username].update({columnsTitles[leaderID][score.column_id]: float(score.score)})
         return leaderboard_data
 
-    @action(detail=True, methods=['GET'])
-    @renderer_classes((JSONRenderer,))
-    def json(self, request, pk):
+    @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
+    def results(self, request, pk, format=None):
         competition = self.get_object()
         self.collect_leaderboard_check_permissions(request, competition)
         data = self.collect_leaderboard_data(competition)
-        return Response(data)
+        selected_leaderboard = request.GET.get('leaderboard')
 
-    @action(detail=True, methods=['GET'])
-    def zip(self, request, pk):
-        competition = self.get_object()
-        self.collect_leaderboard_check_permissions(request, competition)
-        data = self.collect_leaderboard_data(competition)
-        with SpooledTemporaryFile() as tmp:
-            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-                for leaderboard in data:
-                    temp_file = NamedTemporaryFile()
-                    line = "Username"
-                    columns = data[leaderboard][list(data[leaderboard].keys())[0]]
-                    for column_title in columns:
-                        line += f',{column_title}'
-                    line += '\n'
-                    temp_file.write(str.encode(line))
-                    for submission in data[leaderboard]:
-                        line = submission
-                        for column_title in columns:
-                            print(f'\n\n{data[leaderboard]}\n\n')
-                            line += f",{data[leaderboard][submission][column_title]}"
-                        line +="\n"
-                        temp_file.write(str.encode(line))
-                    temp_file.seek(0)
-                    archive.write(temp_file.name, f"{leaderboard}.csv")
-            tmp.seek(0)
-            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+        print(f'\n\n\n{selected_leaderboard}\n\n\n')
+
+        if format == 'json':
+            if selected_leaderboard is None:
+                return HttpResponse(json.dumps(data, indent=4), content_type="application/json",)
+            elif selected_leaderboard in data.keys():
+                return HttpResponse(json.dumps({selected_leaderboard: data[selected_leaderboard]}, indent=4), content_type="application/json")
+            else:
+                raise ValidationError("Selected leaderboard does not exist in this competition.")
+
+        elif format == 'csv':
+            if selected_leaderboard not in data.keys() and len(data) != 1:
+                raise ValidationError("Selected leaderboard does not exist in this competition.")
+            elif len(data) == 1:
+                selected_leaderboard = list(data.keys())[0]
+
+            columns = list(data[selected_leaderboard][list(data[selected_leaderboard].keys())[0]].keys())
+            csv = f'{selected_leaderboard}\n'
+            csv += "Username"
+            for col in columns:
+                csv += f',{col}'
+            csv += '\n'
+            for submission in data[selected_leaderboard]:
+                csv += submission
+                for col in columns:
+                    csv += f',{data[selected_leaderboard][submission][col]}'
+                csv += '\n'
+            response = HttpResponse(str.encode(csv), content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{selected_leaderboard}.csv"'
             return response
 
-    @action(detail=True, methods=['GET'])
-    @renderer_classes((CSVRenderer,))
-    def csv(self, request, pk):
-        competition = self.get_object()
-        self.collect_leaderboard_check_permissions(request, competition)
-        data = self.collect_leaderboard_data(competition)
+        elif format == 'zip':
+            with SpooledTemporaryFile() as tmp:
+                with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                    for leaderboard in data:
+                        temp_file = NamedTemporaryFile()
+                        line = "Username"
+                        columns = data[leaderboard][list(data[leaderboard].keys())[0]]
+                        for column_title in columns:
+                            line += f',{column_title}'
+                        line += '\n'
+                        temp_file.write(str.encode(line))
+                        for submission in data[leaderboard]:
+                            line = submission
+                            for column_title in columns:
+                                print(f'\n\n{data[leaderboard]}\n\n')
+                                line += f",{data[leaderboard][submission][column_title]}"
+                            line += "\n"
+                            temp_file.write(str.encode(line))
+                        temp_file.seek(0)
+                        archive.write(temp_file.name, f"{leaderboard}.csv")
+                tmp.seek(0)
+                response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
+                response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+                return response
 
-        selected_leaderboard = request.GET.get('leaderboard')
-        if selected_leaderboard not in data.keys() and len(data) != 1:
-            raise ValidationError("Selected leaderboard does not exist in this competition.")
-        elif len(data) == 1:
-            selected_leaderboard = list(data.keys())[0]
-
-        columns = list(data[selected_leaderboard][list(data[selected_leaderboard].keys())[0]].keys())
-        csv = f'{selected_leaderboard}\n'
-        csv += "Username"
-        for col in columns:
-            csv += f',{col}'
-        csv += '\n'
-        for submission in data[selected_leaderboard]:
-            csv += submission
-            for col in columns:
-                csv += f',{data[selected_leaderboard][submission][col]}'
-            csv += '\n'
-        response = HttpResponse(str.encode(csv), content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="{selected_leaderboard}.csv"'
-        return response
-
-    def _ensure_organizer_participants_accepted(self, instance):
-        CompetitionParticipant.objects.filter(
-            user__in=instance.collaborators.all()
-        ).update(status=CompetitionParticipant.APPROVED)
-
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        self._ensure_organizer_participants_accepted(instance)
-
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        self._ensure_organizer_participants_accepted(instance)
+        else:
+            raise ValidationError("Valid data type needed")
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))

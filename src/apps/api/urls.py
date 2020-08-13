@@ -5,6 +5,8 @@ from drf_yasg.views import get_schema_view
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
+from rest_framework.urlpatterns import format_suffix_patterns
+
 from api.views.competitions import front_page_competitions
 from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
@@ -54,6 +56,6 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
-    path('', include(router.urls)),
+    path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip',]))),
     path('front_page_competitions/', front_page_competitions, name='front_page_competitions'),
 ]
