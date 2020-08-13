@@ -227,7 +227,8 @@
 
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }">
+                              leaderboards="{ competition.leaderboards }"
+                              is_admin="{competition.admin}">
                 </leaderboards>
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
