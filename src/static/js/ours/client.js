@@ -56,7 +56,7 @@ CODALAB.api = {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})
     },
     get_front_page_competitions: function (data) {
-        return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
+        return CODALAB.api.request('GET', `${URLS.API}competitions/front_page/`, data)
     },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
