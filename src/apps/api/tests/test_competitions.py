@@ -14,14 +14,18 @@ class CompetitionTests(APITestCase):
         self.creator = UserFactory(username='creator', password='creator')
         self.other_user = UserFactory(username='other_user', password='other')
         self.comp = CompetitionFactory(created_by=self.creator)
-        PhaseFactory(competition=self.comp)
-        self.leaderboard = LeaderboardFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+        PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
         ColumnFactory(leaderboard=self.leaderboard)
 
     def _prepare_competition_data(self, url):
         resp = self.client.get(url)
         data = resp.data
         data.pop('id')
+
+        from pprint import pprint
+        print('data in _preprare @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+        pprint(data)
 
         # We don't want to post back the logo url, since it's expecting JSON data with
         # the base64 of the logo in it
@@ -41,6 +45,12 @@ class CompetitionTests(APITestCase):
         data = self._prepare_competition_data(url)
 
         data["collaborators"] = [self.other_user.pk]
+
+        from pprint import pprint
+        pprint(url)
+        print('data in test @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2')
+        pprint(json.dumps(data))
+
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
         assert CompetitionParticipant.objects.filter(
@@ -76,9 +86,9 @@ class PhaseMigrationTests(APITestCase):
         self.creator = UserFactory(username='creator', password='creator')
         self.other_user = UserFactory(username='other_user', password='other')
         self.comp = CompetitionFactory(created_by=self.creator)
-        self.phase_1 = PhaseFactory(competition=self.comp, index=0)
-        self.phase_2 = PhaseFactory(competition=self.comp, index=1)
-        self.leaderboard = LeaderboardFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
+        self.phase_1 = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, index=0)
+        self.phase_2 = PhaseFactory(competition=self.comp, leaderboard=self.leaderboard, index=1)
         ColumnFactory(leaderboard=self.leaderboard)
 
     def test_manual_migration_checks_permissions_must_be_collaborator_to_migrate(self):
