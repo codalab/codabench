@@ -272,6 +272,9 @@ class CompetitionViewSet(ModelViewSet):
     def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
+        #TODO: Pass PKs or other additional information to differentiate between tasks and leaderboards with same names
+        #Maybe: Add the ability to sort submissions by score
+
         # Query Needed data and filter to what is needed.
         phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
         submission_query = Submission.objects.filter(
