@@ -279,7 +279,7 @@ class CompetitionViewSet(ModelViewSet):
         return Response(serializer.data)
 
     @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
-    @action(detail=False, methods=('GET',))
+    @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
         featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
