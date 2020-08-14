@@ -1,6 +1,5 @@
 import os
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.http import Http404
@@ -13,7 +12,6 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
-from competitions.models import Competition
 from datasets.models import Data, DataGroup
 from utils.data import make_url_sassy
 

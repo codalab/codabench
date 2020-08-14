@@ -6,17 +6,15 @@ from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
