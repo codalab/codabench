@@ -14,7 +14,6 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
-
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [LeaderboardIsOrganizerOrCollaborator]

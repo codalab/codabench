@@ -83,23 +83,6 @@
             })
         }
 
-        // self.filterLeaderboard = function () {
-        //     let tempStr = self.refs.leaderboardFilter.value.toLowerCase()
-        //     let finalArray = tempStr.match(/[a-z]+[:][a-z,0-9]+/g)
-        //     if(finalArray == null){return false}
-        //     for(i =0; i < finalArray.length; i++) {
-        //         console.log(finalArray[i])
-        //     }
-        // }
-        //
-        // self.on("mount", function () {
-        //     this.refs.leaderboardFilter.onkeyup = _.debounce(self.filterLeaderboard, 250, {
-        //         'leading': true,
-        //         'trailing': true,
-        //         'maxWait': 500
-        //     })
-        // })
-        //
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
             self.competition_id = self.opts.competition_pk

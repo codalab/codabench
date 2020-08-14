@@ -1,14 +1,12 @@
 import zipfile
-import csv
 import json
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
-
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes, renderer_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.mixins import RetrieveModelMixin
@@ -18,8 +16,6 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 from api.renderers import ZipRenderer
-from rest_framework.views import APIView
-
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
@@ -27,10 +23,8 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from competitions.tasks import batch_send_email, manual_migration
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from leaderboards.models import Column, Leaderboard
-from profiles.models import User
+from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
-
 from api.permissions import IsOrganizerOrCollaborator
 
 
@@ -220,8 +214,8 @@ class CompetitionViewSet(ModelViewSet):
     def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
-        #TODO: Pass PKs or other additional information to differentiate between tasks with the same names
-        #Maybe: Add the ability to sort submissions by score
+        # TODO: Pass PKs or other additional information to differentiate between tasks with the same names
+        # Maybe: Add the ability to sort submissions by score
 
         # Query Needed data and filter to what is needed.
         phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
@@ -315,6 +309,7 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(str.encode(csv), content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             return response
+
 
 @api_view(['GET'])
 @permission_classes((AllowAny,))
