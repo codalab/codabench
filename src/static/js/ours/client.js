@@ -32,7 +32,7 @@ CODALAB.api = {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
     get_competition_creation_status: function (key) {
-        return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
+        return CODALAB.api.request('GET', `${URLS.API}competitions/creation_status/${key}/`)
     },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
@@ -56,10 +56,13 @@ CODALAB.api = {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})
     },
     get_front_page_competitions: function (data) {
-        return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
+        return CODALAB.api.request('GET', `${URLS.API}competitions/front_page/`, data)
     },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
+    },
+    create_competition_dump: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/create_dump/`)
     },
     /*---------------------------------------------------------------------
          Submissions
@@ -125,9 +128,6 @@ CODALAB.api = {
     },
     delete_datasets: function(pk_list) {
         return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
-    },
-    create_dump: function (competition_id) {
-        return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
     },
     /**
      * Creates a dataset
