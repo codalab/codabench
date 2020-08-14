@@ -5,23 +5,25 @@ from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 from api.renderers import ZipRenderer
+from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
+    FrontPageCompetitionsSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
-from competitions.tasks import batch_send_email, manual_migration
+from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
@@ -180,6 +182,7 @@ class CompetitionViewSet(ModelViewSet):
             'dumps__dataset',
         )
         competition = qs_helper.get(id=pk)
+        # TODO: Replace this auth check with user_has_admin_permission
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
@@ -310,18 +313,52 @@ class CompetitionViewSet(ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             return response
 
+    @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')
+    def creation_status(self, request, dataset_key=None):
+        """This endpoint gets the creation status for a competition during upload"""
+        competition_creation_status = get_object_or_404(
+            CompetitionCreationTaskStatus,
+            dataset__created_by=request.user,  # make sure user owns this
+            dataset__key=dataset_key  # lookup dataset by key, we have no competition ID yet
+        )
+        serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
+        return Response(serializer.data)
 
-@api_view(['GET'])
-@permission_classes((AllowAny,))
-def front_page_competitions(request):
-    popular_comps = get_popular_competitions()
-    featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
-    popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-    featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
-    return Response(data={
-        "popular_comps": popular_comps_serializer.data,
-        "featured_comps": featured_comps_serializer.data
-    }, status=status.HTTP_200_OK)
+    @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
+    @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
+    def front_page(self, request):
+        popular_comps = get_popular_competitions()
+        featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+        popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
+        featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+        return Response(data={
+            "popular_comps": popular_comps_serializer.data,
+            "featured_comps": featured_comps_serializer.data
+        })
+
+    @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
+    def create_dump(self, request, pk=None):
+        competition = self.get_object()
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You don't have access")
+        create_competition_dump.delay(pk)
+        serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
+        return Response(serializer.data, status=201)
+
+    def _ensure_organizer_participants_accepted(self, instance):
+        CompetitionParticipant.objects.filter(
+            user__in=instance.collaborators.all()
+        ).update(status=CompetitionParticipant.APPROVED)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self._ensure_organizer_participants_accepted(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self._ensure_organizer_participants_accepted(instance)
 
 
 class PhaseViewSet(ModelViewSet):
@@ -353,12 +390,6 @@ class PhaseViewSet(ModelViewSet):
             submission.re_run()
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
-
-
-class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
-    queryset = CompetitionCreationTaskStatus.objects.all()
-    serializer_class = CompetitionCreationTaskStatusSerializer
-    lookup_field = 'dataset__key'
 
 
 class CompetitionParticipantViewSet(ModelViewSet):
