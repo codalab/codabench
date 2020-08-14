@@ -285,10 +285,10 @@ class CompetitionViewSet(ModelViewSet):
         featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
         featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
-        return Response(data=FrontPageCompetitionsSerializer({
+        return Response(data={
             "popular_comps": popular_comps_serializer.data,
             "featured_comps": featured_comps_serializer.data
-        }).data)
+        })
 
     @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
     @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
