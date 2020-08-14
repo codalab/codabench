@@ -6,15 +6,15 @@
                 { selected_leaderboard.title }
             </th>
         </tr>
+        <tr class="task-row">
+            <th>Task:</th>
+            <th></th>
+            <th each="{ column in generated_columns }" class="center aligned" if="{!_.includes(hidden_column_keys, column.key)}">{ column.task.name }</th>
+        </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
             <th class="center aligned" each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
-        </tr>
-        <tr>
-            <th>Task:</th>
-            <th></th>
-            <th each="{ column, index in generated_columns }" colspan="2" class="center aligned" if="{!_.includes(hidden_column_keys, column.key) && index % 2 == 0}">{ column.task.name } - { column.task.id }</th>
         </tr>
         </thead>
         <tbody>
@@ -134,5 +134,8 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        .ui.table > thead > tr.task-row > th
+            background-color: #e8f6ff !important
+
     </style>
 </leaderboards>
