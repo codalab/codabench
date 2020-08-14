@@ -82,7 +82,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
-    leaderboards = LeaderboardSerializer(many=True)
+    # leaderboards = LeaderboardSerializer(many=True)
     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
     queue = QueueSerializer(required=False, allow_null=True)
     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
@@ -103,7 +103,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'docker_image',
             'pages',
             'phases',
-            'leaderboards',
+            # 'leaderboards',
             'collaborators',
             'description',
             'terms',
@@ -115,10 +115,10 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'competition_type',
         )
 
-    def validate_leaderboards(self, value):
-        if not value:
-            raise ValidationError("Competitions require at least 1 leaderboard")
-        return value
+    # def validate_leaderboards(self, value):
+    #     if not value:
+    #         raise ValidationError("Competitions require at least 1 leaderboard")
+    #     return value
 
     def validate_phases(self, phases):
         if not phases or len(phases) <= 0:

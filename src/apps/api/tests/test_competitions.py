@@ -23,10 +23,6 @@ class CompetitionTests(APITestCase):
         data = resp.data
         data.pop('id')
 
-        from pprint import pprint
-        print('data in _preprare @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        pprint(data)
-
         # We don't want to post back the logo url, since it's expecting JSON data with
         # the base64 of the logo in it
         data["logo"] = None
@@ -45,11 +41,6 @@ class CompetitionTests(APITestCase):
         data = self._prepare_competition_data(url)
 
         data["collaborators"] = [self.other_user.pk]
-
-        from pprint import pprint
-        pprint(url)
-        print('data in test @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2')
-        pprint(json.dumps(data))
 
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
