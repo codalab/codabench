@@ -3,9 +3,18 @@
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
-                { selected_leaderboard.title }
-                <a if="{admin}" href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new"><button class="ui inline button right">CSV</button></a>
-                <a if="{admin}" href="{URLS.COMPETITION_GET_JSON(competition_id, selected_leaderboard.id)}" target="new"><button class="ui inline button right">JSON</button></a>
+                <p class="leaderboard-title">{ selected_leaderboard.title }</p>
+                <div class="float-right">
+                    <div class="ui compact menu">
+                        <div class="ui simple dropdown item" style="padding: 0px 5px">
+                            <img src="/static/img/simple_download_icon.svg" alt="">
+                            <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                                <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
+                                <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </th>
         </tr>
         <tr>
@@ -119,5 +128,10 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        .leaderboard-title{
+            position absolute
+            left 50%
+            transform translate(-50%, 50%)
+        }
     </style>
 </leaderboards>

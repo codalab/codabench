@@ -223,8 +223,17 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
-                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_ZIP(competition.id)}" target="new"><button class="ui inline button right">Download ZIP</button></a>                </div>
-
+                    <div class="float-right">
+                   <div class="ui compact menu">
+                       <div class="ui simple dropdown item" style="padding: 0px 5px">
+                           <img src="/static/img/simple_download_icon.svg" alt="">
+                           <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                               <a href="{URLS.COMPETITION_GET_ZIP(competition.id)}" target="new" class="item">All CSV</a>
+                               <a href="{URLS.COMPETITION_GET_JSON(competition.id)}" target="new" class="item">All JSON</a>
+                           </div>
+                       </div>
+                   </div>
+                    </div>
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }"

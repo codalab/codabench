@@ -234,7 +234,11 @@
                 let urlParam = "?id=" + leaderboard_id
                 return urlBase.slice(0, -1) + ".csv" + urlParam
             },
-            COMPETITION_GET_JSON: function (pk, leaderboard_id) {
+            COMPETITION_GET_JSON: function (pk) {
+                let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
+                return urlBase.slice(0, -1) + ".json"
+            },
+            COMPETITION_GET_JSON_BY_ID: function (pk, leaderboard_id) {
                 let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
                 let urlParam = "?id=" + leaderboard_id
                 return urlBase.slice(0, -1) + ".json" + urlParam
