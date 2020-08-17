@@ -258,22 +258,15 @@ class CompetitionViewSet(ModelViewSet):
             with SpooledTemporaryFile() as tmp:
                 with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                     for leaderboard in data:
-                        temp_file = NamedTemporaryFile()
-                        line = "Username"
-                        columns = data[leaderboard][list(data[leaderboard].keys())[0]]
-                        for column_title in columns:
-                            line += f',{column_title}'
-                        line += '\n'
-                        temp_file.write(str.encode(line))
+                        stringIO = StringIO()
+                        columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
+                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username"] + columns))
+                        dict_writer.writeheader()
                         for submission in data[leaderboard]:
-                            line = submission
-                            for column_title in columns:
-                                print(f'\n\n{data[leaderboard]}\n\n')
-                                line += f",{data[leaderboard][submission][column_title]}"
-                            line += "\n"
-                            temp_file.write(str.encode(line))
-                        temp_file.seek(0)
-                        archive.write(temp_file.name, f"{leaderboard}.csv")
+                            line = {"Username": submission}
+                            line.update(data[leaderboard][submission])
+                            dict_writer.writerow(line)
+                        archive.writestr(f'{leaderboard}.csv', stringIO.getvalue())
                 tmp.seek(0)
                 response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
                 response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
