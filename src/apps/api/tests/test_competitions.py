@@ -1,12 +1,13 @@
 import json
 from unittest import mock
-
+import random
 from django.urls import reverse
+from django.test import Client
 from rest_framework.test import APITestCase
 
 from competitions.models import CompetitionParticipant, Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, TaskFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
 
 
 class CompetitionTests(APITestCase):
@@ -138,3 +139,82 @@ class PhaseMigrationTests(APITestCase):
         # check phase 2 has the 1 parent submission
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 1
+
+
+class CompetitionResultDatatypesTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator2', password='creator2')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase = PhaseFactory(competition=self.comp, index=0)
+
+        self.leaderboard_titles = set()
+        self.usernames = set()
+        self.leaderboard_ids_to_titles = {}
+
+        self.usernames.add(self.creator.username)
+        self.users = [self.creator]
+        for standard_users in range(5):
+            user = UserFactory()
+            self.users.append(user)
+            self.usernames.add(user.username)
+
+
+        for leaderboards in range(3):
+            leaderboard = LeaderboardFactory(competition=self.comp)
+            self.leaderboard_titles.add(leaderboard.title)
+            self.leaderboard_ids_to_titles.update({leaderboard.id : leaderboard.title})
+            self.columns = []
+            for column in range(4):
+                self.columns.append(ColumnFactory(leaderboard=leaderboard))
+            for user in self.users:
+                submission = SubmissionFactory(owner=user, phase=self.phase ,leaderboard=leaderboard)
+                for col in self.columns:
+                    submission.scores.add(SubmissionScoreFactory(column=col))
+
+
+    def test_get_competition_leaderboard_as_json(self):
+        # gets makes sure to get JSON response and that it has all leaderboards and users
+        c = Client()
+        c.login(username="creator2", password="creator2")
+        response = json.loads(c.get(f'/api/competitions/{self.comp.id}/results.json', HTTP_ACCEPT='application/json').content)
+        self.response_titles  = set()
+        self.response_users = set()
+        for key in response.keys():
+            title, id = key.rsplit("(", 1)
+            self.response_titles.add(title)
+            for user in response[key].keys():
+                self.response_users.add(user)
+        assert self.leaderboard_titles == self.response_titles
+        assert self.usernames == self.response_users
+
+    def test_get_competition_leaderboard_by_title_as_json(self):
+        # Makes sure the query returns a json that had a matching leaderboard title
+        c = Client()
+        c.login(username="creator2", password="creator2")
+        leaderboard_choice = random.sample(self.leaderboard_titles, 1)[0]
+        response = json.loads(c.get(f'/api/competitions/{self.comp.id}/results.json?title={leaderboard_choice}', HTTP_ACCEPT='application/json').content)
+        for title in response.keys():
+            assert leaderboard_choice in title
+
+    def test_get_competition_leaderboard_by_id_as_json(self):
+        # Make sure when getting leaderboard by id you get exactly one leaderboard with matching title
+        c = Client()
+        c.login(username="creator2", password="creator2")
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
+        response = json.loads(c.get(f'/api/competitions/{self.comp.id}/results.json?id={leaderboard_choice}', HTTP_ACCEPT='application/json').content)
+        response_title = list(response.keys())
+        assert len(response_title) == 1
+        assert response_title[0] == f'{self.leaderboard_ids_to_titles[leaderboard_choice]}({leaderboard_choice})'
+
+    def test_get_competition_leaderboard_by_id_as_csv(self):
+        c = Client()
+        c.login(username="creator2", password="creator2")
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
+        response = c.get(f'/api/competitions/{self.comp.id}/results.csv?id={leaderboard_choice}', HTTP_ACCEPT='text/csv')
+        content = response.content.decode('utf-8')
+        print(content)
+
+        assert 0 == 1
+
+    def test_get_competition_leaderboard_by_title_as_csv(self):
+        return
