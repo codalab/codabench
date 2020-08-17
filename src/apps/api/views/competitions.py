@@ -212,14 +212,9 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    def collect_leaderboard_check_permissions(self, request, competition):
-        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-            raise PermissionDenied("You are not a competition admin or superuser")
-
     def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
-        # TODO: Pass PKs or other additional information to differentiate between tasks with the same names
         # Maybe: Add the ability to sort submissions by score
 
         # Query Needed data and filter to what is needed.
@@ -248,7 +243,8 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
     def results(self, request, pk, format=None):
         competition = self.get_object()
-        self.collect_leaderboard_check_permissions(request, competition)
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You are not a competition admin or superuser")
         data = self.collect_leaderboard_data(competition)
         selected_data = {}
         selected_id = request.GET.get('id')
