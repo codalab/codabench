@@ -4,10 +4,10 @@
         <tr>
             <th colspan="100%" class="center aligned">
                 <p class="leaderboard-title">{ selected_leaderboard.title }</p>
-                <div class="float-right">
+                <div style="visibility: {show_download};" class="float-right">
                     <div class="ui compact menu">
                         <div class="ui simple dropdown item" style="padding: 0px 5px">
-                            <img src="/static/img/simple_download_icon.svg" alt="">
+                            <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
                             <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
                                 <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
                                 <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
@@ -49,7 +49,6 @@
         self.hidden_column_keys = []
         self.filtered_column_keys = new Set()
         self.competition_id = 0
-        self.admin = null
 
         self.get_score = function(column, submission) {
              return _.get(_.find(submission.scores, {column_key: column.key}), 'score', 'N/A')
@@ -86,7 +85,7 @@
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
             self.competition_id = self.opts.competition_pk
-            self.admin = self.opts.is_admin
+            self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
             self.update_leaderboards()
         })
 
