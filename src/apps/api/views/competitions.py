@@ -1,5 +1,7 @@
 import zipfile
 import json
+import csv
+from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from django.db import IntegrityError
@@ -299,19 +301,18 @@ class CompetitionViewSet(ModelViewSet):
             if len(selected_data) > 1:
                 raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
             leaderboard_title = list(selected_data.keys())[0]
-            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
-            csv = "Username"
-            for col in columns:
-                csv += f',{col}'
-            csv += '\n'
-            for submission in selected_data[leaderboard_title]:
-                csv += submission
-                for col in columns:
-                    csv += f',{data[leaderboard_title][submission][col]}'
-                csv += '\n'
-            response = HttpResponse(str.encode(csv), content_type='text/csv')
+            response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
+            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username"]+columns))
+
+            dict_writer.writeheader()
+            for submission in selected_data[leaderboard_title]:
+                row = {"Username": submission}
+                row.update(selected_data[leaderboard_title][submission])
+                dict_writer.writerow(row)
             return response
+
 
     @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
     @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')
