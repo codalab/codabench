@@ -3,7 +3,7 @@ import json
 import csv
 from io import StringIO
 from django.http import HttpResponse
-from tempfile import SpooledTemporaryFile, NamedTemporaryFile
+from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
@@ -293,7 +293,7 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
-            dict_writer = csv.DictWriter(response, fieldnames=(["Username"]+columns))
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
 
             dict_writer.writeheader()
             for submission in selected_data[leaderboard_title]:
@@ -301,7 +301,6 @@ class CompetitionViewSet(ModelViewSet):
                 row.update(selected_data[leaderboard_title][submission])
                 dict_writer.writerow(row)
             return response
-
 
     @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
     @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')

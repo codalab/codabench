@@ -161,10 +161,9 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.users.append(user)
             self.usernames.add(user.username)
 
-
         for leaderboards in range(3):
             leaderboard = LeaderboardFactory(competition=self.comp)
-            self.leaderboard_ids_to_titles.update({leaderboard.id : leaderboard.title})
+            self.leaderboard_ids_to_titles.update({leaderboard.id: leaderboard.title})
             self.leaderboard_ids_to_columns.update({leaderboard.id: {}})
             self.columns = []
             for columns in range(4):
@@ -172,10 +171,9 @@ class CompetitionResultDatatypesTests(APITestCase):
                 self.columns.append(column)
                 self.leaderboard_ids_to_columns[leaderboard.id].update({column.title: column.id})
             for user in self.users:
-                submission = SubmissionFactory(owner=user, phase=self.phase ,leaderboard=leaderboard)
+                submission = SubmissionFactory(owner=user, phase=self.phase, leaderboard=leaderboard)
                 for col in self.columns:
                     submission.scores.add(SubmissionScoreFactory(column=col))
-
 
     def test_get_competition_leaderboard_as_json(self):
         # gets makes sure to get JSON response and that it has all leaderboards and users
@@ -185,7 +183,7 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         content = json.loads(response.content)
 
-        self.response_titles  = set()
+        self.response_titles = set()
         self.response_users = set()
         for key in content.keys():
             title, id = key.rsplit("(", 1)
