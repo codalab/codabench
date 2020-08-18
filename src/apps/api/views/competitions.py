@@ -274,7 +274,7 @@ class CompetitionViewSet(ModelViewSet):
                 title, id = key.rsplit("(", 1)
                 if selected_id is not None and id[0: -1] == selected_id:
                     matched_keys.append(key)
-                elif selected_leaderboard is not None and selected_leaderboard in title:
+                elif selected_leaderboard is not None and selected_leaderboard in key:
                     matched_keys.append(key)
             if not matched_keys:
                 raise ValidationError("Selected leaderboard does not exist in this competition.")
