@@ -232,12 +232,12 @@ class CompetitionViewSet(ModelViewSet):
             leaderID = submission.leaderboard_id
             if leaderID not in leaderboardTitles.keys():
                 leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
-                columnsTitles.update({leaderID: {col.id: f'{col.title}({col.id})' for col in leaderboard.columns.all()}})
+                columnsTitles.update({leaderID: {f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()}})
                 leaderboardTitles.update({leaderID: f"{leaderboard.title}({leaderID})"})
                 leaderboard_data[leaderboardTitles[leaderID]] = {}
             leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username] = {}
             for score in submission.scores.all():
-                leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username].update({columnsTitles[leaderID][score.column_id]: float(score.score)})
+                leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username].update({columnsTitles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
