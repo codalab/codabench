@@ -82,6 +82,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
         fields = (
             'scores',
             'owner',
+            'task',
         )
         extra_kwargs = {
             "scores": {"read_only": True},
