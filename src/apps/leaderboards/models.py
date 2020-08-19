@@ -12,7 +12,7 @@ class Leaderboard(models.Model):
     hidden = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.title} - {self.competition}'
+        return f'{self.title}'
 
 
 class Column(models.Model):

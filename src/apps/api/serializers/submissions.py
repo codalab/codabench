@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
+from api.serializers.tasks import TaskSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
@@ -35,6 +36,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     owner = serializers.CharField(source='owner.username')
     phase_name = serializers.CharField(source='phase.name')
     on_leaderboard = serializers.BooleanField(read_only=True)
+    task = TaskSerializer()
 
     class Meta:
         model = Submission
@@ -57,6 +59,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'scores',
             'leaderboard',
             'on_leaderboard',
+            'task',
         )
         read_only_fields = (
             'pk',

@@ -39,6 +39,11 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'leaderboard',
         )
 
+    def validate_leaderboard(self, value):
+        if not value:
+            raise ValidationError("Phases require a leaderboard")
+        return value
+
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = TaskListSerializer(many=True)
@@ -82,7 +87,6 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
-    # leaderboards = LeaderboardSerializer(many=True)
     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
     queue = QueueSerializer(required=False, allow_null=True)
     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
@@ -103,7 +107,6 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'docker_image',
             'pages',
             'phases',
-            # 'leaderboards',
             'collaborators',
             'description',
             'terms',
@@ -114,11 +117,6 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'allow_robot_submissions',
             'competition_type',
         )
-
-    # def validate_leaderboards(self, value):
-    #     if not value:
-    #         raise ValidationError("Competitions require at least 1 leaderboard")
-    #     return value
 
     def validate_phases(self, phases):
         if not phases or len(phases) <= 0:
@@ -177,10 +175,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         try:
             if instance.user_has_admin_permission(self.context['request'].user):
                 # qs = instance.leaderboards.all()
-                qs = Leaderboard.objects.filter(phases__competition=instance)
+                qs = Leaderboard.objects.filter(phases__competition=instance).distinct('id')
             else:
                 # qs = instance.leaderboards.filter(hidden=False)
-                qs = Leaderboard.objects.filter(phases__competition=instance, hidden=False)
+                qs = Leaderboard.objects.filter(phases__competition=instance, hidden=False).distinct('id')
         except KeyError:
             raise Exception(f'KeyError on context. Context: {self.context}')
         return LeaderboardSerializer(qs, many=True).data

@@ -3,6 +3,7 @@ from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
 from api.serializers.submissions import SubmissionLeaderBoardSerializer
+from competitions.models import Submission
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
@@ -93,7 +94,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         # asc == colname
         primary_col = instance.columns.get(index=instance.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = instance.submissions.all().select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+        submissions = Submission.objects.filter(phase__in=instance.phases.all()).filter(leaderboard=instance).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
