@@ -217,17 +217,19 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading && !_.isEmpty(competition.leaderboards)}">
+            <div show="{!loading && !_.isEmpty(leaderboard_phases)}">
                 <div class="ui button-container">
-                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
-                         each="{ leaderboard in competition.leaderboards }"
-                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
+                    <div class="ui inline button {active: selected_leaderboard_phase_index == phase.id}"
+                         each="{ phase in leaderboard_phases }"
+                         onclick="{ leaderboard_phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
-                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>                </div>
+                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>
+                </div>
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
                               tasks="{ selected_phase ? selected_phase.tasks : [] }"
-                              leaderboards="{ competition.leaderboards }">
+                              leaderboards="{ competition.leaderboards }"
+                              phases="{ leaderboard_phases }">
                 </leaderboards>
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
@@ -242,7 +244,8 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
-        self.selected_leaderboard_index = undefined
+        self.selected_leaderboard_phase_index = undefined
+        self.leaderboard_phases = []
         self.loading = true
         self.csvURL = '{% url competitions.views.get_csv %}'
 
@@ -269,9 +272,7 @@
                     })
                 })
             })
-            if (!_.isEmpty(self.competition.leaderboards)) {
-                self.selected_leaderboard_index = self.competition.leaderboards[0].id
-            }
+
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()
@@ -286,6 +287,19 @@
             _.forEach(competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
+
+            CODALAB.api.get_leaderboard_submissions(self.competition.id)
+                .done( data => {
+                    self.leaderboard_phases = data
+                    if (!_.isEmpty(self.leaderboard_phases)) {
+                        self.selected_leaderboard_phase_index = self.leaderboard_phases[0].id
+                        self.leaderboard_phase_selected(self.leaderboard_phases[0])
+                    }
+                })
+                .fail(error => {
+                    toastr.error(error)
+                })
+
             // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
             // rather than a weird flicker
             _.delay(() => {
@@ -314,11 +328,11 @@
             CODALAB.events.trigger('phase_selected', data)
         }
 
-        self.leaderboard_selected = function (data, event) {
-            self.selected_leaderboard_index = data.id
+        self.leaderboard_phase_selected = function (data, event) {
+            self.selected_leaderboard_phase_index = data.id
             self.update()
 
-            CODALAB.events.trigger('leaderboard_selected', data)
+            CODALAB.events.trigger('leaderboard_phase_selected', data)
         }
     </script>
 

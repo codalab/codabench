@@ -17,6 +17,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
@@ -101,6 +102,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        elif self.action == 'leaderboard_submissions':
+            return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
         else:
@@ -261,6 +264,12 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
             response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
             return response
+
+    @action(detail=True, methods=('GET',))
+    def leaderboard_submissions(self, request, pk):
+        comp = self.get_object()
+        phases = comp.phases.all()
+        return Response(self.get_serializer(phases, many=True).data)
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(

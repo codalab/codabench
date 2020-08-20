@@ -18,12 +18,12 @@
         </tr>
         </thead>
         <tbody>
-        <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
+        <tr if="{_.isEmpty(selected_leaderboard_phase.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission, index in organized_submissions }">
+        <tr each="{ submission_list, index in organized_submissions }">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -32,8 +32,8 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission[0].owner }</td>
-            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission ) } </td>
+            <td>{ submission_list[0].owner }</td>
+            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission_list ) } </td>
         </tr>
         </tbody>
     </table>
@@ -41,10 +41,13 @@
         let self = this
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
+        self.generated_columns = []
+        self.organized_submissions = []
+        self.selected_leaderboard_phase = {}
 
-        self.get_score = function(column, submission) {
-            for (i in submission) {
-                let score = _.get(_.find(submission[i].scores, {column_key: column.key}), 'score')
+        self.get_score = function(column, submission_list) {
+            for (i in submission_list) {
+                let score = _.get(_.find(submission_list[i].scores, {column_key: column.key}), 'score')
                 if (score) {
                     return score
                 }
@@ -62,7 +65,7 @@
                 }
             })
             self.generated_columns = []
-            _.forEach(self.opts.tasks, task => {
+            _.forEach(self.selected_leaderboard_phase.tasks, task => {
                 _.forEach(self.selected_leaderboard.columns, col => {
                     col = Object.assign({}, col)
                     col['task'] =  task
@@ -72,7 +75,8 @@
             })
 
             let organized_submissions = {}
-            _.forEach(self.selected_leaderboard.submissions, submission => {
+            _.forEach(self.selected_leaderboard_phase.submissions, submission => {
+                submission = JSON.parse(JSON.stringify(submission))
                 _.forEach(submission['scores'], score => {
                     score['column_key'] += `_${submission['task']}`
                 })
@@ -92,29 +96,9 @@
             self.update()
         }
 
-        self.update_leaderboards = function () {
-            if (!self.opts.leaderboards) {
-                return
-            }
-            _.forEach(self.opts.leaderboards, leaderboard => {
-                CODALAB.api.get_leaderboard(leaderboard.id)
-                    .done(function (data) {
-                        leaderboard.submissions = data.submissions
-                        self.update_leaderboard()
-                    })
-                    .fail(function (response) {
-                        toastr.error("Could not find leaderboard submissions")
-                    })
-            })
-        }
-
-        CODALAB.events.on('competition_loaded', () => {
+        CODALAB.events.on('leaderboard_phase_selected', phase => {
+            self.selected_leaderboard_phase = phase
             self.selected_leaderboard = self.opts.leaderboards[0]
-            self.update_leaderboards()
-        })
-
-        CODALAB.events.on('leaderboard_selected', leaderboard => {
-            self.selected_leaderboard = leaderboard
             self.update_leaderboard()
         })
 

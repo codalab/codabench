@@ -15,10 +15,13 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
+    # TODO: The retrieve and list actions are the only ones used, apparently. Delete other permission checks soon!
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
+            raise Exception('Unexpected code branch execution.')
             self.permission_classes = [LeaderboardIsOrganizerOrCollaborator]
         elif self.action in ['create']:
+            raise Exception('Unexpected code branch execution.')
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [LeaderboardNotHidden]

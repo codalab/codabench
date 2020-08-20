@@ -3,10 +3,11 @@ from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
 from api.serializers.submissions import SubmissionLeaderBoardSerializer
-from competitions.models import Submission
+from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
+from .tasks import TaskSerializer
 
 
 class ColumnSerializer(WritableNestedModelSerializer):
@@ -94,9 +95,44 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         # asc == colname
         primary_col = instance.columns.get(index=instance.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = Submission.objects.filter(phase__in=instance.phases.all()).filter(leaderboard=instance).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+        submissions = Submission.objects.filter(leaderboard=instance).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
+            col_name = f'col{column.index}'
+            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+            kwargs = {
+                col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+            }
+            submissions = submissions.annotate(**kwargs)
+
+        submissions = submissions.order_by(*ordering, 'created_when')
+        return SubmissionLeaderBoardSerializer(submissions, many=True).data
+
+
+class LeaderboardPhaseSerializer(serializers.ModelSerializer):
+    submissions = serializers.SerializerMethodField(read_only=True)
+    tasks = TaskSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Phase
+        fields = (
+            'id',
+            'name',
+            'submissions',
+            'tasks',
+        )
+
+    def get_submissions(self, instance):
+        # desc == -colname
+        # asc == colname
+        primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
+        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        submissions = Submission.objects.filter(
+            phase=instance,
+            has_children=False,
+        ).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+
+        for column in instance.leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
             ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
             kwargs = {
