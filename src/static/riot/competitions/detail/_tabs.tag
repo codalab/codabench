@@ -237,6 +237,7 @@
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
                               leaderboards="{ competition.leaderboards }"
+                              tasks="{ selected_phase ? selected_phase.tasks : [] }"
                               is_admin="{competition.admin}">
                 </leaderboards>
             </div>
@@ -302,6 +303,11 @@
                 self.loading = false
                 self.update()
             }, 500)
+        })
+
+        CODALAB.events.on('phase_selected', function (selected_phase) {
+            self.selected_phase = selected_phase
+            self.update()
         })
 
         self.pretty_date = function (date_string) {
