@@ -50,15 +50,14 @@ def add_submission_to_leaderboard(request, submission_pk):
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
+    # Assume that submission.scores.first().column.leaderboard will always have the correct leaderboard
+    leaderboard = submission.scores.first().column.leaderboard
+
     if submission.has_children:
-        # Assume that submission.children.first().scores.first().column.leaderboard will always have the correct leaderboard
-        leaderboard = submission.children.first().scores.first().column.leaderboard
         for s in Submission.objects.filter(parent=submission_pk):
             s.leaderboard = leaderboard
             s.save()
     else:
-        # Assume that submission.scores.first().column.leaderboard will always have the correct leaderboard
-        leaderboard = submission.scores.first().column.leaderboard
         submission.leaderboard = leaderboard
         submission.save()
 
