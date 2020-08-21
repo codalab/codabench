@@ -6,10 +6,15 @@
                 { selected_leaderboard.title }
             </th>
         </tr>
+        <tr class="task-row">
+            <th>Task:</th>
+            <th></th>
+            <th each="{ column in generated_columns }" class="center aligned" if="{!_.includes(hidden_column_keys, column.key)}">{ column.task.name }</th>
+        </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
+            <th class="center aligned" each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
         </tr>
         </thead>
         <tbody>
@@ -18,7 +23,7 @@
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission, index in selected_leaderboard.submissions }">
+        <tr each="{ submission, index in organized_submissions }">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -28,7 +33,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ column in selected_leaderboard.columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission) } </td>
+            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission.scores ) } </td>
         </tr>
         </tbody>
     </table>
@@ -37,8 +42,14 @@
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
 
-        self.get_score = function(column, submission) {
-             return _.get(_.find(submission.scores, {column_key: column.key}), 'score', 'N/A')
+        self.get_score = function(column, scores) {
+            for (i in scores) {
+                score = scores[i]
+                if (column.key === score.column_key) {
+                    return score.score
+                }
+            }
+            return 'n/a'
         }
 
         self.update_leaderboard = () => {
@@ -50,6 +61,52 @@
                     return col.key
                 }
             })
+
+            // Columns are assumed to be the same for each task. Each column on the leaderboard is duplicated once for
+            // each task and assigned a unique column key.
+            self.generated_columns = []
+            _.forEach(self.opts.tasks, task => {
+                _.forEach(self.selected_leaderboard.columns, col => {
+                    col = Object.assign({}, col)
+                    col['task'] =  task
+                    col['key'] += `_${task['id']}`
+                    self.generated_columns.push(col)
+                })
+            })
+
+            // organized_submissions is used to organize submissions by owner so many scores by the same owner are
+            // rendered on the same row of the leaderboard table.
+            let organized_submissions = {}
+            _.forEach(self.selected_leaderboard.submissions, submission => {
+                _.forEach(submission['scores'], score => {
+                    score['column_key'] += `_${submission['task']}`
+                })
+
+                if (!organized_submissions[submission['owner']]) {
+                    organized_submissions[submission['owner']] = [submission]
+                } else {
+                    organized_submissions[submission['owner']].push(submission)
+                }
+            })
+
+            self.organized_submissions = []
+            _.forEach(organized_submissions, submission_list => {
+                let scores = []
+                _.forEach(submission_list, submission => {
+                    _.forEach(submission.scores, score => {
+                        scores.push(score)
+                    })
+                })
+
+                let submission = {
+                    owner: submission_list[0].owner,
+                    scores: scores,
+                }
+                self.organized_submissions.push(submission)
+            })
+
+            console.log('organized_submissions', self.organized_submissions)
+
             self.update()
         }
 
@@ -95,5 +152,8 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        .ui.table > thead > tr.task-row > th
+            background-color: #e8f6ff !important
+
     </style>
 </leaderboards>

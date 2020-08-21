@@ -224,9 +224,9 @@
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
                     <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>                </div>
-
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
+                              tasks="{ selected_phase ? selected_phase.tasks : [] }"
                               leaderboards="{ competition.leaderboards }">
                 </leaderboards>
             </div>
@@ -292,6 +292,11 @@
                 self.loading = false
                 self.update()
             }, 500)
+        })
+
+        CODALAB.events.on('phase_selected', function (selected_phase) {
+            self.selected_phase = selected_phase
+            self.update()
         })
 
         self.pretty_date = function (date_string) {
