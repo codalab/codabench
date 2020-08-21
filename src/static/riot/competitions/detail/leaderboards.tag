@@ -43,8 +43,8 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission[0].owner }</td>
-            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission ) } </td>
+            <td>{ submission.owner }</td>
+            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission.scores ) } </td>
         </tr>
         </tbody>
     </table>
@@ -55,11 +55,11 @@
         self.filtered_column_keys = new Set()
         self.competition_id = 0
 
-        self.get_score = function(column, submission) {
-            for (i in submission) {
-                let score = _.get(_.find(submission[i].scores, {column_key: column.key}), 'score')
-                if (score) {
-                    return score
+        self.get_score = function(column, scores) {
+            for (i in scores) {
+                score = scores[i]
+                if (column.key === score.column_key) {
+                    return score.score
                 }
             }
             return 'n/a'
@@ -74,6 +74,9 @@
                     return col.key
                 }
             })
+
+            // Columns are assumed to be the same for each task. Each column on the leaderboard is duplicated once for
+            // each task and assigned a unique column key.
             self.generated_columns = []
             _.forEach(self.opts.tasks, task => {
                 _.forEach(self.selected_leaderboard.columns, col => {
@@ -84,6 +87,8 @@
                 })
             })
 
+            // organized_submissions is used to organize submissions by owner so many scores by the same owner are
+            // rendered on the same row of the leaderboard table.
             let organized_submissions = {}
             _.forEach(self.selected_leaderboard.submissions, submission => {
                 _.forEach(submission['scores'], score => {
@@ -99,8 +104,21 @@
 
             self.organized_submissions = []
             _.forEach(organized_submissions, submission_list => {
-                self.organized_submissions.push(submission_list)
+                let scores = []
+                _.forEach(submission_list, submission => {
+                    _.forEach(submission.scores, score => {
+                        scores.push(score)
+                    })
+                })
+
+                let submission = {
+                    owner: submission_list[0].owner,
+                    scores: scores,
+                }
+                self.organized_submissions.push(submission)
             })
+
+            console.log('organized_submissions', self.organized_submissions)
 
             self.update()
         }
