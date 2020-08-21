@@ -1,12 +1,15 @@
 import json
+import random
+import csv
+from zipfile import ZipFile
+from io import StringIO, BytesIO
 from unittest import mock
-
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from competitions.models import CompetitionParticipant, Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, TaskFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
 
 
 class CompetitionTests(APITestCase):
@@ -138,3 +141,120 @@ class PhaseMigrationTests(APITestCase):
         # check phase 2 has the 1 parent submission
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 1
+
+
+class CompetitionResultDatatypesTests(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator2', password='creator2')
+        self.client.login(username='creator2', password='creator2')
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase = PhaseFactory(competition=self.comp, index=0)
+
+        self.usernames = set()
+        self.leaderboard_ids_to_titles = {}
+        self.leaderboard_ids_to_columns = {}
+
+        self.usernames.add(self.creator.username)
+        self.users = [self.creator]
+        for standard_users in range(5):
+            user = UserFactory()
+            self.users.append(user)
+            self.usernames.add(user.username)
+
+        for leaderboards in range(3):
+            leaderboard = LeaderboardFactory(competition=self.comp)
+            self.leaderboard_ids_to_titles.update({leaderboard.id: leaderboard.title})
+            self.leaderboard_ids_to_columns.update({leaderboard.id: {}})
+            self.columns = []
+            for columns in range(4):
+                column = ColumnFactory(leaderboard=leaderboard)
+                self.columns.append(column)
+                self.leaderboard_ids_to_columns[leaderboard.id].update({column.title: column.id})
+            for user in self.users:
+                submission = SubmissionFactory(owner=user, phase=self.phase, leaderboard=leaderboard)
+                for col in self.columns:
+                    submission.scores.add(SubmissionScoreFactory(column=col))
+
+    def test_get_competition_leaderboard_as_json(self):
+        # gets makes sure to get JSON response and that it has all leaderboards and users
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + '.json'
+        response = self.client.get(url, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+
+        self.response_titles = set()
+        self.response_users = set()
+        for key in content.keys():
+            title, id = key.rsplit("(", 1)
+            self.response_titles.add(title)
+            for user in content[key].keys():
+                self.response_users.add(user)
+        leaderboard_titles = set(self.leaderboard_ids_to_titles.values())
+        assert leaderboard_titles == self.response_titles
+        assert self.usernames == self.response_users
+
+    def test_get_competition_leaderboard_by_title_as_json(self):
+        # Makes sure the query returns a json that had a matching leaderboard title
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.values()))
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.json?title={leaderboard_choice}'
+        response = self.client.get(url, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+
+        for title in content.keys():
+            assert leaderboard_choice in title
+
+    def test_get_competition_leaderboard_by_id_as_json(self):
+        # Make sure when getting leaderboard by id you get exactly one leaderboard with matching title
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.json?id={leaderboard_choice}'
+        response = self.client.get(url, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+
+        response_title = list(content.keys())
+        assert len(response_title) == 1
+        assert response_title[0] == f'{self.leaderboard_ids_to_titles[leaderboard_choice]}({leaderboard_choice})'
+
+    def test_get_competition_leaderboard_by_id_as_csv(self):
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.csv?id={leaderboard_choice}'
+        response = self.client.get(url, HTTP_ACCEPT='text/csv')
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode('utf-8')
+        csv_reader = csv.reader(StringIO(content))
+        csv_header = list(csv_reader)[0]
+        csv_header.pop(0)
+
+        for column_title in self.leaderboard_ids_to_columns[leaderboard_choice]:
+            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})'
+
+    def test_get_competition_leaderboard_by_title_as_csv(self):
+        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.csv?title={self.leaderboard_ids_to_titles[leaderboard_choice]}({leaderboard_choice})'
+        response = self.client.get(url, HTTP_ACCEPT='text/csv')
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode('utf-8')
+        csv_reader = csv.reader(StringIO(content))
+        csv_header = list(csv_reader)[0]
+        csv_header.pop(0)
+
+        for column_title in self.leaderboard_ids_to_columns[leaderboard_choice]:
+            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})'
+
+    def test_get_competition_leaderboard_as_zip(self):
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + '.zip'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        assert response['content-type'] == 'application/x-zip-compressed'
+        assert response['Content-Disposition'] == f'attachment; filename={self.comp.title}.zip'
+
+        with BytesIO(response.content) as file:
+            zipped_file = ZipFile(file, 'r')
+            self.assertIsNone(zipped_file.testzip())
+            for id in self.leaderboard_ids_to_titles:
+                title = self.leaderboard_ids_to_titles[id]
+                self.assertIn(f'{title}({id}).csv', zipped_file.namelist())

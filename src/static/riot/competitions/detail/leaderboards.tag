@@ -3,7 +3,18 @@
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
-                { selected_leaderboard.title }
+                <p class="leaderboard-title">{ selected_leaderboard.title }</p>
+                <div style="visibility: {show_download};" class="float-right">
+                    <div class="ui compact menu">
+                        <div class="ui simple dropdown item" style="padding: 0px 5px">
+                            <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
+                            <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                                <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
+                                <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </th>
         </tr>
         <tr class="task-row">
@@ -41,6 +52,8 @@
         let self = this
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
+        self.filtered_column_keys = new Set()
+        self.competition_id = 0
 
         self.get_score = function(column, scores) {
             for (i in scores) {
@@ -128,6 +141,8 @@
 
         CODALAB.events.on('competition_loaded', () => {
             self.selected_leaderboard = self.opts.leaderboards[0]
+            self.competition_id = self.opts.competition_pk
+            self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
             self.update_leaderboards()
         })
 
@@ -152,8 +167,11 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        .leaderboard-title
+            position absolute
+            left 50%
+            transform translate(-50%, 50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
-
     </style>
 </leaderboards>

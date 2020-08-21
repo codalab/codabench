@@ -3,7 +3,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
 from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
@@ -22,6 +21,7 @@ class LeaderboardViewSet(ModelViewSet):
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [LeaderboardNotHidden]
+
         return [permission() for permission in self.permission_classes]
 
 
@@ -30,7 +30,7 @@ class SubmissionScoreViewSet(ModelViewSet):
     serializer_class = SubmissionScoreSerializer
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        instance = super().get_object()
         comp = instance.submissions.first().phase.competition
         if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionError('You do not have permission to update submission scores')

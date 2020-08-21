@@ -5,6 +5,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
+from rest_framework.urlpatterns import format_suffix_patterns
 
 from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
@@ -49,5 +50,5 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
-    path('', include(router.urls)),
+    path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip']))),
 ]

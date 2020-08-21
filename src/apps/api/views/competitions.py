@@ -1,8 +1,9 @@
 import zipfile
-
+import json
+import csv
+from io import StringIO
 from django.http import HttpResponse
-from tempfile import SpooledTemporaryFile, NamedTemporaryFile
-
+from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,8 +15,10 @@ from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
+from rest_framework_csv.renderers import CSVRenderer
+from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer
@@ -24,10 +27,8 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from leaderboards.models import Column, Leaderboard
-from profiles.models import User
+from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
-
 from api.permissions import IsOrganizerOrCollaborator
 
 
@@ -211,59 +212,96 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET'])
-    def get_csv(self, request, pk):
+    def collect_leaderboard_data(self, competition):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
-
-        competition = self.get_object()
-        # TODO: Replace this auth check with user_has_admin_permission
-        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
+        # Maybe: Add the ability to sort submissions by score
 
         # Query Needed data and filter to what is needed.
         phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
-        submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
+        submission_query = Submission.objects.filter(
+            Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
         if not submission_query.exists():
             raise ValidationError("There are no submissions on the leaderboard")
 
-        # Build the data needed for the csv's into a dictionary
-        csv = {}
-        user_id = set()
-        for sub in submission_query:
-            if sub.leaderboard_id not in csv.keys():
-                csv[sub.leaderboard_id] = {}
-                csv[sub.leaderboard_id]["user"] = ["Username"]
-                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-                for col in columns:
-                    csv[sub.leaderboard_id][col.id] = [col.title]
-            for score in sub.scores.all():
-                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
-            user_id.add(sub.owner_id)
+        # Build the data needed for the leaderboard_data's into a dictionary
+        leaderboard_data = {}
+        leaderboard_titles = {}
+        columns_titles = {}
+        for submission in submission_query:
+            leaderID = submission.leaderboard_id
+            if leaderID not in leaderboard_titles.keys():
+                leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
+                columns_titles.update({leaderID: {}})
+                leaderboard_titles.update({leaderID: f"{leaderboard.title}({leaderID})"})
+                leaderboard_data[leaderboard_titles[leaderID]] = {}
+            columns_titles[leaderID].update({f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()})
+            if submission.owner.username not in leaderboard_data[leaderboard_titles[leaderID]].keys():
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username] = {}
+            for score in submission.scores.all():
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username].update({columns_titles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
+        return leaderboard_data
 
-        # Replace user_id with usernames
-        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-        for leaderboard in csv:
-            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
+    @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
+    def results(self, request, pk, format=None):
+        competition = self.get_object()
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You are not a competition admin or superuser")
+        data = self.collect_leaderboard_data(competition)
+        selected_data = {}
+        selected_id = request.GET.get('id')
+        selected_leaderboard = request.GET.get('title')
 
-        # Take the data from the dict, put them into csv files and add them to the archive
-        with SpooledTemporaryFile() as tmp:
-            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-                for lb_id in csv.keys():
-                    tempFile = NamedTemporaryFile()
-                    csvCols = [x for x in csv[lb_id].keys()]
-                    for entry in range(len(csv[lb_id][csvCols[0]])):
-                        line = ""
-                        for col in csvCols:
-                            line += "{},".format(csv[lb_id][col][entry])
-                        line = line[:-1] + "\n"
-                        tempFile.write(str.encode(line))
-                    tempFile.seek(0)
-                    archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
-            tmp.seek(0)
-            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+        if format == 'zip':
+            with SpooledTemporaryFile() as tmp:
+                with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                    for leaderboard in data:
+                        stringIO = StringIO()
+                        columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
+                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username"] + columns))
+                        dict_writer.writeheader()
+                        for submission in data[leaderboard]:
+                            line = {"Username": submission}
+                            line.update(data[leaderboard][submission])
+                            dict_writer.writerow(line)
+                        archive.writestr(f'{leaderboard}.csv', stringIO.getvalue())
+                tmp.seek(0)
+                response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
+                response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+                return response
+
+        if selected_leaderboard is not None or selected_id is not None:
+            matched_keys = []
+            for key in data.keys():
+                title, id = key.rsplit("(", 1)
+                if selected_id is not None and id[0: -1] == selected_id:
+                    matched_keys.append(key)
+                elif selected_leaderboard is not None and selected_leaderboard.lower() in key.lower():
+                    matched_keys.append(key)
+            if not matched_keys:
+                raise ValidationError("Selected leaderboard does not exist in this competition.")
+            for key in matched_keys:
+                selected_data.update({key: data[key]})
+
+        if format == 'json':
+            if not selected_data:
+                return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+            return HttpResponse(json.dumps(selected_data, indent=4), content_type="application/json")
+
+        elif format == 'csv':
+            if len(selected_data) > 1:
+                raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
+            leaderboard_title = list(selected_data.keys())[0]
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
+            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
+
+            dict_writer.writeheader()
+            for submission in selected_data[leaderboard_title]:
+                row = {"Username": submission}
+                row.update(selected_data[leaderboard_title][submission])
+                dict_writer.writerow(row)
             return response
 
     @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})

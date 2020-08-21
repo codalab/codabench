@@ -52,7 +52,7 @@ class Column(models.Model):
         ordering = ('index',)
 
     def __str__(self):
-        return f'{self.title} ({self.index})'
+        return f'ID={self.id} - {self.title}'
 
     def compute(self, scores):
         return self.COMPUTATION_FUNCTIONS[self.computation](scores)
@@ -66,4 +66,4 @@ class SubmissionScore(models.Model):
         ordering = ('column__index',)
 
     def __str__(self):
-        return f'{self.column} - {self.score}'
+        return f'ID={self.id} - Column={self.column}'
