@@ -226,20 +226,20 @@ class CompetitionViewSet(ModelViewSet):
 
         # Build the data needed for the leaderboard_data's into a dictionary
         leaderboard_data = {}
-        leaderboardTitles = {}
-        columnsTitles = {}
+        leaderboard_titles = {}
+        columns_titles = {}
         for submission in submission_query:
             leaderID = submission.leaderboard_id
-            if leaderID not in leaderboardTitles.keys():
+            if leaderID not in leaderboard_titles.keys():
                 leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
-                columnsTitles.update({leaderID: {}})
-                leaderboardTitles.update({leaderID: f"{leaderboard.title}({leaderID})"})
-                leaderboard_data[leaderboardTitles[leaderID]] = {}
-            columnsTitles[leaderID].update({f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()})
-            if submission.owner.username not in leaderboard_data[leaderboardTitles[leaderID]].keys():
-                leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username] = {}
+                columns_titles.update({leaderID: {}})
+                leaderboard_titles.update({leaderID: f"{leaderboard.title}({leaderID})"})
+                leaderboard_data[leaderboard_titles[leaderID]] = {}
+            columns_titles[leaderID].update({f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()})
+            if submission.owner.username not in leaderboard_data[leaderboard_titles[leaderID]].keys():
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username] = {}
             for score in submission.scores.all():
-                leaderboard_data[leaderboardTitles[leaderID]][submission.owner.username].update({columnsTitles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username].update({columns_titles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
