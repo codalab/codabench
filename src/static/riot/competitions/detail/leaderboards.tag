@@ -92,6 +92,9 @@
             _.forEach(organized_submissions, submission_list => {
                 self.organized_submissions.push(submission_list)
             })
+            console.log('self.generated_columns', self.generated_columns)
+            console.log('organized_submissions', organized_submissions)
+            console.log('self.organized_submissions', self.organized_submissions)
 
             self.update()
         }

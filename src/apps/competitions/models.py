@@ -129,6 +129,36 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating_delayed = False
         self.save()
 
+    def update_phase_statuses(self):
+        current_phase = None
+        for phase in self.phases.all():
+            if phase.end is not None and phase.start < now() < phase.end:
+                current_phase = phase
+            elif phase.end is None:
+                current_phase = phase
+
+        if current_phase:
+            current_index = current_phase.index
+            previous_index = current_index - 1 if current_index >= 1 else None
+            next_index = current_index + 1 if current_index < len(self.phases.all()) - 1 else None
+        else:
+            current_index = None
+
+            next_phase = self.phases.filter(end__gt= now()).order_by('index').first()
+            if next_phase:
+                next_index = next_phase.index
+                previous_index = next_index - 1 if next_index >= 1 else None
+            else:
+                next_index = None
+                previous_index = None
+
+        if current_index is not None:
+            self.phases.filter(index=current_index).update(status=Phase.CURRENT)
+        if next_index is not None:
+            self.phases.filter(index=next_index).update(status=Phase.NEXT)
+        if previous_index is not None:
+            self.phases.filter(index=previous_index).update(status=Phase.PREVIOUS)
+
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.pk})
 
@@ -215,10 +245,10 @@ class Phase(ChaHubSaveMixin, models.Model):
         (PREVIOUS, "Previous"),
         (CURRENT, "Current"),
         (NEXT, "Next"),
-        (FINAL, "Final"),
     )
 
     status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
+    is_final_phase = models.BooleanField(default=False)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
     index = models.PositiveIntegerField()
     start = models.DateTimeField()

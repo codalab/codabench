@@ -67,8 +67,10 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.item[data-tab="results-tab"]').click()
 
         # The leaderboard table lists our submission
-        prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
-        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
+        prediction_scores = Submission.objects.get(pk=submission_id).scores.all()
+        from pprint import pprint
+        pprint(prediction_scores)
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_scores
 
     def test_v15_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)

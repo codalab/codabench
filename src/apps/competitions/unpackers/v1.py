@@ -20,6 +20,7 @@ class V15Unpacker(BaseUnpacker):
             "description": self.competition_yaml.get("description", ""),
             "docker_image": docker_image,
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
+            "end_date": self.competition_yaml.get('end_date', None),
             "pages": [],
             "phases": [],
             "leaderboards": [],
