@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls import include
-from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
 
 urlpatterns = [
@@ -29,7 +29,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     # Static files for local dev, so we don't have to collectstatic and such
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_URL)
+    urlpatterns += staticfiles_urlpatterns()
 
     # Django debug toolbar
     import debug_toolbar

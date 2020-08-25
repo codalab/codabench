@@ -5,14 +5,13 @@ from drf_yasg.views import get_schema_view
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
+from rest_framework.urlpatterns import format_suffix_patterns
 
-from api.views.competitions import front_page_competitions
 from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
 
 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
-router.register('competition_status', competitions.CompetitionCreationTaskStatusViewSet)
 router.register('phases', competitions.PhaseViewSet, 'phases')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
@@ -25,7 +24,7 @@ router.register('queues', queues.QueueViewSet, 'queues')
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Codalab Competitions API",
+        title="Codabench API",
         default_version='v1',
     ),
     validators=['flex', 'ssv'],
@@ -34,27 +33,22 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # url('^query/', search.query),
     path('my_profile/', profiles.GetMyProfile.as_view()),
     path('datasets/completed/<uuid:key>/', datasets.upload_completed),
     path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
+    path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard, name='add_submission_to_leaderboard'),
-    path('datasets/create_dump/<int:competition_id>/', datasets.create_competition_dump),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
 
-    # path('docs/', include_docs_urls(
-    #     title='Codalab Competitions V2',
-    #     permission_classes=(AllowAny,),
-    # )),
+    # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
+
     # Include this at the end so our URLs above run first, like /datasets/completed/<pk>/ before /datasets/<pk>/
-    path('', include(router.urls)),
-    path('front_page_competitions/', front_page_competitions, name='front_page_competitions'),
+    path('', include(format_suffix_patterns(router.urls, allowed=['html', 'json', 'csv', 'zip']))),
 ]

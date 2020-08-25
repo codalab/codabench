@@ -230,3 +230,8 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'email',
             'status',
         )
+
+
+class FrontPageCompetitionsSerializer(serializers.Serializer):
+    popular_comps = CompetitionSerializerSimple(many=True)
+    featured_comps = CompetitionSerializerSimple(many=True)

@@ -3,7 +3,18 @@
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
-                { selected_leaderboard.title }
+                <p class="leaderboard-title">{ selected_leaderboard.title }</p>
+                <div style="visibility: {show_download};" class="float-right">
+                    <div class="ui compact menu">
+                        <div class="ui simple dropdown item" style="padding: 0px 5px">
+                            <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
+                            <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                                <a href="{URLS.COMPETITION_GET_CSV(competition_id, selected_leaderboard.id)}" target="new" class="item">This CSV</a>
+                                <a href="{URLS.COMPETITION_GET_JSON_BY_ID(competition_id, selected_leaderboard.id)}" target="new" class="item">This JSON</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </th>
         </tr>
         <tr class="task-row">
@@ -64,6 +75,9 @@
                     return col.key
                 }
             })
+
+            // Columns are assumed to be the same for each task. Each column on the leaderboard is duplicated once for
+            // each task and assigned a unique column key.
             self.generated_columns = []
             _.forEach(self.selected_leaderboard_phase.tasks, task => {
                 _.forEach(self.selected_leaderboard.columns, col => {
@@ -74,6 +88,8 @@
                 })
             })
 
+            // organized_submissions is used to organize submissions by owner so many scores by the same owner are
+            // rendered on the same row of the leaderboard table.
             let organized_submissions = {}
             _.forEach(self.selected_leaderboard_phase.submissions, submission => {
                 submission = JSON.parse(JSON.stringify(submission))
@@ -90,11 +106,24 @@
 
             self.organized_submissions = []
             _.forEach(organized_submissions, submission_list => {
-                self.organized_submissions.push(submission_list)
+                let scores = []
+                _.forEach(submission_list, submission => {
+                    _.forEach(submission.scores, score => {
+                        scores.push(score)
+                    })
+                })
+
+                let submission = {
+                    owner: submission_list[0].owner,
+                    scores: scores,
+                }
+                self.organized_submissions.push(submission)
             })
             console.log('self.generated_columns', self.generated_columns)
             console.log('organized_submissions', organized_submissions)
             console.log('self.organized_submissions', self.organized_submissions)
+
+            console.log('organized_submissions', self.organized_submissions)
 
             self.update()
         }
@@ -121,8 +150,11 @@
             color #8c8c8c
         .index-column
             min-width 55px
+        .leaderboard-title
+            position absolute
+            left 50%
+            transform translate(-50%, 50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
-
     </style>
 </leaderboards>

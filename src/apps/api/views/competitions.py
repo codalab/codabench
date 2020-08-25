@@ -1,32 +1,35 @@
 import zipfile
-
+import json
+import csv
+from io import StringIO
 from django.http import HttpResponse
-from tempfile import SpooledTemporaryFile, NamedTemporaryFile
-
+from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
-
+from rest_framework.renderers import JSONRenderer
+from rest_framework_csv.renderers import CSVRenderer
+from api.renderers import ZipRenderer
+from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
+    FrontPageCompetitionsSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
-from competitions.tasks import batch_send_email, manual_migration
+from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
-from leaderboards.models import Column, Leaderboard
-from profiles.models import User
+from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
-
 from api.permissions import IsOrganizerOrCollaborator
 
 
@@ -102,7 +105,7 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
-        elif self.action == 'leaderboard_submissions':
+        elif self.action in ['leaderboard_submissions', 'results']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
@@ -184,6 +187,7 @@ class CompetitionViewSet(ModelViewSet):
             'dumps__dataset',
         )
         competition = qs_helper.get(id=pk)
+        # TODO: Replace this auth check with user_has_admin_permission
         if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
             raise PermissionDenied("You don't have access to the competition files")
         bundle = competition.bundle_dataset
@@ -211,65 +215,147 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['GET'])
-    def get_csv(self, request, pk):
-        # TODO: Need to differentiate between leaderboards on different phases
-        #  (after there are different leaderboards on each phase)
-
-        competition = self.get_object()
-        if request.user != competition.created_by and request.user not in competition.collaborators.all() and not request.user.is_superuser:
-            raise PermissionDenied("You don't have access to the competition leaderboard as a CSV")
-
-        # Query Needed data and filter to what is needed.
-        phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
-        submission_query = Submission.objects.filter(Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
-        if not submission_query.exists():
-            raise ValidationError("There are no submissions on the leaderboard")
-
-        # Build the data needed for the csv's into a dictionary
-        csv = {}
-        user_id = set()
-        for sub in submission_query:
-            if sub.leaderboard_id not in csv.keys():
-                csv[sub.leaderboard_id] = {}
-                csv[sub.leaderboard_id]["user"] = ["Username"]
-                columns = Column.objects.filter(leaderboard_id=sub.leaderboard_id)
-                for col in columns:
-                    csv[sub.leaderboard_id][col.id] = [col.title]
-            for score in sub.scores.all():
-                csv[sub.leaderboard_id][score.column_id].append(float(score.score))
-            csv[sub.leaderboard_id]["user"].append(sub.owner_id)
-            user_id.add(sub.owner_id)
-
-        # Replace user_id with usernames
-        users = {x.id: x.username for x in User.objects.filter(id__in=user_id)}
-        for leaderboard in csv:
-            csv[leaderboard]['user'] = csv[leaderboard]["user"][:1] + [users[x] for x in csv[leaderboard]["user"][1:]]
-
-        # Take the data from the dict, put them into csv files and add them to the archive
-        with SpooledTemporaryFile() as tmp:
-            with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
-                for lb_id in csv.keys():
-                    tempFile = NamedTemporaryFile()
-                    csvCols = [x for x in csv[lb_id].keys()]
-                    for entry in range(len(csv[lb_id][csvCols[0]])):
-                        line = ""
-                        for col in csvCols:
-                            line += "{},".format(csv[lb_id][col][entry])
-                        line = line[:-1] + "\n"
-                        tempFile.write(str.encode(line))
-                    tempFile.seek(0)
-                    archive.write(tempFile.name, "{}.csv".format(Leaderboard.objects.get(id=lb_id).title))
-            tmp.seek(0)
-            response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
-            response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
-            return response
-
     @action(detail=True, methods=('GET',))
     def leaderboard_submissions(self, request, pk):
         comp = self.get_object()
         phases = comp.phases.all()
         return Response(self.get_serializer(phases, many=True).data)
+
+    def collect_leaderboard_data(self, competition):
+        # TODO: Need to differentiate between leaderboards on different phases
+        #  (after there are different leaderboards on each phase)
+        # Maybe: Add the ability to sort submissions by score
+
+        # Query Needed data and filter to what is needed.
+        # phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
+        # submission_query = Submission.objects.filter(
+        #     Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
+        # if not submission_query.exists():
+        #     raise ValidationError("There are no submissions on the leaderboard")
+        phases = competition.phases.last()
+
+        #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
+
+        submission_query = self.get_serializer(phases, many=True).data
+        from pprint import pprint
+        pprint(f'\n\n{submission_query}\n\n')
+        print('\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
+        for i in submission_query:
+            print("\n\n\nNew entry \n")
+            pprint(i)
+        # Build the data needed for the leaderboard_data's into a dictionary
+        leaderboard_data = {}
+        leaderboard_titles = {}
+        columns_titles = {}
+        for submission in submission_query.submissions:
+            leaderID = submission.leaderboard_id
+            if leaderID not in leaderboard_titles.keys():
+                leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
+                columns_titles.update({leaderID: {}})
+                leaderboard_titles.update({leaderID: f"{leaderboard.title}({leaderID})"})
+                leaderboard_data[leaderboard_titles[leaderID]] = {}
+            columns_titles[leaderID].update({f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()})
+            if submission.owner.username not in leaderboard_data[leaderboard_titles[leaderID]].keys():
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username] = {}
+            for score in submission.scores.all():
+                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username].update({columns_titles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
+        return leaderboard_data
+
+    @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
+    def results(self, request, pk, format=None):
+        competition = self.get_object()
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You are not a competition admin or superuser")
+        data = self.collect_leaderboard_data(competition)
+        selected_data = {}
+        selected_id = request.GET.get('id')
+        selected_leaderboard = request.GET.get('title')
+
+        if format == 'zip':
+            with SpooledTemporaryFile() as tmp:
+                with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
+                    for leaderboard in data:
+                        stringIO = StringIO()
+                        columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
+                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username"] + columns))
+                        dict_writer.writeheader()
+                        for submission in data[leaderboard]:
+                            line = {"Username": submission}
+                            line.update(data[leaderboard][submission])
+                            dict_writer.writerow(line)
+                        archive.writestr(f'{leaderboard}.csv', stringIO.getvalue())
+                tmp.seek(0)
+                response = HttpResponse(tmp.read(), content_type="application/x-zip-compressed")
+                response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
+                return response
+
+        if selected_leaderboard is not None or selected_id is not None:
+            matched_keys = []
+            for key in data.keys():
+                title, id = key.rsplit("(", 1)
+                if selected_id is not None and id[0: -1] == selected_id:
+                    matched_keys.append(key)
+                elif selected_leaderboard is not None and selected_leaderboard.lower() in key.lower():
+                    matched_keys.append(key)
+            if not matched_keys:
+                raise ValidationError("Selected leaderboard does not exist in this competition.")
+            for key in matched_keys:
+                selected_data.update({key: data[key]})
+
+        if format == 'json':
+            if not selected_data:
+                return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
+            return HttpResponse(json.dumps(selected_data, indent=4), content_type="application/json")
+
+        elif format == 'csv':
+            if len(selected_data) > 1:
+                raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
+            leaderboard_title = list(selected_data.keys())[0]
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
+            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
+
+            dict_writer.writeheader()
+            for submission in selected_data[leaderboard_title]:
+                row = {"Username": submission}
+                row.update(selected_data[leaderboard_title][submission])
+                dict_writer.writerow(row)
+            return response
+
+    @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')
+    def creation_status(self, request, dataset_key=None):
+        """This endpoint gets the creation status for a competition during upload"""
+        competition_creation_status = get_object_or_404(
+            CompetitionCreationTaskStatus,
+            dataset__created_by=request.user,  # make sure user owns this
+            dataset__key=dataset_key  # lookup dataset by key, we have no competition ID yet
+        )
+        serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
+    @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
+    def front_page(self, request):
+        popular_comps = get_popular_competitions()
+        featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+        popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
+        featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+        return Response(data={
+            "popular_comps": popular_comps_serializer.data,
+            "featured_comps": featured_comps_serializer.data
+        })
+
+    @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
+    @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
+    def create_dump(self, request, pk=None):
+        competition = self.get_object()
+        if not competition.user_has_admin_permission(request.user):
+            raise PermissionDenied("You don't have access")
+        create_competition_dump.delay(pk)
+        serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
+        return Response(serializer.data, status=201)
 
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
@@ -283,19 +369,6 @@ class CompetitionViewSet(ModelViewSet):
     def perform_update(self, serializer):
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
-
-
-@api_view(['GET'])
-@permission_classes((AllowAny,))
-def front_page_competitions(request):
-    popular_comps = get_popular_competitions()
-    featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
-    popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-    featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
-    return Response(data={
-        "popular_comps": popular_comps_serializer.data,
-        "featured_comps": featured_comps_serializer.data
-    }, status=status.HTTP_200_OK)
 
 
 class PhaseViewSet(ModelViewSet):
@@ -327,12 +400,6 @@ class PhaseViewSet(ModelViewSet):
             submission.re_run()
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
-
-
-class CompetitionCreationTaskStatusViewSet(RetrieveModelMixin, GenericViewSet):
-    queryset = CompetitionCreationTaskStatus.objects.all()
-    serializer_class = CompetitionCreationTaskStatusSerializer
-    lookup_field = 'dataset__key'
 
 
 class CompetitionParticipantViewSet(ModelViewSet):

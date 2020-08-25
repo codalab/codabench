@@ -98,15 +98,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
-
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-
-DEFAULT_FROM_EMAIL = 'Do Not Reply <donotreply@blank.com>'
-SERVER_EMAIL = 'Do Not Reply <donotreply@blank.com>'
-
 LOGIN_REDIRECT_URL = '/'
-
-# AUTH_USER_MODEL = 'profiles.User'
 
 
 # =============================================================================
@@ -174,15 +166,16 @@ else:
         }
     }
 
-# =============================================================================
-# SSL
-# =============================================================================
-if os.environ.get('USE_SSL'):
-    SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
-    # Allows us to use with django-oauth-toolkit on localhost sans https
-    SESSION_COOKIE_SECURE = False
+# TODO: Pull this, leaving in case django-oauth-toolkit problems
+# # =============================================================================
+# # SSL
+# # =============================================================================
+# if os.environ.get('USE_SSL'):
+#     SECURE_SSL_REDIRECT = True
+#     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# else:
+#     # Allows us to use with django-oauth-toolkit on localhost sans https
+#     SESSION_COOKIE_SECURE = False
 
 # =========================================================================
 # RabbitMQ
@@ -390,6 +383,21 @@ if DEBUG:
         "SHOW_TOOLBAR_CALLBACK": lambda request: True
     }
 
+# =========================================================================
+# Email
+# =========================================================================
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.sendgrid.net')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
+
+# =============================================================================
+# Chahub
+# =============================================================================
 CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL')
 CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
 CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
