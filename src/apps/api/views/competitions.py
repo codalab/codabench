@@ -1,6 +1,7 @@
 import zipfile
 import json
 import csv
+from collections import OrderedDict
 from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
@@ -221,10 +222,12 @@ class CompetitionViewSet(ModelViewSet):
         phases = comp.phases.all()
         return Response(self.get_serializer(phases, many=True).data)
 
-    def collect_leaderboard_data(self, competition):
+    def collect_leaderboard_data(self, competition, phase_pk=None):
         # TODO: Need to differentiate between leaderboards on different phases
         #  (after there are different leaderboards on each phase)
         # Maybe: Add the ability to sort submissions by score
+
+        from pprint import pprint
 
         # Query Needed data and filter to what is needed.
         # phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
@@ -232,33 +235,49 @@ class CompetitionViewSet(ModelViewSet):
         #     Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
         # if not submission_query.exists():
         #     raise ValidationError("There are no submissions on the leaderboard")
-        phases = competition.phases.last()
-
         #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
+        if phase_pk:
+            phases = competition.phases.get(id=phase_pk)
+            submission_query = [self.get_serializer(phases).data]
+            phase_id = phases.id
+        else:
+            phases = competition.phases.all()
+            submission_query = self.get_serializer(phases, many=True).data
+            phase_id = phases.first().id
 
-        submission_query = self.get_serializer(phases, many=True).data
-        from pprint import pprint
-        pprint(f'\n\n{submission_query}\n\n')
-        print('\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
-        for i in submission_query:
-            print("\n\n\nNew entry \n")
-            pprint(i)
-        # Build the data needed for the leaderboard_data's into a dictionary
-        leaderboard_data = {}
-        leaderboard_titles = {}
-        columns_titles = {}
-        for submission in submission_query.submissions:
-            leaderID = submission.leaderboard_id
-            if leaderID not in leaderboard_titles.keys():
-                leaderboard = Leaderboard.objects.prefetch_related('columns').get(pk=leaderID)
-                columns_titles.update({leaderID: {}})
-                leaderboard_titles.update({leaderID: f"{leaderboard.title}({leaderID})"})
-                leaderboard_data[leaderboard_titles[leaderID]] = {}
-            columns_titles[leaderID].update({f'col:{col.id}-task:{submission.task_id}': f'{col.title}-{col.id}(Task:{submission.task_id})' for col in leaderboard.columns.all()})
-            if submission.owner.username not in leaderboard_data[leaderboard_titles[leaderID]].keys():
-                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username] = {}
-            for score in submission.scores.all():
-                leaderboard_data[leaderboard_titles[leaderID]][submission.owner.username].update({columns_titles[leaderID][f'col:{score.column_id}-task:{submission.task_id}']: float(score.score)})
+
+        leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
+        leaderboard_titles = {phase['id']:f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+
+        # print("\n\n@@@@@@@@@@@@@@@@@@@@@\n\n")
+        # pprint(leaderboard_titles)
+        # for phase in submission_query:
+        #     print("\n\n\nTasks;")
+        #     for i in phase['tasks']:
+        #         pprint(i)
+        #     print("\n\n\nSubmissions:\n")
+        #     for i in phase['submissions']:
+        #         pprint(i)
+        # print(f'\n@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
+        # pprint(leaderboard_titles)
+        # print('\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
+        # for i in submission_query.keys():
+        #     print(f'Key: {i}')
+
+        leaderboard_data = {title: OrderedDict() for title in leaderboard_titles.values()}
+        for phase in submission_query:
+            generated_columns = OrderedDict()
+            for task in phase['tasks']:
+                for col in leaderboard.columns.all():
+                    generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+            for submission in phase['submissions']:
+                if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
+                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission["owner"]: OrderedDict()})
+                    for col_title in generated_columns.values():
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({col_title: ""})
+                for score in submission['scores']:
+                    score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
@@ -266,9 +285,9 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You are not a competition admin or superuser")
-        data = self.collect_leaderboard_data(competition)
-        selected_data = {}
-        selected_id = request.GET.get('id')
+        selected_phase = request.GET.get('phase')
+        data = self.collect_leaderboard_data(competition, selected_phase)
+
         selected_leaderboard = request.GET.get('title')
 
         if format == 'zip':
@@ -289,13 +308,11 @@ class CompetitionViewSet(ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
                 return response
 
-        if selected_leaderboard is not None or selected_id is not None:
+        selected_data = {}
+        if selected_leaderboard is not None:
             matched_keys = []
             for key in data.keys():
-                title, id = key.rsplit("(", 1)
-                if selected_id is not None and id[0: -1] == selected_id:
-                    matched_keys.append(key)
-                elif selected_leaderboard is not None and selected_leaderboard.lower() in key.lower():
+                if selected_leaderboard.lower() in key.lower():
                     matched_keys.append(key)
             if not matched_keys:
                 raise ValidationError("Selected leaderboard does not exist in this competition.")

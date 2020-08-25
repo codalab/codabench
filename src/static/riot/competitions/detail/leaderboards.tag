@@ -131,6 +131,7 @@
         CODALAB.events.on('leaderboard_phase_selected', phase => {
             self.selected_leaderboard_phase = phase
             self.selected_leaderboard = self.opts.leaderboards[0]
+            self.competition_id = self.opts.competition_pk
             self.update_leaderboard()
         })
 
