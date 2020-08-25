@@ -106,7 +106,7 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
-        elif self.action in ['leaderboard_submissions', 'results']:
+        elif self.action in ['leaderboard_submissions', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
@@ -222,19 +222,8 @@ class CompetitionViewSet(ModelViewSet):
         phases = comp.phases.all()
         return Response(self.get_serializer(phases, many=True).data)
 
-    def collect_leaderboard_data(self, competition, phase_pk=None):
-        # TODO: Need to differentiate between leaderboards on different phases
-        #  (after there are different leaderboards on each phase)
-        # Maybe: Add the ability to sort submissions by score
+    def collect_leaderboard_data(self, competition, phase_pk=None, for_front_end=False):
 
-        from pprint import pprint
-
-        # Query Needed data and filter to what is needed.
-        # phase_pks = [phase.id for phase in Phase.objects.filter(competition_id=competition.id)]
-        # submission_query = Submission.objects.filter(
-        #     Q(phase_id__in=phase_pks) & Q(has_children=False) & Q(leaderboard_id__isnull=False))
-        # if not submission_query.exists():
-        #     raise ValidationError("There are no submissions on the leaderboard")
         #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
         if phase_pk:
             phases = competition.phases.get(id=phase_pk)
@@ -245,9 +234,9 @@ class CompetitionViewSet(ModelViewSet):
             submission_query = self.get_serializer(phases, many=True).data
             phase_id = phases.first().id
 
-
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
         leaderboard_titles = {phase['id']:f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+        leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
         # print("\n\n@@@@@@@@@@@@@@@@@@@@@\n\n")
         # pprint(leaderboard_titles)
@@ -264,7 +253,25 @@ class CompetitionViewSet(ModelViewSet):
         # for i in submission_query.keys():
         #     print(f'Key: {i}')
 
-        leaderboard_data = {title: OrderedDict() for title in leaderboard_titles.values()}
+
+        if for_front_end:
+            for phase in submission_query:
+                generated_columns = OrderedDict()
+                for task in phase['tasks']:
+                    for col in leaderboard.columns.all():
+                        generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+                leaderboard_data[leaderboard_titles[phase['id']]].update({'Column_Keys': [col_title for col_title in generated_columns.values()]})
+                leaderboard_data[leaderboard_titles[phase['id']]].update({'Submissions': OrderedDict()})
+                for submission in phase['submissions']:
+                    if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'].keys():
+                        leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'].update({submission["owner"]: OrderedDict()})
+                        for col_title in generated_columns.values():
+                            leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'][submission["owner"]].update({col_title: ""})
+                    for score in submission['scores']:
+                        score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
+                        leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'][submission["owner"]].update({score_column: score['score']})
+            return leaderboard_data
+
         for phase in submission_query:
             generated_columns = OrderedDict()
             for task in phase['tasks']:
@@ -279,6 +286,12 @@ class CompetitionViewSet(ModelViewSet):
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
                     leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
         return leaderboard_data
+
+    @action(detail=True, methods=['GET'])
+    def get_leaderboard_frontend_object(self, request, pk):
+        competition = self.get_object()
+        selected_phase = request.GET.get('phase')
+        return Response(self.collect_leaderboard_data(competition, phase_pk=selected_phase, for_front_end=True))
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
     def results(self, request, pk, format=None):
