@@ -109,11 +109,12 @@ class SubmissionManagerTests(SubmissionTestCase):
 
     def test_adding_submission_to_leaderboard_adds_all_children(self):
         parent_sub = self.make_submission(has_children=True)
+        leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
         for _ in range(10):
-            leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
             column = ColumnFactory(leaderboard=leaderboard)
             sub = self.make_submission(parent=parent_sub)
-            SubmissionScoreFactory(column=column, submissions=sub)
+            score = SubmissionScoreFactory(column=column, submissions=sub)
+            parent_sub.scores.add(score)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})

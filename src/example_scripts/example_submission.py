@@ -32,6 +32,7 @@ CODALAB_URL = 'http://localhost/'
 USERNAME = 'admin'
 PASSWORD = 'admin'
 PHASE_ID = None
+TASK_LIST = []
 SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 
 
@@ -41,6 +42,9 @@ SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
 from urllib.parse import urljoin  # noqa: E402
 import requests                   # noqa: E402,E261  # Ignore E261 to line up these noqa
 
+
+# Check someone updated PHASE_ID argument!
+assert PHASE_ID, "PHASE_ID must be set at the top of this script"
 
 # Login
 login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
@@ -84,6 +88,16 @@ if resp.status_code != 200:
 
 # Submit it to the competition
 submission_url = urljoin(CODALAB_URL, '/api/submissions/')
-submission_payload = {"phase": PHASE_ID, "data": dataset_data["key"]}
+submission_payload = {
+    "phase": PHASE_ID,
+    "tasks": TASK_LIST,
+    "data": dataset_data["key"],
+}
+
 print(f"Making submission using data: {submission_payload}")
-requests.post(submission_url, submission_payload, headers=headers)
+resp = requests.post(submission_url, submission_payload, headers=headers)
+
+if resp.status_code in (200, 201):
+    print(f"Successfully submitted: {resp.content}")
+else:
+    print(f"Error submitting ({resp.status_code}): {resp.content}")

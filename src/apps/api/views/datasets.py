@@ -1,6 +1,5 @@
 import os
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.http import Http404
@@ -13,7 +12,6 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
-from competitions.models import Competition
 from datasets.models import Data, DataGroup
 from utils.data import make_url_sassy
 
@@ -130,20 +128,3 @@ def upload_completed(request, key):
         unpack_competition.apply_async((dataset.pk,))
 
     return Response({"key": dataset.key})
-
-
-@api_view(['POST'])
-def create_competition_dump(request, competition_id):
-    try:
-        comp = Competition.objects.get(pk=competition_id)
-        if not request.user == comp.created_by:
-            return Response({"error": "Denied. You do not have access"}, status=status.HTTP_403_FORBIDDEN)
-        from competitions.tasks import create_competition_dump
-        create_competition_dump.delay(competition_id)
-        return Response(
-            {
-                "status": "Success. Competition dump is being created."
-            },
-            status=status.HTTP_202_ACCEPTED)
-    except ObjectDoesNotExist:
-        return Response({"error": "Competition not found!"}, status=status.HTTP_403_FORBIDDEN)

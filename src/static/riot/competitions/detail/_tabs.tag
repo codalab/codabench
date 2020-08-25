@@ -223,11 +223,22 @@
                          each="{ leaderboard in competition.leaderboards }"
                          onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
                     </div>
-                </div>
-
+                    <div show="{competition.admin}" class="float-right">
+                        <div class="ui compact menu">
+                            <div class="ui simple dropdown item" style="padding: 0px 5px">
+                                <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
+                                <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                                    <a href="{URLS.COMPETITION_GET_ZIP(competition.id)}" target="new" class="item">All CSV</a>
+                                    <a href="{URLS.COMPETITION_GET_JSON(competition.id)}" target="new" class="item">All JSON</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 <leaderboards class="leaderboard-table"
                               competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }">
+                              leaderboards="{ competition.leaderboards }"
+                              tasks="{ selected_phase ? selected_phase.tasks : [] }"
+                              is_admin="{competition.admin}">
                 </leaderboards>
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
@@ -244,6 +255,7 @@
         self.selected_phase_index = undefined
         self.selected_leaderboard_index = undefined
         self.loading = true
+        self.csvURL = '{% url competitions.views.get_csv %}'
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -293,6 +305,11 @@
             }, 500)
         })
 
+        CODALAB.events.on('phase_selected', function (selected_phase) {
+            self.selected_phase = selected_phase
+            self.update()
+        })
+
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATETIME_FULL)
@@ -300,7 +317,6 @@
                 return ''
             }
         }
-
 
         self.phase_selected = function (data, event) {
             self.selected_phase_index = data.id
@@ -315,7 +331,6 @@
 
             CODALAB.events.trigger('leaderboard_selected', data)
         }
-
     </script>
 
     <style type="text/stylus">

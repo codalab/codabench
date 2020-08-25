@@ -3,7 +3,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
 from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
@@ -22,6 +21,7 @@ class LeaderboardViewSet(ModelViewSet):
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [LeaderboardNotHidden]
+
         return [permission() for permission in self.permission_classes]
 
 
@@ -30,7 +30,7 @@ class SubmissionScoreViewSet(ModelViewSet):
     serializer_class = SubmissionScoreSerializer
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        instance = super().get_object()
         comp = instance.submissions.first().phase.competition
         if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionError('You do not have permission to update submission scores')
@@ -50,13 +50,15 @@ def add_submission_to_leaderboard(request, submission_pk):
     # Removing any existing submissions on leaderboard
     Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
 
+    # Assume that submission.scores.first().column.leaderboard will always have the correct leaderboard
+    leaderboard = submission.scores.first().column.leaderboard
+
     if submission.has_children:
         for s in Submission.objects.filter(parent=submission_pk):
-            # Assume that Submission -> Scores -> Column.leaderboard will always have the correct leaderboard
-            s.leaderboard = s.scores.first().column.leaderboard
+            s.leaderboard = leaderboard
             s.save()
     else:
-        submission.leaderboard = submission.scores.first().column.leaderboard
+        submission.leaderboard = leaderboard
         submission.save()
 
     return Response({})
