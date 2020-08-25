@@ -88,6 +88,8 @@ class BaseUnpacker:
         return min(future_phases, key=lambda p: p['index'], default=None)
 
     def _set_phase_statuses(self):
+        self.competition['phases'][-1]['is_final_phase'] = True
+
         current_phase = self._get_current_phase(self.competition['phases'])
         if current_phase:
             current_index = current_phase['index']

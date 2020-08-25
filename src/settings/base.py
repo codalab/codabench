@@ -207,6 +207,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'competitions.tasks.do_phase_migrations',
         'schedule': timedelta(seconds=300),
     },
+    'update_phase_statuses': {
+        'task': 'competitions.tasks.update_phase_statuses',
+        'schedule': timedelta(seconds=3600)
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 

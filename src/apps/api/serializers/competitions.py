@@ -37,6 +37,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'auto_migrate_to_this_phase',
             'hide_output',
             'leaderboard',
+            'is_final_phase',
         )
 
     def validate_leaderboard(self, value):
