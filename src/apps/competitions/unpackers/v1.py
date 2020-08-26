@@ -69,6 +69,7 @@ class V15Unpacker(BaseUnpacker):
             raise CompetitionUnpackingException('No phases could be found for this competition')
         # convert dict to list, sorted by phasenumber
         phases = [phase for phase in sorted(phases.values(), key=lambda p: p['phasenumber'])]
+        phases = self._preprocess_phases(phases)
         for index, phase in enumerate(phases):
             new_phase = {
                 'index': index,
@@ -93,32 +94,41 @@ class V15Unpacker(BaseUnpacker):
                     new_phase['end'] = get_datetime(end)
                 else:
                     new_phase['end'] = None
-            if not phase.get('is_parallel_parent') and not phase.get('parent_phasenumber'):
-                task_index = len(self.competition['tasks'])
-                new_phase['tasks'] = [task_index]
-                self.competition['phases'].append(new_phase)
 
-                new_task = {
-                    'name': f'{new_phase["name"]} Task',
-                    'description': new_phase['description'],
-                    'created_by': self.creator.id,
-                    'ingestion_only_during_scoring': phase.get('ingestion_program_only_during_scoring', False)
-                }
+            task_index = len(self.competition['tasks'])
+            new_phase['tasks'] = [task_index]
+            self.competition['phases'].append(new_phase)
 
-                for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
-                    if file_type in phase:
-                        new_task[file_type] = {
-                            'file_name': phase[file_type],
-                            'file_path': os.path.join(self.temp_directory, phase[file_type]),
-                            'file_type': file_type,
-                            'creator': self.creator.id,
-                        }
-                self.competition['tasks'][task_index] = new_task
-            else:
-                raise CompetitionUnpackingException('Parallel Parents not supported')
+            new_task = {
+                'name': f'{new_phase["name"]} Task',
+                'description': new_phase['description'],
+                'created_by': self.creator.id,
+                'ingestion_only_during_scoring': phase.get('ingestion_program_only_during_scoring', False)
+            }
+
+            for file_type in ['ingestion_program', 'input_data', 'scoring_program', 'reference_data']:
+                if file_type in phase:
+                    new_task[file_type] = {
+                        'file_name': phase[file_type],
+                        'file_path': os.path.join(self.temp_directory, phase[file_type]),
+                        'file_type': file_type,
+                        'creator': self.creator.id,
+                    }
+            self.competition['tasks'][task_index] = new_task
 
         self._validate_phase_ordering()
         self._set_phase_statuses()
+
+    def _preprocess_phases(self, phases):
+        """If it's version 1.8, then we remove the first phase, which is the parent phase."""
+        return phases[1:] if self._is_v18(phases) else phases
+
+    def _is_v18(self, phases):
+        """
+        Determine if the current version is 1.8
+        :return:
+        """
+        return any(p.get('is_parallel_parent') or p.get('parent_phasenumber') for p in phases)
 
     def _unpack_leaderboards(self):
         try:
