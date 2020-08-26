@@ -12,6 +12,7 @@ DEBUG = False
 INSTALLED_APPS += ('whitenoise',)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MIDDLEWARE += ('whitenoise.middleware.WhiteNoiseMiddleware',)
+WHITENOISE_MANIFEST_STRICT = False
 
 # =========================================================================
 # SSL
