@@ -2,6 +2,7 @@ import zipfile
 import json
 import csv
 from io import StringIO
+
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
@@ -314,6 +315,11 @@ class CompetitionViewSet(ModelViewSet):
             dataset__key=dataset_key  # lookup dataset by key, we have no competition ID yet
         )
         serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
+
+        # Cleans up associated data if competition unpacker fails
+        if competition_creation_status.status == 'Failed':
+            competition_creation_status.dataset.delete()
+
         return Response(serializer.data)
 
     @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
