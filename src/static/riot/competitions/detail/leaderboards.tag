@@ -52,9 +52,9 @@
     <script>
         let self = this
         self.selected_leaderboard = {}
-        self.hidden_column_keys = []
+        // self.hidden_column_keys = []
         self.columns = []
-        self.organized_submissions = []
+        // self.organized_submissions = []
         self.phase_id = null
 
         self.get_score = function(column, scores) {
