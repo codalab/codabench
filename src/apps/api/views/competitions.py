@@ -432,14 +432,11 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         query = LeaderboardPhaseSerializer(phase).data
-        print(f'\n\nQUERY:\n')
-        from pprint import pprint
-        pprint(query)
-        print('\n\n\n')
-        columns = [col for col in query['columns']]
+
         response = {}
         response.update({'title': query['leaderboard']['title']})
         response.update({'submissions': []})
+        columns = [col for col in query['columns']]
         users = {}
         for submission in query['submissions']:
             if submission['owner'] not in users.keys():
@@ -463,10 +460,6 @@ class PhaseViewSet(ModelViewSet):
                 tempTask['columns'].append(col)
             response['tasks'].append(tempTask)
 
-
-        print('\n\nResponse:\n')
-        pprint(response)
-        print('\n\n\n')
         return Response(response)
 
 
