@@ -119,23 +119,13 @@
                 }
                 self.organized_submissions.push(submission)
             })
-            // console.log('self.generated_columns', self.generated_columns)
-            // console.log('organized_submissions', organized_submissions)
-            // console.log('self.organized_submissions', self.organized_submissions)
-
-            // console.log('organized_submissions', self.organized_submissions)
 
             self.update()
         }
 
-        CODALAB.events.on('leaderboard_phase_selected', phase => {
-            self.selected_leaderboard_phase = phase
-            self.selected_leaderboard = self.opts.leaderboards[0]
-            self.competition_id = self.opts.competition_pk
-            self.update_leaderboard()
-        })
+        CODALAB.events.on('leaderboard_phase_selected', self.update_leaderboard())
 
-        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboards)
+        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboard())
 
     </script>
     <style type="text/stylus">

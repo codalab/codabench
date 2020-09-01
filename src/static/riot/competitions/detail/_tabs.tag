@@ -236,12 +236,12 @@
                         </div>
                     </div>
                 <leaderboards class="leaderboard-table"
-                              competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }"
-                              phases="{ leaderboard_phases }"
-                              phase_pk="{selected_leaderboard_index}"
                               is_admin="{competition.admin}">
+                              phase_pk="{selected_leaderboard_index}"
                 </leaderboards>
+<!--                              competition_pk="{ competition.id }"-->
+<!--                              phases="{ leaderboard_phases }"-->
+<!--                              leaderboards="{ competition.leaderboards }"-->
 <!--                              tasks="{ selected_phase ? selected_phase.tasks : [] }"-->
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
@@ -343,16 +343,16 @@
 
         self.leaderboard_phase_selected = function (data, event) {
             self.selected_leaderboard_phase_index = data.id
-            CODALAB.api.get_leaderboard_for_render(self.competition.id, self.selected_leaderboard_phase_index)
+            CODALAB.api.get_leaderboard_for_render(self.selected_leaderboard_phase_index)
                 .done(responseData => {
 
                     console.log("Response", responseData)
                 })
+            CODALAB.events.trigger('leaderboard_phase_selected', data)
         }
             self.update()
 
-            CODALAB.events.trigger('leaderboard_phase_selected', data)
-        }
+
     </script>
 
     <style type="text/stylus">

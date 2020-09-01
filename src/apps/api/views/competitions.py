@@ -288,11 +288,7 @@ class CompetitionViewSet(ModelViewSet):
                         leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
             return leaderboard_data
 
-    @action(detail=True, methods=['GET'])
-    def get_leaderboard_frontend_object(self, request, pk):
-        competition = self.get_object()
-        selected_phase = request.GET.get('phase')
-        return Response(self.collect_leaderboard_data(competition, phase_pk=selected_phase, for_front_end=True))
+
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
     def results(self, request, pk, format=None):
@@ -431,6 +427,14 @@ class PhaseViewSet(ModelViewSet):
             submission.re_run()
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
+
+    @action(detail=True, methods=['GET'])
+    def get_leaderboard(self, request, pk):
+        phase = self.get_object()
+        query = LeaderboardPhaseSerializer(phase).data
+        print(f'\n\n\n{query}\n\n\n')
+        return Response(query)
+
 
 
 class CompetitionParticipantViewSet(ModelViewSet):

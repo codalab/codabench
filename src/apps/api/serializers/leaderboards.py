@@ -112,6 +112,16 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
     tasks = TaskSerializer(many=True, read_only=True)
+    columns = serializers.SerializerMethodField()
+
+    def get_columns(self, instance):
+        columns = Column.objects.filter(leaderboard=instance.leaderboard)
+        if len(columns) == 0:
+            raise serializers.ValidationError("No columns exist on the leaderboard")
+        elif len(columns) == 1:
+            return ColumnSerializer(columns).data
+        else:
+            return ColumnSerializer(columns, many=True).data
 
     class Meta:
         model = Phase
@@ -120,7 +130,10 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             'name',
             'submissions',
             'tasks',
+            'leaderboard',
+            'columns',
         )
+        depth = 1
 
     def get_submissions(self, instance):
         # desc == -colname
@@ -142,3 +155,5 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
 
         submissions = submissions.order_by(*ordering, 'created_when')
         return SubmissionLeaderBoardSerializer(submissions, many=True).data
+
+

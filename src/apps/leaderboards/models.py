@@ -1,5 +1,4 @@
 from statistics import mean
-
 from django.db import models
 
 
