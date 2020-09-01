@@ -119,11 +119,11 @@
                 }
                 self.organized_submissions.push(submission)
             })
-            console.log('self.generated_columns', self.generated_columns)
-            console.log('organized_submissions', organized_submissions)
-            console.log('self.organized_submissions', self.organized_submissions)
+            // console.log('self.generated_columns', self.generated_columns)
+            // console.log('organized_submissions', organized_submissions)
+            // console.log('self.organized_submissions', self.organized_submissions)
 
-            console.log('organized_submissions', self.organized_submissions)
+            // console.log('organized_submissions', self.organized_submissions)
 
             self.update()
         }

@@ -287,8 +287,6 @@
 
             // self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
-            // console.log('self.selected_phase_index', self.selected_phase_index)
-            // console.log('self.competition.phases', self.competition.phases)
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.update()
 
@@ -308,9 +306,6 @@
                     self.leaderboard_phases = data
                     if (!_.isEmpty(self.leaderboard_phases)) {
                         self.selected_leaderboard_phase_index = self.selected_phase_index
-                        // console.log('self.leaderboard_phases', self.leaderboard_phases)
-                        // console.log('self.selected_phase_index', self.selected_phase_index)
-                        // console.log("_.find()", _.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
                         self.leaderboard_phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
                     }
                 })
@@ -348,6 +343,12 @@
 
         self.leaderboard_phase_selected = function (data, event) {
             self.selected_leaderboard_phase_index = data.id
+            CODALAB.api.get_leaderboard_for_render(self.competition.id, self.selected_leaderboard_phase_index)
+                .done(responseData => {
+
+                    console.log("Response", responseData)
+                })
+        }
             self.update()
 
             CODALAB.events.trigger('leaderboard_phase_selected', data)
