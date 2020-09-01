@@ -432,8 +432,42 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         query = LeaderboardPhaseSerializer(phase).data
-        print(f'\n\n\n{query}\n\n\n')
-        return Response(query)
+        print(f'\n\nQUERY:\n')
+        from pprint import pprint
+        pprint(query)
+        print('\n\n\n')
+        columns = [col for col in query['columns']]
+        response = {}
+        response.update({'title': query['leaderboard']['title']})
+        response.update({'submissions': []})
+        users = {}
+        for submission in query['submissions']:
+            if submission['owner'] not in users.keys():
+                users.update({submission['owner']: len(users)})
+                response['submissions'].append({'owner': submission['owner'], 'scores': []})
+            for score in submission['scores']:
+                tempScore = score
+                tempScore.update({'task_id': submission['task']})
+                response['submissions'][users[submission['owner']]]['scores'].append(tempScore)
+
+        response.update({'tasks': []})
+        for task in query['tasks']:
+            tempTask = {}
+            tempTask.update({'name': task['name']})
+            tempTask.update({'id': task['id']})
+
+            # This can be used to rendered variable columns on each task
+            tempTask.update({'colWidth': len(columns)})
+            tempTask.update({'columns': []})
+            for col in columns:
+                tempTask['columns'].append(col)
+            response['tasks'].append(tempTask)
+
+
+        print('\n\nResponse:\n')
+        pprint(response)
+        print('\n\n\n')
+        return Response(response)
 
 
 

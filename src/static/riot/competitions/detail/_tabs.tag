@@ -221,7 +221,7 @@
                 <div class="ui button-container">
                     <div class="ui inline button {active: selected_leaderboard_phase_index == phase.id}"
                          each="{ phase in leaderboard_phases }"
-                         onclick="{ leaderboard_phase_selected.bind(this, phase) }">{ phase.name }
+                         onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
                 </div>
                     <div show="{competition.admin}" class="float-right">
@@ -236,13 +236,9 @@
                         </div>
                     </div>
                 <leaderboards class="leaderboard-table"
+                              phase_id="{ self.selected_phase_index }"
                               is_admin="{competition.admin}">
-                              phase_pk="{selected_leaderboard_index}"
                 </leaderboards>
-<!--                              competition_pk="{ competition.id }"-->
-<!--                              phases="{ leaderboard_phases }"-->
-<!--                              leaderboards="{ competition.leaderboards }"-->
-<!--                              tasks="{ selected_phase ? selected_phase.tasks : [] }"-->
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
                 <div class="center aligned"><h2>No Visible Leaderboards for this competition</h2></div>
@@ -256,8 +252,6 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
-        self.selected_leaderboard_phase_index = undefined
-        //Should be named selected_leaderboard_phase_pk
         self.leaderboard_phases = []
         self.loading = true
 
@@ -286,9 +280,9 @@
             })
 
             // self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
-            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
-            self.update()
+            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+            CODALAB.events.trigger('phase_selected', self.selected_phase_index)
 
             $('.phases-tab .accordion', self.root).accordion()
 
@@ -305,8 +299,7 @@
                 .done( data => {
                     self.leaderboard_phases = data
                     if (!_.isEmpty(self.leaderboard_phases)) {
-                        self.selected_leaderboard_phase_index = self.selected_phase_index
-                        self.leaderboard_phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
+                        self.phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
                     }
                 })
                 .fail(error => {
@@ -337,20 +330,11 @@
         self.phase_selected = function (data, event) {
             self.selected_phase_index = data.id
             self.update()
-
             CODALAB.events.trigger('phase_selected', data)
+            CODALAB.events.trigger('leaderboard_phase_selected', self.selected_phase_index)
         }
 
-        self.leaderboard_phase_selected = function (data, event) {
-            self.selected_leaderboard_phase_index = data.id
-            CODALAB.api.get_leaderboard_for_render(self.selected_leaderboard_phase_index)
-                .done(responseData => {
-
-                    console.log("Response", responseData)
-                })
-            CODALAB.events.trigger('leaderboard_phase_selected', data)
-        }
-            self.update()
+        self.update()
 
 
     </script>

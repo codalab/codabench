@@ -20,21 +20,21 @@
         <tr class="task-row">
             <th>Task:</th>
             <th></th>
-            <th each="{ column in generated_columns }" class="center aligned" if="{!_.includes(hidden_column_keys, column.key)}">{ column.task.name }</th>
+            <th each="{ task in selected_leaderboard.tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th class="center aligned" each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ column.title }</th>
+            <th class="center aligned" each="{ column in columns }" colspan="1">{column.title}</th>
         </tr>
         </thead>
         <tbody>
-        <tr if="{_.isEmpty(selected_leaderboard_phase.submissions)}" class="center aligned">
+        <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission_list, index in organized_submissions }">
+        <tr each="{ submission, index in selected_leaderboard.submissions}">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -43,89 +43,111 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission_list[0].owner }</td>
-            <td each="{ column in generated_columns }" if="{!_.includes(hidden_column_keys, column.key)}">{ get_score(column, submission_list ) } </td>
+            <td>{ submission.owner }</td>
+            <td each="{ column in columns }">{ get_score(column, submission.scores) } </td>
         </tr>
         </tbody>
     </table>
+
     <script>
         let self = this
         self.selected_leaderboard = {}
         self.hidden_column_keys = []
-        self.generated_columns = []
+        self.columns = []
         self.organized_submissions = []
-        self.selected_leaderboard_phase = {}
+        self.phase_id = null
 
-        self.get_score = function(column, submission_list) {
-            for (i in submission_list) {
-                let score = _.get(_.find(submission_list[i].scores, {column_key: column.key}), 'score')
-                if (score) {
-                    return score
-                }
+        self.get_score = function(column, scores) {
+            let score = _.get(_.find(scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
+            if (score) {
+                return score
             }
             return 'n/a'
         }
 
         self.update_leaderboard = () => {
-            if (_.isEmpty(self.selected_leaderboard)) {
-                return
-            }
-            self.hidden_column_keys = _.map(self.selected_leaderboard.columns, col => {
-                if (col.hidden) {
-                    return col.key
-                }
-            })
-
-            // Columns are assumed to be the same for each task. Each column on the leaderboard is duplicated once for
-            // each task and assigned a unique column key.
-            self.generated_columns = []
-            _.forEach(self.selected_leaderboard_phase.tasks, task => {
-                _.forEach(self.selected_leaderboard.columns, col => {
-                    col = Object.assign({}, col)
-                    col['task'] =  task
-                    col['key'] += `_${task['id']}`
-                    self.generated_columns.push(col)
+            CODALAB.api.get_leaderboard_for_render(self.phase_id)
+                .done(responseData => {
+                    self.selected_leaderboard = responseData
+                    self.columns = []
+                    for(taskNum = 0; taskNum < Object.keys(self.selected_leaderboard.tasks).length; taskNum++){
+                        for(colNum = 0; colNum < Object.keys(self.selected_leaderboard.tasks[taskNum].columns).length; colNum++){
+                            col = self.selected_leaderboard.tasks[taskNum].columns[colNum]
+                            col.task_id = self.selected_leaderboard.tasks[taskNum].id
+                            self.columns.push(col)
+                        }
+                    }
+                    self.update()
                 })
-            })
-
-            // organized_submissions is used to organize submissions by owner so many scores by the same owner are
-            // rendered on the same row of the leaderboard table.
-            let organized_submissions = {}
-            _.forEach(self.selected_leaderboard_phase.submissions, submission => {
-                submission = JSON.parse(JSON.stringify(submission))
-                _.forEach(submission['scores'], score => {
-                    score['column_key'] += `_${submission['task']}`
-                })
-
-                if (!organized_submissions[submission['owner']]) {
-                    organized_submissions[submission['owner']] = [submission]
-                } else {
-                    organized_submissions[submission['owner']].push(submission)
-                }
-            })
-
-            self.organized_submissions = []
-            _.forEach(organized_submissions, submission_list => {
-                let scores = []
-                _.forEach(submission_list, submission => {
-                    _.forEach(submission.scores, score => {
-                        scores.push(score)
-                    })
-                })
-
-                let submission = {
-                    owner: submission_list[0].owner,
-                    scores: scores,
-                }
-                self.organized_submissions.push(submission)
-            })
-
-            self.update()
+            // if (_.isEmpty(self.selected_leaderboard)) {
+            //     return
+            // }
+            // self.hidden_column_keys = _.map(self.selected_leaderboard.columns, col => {
+            //     if (col.hidden) {
+            //         return col.key
+            //     }
+            // })
+            //
+            // // Columns are assumed to be the same for each task. Each column on the leaderboard is duplicated once for
+            // // each task and assigned a unique column key.
+            // self.generated_columns = []
+            // _.forEach(self.selected_leaderboard_phase.tasks, task => {
+            //     _.forEach(self.selected_leaderboard.columns, col => {
+            //         col = Object.assign({}, col)
+            //         col['task'] =  task
+            //         col['key'] += `_${task['id']}`
+            //         self.generated_columns.push(col)
+            //     })
+            // })
+            //
+            // // organized_submissions is used to organize submissions by owner so many scores by the same owner are
+            // // rendered on the same row of the leaderboard table.
+            // let organized_submissions = {}
+            // _.forEach(self.selected_leaderboard_phase.submissions, submission => {
+            //     submission = JSON.parse(JSON.stringify(submission))
+            //     _.forEach(submission['scores'], score => {
+            //         score['column_key'] += `_${submission['task']}`
+            //     })
+            //
+            //     if (!organized_submissions[submission['owner']]) {
+            //         organized_submissions[submission['owner']] = [submission]
+            //     } else {
+            //         organized_submissions[submission['owner']].push(submission)
+            //     }
+            // })
+            //
+            // self.organized_submissions = []
+            // _.forEach(organized_submissions, submission_list => {
+            //     let scores = []
+            //     _.forEach(submission_list, submission => {
+            //         _.forEach(submission.scores, score => {
+            //             scores.push(score)
+            //         })
+            //     })
+            //
+            //     let submission = {
+            //         owner: submission_list[0].owner,
+            //         scores: scores,
+            //     }
+            //     self.organized_submissions.push(submission)
+            // })
+            //
         }
 
-        CODALAB.events.on('leaderboard_phase_selected', self.update_leaderboard())
 
-        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboard())
+        CODALAB.events.on('leaderboard_phase_selected', id => {
+            self.phase_id = id
+            self.update_leaderboard()
+        })
+
+        CODALAB.events.on('competition_loaded', () => {
+            self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
+        })
+
+        CODALAB.events.on('submission_added_to_leaderboard', id => {
+            self.phase_id = id
+            self.update_leaderboard()
+        })
 
     </script>
     <style type="text/stylus">
