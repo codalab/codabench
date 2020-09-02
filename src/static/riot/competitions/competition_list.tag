@@ -17,7 +17,8 @@
                             <thead>
                             <tr>
                                 <th>Name</th>
-                                <th width="125px">Uploaded...</th>
+                                <th width="100">Type</th>
+                                <th width="125">Uploaded...</th>
                                 <th width="50px">Publish</th>
                                 <th width="50px">Edit</th>
                                 <th width="50px">Delete</th>
@@ -26,6 +27,7 @@
                             <tbody>
                             <tr each="{ competition in running_competitions }" no-reorder>
                                 <td><a href="{ URLS.COMPETITION_DETAIL(competition.id) }">{ competition.title }</a></td>
+                                <td class="center aligned">{ competition.competition_type }</td>
                                 <td>{ timeSince(Date.parse(competition.created_when)) } ago</td>
                                 <td class="center aligned">
                                     <!--<button class="mini ui button green icon" show="{ !competition.published }" onclick="{ publish_competition.bind(this, competition) }">
