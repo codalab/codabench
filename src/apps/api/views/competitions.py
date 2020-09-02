@@ -251,7 +251,7 @@ class CompetitionViewSet(ModelViewSet):
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
                     leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
-            return leaderboard_data
+        return leaderboard_data
 
 
 
@@ -283,7 +283,7 @@ class CompetitionViewSet(ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
                 return response
 
-        selected_data = {}
+        filtered_data = {}
         if selected_leaderboard is not None:
             matched_keys = []
             for key in data.keys():
@@ -292,16 +292,18 @@ class CompetitionViewSet(ModelViewSet):
             if not matched_keys:
                 raise ValidationError("Selected leaderboard does not exist in this competition.")
             for key in matched_keys:
-                selected_data.update({key: data[key]})
+                filtered_data.update({key: data[key]})
 
         if format == 'json':
-            if not selected_data:
+            if not filtered_data:
                 return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
-            return HttpResponse(json.dumps(selected_data, indent=4), content_type="application/json")
+            return HttpResponse(json.dumps(filtered_data, indent=4), content_type="application/json")
 
         elif format == 'csv':
+            selected_data = filtered_data or data
             if len(selected_data) > 1:
                 raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
+            elif len(selected_data) == 0: raise ValidationError("No Matching Leaderboard")
             leaderboard_title = list(selected_data.keys())[0]
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
@@ -399,7 +401,7 @@ class PhaseViewSet(ModelViewSet):
         query = LeaderboardPhaseSerializer(phase).data
         response = {}
         response.update({'title': query['leaderboard']['title']})
-        response.update({'id': query['leaderboard']['id']})
+        response.update({'id': phase.id})
         response.update({'submissions': []})
         columns = [col for col in query['columns']]
         users = {}

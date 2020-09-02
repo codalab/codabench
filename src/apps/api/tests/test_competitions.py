@@ -150,8 +150,9 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.client.login(username='creator2', password='creator2')
         self.comp = CompetitionFactory(created_by=self.creator)
         self.leaderboard = LeaderboardFactory(primary_index=0)
-        self.phase = PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,  competition=self.comp, index=0)
-
+        self.phases = []
+        for i in range(3):
+           self.phases.append(PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,  competition=self.comp, index=0))
         self.usernames = set()
         self.leaderboard_ids_to_titles = {}
         self.leaderboard_ids_to_columns = {}
@@ -173,12 +174,13 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.leaderboard_ids_to_columns[self.leaderboard.id].update({column.title: column.id})
             task = TaskFactory()
             self.tasks.append(task)
-            self.phase.tasks.add(task)
         for user in self.users:
-            for task in self.tasks:
-                submission = SubmissionFactory(owner=user, phase=self.phase, leaderboard=self.leaderboard, task=task)
-                for col in self.columns:
-                    submission.scores.add(SubmissionScoreFactory(column=col))
+            for phase in self.phases:
+                for task in self.tasks:
+                    phase.tasks.add(task)
+                    submission = SubmissionFactory(owner=user, phase=phase, leaderboard=self.leaderboard, task=task)
+                    for col in self.columns:
+                        submission.scores.add(SubmissionScoreFactory(column=col))
 
     def test_get_competition_leaderboard_as_json(self):
         # gets makes sure to get JSON response and that it has all leaderboards and users
@@ -188,16 +190,18 @@ class CompetitionResultDatatypesTests(APITestCase):
         content = json.loads(response.content)
 
         self.response_titles = set()
-        self.response_users = set()
         for key in content.keys():
+            response_users = set()
             title, id = key.rsplit("(", 1)
             self.response_titles.add(title)
             for user in content[key].keys():
-                self.response_users.add(user)
+                response_users.add(user)
+            print(f'{key} : {self.usernames} == {response_users}')
+            assert self.usernames == response_users
+
         leaderboard_title = list(self.leaderboard_ids_to_titles.values())[0]
         response_title = str(list(self.response_titles)[0]).split(' ')[0]
         assert leaderboard_title in response_title
-        assert self.usernames == self.response_users
 
     def test_get_competition_leaderboard_by_title_as_json(self):
         # Makes sure the query returns a json that had a matching leaderboard title
