@@ -154,8 +154,7 @@ class CompetitionResultDatatypesTests(APITestCase):
         for i in range(3):
            self.phases.append(PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,  competition=self.comp, index=0))
         self.usernames = set()
-        self.leaderboard_ids_to_titles = {}
-        self.leaderboard_ids_to_columns = {}
+        self.column_title_to_id = {}
 
         self.usernames.add(self.creator.username)
         self.users = [self.creator]
@@ -164,14 +163,12 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.users.append(user)
             self.usernames.add(user.username)
 
-        self.leaderboard_ids_to_titles.update({self.leaderboard.id: self.leaderboard.title})
-        self.leaderboard_ids_to_columns.update({self.leaderboard.id: {}})
         self.columns = []
         self.tasks = []
         for i in range(4):
             column = ColumnFactory(leaderboard=self.leaderboard, index=i)
             self.columns.append(column)
-            self.leaderboard_ids_to_columns[self.leaderboard.id].update({column.title: column.id})
+            self.column_title_to_id.update({column.title: column.id})
             task = TaskFactory()
             self.tasks.append(task)
         for user in self.users:
@@ -199,36 +196,24 @@ class CompetitionResultDatatypesTests(APITestCase):
             print(f'{key} : {self.usernames} == {response_users}')
             assert self.usernames == response_users
 
-        leaderboard_title = list(self.leaderboard_ids_to_titles.values())[0]
         response_title = str(list(self.response_titles)[0]).split(' ')[0]
-        assert leaderboard_title in response_title
-
-    def test_get_competition_leaderboard_by_title_as_json(self):
-        # Makes sure the query returns a json that had a matching leaderboard title
-        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.values()))
-        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.json?title={leaderboard_choice}'
-        response = self.client.get(url, HTTP_ACCEPT='application/json')
-        self.assertEqual(response.status_code, 200)
-        content = json.loads(response.content)
-
-        for title in content.keys():
-            assert leaderboard_choice in title
+        assert self.leaderboard.title in response_title
 
     def test_get_competition_leaderboard_by_id_as_json(self):
         # Make sure when getting leaderboard by id you get exactly one leaderboard with matching title
-        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
-        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.json?id={leaderboard_choice}'
+        phase_choice = random.choice(self.phases)
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.json?phase={phase_choice.id}'
         response = self.client.get(url, HTTP_ACCEPT='application/json')
         self.assertEqual(response.status_code, 200)
         content = json.loads(response.content)
 
         response_title = list(content.keys())
         assert len(response_title) == 1
-        assert response_title[0] == f'{self.leaderboard_ids_to_titles[leaderboard_choice]} - {self.phase.name}({leaderboard_choice})'
+        assert response_title[0] == f'{self.leaderboard.title} - {phase_choice.name}({phase_choice.id})'
 
     def test_get_competition_leaderboard_by_id_as_csv(self):
-        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
-        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.csv?id={leaderboard_choice}'
+        phase_choice = random.choice(self.phases).id
+        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.csv?phase={phase_choice}'
         response = self.client.get(url, HTTP_ACCEPT='text/csv')
         self.assertEqual(response.status_code, 200)
 
@@ -237,22 +222,9 @@ class CompetitionResultDatatypesTests(APITestCase):
         csv_header = list(csv_reader)[0]
         csv_header.pop(0)
 
-        for column_title in self.leaderboard_ids_to_columns[leaderboard_choice]:
-            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})' in csv_header
-
-    def test_get_competition_leaderboard_by_title_as_csv(self):
-        leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
-        url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + f'.csv?title={self.leaderboard_ids_to_titles[leaderboard_choice]}({leaderboard_choice})'
-        response = self.client.get(url, HTTP_ACCEPT='text/csv')
-        self.assertEqual(response.status_code, 200)
-
-        content = response.content.decode('utf-8')
-        csv_reader = csv.reader(StringIO(content))
-        csv_header = list(csv_reader)[0]
-        csv_header.pop(0)
-
-        for column_title in self.leaderboard_ids_to_columns[leaderboard_choice]:
-            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})'
+        for task in self.tasks:
+            for column in self.columns:
+                assert f'{task.name}({task.id})-{column.title}' in csv_header
 
     def test_get_competition_leaderboard_as_zip(self):
         url = reverse('competition-results', kwargs={"pk": self.comp.id})[0:-1] + '.zip'
@@ -265,6 +237,5 @@ class CompetitionResultDatatypesTests(APITestCase):
         with BytesIO(response.content) as file:
             zipped_file = ZipFile(file, 'r')
             self.assertIsNone(zipped_file.testzip())
-            for id in self.leaderboard_ids_to_titles:
-                title = self.leaderboard_ids_to_titles[id]
-                self.assertIn(f'{title}({id}).csv', zipped_file.namelist())
+            for phase in self.phases:
+                self.assertIn(f'{self.leaderboard.title} - {phase.name}({phase.id}).csv', zipped_file.namelist())

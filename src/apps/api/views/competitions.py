@@ -226,9 +226,9 @@ class CompetitionViewSet(ModelViewSet):
 
         #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
         if phase_pk:
-            phases = competition.phases.get(id=phase_pk)
-            submission_query = [self.get_serializer(phases).data]
-            phase_id = phases.id
+            phase = get_object_or_404(competition.phases.all(), id=phase_pk)
+            submission_query = [self.get_serializer(phase).data]
+            phase_id = phase.id
         else:
             phases = competition.phases.all()
             submission_query = self.get_serializer(phases, many=True).data
@@ -263,8 +263,6 @@ class CompetitionViewSet(ModelViewSet):
         selected_phase = request.GET.get('phase')
         data = self.collect_leaderboard_data(competition, selected_phase)
 
-        selected_leaderboard = request.GET.get('title')
-
         if format == 'zip':
             with SpooledTemporaryFile() as tmp:
                 with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
@@ -283,37 +281,23 @@ class CompetitionViewSet(ModelViewSet):
                 response['Content-Disposition'] = 'attachment; filename={}.zip'.format(competition.title)
                 return response
 
-        filtered_data = {}
-        if selected_leaderboard is not None:
-            matched_keys = []
-            for key in data.keys():
-                if selected_leaderboard.lower() in key.lower():
-                    matched_keys.append(key)
-            if not matched_keys:
-                raise ValidationError("Selected leaderboard does not exist in this competition.")
-            for key in matched_keys:
-                filtered_data.update({key: data[key]})
-
         if format == 'json':
-            if not filtered_data:
-                return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
-            return HttpResponse(json.dumps(filtered_data, indent=4), content_type="application/json")
+            return HttpResponse(json.dumps(data, indent=4), content_type="application/json")
 
         elif format == 'csv':
-            selected_data = filtered_data or data
-            if len(selected_data) > 1:
-                raise ValidationError("More than one matching leaderboard. Try using id or .zip?")
-            elif len(selected_data) == 0: raise ValidationError("No Matching Leaderboard")
-            leaderboard_title = list(selected_data.keys())[0]
+            if len(data) > 1:
+                raise ValidationError("More than one matching leaderboard. Try selecting phase or get a .zip?")
+            elif len(data) == 0: raise ValidationError("No Matching Leaderboard")
+            leaderboard_title = list(data.keys())[0]
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
-            columns = list(selected_data[leaderboard_title][list(selected_data[leaderboard_title].keys())[0]].keys())
+            columns = list(data[leaderboard_title][list(data[leaderboard_title].keys())[0]].keys())
             dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
 
             dict_writer.writeheader()
-            for submission in selected_data[leaderboard_title]:
+            for submission in data[leaderboard_title]:
                 row = {"Username": submission}
-                row.update(selected_data[leaderboard_title][submission])
+                row.update(data[leaderboard_title][submission])
                 dict_writer.writerow(row)
             return response
 
