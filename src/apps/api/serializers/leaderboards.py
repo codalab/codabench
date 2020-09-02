@@ -143,6 +143,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         submissions = Submission.objects.filter(
             phase=instance,
             has_children=False,
+            leaderboard__isnull=False,
         ).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
