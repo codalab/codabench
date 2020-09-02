@@ -222,7 +222,7 @@ class CompetitionViewSet(ModelViewSet):
         phases = comp.phases.all()
         return Response(self.get_serializer(phases, many=True).data)
 
-    def collect_leaderboard_data(self, competition, phase_pk=None, for_front_end=False):
+    def collect_leaderboard_data(self, competition, phase_pk=None):
 
         #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
         if phase_pk:
@@ -238,54 +238,19 @@ class CompetitionViewSet(ModelViewSet):
         leaderboard_titles = {phase['id']:f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
         leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
-        # print("\n\n@@@@@@@@@@@@@@@@@@@@@\n\n")
-        # pprint(leaderboard_titles)
-        # for phase in submission_query:
-        #     print("\n\n\nTasks;")
-        #     for i in phase['tasks']:
-        #         pprint(i)
-        #     print("\n\n\nSubmissions:\n")
-        #     for i in phase['submissions']:
-        #         pprint(i)
-        # print(f'\n@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
-        # pprint(leaderboard_titles)
-        # print('\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
-        # for i in submission_query.keys():
-        #     print(f'Key: {i}')
-
-
-        if for_front_end:
-            for phase in submission_query:
-                generated_columns = OrderedDict()
-                for task in phase['tasks']:
-                    for col in leaderboard.columns.all():
-                        generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
-                leaderboard_data[leaderboard_titles[phase['id']]].update({'Column_Keys': [col_title for col_title in generated_columns.values()]})
-                leaderboard_data[leaderboard_titles[phase['id']]].update({'Submissions': OrderedDict()})
-                for submission in phase['submissions']:
-                    if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'].keys():
-                        leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'].update({submission["owner"]: OrderedDict()})
-                        for col_title in generated_columns.values():
-                            leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'][submission["owner"]].update({col_title: ""})
-                    for score in submission['scores']:
-                        score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                        leaderboard_data[leaderboard_titles[phase['id']]]['Submissions'][submission["owner"]].update({score_column: score['score']})
-            return leaderboard_data
-
-        else:
-            for phase in submission_query:
-                generated_columns = OrderedDict()
-                for task in phase['tasks']:
-                    for col in leaderboard.columns.all():
-                        generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
-                for submission in phase['submissions']:
-                    if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                        leaderboard_data[leaderboard_titles[phase['id']]].update({submission["owner"]: OrderedDict()})
-                        for col_title in generated_columns.values():
-                            leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({col_title: ""})
-                    for score in submission['scores']:
-                        score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
+        for phase in submission_query:
+            generated_columns = OrderedDict()
+            for task in phase['tasks']:
+                for col in leaderboard.columns.all():
+                    generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+            for submission in phase['submissions']:
+                if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
+                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission["owner"]: OrderedDict()})
+                    for col_title in generated_columns.values():
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({col_title: ""})
+                for score in submission['scores']:
+                    score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
             return leaderboard_data
 
 
@@ -432,9 +397,9 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         query = LeaderboardPhaseSerializer(phase).data
-
         response = {}
         response.update({'title': query['leaderboard']['title']})
+        response.update({'id': query['leaderboard']['id']})
         response.update({'submissions': []})
         columns = [col for col in query['columns']]
         users = {}

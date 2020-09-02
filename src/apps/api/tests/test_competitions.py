@@ -149,7 +149,8 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.creator = UserFactory(username='creator2', password='creator2')
         self.client.login(username='creator2', password='creator2')
         self.comp = CompetitionFactory(created_by=self.creator)
-        self.phase = PhaseFactory(competition=self.comp, index=0)
+        self.leaderboard = LeaderboardFactory(primary_index=0)
+        self.phase = PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,  competition=self.comp, index=0)
 
         self.usernames = set()
         self.leaderboard_ids_to_titles = {}
@@ -162,17 +163,20 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.users.append(user)
             self.usernames.add(user.username)
 
-        for leaderboards in range(3):
-            leaderboard = LeaderboardFactory()
-            self.leaderboard_ids_to_titles.update({leaderboard.id: leaderboard.title})
-            self.leaderboard_ids_to_columns.update({leaderboard.id: {}})
-            self.columns = []
-            for columns in range(4):
-                column = ColumnFactory(leaderboard=leaderboard)
-                self.columns.append(column)
-                self.leaderboard_ids_to_columns[leaderboard.id].update({column.title: column.id})
-            for user in self.users:
-                submission = SubmissionFactory(owner=user, phase=self.phase, leaderboard=leaderboard)
+        self.leaderboard_ids_to_titles.update({self.leaderboard.id: self.leaderboard.title})
+        self.leaderboard_ids_to_columns.update({self.leaderboard.id: {}})
+        self.columns = []
+        self.tasks = []
+        for i in range(4):
+            column = ColumnFactory(leaderboard=self.leaderboard, index=i)
+            self.columns.append(column)
+            self.leaderboard_ids_to_columns[self.leaderboard.id].update({column.title: column.id})
+            task = TaskFactory()
+            self.tasks.append(task)
+            self.phase.tasks.add(task)
+        for user in self.users:
+            for task in self.tasks:
+                submission = SubmissionFactory(owner=user, phase=self.phase, leaderboard=self.leaderboard, task=task)
                 for col in self.columns:
                     submission.scores.add(SubmissionScoreFactory(column=col))
 
@@ -190,8 +194,9 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.response_titles.add(title)
             for user in content[key].keys():
                 self.response_users.add(user)
-        leaderboard_titles = set(self.leaderboard_ids_to_titles.values())
-        assert leaderboard_titles == self.response_titles
+        leaderboard_title = list(self.leaderboard_ids_to_titles.values())[0]
+        response_title = str(list(self.response_titles)[0]).split(' ')[0]
+        assert leaderboard_title in response_title
         assert self.usernames == self.response_users
 
     def test_get_competition_leaderboard_by_title_as_json(self):
@@ -215,7 +220,7 @@ class CompetitionResultDatatypesTests(APITestCase):
 
         response_title = list(content.keys())
         assert len(response_title) == 1
-        assert response_title[0] == f'{self.leaderboard_ids_to_titles[leaderboard_choice]}({leaderboard_choice})'
+        assert response_title[0] == f'{self.leaderboard_ids_to_titles[leaderboard_choice]} - {self.phase.name}({leaderboard_choice})'
 
     def test_get_competition_leaderboard_by_id_as_csv(self):
         leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))
@@ -229,7 +234,7 @@ class CompetitionResultDatatypesTests(APITestCase):
         csv_header.pop(0)
 
         for column_title in self.leaderboard_ids_to_columns[leaderboard_choice]:
-            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})'
+            assert f'{column_title}({self.leaderboard_ids_to_columns[leaderboard_choice][column_title]})' in csv_header
 
     def test_get_competition_leaderboard_by_title_as_csv(self):
         leaderboard_choice = random.choice(list(self.leaderboard_ids_to_titles.keys()))

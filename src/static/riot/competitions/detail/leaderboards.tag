@@ -56,6 +56,7 @@
         self.columns = []
         // self.organized_submissions = []
         self.phase_id = null
+        self.competition_id = null
 
         self.get_score = function(column, scores) {
             let score = _.get(_.find(scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
@@ -69,6 +70,7 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+                    console.log("Selected_leaderboard",self.selected_leaderboard)
                     self.columns = []
                     for(taskNum = 0; taskNum < Object.keys(self.selected_leaderboard.tasks).length; taskNum++){
                         for(colNum = 0; colNum < Object.keys(self.selected_leaderboard.tasks[taskNum].columns).length; colNum++){
@@ -140,14 +142,13 @@
             self.update_leaderboard()
         })
 
-        CODALAB.events.on('competition_loaded', () => {
+        CODALAB.events.on('competition_loaded', (competition) => {
+            console.log("Competition", competition)
+            self.competition_id = competition.id
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
         })
 
-        CODALAB.events.on('submission_added_to_leaderboard', id => {
-            self.phase_id = id
-            self.update_leaderboard()
-        })
+        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboard)
 
     </script>
     <style type="text/stylus">

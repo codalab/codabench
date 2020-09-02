@@ -22,6 +22,7 @@
                     self.competition = data
                     CODALAB.events.trigger('competition_loaded', self.competition)
                     let phase = _.find(self.competition.phases, p => p.status === 'Current')
+                    console.log('PHASE TRIGGER ONE')
                     CODALAB.events.trigger('phase_selected', phase ? phase : self.competition.phases[0])
                     self.update()
                 })

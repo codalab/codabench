@@ -219,7 +219,7 @@
             <!-- Tab Content !-->
             <div show="{!loading && !_.isEmpty(leaderboard_phases)}">
                 <div class="ui button-container">
-                    <div class="ui inline button {active: selected_leaderboard_phase_index == phase.id}"
+                    <div class="ui inline button {active: selected_phase_index == phase.id}"
                          each="{ phase in leaderboard_phases }"
                          onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
@@ -279,19 +279,22 @@
                 })
             })
 
-            // self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
-            CODALAB.events.trigger('phase_selected', self.selected_phase_index)
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+            }
 
             $('.phases-tab .accordion', self.root).accordion()
 
             $('.tabular.pages-menu.menu .item', self.root).tab()
 
-            _.forEach(competition.pages, (page, index) => {
+            // Need to run update() to build tags to render html in
+            self.update()
+            _.forEach(self.competition.pages, (page, index) => {
                 $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
             })
-            _.forEach(competition.phases, (phase, index) => {
+            _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
 

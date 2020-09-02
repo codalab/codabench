@@ -66,6 +66,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'max_submissions_per_person',
             'execution_time_limit',
             'hide_output',
+            'is_final_phase',
         )
 
 
