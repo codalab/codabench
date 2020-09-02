@@ -70,7 +70,6 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
-                    console.log("Selected_leaderboard",self.selected_leaderboard)
                     self.columns = []
                     for(taskNum = 0; taskNum < Object.keys(self.selected_leaderboard.tasks).length; taskNum++){
                         for(colNum = 0; colNum < Object.keys(self.selected_leaderboard.tasks[taskNum].columns).length; colNum++){
@@ -143,7 +142,6 @@
         })
 
         CODALAB.events.on('competition_loaded', (competition) => {
-            console.log("Competition", competition)
             self.competition_id = competition.id
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
         })
