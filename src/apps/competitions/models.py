@@ -144,7 +144,7 @@ class Competition(ChaHubSaveMixin, models.Model):
         else:
             current_index = None
 
-            next_phase = self.phases.filter(end__gt= now()).order_by('index').first()
+            next_phase = self.phases.filter(end__gt=now()).order_by('index').first()
             if next_phase:
                 next_index = next_phase.index
                 previous_index = next_index - 1 if next_index >= 1 else None

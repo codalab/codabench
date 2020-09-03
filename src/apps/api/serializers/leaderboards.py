@@ -156,5 +156,3 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
 
         submissions = submissions.order_by(*ordering, 'created_when')
         return SubmissionLeaderBoardSerializer(submissions, many=True).data
-
-

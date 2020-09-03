@@ -152,7 +152,8 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.leaderboard = LeaderboardFactory(primary_index=0)
         self.phases = []
         for i in range(3):
-           self.phases.append(PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,  competition=self.comp, index=0))
+            self.phases.append(PhaseFactory(
+                leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id, competition=self.comp, index=0))
         self.usernames = set()
         self.column_title_to_id = {}
 

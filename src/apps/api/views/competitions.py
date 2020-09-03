@@ -26,7 +26,7 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
@@ -223,8 +223,6 @@ class CompetitionViewSet(ModelViewSet):
         return Response(self.get_serializer(phases, many=True).data)
 
     def collect_leaderboard_data(self, competition, phase_pk=None):
-
-        #TODO: Should add a query and only allow getting data from one phase at a time! sumission query starts at that phase level
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
             submission_query = [self.get_serializer(phase).data]
@@ -235,7 +233,7 @@ class CompetitionViewSet(ModelViewSet):
             phase_id = phases.first().id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
-        leaderboard_titles = {phase['id']:f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+        leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
         leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
         for phase in submission_query:
@@ -252,8 +250,6 @@ class CompetitionViewSet(ModelViewSet):
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
                     leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
         return leaderboard_data
-
-
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
     def results(self, request, pk, format=None):
@@ -287,7 +283,8 @@ class CompetitionViewSet(ModelViewSet):
         elif format == 'csv':
             if len(data) > 1:
                 raise ValidationError("More than one matching leaderboard. Try selecting phase or get a .zip?")
-            elif len(data) == 0: raise ValidationError("No Matching Leaderboard")
+            elif len(data) == 0:
+                raise ValidationError("No Matching Leaderboard")
             leaderboard_title = list(data.keys())[0]
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
@@ -412,7 +409,6 @@ class PhaseViewSet(ModelViewSet):
             response['tasks'].append(tempTask)
 
         return Response(response)
-
 
 
 class CompetitionParticipantViewSet(ModelViewSet):

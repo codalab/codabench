@@ -9,7 +9,7 @@ from django.utils import timezone
 from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionScoreFactory
+    ColumnFactory
 
 
 class SubmissionTestCase(TestCase):

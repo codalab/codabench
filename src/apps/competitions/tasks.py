@@ -702,6 +702,7 @@ def batch_send_email(comp_id, content):
         recipient_list=[participant.user.email for participant in competition.participants.all()]
     )
 
+
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def update_phase_statuses():
     competitions = Competition.objects.exclude(phases__in=Phase.objects.filter(is_final_phase=True, end__lt=now()))
