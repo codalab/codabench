@@ -12,7 +12,6 @@ from ..utils import SeleniumTestCase
 
 class TestSubmissions(SeleniumTestCase):
     def setUp(self):
-        print("DEGBUG1")
         super().setUp()
         self.user = UserFactory(password='test')
 
@@ -23,7 +22,6 @@ class TestSubmissions(SeleniumTestCase):
         :param competition_zip_path: Relative to test_files/ dir
         :param submission_zip_path: Relative to test_files/ dir
         """
-        print("DEGBUG2")
         self.login(username=self.user.username, password='test')
 
         self.get(reverse('competitions:upload'))
@@ -69,7 +67,7 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.item[data-tab="results-tab"]').click()
 
         # The leaderboard table lists our submission
-        prediction_scores = Submission.objects.get(pk=submission_id).scores.all()
+        prediction_scores = Submission.objects.get(pk=submission_id).scores.first().score
         assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_scores
 
     def test_v15_submission_end_to_end(self):
