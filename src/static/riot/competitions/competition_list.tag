@@ -107,7 +107,10 @@
         }
 
         self.get_running_competitions = function () {
-            self.get_competitions_wrapper({mine: true})
+            self.get_competitions_wrapper({
+                mine: true,
+                type: 'any',
+            })
                 .done(function (data) {
                     self.running_competitions = data
                     self.update()

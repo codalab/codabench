@@ -118,8 +118,6 @@
                 self.organized_submissions.push(submission)
             })
 
-            console.log('organized_submissions', self.organized_submissions)
-
             self.update()
         }
 
