@@ -43,7 +43,7 @@ class CompetitionViewSet(ModelViewSet):
             # filter by competition_type first, 'competition' by default
             competition_type = self.request.query_params.get('type', Competition.COMPETITION)
 
-            if competition_type != 'any' and self.detail == False:
+            if competition_type != 'any' and self.detail is False:
                 qs = qs.filter(competition_type=competition_type)
 
             # Filter to only see competitions you own
