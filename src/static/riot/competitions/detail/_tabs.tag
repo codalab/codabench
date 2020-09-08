@@ -217,10 +217,10 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading && !_.isEmpty(leaderboard_phases)}">
+            <div show="{!loading}">
                 <div class="ui button-container">
                     <div class="ui inline button {active: selected_phase_index == phase.id}"
-                         each="{ phase in leaderboard_phases }"
+                         each="{ phase in competition.phases }"
                          onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
                 </div>
@@ -284,6 +284,7 @@
             if (self.selected_phase_index == null) {
                 self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
             }
+            self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()
 
@@ -298,16 +299,16 @@
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
 
-            CODALAB.api.get_leaderboard_submissions(self.competition.id)
-                .done( data => {
-                    self.leaderboard_phases = data
-                    if (!_.isEmpty(self.leaderboard_phases)) {
-                        self.phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
-                    }
-                })
-                .fail(error => {
-                    toastr.error(error)
-                })
+            // CODALAB.api.get_competition_phases(self.competition.id)
+            //     .done( data => {
+            //         self.leaderboard_phases = data
+            //         if (!_.isEmpty(self.leaderboard_phases)) {
+            //             self.phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
+            //         }
+            //     })
+            //     .fail(error => {
+            //         toastr.error(error)
+            //     })
 
             // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
             // rather than a weird flicker
@@ -334,7 +335,6 @@
             self.selected_phase_index = data.id
             self.update()
             CODALAB.events.trigger('phase_selected', data)
-            CODALAB.events.trigger('leaderboard_phase_selected', self.selected_phase_index)
         }
 
         self.update()

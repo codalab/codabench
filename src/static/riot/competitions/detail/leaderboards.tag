@@ -80,9 +80,8 @@
                 })
         }
 
-
-        CODALAB.events.on('leaderboard_phase_selected', id => {
-            self.phase_id = id
+        CODALAB.events.on('phase_selected', data => {
+            self.phase_id = data.id
             self.update_leaderboard()
         })
 

@@ -106,7 +106,7 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
-        elif self.action in ['leaderboard_submissions', 'results', 'get_leaderboard_frontend_object']:
+        elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
@@ -215,12 +215,6 @@ class CompetitionViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=('GET',))
-    def leaderboard_submissions(self, request, pk):
-        comp = self.get_object()
-        phases = comp.phases.all()
-        return Response(self.get_serializer(phases, many=True).data)
 
     def collect_leaderboard_data(self, competition, phase_pk=None):
         if phase_pk:
