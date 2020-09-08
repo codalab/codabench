@@ -1,5 +1,5 @@
 <leaderboards>
-    <input ref="leaderboardFilter" type="text" placeholder="Filter Columns">
+    <input ref="leaderboardFilter" type="text" placeholder="Filter Columns" style="margin-top: 32px">
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
