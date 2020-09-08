@@ -298,20 +298,6 @@
             _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
-
-            // CODALAB.api.get_competition_phases(self.competition.id)
-            //     .done( data => {
-            //         self.leaderboard_phases = data
-            //         if (!_.isEmpty(self.leaderboard_phases)) {
-            //             self.phase_selected(_.find(self.leaderboard_phases, {'id': self.selected_phase_index}))
-            //         }
-            //     })
-            //     .fail(error => {
-            //         toastr.error(error)
-            //     })
-
-            // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
-            // rather than a weird flicker
             _.delay(() => {
                 self.loading = false
                 self.update()
