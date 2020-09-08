@@ -176,10 +176,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     def get_leaderboards(self, instance):
         try:
             if instance.user_has_admin_permission(self.context['request'].user):
-                # qs = instance.leaderboards.all()
                 qs = Leaderboard.objects.filter(phases__competition=instance).distinct('id')
             else:
-                # qs = instance.leaderboards.filter(hidden=False)
                 qs = Leaderboard.objects.filter(phases__competition=instance, hidden=False).distinct('id')
         except KeyError:
             raise Exception(f'KeyError on context. Context: {self.context}')
