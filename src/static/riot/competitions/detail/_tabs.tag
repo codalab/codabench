@@ -218,8 +218,8 @@
             </div>
             <!-- Tab Content !-->
             <div show="{!loading}">
-                <div class="ui button-container">
-                    <div class="ui inline button {active: selected_phase_index == phase.id}"
+                <div class="ui button-container inline">
+                    <div class="ui button {active: selected_phase_index == phase.id}"
                          each="{ phase in competition.phases }"
                          onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
@@ -360,6 +360,9 @@
         .ui.secondary.pointing.menu .active.item:hover
             border-color rgba(42, 68, 88, .5)
             color rgb(42, 68, 88)
+
+        .inline
+            display inline-block
 
         .float-right
             float right

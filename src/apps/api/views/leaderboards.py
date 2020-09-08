@@ -54,7 +54,6 @@ def add_submission_to_leaderboard(request, submission_pk):
     Submission.objects.filter(phase=phase, owner=request.user).update(leaderboard=None)
 
     leaderboard = submission.phase.leaderboard
-    # Assume that submission.children.first().scores.first().column.leaderboard will always have the correct leaderboard
 
     if submission.has_children:
         for s in Submission.objects.filter(parent=submission_pk):
