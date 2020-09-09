@@ -73,5 +73,8 @@ class TestSubmissions(SeleniumTestCase):
     def test_v15_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
 
+    def test_v18_submission_end_to_end(self):
+        self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
+
     def test_v2_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition.zip', 'submission.zip', 'Scores')
