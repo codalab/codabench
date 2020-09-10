@@ -28,14 +28,16 @@ class ColumnSerializer(WritableNestedModelSerializer):
 
     def validate(self, attrs):
         if 'computation' in attrs and 'computation_indexes' not in attrs:
-            raise serializers.ValidationError("Column with computation must have at least 1 column selected for the computation to act upon")
+            raise serializers.ValidationError(
+                "Column with computation must have at least 1 column selected for the computation to act upon")
 
         if 'computation_indexes' in attrs and attrs['computation_indexes']:
             if 'computation' not in attrs:
                 raise serializers.ValidationError("Cannot add computation columns without a computation function set")
 
             if str(attrs["index"]) in attrs["computation_indexes"].split(","):
-                raise serializers.ValidationError(f"Column with index {attrs['index']} referencing itself. Cannot self-reference, must be other columns.")
+                raise serializers.ValidationError(
+                    f"Column with index {attrs['index']} referencing itself. Cannot self-reference, must be other columns.")
 
         return attrs
 
@@ -74,9 +76,11 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
                 for index in column['computation_indexes'].split(","):
                     try:
                         if int(index) not in indexes:
-                            raise serializers.ValidationError(f"Column index {index} does not exist in available indexes {indexes}")
+                            raise serializers.ValidationError(
+                                f"Column index {index} does not exist in available indexes {indexes}")
                     except ValueError:
-                        raise serializers.ValidationError(f"Bad value for index, should be an integer but received: {index}.")
+                        raise serializers.ValidationError(
+                            f"Bad value for index, should be an integer but received: {index}.")
 
         return columns
 
@@ -95,7 +99,8 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         # asc == colname
         primary_col = instance.columns.get(index=instance.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = Submission.objects.filter(leaderboard=instance).select_related('owner').prefetch_related('scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
+        submissions = Submission.objects.filter(leaderboard=instance).select_related('owner').prefetch_related(
+            'scores').annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
@@ -118,10 +123,8 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         columns = Column.objects.filter(leaderboard=instance.leaderboard)
         if len(columns) == 0:
             raise serializers.ValidationError("No columns exist on the leaderboard")
-        elif len(columns) == 1:
-            return ColumnSerializer(columns).data
         else:
-            return ColumnSerializer(columns, many=True).data
+            return ColumnSerializer(columns, many=len(columns) > 1).data
 
     class Meta:
         model = Phase
@@ -141,10 +144,10 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
         submissions = Submission.objects.filter(
-                phase=instance,
-                has_children=False,
-                leaderboard__isnull=False,)\
-            .select_related('owner').prefetch_related('scores')\
+            phase=instance,
+            has_children=False,
+            leaderboard__isnull=False, ) \
+            .select_related('owner').prefetch_related('scores') \
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in instance.leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
