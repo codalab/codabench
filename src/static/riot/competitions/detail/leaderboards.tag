@@ -101,10 +101,10 @@
                 .done(responseData => {
                     self.selected_leaderboard = responseData
                     self.columns = []
-                    for(taskNum = 0; taskNum < Object.keys(self.selected_leaderboard.tasks).length; taskNum++){
-                        for(colNum = 0; colNum < Object.keys(self.selected_leaderboard.tasks[taskNum].columns).length; colNum++){
-                            col = self.selected_leaderboard.tasks[taskNum].columns[colNum]
-                            col.task_id = self.selected_leaderboard.tasks[taskNum].id
+                    for(task of self.selected_leaderboard.tasks){
+                        for(column of task){
+                            col = column
+                            col.task_id = task.id
                             self.columns.push(col)
                         }
                     }
