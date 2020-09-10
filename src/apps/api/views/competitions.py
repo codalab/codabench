@@ -22,7 +22,7 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer
+    FrontPageCompetitionsSerializer, PhaseResultsSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
@@ -370,6 +370,7 @@ class PhaseViewSet(ModelViewSet):
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
 
+    @swagger_auto_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
