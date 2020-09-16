@@ -224,6 +224,8 @@ class CompetitionViewSet(ModelViewSet):
         else:
             phases = competition.phases.all()
             submission_query = self.get_serializer(phases, many=True).data
+            if not len(phases):
+                raise ValidationError(f"No Phases found on competition id:{competition.id}")
             phase_id = phases[0].id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
@@ -375,10 +377,12 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         query = LeaderboardPhaseSerializer(phase).data
-        response = {}
-        response.update({'title': query['leaderboard']['title']})
-        response.update({'id': phase.id})
-        response.update({'submissions': []})
+        response = {
+            'title': query['leaderboard']['title'],
+            'id': phase.id,
+            'submissions': [],
+            'tasks': [],
+        }
         columns = [col for col in query['columns']]
         users = {}
         for submission in query['submissions']:
@@ -390,15 +394,14 @@ class PhaseViewSet(ModelViewSet):
                 tempScore.update({'task_id': submission['task']})
                 response['submissions'][users[submission['owner']]]['scores'].append(tempScore)
 
-        response.update({'tasks': []})
         for task in query['tasks']:
-            tempTask = {}
-            tempTask.update({'name': task['name']})
-            tempTask.update({'id': task['id']})
-
             # This can be used to rendered variable columns on each task
-            tempTask.update({'colWidth': len(columns)})
-            tempTask.update({'columns': []})
+            tempTask = {
+                'name': task['name'],
+                'id': task['id'],
+                'colWidth': len(columns),
+                'columns': [],
+            }
             for col in columns:
                 tempTask['columns'].append(col)
             response['tasks'].append(tempTask)
