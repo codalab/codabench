@@ -7,7 +7,7 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer, TaskSerializer
+from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -237,6 +237,7 @@ class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
     featured_comps = CompetitionSerializerSimple(many=True)
 
+
 class PhaseResultsSubmissionSerializer(serializers.Serializer):
     owner = serializers.CharField()
     scores = SubmissionScoreSerializer(many=True)
@@ -248,13 +249,9 @@ class PhaseResultsTaskSerializer(serializers.Serializer):
     columns = ColumnSerializer(many=True)
     name = serializers.CharField()
 
+
 class PhaseResultsSerializer(serializers.Serializer):
     title = serializers.CharField()
     id = serializers.IntegerField()
     tasks = PhaseResultsTaskSerializer(many=True, read_only=True)
     submissions = PhaseResultsSubmissionSerializer(many=True)
-
-
-
-
-
