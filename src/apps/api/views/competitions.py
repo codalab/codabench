@@ -224,7 +224,7 @@ class CompetitionViewSet(ModelViewSet):
         else:
             phases = competition.phases.all()
             submission_query = self.get_serializer(phases, many=True).data
-            phase_id = phases.first().id
+            phase_id = phases[0].id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
         leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
