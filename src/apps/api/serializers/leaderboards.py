@@ -111,7 +111,8 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
-    tasks = TaskSerializer(many=True, read_only=True)
+    tasks = serializers.SerializerMethodField()
+    # tasks = TaskSerializer(many=True, read_only=True)
     columns = serializers.SerializerMethodField()
 
     def get_columns(self, instance):
@@ -122,6 +123,10 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             return ColumnSerializer(columns).data
         else:
             return ColumnSerializer(columns, many=True).data
+
+    def get_tasks(self, instance):
+        tasks = instance.tasks.all().order_by('order')
+        return TaskSerializer(tasks, many=True, read_only=True).data
 
     class Meta:
         model = Phase
