@@ -102,10 +102,9 @@
                     self.selected_leaderboard = responseData
                     self.columns = []
                     for(task of self.selected_leaderboard.tasks){
-                        for(column of task){
-                            col = column
-                            col.task_id = task.id
-                            self.columns.push(col)
+                        for(column of task.columns){
+                            column.task_id = task.id
+                            self.columns.push(column)
                         }
                     }
                     self.filter_columns()
