@@ -217,12 +217,13 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading && !_.isEmpty(competition.leaderboards)}">
-                <div class="ui button-container">
-                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
-                         each="{ leaderboard in competition.leaderboards }"
-                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
+            <div show="{!loading}">
+                <div class="ui button-container inline">
+                    <div class="ui button {active: selected_phase_index == phase.id}"
+                         each="{ phase in competition.phases }"
+                         onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
+                </div>
                     <div show="{competition.admin}" class="float-right">
                         <div class="ui compact menu">
                             <div class="ui simple dropdown item" style="padding: 0px 5px">
@@ -235,9 +236,7 @@
                         </div>
                     </div>
                 <leaderboards class="leaderboard-table"
-                              competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }"
-                              tasks="{ selected_phase ? selected_phase.tasks : [] }"
+                              phase_id="{ self.selected_phase_index }"
                               is_admin="{competition.admin}">
                 </leaderboards>
             </div>
@@ -253,9 +252,8 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
-        self.selected_leaderboard_index = undefined
+        self.leaderboard_phases = []
         self.loading = true
-        self.csvURL = '{% url competitions.views.get_csv %}'
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -280,25 +278,26 @@
                     })
                 })
             })
-            if (!_.isEmpty(self.competition.leaderboards)) {
-                self.selected_leaderboard_index = self.competition.leaderboards[0].id
-            }
-            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
-            self.update()
+            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+            }
+            self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()
 
             $('.tabular.pages-menu.menu .item', self.root).tab()
 
-            _.forEach(competition.pages, (page, index) => {
+            // Need to run update() to build tags to render html in
+            self.update()
+            _.forEach(self.competition.pages, (page, index) => {
                 $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
             })
-            _.forEach(competition.phases, (phase, index) => {
+            _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
-            // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
-            // rather than a weird flicker
             _.delay(() => {
                 self.loading = false
                 self.update()
@@ -321,16 +320,12 @@
         self.phase_selected = function (data, event) {
             self.selected_phase_index = data.id
             self.update()
-
             CODALAB.events.trigger('phase_selected', data)
         }
 
-        self.leaderboard_selected = function (data, event) {
-            self.selected_leaderboard_index = data.id
-            self.update()
+        self.update()
 
-            CODALAB.events.trigger('leaderboard_selected', data)
-        }
+
     </script>
 
     <style type="text/stylus">
@@ -351,6 +346,9 @@
         .ui.secondary.pointing.menu .active.item:hover
             border-color rgba(42, 68, 88, .5)
             color rgb(42, 68, 88)
+
+        .inline
+            display inline-block
 
         .float-right
             float right

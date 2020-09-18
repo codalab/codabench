@@ -153,14 +153,14 @@ def upload_submission_scores(request, submission_pk):
     except TypeError:
         raise ValidationError("Secret not a valid UUID")
 
-    competition_columns = submission.phase.competition.leaderboards.values_list('columns__key', flat=True)
+    competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
 
     for column_key, score in data["scores"].items():
         if column_key not in competition_columns:
             continue
         score = SubmissionScore.objects.create(
             score=score,
-            column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key)
+            column=Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
         )
         submission.scores.add(score)
         if submission.parent:
