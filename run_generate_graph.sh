@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 #Uses graphviz to convert .dot to .png
 
+#Kwargs**: [FILENAME] [APPS...]
+#Ex: run_generate_graph.sh filename
+#Ex: run_generate_graph.sh filename model1 model2...
 
 mkdir "graphs"
 
