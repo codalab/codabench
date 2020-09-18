@@ -257,6 +257,7 @@
                         self.form_updated()
                     }
                 }
+
                 var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
                 var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
 
@@ -265,6 +266,8 @@
 
                 self.has_initialized_calendars = true
             }
+            $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
+            $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
         }
 
         self.close_modal = function () {

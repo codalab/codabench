@@ -152,8 +152,8 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.leaderboard = LeaderboardFactory(primary_index=0)
         self.phases = []
         for i in range(3):
-            self.phases.append(PhaseFactory(
-                leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id, competition=self.comp, index=0))
+            self.phases.append(PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,
+                                            competition=self.comp, index=0))
         self.usernames = set()
         self.column_title_to_id = {}
 
@@ -194,7 +194,6 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.response_titles.add(title)
             for user in content[key].keys():
                 response_users.add(user)
-            print(f'{key} : {self.usernames} == {response_users}')
             assert self.usernames == response_users
 
         response_title = str(list(self.response_titles)[0]).split(' ')[0]

@@ -4,8 +4,9 @@ from rest_framework.exceptions import ValidationError
 
 from api.fields import NamedBase64ImageField
 from api.mixins import DefaultUserCreateMixin
-from api.serializers.leaderboards import LeaderboardSerializer
+from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
+from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from leaderboards.models import Leaderboard
@@ -235,3 +236,22 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
 class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
     featured_comps = CompetitionSerializerSimple(many=True)
+
+
+class PhaseResultsSubmissionSerializer(serializers.Serializer):
+    owner = serializers.CharField()
+    scores = SubmissionScoreSerializer(many=True)
+
+
+class PhaseResultsTaskSerializer(serializers.Serializer):
+    colWidth = serializers.IntegerField()
+    id = serializers.IntegerField()
+    columns = ColumnSerializer(many=True)
+    name = serializers.CharField()
+
+
+class PhaseResultsSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    id = serializers.IntegerField()
+    tasks = PhaseResultsTaskSerializer(many=True, read_only=True)
+    submissions = PhaseResultsSubmissionSerializer(many=True)
