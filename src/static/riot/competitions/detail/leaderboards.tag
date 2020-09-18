@@ -1,10 +1,11 @@
 <leaderboards>
+    <input ref="leaderboardFilter" type="text" placeholder="Filter Columns" style="margin-top: 32px">
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
                 <p class="leaderboard-title">{ selected_leaderboard.title }</p>
-                <div style="visibility: {show_download};" class="float-right">
+                <div style="visibility:{show_download}" class="float-right">
                     <div class="ui compact menu">
                         <div class="ui simple dropdown item" style="padding: 0px 5px">
                             <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
@@ -20,12 +21,12 @@
         <tr class="task-row">
             <th>Task:</th>
             <th></th>
-            <th each="{ task in selected_leaderboard.tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
+            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Username</th>
-            <th class="center aligned" each="{ column in columns }" colspan="1">{column.title}</th>
+            <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
         </tr>
         </thead>
         <tbody>
@@ -44,7 +45,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ column in columns }">{ get_score(column, submission.scores) } </td>
+            <td each="{ column in filtered_columns }">{ get_score(column, submission.scores) } </td>
         </tr>
         </tbody>
     </table>
@@ -52,7 +53,9 @@
     <script>
         let self = this
         self.selected_leaderboard = {}
+        self.filtered_tasks = []
         self.columns = []
+        self.filtered_columns = []
         self.phase_id = null
         self.competition_id = null
 
@@ -64,19 +67,48 @@
             return 'n/a'
         }
 
+        self.on("mount" , function () {
+            this.refs.leaderboardFilter.onkeyup = function (e) {
+                self.filter_columns()
+            }
+        })
+
+        self.filter_columns = () => {
+            let search_key = self.refs.leaderboardFilter.value.toLowerCase()
+            self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
+            if(search_key){
+                self.filtered_columns = []
+                for (const column of self.columns){
+                    let key = column.key.toLowerCase()
+                    let title = column.title.toLowerCase()
+                    if((key.includes(search_key) || title.includes(search_key)) && !column.hidden) {
+                        self.filtered_columns.push(column)
+                    }
+                    else {
+                        let task = _.find(self.filtered_tasks, {id: column.task_id})
+                        task.colWidth -= 1
+                    }
+                }
+                self.filtered_tasks = self.filtered_tasks.filter(task => task.colWidth > 0)
+            } else {
+                self.filtered_columns = self.columns
+            }
+            self.update()
+        }
+
         self.update_leaderboard = () => {
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     console.log(responseData)
                     self.selected_leaderboard = responseData
                     self.columns = []
-                    for(taskNum = 0; taskNum < Object.keys(self.selected_leaderboard.tasks).length; taskNum++){
-                        for(colNum = 0; colNum < Object.keys(self.selected_leaderboard.tasks[taskNum].columns).length; colNum++){
-                            col = self.selected_leaderboard.tasks[taskNum].columns[colNum]
-                            col.task_id = self.selected_leaderboard.tasks[taskNum].id
-                            self.columns.push(col)
+                    for(task of self.selected_leaderboard.tasks){
+                        for(column of task.columns){
+                            column.task_id = task.id
+                            self.columns.push(column)
                         }
                     }
+                    self.filter_columns()
                     self.update()
                 })
         }
