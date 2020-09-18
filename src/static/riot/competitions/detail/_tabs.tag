@@ -401,20 +401,14 @@
         .submission-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         .results-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         .pages-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
             .vertical.tabular.menu > .item
                 cursor pointer
@@ -434,9 +428,6 @@
             width 100%
             color #2c3f4c
             padding 50px 0 150px
-
-            @media screen and (min-width 768px)
-                width 85%
 
             .underline
                 border-bottom 1px solid $teal
@@ -480,8 +471,6 @@
         .admin-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         pre
             background #f4f4f4
