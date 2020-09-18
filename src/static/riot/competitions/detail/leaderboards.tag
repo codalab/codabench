@@ -74,14 +74,14 @@
         })
 
         self.filter_columns = () => {
-            let searchKey = self.refs.leaderboardFilter.value.toLowerCase()
+            let search_key = self.refs.leaderboardFilter.value.toLowerCase()
             self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
-            if(searchKey){
+            if(search_key){
                 self.filtered_columns = []
                 for (const column of self.columns){
-                    let key   =   column.key.toLowerCase()
+                    let key = column.key.toLowerCase()
                     let title = column.title.toLowerCase()
-                    if((key.includes(searchKey) || title.includes(searchKey)) && !column.hidden) {
+                    if((key.includes(search_key) || title.includes(search_key)) && !column.hidden) {
                         self.filtered_columns.push(column)
                     }
                     else {
