@@ -70,7 +70,6 @@ class Task(ChaHubSaveMixin, models.Model):
         self.is_public = self.is_public and self._validated
         return super().save(*args, **kwargs)
 
-
 class Solution(ChaHubSaveMixin, models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)

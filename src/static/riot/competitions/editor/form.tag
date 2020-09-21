@@ -147,6 +147,7 @@
             CODALAB.api.get_competition(id)
                 .done(function (data) {
                     self.competition = data
+                    console.log('get_compeititon', self.competition)
                     self.refs.publish.checked = self.competition.published
                     CODALAB.events.trigger('competition_loaded', self.competition)
                     self.update()

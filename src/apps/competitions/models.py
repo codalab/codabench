@@ -235,6 +235,7 @@ class CompetitionCreationTaskStatus(models.Model):
         return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
 
 
+
 class Phase(ChaHubSaveMixin, models.Model):
     PREVIOUS = "Previous"
     CURRENT = "Current"
@@ -264,7 +265,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
 
-    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
+    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases", through='TaskOrder')
 
     leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True, related_name="phases")
 
@@ -350,6 +351,15 @@ class Phase(ChaHubSaveMixin, models.Model):
             logger.info(f"This competition is missing the next phase to migrate to.")
         except current_phase.DoesNotExist:
             logger.info(f"This competition is missing the previous phase to migrate from.")
+
+
+class TaskOrder(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    phase = models.ForeignKey(Phase, on_delete=models.CASCADE)
+    order_index = models.PositiveIntegerField(default=999)
+
+    def __str__(self):
+        return f'Task:{self.task.name}, Phase:{self.phase.name}, Order:{int(self.order_index)}'
 
 
 class SubmissionDetails(models.Model):
@@ -578,7 +588,6 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
         }
         return self.clean_private_data(data)
 
-
 class Page(models.Model):
     competition = models.ForeignKey(Competition, related_name='pages', on_delete=models.CASCADE)
     title = models.TextField(max_length=255)
@@ -611,16 +620,3 @@ class CompetitionDump(models.Model):
     def __str__(self):
         return f"Comp dump created by {self.dataset.created_by} - {self.status}"
 
-
-# class Leaderboard(models.Model):
-#     pass
-#
-#
-# class Leaderboard
-
-
-"""
-What if the competition creator adds/removes leaderboards?
-
-what if the competition creator adds/removes columns?
-"""
