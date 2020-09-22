@@ -7,8 +7,9 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer
-from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
+from api.serializers.tasks import TaskListSerializer, TaskSerializer
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, \
+    TaskOrder
 from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
@@ -16,9 +17,21 @@ from tasks.models import Task
 from api.serializers.queues import QueueSerializer
 
 
+class TaskOrderSerializer(serializers.HyperlinkedModelSerializer):
+    task = TaskSerializer()
+
+    class Meta:
+        model = TaskOrder
+        fields = (
+            'task',
+            'order_index',
+        )
+
+
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
                                          many=True)
+    task_order = TaskOrderSerializer(source='taskorder_set', many=True)
 
     class Meta:
         model = Phase
@@ -32,6 +45,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'status',
             'execution_time_limit',
             'tasks',
+            'task_order',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
@@ -46,9 +60,16 @@ class PhaseSerializer(WritableNestedModelSerializer):
             raise ValidationError("Phases require a leaderboard")
         return value
 
-
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    tasks = TaskListSerializer(many=True)
+    # tasks = TaskListSerializer(many=True)
+    tasks = serializers.SerializerMethodField()
+
+    def get_tasks(self, instance):
+        tasks_ordering = instance.taskorder_set.prefetch_related('task').all().order_by('order_index')
+        tasks = []
+        for task_order in tasks_ordering:
+            tasks.append(task_order.task)
+        return TaskListSerializer(tasks, many=True).data
 
     class Meta:
         model = Phase
@@ -69,7 +90,6 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'hide_output',
             'is_final_phase',
         )
-
 
 class PageSerializer(WritableNestedModelSerializer):
     # *NOTE* The competition property has to be replicated at the end of the file

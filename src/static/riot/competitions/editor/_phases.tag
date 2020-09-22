@@ -276,6 +276,7 @@
 
         self.form_updated = function () {
             // This checks phases overall to make sure they are ready to go
+            console.log(self.phase_tasks)
             var is_valid = true
 
             // Make sure we have at least 1 phase
@@ -407,7 +408,14 @@
                 'execution_time_limit'
             ]
             var data = get_form_data(self.refs.form)
-            data.tasks = self.phase_tasks
+            // data.tasks = self.phase_tasks
+            data.task_order = []
+            for(task of self.phase_tasks){
+                data.task_order.push({
+                    order_index: data.task_order.length,
+                    task: task,
+                })
+            }
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
             data.hide_output = self.refs.hide_output.checked
             _.forEach(number_fields, field => {

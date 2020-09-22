@@ -129,6 +129,9 @@ class CompetitionViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         """Mostly a copy of the underlying base update, however we return some additional data
         in the response to remove a GET from the frontend"""
+        from pprint import pprint
+        pprint(request.data)
+        print(f'\n\n\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@REQUEST@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n{request.method}\n\n\n')
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)

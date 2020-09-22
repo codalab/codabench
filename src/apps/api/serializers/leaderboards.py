@@ -130,7 +130,10 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             return ColumnSerializer(columns, many=len(columns) > 1).data
 
     def get_tasks(self, instance):
-        tasks = instance.tasks.all().order_by('order')
+        tasks_ordering = instance.taskorder_set.prefetch_related('task').all().order_by('order_index')
+        tasks = []
+        for task_order in tasks_ordering:
+            tasks.append(task_order.task)
         return TaskSerializer(tasks, many=True, read_only=True).data
 
     class Meta:

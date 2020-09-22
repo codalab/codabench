@@ -197,8 +197,8 @@
             // convert serializer task data to just keys if we didn't edit phases
             // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
-                if (phase.tasks && _.some(phase.tasks, Object)) {
-                    phase.tasks = _.map(phase.tasks, task => task.key || task.value)
+                if (phase.task_order && _.some(phase.task_order, Object)) {
+                    phase.task_order.task = _.map(phase.task_order.task, task => task.key || task.value)
                 }
                 switch (phase.index) {
                     case current_index:
@@ -220,8 +220,14 @@
 
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
+            self.competition_return = JSON.parse(JSON.stringify(self.competition))
+            for(phase of self.competition_return.phases){
+                delete phase.tasks
+            }
+
             // Send competition_id for either create or update, won't hurt anything but is
             // useless for creation
+            console.log("Competition to Save", self.competition_return)
             api_endpoint(self.competition, self.opts.competition_id)
                 .done(function (response) {
                     self.errors = {}

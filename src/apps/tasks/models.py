@@ -11,7 +11,6 @@ class Task(ChaHubSaveMixin, models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField(null=True, blank=True)
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
-    order = models.PositiveIntegerField(default=999)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
