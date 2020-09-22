@@ -57,8 +57,8 @@ class CompetitionPhaseMigrationValidation(TestCase):
     def setUp(self):
         self.user = UserFactory(username='test')
         self.competition = CompetitionFactory(created_by=self.user, id=1)
-        self.phase = PhaseFactory(competition=self.competition)
-        self.leaderboard = LeaderboardFactory(competition=self.competition)
+        self.leaderboard = LeaderboardFactory()
+        self.phase = PhaseFactory(competition=self.competition, leaderboard=self.leaderboard)
 
     def serialize_and_validate_data(self):
         serializer = CompetitionSerializer(self.competition)

@@ -21,8 +21,11 @@
                 .done(function (data) {
                     self.competition = data
                     CODALAB.events.trigger('competition_loaded', self.competition)
-                    let phase = _.find(self.competition.phases, p => p.status === 'Current')
-                    CODALAB.events.trigger('phase_selected', phase ? phase : self.competition.phases[0])
+                    let selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+                    if (selected_phase_index == null) {
+                        selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+                    }
+                    CODALAB.events.trigger('phase.selected',(_.find(self.competition.phases, {id: selected_phase_index})))
                     self.update()
                 })
                 .fail(function (response) {
