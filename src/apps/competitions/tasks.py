@@ -302,7 +302,6 @@ def unpack_competition(status_pk):
     competition_dataset = status.dataset
     creator = competition_dataset.created_by
 
-
     def mark_status_as_failed_and_delete_dataset(competition_creation_status, details):
         competition_creation_status.details = details
         competition_creation_status.status = CompetitionCreationTaskStatus.FAILED
