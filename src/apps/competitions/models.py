@@ -194,7 +194,7 @@ class CompetitionCreationTaskStatus(models.Model):
         (FAILED, "Failed"),
     )
 
-    dataset = models.ForeignKey('datasets.Data', on_delete=models.CASCADE, related_name="competition_bundles")
+    dataset = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, related_name="competition_bundles")
     status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
     details = models.TextField(null=True, blank=True)
 
@@ -202,7 +202,7 @@ class CompetitionCreationTaskStatus(models.Model):
     resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='creation_statuses')
 
     def __str__(self):
-        return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
+        return f"pk: {self.pk} ({self.status})"
 
 
 class Phase(ChaHubSaveMixin, models.Model):

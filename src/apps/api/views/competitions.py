@@ -306,19 +306,15 @@ class CompetitionViewSet(ModelViewSet):
             return response
 
     @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
-    @action(detail=False, methods=('GET',), url_path='creation_status/(?P<dataset_key>.+)')
-    def creation_status(self, request, dataset_key=None):
+    @action(detail=True, methods=('GET',))
+    def creation_status(self, request, pk):
         """This endpoint gets the creation status for a competition during upload"""
+        # TODO: Do we need to check if the requester is the owner of this status object below?
         competition_creation_status = get_object_or_404(
             CompetitionCreationTaskStatus,
-            dataset__created_by=request.user,  # make sure user owns this
-            dataset__key=dataset_key  # lookup dataset by key, we have no competition ID yet
+            pk=pk,
         )
         serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)
-
-        # Cleans up associated data if competition unpacker fails
-        if competition_creation_status.status == 'Failed':
-            competition_creation_status.dataset.delete()
 
         return Response(serializer.data)
 

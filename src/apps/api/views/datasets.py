@@ -13,6 +13,7 @@ from rest_framework.viewsets import ModelViewSet
 from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
+from competitions.models import CompetitionCreationTaskStatus
 from utils.data import make_url_sassy
 
 
@@ -125,6 +126,12 @@ def upload_completed(request, key):
     if dataset.type == Data.COMPETITION_BUNDLE:
         # Doing a local import here to avoid circular imports
         from competitions.tasks import unpack_competition
-        unpack_competition.apply_async((dataset.pk,))
+
+        status = CompetitionCreationTaskStatus.objects.create(
+            dataset=dataset,
+            status=CompetitionCreationTaskStatus.STARTING,
+        )
+        unpack_competition.apply_async((status.pk,))
+        return Response({"id": status.pk})
 
     return Response({"key": dataset.key})
