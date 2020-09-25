@@ -1,4 +1,4 @@
-from drf_writable_nested import WritableNestedModelSerializer
+from drf_writable_nested import WritableNestedModelSerializer, NestedUpdateMixin
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -18,19 +18,28 @@ from api.serializers.queues import QueueSerializer
 
 
 class TaskOrderSerializer(serializers.HyperlinkedModelSerializer):
-    task = TaskSerializer()
+    # task = serializers.PrimaryKeyRelatedField(many=False, queryset=Task.objects.all())
+    task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
+                                         many=False)
+    phase = serializers.PrimaryKeyRelatedField(many=False, queryset=Phase.objects.all())
 
     class Meta:
         model = TaskOrder
         fields = (
             'task',
             'order_index',
+            'phase',
         )
 
+    def create(self, validated_data):
+        from pprint import pprint
+        pprint(validated_data)
+        return super().create(validated_data)
 
-class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
-                                         many=True)
+
+class PhaseUpdateSerializer(WritableNestedModelSerializer):
+    # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+    #                                      many=True)
     task_order = TaskOrderSerializer(source='taskorder_set', many=True)
 
     class Meta:
@@ -44,8 +53,38 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'description',
             'status',
             'execution_time_limit',
-            'tasks',
             'task_order',
+            'has_max_submissions',
+            'max_submissions_per_day',
+            'max_submissions_per_person',
+            'auto_migrate_to_this_phase',
+            'hide_output',
+            'leaderboard',
+            'is_final_phase',
+        )
+
+    def validate_leaderboard(self, value):
+        if not value:
+            raise ValidationError("Phases require a leaderboard")
+        return value
+
+
+class PhaseSerializer(WritableNestedModelSerializer):
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+                                         many=True)
+
+    class Meta:
+        model = Phase
+        fields = (
+            'id',
+            'index',
+            'start',
+            'end',
+            'name',
+            'description',
+            'status',
+            'execution_time_limit',
+            'tasks',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
@@ -104,6 +143,76 @@ class PageSerializer(WritableNestedModelSerializer):
             'content',
             'index',
         )
+
+class CompetitionUpdateSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    pages = PageSerializer(many=True)
+    phases = PhaseUpdateSerializer(many=True)
+    collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
+    queue = QueueSerializer(required=False, allow_null=True)
+    # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
+    # include the logo as a _file_ then we would need to use FormData _not_ JSON.
+    logo = NamedBase64ImageField(required=True, allow_null=True)
+
+    class Meta:
+        model = Competition
+        user_field = 'created_by'
+        fields = (
+            'id',
+            'title',
+            'published',
+            'secret_key',
+            'created_by',
+            'created_when',
+            'logo',
+            'docker_image',
+            'pages',
+            'phases',
+            'collaborators',
+            'description',
+            'terms',
+            'registration_auto_approve',
+            'queue',
+            'enable_detailed_results',
+            'docker_image',
+            'allow_robot_submissions',
+            'competition_type',
+        )
+
+    def validate_phases(self, phases):
+        if not phases or len(phases) <= 0:
+            raise ValidationError("Competitions must have at least one phase")
+        if len(phases) == 1 and phases[0].get('auto_migrate_to_this_phase'):
+            raise ValidationError("You cannot auto migrate in a competition with one phase")
+        if phases[0].get('auto_migrate_to_this_phase') is True:
+            raise ValidationError("You cannot auto migrate to the first phase of a competition")
+        return phases
+
+    def create(self, validated_data):
+        if 'logo' not in validated_data:
+            raise ValidationError("Competitions require a logo upon creation")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        from pprint import pprint
+        print('\n\n\n\n VALIDATED DATA \n')
+        pprint(validated_data)
+        relations, reverse_relations = self._extract_relations(validated_data)
+
+        # Create or update direct relations (foreign key, one-to-one)
+        self.update_or_create_direct_relations(
+            validated_data,
+            relations,
+        )
+
+        # Update instance
+        instance = super(NestedUpdateMixin, self).update(
+            instance,
+            validated_data,
+        )
+        self.update_or_create_reverse_relations(instance, reverse_relations)
+        self.delete_reverse_relations_if_need(instance, reverse_relations)
+        return instance
 
 
 class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
