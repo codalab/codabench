@@ -2,6 +2,7 @@
 
 from django.db import migrations
 
+
 def create_through_relations(apps, schema_editor):
     Phase = apps.get_model('competitions', 'Phase')
     TaskOrder = apps.get_model('competitions', 'TaskOrder')
@@ -13,8 +14,8 @@ def create_through_relations(apps, schema_editor):
                 order_index=999,
             ).save()
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
         ('competitions', '0017_taskorder'),
     ]

@@ -147,7 +147,6 @@
             CODALAB.api.get_competition(id)
                 .done(function (data) {
                     self.competition = data
-                    console.log('get_compeititon', self.competition)
                     for(phase of self.competition.phases){
                         phase.task_order = []
                         for(task of phase.tasks){
@@ -230,7 +229,6 @@
 
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
-            console.log('self.competition', self.competition)
             self.competition_return = JSON.parse(JSON.stringify(self.competition))
             for(phase of self.competition_return.phases){
                 for(taskord of phase.task_order){
@@ -238,7 +236,6 @@
                 }
                 delete phase.tasks
             }
-            console.log("Competition to Save", self.competition_return)
 
             // Send competition_id for either create or update, won't hurt anything but is
             // useless for creation

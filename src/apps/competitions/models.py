@@ -43,7 +43,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
     enable_detailed_results = models.BooleanField(default=False)
 
-    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
+    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='competitions')
 
     allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
@@ -168,7 +169,8 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def get_chahub_is_valid(self):
         has_phases = self.phases.exists()
-        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()]) if self.creation_statuses.exists() else True
+        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in
+                               self.creation_statuses.all()]) if self.creation_statuses.exists() else True
         return has_phases and upload_finished
 
     def get_whitelist(self):
@@ -229,11 +231,11 @@ class CompetitionCreationTaskStatus(models.Model):
     details = models.TextField(null=True, blank=True)
 
     # The resulting competition is only made on success
-    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='creation_statuses')
+    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True,
+                                              related_name='creation_statuses')
 
     def __str__(self):
         return f"Comp uploaded by {self.dataset.created_by} - {self.status}"
-
 
 
 class Phase(ChaHubSaveMixin, models.Model):
@@ -267,7 +269,8 @@ class Phase(ChaHubSaveMixin, models.Model):
 
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases", through='TaskOrder')
 
-    leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True, related_name="phases")
+    leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True,
+                                    related_name="phases")
 
     class Meta:
         ordering = ('index',)
@@ -413,9 +416,12 @@ class Submission(ChaHubSaveMixin, models.Model):
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE, related_name='submission')
     md5 = models.CharField(max_length=32, null=True, blank=True)
 
-    prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
-    scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True, storage=BundleStorage)
-    detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
+    prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True,
+                                         storage=BundleStorage)
+    scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True,
+                                      storage=BundleStorage)
+    detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True,
+                                       storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
@@ -430,7 +436,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
     is_migrated = models.BooleanField(default=False)
-    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
+    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
+                                             null=True,
                                              blank=True)
 
     scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
@@ -492,7 +499,8 @@ class Submission(ChaHubSaveMixin, models.Model):
         # for leaderboard in leaderboards:
         columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
         for column in columns:
-            scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
+            scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
+                                                                                                             flat=True)
             if scores.exists():
                 score = column.compute(scores)
                 try:
@@ -588,6 +596,7 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
         }
         return self.clean_private_data(data)
 
+
 class Page(models.Model):
     competition = models.ForeignKey(Competition, related_name='pages', on_delete=models.CASCADE)
     title = models.TextField(max_length=255)
@@ -619,4 +628,3 @@ class CompetitionDump(models.Model):
 
     def __str__(self):
         return f"Comp dump created by {self.dataset.created_by} - {self.status}"
-

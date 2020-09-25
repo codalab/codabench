@@ -189,7 +189,6 @@
                 apiSettings: {
                     url: `${URLS.API}tasks/?search={query}`,
                     onResponse: (data) => {
-                        console.log("DATA", JSON.parse(JSON.stringify(data)))
                         return {success: true, results: _.values(data.results)}
                     },
                 },
@@ -228,7 +227,6 @@
                 self.phase_tasks.push(task)
             }
             self.form_updated()
-            console.log('added: phase_tasks', self.phase_tasks)
         }
 
         self.task_removed = (key, text, item) => {
@@ -237,7 +235,6 @@
             })
             self.phase_tasks.splice(index, 1)
             self.form_updated()
-            console.log('removed: phase_tasks', self.phase_tasks)
         }
 
         self.show_modal = function () {
@@ -412,7 +409,6 @@
             var data = get_form_data(self.refs.form)
             // data.tasks = self.phase_tasks
             data.task_order = []
-            console.log('Save Tasks', self.phase_tasks)
             for(task of self.phase_tasks){
                 data.task_order.push({
                     order_index: data.task_order.length,

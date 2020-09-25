@@ -7,7 +7,7 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer, TaskSerializer
+from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, \
     TaskOrder
 from leaderboards.models import Leaderboard
@@ -20,7 +20,7 @@ from api.serializers.queues import QueueSerializer
 class TaskOrderSerializer(serializers.HyperlinkedModelSerializer):
     # task = serializers.PrimaryKeyRelatedField(many=False, queryset=Task.objects.all())
     task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
-                                         many=False)
+                                        many=False)
     phase = serializers.PrimaryKeyRelatedField(many=False, queryset=Phase.objects.all())
 
     class Meta:
@@ -99,6 +99,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             raise ValidationError("Phases require a leaderboard")
         return value
 
+
 class PhaseDetailSerializer(serializers.ModelSerializer):
     # tasks = TaskListSerializer(many=True)
     tasks = serializers.SerializerMethodField()
@@ -130,6 +131,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'is_final_phase',
         )
 
+
 class PageSerializer(WritableNestedModelSerializer):
     # *NOTE* The competition property has to be replicated at the end of the file
     # after the CompetitionSerializer class is declared
@@ -143,6 +145,7 @@ class PageSerializer(WritableNestedModelSerializer):
             'content',
             'index',
         )
+
 
 class CompetitionUpdateSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
