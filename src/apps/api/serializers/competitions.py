@@ -101,14 +101,11 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    # tasks = TaskListSerializer(many=True)
     tasks = serializers.SerializerMethodField()
 
     def get_tasks(self, instance):
-        tasks_ordering = instance.phasetaskinstance_set.prefetch_related('task').all().order_by('order_index')
-        tasks = []
-        for task_order in tasks_ordering:
-            tasks.append(task_order.task)
+        tasksords = instance.phasetaskinstance_set.select_related('task').all()
+        tasks = [taskord.task for taskord in tasksords]
         return TaskListSerializer(tasks, many=True).data
 
     class Meta:

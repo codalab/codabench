@@ -361,6 +361,9 @@ class PhaseTaskInstance(models.Model):
     phase = models.ForeignKey(Phase, on_delete=models.CASCADE)
     order_index = models.PositiveIntegerField(default=999)
 
+    class Meta:
+        ordering = ["order_index"]
+
     def __str__(self):
         return f'Task:{self.task.name}, Phase:{self.phase.name}, Order:{int(self.order_index)}'
 
