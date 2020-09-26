@@ -40,7 +40,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
 class PhaseUpdateSerializer(WritableNestedModelSerializer):
     # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
     #                                      many=True)
-    task_order = PhaseTaskInstanceSerializer(source='phasetaskinstance_set', many=True)
+    phasetaskinstance = PhaseTaskInstanceSerializer(source='phasetaskinstance_set', many=True)
 
     class Meta:
         model = Phase
@@ -53,7 +53,7 @@ class PhaseUpdateSerializer(WritableNestedModelSerializer):
             'description',
             'status',
             'execution_time_limit',
-            'task_order',
+            'phasetaskinstance',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
