@@ -9,7 +9,7 @@ from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, \
-    TaskOrder
+    PhaseTaskInstance
 from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
@@ -17,14 +17,14 @@ from tasks.models import Task
 from api.serializers.queues import QueueSerializer
 
 
-class TaskOrderSerializer(serializers.HyperlinkedModelSerializer):
+class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     # task = serializers.PrimaryKeyRelatedField(many=False, queryset=Task.objects.all())
     task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
                                         many=False)
     phase = serializers.PrimaryKeyRelatedField(many=False, queryset=Phase.objects.all())
 
     class Meta:
-        model = TaskOrder
+        model = PhaseTaskInstance
         fields = (
             'task',
             'order_index',
@@ -40,7 +40,7 @@ class TaskOrderSerializer(serializers.HyperlinkedModelSerializer):
 class PhaseUpdateSerializer(WritableNestedModelSerializer):
     # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
     #                                      many=True)
-    task_order = TaskOrderSerializer(source='taskorder_set', many=True)
+    task_order = PhaseTaskInstanceSerializer(source='phasetaskinstance_set', many=True)
 
     class Meta:
         model = Phase
@@ -105,7 +105,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = serializers.SerializerMethodField()
 
     def get_tasks(self, instance):
-        tasks_ordering = instance.taskorder_set.prefetch_related('task').all().order_by('order_index')
+        tasks_ordering = instance.phasetaskinstance_set.prefetch_related('task').all().order_by('order_index')
         tasks = []
         for task_order in tasks_ordering:
             tasks.append(task_order.task)

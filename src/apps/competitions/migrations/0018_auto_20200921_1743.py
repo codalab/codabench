@@ -5,10 +5,10 @@ from django.db import migrations
 
 def create_through_relations(apps, schema_editor):
     Phase = apps.get_model('competitions', 'Phase')
-    TaskOrder = apps.get_model('competitions', 'TaskOrder')
+    PhaseTaskInstance = apps.get_model('competitions', 'PhaseTaskInstance')
     for phase in Phase.objects.all():
         for task in phase.tasks.all():
-            TaskOrder(
+            PhaseTaskInstance(
                 phase=phase,
                 task=task,
                 order_index=999,
@@ -17,7 +17,7 @@ def create_through_relations(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('competitions', '0017_taskorder'),
+        ('competitions', '0017_phasetaskinstance'),
     ]
 
     operations = [

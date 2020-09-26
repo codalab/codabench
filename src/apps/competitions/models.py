@@ -267,7 +267,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
 
-    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases", through='TaskOrder')
+    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name='phases', through='PhaseTaskInstance')
 
     leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True,
                                     related_name="phases")
@@ -356,7 +356,7 @@ class Phase(ChaHubSaveMixin, models.Model):
             logger.info(f"This competition is missing the previous phase to migrate from.")
 
 
-class TaskOrder(models.Model):
+class PhaseTaskInstance(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     phase = models.ForeignKey(Phase, on_delete=models.CASCADE)
     order_index = models.PositiveIntegerField(default=999)

@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='phase',
             name='tasks',
-            field=models.ManyToManyField(blank=True, related_name='phases', through='competitions.TaskOrder', to='tasks.Task'),
+            field=models.ManyToManyField(blank=True, related_name='phases', through='competitions.PhaseTaskInstance', to='tasks.Task'),
         ),
     ]
