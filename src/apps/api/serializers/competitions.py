@@ -1,4 +1,4 @@
-from drf_writable_nested import WritableNestedModelSerializer, NestedUpdateMixin
+from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
