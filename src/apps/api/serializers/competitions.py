@@ -31,11 +31,6 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'phase',
         )
 
-    def create(self, validated_data):
-        from pprint import pprint
-        pprint(validated_data)
-        return super().create(validated_data)
-
 
 class PhaseUpdateSerializer(WritableNestedModelSerializer):
     # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
@@ -192,27 +187,6 @@ class CompetitionUpdateSerializer(DefaultUserCreateMixin, WritableNestedModelSer
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
         return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        from pprint import pprint
-        print('\n\n\n\n VALIDATED DATA \n')
-        pprint(validated_data)
-        relations, reverse_relations = self._extract_relations(validated_data)
-
-        # Create or update direct relations (foreign key, one-to-one)
-        self.update_or_create_direct_relations(
-            validated_data,
-            relations,
-        )
-
-        # Update instance
-        instance = super(NestedUpdateMixin, self).update(
-            instance,
-            validated_data,
-        )
-        self.update_or_create_reverse_relations(instance, reverse_relations)
-        self.delete_reverse_relations_if_need(instance, reverse_relations)
-        return instance
 
 
 class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
