@@ -101,6 +101,7 @@ class TaskFactory(DjangoModelFactory):
             for solution in extracted:
                 self.solutions.add(solution)
 
+
 class SolutionFactory(DjangoModelFactory):
     class Meta:
         model = Solution
@@ -143,6 +144,7 @@ class PhaseTaskInstanceFactory(DjangoModelFactory):
     order_index = 99
     phase = factory.SubFactory(PhaseFactory)
     task = factory.SubFactory(TaskFactory)
+
 
 class SubmissionFactory(DjangoModelFactory):
     class Meta:

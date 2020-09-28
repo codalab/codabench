@@ -95,6 +95,7 @@ class CompetitionPhaseMigrationValidation(TestCase):
 
         assert ("Competitions must have at least one phase" in str(exception.value))
 
+
 class PhaseTaskInstanceTests(APITestCase):
     def setUp(self):
         self.phase = PhaseFactory()
@@ -113,4 +114,3 @@ class PhaseTaskInstanceTests(APITestCase):
 
         for index in range(len(self.tasks)):
             assert self.tasks_random[index].id == self.serializer['tasks'][index]['id']
-
