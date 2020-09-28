@@ -88,7 +88,7 @@
 
                 <div class="fluid field required">
                     <label for="tasks">
-                        Tasks
+                        Tasks (Order will be saved)
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
