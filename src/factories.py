@@ -7,7 +7,7 @@ from factory import post_generation
 from factory.django import DjangoModelFactory
 from pytz import UTC
 
-from competitions.models import Competition, Phase, Submission, CompetitionParticipant
+from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
 from datasets.models import Data
 from leaderboards.models import Leaderboard, Column, SubmissionScore
 from profiles.models import User
@@ -101,7 +101,6 @@ class TaskFactory(DjangoModelFactory):
             for solution in extracted:
                 self.solutions.add(solution)
 
-
 class SolutionFactory(DjangoModelFactory):
     class Meta:
         model = Solution
@@ -136,6 +135,14 @@ class PhaseFactory(DjangoModelFactory):
         else:
             self.tasks.add(TaskFactory.create())
 
+
+class PhaseTaskInstanceFactory(DjangoModelFactory):
+    class Meta:
+        model = PhaseTaskInstance
+
+    order_index = 99
+    phase = factory.SubFactory(PhaseFactory)
+    task = factory.SubFactory(TaskFactory)
 
 class SubmissionFactory(DjangoModelFactory):
     class Meta:

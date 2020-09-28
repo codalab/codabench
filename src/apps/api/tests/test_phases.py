@@ -1,11 +1,12 @@
 from django.urls import reverse
 import pytest
+import random
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from rest_framework.exceptions import ValidationError
 
-from api.serializers.competitions import CompetitionSerializer
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory
+from api.serializers.competitions import CompetitionSerializer, PhaseDetailSerializer
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, LeaderboardFactory, TaskFactory, PhaseTaskInstanceFactory
 
 
 class ReRunPhaseSubmissionTests(APITestCase):
@@ -93,3 +94,23 @@ class CompetitionPhaseMigrationValidation(TestCase):
         exception = self.serialize_and_validate_data()
 
         assert ("Competitions must have at least one phase" in str(exception.value))
+
+class PhaseTaskInstanceTests(APITestCase):
+    def setUp(self):
+        self.phase = PhaseFactory()
+        self.dummy_task = self.phase.tasks.first()
+        self.tasks = [TaskFactory() for x in range(10)]
+        self.tasks_random = [task for task in self.tasks]
+        random.shuffle(self.tasks_random)
+        for task in self.tasks:
+            order_index = self.tasks_random.index(task)
+            PhaseTaskInstanceFactory(phase=self.phase, task=task, order_index=order_index)
+        self.phase.tasks.remove(self.dummy_task)
+
+    def test_phase_detail_tasks_ordered(self):
+        self.serializer = PhaseDetailSerializer(self.phase).data
+        assert len(self.tasks) == len(self.serializer['tasks'])
+
+        for index in range(len(self.tasks)):
+            assert self.tasks_random[index].id == self.serializer['tasks'][index]['id']
+
