@@ -408,10 +408,10 @@
             ]
             var data = get_form_data(self.refs.form)
             // data.tasks = self.phase_tasks
-            data.phasetaskinstance = []
+            data.task_instances = []
             for(task of self.phase_tasks){
-                data.phasetaskinstance.push({
-                    order_index: data.phasetaskinstance.length,
+                data.task_instances.push({
+                    order_index: data.task_instances.length,
                     task: task.value,
                 })
             }

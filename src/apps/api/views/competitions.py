@@ -133,14 +133,15 @@ class CompetitionViewSet(ModelViewSet):
         instance = self.get_object()
 
         from pprint import pprint
-        print(f'\n\n\nREQUEST DATA\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`')
+
+        print(f'\n\nRequest Type: {self.action}\nREQUEST DATA\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`')
         pprint(request.data)
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
-        print(f'\n\n\nSERIALIZER DATA\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`')
-        pprint(serializer.data)
+        # print(f'\n\n\nSERIALIZER DATA\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@`')
+        # pprint(serializer.data)
         print('\nEND\n\n\n')
         self.perform_update(serializer)
 

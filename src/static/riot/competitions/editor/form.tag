@@ -148,12 +148,12 @@
                 .done(function (data) {
                     self.competition = data
                     for(phase of self.competition.phases){
-                        phase.phasetaskinstance = []
+                        phase.task_instances = []
                         for(task of phase.tasks){
-                            phase.phasetaskinstance.push({
+                            phase.task_instances.push({
                                 task: task.value,
                                 phase: phase.id,
-                                order_index: phase.phasetaskinstance.length,
+                                order_index: phase.task_instances.length,
                             })
                         }
                     }
@@ -206,8 +206,8 @@
             // convert serializer task data to just keys if we didn't edit phases
             // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
-                if (phase.phasetaskinstance && _.some(phase.phasetaskinstance, Object)) {
-                    phase.phasetaskinstance.task = _.map(phase.phasetaskinstance.task, task => task.key || task.value)
+                if (phase.task_instances && _.some(phase.task_instances, Object)) {
+                    phase.task_instances.task = _.map(phase.task_instances.task, task => task.key || task.value)
                 }
                 switch (phase.index) {
                     case current_index:
@@ -231,10 +231,11 @@
 
             self.competition_return = JSON.parse(JSON.stringify(self.competition))
             for(phase of self.competition_return.phases){
-                for(taskord of phase.phasetaskinstance){
+                for(taskord of phase.task_instances){
                     taskord.phase = phase.id
                 }
-                delete phase.tasks
+                phase.tasks = phase.task_instances
+                delete phase.task_instances
             }
 
             // Send competition_id for either create or update, won't hurt anything but is
