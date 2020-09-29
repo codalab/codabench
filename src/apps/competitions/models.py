@@ -358,7 +358,7 @@ class Phase(ChaHubSaveMixin, models.Model):
 
 class PhaseTaskInstance(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    phase = models.ForeignKey(Phase, on_delete=models.CASCADE)
+    phase = models.ForeignKey(Phase, on_delete=models.CASCADE, related_name="task_instances")
     order_index = models.PositiveIntegerField(default=999)
 
     class Meta:

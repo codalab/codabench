@@ -22,7 +22,7 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer
+    FrontPageCompetitionsSerializer, PhaseResultsSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
@@ -110,8 +110,8 @@ class CompetitionViewSet(ModelViewSet):
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
-        elif self.request.method == 'PATCH':
-            return CompetitionUpdateSerializer
+        # elif self.request.method == 'PATCH':
+        #     return CompetitionUpdateSerializer
         else:
             return CompetitionSerializer
 
