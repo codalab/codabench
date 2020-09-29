@@ -34,7 +34,6 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'task',
             'order_index',
             'phase',
-
             'id',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
@@ -77,9 +76,8 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
 #
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
-    #                                      many=True)
-    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+                                         many=True)
 
     class Meta:
         model = Phase
@@ -110,7 +108,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    tasks = TaskListSerializer(many=True)
+    # tasks = TaskListSerializer(many=True)
     #
     # def get_tasks(self, instance):
     #     tasksords = instance.phasetaskinstance_set.select_related('task').all()
@@ -118,6 +116,8 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
     #     return TaskListSerializer(tasks, many=True).data
     #
     # tasks = PhaseTaskInstanceSerializer(source="task_instances", many=True)
+
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     class Meta:
         model = Phase
