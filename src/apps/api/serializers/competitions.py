@@ -7,73 +7,14 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer
-from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, \
-    PhaseTaskInstance
+from api.serializers.tasks import TaskListSerializer, PhaseTaskInstanceSerializer
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
 
 from api.serializers.queues import QueueSerializer
 
-
-class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
-    task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
-                                        many=False)
-    phase = serializers.PrimaryKeyRelatedField(many=False, queryset=Phase.objects.all())
-    id = serializers.IntegerField(source='task.id')
-    value = serializers.CharField(source='task.key', required=False)
-    key = serializers.CharField(source='task.key', required=False)
-    created_when = serializers.DateTimeField(source='task.created_when')
-    name = serializers.CharField(source='task.name')
-
-
-    class Meta:
-        model = PhaseTaskInstance
-        fields = (
-            'task',
-            'order_index',
-            'phase',
-            'id',
-            # Value is used for Semantic Multiselect dropdown api calls
-            'value',
-            'key',
-            'created_when',
-            'name',
-            # 'solutions',
-            # 'ingestion_only_during_scoring',
-        )
-
-
-# class PhaseUpdateSerializer(WritableNestedModelSerializer):
-#     phasetaskinstance = PhaseTaskInstanceSerializer(source='phasetaskinstance_set', many=True)
-#
-#     class Meta:
-#         model = Phase
-#         fields = (
-#             'id',
-#             'index',
-#             'start',
-#             'end',
-#             'name',
-#             'description',
-#             'status',
-#             'execution_time_limit',
-#             'phasetaskinstance',
-#             'has_max_submissions',
-#             'max_submissions_per_day',
-#             'max_submissions_per_person',
-#             'auto_migrate_to_this_phase',
-#             'hide_output',
-#             'leaderboard',
-#             'is_final_phase',
-#         )
-#
-#     def validate_leaderboard(self, value):
-#         if not value:
-#             raise ValidationError("Phases require a leaderboard")
-#         return value
-#
 
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
@@ -108,15 +49,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    # tasks = TaskListSerializer(many=True)
-    #
-    # def get_tasks(self, instance):
-    #     tasksords = instance.phasetaskinstance_set.select_related('task').all()
-    #     tasks = [taskord.task for taskord in tasksords]
-    #     return TaskListSerializer(tasks, many=True).data
-    #
-    # tasks = PhaseTaskInstanceSerializer(source="task_instances", many=True)
-
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     class Meta:
@@ -153,57 +85,6 @@ class PageSerializer(WritableNestedModelSerializer):
             'content',
             'index',
         )
-
-
-# class CompetitionUpdateSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
-#     created_by = serializers.CharField(source='created_by.username', read_only=True)
-#     pages = PageSerializer(many=True)
-#     phases = PhaseUpdateSerializer(many=True)
-#     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
-#     queue = QueueSerializer(required=False, allow_null=True)
-#     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
-#     # include the logo as a _file_ then we would need to use FormData _not_ JSON.
-#     logo = NamedBase64ImageField(required=True, allow_null=True)
-#
-#     class Meta:
-#         model = Competition
-#         user_field = 'created_by'
-#         fields = (
-#             'id',
-#             'title',
-#             'published',
-#             'secret_key',
-#             'created_by',
-#             'created_when',
-#             'logo',
-#             'docker_image',
-#             'pages',
-#             'phases',
-#             'collaborators',
-#             'description',
-#             'terms',
-#             'registration_auto_approve',
-#             'queue',
-#             'enable_detailed_results',
-#             'docker_image',
-#             'allow_robot_submissions',
-#             'competition_type',
-#         )
-#
-#     def validate_phases(self, phases):
-#         if not phases or len(phases) <= 0:
-#             raise ValidationError("Competitions must have at least one phase")
-#         if len(phases) == 1 and phases[0].get('auto_migrate_to_this_phase'):
-#             raise ValidationError("You cannot auto migrate in a competition with one phase")
-#         if phases[0].get('auto_migrate_to_this_phase') is True:
-#             raise ValidationError("You cannot auto migrate to the first phase of a competition")
-#         return phases
-#
-#     def create(self, validated_data):
-#         if 'logo' not in validated_data:
-#             raise ValidationError("Competitions require a logo upon creation")
-#         return super().create(validated_data)
-#
 
 class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)

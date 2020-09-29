@@ -7,7 +7,7 @@ from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
-from .tasks import TaskSerializer
+from .tasks import PhaseTaskInstanceSerializer
 
 
 class ColumnSerializer(WritableNestedModelSerializer):
@@ -119,9 +119,8 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
-    tasks = serializers.SerializerMethodField()
     columns = serializers.SerializerMethodField()
-    # tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     def get_columns(self, instance):
         columns = Column.objects.filter(leaderboard=instance.leaderboard)
@@ -129,13 +128,6 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("No columns exist on the leaderboard")
         else:
             return ColumnSerializer(columns, many=len(columns) > 1).data
-
-    def get_tasks(self, instance):
-        tasks_ordering = instance.phasetaskinstance_set.prefetch_related('task').all().order_by('order_index')
-        tasks = []
-        for task_order in tasks_ordering:
-            tasks.append(task_order.task)
-        return TaskSerializer(tasks, many=True, read_only=True).data
 
     class Meta:
         model = Phase
