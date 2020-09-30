@@ -17,7 +17,8 @@ from api.serializers.queues import QueueSerializer
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
+                                        many=True)
 
     class Meta:
         model = Phase
@@ -47,11 +48,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
         return value
 
 
-class PhaseCreationSerializer(PhaseSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
-                                         many=True)
-
-
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
@@ -74,6 +70,10 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'hide_output',
             'is_final_phase',
         )
+
+
+class PhaseUpdateSerializer(PhaseSerializer):
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
 
 class PageSerializer(WritableNestedModelSerializer):
@@ -141,8 +141,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
         return super().create(validated_data)
 
 
-class CompetitionCreationSerializer(CompetitionSerializer):
-    phases = PhaseCreationSerializer(many=True)
+class CompetitionUpdateSerializer(CompetitionSerializer):
+    phases = PhaseUpdateSerializer(many=True)
 
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):

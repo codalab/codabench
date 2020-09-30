@@ -22,7 +22,7 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer
+    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
@@ -110,6 +110,8 @@ class CompetitionViewSet(ModelViewSet):
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
             return CompetitionDetailSerializer
+        elif self.request.method == 'PATCH':
+            return CompetitionUpdateSerializer
         else:
             return CompetitionSerializer
 
@@ -152,7 +154,7 @@ class CompetitionViewSet(ModelViewSet):
 
         # Re-do serializer in detail version (i.e. for Collaborator data)
         context = self.get_serializer_context()
-        serializer = CompetitionDetailSerializer(serializer.instance, context=context)
+        serializer = CompetitionUpdateSerializer(serializer.instance, context=context)
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
