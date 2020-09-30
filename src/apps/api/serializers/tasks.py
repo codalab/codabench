@@ -127,6 +127,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'value',
         )
 
+
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
                                         many=False)
@@ -136,7 +137,6 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
     name = serializers.CharField(source='task.name', required=False)
-
 
     class Meta:
         model = PhaseTaskInstance
@@ -153,5 +153,3 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             # 'solutions',
             # 'ingestion_only_during_scoring',
         )
-
-

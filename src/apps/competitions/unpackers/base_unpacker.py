@@ -7,7 +7,7 @@ from django.core.files import File
 from django.test import RequestFactory
 from django.utils import timezone
 
-from api.serializers.competitions import CompetitionSerializer, CompetitionCreationSerializer
+from api.serializers.competitions import CompetitionCreationSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Phase

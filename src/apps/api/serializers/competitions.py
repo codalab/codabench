@@ -7,7 +7,7 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer, PhaseTaskInstanceSerializer
+from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -50,7 +50,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
 class PhaseCreationSerializer(PhaseSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
                                          many=True)
-
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):

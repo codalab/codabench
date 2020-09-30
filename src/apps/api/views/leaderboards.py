@@ -65,6 +65,7 @@ def add_submission_to_leaderboard(request, submission_pk):
 
     return Response({})
 
+
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 def remove_submission_from_leaderboard(request, submission_pk):
