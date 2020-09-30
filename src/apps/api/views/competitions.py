@@ -130,7 +130,7 @@ class CompetitionViewSet(ModelViewSet):
 
         # Re-do serializer in detail version (i.e. for Collaborator data)
         context = self.get_serializer_context()
-        serializer = CompetitionSerializer(serializer.instance, context=context)
+        serializer = CompetitionDetailSerializer(serializer.instance, context=context)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
