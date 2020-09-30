@@ -18,7 +18,7 @@ from api.serializers.queues import QueueSerializer
 
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
-                                        many=True)
+                                         many=True)
 
     class Meta:
         model = Phase
