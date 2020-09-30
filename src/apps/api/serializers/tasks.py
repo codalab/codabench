@@ -84,7 +84,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     reference_data = DataSimpleSerializer(read_only=True)
     scoring_program = DataSimpleSerializer(read_only=True)
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
-    validated = serializers.SerializerMethodField()
+    validated = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Task

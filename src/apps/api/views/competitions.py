@@ -118,6 +118,11 @@ class CompetitionViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Mostly a copy of the underlying base create, however we return some additional data
         in the response to remove a GET from the frontend"""
+
+        for phase in request.data['phases']:
+            for index in range(len(phase['tasks'])):
+                phase['tasks'][index] = phase['tasks'][index]['task']
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -125,7 +130,7 @@ class CompetitionViewSet(ModelViewSet):
 
         # Re-do serializer in detail version (i.e. for Collaborator data)
         context = self.get_serializer_context()
-        serializer = CompetitionDetailSerializer(serializer.instance, context=context)
+        serializer = CompetitionSerializer(serializer.instance, context=context)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
