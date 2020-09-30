@@ -219,6 +219,7 @@
          Methods
         ---------------------------------------------------------------------*/
         self.task_added = (key, text, item) => {
+            console.log("Task Added")
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
             })
@@ -366,6 +367,7 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
+            console.log("self.phase_tasks", self.phase_tasks)
 
             self.update()
             set_form_data(phase, self.refs.form)
