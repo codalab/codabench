@@ -306,6 +306,7 @@ def unpack_competition(competition_dataset_pk):
         status=CompetitionCreationTaskStatus.STARTING,
     )
 
+
     try:
         with TemporaryDirectory() as temp_directory:
             # ---------------------------------------------------------------------

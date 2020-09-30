@@ -96,7 +96,7 @@ class V2Unpacker(BaseUnpacker):
                         raise CompetitionUnpackingException(
                             f'ERROR: Task "{task.get("name") or index}" does not have a scoring program'
                         )
-                self.competition['tasks'][index] = new_task
+                    self.competition['tasks'][index] = new_task
 
     def _unpack_solutions(self):
         # ---------------------------------------------------------------------

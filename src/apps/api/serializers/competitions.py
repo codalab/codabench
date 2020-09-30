@@ -17,8 +17,6 @@ from api.serializers.queues import QueueSerializer
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    # tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
-    #                                      many=True)
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     class Meta:
@@ -47,6 +45,12 @@ class PhaseSerializer(WritableNestedModelSerializer):
         if not value:
             raise ValidationError("Phases require a leaderboard")
         return value
+
+
+class PhaseCreationSerializer(PhaseSerializer):
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+                                         many=True)
+
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
@@ -86,6 +90,7 @@ class PageSerializer(WritableNestedModelSerializer):
             'content',
             'index',
         )
+
 
 class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
@@ -135,6 +140,10 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
         return super().create(validated_data)
+
+
+class CompetitionCreationSerializer(CompetitionSerializer):
+    phases = PhaseCreationSerializer(many=True)
 
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
