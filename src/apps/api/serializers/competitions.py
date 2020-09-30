@@ -32,7 +32,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'status',
             'execution_time_limit',
             'tasks',
-            # 'task_instances',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
