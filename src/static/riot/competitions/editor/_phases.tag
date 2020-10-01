@@ -86,13 +86,13 @@
                     </div>
                 </div>
 
-                <div class="fluid field required">
+                <div class="fluid field required" ref="tasks_select_container">
                     <label for="tasks">
                         Tasks (Order will be saved)
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
-                    <select  name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
+                    <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
                             multiple="multiple">
                     </select>
                 </div>
@@ -184,6 +184,7 @@
 
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
+
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
@@ -219,7 +220,6 @@
          Methods
         ---------------------------------------------------------------------*/
         self.task_added = (key, text, item) => {
-            console.log("Task Added")
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
             })
@@ -391,6 +391,10 @@
                 }))
 
             self.show_modal()
+
+            // make semantic multiselect sortable -- Sortable library imported in competitions/form.html
+            Sortable.create($('.search.dropdown.multiple', self.refs.tasks_select_container)[0])
+
             self.form_check_is_valid()
             self.update()
         }
