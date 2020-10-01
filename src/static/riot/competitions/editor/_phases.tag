@@ -236,6 +236,7 @@
             })
             self.phase_tasks.splice(index, 1)
             self.form_updated()
+            console.log("task_removed", self.phase_tasks)
         }
 
         self.show_modal = function () {
@@ -367,7 +368,7 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
-            console.log("self.phase_tasks", self.phase_tasks)
+            console.log("self.phase_tasks(edit)", self.phase_tasks)
 
             self.update()
             set_form_data(phase, self.refs.form)
@@ -409,7 +410,7 @@
                 'execution_time_limit'
             ]
             var data = get_form_data(self.refs.form)
-            // data.tasks = self.phase_tasks
+            data.tasks = self.phase_tasks
             data.task_instances = []
             for(task of self.phase_tasks){
                 data.task_instances.push({
@@ -429,12 +430,15 @@
             })
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
+                console.log("if data", data)
             } else {
                 // We have a selected phase, do an update instead of a create
                 data.id = self.phases[self.selected_phase_index].id
                 self.phases[self.selected_phase_index] = data
+                console.log("esle_data", data)
             }
             self.close_modal()
+            console.log("self.phase_tasks(save)", self.phase_tasks)
         }
 
         /*---------------------------------------------------------------------
