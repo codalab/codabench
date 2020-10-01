@@ -150,6 +150,4 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'key',
             'created_when',
             'name',
-            # 'solutions',
-            # 'ingestion_only_during_scoring',
         )
