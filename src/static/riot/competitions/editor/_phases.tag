@@ -380,10 +380,10 @@
 
             // Setting Tasks
             $(self.refs.multiselect)
-                .dropdown('change values', _.map(phase.tasks, task => {
+                .dropdown('change values', _.map(self.phase_tasks, task => {
                     // renaming things to work w/ semantic UI multiselect
                     return {
-                        value: task.key,
+                        value: task.value,
                         text: task.name,
                         name: task.name,
                         selected: true,
