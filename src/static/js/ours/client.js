@@ -105,6 +105,9 @@ CODALAB.api = {
     add_submission_to_leaderboard: function (submission_pk) {
         return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
     },
+    remove_submission_from_leaderboard: function (submission_pk) {
+        return CODALAB.api.request('POST', URLS.API + "remove_submission_from_leaderboard/" + submission_pk + '/')
+    },
     get_leaderboard_for_render: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard`)
     },

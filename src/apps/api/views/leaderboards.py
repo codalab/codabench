@@ -70,7 +70,7 @@ def add_submission_to_leaderboard(request, submission_pk):
 @permission_classes((IsAuthenticated, ))
 def remove_submission_from_leaderboard(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
-    submission.leaderboard = submission.phase.leaderboard
+    submission.leaderboard = None
     submission.save()
 
     return Response({})

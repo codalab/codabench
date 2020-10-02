@@ -99,7 +99,7 @@
                 <span if="{ submission.on_leaderboard }"
                      data-tooltip="On the Leaderboard"
                      data-inverted=""
-                     onclick="{do_nothing}">
+                     onclick="{ remove_from_leaderboard.bind(this, submission) }">
                     <i class="icon green check"></i>
                 </span>
                 <span if="{!submission.is_public && submission.status === 'Finished'}"
@@ -224,7 +224,18 @@
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
-                    CODALAB.events.trigger('submission_added_to_leaderboard')
+                    CODALAB.events.trigger('submission_changed_on_leaderboard')
+                })
+                .fail(function (response) {
+                    toastr.error("Could not find competition")
+                })
+            event.stopPropagation()
+        }
+        self.remove_from_leaderboard = function (submission) {
+            CODALAB.api.remove_submission_from_leaderboard(submission.id)
+                .done(function (data) {
+                    self.update_submissions()
+                    CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
                     toastr.error("Could not find competition")
