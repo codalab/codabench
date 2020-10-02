@@ -86,7 +86,7 @@
                     </div>
                 </div>
 
-                <div class="fluid field required" ref="tasks_select_container">
+                <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
                         Tasks (Order will be saved)
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
@@ -236,7 +236,6 @@
             })
             self.phase_tasks.splice(index, 1)
             self.form_updated()
-            console.log("task_removed", self.phase_tasks)
         }
 
         self.show_modal = function () {
@@ -368,7 +367,6 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
-            console.log("self.phase_tasks(edit)", self.phase_tasks)
 
             self.update()
             set_form_data(phase, self.refs.form)
@@ -413,6 +411,25 @@
                 'max_submissions_per_day',
                 'execution_time_limit'
             ]
+            // Get tasks order from DOM and order the task array by that.
+            let tasks_from_dom = []
+            $("#tasks_select_container a").each(function () {
+                tasks_from_dom.push($(this).data("value"))
+            })
+            let sorted_phase_tasks = []
+            tasks_from_dom.forEach( function(key) {
+                let found = false;
+                self.phase_tasks = self.phase_tasks.filter(function (item) {
+                    if(!found && item['value'] == key){
+                        sorted_phase_tasks.push(item)
+                        found = true
+                        return false
+                    } else
+                        return true
+                })
+            })
+            self.phase_tasks = sorted_phase_tasks.slice()
+
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
             data.task_instances = []
@@ -434,15 +451,12 @@
             })
             if (self.selected_phase_index === undefined) {
                 self.phases.push(data)
-                console.log("if data", data)
             } else {
                 // We have a selected phase, do an update instead of a create
                 data.id = self.phases[self.selected_phase_index].id
                 self.phases[self.selected_phase_index] = data
-                console.log("esle_data", data)
             }
             self.close_modal()
-            console.log("self.phase_tasks(save)", self.phase_tasks)
         }
 
         /*---------------------------------------------------------------------
