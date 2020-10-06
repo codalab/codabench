@@ -7,7 +7,7 @@ from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column
 
 from .fields import CharacterSeparatedField
-from .tasks import TaskSerializer
+from .tasks import PhaseTaskInstanceSerializer
 
 
 class ColumnSerializer(WritableNestedModelSerializer):
@@ -119,8 +119,8 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
 
 class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
-    tasks = TaskSerializer(many=True, read_only=True)
     columns = serializers.SerializerMethodField()
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     def get_columns(self, instance):
         columns = Column.objects.filter(leaderboard=instance.leaderboard)

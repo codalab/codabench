@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
+from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
 
@@ -83,7 +84,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     reference_data = DataSimpleSerializer(read_only=True)
     scoring_program = DataSimpleSerializer(read_only=True)
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
-    validated = serializers.SerializerMethodField()
+    validated = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Task
@@ -124,4 +125,29 @@ class TaskListSerializer(serializers.ModelSerializer):
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
+        )
+
+
+class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
+    task = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
+                                        many=False)
+    phase = serializers.PrimaryKeyRelatedField(many=False, queryset=Phase.objects.all())
+    id = serializers.IntegerField(source='task.id', required=False)
+    value = serializers.CharField(source='task.key', required=False)
+    key = serializers.CharField(source='task.key', required=False)
+    created_when = serializers.DateTimeField(source='task.created_when', required=False)
+    name = serializers.CharField(source='task.name', required=False)
+
+    class Meta:
+        model = PhaseTaskInstance
+        fields = (
+            'task',
+            'order_index',
+            'phase',
+            'id',
+            # Value is used for Semantic Multiselect dropdown api calls
+            'value',
+            'key',
+            'created_when',
+            'name',
         )

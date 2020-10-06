@@ -112,7 +112,9 @@ class DataGroupViewSet(ModelViewSet):
 
 @api_view(['PUT'])
 def upload_completed(request, key):
-    # TODO: This view is weird. We have competitions, submissions, etc. that may not need to call this? We might need special behavior/metadata for "submission finalization" for example. Competitions are a unique usecase where they hold all of the metadata in the bundle itself
+    # TODO: This view is weird. We have competitions, submissions, etc. that may not need to call this?
+    #  We might need special behavior/metadata for "submission finalization" for example.
+    #  Competitions are a unique use case where they hold all of the metadata in the bundle itself
 
     try:
         dataset = Data.objects.get(created_by=request.user, key=key)
