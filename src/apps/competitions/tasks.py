@@ -185,6 +185,8 @@ def _send_submission(submission, task, is_scoring, run_args):
         )
     submission.celery_task_id = task.id
     submission.status = Submission.SUBMITTED
+    print(f'\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@SEND_SUBMISSION@@@@@@@@@@@@@@@@@@@@@@@@')
+    print(f'\n\n{submission}\n\n')
     submission.save()
 
 

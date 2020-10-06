@@ -227,7 +227,7 @@
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    toastr.error("Could not find competition")
+                    toastr.error(response.responseJSON)
                 })
             event.stopPropagation()
         }
@@ -238,7 +238,8 @@
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    toastr.error("Could not find competition")
+                    console.log(response)
+                    toastr.error(response.responseJSON)
                 })
             event.stopPropagation()
         }
