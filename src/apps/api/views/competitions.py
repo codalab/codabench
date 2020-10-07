@@ -354,7 +354,7 @@ class CompetitionViewSet(ModelViewSet):
                     parent=submission,
                     task=task,
                     appear_on_leaderboards=submission.appear_on_leaderboards,
-                    leaderboard=submission.leaderboard,
+                    leaderboard=phase.leaderboard,
                     data=submission.data,
                 )
                 sub.save(ignore_submission_limit=True)
