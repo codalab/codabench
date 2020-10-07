@@ -26,7 +26,7 @@ from api.serializers.competitions import CompetitionSerializer, CompetitionSeria
 from api.serializers.leaderboards import LeaderboardPhaseSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant
+from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
@@ -337,6 +337,31 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
+    def run_new_task_submissions(self, phase, tasks):
+        tasks_id = set([task.id for task in tasks])
+        submissions = phase.submissions.prefetch_related("children").all()
+        parents = lambda s: s.has_children
+
+        for submission in filter(parents, submissions):
+            child_tasks = set([sub.task for sub in submission.children.all()])
+            missing_tasks = tasks_id - set([task.id for task in child_tasks])
+            missing_task_fitler = lambda t: t.id in missing_tasks
+            for task in filter(missing_task_fitler, tasks):
+                print(f'\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nTask{task} needs to be run for {submission}\n\n')
+                sub = Submission(
+                    owner=submission.owner,
+                    phase=submission.phase,
+                    parent=submission,
+                    task=task,
+                    appear_on_leaderboards=submission.appear_on_leaderboards,
+                    leaderboard=submission.leaderboard,
+                    data=submission.data,
+                )
+                sub.save(ignore_submission_limit=True)
+                sub.refresh_from_db()
+                sub.start(tasks=[task])
+
+
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
             user__in=instance.collaborators.all()
@@ -347,7 +372,27 @@ class CompetitionViewSet(ModelViewSet):
         self._ensure_organizer_participants_accepted(instance)
 
     def perform_update(self, serializer):
+        instance = self.get_object()
+
+        initial_tasks = {}
+        for phase in instance.phases.all():
+            initial_tasks.update({phase.id: set(phase.tasks.all())})
+
         instance = serializer.save()
+
+        saved_tasks = {}
+        new_phases = {}
+        for phase in instance.phases.all():
+            saved_tasks.update({phase.id: set(phase.tasks.all())})
+            new_phases.update({phase.id: phase})
+        for key in saved_tasks.keys():
+            if key in initial_tasks.keys():
+                print(saved_tasks[key] - initial_tasks[key])
+                new_tasks = list(saved_tasks[key] - initial_tasks[key])
+                if new_tasks:
+                    self.run_new_task_submissions(new_phases[key], new_tasks)
+
+
         self._ensure_organizer_participants_accepted(instance)
 
 

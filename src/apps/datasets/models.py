@@ -88,7 +88,7 @@ class Data(ChaHubSaveMixin, models.Model):
         return competitions_in_use
 
     def __str__(self):
-        return self.name or ''
+        return f'{self.name}({self.id})' or ''
 
     @staticmethod
     def get_chahub_endpoint():
