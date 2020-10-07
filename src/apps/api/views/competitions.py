@@ -347,7 +347,7 @@ class CompetitionViewSet(ModelViewSet):
             missing_tasks = tasks_id - set([task.id for task in child_tasks])
             missing_task_fitler = lambda t: t.id in missing_tasks
             for task in filter(missing_task_fitler, tasks):
-                print(f'\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nTask{task} needs to be run for {submission}\n\n')
+                print(f'\nRunning Task({task}) for {submission}\n')
                 sub = Submission(
                     owner=submission.owner,
                     phase=submission.phase,
