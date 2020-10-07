@@ -361,7 +361,6 @@ class CompetitionViewSet(ModelViewSet):
                 sub.refresh_from_db()
                 sub.start(tasks=[task])
 
-
     def _ensure_organizer_participants_accepted(self, instance):
         CompetitionParticipant.objects.filter(
             user__in=instance.collaborators.all()
@@ -379,6 +378,7 @@ class CompetitionViewSet(ModelViewSet):
             initial_tasks.update({phase.id: set(phase.tasks.all())})
 
         instance = serializer.save()
+        self._ensure_organizer_participants_accepted(instance)
 
         saved_tasks = {}
         new_phases = {}
@@ -391,9 +391,6 @@ class CompetitionViewSet(ModelViewSet):
                 new_tasks = list(saved_tasks[key] - initial_tasks[key])
                 if new_tasks:
                     self.run_new_task_submissions(new_phases[key], new_tasks)
-
-
-        self._ensure_organizer_participants_accepted(instance)
 
 
 class PhaseViewSet(ModelViewSet):
