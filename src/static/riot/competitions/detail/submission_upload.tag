@@ -4,7 +4,7 @@
         <h1>Submission upload</h1>
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-            <textarea maxlength="4094" ref="fact_sheet_answers" value="{ JSON.stringify(opts.fact_sheet, null, 2) }"></textarea>
+            <textarea maxlength="4094" ref="fact_sheet_answers"></textarea>
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
 
@@ -105,6 +105,7 @@
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
+        self.fact_sheet_text = {}
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
@@ -115,12 +116,26 @@
             })
 
 
+
+
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-            console.log("self.opts.fact_sheet", self.opts.fact_sheet)
+            self.setup_factsheet()
             self.setup_autoscroll()
             self.setup_websocket()
         })
+
+        self.setup_factsheet = function () {
+            if (self.opts.fact_sheet === null){
+                self.refs.fact_sheet.hidden = true
+                return
+            }
+            for (key in self.opts.fact_sheet){
+                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "")
+            }
+            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2)
+            self.refs.fact_sheet_answers.value = self.fact_sheet_text
+        }
 
         self.setup_autoscroll = function () {
             if (!self.refs.autoscroll_checkbox) {
@@ -277,7 +292,7 @@
                 .not(':button, :submit, :reset, :hidden')
                 .val('')
 
-            self.refs.fact_sheet_answers.value = JSON.stringify(self.opts.fact_sheet, null, 2)
+            self.refs.fact_sheet_answers.value = self.fact_sheet_text
             self.errors = {}
             self.update()
         }
