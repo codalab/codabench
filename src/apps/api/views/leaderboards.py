@@ -52,6 +52,7 @@ def is_user_submission_owner_or_admin(request, submission, competition):
     else:
         raise drf_execptions.AuthenticationFailed("You do not have permission to change this submission's leaderboard status")
 
+
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
 def add_submission_to_leaderboard(request, submission_pk):

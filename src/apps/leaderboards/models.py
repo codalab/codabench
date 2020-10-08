@@ -24,7 +24,6 @@ class Leaderboard(models.Model):
     hidden = models.BooleanField(default=False)
     submission_rule = models.TextField(choices=SUBMISSION_RULES, null=True, blank=True)
 
-
     def __str__(self):
         return f'{self.title} - {self.id}'
 
