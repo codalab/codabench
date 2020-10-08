@@ -340,13 +340,11 @@ class CompetitionViewSet(ModelViewSet):
     def run_new_task_submissions(self, phase, tasks):
         tasks_id = set([task.id for task in tasks])
         submissions = phase.submissions.prefetch_related("children").all()
-        parents = lambda s: s.has_children
 
-        for submission in filter(parents, submissions):
+        for submission in filter(lambda s: s.has_children, submissions):
             child_tasks = set([sub.task for sub in submission.children.all()])
             missing_tasks = tasks_id - set([task.id for task in child_tasks])
-            missing_task_fitler = lambda t: t.id in missing_tasks
-            for task in filter(missing_task_fitler, tasks):
+            for task in filter(lambda t: t.id in missing_tasks, tasks):
                 print(f'\nRunning Task({task}) for {submission}\n')
                 sub = Submission(
                     owner=submission.owner,
