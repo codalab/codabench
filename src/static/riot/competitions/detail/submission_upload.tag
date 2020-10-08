@@ -4,6 +4,7 @@
         <h1>Submission upload</h1>
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+            <textarea maxlength="4094" ref="fact_sheet_answers" value="{ JSON.stringify(opts.fact_sheet, null, 2) }"></textarea>
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
 
@@ -115,7 +116,7 @@
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-
+            console.log("self.opts.fact_sheet", self.opts.fact_sheet)
             self.setup_autoscroll()
             self.setup_websocket()
         })
@@ -300,6 +301,7 @@
                 type: 'submission'
             }
             var data_file = self.refs.data_file.refs.file_input.files[0]
+            var fact_sheet_answers = JSON.parse(self.refs.fact_sheet_answers.value)
             self.children = []
             self.children_statuses = {}
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
@@ -311,7 +313,8 @@
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": self.selected_phase.id
+                        "phase": self.selected_phase.id,
+                        "fact_sheet_answers": fact_sheet_answers,
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
