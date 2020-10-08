@@ -172,6 +172,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
+            'fact_sheet',
         )
 
     def get_leaderboards(self, instance):

@@ -3,6 +3,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -48,6 +49,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
+
+    fact_sheet = JSONField(blank=True, null=True, max_length=4096)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
@@ -427,6 +430,8 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
+
+    fact_sheet_answers = JSONField(null=True, blank=True, max_length=4096)
 
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
