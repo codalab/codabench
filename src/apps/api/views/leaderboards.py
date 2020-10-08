@@ -8,7 +8,7 @@ from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from competitions.models import Submission
 from leaderboards.models import Leaderboard, SubmissionScore
-import rest_framework.exceptions as drf_execptions
+import rest_framework.exceptions as drf_exceptions
 
 
 class LeaderboardViewSet(ModelViewSet):
@@ -50,7 +50,7 @@ def is_user_submission_owner_or_admin(request, submission, competition):
     elif request.user == submission.owner:
         return True
     else:
-        raise drf_execptions.AuthenticationFailed("You do not have permission to change this submission's leaderboard status")
+        raise drf_exceptions.AuthenticationFailed("You do not have permission to change this submission's leaderboard status")
 
 
 @api_view(['POST'])
@@ -61,7 +61,7 @@ def add_submission_to_leaderboard(request, submission_pk):
     is_user_submission_owner_or_admin(request, submission, phase.competition)
 
     # Removing any existing submissions on leaderboard
-    Submission.objects.filter(phase=phase, owner=request.user).update(leaderboard=None)
+    Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
     leaderboard = submission.phase.leaderboard
 
@@ -83,7 +83,7 @@ def remove_submission_from_leaderboard(request, submission_pk):
     competition = submission.phase.competition
     is_user_submission_owner_or_admin(request, submission, competition)
     if submission.leaderboard.submission_rule != "Add_And_Delete":
-        raise drf_execptions.ValidationError("You are not allowed to remove a submission on this phase")
+        raise drf_exceptions.ValidationError("You are not allowed to remove a submission on this phase")
     submission.leaderboard = None
     submission.save()
 
