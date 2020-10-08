@@ -112,7 +112,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'secret',
             'md5',
             'tasks',
-            'fact_sheet_answers',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
