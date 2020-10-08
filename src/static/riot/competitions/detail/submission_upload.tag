@@ -114,6 +114,7 @@
                 onClose: () => segment.hide(),
             })
 
+
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             console.log("self.opts.fact_sheet", self.opts.fact_sheet)
@@ -276,6 +277,7 @@
                 .not(':button, :submit, :reset, :hidden')
                 .val('')
 
+            self.refs.fact_sheet_answers.value = JSON.stringify(self.opts.fact_sheet, null, 2)
             self.errors = {}
             self.update()
         }
