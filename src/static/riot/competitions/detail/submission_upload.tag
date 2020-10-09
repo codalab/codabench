@@ -135,8 +135,8 @@
             for (key in self.opts.fact_sheet){
                 self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key]).replaceAll(/\"/g, "'")
             }
-            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'")
-            self.refs.fact_sheet_answers.value = self.fact_sheet_text.replaceAll("''''", "''")
+            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'").replaceAll("''''", "''")
+            self.refs.fact_sheet_answers.value = self.fact_sheet_text
         }
 
         self.setup_autoscroll = function () {
