@@ -105,7 +105,7 @@
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
-        self.fact_sheet_text = undefined
+        self.fact_sheet_text = {}
         self.validated_fact_sheet_answers = {}
 
         self.one('mount', function () {
@@ -127,7 +127,8 @@
         })
 
         self.setup_factsheet = function () {
-            if (self.opts.fact_sheet_answers === undefined){
+            console.log("fact_sheet", self.opts.fact_sheet)
+            if (self.opts.fact_sheet === null){
                 $('textarea[ref="fact_sheet_answers"]').hide()
                 return
             }
@@ -307,7 +308,7 @@
         }
 
         self.validate_fact_sheet_answers = function () {
-            if(self.fact_sheet_text === undefined){
+            if(self.opts.fact_sheet === null){
                 self.validated_fact_sheet_answers = null
                 return true
             }
@@ -389,11 +390,20 @@
                             CODALAB.events.trigger('new_submission_created', data)
                             CODALAB.events.trigger('submission_selected', data)
                         })
+                        .fail(function (response) {
+                            try {
+                                let errors = JSON.parse(response.responseText)
+                                let error_str = Object.keys( errors ).map(function (key) { return errors[key] }).join("; ")
+                                toastr.error("Submission Failed: ".concat(error_str))
+                            } catch (e) {
+                                toastr.error("Submission Failed")
+                            }
+                        })
                 })
                 .fail(function (response) {
                     if (response) {
                         try {
-                            var errors = JSON.parse(response.responseText)
+                            let errors = JSON.parse(response.responseText);
 
                             // Clean up errors to not be arrays but plain text
                             Object.keys(errors).map(function (key, index) {
