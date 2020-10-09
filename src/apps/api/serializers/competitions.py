@@ -123,6 +123,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
+            'fact_sheet',
         )
 
     def validate_phases(self, phases):

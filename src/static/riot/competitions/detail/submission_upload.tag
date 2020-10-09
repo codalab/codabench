@@ -127,7 +127,6 @@
         })
 
         self.setup_factsheet = function () {
-            console.log("fact_sheet", self.opts.fact_sheet)
             if (self.opts.fact_sheet === null){
                 $('textarea[ref="fact_sheet_answers"]').hide()
                 return

@@ -26,6 +26,10 @@
             <label>Description</label>
             <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
         </div>
+        <div class="field smaller-mde">
+            <label>Fact Sheet (JSON)</label>
+            <textarea class="json-editor" ref="comp_fact_sheet" name="fact_sheet"></textarea>
+        </div>
         <div class="field">
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
@@ -74,6 +78,8 @@
         self.logo_file_name = ''
 
         self.one("mount", function () {
+            // Set placeholder here so we can have multiple lines
+            $(self.refs.comp_fact_sheet).attr('placeholder', '{\n  "key": ["value1","value2",true,false]\n  "leave_blank_to_accept_any": ""\n}\n')
             self.markdown_editor = create_easyMDE(self.refs.comp_description)
             $('.ui.checkbox', self.root).checkbox({
                 onChange: self.form_updated
@@ -126,6 +132,13 @@
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
+            try {
+                self.data["fact_sheet"] = JSON.parse(self.refs.comp_fact_sheet.value)
+                $(self.refs.comp_fact_sheet).css('background-color', 'white')
+            } catch (e) {
+                is_valid = false
+                $(self.refs.comp_fact_sheet).css('background-color', '#fff0f0')
+            }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -173,6 +186,12 @@
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
+            let fact_sheet = competition.fact_sheet
+            for (key of Object.keys(fact_sheet)){
+                fact_sheet[key] = JSON.stringify(fact_sheet[key]).replaceAll(/\"/g, '"')
+            }
+            fact_sheet = JSON.stringify(fact_sheet, null, 2).replaceAll('\\\"', '\"').replaceAll('\"[', '[').replaceAll(']\"', ']').replaceAll('""""', '""')
+            $(self.refs.comp_fact_sheet).val(fact_sheet)
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {
