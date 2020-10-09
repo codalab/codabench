@@ -132,13 +132,7 @@
                 return
             }
             for (key in self.opts.fact_sheet){
-                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replaceAll(/\"/g, "'")
-                // if (Array.isArray(self.opts.fact_sheet[key]) && typeof self.opts.fact_sheet[key][0] === 'string'){
-                //     console.log("Array of strings detected")
-                //     self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "'")
-                // } else {
-                //     self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "")
-                // }
+                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key]).replaceAll(/\"/g, "'")
             }
             self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'")
             self.refs.fact_sheet_answers.value = self.fact_sheet_text.replaceAll("''''", "''")
@@ -339,10 +333,7 @@
             }
             let is_error = false
             for (key in self.opts.fact_sheet){
-                console.log("Key:",key)
-                console.log("Value:",self.opts.fact_sheet[key])
                 if (self.opts.fact_sheet[key] === undefined || self.opts.fact_sheet[key] === "" || self.opts.fact_sheet[key] === null){
-                    console.log(key)
                 } else if (self.opts.fact_sheet[key].includes(self.validated_fact_sheet_answers[key]) === false) {
                     is_error = true
                     err = self.validated_fact_sheet_answers[key].toString().concat(" not in ".concat(self.opts.fact_sheet[key].toString()))
