@@ -30,3 +30,5 @@ docker-compose.override.yml
 
 server_config.yaml
 /graphs/
+
+.idea
