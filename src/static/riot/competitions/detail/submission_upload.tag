@@ -105,7 +105,7 @@
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
-        self.fact_sheet_text = {}
+        self.fact_sheet_text = undefined
         self.validated_fact_sheet_answers = {}
 
         self.one('mount', function () {
@@ -127,8 +127,8 @@
         })
 
         self.setup_factsheet = function () {
-            if (self.opts.fact_sheet === null){
-                self.refs.fact_sheet.hidden = true
+            if (self.opts.fact_sheet_answers === undefined){
+                $('textarea[ref="fact_sheet_answers"]').hide()
                 return
             }
             for (key in self.opts.fact_sheet){
@@ -307,6 +307,10 @@
         }
 
         self.validate_fact_sheet_answers = function () {
+            if(self.fact_sheet_text === undefined){
+                self.validated_fact_sheet_answers = null
+                return true
+            }
             try {
                 self.validated_fact_sheet_answers = JSON.parse(self.refs.fact_sheet_answers.value.replaceAll("'", '"'))
             } catch (e) {
