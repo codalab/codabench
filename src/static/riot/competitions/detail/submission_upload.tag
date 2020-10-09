@@ -106,6 +106,7 @@
         self.children_statuses = {}
         self.datasets = {}
         self.fact_sheet_text = {}
+        self.validated_fact_sheet_answers = {}
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
@@ -131,10 +132,16 @@
                 return
             }
             for (key in self.opts.fact_sheet){
-                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "")
+                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replaceAll(/\"/g, "'")
+                // if (Array.isArray(self.opts.fact_sheet[key]) && typeof self.opts.fact_sheet[key][0] === 'string'){
+                //     console.log("Array of strings detected")
+                //     self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "'")
+                // } else {
+                //     self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key], null, null).replace(/\"/g, "")
+                // }
             }
-            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2)
-            self.refs.fact_sheet_answers.value = self.fact_sheet_text
+            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'")
+            self.refs.fact_sheet_answers.value = self.fact_sheet_text.replaceAll("''''", "''")
         }
 
         self.setup_autoscroll = function () {
@@ -297,7 +304,58 @@
             self.update()
         }
 
+        self.set_difference = function (setA, setB) {
+            let difference = new Set(setA)
+            for (ele of setB){
+                difference.delete(ele)
+            }
+            return difference
+        }
+
+        self.validate_fact_sheet_answers = function () {
+            try {
+                self.validated_fact_sheet_answers = JSON.parse(self.refs.fact_sheet_answers.value.replaceAll("'", '"'))
+            } catch (e) {
+                toastr.error("Fact Sheet Answer is not a valid JSON format")
+                return false
+            }
+            let sheet_set = new Set()
+            let answer_set = new Set()
+            for(key in self.opts.fact_sheet){
+                sheet_set.add(key)
+            }
+            for(key in self.validated_fact_sheet_answers){
+                answer_set.add(key)
+            }
+            let missing_keys = self.set_difference(sheet_set, answer_set)
+            if(missing_keys.size !== 0){
+                toastr.error("Fact Sheet is missing answers for: ".concat(Array.from(missing_keys).join(", ")))
+                return false
+            }
+            let extra_keys = self.set_difference(answer_set, sheet_set)
+            if(extra_keys.size !== 0){
+                toastr.error("Fact Sheet is got unexpected keys: " .concat(Array.from(extra_keys).join(" ,")))
+                return false
+            }
+            let is_error = false
+            for (key in self.opts.fact_sheet){
+                console.log("Key:",key)
+                console.log("Value:",self.opts.fact_sheet[key])
+                if (self.opts.fact_sheet[key] === undefined || self.opts.fact_sheet[key] === "" || self.opts.fact_sheet[key] === null){
+                    console.log(key)
+                } else if (self.opts.fact_sheet[key].includes(self.validated_fact_sheet_answers[key]) === false) {
+                    is_error = true
+                    err = self.validated_fact_sheet_answers[key].toString().concat(" not in ".concat(self.opts.fact_sheet[key].toString()))
+                    toastr.error(err)
+                }
+            }
+            return !is_error
+        }
+
         self.check_can_upload = function () {
+            if(!self.validate_fact_sheet_answers()){
+                return false
+            }
             CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
@@ -318,7 +376,6 @@
                 type: 'submission'
             }
             var data_file = self.refs.data_file.refs.file_input.files[0]
-            var fact_sheet_answers = JSON.parse(self.refs.fact_sheet_answers.value)
             self.children = []
             self.children_statuses = {}
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
@@ -331,7 +388,7 @@
                     CODALAB.api.create_submission({
                         "data": data.key,
                         "phase": self.selected_phase.id,
-                        "fact_sheet_answers": fact_sheet_answers,
+                        "fact_sheet_answers": self.validated_fact_sheet_answers,
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
