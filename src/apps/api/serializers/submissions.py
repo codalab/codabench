@@ -140,8 +140,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if set(fact_sheet_answers.keys()) != set(fact_sheet.keys()):
                 raise ValidationError("Fact Sheet keys do not match Answer keys")
             for key in fact_sheet_answers.keys():
-                if fact_sheet_answers[key] not in fact_sheet[key] and fact_sheet[key]:
+                if not fact_sheet[key] and type(fact_sheet_answers[key]) != 'string':
+                    raise ValidationError(f'{fact_sheet_answers[key]} needs quotes')
+                elif fact_sheet_answers[key] not in fact_sheet[key] and fact_sheet[key]:
                     raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
+
 
         # Make sure selected tasks are part of the phase
         if attrs.get('tasks'):
