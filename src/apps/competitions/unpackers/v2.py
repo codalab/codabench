@@ -17,6 +17,7 @@ class V2Unpacker(BaseUnpacker):
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "description": self.competition_yaml.get("description", ""),
             "competition_type": self.competition_yaml.get("competition_type", "competition"),
+            "leaderboard_mode": self.competition_yaml.get("leaderboard_mode", "manually"),
             "pages": [],
             "phases": [],
             "leaderboards": [],
