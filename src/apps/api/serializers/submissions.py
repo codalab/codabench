@@ -145,7 +145,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
                 elif fact_sheet_answers[key] not in fact_sheet[key] and fact_sheet[key]:
                     raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
 
-
         # Make sure selected tasks are part of the phase
         if attrs.get('tasks'):
             if not all(_ in attrs['phase'].tasks.all() for _ in attrs['tasks']):
