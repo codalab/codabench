@@ -7,8 +7,9 @@ from .production import *
 CLOUDAMQP_URL = os.environ.get("CLOUDAMQP_URL")
 
 BROKER_URL = CLOUDAMQP_URL
+CELERY_BROKER_URL = CLOUDAMQP_URL
 
-rabbit_url_pieces = urlsplit(BROKER_URL)
+rabbit_url_pieces = urlsplit(CLOUDAMQP_URL)
 
 RABBITMQ_DEFAULT_USER = os.environ.get('RABBITMQ_DEFAULT_USER', rabbit_url_pieces.username)
 RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', rabbit_url_pieces.password)
