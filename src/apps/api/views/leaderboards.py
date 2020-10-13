@@ -14,10 +14,13 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
 
+    # TODO: The retrieve and list actions are the only ones used, apparently. Delete other permission checks soon!
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
+            raise Exception('Unexpected code branch execution.')
             self.permission_classes = [LeaderboardIsOrganizerOrCollaborator]
         elif self.action in ['create']:
+            raise Exception('Unexpected code branch execution.')
             self.permission_classes = [IsAuthenticated]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [LeaderboardNotHidden]
@@ -45,13 +48,12 @@ class SubmissionScoreViewSet(ModelViewSet):
 def add_submission_to_leaderboard(request, submission_pk):
     # TODO: rebuild this to look somewhere else for what leaderboard to post to?
     submission = get_object_or_404(Submission, pk=submission_pk)
-    competition = submission.phase.competition
+    phase = submission.phase
 
     # Removing any existing submissions on leaderboard
-    Submission.objects.filter(phase__competition=competition, owner=request.user).update(leaderboard=None)
+    Submission.objects.filter(phase=phase, owner=request.user).update(leaderboard=None)
 
-    # Assume that submission.scores.first().column.leaderboard will always have the correct leaderboard
-    leaderboard = submission.scores.first().column.leaderboard
+    leaderboard = submission.phase.leaderboard
 
     if submission.has_children:
         for s in Submission.objects.filter(parent=submission_pk):

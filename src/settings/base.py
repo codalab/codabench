@@ -190,7 +190,7 @@ FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 # ============================================================================
 # Celery
 # ============================================================================
-CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL") or os.environ.get('BROKER_URL')
+CELERY_BROKER_URL = os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
 CELERY_TASK_SERIALIZER = 'json'
@@ -199,6 +199,10 @@ CELERY_BEAT_SCHEDULE = {
     'do_phase_migrations': {
         'task': 'competitions.tasks.do_phase_migrations',
         'schedule': timedelta(seconds=300),
+    },
+    'update_phase_statuses': {
+        'task': 'competitions.tasks.update_phase_statuses',
+        'schedule': timedelta(seconds=3600)
     },
 }
 CELERY_TIMEZONE = 'UTC'
