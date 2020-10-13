@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('competitions', '0017_auto_20200811_1835'),
+        ('competitions', '0017_phasetaskinstance'),
     ]
 
     operations = [
