@@ -191,10 +191,12 @@
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             let fact_sheet = competition.fact_sheet
-            for (key of Object.keys(fact_sheet)){
-                fact_sheet[key] = JSON.stringify(fact_sheet[key]).replaceAll(/\"/g, '"')
+            if(fact_sheet !== null){
+                for (key of Object.keys(fact_sheet)){
+                    fact_sheet[key] = JSON.stringify(fact_sheet[key]).replaceAll(/\"/g, '"')
+                }
+                fact_sheet = JSON.stringify(fact_sheet, null, 2).replaceAll('\\\"', '\"').replaceAll('\"[', '[').replaceAll(']\"', ']').replaceAll('""""', '""')
             }
-            fact_sheet = JSON.stringify(fact_sheet, null, 2).replaceAll('\\\"', '\"').replaceAll('\"[', '[').replaceAll(']\"', ']').replaceAll('""""', '""')
             $(self.refs.comp_fact_sheet).val(fact_sheet)
             self.form_updated()
         })
