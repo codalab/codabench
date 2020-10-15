@@ -8,21 +8,23 @@
                 <span if="{ question.type === 'text' }">
                     <!--suppress XmlInvalidId -->
                     <label for="{ question.label }">{ question.label }</label>
-                    <input type="text" id="{question.label}">
+                    <input type="text" name="{ question.label }">
                 </span>
                 <span if="{ question.type === 'checkbox' }">
                     <!--suppress XmlInvalidId -->
                     <label for="{ question.label }">{ question.label }</label>
-                    <input type="checkbox" id="{ question.label }">
+                    <input type="hidden" name="{ question.label }" value="false">
+                    <!--suppress XmlInvalidId, XmlDuplicatedId -->
+                    <input type="checkbox" name="{ question.label }" value="true">
                 </span>
                 <span if="{ question.type == 'select' }">
+                    <!--suppress XmlInvalidId, XmlDuplicatedId -->
                     <label for="{ question.label }">{ question.label }</label>
-                    <select name="{ question.label }" id="{ question.label }">
+                    <select name="{ question.label }">
                         <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
                     </select>
                 </span>
             </div>
-            <textarea maxlength="4094" ref="fact_sheet_answers"></textarea>
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
 
@@ -141,7 +143,7 @@
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-            self.setup_factsheet()
+            // self.setup_factsheet()
             self.setup_autoscroll()
             self.setup_websocket()
             self.update()
@@ -311,11 +313,7 @@
         }
 
         self.clear_form = function () {
-            $(':input', self.root)
-                .not(':button, :submit, :reset, :hidden')
-                .val('')
-
-            self.refs.fact_sheet_answers.value = self.fact_sheet_text
+            $('input-file[ref="data_file"]').find("input").val('')
             self.errors = {}
             self.update()
         }
@@ -370,9 +368,9 @@
         }
 
         self.check_can_upload = function () {
-            if(!self.validate_fact_sheet_answers()){
-                return false
-            }
+            // if(!self.validate_fact_sheet_answers()){
+            //     return false
+            // }
             CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
@@ -384,6 +382,17 @@
                 .fail(function (data) {
                     toastr.error('Could not verify your ability to make a submission')
                 })
+        }
+
+        self.get_fact_sheet_answers = function () {
+            let form_array = $(self.refs.form).serializeArray()
+            console.log("form_array", form_array)
+            let form_json = {}
+            for (answer of form_array) {
+                console.log(answer)
+                form_json[answer['name']] = answer['value']
+            }
+            console.log("form_json", form_json)
         }
 
         self.upload = function () {
@@ -405,7 +414,7 @@
                     CODALAB.api.create_submission({
                         "data": data.key,
                         "phase": self.selected_phase.id,
-                        "fact_sheet_answers": self.validated_fact_sheet_answers,
+                        "fact_sheet_answers": self.get_fact_sheet_answers(),
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
