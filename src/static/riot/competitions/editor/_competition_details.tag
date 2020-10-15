@@ -30,6 +30,23 @@
             <label>Fact Sheet (JSON)</label>
             <textarea class="json-editor" ref="comp_fact_sheet" name="fact_sheet"></textarea>
         </div>
+        <div class="field smaller-mde">
+            <label>Fact Sheet</label>
+            <div class="row">
+                <button onclick="{ add_question.bind(this, 'boolean') }">Boolean</button>
+                <button onclick="{ add_question.bind(this, 'text') }">Text</button>
+                <button onclick="{ add_question.bind(this, 'selection') }">Selection</button>
+            </div>
+            <form>
+            <div style="border: 1px solid #dcdcdcdc; background-color: white; padding: 1.5em;" each="{question in fact_sheet_questions}">
+                <p>Type: {question}</p>
+                <div class="row" if="{ question === 'boolean' }">
+                    <label for="bool-text">Key name: </label>
+                    <input name="bool-text" id="bool-text" type="text">
+                </div>
+            </div>
+            </form>
+        </div>
         <div class="field">
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
@@ -67,7 +84,7 @@
 
     <script>
         var self = this
-
+        self.fact_sheet_questions = []
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
@@ -161,6 +178,21 @@
                     self.data['logo'] = undefined
                 }
                 CODALAB.events.trigger('competition_data_update', self.data)
+            }
+        }
+
+        self.add_question = (type) => {
+            if(type === 'boolean'){
+                self.fact_sheet_questions.push(type)
+                self.update()
+            }
+            else if(type === 'text'){
+                self.fact_sheet_questions.push(type)
+                self.update()
+            }
+            else if(type === 'selection'){
+                self.fact_sheet_questions.push(type)
+                self.update()
             }
         }
 

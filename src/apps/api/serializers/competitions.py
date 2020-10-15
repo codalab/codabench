@@ -155,7 +155,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
-    fact_sheet_questions = serializers.SerializerMethodField()
+    fact_sheet = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Competition
@@ -183,10 +183,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
-            'fact_sheet_questions',
+            # 'fact_sheet_questions',
         )
 
-    def get_fact_sheet_questions(self, instance):
+    def get_fact_sheet(self, instance):
         fact_sheet = instance.fact_sheet
         if fact_sheet:
             fact_sheet_questions = []
