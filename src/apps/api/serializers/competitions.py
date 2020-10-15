@@ -188,8 +188,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
     def get_fact_sheet_questions(self, instance):
         fact_sheet = instance.fact_sheet
-        fact_sheet_questions = []
         if fact_sheet:
+            fact_sheet_questions = []
             for key in fact_sheet.keys():
                 if not fact_sheet[key]:
                     fact_sheet_questions.append({
@@ -210,7 +210,9 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
                         })
                 else:
                     raise ValidationError("Fact Sheet Format Error")
-        return fact_sheet_questions
+            return fact_sheet_questions
+        else:
+            return None
 
     def get_leaderboards(self, instance):
         try:

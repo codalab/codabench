@@ -5,7 +5,7 @@
         <div class="submission-form">
             <h1>Submission upload</h1>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" if="{ opts.fact_sheet_questions }">
+                <div class="submission-form" if="{ opts.fact_sheet_questions !== null }">
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet_questions }">
                         <span if="{ question.type === 'text' }">
@@ -138,14 +138,12 @@
                 onClose: () => segment.hide(),
             })
 
-
-
-
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
             self.update()
+            console.log("sheet", self.opts.fact_sheet_questions)
         })
 
         self.setup_autoscroll = function () {
