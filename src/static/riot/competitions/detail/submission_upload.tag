@@ -125,10 +125,6 @@
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
-        self.fact_sheet_text = {}
-        self.validated_fact_sheet_answers = {}
-
-        self.fact_sheet_objects = {}
 
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
@@ -143,24 +139,10 @@
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-            // self.setup_factsheet()
             self.setup_autoscroll()
             self.setup_websocket()
             self.update()
         })
-
-        self.setup_factsheet = function () {
-            if (self.opts.fact_sheet_questions === null){
-                $('textarea[ref="fact_sheet_answers"]').hide()
-                return
-            }
-            for (key in self.opts.fact_sheet_questions){
-                self.fact_sheet_objects[key] = self.opts.fact_sheet_questions[key]
-                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet_questions[key]).replaceAll(/\"/g, "'")
-            }
-            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'").replaceAll("''''", "''").replaceAll('\'[', '[').replaceAll(']\'', ']')
-            self.refs.fact_sheet_answers.value = self.fact_sheet_text
-        }
 
         self.setup_autoscroll = function () {
             if (!self.refs.autoscroll_checkbox) {
@@ -326,51 +308,7 @@
             return difference
         }
 
-        self.validate_fact_sheet_answers = function () {
-            if(self.opts.fact_sheet === null){
-                self.validated_fact_sheet_answers = null
-                return true
-            }
-            try {
-                self.validated_fact_sheet_answers = JSON.parse(self.refs.fact_sheet_answers.value.replaceAll("'", '"'))
-            } catch (e) {
-                toastr.error("Fact Sheet Answer is not a valid JSON format")
-                return false
-            }
-            let sheet_set = new Set()
-            let answer_set = new Set()
-            for(key in self.opts.fact_sheet_questions){
-                sheet_set.add(key)
-            }
-            for(key in self.validated_fact_sheet_answers){
-                answer_set.add(key)
-            }
-            let missing_keys = self.set_difference(sheet_set, answer_set)
-            if(missing_keys.size !== 0){
-                toastr.error("Fact Sheet is missing answers for: ".concat(Array.from(missing_keys).join(", ")))
-                return false
-            }
-            let extra_keys = self.set_difference(answer_set, sheet_set)
-            if(extra_keys.size !== 0){
-                toastr.error("Fact Sheet is got unexpected keys: " .concat(Array.from(extra_keys).join(" ,")))
-                return false
-            }
-            let is_error = false
-            for (key in self.opts.fact_sheet_questions){
-                if (self.opts.fact_sheet_questions[key] === undefined || self.opts.fact_sheet_questions[key] === "" || self.opts.fact_sheet_questions[key] === null){
-                } else if (self.opts.fact_sheet_questions[key].includes(self.validated_fact_sheet_answers[key]) === false) {
-                    is_error = true
-                    err = self.validated_fact_sheet_answers[key].toString().concat(" not in ".concat(self.opts.fact_sheet_questions[key].toString()))
-                    toastr.error(err)
-                }
-            }
-            return !is_error
-        }
-
         self.check_can_upload = function () {
-            // if(!self.validate_fact_sheet_answers()){
-            //     return false
-            // }
             CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
