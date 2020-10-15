@@ -132,14 +132,16 @@
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
+            console.log("value", self.refs.comp_fact_sheet.value)
             if (self.refs.comp_fact_sheet.value !== "") {
-                console.log(self.refs.comp_fact_sheet.value)
                 try {
                     self.data["fact_sheet"] = JSON.parse(self.refs.comp_fact_sheet.value)
-                    console.log("Form Approved", self.data["fact_sheet"])
+                    $(self.refs.comp_fact_sheet).css('background-color', '#ffffff')
+                    console.log("Form Approved")
                 } catch (e) {
                     is_valid = false
                     $(self.refs.comp_fact_sheet).css('background-color', '#fff0f0')
+                    console.log("form invalid")
                 }
             } else {
                 self.data["fact_sheet"] = null

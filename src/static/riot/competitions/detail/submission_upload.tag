@@ -4,6 +4,24 @@
         <h1>Submission upload</h1>
 
         <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+            <div each="{ question in opts.fact_sheet_questions }">
+                <span if="{ question.type === 'text' }">
+                    <!--suppress XmlInvalidId -->
+                    <label for="{ question.label }">{ question.label }</label>
+                    <input type="text" id="{question.label}">
+                </span>
+                <span if="{ question.type === 'checkbox' }">
+                    <!--suppress XmlInvalidId -->
+                    <label for="{ question.label }">{ question.label }</label>
+                    <input type="checkbox" id="{ question.label }">
+                </span>
+                <span if="{ question.type == 'select' }">
+                    <label for="{ question.label }">{ question.label }</label>
+                    <select name="{ question.label }" id="{ question.label }">
+                        <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
+                    </select>
+                </span>
+            </div>
             <textarea maxlength="4094" ref="fact_sheet_answers"></textarea>
             <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
         </form>
@@ -108,6 +126,8 @@
         self.fact_sheet_text = {}
         self.validated_fact_sheet_answers = {}
 
+        self.fact_sheet_objects = {}
+
         self.one('mount', function () {
             $('.dropdown', self.root).dropdown()
             let segment = $('.submission-output-container .ui.basic.segment')
@@ -124,17 +144,19 @@
             self.setup_factsheet()
             self.setup_autoscroll()
             self.setup_websocket()
+            self.update()
         })
 
         self.setup_factsheet = function () {
-            if (self.opts.fact_sheet === null){
+            if (self.opts.fact_sheet_questions === null){
                 $('textarea[ref="fact_sheet_answers"]').hide()
                 return
             }
-            for (key in self.opts.fact_sheet){
-                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet[key]).replaceAll(/\"/g, "'")
+            for (key in self.opts.fact_sheet_questions){
+                self.fact_sheet_objects[key] = self.opts.fact_sheet_questions[key]
+                self.fact_sheet_text[key] = JSON.stringify(self.opts.fact_sheet_questions[key]).replaceAll(/\"/g, "'")
             }
-            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'").replaceAll("''''", "''")
+            self.fact_sheet_text = JSON.stringify(self.fact_sheet_text, null, 2).replaceAll(/\"/g, "'").replaceAll("''''", "''").replaceAll('\'[', '[').replaceAll(']\'', ']')
             self.refs.fact_sheet_answers.value = self.fact_sheet_text
         }
 
@@ -319,7 +341,7 @@
             }
             let sheet_set = new Set()
             let answer_set = new Set()
-            for(key in self.opts.fact_sheet){
+            for(key in self.opts.fact_sheet_questions){
                 sheet_set.add(key)
             }
             for(key in self.validated_fact_sheet_answers){
@@ -336,11 +358,11 @@
                 return false
             }
             let is_error = false
-            for (key in self.opts.fact_sheet){
-                if (self.opts.fact_sheet[key] === undefined || self.opts.fact_sheet[key] === "" || self.opts.fact_sheet[key] === null){
-                } else if (self.opts.fact_sheet[key].includes(self.validated_fact_sheet_answers[key]) === false) {
+            for (key in self.opts.fact_sheet_questions){
+                if (self.opts.fact_sheet_questions[key] === undefined || self.opts.fact_sheet_questions[key] === "" || self.opts.fact_sheet_questions[key] === null){
+                } else if (self.opts.fact_sheet_questions[key].includes(self.validated_fact_sheet_answers[key]) === false) {
                     is_error = true
-                    err = self.validated_fact_sheet_answers[key].toString().concat(" not in ".concat(self.opts.fact_sheet[key].toString()))
+                    err = self.validated_fact_sheet_answers[key].toString().concat(" not in ".concat(self.opts.fact_sheet_questions[key].toString()))
                     toastr.error(err)
                 }
             }
