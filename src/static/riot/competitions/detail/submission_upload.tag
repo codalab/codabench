@@ -1,33 +1,37 @@
 <submission-upload>
     <div class="ui sixteen wide column submission-container"
          show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
-        <h1>Submission upload</h1>
 
-        <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-            <div each="{ question in opts.fact_sheet_questions }">
-                <span if="{ question.type === 'text' }">
-                    <!--suppress XmlInvalidId -->
-                    <label for="{ question.label }">{ question.label }</label>
-                    <input type="text" name="{ question.label }">
-                </span>
-                <span if="{ question.type === 'checkbox' }">
-                    <!--suppress XmlInvalidId -->
-                    <label for="{ question.label }">{ question.label }</label>
-                    <input type="hidden" name="{ question.label }" value="false">
-                    <!--suppress XmlInvalidId, XmlDuplicatedId -->
-                    <input type="checkbox" name="{ question.label }" value="true">
-                </span>
-                <span if="{ question.type == 'select' }">
-                    <!--suppress XmlInvalidId, XmlDuplicatedId -->
-                    <label for="{ question.label }">{ question.label }</label>
-                    <select name="{ question.label }">
-                        <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
-                    </select>
-                </span>
-            </div>
-            <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-        </form>
-
+        <div class="submission-form">
+            <h1>Submission upload</h1>
+            <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+                <div class="submission-form" if="{ opts.fact_sheet_questions }">
+                    <h2>Metadata or Fact Sheet</h2>
+                    <div class="submission-form-question" each="{ question in opts.fact_sheet_questions }">
+                        <span if="{ question.type === 'text' }">
+                            <!--suppress XmlInvalidId -->
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <input type="text" name="{ question.label }">
+                        </span>
+                        <span if="{ question.type === 'checkbox' }">
+                            <!--suppress XmlInvalidId -->
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <input type="hidden" name="{ question.label }" value="false">
+                            <!--suppress XmlInvalidId, XmlDuplicatedId -->
+                            <input type="checkbox" name="{ question.label }" value="true">
+                        </span>
+                        <span if="{ question.type == 'select' }">
+                            <!--suppress XmlInvalidId, XmlDuplicatedId -->
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <select name="{ question.label }">
+                                <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
+                            </select>
+                        </span>
+                    </div>
+                </div>
+                <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+            </form>
+        </div>
 
         <div class="ui indicating progress" ref="progress">
             <div class="bar">
@@ -427,6 +431,20 @@
     </script>
 
     <style type="text/stylus">
+        .submission-form
+            background-color white
+            padding 2em
+            margin 0, -2.9em
+            border solid 1px #dcdcdcdc
+            margin-bottom 2em
+
+        .submission-form-question
+            padding .66em 2em
+
+            label
+                font-size 16px
+                font-weight 600
+
         :scope
             display block
             width 100%
