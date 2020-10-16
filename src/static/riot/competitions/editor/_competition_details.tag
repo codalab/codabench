@@ -259,10 +259,9 @@
                 }
             }
             if(form_json.length === 0){
-                // return null
+                return null
             }
-            console.log(form_json)
-            // return form_json
+            return form_json
         }
 
         self.filter_queues = function (filters) {
@@ -295,10 +294,10 @@
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
-            let fact_sheet = competition.fact_sheet
-            if(fact_sheet !== null){
-                fact_sheet.forEach( q => {
-                    var q_json = JSON.parse(q)
+            console.log("fs", competition.fact_sheet.length)
+            if(competition.fact_sheet !== null){
+                competition.fact_sheet.forEach( q => {
+                    var q_json = q
                     q_json.id = self.fact_sheet_questions.length
                     self.fact_sheet_questions.push(q_json)
                 })
