@@ -28,22 +28,45 @@
         </div>
         <div class="field smaller-mde">
             <label>Fact Sheet (JSON)</label>
-            <textarea class="json-editor" ref="comp_fact_sheet" name="fact_sheet"></textarea>
+            <textarea class="json-editor" name="fact_sheet"></textarea>
         </div>
         <div class="field smaller-mde">
             <label>Fact Sheet</label>
             <div class="row">
-                <button onclick="{ add_question.bind(this, 'boolean') }">Boolean</button>
-                <button onclick="{ add_question.bind(this, 'text') }">Text</button>
-                <button onclick="{ add_question.bind(this, 'selection') }">Selection</button>
+                <button onclick="{ add_question.bind(this, 'boolean') }">Boolean +</button>
+                <button onclick="{ add_question.bind(this, 'text') }">Text +</button>
+                <button onclick="{ add_question.bind(this, 'selection') }">Selection +</button>
             </div>
-            <form>
+            <form ref="comp_fact_sheet">
             <div style="border: 1px solid #dcdcdcdc; background-color: white; padding: 1.5em;" each="{question in fact_sheet_questions}">
-                <p>Type: {question}</p>
-                <div class="row" if="{ question === 'boolean' }">
-                    <label for="bool-text">Key name: </label>
-                    <input name="bool-text" id="bool-text" type="text">
+                <!--suppress XmlDuplicatedId -->
+                <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
+                    <p>Type: Boolean</p>
+                    <input type="hidden" name="type" value="checkbox">
+                    <label for="q{question.id}">Key name: </label>
+                    <!--suppress XmlDuplicatedId -->
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
                 </div>
+                <!--suppress XmlDuplicatedId -->
+                <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
+                    <p>Type: Text</p>
+                    <input type="hidden" name="type" value="text">
+                    <label for="q{question.id}">Key name: </label>
+                    <!--suppress XmlDuplicatedId -->
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                </div>
+                <!--suppress XmlDuplicatedId -->
+                <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
+                    <p>Type: Select</p>
+                    <input type="hidden" name="type" value="select">
+                    <label for="q{question.id}">Key name: </label>
+                    <!--suppress XmlDuplicatedId -->
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+
+                    <label for="choice{question.id}">Choices (Comma Separated): </label>
+                    <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
+                </div>
+                <button onclick="{remove_question.bind(this, question.id)}">Remove</button>
             </div>
             </form>
         </div>
@@ -149,20 +172,20 @@
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
-            console.log("value", self.refs.comp_fact_sheet.value)
-            if (self.refs.comp_fact_sheet.value !== "") {
-                try {
-                    self.data["fact_sheet"] = JSON.parse(self.refs.comp_fact_sheet.value)
-                    $(self.refs.comp_fact_sheet).css('background-color', '#ffffff')
-                    console.log("Form Approved")
-                } catch (e) {
-                    is_valid = false
-                    $(self.refs.comp_fact_sheet).css('background-color', '#fff0f0')
-                    console.log("form invalid")
-                }
-            } else {
-                self.data["fact_sheet"] = null
-            }
+            self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
+            // if (self.refs.comp_fact_sheet.value !== "") {
+            //     try {
+            //         self.data["fact_sheet"] = JSON.parse(self.refs.comp_fact_sheet.value)
+            //         $(self.refs.comp_fact_sheet).css('background-color', '#ffffff')
+            //         console.log("Form Approved")
+            //     } catch (e) {
+            //         is_valid = false
+            //         $(self.refs.comp_fact_sheet).css('background-color', '#fff0f0')
+            //         console.log("form invalid")
+            //     }
+            // } else {
+            //     self.data["fact_sheet"] = null
+            // }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -182,18 +205,64 @@
         }
 
         self.add_question = (type) => {
+            let current_id = 0
+            if(self.fact_sheet_questions[0] !== undefined) {
+                current_id = self.fact_sheet_questions[self.fact_sheet_questions.length - 1].id + 1
+            }
             if(type === 'boolean'){
-                self.fact_sheet_questions.push(type)
-                self.update()
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "checkbox"
+                })
             }
             else if(type === 'text'){
-                self.fact_sheet_questions.push(type)
-                self.update()
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "text"
+                })
             }
             else if(type === 'selection'){
-                self.fact_sheet_questions.push(type)
-                self.update()
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "select",
+                    "selection": []
+                })
             }
+            self.update()
+            $(':input', self.refs.comp_fact_sheet).not('button').not('[readonly]').each(function (i, field) {
+                this.addEventListener('keyup', self.form_updated)
+            })
+
+
+        }
+
+        self.remove_question = function (id) {
+            self.fact_sheet_questions = self.fact_sheet_questions.filter(q => q.id !== id)
+            self.update()
+            self.form_updated()
+        }
+
+        self.serialize_fact_sheet_questions = function (){
+            let form = $(self.refs.comp_fact_sheet).children()
+            let form_json = {}
+            for(question of form){
+             let q_serialized = $(question).find(":input").serializeArray()
+                if(q_serialized[0].value === "checkbox"){
+                    form_json[q_serialized[1].value] = [true, false]
+                } else if(q_serialized[0].value === "text"){
+                    form_json[q_serialized[1].value] = ""
+                } else if(q_serialized[0].value === "select"){
+                    form_json[q_serialized[1].value] = q_serialized[2].value.split(',')
+                }
+            }
+            if(form_json.length === 0){
+                // return null
+            }
+            console.log(form_json)
+            // return form_json
         }
 
         self.filter_queues = function (filters) {
@@ -205,6 +274,7 @@
             self.page = filters.page
             self.get_available_queues(filters)
         }
+
 
         /*---------------------------------------------------------------------
          Events
@@ -227,12 +297,12 @@
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             let fact_sheet = competition.fact_sheet
             if(fact_sheet !== null){
-                for (key of Object.keys(fact_sheet)){
-                    fact_sheet[key] = JSON.stringify(fact_sheet[key]).replaceAll(/\"/g, '"')
-                }
-                fact_sheet = JSON.stringify(fact_sheet, null, 2).replaceAll('\\\"', '\"').replaceAll('\"[', '[').replaceAll(']\"', ']').replaceAll('""""', '""')
+                fact_sheet.forEach( q => {
+                    var q_json = JSON.parse(q)
+                    q_json.id = self.fact_sheet_questions.length
+                    self.fact_sheet_questions.push(q_json)
+                })
             }
-            $(self.refs.comp_fact_sheet).val(fact_sheet)
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {
