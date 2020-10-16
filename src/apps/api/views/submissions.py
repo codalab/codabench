@@ -122,10 +122,11 @@ class SubmissionViewSet(ModelViewSet):
                 submission.save()
 
         if request.method == 'DELETE':
-            if submission.leaderboard.submission_rule != "Add_And_Delete":
+            if submission.phase.leaderboard.submission_rule != "Add_And_Delete":
                 raise ValidationError("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
+            Submission.objects.filter(parent=submission).update(leaderboard=None)
 
         return Response({})
 

@@ -99,6 +99,7 @@ class SubmissionManagerTests(SubmissionTestCase):
         sub = self.make_submission()
         assert sub.cancel(), 'Cancel returned False, meaning the submission could not be cancelled when it should'
         assert sub.status == 'Cancelled'
+        assert sub.status == 'Cancelled'
 
     def test_cancel_does_nothing_if_status_is_cancelled_failed_or_finished(self):
         sub = self.make_submission()
@@ -124,6 +125,25 @@ class SubmissionManagerTests(SubmissionTestCase):
         assert resp.status_code == 200
         for submission in Submission.objects.filter(parent=parent_sub):
             assert submission.leaderboard
+
+    def test_remove_submission_from_leaderboard(self):
+        parent_sub = self.make_submission(has_children=True)
+
+        for _ in range(10):
+            leaderboard = LeaderboardFactory(submission_rule="Add_And_Delete")
+            parent_sub.phase.leaderboard = leaderboard
+            parent_sub.phase.save()
+
+            ColumnFactory(leaderboard=leaderboard)
+            self.make_submission(parent=parent_sub)
+
+        self.client.force_login(parent_sub.owner)
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
+        self.client.post(url)
+        resp = self.client.delete(url)
+        assert resp.status_code == 200
+        for submission in Submission.objects.filter(parent=parent_sub):
+            assert submission.leaderboard is None
 
 
 class MultipleTasksPerPhaseTests(SubmissionTestCase):
