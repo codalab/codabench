@@ -7,7 +7,7 @@ from api.mixins import DefaultUserCreateMixin
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import TaskListSerializer
+from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -17,7 +17,7 @@ from api.serializers.queues import QueueSerializer
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
                                          many=True)
 
     class Meta:
@@ -48,7 +48,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    tasks = TaskListSerializer(many=True)
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     class Meta:
         model = Phase
@@ -69,6 +69,10 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'hide_output',
             'is_final_phase',
         )
+
+
+class PhaseUpdateSerializer(PhaseSerializer):
+    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
 
 class PageSerializer(WritableNestedModelSerializer):
@@ -134,6 +138,10 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
         return super().create(validated_data)
+
+
+class CompetitionUpdateSerializer(CompetitionSerializer):
+    phases = PhaseUpdateSerializer(many=True)
 
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
