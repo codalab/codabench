@@ -33,10 +33,11 @@
         <div class="field smaller-mde">
             <label>Fact Sheet</label>
             <div class="row">
-                <button onclick="{ add_question.bind(this, 'boolean') }">Boolean +</button>
-                <button onclick="{ add_question.bind(this, 'text') }">Text +</button>
-                <button onclick="{ add_question.bind(this, 'selection') }">Selection +</button>
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'boolean') }">Boolean +</button>
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'text') }">Text +</button>
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'selection') }">Selection +</button>
             </div>
+            <br>
             <form ref="comp_fact_sheet">
             <div style="border: 1px solid #dcdcdcdc; background-color: white; padding: 1.5em;" each="{question in fact_sheet_questions}">
                 <!--suppress XmlDuplicatedId -->
@@ -62,11 +63,11 @@
                     <label for="q{question.id}">Key name: </label>
                     <!--suppress XmlDuplicatedId -->
                     <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
-
                     <label for="choice{question.id}">Choices (Comma Separated): </label>
                     <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
                 </div>
-                <button onclick="{remove_question.bind(this, question.id)}">Remove</button>
+                <br>
+                <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>
             </div>
             </form>
         </div>
@@ -173,19 +174,6 @@
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
-            // if (self.refs.comp_fact_sheet.value !== "") {
-            //     try {
-            //         self.data["fact_sheet"] = JSON.parse(self.refs.comp_fact_sheet.value)
-            //         $(self.refs.comp_fact_sheet).css('background-color', '#ffffff')
-            //         console.log("Form Approved")
-            //     } catch (e) {
-            //         is_valid = false
-            //         $(self.refs.comp_fact_sheet).css('background-color', '#fff0f0')
-            //         console.log("form invalid")
-            //     }
-            // } else {
-            //     self.data["fact_sheet"] = null
-            // }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
