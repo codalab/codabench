@@ -143,7 +143,6 @@
             self.setup_autoscroll()
             self.setup_websocket()
             self.update()
-            console.log("sheet", self.opts.fact_sheet)
         })
 
         self.setup_autoscroll = function () {
@@ -326,13 +325,10 @@
 
         self.get_fact_sheet_answers = function () {
             let form_array = $(self.refs.form).serializeArray()
-            console.log("form_array", form_array)
             let form_json = {}
             for (answer of form_array) {
-                console.log(answer)
                 form_json[answer['name']] = answer['value']
             }
-            console.log("form_json", form_json)
         }
 
         self.upload = function () {

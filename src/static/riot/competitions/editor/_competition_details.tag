@@ -27,10 +27,6 @@
             <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
         </div>
         <div class="field smaller-mde">
-            <label>Fact Sheet (JSON)</label>
-            <textarea class="json-editor" name="fact_sheet"></textarea>
-        </div>
-        <div class="field smaller-mde">
             <label>Fact Sheet</label>
             <div class="row">
                 <button class="ui basic blue button" onclick="{ add_question.bind(this, 'boolean') }">Boolean +</button>
@@ -282,7 +278,6 @@
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
-            console.log("fs", competition.fact_sheet.length)
             if(competition.fact_sheet !== null){
                 competition.fact_sheet.forEach( q => {
                     var q_json = q

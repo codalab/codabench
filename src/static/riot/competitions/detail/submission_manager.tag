@@ -163,7 +163,6 @@
             $(self.refs.status).dropdown();
             $(self.refs.phase).dropdown();
             $(self.refs.rerun_button).dropdown();
-            console.log("comp", self.opts.competition)
         })
 
         self.is_admin = () => {

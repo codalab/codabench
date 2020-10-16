@@ -99,7 +99,6 @@
         self.update_leaderboard = () => {
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
-                    console.log(responseData)
                     self.selected_leaderboard = responseData
                     self.columns = []
                     for(task of self.selected_leaderboard.tasks){
