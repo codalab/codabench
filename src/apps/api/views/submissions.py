@@ -5,10 +5,11 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.exceptions import PermissionDenied, ValidationError, AuthenticationFailed
+from django.http import Http404
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
@@ -80,7 +81,6 @@ class SubmissionViewSet(ModelViewSet):
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
     def get_renderer_context(self):
         """We override this to pass some context to the CSV renderer"""
         context = super().get_renderer_context()
@@ -104,8 +104,8 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         phase = submission.phase
 
-        if not request.user.is_superuser and request.user != submission.owner and request.user not in phase.competition.collaborators.all():
-            raise AuthenticationFailed("You do not have permission to change this submission's leaderboard status")
+        if not (request.user.is_superuser or request.user == submission.owner or phase.competition.collaborators.filter(pk=request.user.pk).exists()):
+            raise Http404
 
         if request.method == 'POST':
             # Removing any existing submissions on leaderboard
@@ -128,8 +128,6 @@ class SubmissionViewSet(ModelViewSet):
             submission.save()
 
         return Response({})
-
-
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
@@ -176,7 +174,7 @@ class SubmissionViewSet(ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes((AllowAny, ))  # permissions are checked via the submission secret
+@permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
 
@@ -210,10 +208,12 @@ def upload_submission_scores(request, submission_pk):
 @api_view(('GET',))
 def can_make_submission(request, phase_id):
     phase = get_object_or_404(Phase, id=phase_id)
-    user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
+    user_is_approved = phase.competition.participants.filter(user=request.user,
+                                                             status=CompetitionParticipant.APPROVED).exists()
 
     if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition,
+                                              status=CompetitionParticipant.APPROVED)
         user_is_approved = True
 
     if user_is_approved:
