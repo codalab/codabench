@@ -5,10 +5,10 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, AuthenticationFailed
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
@@ -28,7 +28,9 @@ class SubmissionViewSet(ModelViewSet):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
 
     def check_object_permissions(self, request, obj):
-        if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
+        if self.action in ['submission_leaderboard_connection']:
+            return
+        elif self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             try:
                 if uuid.UUID(request.data.get('secret')) != obj.secret:
                     raise PermissionDenied("Submission secrets do not match")
@@ -78,6 +80,7 @@ class SubmissionViewSet(ModelViewSet):
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
     def get_renderer_context(self):
         """We override this to pass some context to the CSV renderer"""
         context = super().get_renderer_context()
@@ -95,6 +98,38 @@ class SubmissionViewSet(ModelViewSet):
     def has_admin_permission(self, user, submission):
         competition = submission.phase.competition
         return user.is_superuser or user in competition.all_organizers
+
+    @action(detail=True, methods=('POST', 'DELETE'))
+    def submission_leaderboard_connection(self, request, pk):
+        submission = self.get_object()
+        phase = submission.phase
+
+        if not request.user.is_superuser and request.user != submission.owner and request.user not in phase.competition.collaborators.all():
+            raise AuthenticationFailed("You do not have permission to change this submission's leaderboard status")
+
+        if request.method == 'POST':
+            # Removing any existing submissions on leaderboard
+            Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
+
+            leaderboard = submission.phase.leaderboard
+
+            if submission.has_children:
+                for s in Submission.objects.filter(parent=pk):
+                    s.leaderboard = leaderboard
+                    s.save()
+            else:
+                submission.leaderboard = leaderboard
+                submission.save()
+
+        if request.method == 'DELETE':
+            if submission.leaderboard.submission_rule != "Add_And_Delete":
+                raise ValidationError("You are not allowed to remove a submission on this phase")
+            submission.leaderboard = None
+            submission.save()
+
+        return Response({})
+
+
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):

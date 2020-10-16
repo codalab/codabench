@@ -119,7 +119,7 @@ class SubmissionManagerTests(SubmissionTestCase):
             self.make_submission(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
-        url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})
+        url = reverse('add_submission_to_leaderboard', kwargs={'pk': parent_sub.pk})
         resp = self.client.post(url)
         assert resp.status_code == 200
         for submission in Submission.objects.filter(parent=parent_sub):

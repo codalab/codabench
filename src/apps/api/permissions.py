@@ -20,3 +20,4 @@ class LeaderboardNotHidden(permissions.BasePermission):
             return True
         else:
             return not obj.hidden
+
