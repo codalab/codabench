@@ -175,8 +175,8 @@ class SubmissionViewSet(ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
-def upload_submission_scores(request, submission_pk):
-    submission = get_object_or_404(Submission, pk=submission_pk)
+def upload_submission_scores(request, pk):
+    submission = get_object_or_404(Submission, pk=pk)
 
     data = json.loads(request.body)
 
