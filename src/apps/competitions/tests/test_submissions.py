@@ -145,6 +145,22 @@ class SubmissionManagerTests(SubmissionTestCase):
         for submission in Submission.objects.filter(parent=parent_sub):
             assert submission.leaderboard is None
 
+    def test_only_owner_can_add_submission_to_leaderboard(self):
+        parent_sub = self.make_submission(has_children=True)
+
+        for _ in range(10):
+            leaderboard = LeaderboardFactory()
+            parent_sub.phase.leaderboard = leaderboard
+            parent_sub.phase.save()
+
+            ColumnFactory(leaderboard=leaderboard)
+            self.make_submission(parent=parent_sub)
+        different_user = UserFactory()
+        self.client.force_login(different_user)
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 404
+
 
 class MultipleTasksPerPhaseTests(SubmissionTestCase):
     def setUp(self):
