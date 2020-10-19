@@ -309,9 +309,9 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def creation_status(self, request, pk):
         """This endpoint gets the creation status for a competition during upload"""
-        # TODO: Do we need to check if the requester is the owner of this status object below?
         competition_creation_status = get_object_or_404(
             CompetitionCreationTaskStatus,
+            created_by=request.user,
             pk=pk,
         )
         serializer = CompetitionCreationTaskStatusSerializer(competition_creation_status)

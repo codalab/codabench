@@ -128,10 +128,11 @@ def upload_completed(request, key):
         from competitions.tasks import unpack_competition
 
         status = CompetitionCreationTaskStatus.objects.create(
+            created_by=request.user,
             dataset=dataset,
             status=CompetitionCreationTaskStatus.STARTING,
         )
         unpack_competition.apply_async((status.pk,))
-        return Response({"id": status.pk})
+        return Response({"status_id": status.pk})
 
     return Response({"key": dataset.key})

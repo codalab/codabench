@@ -197,6 +197,12 @@ class CompetitionCreationTaskStatus(models.Model):
     dataset = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, related_name="competition_bundles")
     status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
     details = models.TextField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='competition_creation_task_statuses',
+    )
 
     # The resulting competition is only made on success
     resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='creation_statuses')

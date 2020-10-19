@@ -211,6 +211,7 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
             'status',
             'details',
             'resulting_competition',
+            'created_by',
         )
 
 

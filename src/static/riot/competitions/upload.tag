@@ -113,7 +113,7 @@
             CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     setTimeout(function() {
-                        self.status_listening_loop(data.id)
+                        self.status_listening_loop(data.status_id)
                     }, 501)  // do this after the always() hide progress bar's 500ms wait
                 })
                 .fail(function (response) {
