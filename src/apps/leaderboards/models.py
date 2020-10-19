@@ -1,18 +1,15 @@
 from statistics import mean
-
 from django.db import models
 
 
 class Leaderboard(models.Model):
-    competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE, related_name="leaderboards",
-                                    null=True, blank=True)
     primary_index = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
     hidden = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.title} - {self.competition}'
+        return f'{self.title} - {self.id}'
 
 
 class Column(models.Model):

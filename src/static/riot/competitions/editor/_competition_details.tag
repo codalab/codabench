@@ -35,6 +35,18 @@
             <input type="text" ref="docker_image">
         </div>
         <div class="field">
+            <label>Competition Type</label>
+            <div ref="competition_type" class="ui selection dropdown">
+                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }">
+                <div class="text">Competition</div>
+                <i class="dropdown icon"></i>
+                <div class="menu">
+                    <div class="item" data-value="competition">Competition</div>
+                    <div class="item" data-value="benchmark">Benchmark</div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
             <div class="ui checkbox">
                 <label>Enable Visualizations</label>
                 <input type="checkbox" ref="detailed_results">
@@ -82,6 +94,9 @@
                 self.form_updated()
             })
 
+            $(self.refs.competition_type).dropdown({
+                onChange: self.form_updated,
+            })
             $(self.refs.queue).dropdown({
                 // Note: Passing `public=true` so default behavior is users can search for public queues
                 apiSettings: {
@@ -110,6 +125,7 @@
             self.data["queue"] = self.refs.queue.value
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
+            self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -156,6 +172,7 @@
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
+            $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {

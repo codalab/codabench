@@ -105,8 +105,8 @@ CODALAB.api = {
     add_submission_to_leaderboard: function (submission_pk) {
         return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
     },
-    get_leaderboard: function (leaderboard_pk) {
-        return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
+    get_leaderboard_for_render: function (phase_pk) {
+        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard`)
     },
     update_submission_score: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)

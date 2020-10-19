@@ -8,6 +8,7 @@ from django.test import RequestFactory
 from django.utils import timezone
 
 from api.serializers.competitions import CompetitionSerializer
+from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
 from competitions.models import Phase
 from datasets.models import Data
@@ -87,6 +88,8 @@ class BaseUnpacker:
         return min(future_phases, key=lambda p: p['index'], default=None)
 
     def _set_phase_statuses(self):
+        self.competition['phases'][-1]['is_final_phase'] = True
+
         current_phase = self._get_current_phase(self.competition['phases'])
         if current_phase:
             current_index = current_phase['index']
@@ -293,9 +296,18 @@ class BaseUnpacker:
                 new_solution = serializer.save()
                 self.created_solutions.append(new_solution)
 
+    def _save_leaderboards(self):
+        for index, leaderboard in enumerate(self.competition['leaderboards']):
+            serializer = LeaderboardSerializer(data=leaderboard, context={'request': self.fake_request})
+            serializer.is_valid(raise_exception=True)
+            self.competition['leaderboards'][index] = serializer.save()
+
     def _save_competition(self):
         for phase in self.competition['phases']:
             phase['tasks'] = [self.competition['tasks'][index].key for index in phase['tasks']]
+            phase['leaderboard'] = self.competition['leaderboards'][0].id
+
+        self.competition.pop('leaderboards')
 
         serializer = CompetitionSerializer(
             data=self.competition,
@@ -316,6 +328,7 @@ class BaseUnpacker:
         try:
             self._save_tasks()
             self._save_solutions()
+            self._save_leaderboards()
             return self._save_competition()
         except Exception as e:
             self._clean()

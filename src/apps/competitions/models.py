@@ -43,7 +43,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
     enable_detailed_results = models.BooleanField(default=False)
 
-    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True, related_name='competitions')
+    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='competitions')
 
     allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
@@ -129,6 +130,36 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating_delayed = False
         self.save()
 
+    def update_phase_statuses(self):
+        current_phase = None
+        for phase in self.phases.all():
+            if phase.end is not None and phase.start < now() < phase.end:
+                current_phase = phase
+            elif phase.end is None:
+                current_phase = phase
+
+        if current_phase:
+            current_index = current_phase.index
+            previous_index = current_index - 1 if current_index >= 1 else None
+            next_index = current_index + 1 if current_index < len(self.phases.all()) - 1 else None
+        else:
+            current_index = None
+
+            next_phase = self.phases.filter(end__gt=now()).order_by('index').first()
+            if next_phase:
+                next_index = next_phase.index
+                previous_index = next_index - 1 if next_index >= 1 else None
+            else:
+                next_index = None
+                previous_index = None
+
+        if current_index is not None:
+            self.phases.filter(index=current_index).update(status=Phase.CURRENT)
+        if next_index is not None:
+            self.phases.filter(index=next_index).update(status=Phase.NEXT)
+        if previous_index is not None:
+            self.phases.filter(index=previous_index).update(status=Phase.PREVIOUS)
+
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.pk})
 
@@ -138,7 +169,8 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def get_chahub_is_valid(self):
         has_phases = self.phases.exists()
-        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in self.creation_statuses.all()]) if self.creation_statuses.exists() else True
+        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in
+                               self.creation_statuses.all()]) if self.creation_statuses.exists() else True
         return has_phases and upload_finished
 
     def get_whitelist(self):
@@ -205,7 +237,8 @@ class CompetitionCreationTaskStatus(models.Model):
     )
 
     # The resulting competition is only made on success
-    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='creation_statuses')
+    resulting_competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True,
+                                              related_name='creation_statuses')
 
     def __str__(self):
         return f"pk: {self.pk} ({self.status})"
@@ -221,10 +254,10 @@ class Phase(ChaHubSaveMixin, models.Model):
         (PREVIOUS, "Previous"),
         (CURRENT, "Current"),
         (NEXT, "Next"),
-        (FINAL, "Final"),
     )
 
     status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
+    is_final_phase = models.BooleanField(default=False)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
@@ -240,7 +273,10 @@ class Phase(ChaHubSaveMixin, models.Model):
     max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
 
-    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name="phases")
+    tasks = models.ManyToManyField('tasks.Task', blank=True, related_name='phases', through='PhaseTaskInstance')
+
+    leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True,
+                                    related_name="phases")
 
     class Meta:
         ordering = ('index',)
@@ -326,6 +362,18 @@ class Phase(ChaHubSaveMixin, models.Model):
             logger.info(f"This competition is missing the previous phase to migrate from.")
 
 
+class PhaseTaskInstance(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    phase = models.ForeignKey(Phase, on_delete=models.CASCADE, related_name="task_instances")
+    order_index = models.PositiveIntegerField(default=999)
+
+    class Meta:
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f'Task:{self.task.name}, Phase:{self.phase.name}, Order:{int(self.order_index)}'
+
+
 class SubmissionDetails(models.Model):
     DETAILED_OUTPUT_NAMES_PREDICTION = [
         "prediction_stdout",
@@ -377,9 +425,12 @@ class Submission(ChaHubSaveMixin, models.Model):
     data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE, related_name='submission')
     md5 = models.CharField(max_length=32, null=True, blank=True)
 
-    prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True, storage=BundleStorage)
-    scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True, storage=BundleStorage)
-    detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True, storage=BundleStorage)
+    prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True,
+                                         storage=BundleStorage)
+    scoring_result = models.FileField(upload_to=PathWrapper('scoring_result'), null=True, blank=True,
+                                      storage=BundleStorage)
+    detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True,
+                                       storage=BundleStorage)
 
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
@@ -394,7 +445,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
     is_migrated = models.BooleanField(default=False)
-    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE, null=True,
+    created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
+                                             null=True,
                                              blank=True)
 
     scores = models.ManyToManyField('leaderboards.SubmissionScore', related_name='submissions')
@@ -452,23 +504,24 @@ class Submission(ChaHubSaveMixin, models.Model):
             self.save()
 
     def calculate_scores(self):
-        leaderboards = self.phase.competition.leaderboards.all()
-        for leaderboard in leaderboards:
-            columns = leaderboard.columns.exclude(computation__isnull=True)
-            for column in columns:
-                scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score', flat=True)
-                if scores.exists():
-                    score = column.compute(scores)
-                    try:
-                        sub_score = self.scores.get(column=column)
-                        sub_score.score = score
-                        sub_score.save()
-                    except SubmissionScore.DoesNotExist:
-                        sub_score = SubmissionScore.objects.create(
-                            column=column,
-                            score=score
-                        )
-                        self.scores.add(sub_score)
+        # leaderboards = self.phase.competition.leaderboards.all()
+        # for leaderboard in leaderboards:
+        columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
+        for column in columns:
+            scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
+                                                                                                             flat=True)
+            if scores.exists():
+                score = column.compute(scores)
+                try:
+                    sub_score = self.scores.get(column=column)
+                    sub_score.score = score
+                    sub_score.save()
+                except SubmissionScore.DoesNotExist:
+                    sub_score = SubmissionScore.objects.create(
+                        column=column,
+                        score=score
+                    )
+                    self.scores.add(sub_score)
 
     @property
     def on_leaderboard(self):
@@ -584,17 +637,3 @@ class CompetitionDump(models.Model):
 
     def __str__(self):
         return f"Comp dump created by {self.dataset.created_by} - {self.status}"
-
-
-# class Leaderboard(models.Model):
-#     pass
-#
-#
-# class Leaderboard
-
-
-"""
-What if the competition creator adds/removes leaderboards?
-
-what if the competition creator adds/removes columns?
-"""

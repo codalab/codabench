@@ -182,7 +182,7 @@ PHASES = [
         'has_max_submissions': True,
         'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
         'tasks': [0],
-        'status': 'Previous'
+        'status': 'Previous',
     },
     {
         'index': 1,
@@ -196,7 +196,8 @@ PHASES = [
         'has_max_submissions': True,
         'tasks': [1],
         'status': 'Current',
-        'end': None
+        'end': None,
+        'is_final_phase': True,
     }
 ]
 

@@ -9,7 +9,7 @@ from django.utils import timezone
 from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionScoreFactory
+    ColumnFactory
 
 
 class SubmissionTestCase(TestCase):
@@ -109,12 +109,14 @@ class SubmissionManagerTests(SubmissionTestCase):
 
     def test_adding_submission_to_leaderboard_adds_all_children(self):
         parent_sub = self.make_submission(has_children=True)
-        leaderboard = LeaderboardFactory(competition=parent_sub.phase.competition)
+
         for _ in range(10):
-            column = ColumnFactory(leaderboard=leaderboard)
-            sub = self.make_submission(parent=parent_sub)
-            score = SubmissionScoreFactory(column=column, submissions=sub)
-            parent_sub.scores.add(score)
+            leaderboard = LeaderboardFactory()
+            parent_sub.phase.leaderboard = leaderboard
+            parent_sub.phase.save()
+
+            ColumnFactory(leaderboard=leaderboard)
+            self.make_submission(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('add_submission_to_leaderboard', kwargs={'submission_pk': parent_sub.pk})
