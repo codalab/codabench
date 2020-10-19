@@ -17,6 +17,7 @@ from rest_framework_csv import renderers
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
 from leaderboards.models import SubmissionScore, Column
+from tasks.models import Task
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -113,7 +114,24 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
-        submission.re_run()
+
+        rerun_kwargs = {}
+
+        # Rerun submission on private task
+        if request.query_params.get('private_task'):
+            task_pk = request.query_params.get('private_task')
+            try:
+                task_pk = int(task_pk)
+            except ValueError:
+                raise ValidationError('private_task query parameter must be an integer.')
+
+            task = Task.objects.filter(created_by=request.user, pk=task_pk, is_private=True).first()
+            if task is None:
+                raise ValidationError('You are not the owner of a private task with this pk.')
+            rerun_kwargs = {
+                'task': task,
+            }
+        submission.re_run(**rerun_kwargs)
         return Response({})
 
     @action(detail=True, methods=('GET',))
