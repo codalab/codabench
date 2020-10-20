@@ -21,11 +21,37 @@ Usage
 """
 
 from sys import argv              # noqa: E402,E261  # Ignore E261 to line up these noqa
+import getopt
 from operator import itemgetter   # noqa: E402,E261
 from urllib.parse import urljoin  # noqa: E402,E261
 import requests                   # noqa: E402,E261
 from pprint import pprint         # noqa: E402,E261
 
+
+# ----------------------------------------------------------------------------
+# Help (-h, --help)
+# ----------------------------------------------------------------------------
+def print_help():
+    help_commands =[
+        ["-h, --help", "Print Help (this message) and exit"],
+        ["-p, --phase <phase-id>", "Phase ID/PK to select"],
+        ["-s, --submission <submission-id>", "Submission ID/PK to select"],
+        ["-v, --verbose", "Enable Verbose Output"]
+    ]
+    usage = [
+        [f"{argv[0]} -p <id>", "Show table of submissions on a phase"],
+        [f"{argv[0]} -p <id> -s <id>", "Get Details of selected submission"],
+        [f"{argv[0]} -p <id> -s <id> -v", "TODO: Explain Verbose Output"],
+     ]
+    print("Overview:\n    This script is designed to find submission information.\n    "
+          "It's main purpose is to demonstrate how to programmatically find submission information.\n")
+    print("Usage:")
+    for use in usage:
+        print("    %-55s %-45s" % (use[0], use[1]))
+    print("\nArguments:")
+    for command in help_commands:
+        print("    %-55s %-45s" % (command[0], command[1]))
+    exit(0)
 
 # ----------------------------------------------------------------------------
 # Configure these
@@ -38,16 +64,36 @@ PASSWORD = 'admin'
 # ----------------------------------------------------------------------------
 # Script start..
 # ----------------------------------------------------------------------------
-PHASE_ID = None
-SUBMISSION_ID = None
-MODE = None
+PHASE_ID = SUBMISSION_ID = DETAIL = None
 
-if len(argv) > 1:
-    PHASE_ID = int(argv[1])
-    MODE = 1
-if len(argv) > 2:
-    SUBMISSION_ID = int(argv[2])
-    MODE = 2
+short_options = "hp:s:v"
+long_options = ["help", "phase=", "submission=", "verbose"]
+argument_list = argv[1:]
+
+try:
+    arguments, values = getopt.getopt(argument_list, short_options, long_options)
+except getopt.error as err:
+    # Output error, and return with an error code
+    print(str(err))
+    exit(2)
+
+# Evaluate given options
+for current_argument, current_value in arguments:
+    if current_argument in ("-v", "--verbose"):
+        print("Enabling verbose mode")
+    elif current_argument in ("-h", "--help"):
+        print_help()
+    elif current_argument in ("-p", "--phase"):
+        PHASE_ID = int(current_value)
+    elif current_argument in ("-s", "--submission"):
+        SUBMISSION_ID = int(current_value)
+
+# exit(0)
+#
+# if len(argv) > 1:
+#     PHASE_ID = int(argv[1])
+# if len(argv) > 2:
+#     SUBMISSION_ID = int(argv[2])
 
 # Login
 login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
@@ -79,7 +125,7 @@ if PHASE_ID and not SUBMISSION_ID:
         print(f"{s['id']:>4}  |  {s['owner']:<20}  |  {s['created_when']}")
     print()
 
-elif SUBMISSION_ID:
+elif PHASE_ID and SUBMISSION_ID:
     submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}')
     resp = requests.get(submissions_detail_url, headers=headers)
     if resp.status_code != 200:
