@@ -85,7 +85,6 @@ except getopt.error as err:
 # Evaluate given options
 for current_argument, current_value in arguments:
     if current_argument in ("-v", "--verbose"):
-        print("Enabling verbose mode")
         VERBOSE = True
     elif current_argument in ("-h", "--help"):
         print_help()
@@ -162,10 +161,11 @@ if PHASE_ID and not SUBMISSION_ID:
 elif PHASE_ID and SUBMISSION_ID and VERBOSE:
     temp_dir = get_verbose(SUBMISSION_ID)
     files = os.listdir(temp_dir.__enter__())
-
-    with zipfile.ZipFile(f'{CURRENT_DIR}/submission-{SUBMISSION_ID}.zip', 'w') as zipObj:
+    zip_dir = f'{CURRENT_DIR}/submission-{SUBMISSION_ID}.zip'
+    with zipfile.ZipFile(zip_dir, 'w') as zipObj:
         for file in files:
             zipObj.write(f'{temp_dir.__enter__()}/{file}', arcname=file)
+    print(f"Saved Output to: {zip_dir}")
     temp_dir.cleanup()
 
 
