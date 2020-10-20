@@ -142,7 +142,6 @@
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
-            self.update()
         })
 
         self.setup_autoscroll = function () {

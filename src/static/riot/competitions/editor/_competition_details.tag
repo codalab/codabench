@@ -35,7 +35,7 @@
             </div>
             <br>
             <form ref="comp_fact_sheet">
-            <div style="border: 1px solid #dcdcdcdc; background-color: white; padding: 1.5em;" each="{question in fact_sheet_questions}">
+            <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
                 <!--suppress XmlDuplicatedId -->
                 <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
                     <p>Type: Boolean</p>
@@ -219,8 +219,6 @@
             $(':input', self.refs.comp_fact_sheet).not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
             })
-
-
         }
 
         self.remove_question = function (id) {
@@ -291,4 +289,11 @@
             self.markdown_editor.codemirror.refresh()
         })
     </script>
+    <style>
+        .fact-sheet-question {
+            border: 1px solid #dcdcdcdc;
+            background-color: white;
+            padding: 1.5em;
+        }
+    </style>
 </competition-details>

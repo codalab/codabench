@@ -140,8 +140,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             if set(fact_sheet_answers.keys()) != set(fact_sheet.keys()):
                 raise ValidationError("Fact Sheet keys do not match Answer keys")
             for key in fact_sheet_answers.keys():
-                if not fact_sheet[key] and type(fact_sheet_answers[key]) != 'string':
-                    raise ValidationError(f'{fact_sheet_answers[key]} needs quotes')
+                if not fact_sheet[key] and not isinstance(fact_sheet_answers[key], str):
+                    raise ValidationError(f'{fact_sheet_answers[key]} should be string not {type(fact_sheet_answers[key])}')
                 elif fact_sheet_answers[key] not in fact_sheet[key] and fact_sheet[key]:
                     raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
 
