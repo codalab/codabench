@@ -17,7 +17,7 @@ from rest_framework_csv import renderers
 
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
-from leaderboards.models import SubmissionScore, Column
+from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -104,8 +104,9 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         phase = submission.phase
 
-        if not (request.user.is_superuser or request.user == submission.owner or phase.competition.collaborators.filter(pk=request.user.pk).exists()):
-            raise Http404
+        if not (request.user.is_superuser or request.user == submission.owner):
+            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
+                raise Http404
 
         if request.method == 'POST':
             # Removing any existing submissions on leaderboard
@@ -114,7 +115,7 @@ class SubmissionViewSet(ModelViewSet):
             leaderboard = submission.phase.leaderboard
 
             if submission.has_children:
-                for s in Submission.objects.filter(parent=pk):
+                for s in Submission.objects.filter(parent=submission):
                     s.leaderboard = leaderboard
                     s.save()
             else:
@@ -122,7 +123,7 @@ class SubmissionViewSet(ModelViewSet):
                 submission.save()
 
         if request.method == 'DELETE':
-            if submission.phase.leaderboard.submission_rule != "Add_And_Delete":
+            if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE:
                 raise ValidationError("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
@@ -176,8 +177,8 @@ class SubmissionViewSet(ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
-def upload_submission_scores(request, pk):
-    submission = get_object_or_404(Submission, pk=pk)
+def upload_submission_scores(request, submission_pk):
+    submission = get_object_or_404(Submission, pk=submission_pk)
 
     data = json.loads(request.body)
 
@@ -209,12 +210,17 @@ def upload_submission_scores(request, pk):
 @api_view(('GET',))
 def can_make_submission(request, phase_id):
     phase = get_object_or_404(Phase, id=phase_id)
-    user_is_approved = phase.competition.participants.filter(user=request.user,
-                                                             status=CompetitionParticipant.APPROVED).exists()
+    user_is_approved = phase.competition.participants.filter(
+        user=request.user,
+        status=CompetitionParticipant.APPROVED
+    ).exists()
 
     if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition,
-                                              status=CompetitionParticipant.APPROVED)
+        CompetitionParticipant.objects.create(
+            user=request.user,
+            competition=phase.competition,
+            status=CompetitionParticipant.APPROVED
+        )
         user_is_approved = True
 
     if user_is_approved:
