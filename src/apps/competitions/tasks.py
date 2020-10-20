@@ -297,14 +297,18 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
-def unpack_competition(competition_dataset_pk):
-    competition_dataset = Data.objects.get(pk=competition_dataset_pk)
+def unpack_competition(status_pk):
+    status = CompetitionCreationTaskStatus.objects.get(pk=status_pk)
+    competition_dataset = status.dataset
     creator = competition_dataset.created_by
 
-    status = CompetitionCreationTaskStatus.objects.create(
-        dataset=competition_dataset,
-        status=CompetitionCreationTaskStatus.STARTING,
-    )
+    def mark_status_as_failed_and_delete_dataset(competition_creation_status, details):
+        competition_creation_status.details = details
+        competition_creation_status.status = CompetitionCreationTaskStatus.FAILED
+        competition_creation_status.save()
+
+        # Cleans up associated data if competition unpacker fails
+        competition_creation_status.dataset.delete()
 
     try:
         with TemporaryDirectory() as temp_directory:
@@ -373,19 +377,17 @@ def unpack_competition(competition_dataset_pk):
 
     except CompetitionUnpackingException as e:
         # We want to catch well handled exceptions and display them to the user
-        logger.info(str(e))
-        status.details = str(e)
-        status.status = CompetitionCreationTaskStatus.FAILED
-        status.save()
+        message = str(e)
+        logger.info(message)
+        mark_status_as_failed_and_delete_dataset(status, message)
         raise e
 
     except Exception as e:
         # These are critical uncaught exceptions, make sure the end user is at least informed
         # that unpacking has failed -- do not share unhandled exception details
         logger.error(traceback.format_exc())
-        status.details = "Contact an administrator, competition failed to unpack in a critical way."
-        status.status = CompetitionCreationTaskStatus.FAILED
-        status.save()
+        message = "Contact an administrator, competition failed to unpack in a critical way."
+        mark_status_as_failed_and_delete_dataset(status, message)
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
