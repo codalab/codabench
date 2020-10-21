@@ -329,7 +329,7 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            self.form_is_valid = !!data.name && !!data.start && !!data.description && self.phase_tasks.length > 0
+            self.form_is_valid = !!data.name && !!data.start && self.phase_tasks.length > 0
         }
 
         self.clear_form = function () {

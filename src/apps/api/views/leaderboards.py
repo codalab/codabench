@@ -1,12 +1,8 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
-from competitions.models import Submission
 from leaderboards.models import Leaderboard, SubmissionScore
 
 
@@ -41,26 +37,3 @@ class SubmissionScoreViewSet(ModelViewSet):
         for submission in instance.submissions.filter(parent__isnull=True):
             submission.calculate_scores()
         return response
-
-
-@api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
-def add_submission_to_leaderboard(request, submission_pk):
-    # TODO: rebuild this to look somewhere else for what leaderboard to post to?
-    submission = get_object_or_404(Submission, pk=submission_pk)
-    phase = submission.phase
-
-    # Removing any existing submissions on leaderboard
-    Submission.objects.filter(phase=phase, owner=request.user).update(leaderboard=None)
-
-    leaderboard = submission.phase.leaderboard
-
-    if submission.has_children:
-        for s in Submission.objects.filter(parent=submission_pk):
-            s.leaderboard = leaderboard
-            s.save()
-    else:
-        submission.leaderboard = leaderboard
-        submission.save()
-
-    return Response({})

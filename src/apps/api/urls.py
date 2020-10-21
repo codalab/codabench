@@ -37,7 +37,6 @@ urlpatterns = [
     path('datasets/completed/<uuid:key>/', datasets.upload_completed),
     path('upload_submission_scores/<int:submission_pk>/', submissions.upload_submission_scores),
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
-    path('add_submission_to_leaderboard/<int:submission_pk>/', leaderboards.add_submission_to_leaderboard, name='add_submission_to_leaderboard'),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
 

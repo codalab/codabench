@@ -122,7 +122,7 @@
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
         })
 
-        CODALAB.events.on('submission_added_to_leaderboard', self.update_leaderboard)
+        CODALAB.events.on('submission_changed_on_leaderboard', self.update_leaderboard)
 
     </script>
     <style type="text/stylus">
