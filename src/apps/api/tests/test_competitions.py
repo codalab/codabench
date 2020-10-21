@@ -174,9 +174,10 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.tasks.append(task)
         for user in self.users:
             for phase in self.phases:
+                parent_sub = SubmissionFactory(owner=user, phase=phase, leaderboard=self.leaderboard)
                 for task in self.tasks:
                     phase.tasks.add(task)
-                    submission = SubmissionFactory(owner=user, phase=phase, leaderboard=self.leaderboard, task=task)
+                    submission = SubmissionFactory(parent=parent_sub, task=task)
                     for col in self.columns:
                         submission.scores.add(SubmissionScoreFactory(column=col))
 
