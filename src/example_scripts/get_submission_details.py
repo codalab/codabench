@@ -5,19 +5,27 @@ Overview
 This script is designed to find submission information. It's main purpose is to demonstrate
 how to programmatically find submission information.
 
+Tip
+========
+If you don't know a phase ID, start with the get_competition_details.py script.
+
+
 Usage
-=====
-OUTDATED: USE the -h switch in the command line
-1. Run the script with a phase ID as the only argument to find all submissions on that phase.
+========
+    get_submission_details.py -p <id>                       Show table of submissions on a phase
+    get_submission_details.py -s <id>                       Get Details of selected submission
+    get_submission_details.py -s <id> -v                    Download Submission, Metadata, and logs to zip file
 
-    ./get_submission_details.py 1
+Arguments
+========
+    -h, --help                                              Print Help (this message) and exit
+    -p, --phase <phase-id>                                  Phase ID/PK to select
+    -s, --submission <submission-id>                        Submission ID/PK to select
+    -v, --verbose                                           Download Verbose Output
+    -o, --output                                            Change directory to save Verbose Output
 
-2. Find the submission you would like detailed information about.
 
-3. Run the script again with the phase ID as the first argument and the submission ID as the second
-   argument to see a detailed submission object.
 
-    ./get_competition_details.py 1 1
 """
 import json
 from sys import argv  # noqa: E402,E261  # Ignore E261 to line up these noqa
@@ -29,6 +37,14 @@ import requests  # noqa: E402,E261
 from pprint import pprint  # noqa: E402,E261
 import tempfile
 import zipfile
+
+
+# ----------------------------------------------------------------------------
+# Configure these
+# ----------------------------------------------------------------------------
+CODALAB_URL = 'http://localhost/'
+USERNAME = 'admin'
+PASSWORD = 'admin'
 
 
 # ----------------------------------------------------------------------------
@@ -49,6 +65,7 @@ def print_help():
     ]
     print("Overview:\n    This script is designed to find submission information.\n    "
           "It's main purpose is to demonstrate how to programmatically find submission information.\n")
+    print("Tip:\n    If you don't know a phase ID, start with the get_competition_details.py script.\n")
     print("Usage:")
     for use in usage:
         print("    %-55s %-45s" % (use[0], use[1]))
@@ -57,13 +74,6 @@ def print_help():
         print("    %-55s %-45s" % (command[0], command[1]))
     exit(0)
 
-
-# ----------------------------------------------------------------------------
-# Configure these
-# ----------------------------------------------------------------------------
-CODALAB_URL = 'http://localhost/'
-USERNAME = 'admin'
-PASSWORD = 'admin'
 
 # ----------------------------------------------------------------------------
 # Script start..
