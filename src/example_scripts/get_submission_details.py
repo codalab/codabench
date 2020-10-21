@@ -208,4 +208,5 @@ elif SUBMISSION_ID:
     print()
 
 else:
-    print('No command given. Try --help')
+    print('No command given. Here is some --help')
+    print_help()
