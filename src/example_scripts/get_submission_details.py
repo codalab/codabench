@@ -39,12 +39,13 @@ def print_help():
         ["-h, --help", "Print Help (this message) and exit"],
         ["-p, --phase <phase-id>", "Phase ID/PK to select"],
         ["-s, --submission <submission-id>", "Submission ID/PK to select"],
-        ["-v, --verbose", "Enable Verbose Output"]
+        ["-v, --verbose", "Download Verbose Output"],
+        ["-o, --output", "Change directory to save Verbose Output"],
     ]
     usage = [
         [f"{argv[0]} -p <id>", "Show table of submissions on a phase"],
-        [f"{argv[0]} -p <id> -s <id>", "Get Details of selected submission"],
-        [f"{argv[0]} -p <id> -s <id> -v", "TODO: Explain Verbose Output"],
+        [f"{argv[0]} -s <id>", "Get Details of selected submission"],
+        [f"{argv[0]} -s <id> -v", "Download Submission, Metadata, and logs to zip file"],
     ]
     print("Overview:\n    This script is designed to find submission information.\n    "
           "It's main purpose is to demonstrate how to programmatically find submission information.\n")
@@ -71,8 +72,8 @@ PHASE_ID = SUBMISSION_ID = None
 VERBOSE = False
 CURRENT_DIR = os.getcwd()
 
-short_options = "hp:s:v"
-long_options = ["help", "phase=", "submission=", "verbose"]
+short_options = "hp:s:vo:"
+long_options = ["help", "phase=", "submission=", "verbose", "output="]
 argument_list = argv[1:]
 
 try:
@@ -92,6 +93,9 @@ for current_argument, current_value in arguments:
         PHASE_ID = int(current_value)
     elif current_argument in ("-s", "--submission"):
         SUBMISSION_ID = int(current_value)
+    elif current_argument in ("-o", "--output"):
+        os.chdir(current_value)
+        CURRENT_DIR = os.getcwd()
 
 # Login
 login_url = urljoin(CODALAB_URL, '/api/api-token-auth/')
@@ -135,6 +139,15 @@ def get_verbose(SUBMISSION_ID):
         file.write(json.dumps(resp_json, ensure_ascii=False, indent=4))
     with open(f'{temp_dir.__enter__()}/submission_detail.json', 'w', encoding='utf-8') as file:
         file.write(json.dumps(detail_resp_json, ensure_ascii=False, indent=4))
+    for log in detail_resp_json['logs']:
+        with open(f'{temp_dir.__enter__()}/{log["name"]}.txt', 'w', encoding='utf-8') as file:
+            url = log["data_file"]
+            # NEEDED FOR DEV ENVIRONMENT
+            url = url.replace("docker.for.mac.", '')
+            resp = requests.get(url)
+            resp.encoding = 'utf-8'
+            file.write(resp.text)
+
     return temp_dir
 
 
@@ -158,7 +171,7 @@ if PHASE_ID and not SUBMISSION_ID:
         print(f"{s['id']:>4}  |  {s['owner']:<20}  |  {s['created_when']}")
     print()
 
-elif PHASE_ID and SUBMISSION_ID and VERBOSE:
+elif SUBMISSION_ID and VERBOSE:
     temp_dir = get_verbose(SUBMISSION_ID)
     files = os.listdir(temp_dir.__enter__())
     zip_dir = f'{CURRENT_DIR}/submission-{SUBMISSION_ID}.zip'
@@ -169,7 +182,7 @@ elif PHASE_ID and SUBMISSION_ID and VERBOSE:
     temp_dir.cleanup()
 
 
-elif PHASE_ID and SUBMISSION_ID:
+elif SUBMISSION_ID:
     submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}')
     resp = requests.get(submissions_detail_url, headers=headers)
     if resp.status_code != 200:
@@ -195,4 +208,4 @@ elif PHASE_ID and SUBMISSION_ID:
     print()
 
 else:
-    print('ERROR: Phase ID missing! Phase ID is required as a command line argument.')
+    print('No command given. Try --help')
