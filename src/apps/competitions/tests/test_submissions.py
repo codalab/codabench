@@ -8,8 +8,7 @@ from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
-    ColumnFactory
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
 from leaderboards.models import Leaderboard
 
 
