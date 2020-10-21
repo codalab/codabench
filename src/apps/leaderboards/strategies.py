@@ -1,4 +1,5 @@
 from django.db.models import Sum, Q
+import logging
 from rest_framework.generics import get_object_or_404
 
 from competitions.models import Submission
@@ -8,14 +9,15 @@ LATSET = 'latest'
 ALL = 'all'
 BEST = 'best'
 
+logger = logging.getLogger(__name__)
 
-class BaseModeHandler:
+
+class BaseModeStrategy:
 
     def get_submission_and_phase_and_leaderboard(self, submission_pk):
         submission = get_object_or_404(Submission, pk=submission_pk)
         phase = submission.phase
-        leaderboard = submission.phase.leaderboard
-
+        leaderboard = phase.leaderboard
         return submission, phase, leaderboard
 
     def update_submission(self, submission, submission_pk, leaderboard):
@@ -31,54 +33,55 @@ class BaseModeHandler:
         submission, phase, leaderboard = self.get_submission_and_phase_and_leaderboard(submission_pk=submission_pk)
 
         # process specify logic for different mode(for difference display mode)
-        self.do_execute(phase, request)
+        self.do_execute(phase, request, submission)
 
         self.update_submission(submission=submission,
                                submission_pk=submission_pk,
                                leaderboard=leaderboard)
 
-    def do_execute(self, phase, request):
+    def do_execute(self, phase, request, submission):
         pass
 
 
-class ManuallyModeHanlder(BaseModeHandler):
+class ManuallyModeStrategy(BaseModeStrategy):
 
     def put_on_leaderboard(self, request, submission_pk):
         """do nothing by default"""
         pass
 
 
-class LastestModeHandler(BaseModeHandler):
+class LastestModeStrategy(BaseModeStrategy):
 
-    def do_execute(self,phase, request):
+    def do_execute(self, phase, request, submission):
         """add latest submission in leaderboard"""
-
-        # Removing any existing submissions on leaderboard
-        Submission.objects.filter(phase=phase, owner=request.user).update(leaderboard=None)
+        Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
 
-class AllModeHandler(BaseModeHandler):
+class AllModeStrategy(BaseModeStrategy):
     pass
 
 
-class BestModeHandler(BaseModeHandler):
+class BestModeStrategy(BaseModeStrategy):
 
     def put_on_leaderboard(self, request, submission_pk):
         """fetch all submission, then choose best submission and put on leaderboard"""
         submission, phase, leaderboard = super().get_submission_and_phase_and_leaderboard(submission_pk=submission_pk)
 
-        best_submission = self._choose_best_submission(leaderboard=leaderboard, request=request, phase=phase)
+        Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
+        best_submission = self._choose_best_submission(leaderboard=leaderboard, owner=submission.owner, phase=phase)
 
         super().update_submission(submission=best_submission,
                                   submission_pk=best_submission.id,
                                   leaderboard=leaderboard)
 
-    def _choose_best_submission(self, leaderboard, request, phase):
+    def _choose_best_submission(self, leaderboard, owner, phase):
         """choose best submission"""
         primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
-        # Order first by primary column. Then order by other columns after for tie breakers.
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = Submission.objects.filter(phase=phase, owner=request.user)
+
+        submissions = Submission.objects.filter(phase=phase, owner=owner) \
+            .select_related('owner').prefetch_related('scores') \
+            .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
         for column in leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
@@ -92,16 +95,21 @@ class BestModeHandler(BaseModeHandler):
         return submissions[0]
 
 
-class HandlerFactory:
+class StrategyFactory:
 
     @staticmethod
-    def create_by_mode(display_mode):
-        """get leaderboard display mode handler by display mode config in competiton model"""
-        if MANUALLY == display_mode:
-            return ManuallyModeHanlder()
-        elif LATSET == display_mode:
-            return LastestModeHandler()
-        elif AllModeHandler == display_mode:
-            return AllModeHandler()
-        elif BEST == BestModeHandler:
-            return BestModeHandler()
+    def create_by_strategy(display_strategy):
+        if MANUALLY == display_strategy:
+            return ManuallyModeStrategy()
+        elif LATSET == display_strategy:
+            return LastestModeStrategy()
+        elif ALL == display_strategy:
+            return AllModeStrategy()
+        elif BEST == display_strategy:
+            return BestModeStrategy()
+
+
+def put_on_leaderboard_by_strategy(request, submission_pk, leaderboard_display_strategy):
+    """add submission score to leaderboard by display strategy"""
+    strategy = StrategyFactory.create_by_strategy(leaderboard_display_strategy)
+    strategy.put_on_leaderboard(request, submission_pk)
