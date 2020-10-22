@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from api.serializers.competitions import CompetitionSerializer, CompetitionDetailSerializer, CompetitionUpdateSerializer
+from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
@@ -217,37 +217,6 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         sub = Submission.objects.get(id=self.sub.id)
         assert not sub.has_children
 
-    # def test_adding_task_to_phase_runs_submissions_on_new_task(self):
-    #     leaderboard = LeaderboardFactory()
-    #     submission = SubmissionFactory(owner=self.user)
-    #
-    #
-    #     for phase in self.comp.phases.all():
-    #         phase.leaderboard = leaderboard
-    #         phase.save()
-    #     competition_data = CompetitionSerializer(self.comp).data
-    #     new_task = TaskFactory()
-    #     competition_data["phases"][0]['tasks'].append(new_task.key)
-    #     competition_data['logo'] = None
-    #     for id, task in enumerate(competition_data["phases"][0]['tasks']):
-    #         competition_data["phases"][0]['tasks'][id] = str(task)
-    #     url = reverse("competition-detail", args=(self.comp.pk, ))
-    #     from pprint import pprint
-    #     pprint(competition_data)
-    #     print(url)
-    #     self.client.force_login(self.comp.created_by)
-    #     resp = self.client.put(url, json.dumps(competition_data), content_type="application/json")
-    #     print(resp)
-    #     print('\nRESPONSE JSON@@@@@@@@@@@@@@')
-    #     pprint(resp.json)
-    #     print('\nRESPONSE DATA@@@@@@@@@@@@@@')
-    #     pprint(resp.data)
-    #
-    #     assert False
-    #
-
-
-    # @mock.patch.object()
     def test_adding_task_to_phase_runs_submissions_on_new_task(self):
 
         leaderboard = LeaderboardFactory()
@@ -256,22 +225,20 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
             phase.leaderboard = leaderboard
             phase.save()
 
-        submission = SubmissionFactory(owner=self.user, phase=self.phase)
+        SubmissionFactory(owner=self.user, phase=self.phase)
 
         competition_data = CompetitionSerializer(self.comp).data
         new_task = TaskFactory()
         competition_data["phases"][0]['tasks'].append(new_task.key)
         competition_data['logo'] = None
 
-        for id, task in enumerate(competition_data["phases"][0]['tasks']):
-            competition_data["phases"][0]['tasks'][id] = str(task)
+        for task_d, task in enumerate(competition_data["phases"][0]['tasks']):
+            competition_data["phases"][0]['tasks'][task_d] = str(task)
         url = reverse("competition-detail", args=(self.comp.pk,))
 
         self.client.force_login(self.comp.created_by)
 
         # during our put we should expect 1 new run to happen
         with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
-            resp = self.client.put(url, json.dumps(competition_data), content_type="application/json")
+            self.client.put(url, json.dumps(competition_data), content_type="application/json")
             run_new_task_submission.assert_called_once()
-
-        assert False
