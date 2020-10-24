@@ -1,8 +1,11 @@
 import json
 import uuid
 
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
+from competitions.models import Submission, Phase, CompetitionParticipant
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
+from leaderboards.models import SubmissionScore, Column
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -13,10 +16,6 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
-
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
-from competitions.models import Submission, Phase, CompetitionParticipant
-from leaderboards.models import SubmissionScore, Column
 from tasks.models import Task
 
 
@@ -109,28 +108,22 @@ class SubmissionViewSet(ModelViewSet):
 
         return Response({'canceled': canceled})
 
-    @action(detail=True, methods=('GET',))
+    @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
+        print('in re_run')
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
 
         rerun_kwargs = {}
-
-        # Rerun submission on private task
-        if request.query_params.get('private_task'):
-            task_pk = request.query_params.get('private_task')
-            try:
-                task_pk = int(task_pk)
-            except ValueError:
-                raise ValidationError('private_task query parameter must be an integer.')
-
-            task = Task.objects.filter(created_by=request.user, pk=task_pk, is_private=True).first()
-            if task is None:
-                raise ValidationError('You are not the owner of a private task with this pk.')
+        # Rerun submission on different task
+        if request.query_params.get('task_key'):
+            task_key = request.query_params.get('task_key')
             rerun_kwargs = {
-                'task': task,
+                'task': get_object_or_404(Task, key=task_key),
+                'is_private': bool(request.query_params.get('private'))
             }
+
         submission.re_run(**rerun_kwargs)
         return Response({})
 

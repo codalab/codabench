@@ -438,6 +438,9 @@ class Submission(ChaHubSaveMixin, models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
+    is_private = models.BooleanField(default=False)
+    is_specific_task_re_run = models.BooleanField(default=False)
+
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,
@@ -467,29 +470,26 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         super().save(**kwargs)
 
-    def start(self, tasks=None, private=False):
+    def start(self, tasks=None):
         from .tasks import run_submission
-        run_submission(self.pk, tasks=tasks, private=private)
+        run_submission(self.pk, tasks=tasks)
 
-    def re_run(self, task=None):
-        owner = None if task is None else task.created_by
-
+    def re_run(self, task=None, is_private=False):
         submission_arg_dict = {
-            'owner': owner or self.owner,
+            'owner': task.created_by if task else self.owner,
             'task': task or self.task,
             'phase': self.phase,
             'data': self.data,
+            'is_specific_task_re_run': bool(task),
+            'is_private': is_private,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
 
-        # if task is passed, then this must be a private submission
-        private = task is not None
-
-        # No need to rerun on children if this is a private submission
-        if not self.has_children or private:
+        # No need to rerun on children if this is running on a specific task
+        if not self.has_children or sub.is_specific_task_re_run:
             self.refresh_from_db()
-            sub.start(tasks=[task or self.task], private=private)
+            sub.start(tasks=[task or self.task])
         else:
             child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
             sub.start(tasks=child_tasks)

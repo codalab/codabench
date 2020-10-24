@@ -196,9 +196,9 @@ def create_detailed_output_file(detail_name, submission):
     return make_url_sassy(new_details.data_file.name, permission="w")
 
 
-def run_submission(submission_pk, tasks=None, is_scoring=False, private=False):
+def run_submission(submission_pk, tasks=None, is_scoring=False):
     task_ids = [t.id for t in tasks] if tasks else None
-    return _run_submission.apply_async((submission_pk, task_ids, is_scoring, private))
+    return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
 
 
 def send_submission_message(submission, data):
@@ -229,7 +229,7 @@ def send_child_id(submission, child_id):
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
-def _run_submission(submission_pk, task_pks=None, is_scoring=False, private=False):
+def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     """This function is wrapped so that when we run tests we can run this function not
     via celery"""
     select_models = (
@@ -256,13 +256,15 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False, private=Fals
         "is_scoring": is_scoring,
     }
 
-    if private:
-        # Should only be one task for a private submission
+    if submission.is_specific_task_re_run:
+        # Should only be one task for a specified task submission
         tasks = Task.objects.filter(pk__in=task_pks)
     elif task_pks is None:
-        tasks = submission.phase.tasks.all().order_by('pk')
+        tasks = submission.phase.tasks.all()
     else:
-        tasks = submission.phase.tasks.filter(pk__in=task_pks).order_by('pk')
+        tasks = submission.phase.tasks.filter(pk__in=task_pks)
+
+    tasks = tasks.order_by('pk')
 
     # TODO: Make the following code DRY!
     if len(tasks) > 1:

@@ -47,6 +47,8 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'description',
             'created_when',
             'is_public',
+            'is_private',
+            'is_specific_task_re_run',
             'status',
             'status_details',
             'owner',
@@ -65,6 +67,8 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'pk',
             'phase',
             'scores',
+            'is_private',
+            'is_specific_task_re_run',
             'leaderboard',
             'on_leaderboard',
         )
