@@ -6,7 +6,6 @@ from rest_framework.generics import get_object_or_404
 from competitions.models import Submission
 from leaderboards.models import Leaderboard
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -57,9 +56,9 @@ class LastestModeStrategy(BaseModeStrategy):
         """add latest submission in leaderboard"""
         Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
-
     def __str__(self):
         return "LastestModeStrategy"
+
 
 class AllModeStrategy(BaseModeStrategy):
 
