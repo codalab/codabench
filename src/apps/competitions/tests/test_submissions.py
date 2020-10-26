@@ -8,8 +8,8 @@ from django.utils import timezone
 
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
-    ColumnFactory
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
+from leaderboards.models import Leaderboard
 
 
 class SubmissionTestCase(TestCase):
@@ -109,15 +109,13 @@ class SubmissionManagerTests(SubmissionTestCase):
             assert sub.status == status, 'Status was changed and should not have been'
 
     def test_adding_submission_to_leaderboard_adds_all_children(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory()
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
         for _ in range(10):
-            leaderboard = LeaderboardFactory()
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
+            SubmissionFactory(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
@@ -127,34 +125,29 @@ class SubmissionManagerTests(SubmissionTestCase):
             assert submission.leaderboard
 
     def test_remove_submission_from_leaderboard(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory(submission_rule=Leaderboard.ADD_DELETE)
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
         for _ in range(10):
-            leaderboard = LeaderboardFactory(submission_rule="Add_And_Delete")
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
+            SubmissionFactory(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
         self.client.post(url)
         resp = self.client.delete(url)
+        print(resp)
         assert resp.status_code == 200
         for submission in Submission.objects.filter(parent=parent_sub):
             assert submission.leaderboard is None
 
     def test_only_owner_can_add_submission_to_leaderboard(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory()
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
-        for _ in range(10):
-            leaderboard = LeaderboardFactory()
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
         different_user = UserFactory()
         self.client.force_login(different_user)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
