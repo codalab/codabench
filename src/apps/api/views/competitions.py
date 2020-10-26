@@ -338,12 +338,12 @@ class CompetitionViewSet(ModelViewSet):
         return Response(serializer.data, status=201)
 
     def run_new_task_submissions(self, phase, tasks):
-        tasks_id = set([task.id for task in tasks])
-        submissions = phase.submissions.prefetch_related("children").all()
+        tasks_ids = set([task.id for task in tasks])
+        submissions = phase.submissions.filter(has_children=True).prefetch_related("children").all()
 
-        for submission in filter(lambda s: s.has_children, submissions):
-            child_tasks = set([sub.task for sub in submission.children.all()])
-            missing_tasks = tasks_id - set([task.id for task in child_tasks])
+        for submission in submissions:
+            child_tasks_ids = set(submission.children.values_list('task__id', flat=True))
+            missing_tasks = tasks_ids - child_tasks_ids
             for task in filter(lambda t: t.id in missing_tasks, tasks):
                 sub = Submission(
                     owner=submission.owner,
@@ -355,7 +355,6 @@ class CompetitionViewSet(ModelViewSet):
                     data=submission.data,
                 )
                 sub.save(ignore_submission_limit=True)
-                sub.refresh_from_db()
                 sub.start(tasks=[task])
 
     def _ensure_organizer_participants_accepted(self, instance):
@@ -369,10 +368,7 @@ class CompetitionViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
-
-        initial_tasks = {}
-        for phase in instance.phases.all():
-            initial_tasks.update({phase.id: set(phase.tasks.all())})
+        initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
 
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)

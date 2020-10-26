@@ -218,22 +218,16 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         assert not sub.has_children
 
     def test_adding_task_to_phase_runs_submissions_on_new_task(self):
-
         leaderboard = LeaderboardFactory()
-
-        for phase in self.comp.phases.all():
-            phase.leaderboard = leaderboard
-            phase.save()
-
+        self.comp.phases.all().update(leaderboard=leaderboard)
         SubmissionFactory(owner=self.user, phase=self.phase)
-
         competition_data = CompetitionSerializer(self.comp).data
         new_task = TaskFactory()
         competition_data["phases"][0]['tasks'].append(new_task.key)
         competition_data['logo'] = None
 
-        for task_d, task in enumerate(competition_data["phases"][0]['tasks']):
-            competition_data["phases"][0]['tasks'][task_d] = str(task)
+        for task_index, task in enumerate(competition_data["phases"][0]['tasks']):
+            competition_data["phases"][0]['tasks'][task_index] = str(task)
         url = reverse("competition-detail", args=(self.comp.pk,))
 
         self.client.force_login(self.comp.created_by)
