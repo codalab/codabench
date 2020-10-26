@@ -8,10 +8,34 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('tasks', '0003_task_order'),
-        ('competitions', '0016_auto_20200918_2108'),
+        ('competitions', '0016_auto_20200724_2354'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='phase',
+            name='is_final_phase',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='phase',
+            name='leaderboard',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='phases', to='leaderboards.Leaderboard'),
+        ),
+        migrations.AlterField(
+            model_name='phase',
+            name='status',
+            field=models.TextField(blank=True,
+                                   choices=[('Previous', 'Previous'), ('Current', 'Current'), ('Next', 'Next')],
+                                   null=True),
+        ),
+        migrations.AlterField(
+            model_name='submission',
+            name='data',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='submission',
+                                    to='datasets.Data'),
+        ),
         migrations.CreateModel(
             name='PhaseTaskInstance',
             fields=[
