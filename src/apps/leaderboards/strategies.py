@@ -1,13 +1,11 @@
-from django.db.models import Sum, Q
 import logging
+
+from django.db.models import Sum, Q
 from rest_framework.generics import get_object_or_404
 
 from competitions.models import Submission
+from leaderboards.models import Leaderboard
 
-MANUALLY = 'manually'
-LATSET = 'latest'
-ALL = 'all'
-BEST = 'best'
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +47,9 @@ class ManuallyModeStrategy(BaseModeStrategy):
         """do nothing by default"""
         pass
 
+    def __str__(self):
+        return "ManuallyModeStrategy"
+
 
 class LastestModeStrategy(BaseModeStrategy):
 
@@ -57,8 +58,13 @@ class LastestModeStrategy(BaseModeStrategy):
         Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
 
+    def __str__(self):
+        return "LastestModeStrategy"
+
 class AllModeStrategy(BaseModeStrategy):
-    pass
+
+    def __str__(self):
+        return "AllModeStrategy"
 
 
 class BestModeStrategy(BaseModeStrategy):
@@ -94,22 +100,27 @@ class BestModeStrategy(BaseModeStrategy):
         submissions = submissions.order_by(*ordering, 'created_when')
         return submissions[0]
 
+    def __str__(self):
+        return "BestModeStrategy"
+
 
 class StrategyFactory:
 
     @staticmethod
-    def create_by_strategy(display_strategy):
-        if MANUALLY == display_strategy:
+    def create_by_submission_rule(submission_rule):
+        if submission_rule is None:
             return ManuallyModeStrategy()
-        elif LATSET == display_strategy:
+        elif Leaderboard.FORCE_LAST == submission_rule:
             return LastestModeStrategy()
-        elif ALL == display_strategy:
+        elif Leaderboard.FORCE_LATEST_MULTIPLE == submission_rule:
             return AllModeStrategy()
-        elif BEST == display_strategy:
+        elif Leaderboard.FORCE_BEST == submission_rule:
             return BestModeStrategy()
 
 
-def put_on_leaderboard_by_strategy(request, submission_pk, leaderboard_display_strategy):
+def put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule):
     """add submission score to leaderboard by display strategy"""
-    strategy = StrategyFactory.create_by_strategy(leaderboard_display_strategy)
+    logger.info(f"put_on_leaderboard_by_submission_rule方法被调用了,当前submissions_rule的值为{submission_rule}")
+    strategy = StrategyFactory.create_by_submission_rule(submission_rule)
+    logger.info(f"获取到的strategy为:{strategy}")
     strategy.put_on_leaderboard(request, submission_pk)

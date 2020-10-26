@@ -22,21 +22,10 @@ logger = logging.getLogger()
 class Competition(ChaHubSaveMixin, models.Model):
     COMPETITION = "competition"
     BENCHMARK = "benchmark"
-    MANUALLY = 'manually'
-    LATSET = 'latest'
-    ALL = 'all'
-    BEST = 'best'
 
     COMPETITION_TYPE = (
         (COMPETITION, "competition"),
         (BENCHMARK, "benchmark"),
-    )
-
-    LEADERBOARD_MODE = (
-        (MANUALLY, 'manually'),
-        (LATSET, 'latest'),
-        (ALL, 'all'),
-        (BEST, 'best')
     )
 
     title = models.CharField(max_length=256)
@@ -60,7 +49,6 @@ class Competition(ChaHubSaveMixin, models.Model):
     allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
-    leaderboard_mode = models.CharField(max_length=10, choices=LEADERBOARD_MODE, default=MANUALLY)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"

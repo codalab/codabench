@@ -17,7 +17,7 @@ from rest_framework_csv import renderers
 
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
-from leaderboards.strategies import put_on_leaderboard_by_strategy
+from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
@@ -180,7 +180,8 @@ class SubmissionViewSet(ModelViewSet):
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
-    leaderboard_display_strategy = submission.phase.competition.leaderboard_mode
+    # todo：需要换成基于LeaderBoard的配置
+    submission_rule = submission.phase.leaderboard.submission_rule
 
     data = json.loads(request.body)
 
@@ -206,7 +207,7 @@ def upload_submission_scores(request, submission_pk):
         else:
             submission.calculate_scores()
 
-    put_on_leaderboard_by_strategy(request, submission_pk, leaderboard_display_strategy)
+    put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
     return Response()
 
 
