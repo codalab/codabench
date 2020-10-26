@@ -373,17 +373,11 @@ class CompetitionViewSet(ModelViewSet):
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
 
-        saved_tasks = {}
-        new_phases = {}
-        for phase in instance.phases.all():
-            saved_tasks.update({phase.id: set(phase.tasks.all())})
-            new_phases.update({phase.id: phase})
-        for key in saved_tasks.keys():
-            if key in initial_tasks.keys():
-                print(saved_tasks[key] - initial_tasks[key])
-                new_tasks = list(saved_tasks[key] - initial_tasks[key])
-                if new_tasks:
-                    self.run_new_task_submissions(new_phases[key], new_tasks)
+        saved_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.filter(pk__in=initial_tasks.keys()).prefetch_related('tasks')}
+        for phase_id in saved_tasks:
+            new_tasks = list(saved_tasks[phase_id] - initial_tasks[phase_id])
+            if new_tasks:
+                self.run_new_task_submissions(instance.phases.get(pk=phase_id), new_tasks)
 
 
 class PhaseViewSet(ModelViewSet):
