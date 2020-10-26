@@ -180,7 +180,6 @@ class SubmissionViewSet(ModelViewSet):
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
-    # todo：需要换成基于LeaderBoard的配置
     submission_rule = submission.phase.leaderboard.submission_rule
 
     data = json.loads(request.body)
