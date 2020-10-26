@@ -119,7 +119,5 @@ class StrategyFactory:
 
 def put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule):
     """add submission score to leaderboard by display strategy"""
-    logger.info(f"put_on_leaderboard_by_submission_rule方法被调用了,当前submissions_rule的值为{submission_rule}")
     strategy = StrategyFactory.create_by_submission_rule(submission_rule)
-    logger.info(f"获取到的strategy为:{strategy}")
     strategy.put_on_leaderboard(request, submission_pk)
