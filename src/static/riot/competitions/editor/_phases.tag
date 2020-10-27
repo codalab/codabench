@@ -88,7 +88,7 @@
 
                 <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
-                        Tasks (Order will be saved)
+                        Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>

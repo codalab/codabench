@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import timedelta
 from unittest import mock
@@ -6,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
@@ -162,14 +164,15 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.tasks = [TaskFactory() for _ in range(2)]
         self.phase = PhaseFactory(competition=self.comp, tasks=self.tasks)
 
-    def mock_run_submission(self, submission):
+    def mock_run_submission(self, submission, task=None):
         with mock.patch('competitions.tasks.app.send_task') as celery_app:
             with mock.patch('competitions.tasks.make_url_sassy') as mock_sassy:
                 class Task:
                     def __init__(self):
                         self.id = uuid.uuid4()
 
-                task = Task()
+                if task is None:
+                    task = Task()
                 celery_app.return_value = task
                 mock_sassy.return_value = ''
                 run_submission(submission.pk)
@@ -206,3 +209,23 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         assert resp.call_count == 1
         sub = Submission.objects.get(id=self.sub.id)
         assert not sub.has_children
+
+    def test_adding_task_to_phase_runs_submissions_on_new_task(self):
+        leaderboard = LeaderboardFactory()
+        self.comp.phases.all().update(leaderboard=leaderboard)
+        SubmissionFactory(owner=self.user, phase=self.phase)
+        competition_data = CompetitionSerializer(self.comp).data
+        new_task = TaskFactory()
+        competition_data["phases"][0]['tasks'].append(new_task.key)
+        competition_data['logo'] = None
+
+        for task_index, task in enumerate(competition_data["phases"][0]['tasks']):
+            competition_data["phases"][0]['tasks'][task_index] = str(task)
+        url = reverse("competition-detail", args=(self.comp.pk,))
+
+        self.client.force_login(self.comp.created_by)
+
+        # during our put we should expect 1 new run to happen
+        with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
+            self.client.put(url, json.dumps(competition_data), content_type="application/json")
+            run_new_task_submission.assert_called_once()
