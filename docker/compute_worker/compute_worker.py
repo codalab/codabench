@@ -203,7 +203,7 @@ class Run:
         # Nice requests adapter with generous retries/etc.
         self.requests_session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=Retry(
-            total=10,
+            total=3,
             backoff_factor=1,
         ))
         self.requests_session.mount('http://', adapter)
@@ -249,6 +249,7 @@ class Run:
                 return html_files[0]
 
     async def send_detailed_results(self, file_path):
+        logger.info(f"Updating detailed results {file_path} - {self.detailed_results_url}")
         self._put_file(self.detailed_results_url, file=file_path, content_type='')
         async with websockets.connect(self.websocket_url) as websocket:
             await websocket.send(json.dumps({
@@ -275,6 +276,7 @@ class Run:
 
     def _update_submission(self, data):
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
+        logger.info(f"Updating submission @ {url} with data = {data}")
 
         data["secret"] = self.secret
 
@@ -286,10 +288,6 @@ class Run:
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
-        logger.info(
-            f"Updating status to '{status}' with extra_information = '{extra_information}' "
-            f"for submission = {self.submission_id}"
-        )
         data = {
             "status": status,
             "status_details": extra_information,

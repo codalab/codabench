@@ -97,7 +97,7 @@ services:
   #   Database Service
   #-----------------------------------------------
   db:
-    image: postgres:10.6-alpine
+    image: postgres:12-alpine
     env_file: .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
