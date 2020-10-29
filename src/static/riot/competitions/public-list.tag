@@ -42,26 +42,26 @@
     })
 
     self.handle_ajax_pages = function (num){
-        let pagenum = self.get_url_page_number_or_default() + num
-        self.update_competitions_list(pagenum)
-        history.pushState("test", document.title, "?page="+pagenum)
-
+        self.update_competitions_list(self.get_url_page_number_or_default() + num)
     }
 
     self.update_competitions_list = function (num) {
-        self.pagenum = num
-        if (self.competitions_cache[self.pagenum]){
-            self.competitions = self.competitions_cache[self.pagenum]
+        self.current_page = num
+        if (self.competitions_cache[self.current_page]){
+            self.competitions = self.competitions_cache[self.current_page]
+            history.pushState("", document.title, "?page="+self.current_page)
             self.update()
         } else {
-            return CODALAB.api.get_competitions({"published": true, "page":self.pagenum})
+            return CODALAB.api.get_public_competitions({"page":self.current_page})
                 .fail(function (response) {
                     toastr.error("Could not load competition list")
                 })
                 .done(function (response){
                     // toastr.success("Competition list found")
                     self.competitions = response
-                    self.competitions_cache[self.pagenum.toString()] = response
+                    console.log(self.competitions)
+                    self.competitions_cache[self.current_page.toString()] = response
+                    history.pushState("", document.title, "?page="+self.current_page)
                     self.update()
                 })
         }
@@ -98,15 +98,12 @@
             let pagenum = parseInt(urlParams.get('page'))
             if(pagenum < 1){
                 history.pushState("test", document.title, "?page="+1)
-                self.current_page = 1
                 return 1
             } else {
-                self.current_page = pagenum
                 return pagenum
             }
         } else {
             history.pushState("test", document.title, "?page="+1)
-            self.current_page = 1
             return 1
         }
     }
