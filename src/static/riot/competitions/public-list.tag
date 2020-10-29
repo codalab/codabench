@@ -20,7 +20,7 @@
                 <div class="comp-stats">
                     {pretty_date(competition.created_when)}
                     <div class="ui divider"></div>
-                    <strong>{competition.participant_count}</strong> Participants
+                    <strong>{competition.participants_count}</strong> Participants
                 </div>
             </div>
         </a>
@@ -59,7 +59,6 @@
                 .done(function (response){
                     // toastr.success("Competition list found")
                     self.competitions = response
-                    console.log(self.competitions)
                     self.competitions_cache[self.current_page.toString()] = response
                     history.pushState("", document.title, "?page="+self.current_page)
                     self.update()

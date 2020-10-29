@@ -195,7 +195,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
-    participant_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Competition
@@ -205,11 +205,14 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'created_by',
             'created_when',
             'published',
-            'participant_count',
+            'participants_count',
             'logo',
             'description',
             'competition_type',
         )
+
+    def get_participants_count(self, competition):
+        return competition.participants.count()
 
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')

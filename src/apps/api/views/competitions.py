@@ -500,6 +500,6 @@ class CompetitionParticipantViewSet(ModelViewSet):
 
 
 class CompetitionPublicViewSet(ModelViewSet):
-    queryset = Competition.objects.filter(published=True)
+    queryset = Competition.objects.filter(published=True).order_by("-created_when")
     pagination_class = SmallPagination
     serializer_class = CompetitionSerializerSimple
