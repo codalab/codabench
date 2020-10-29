@@ -1,6 +1,6 @@
 <public-list>
     <h1>comps</h1>
-    <div each="{competition in competitions}">
+    <div each="{competition in competitions.results}">
         <a class="link-no-deco" href="../{competition.id}">
             <div class="tile-wrapper">
                 <div class="ui square tiny bordered image img-wrapper">
@@ -25,27 +25,45 @@
             </div>
         </a>
     </div>
+    <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}">Back</button>
+    <button hide="{competitions.previous}" disabled="disabled">Back</button>
+    <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}">Next</button>
+    <button hide="{competitions.next}" disabled="disabled">Next</button>
 <script>
     var self = this
     self.competitions = {}
+    self.competitions_cache = {}
 
     self.one("mount", function () {
-        self.update_competitions_list()
-        console.log("self.comps", self.competitions)
+        self.update_competitions_list(self.get_url_page_number_or_default())
     })
 
+    self.handle_ajax_pages = function (num){
+        let pagenum = self.get_url_page_number_or_default() + num
+        self.update_competitions_list(pagenum)
+        history.pushState("test", document.title, "?page="+pagenum)
 
-    self.update_competitions_list = function () {
-        return CODALAB.api.get_competitions({"published": true})
-            .fail(function (response) {
-                toastr.error("Could not load competition list")
-            })
-            .done(function (response){
-                toastr.success("Competition list found")
-                console.log(response)
-                self.competitions = response
-                self.update()
-            })
+    }
+
+    self.update_competitions_list = function (num) {
+        self.pagenum = num
+        if (self.competitions_cache[self.pagenum]){
+            self.competitions = self.competitions_cache[self.pagenum]
+            console.log("cahce", self.competitions_cache)
+            self.update()
+        } else {
+            return CODALAB.api.get_competitions({"published": true, "page":self.pagenum})
+                .fail(function (response) {
+                    toastr.error("Could not load competition list")
+                })
+                .done(function (response){
+                    // toastr.success("Competition list found")
+                    self.competitions = response
+                    self.competitions_cache[self.pagenum.toString()] = response
+                    console.log("cache", self.competitions_cache)
+                    self.update()
+                })
+        }
     }
 
     self.pretty_date = function (date_string) {
@@ -58,16 +76,40 @@
 
     self.pretty_description = function(description){
         if (description) {
-            description = render_markdown(description)
-            return description.substring(0,90) + (description.length > 90 ? '...' : '')
+            description = render_markdown(description).replaceAll("<p>", "").replaceAll("</p>", "")
+            return description.substring(0,120) + (description.length > 120 ? '...' : '')
         } else {
             return ''
         }
     }
 
+    self.get_url_page_number_or_default = function (){
+        let queryString = window.location.search
+        let urlParams = new URLSearchParams(queryString)
+        if(urlParams.has('page')){
+            let pagenum = parseInt(urlParams.get('page'))
+            if(pagenum < 1){
+                history.pushState("test", document.title, "?page="+1)
+                return 1
+            } else {
+            return pagenum
+            }
+        } else {
+            history.pushState("test", document.title, "?page="+1)
+            return 1
+        }
+    }
+
+    $(window).on('popstate', function (event) {
+        self.update_competitions_list(self.get_url_page_number_or_default())
+    })
+
+
 </script>
 
 <style type="text/stylus">
+    public-list
+        width 100%
     :scope
         display block
         margin-bottom 5px

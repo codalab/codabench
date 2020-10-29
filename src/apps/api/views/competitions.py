@@ -39,7 +39,7 @@ from api.permissions import IsOrganizerOrCollaborator
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
-    # pagination_class = SmallPagination
+    pagination_class = SmallPagination
 
     def get_queryset(self):
         qs = super().get_queryset()
