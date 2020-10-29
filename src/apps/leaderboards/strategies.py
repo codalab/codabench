@@ -40,7 +40,7 @@ class BaseModeStrategy:
         pass
 
 
-class ManuallyModeStrategy(BaseModeStrategy):
+class ManualModeStrategy(BaseModeStrategy):
 
     def put_on_leaderboard(self, request, submission_pk):
         """do nothing by default"""
