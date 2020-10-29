@@ -350,8 +350,6 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        logger.info(f"Connecting to {self.websocket_url}")
-
         start = time.time()
         proc = await asyncio.create_subprocess_exec(
             *docker_cmd,
@@ -378,6 +376,7 @@ class Run:
         }
 
         # Start websocket, it will reconnect in the stdout/stderr listener loop below
+        logger.info(f"Connecting to {self.websocket_url}")
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
