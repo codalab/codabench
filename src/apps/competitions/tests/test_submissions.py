@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import timedelta
 from unittest import mock
@@ -6,10 +7,11 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
-from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory, \
-    ColumnFactory
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
+from leaderboards.models import Leaderboard
 
 
 class SubmissionTestCase(TestCase):
@@ -109,15 +111,13 @@ class SubmissionManagerTests(SubmissionTestCase):
             assert sub.status == status, 'Status was changed and should not have been'
 
     def test_adding_submission_to_leaderboard_adds_all_children(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory()
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
         for _ in range(10):
-            leaderboard = LeaderboardFactory()
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
+            SubmissionFactory(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
@@ -127,34 +127,29 @@ class SubmissionManagerTests(SubmissionTestCase):
             assert submission.leaderboard
 
     def test_remove_submission_from_leaderboard(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory(submission_rule=Leaderboard.ADD_DELETE)
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
         for _ in range(10):
-            leaderboard = LeaderboardFactory(submission_rule="Add_And_Delete")
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
+            SubmissionFactory(parent=parent_sub)
 
         self.client.force_login(parent_sub.owner)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
         self.client.post(url)
         resp = self.client.delete(url)
+        print(resp)
         assert resp.status_code == 200
         for submission in Submission.objects.filter(parent=parent_sub):
             assert submission.leaderboard is None
 
     def test_only_owner_can_add_submission_to_leaderboard(self):
-        parent_sub = self.make_submission(has_children=True)
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory()
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
 
-        for _ in range(10):
-            leaderboard = LeaderboardFactory()
-            parent_sub.phase.leaderboard = leaderboard
-            parent_sub.phase.save()
-
-            ColumnFactory(leaderboard=leaderboard)
-            self.make_submission(parent=parent_sub)
         different_user = UserFactory()
         self.client.force_login(different_user)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
@@ -169,14 +164,15 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.tasks = [TaskFactory() for _ in range(2)]
         self.phase = PhaseFactory(competition=self.comp, tasks=self.tasks)
 
-    def mock_run_submission(self, submission):
+    def mock_run_submission(self, submission, task=None):
         with mock.patch('competitions.tasks.app.send_task') as celery_app:
             with mock.patch('competitions.tasks.make_url_sassy') as mock_sassy:
                 class Task:
                     def __init__(self):
                         self.id = uuid.uuid4()
 
-                task = Task()
+                if task is None:
+                    task = Task()
                 celery_app.return_value = task
                 mock_sassy.return_value = ''
                 run_submission(submission.pk)
@@ -213,3 +209,23 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         assert resp.call_count == 1
         sub = Submission.objects.get(id=self.sub.id)
         assert not sub.has_children
+
+    def test_adding_task_to_phase_runs_submissions_on_new_task(self):
+        leaderboard = LeaderboardFactory()
+        self.comp.phases.all().update(leaderboard=leaderboard)
+        SubmissionFactory(owner=self.user, phase=self.phase)
+        competition_data = CompetitionSerializer(self.comp).data
+        new_task = TaskFactory()
+        competition_data["phases"][0]['tasks'].append(new_task.key)
+        competition_data['logo'] = None
+
+        for task_index, task in enumerate(competition_data["phases"][0]['tasks']):
+            competition_data["phases"][0]['tasks'][task_index] = str(task)
+        url = reverse("competition-detail", args=(self.comp.pk,))
+
+        self.client.force_login(self.comp.created_by)
+
+        # during our put we should expect 1 new run to happen
+        with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
+            self.client.put(url, json.dumps(competition_data), content_type="application/json")
+            run_new_task_submission.assert_called_once()

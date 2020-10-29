@@ -257,7 +257,6 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
         },
     },
-
 }
 
 # =============================================================================
@@ -293,6 +292,10 @@ STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
 DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
 
 TEMP_SUBMISSION_STORAGE = os.environ.get('TEMP_SUBMISSION_STORAGE', '/codalab_tmp')
+
+# Make sure storage exists
+if not os.path.exists(TEMP_SUBMISSION_STORAGE):
+    os.makedirs(TEMP_SUBMISSION_STORAGE)
 
 STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
 STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'

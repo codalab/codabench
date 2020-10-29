@@ -15,7 +15,7 @@ class Leaderboard(models.Model):
         (ADD_BY_REVIEW, "Only allow adding one submission that is approved by review"),
         (FORCE_LAST, "Force only the last submission"),
         (FORCE_LATEST_MULTIPLE, "Force latest submission to be added to leaderboard (multiple)"),
-        (FORCE_LATEST_MULTIPLE, 'Force only the best submission to the leaderboard')
+        (FORCE_BEST, 'Force only the best submission to the leaderboard')
     )
 
     primary_index = models.PositiveIntegerField(default=0)
