@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from leaderboards.models import SubmissionScore, Column
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
+from django.http import Http404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
@@ -16,7 +17,11 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
+
 from tasks.models import Task
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
+from competitions.models import Submission, Phase, CompetitionParticipant
+from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -28,6 +33,8 @@ class SubmissionViewSet(ModelViewSet):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
 
     def check_object_permissions(self, request, obj):
+        if self.action in ['submission_leaderboard_connection']:
+            return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
             if not self.request.user.is_authenticated or not_bot_user:
@@ -98,6 +105,38 @@ class SubmissionViewSet(ModelViewSet):
         competition = submission.phase.competition
         return user.is_authenticated and (user.is_superuser or user in competition.all_organizers or user.is_bot)
 
+    @action(detail=True, methods=('POST', 'DELETE'))
+    def submission_leaderboard_connection(self, request, pk):
+        submission = self.get_object()
+        phase = submission.phase
+
+        if not (request.user.is_superuser or request.user == submission.owner):
+            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
+                raise Http404
+
+        if request.method == 'POST':
+            # Removing any existing submissions on leaderboard
+            Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
+
+            leaderboard = submission.phase.leaderboard
+
+            if submission.has_children:
+                for s in Submission.objects.filter(parent=submission):
+                    s.leaderboard = leaderboard
+                    s.save()
+            else:
+                submission.leaderboard = leaderboard
+                submission.save()
+
+        if request.method == 'DELETE':
+            if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE:
+                raise ValidationError("You are not allowed to remove a submission on this phase")
+            submission.leaderboard = None
+            submission.save()
+            Submission.objects.filter(parent=submission).update(leaderboard=None)
+
+        return Response({})
+
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
         submission = self.get_object()
@@ -153,7 +192,7 @@ class SubmissionViewSet(ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes((AllowAny, ))  # permissions are checked via the submission secret
+@permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
 
@@ -187,10 +226,17 @@ def upload_submission_scores(request, submission_pk):
 @api_view(('GET',))
 def can_make_submission(request, phase_id):
     phase = get_object_or_404(Phase, id=phase_id)
-    user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
+    user_is_approved = phase.competition.participants.filter(
+        user=request.user,
+        status=CompetitionParticipant.APPROVED
+    ).exists()
 
     if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipant.objects.create(
+            user=request.user,
+            competition=phase.competition,
+            status=CompetitionParticipant.APPROVED
+        )
         user_is_approved = True
 
     if user_is_approved:
