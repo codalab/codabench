@@ -25,10 +25,13 @@
             </div>
         </a>
     </div>
-    <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}">Back</button>
-    <button hide="{competitions.previous}" disabled="disabled">Back</button>
-    <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}">Next</button>
-    <button hide="{competitions.next}" disabled="disabled">Next</button>
+    <div class="pagination-nav">
+        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left">Back</button>
+        <button hide="{competitions.previous}" disabled="disabled" class="float-left">Back</button>
+        { current_page }
+        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right">Next</button>
+        <button hide="{competitions.next}" disabled="disabled" class="float-right">Next</button>
+    </div>
 <script>
     var self = this
     self.competitions = {}
@@ -49,7 +52,6 @@
         self.pagenum = num
         if (self.competitions_cache[self.pagenum]){
             self.competitions = self.competitions_cache[self.pagenum]
-            console.log("cahce", self.competitions_cache)
             self.update()
         } else {
             return CODALAB.api.get_competitions({"published": true, "page":self.pagenum})
@@ -60,7 +62,6 @@
                     // toastr.success("Competition list found")
                     self.competitions = response
                     self.competitions_cache[self.pagenum.toString()] = response
-                    console.log("cache", self.competitions_cache)
                     self.update()
                 })
         }
@@ -90,12 +91,15 @@
             let pagenum = parseInt(urlParams.get('page'))
             if(pagenum < 1){
                 history.pushState("test", document.title, "?page="+1)
+                self.current_page = 1
                 return 1
             } else {
-            return pagenum
+                self.current_page = pagenum
+                return pagenum
             }
         } else {
             history.pushState("test", document.title, "?page="+1)
+            self.current_page = 1
             return 1
         }
     }
@@ -113,7 +117,20 @@
     :scope
         display block
         margin-bottom 5px
-        cursor pointer
+
+    .pagination-nav
+        padding 10px 0
+        width 100%
+        text-align center
+
+    .float-left
+        float left
+
+    .float-right
+        float right
+
+    .center
+        margin auto
 
     .link-no-deco
         text-decoration none
