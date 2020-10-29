@@ -29,11 +29,13 @@ class SubmissionViewSet(ModelViewSet):
 
     def check_object_permissions(self, request, obj):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
-            try:
-                if uuid.UUID(request.data.get('secret')) != obj.secret:
-                    raise PermissionDenied("Submission secrets do not match")
-            except TypeError:
-                raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
+            not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
+            if not self.request.user.is_authenticated or (not_bot_user): # and self.action == 're_run_submission'):
+                try:
+                    if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
+                        raise PermissionDenied("Submission secrets do not match")
+                except TypeError:
+                    raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
 
     def get_serializer_class(self):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -48,7 +50,7 @@ class SubmissionViewSet(ModelViewSet):
             if not self.request.user.is_authenticated:
                 return Submission.objects.none()
 
-            if not self.request.user.is_superuser and not self.request.user.is_staff:
+            if not self.request.user.is_superuser and not self.request.user.is_staff and not self.request.user.is_bot:
                 # if you're the creator of the submission or a collaborator on the competition
                 qs = qs.filter(
                     Q(owner=self.request.user) |
@@ -94,7 +96,7 @@ class SubmissionViewSet(ModelViewSet):
 
     def has_admin_permission(self, user, submission):
         competition = submission.phase.competition
-        return user.is_superuser or user in competition.all_organizers
+        return user.is_authenticated and (user.is_superuser or user in competition.all_organizers or user.is_bot)
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
@@ -110,7 +112,6 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
-        print('in re_run')
         submission = self.get_object()
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')

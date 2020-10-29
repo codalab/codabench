@@ -62,8 +62,8 @@ class SubmissionAPITests(APITestCase):
         url = reverse('submission-detail', args=(self.existing_submission.pk,))
         # As anonymous user
         resp = self.client.patch(url, {"status": Submission.FINISHED})
-        assert resp.status_code == 400
-        assert "Secret: (None) not a valid UUID" in str(resp.content)
+        assert resp.status_code == 403
+        assert "Submission secrets do not match" in str(resp.content)
         assert Submission.objects.filter(pk=self.existing_submission.pk, status=Submission.SUBMITTED)
 
         # As superuser (bad secret)
@@ -391,6 +391,6 @@ class TaskSelectionTests(APITestCase):
         # Mock _send_submission so submissions don't actually run
         with mock.patch('competitions.tasks._send_submission'):
             resp = self.client.post(url)
-            assert resp.status_code == 400
-            assert resp.json() == ["Secret: (None) not a valid UUID"]
+            assert resp.status_code == 403
+            assert resp.data["detail"] == "Submission secrets do not match"
 
