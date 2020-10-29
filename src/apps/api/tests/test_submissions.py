@@ -393,4 +393,3 @@ class TaskSelectionTests(APITestCase):
             resp = self.client.post(url)
             assert resp.status_code == 403
             assert resp.data["detail"] == "Submission secrets do not match"
-

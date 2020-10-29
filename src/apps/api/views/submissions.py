@@ -33,6 +33,8 @@ class SubmissionViewSet(ModelViewSet):
 
     def check_object_permissions(self, request, obj):
         if self.action in ['submission_leaderboard_connection']:
+            if obj.is_private or obj.is_specific_task_re_run:
+                raise PermissionDenied("Cannot add task-specific submission re-runs to leaderboards.")
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
@@ -145,7 +147,6 @@ class SubmissionViewSet(ModelViewSet):
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
-
         return Response({'canceled': canceled})
 
     @action(detail=True, methods=('POST',))
@@ -155,7 +156,7 @@ class SubmissionViewSet(ModelViewSet):
             raise PermissionDenied('You do not have permission to re-run submissions')
 
         rerun_kwargs = {}
-        # Rerun submission on different task
+        # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
         if request.query_params.get('task_key'):
             task_key = request.query_params.get('task_key')
             rerun_kwargs = {
