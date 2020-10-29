@@ -1,5 +1,5 @@
 <public-list>
-    <h1>comps</h1>
+    <h1>Public Competitions</h1>
     <div each="{competition in competitions.results}">
         <a class="link-no-deco" href="../{competition.id}">
             <div class="tile-wrapper">
@@ -25,12 +25,12 @@
             </div>
         </a>
     </div>
-    <div class="pagination-nav">
-        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left">Back</button>
-        <button hide="{competitions.previous}" disabled="disabled" class="float-left">Back</button>
+    <div class="pagination-nav" hide="{get_array_length(competitions.results) === competitions.count}">
+        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
+        <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page }
-        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right">Next</button>
-        <button hide="{competitions.next}" disabled="disabled" class="float-right">Next</button>
+        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
+        <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
 <script>
     var self = this
@@ -65,6 +65,13 @@
                     self.update()
                 })
         }
+    }
+
+    self.get_array_length = function (arr) {
+        if(arr === undefined){
+            return 0
+        }
+        return arr.length
     }
 
     self.pretty_date = function (date_string) {
@@ -137,8 +144,9 @@
 
     .tile-wrapper
         border solid 1px gainsboro
-        display inline-grid
-        grid-template-columns 0.1fr 3fr 1.3fr
+        display inline-flex
+        //grid-template-columns 0.1fr 3fr 1.3fr
+
         min-width 425px
         background-color #fff
         transition all 75ms ease-in-out
@@ -164,6 +172,9 @@
             max-width 60px !important
             margin 0 auto
 
+    .comp-info
+        width calc(100% - 140px - 80px)
+
     .comp-info .heading
         text-align left
         padding 5px
@@ -182,6 +193,7 @@
         padding 10px
         text-align center
         font-size 12px
+        width 140px
 
     .organizer
         font-size 13px
