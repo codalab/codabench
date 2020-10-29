@@ -1,5 +1,5 @@
 <competition-tile>
-    <a class="link-no-deco" href="./competitions/{id}">
+    <a class="link-no-deco" href="../{id}">
         <div class="tile-wrapper">
             <div class="ui square tiny bordered image img-wrapper">
                 <img src="{logo}">
