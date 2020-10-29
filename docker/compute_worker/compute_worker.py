@@ -706,11 +706,12 @@ class Run:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 
         url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
-        logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = self.requests_session.post(url, json={
+        data = {
             "secret": self.secret,
             "scores": scores,
-        })
+        }
+        logger.info(f"Submitting these scores to {url}: {scores} with data = {data}")
+        resp = self.requests_session.post(url, json=data)
         logger.info(resp)
         logger.info(str(resp.content))
 
