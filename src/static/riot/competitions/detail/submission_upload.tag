@@ -322,8 +322,16 @@
             let form_array = $(self.refs.form).serializeArray()
             let form_json = {}
             for (answer of form_array) {
+                if(answer['value'] === 'true'){
+                    form_json[answer['name']] = true
+                }
+                else if(answer['value'] === 'false'){
+                    form_json[answer['name']] = false
+                } else {
                 form_json[answer['name']] = answer['value']
+                }
             }
+            return form_json
         }
 
         self.upload = function () {

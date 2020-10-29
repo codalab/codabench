@@ -57,6 +57,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'id',
             'phase',
             'scores',
+            'fact_sheet_answers',
             'leaderboard',
             'on_leaderboard',
             'task',
