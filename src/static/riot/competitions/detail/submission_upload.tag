@@ -9,19 +9,15 @@
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
-                            <!--suppress XmlInvalidId -->
                             <label for="{ question.label }">{ question.label }:</label>
                             <input type="text" name="{ question.label }">
                         </span>
                         <span if="{ question.type === 'checkbox' }">
-                            <!--suppress XmlInvalidId -->
                             <label for="{ question.label }">{ question.label }:</label>
                             <input type="hidden" name="{ question.label }" value="false">
-                            <!--suppress XmlInvalidId, XmlDuplicatedId -->
                             <input type="checkbox" name="{ question.label }" value="true">
                         </span>
                         <span if="{ question.type == 'select' }">
-                            <!--suppress XmlInvalidId, XmlDuplicatedId -->
                             <label for="{ question.label }">{ question.label }:</label>
                             <select name="{ question.label }">
                                 <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>

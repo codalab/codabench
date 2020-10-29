@@ -36,28 +36,22 @@
             <br>
             <form ref="comp_fact_sheet">
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
-                <!--suppress XmlDuplicatedId -->
                 <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
                     <p>Type: Boolean</p>
                     <input type="hidden" name="type" value="checkbox">
                     <label for="q{question.id}">Key name: </label>
-                    <!--suppress XmlDuplicatedId -->
                     <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
                 </div>
-                <!--suppress XmlDuplicatedId -->
                 <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
                     <p>Type: Text</p>
                     <input type="hidden" name="type" value="text">
                     <label for="q{question.id}">Key name: </label>
-                    <!--suppress XmlDuplicatedId -->
                     <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
                 </div>
-                <!--suppress XmlDuplicatedId -->
                 <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
                     <p>Type: Select</p>
                     <input type="hidden" name="type" value="select">
                     <label for="q{question.id}">Key name: </label>
-                    <!--suppress XmlDuplicatedId -->
                     <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
                     <label for="choice{question.id}">Choices (Comma Separated): </label>
                     <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
