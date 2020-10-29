@@ -7,7 +7,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from api.serializers.submissions import SubmissionCreationSerializer, CompetitionSerializer
+from api.serializers.submissions import SubmissionCreationSerializer
+from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
