@@ -56,5 +56,3 @@ def get_competition_page(page=0, amount=25):
     :param amount:
     :return:
     '''
-
-

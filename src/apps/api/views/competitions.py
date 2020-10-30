@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 
-from api.pagination import SmallPagination, BasicPagination, LargePagination
+from api.pagination import SmallPagination, LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
@@ -330,10 +330,6 @@ class CompetitionViewSet(ModelViewSet):
             "popular_comps": popular_comps_serializer.data,
             "featured_comps": featured_comps_serializer.data
         })
-
-    @action(detail=False, methods=('LIST',), permission_classes=(AllowAny,), pagination_class=SmallPagination)
-    def public(self, request, *args, **kwargs):
-        do_nothing = None
 
     @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
     @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)

@@ -8,8 +8,10 @@ from .models import Competition
 class CompetitionManagement(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/management.html'
 
+
 class CompetitionPublic(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/public.html'
+
 
 class CompetitionForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
