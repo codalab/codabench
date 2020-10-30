@@ -107,9 +107,14 @@ class SubmissionViewSet(ModelViewSet):
             if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
                 raise Http404
 
+        if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
+            raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
+
         if request.method == 'POST':
-            # Removing any existing submissions on leaderboard
-            Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
+
+            # Removing any existing submissions on leaderboard unless multiples are allowed
+            if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE_MULTIPLE:
+                Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
             leaderboard = submission.phase.leaderboard
 
@@ -122,7 +127,7 @@ class SubmissionViewSet(ModelViewSet):
                 submission.save()
 
         if request.method == 'DELETE':
-            if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE:
+            if submission.phase.leaderboard.submission_rule not in [Leaderboard.ADD_DELETE, Leaderboard.ADD_DELETE_MULTIPLE]:
                 raise ValidationError("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
