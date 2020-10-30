@@ -39,7 +39,6 @@ from api.permissions import IsOrganizerOrCollaborator
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
-    pagination_class = SmallPagination
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -501,5 +500,5 @@ class CompetitionParticipantViewSet(ModelViewSet):
 
 class CompetitionPublicViewSet(ModelViewSet):
     queryset = Competition.objects.filter(published=True).order_by("-created_when")
-    pagination_class = SmallPagination
+    pagination_class = LargePagination
     serializer_class = CompetitionSerializerSimple

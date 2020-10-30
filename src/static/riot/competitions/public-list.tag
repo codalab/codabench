@@ -1,5 +1,12 @@
 <public-list>
     <h1>Public Competitions</h1>
+    <div class="pagination-nav" hide="{(get_array_length(competitions.results) === competitions.count) || (get_array_length(competitions.results) < 10)}">
+        <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
+        <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
+        { current_page }
+        <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
+        <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
+    </div>
     <div each="{competition in competitions.results}">
         <a class="link-no-deco" href="../{competition.id}">
             <div class="tile-wrapper">
@@ -125,6 +132,7 @@
         padding 10px 0
         width 100%
         text-align center
+        margin-bottom 20px
 
     .float-left
         float left

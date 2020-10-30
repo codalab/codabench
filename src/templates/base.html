@@ -58,10 +58,18 @@
                     </div>
                 </span>
                 <div class="right menu item">
-                    <a class="item" href="{% url "competitions:management" %}">
-                        <i class="ui small trophy icon"></i>
-                        Competitions
-                    </a>
+                    <div id="competition_dropdown" class="ui dropdown item">
+                        <div class="text">
+                            <i class="ui small trophy icon"></i>
+                            Competitions
+                        </div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <div class="header"></div>
+                            <a class="item" href="{% url "competitions:management" %}">Management</a>
+                            <a class="item" href="{% url "competitions:public" %}">Public</a>
+                        </div>
+                    </div>
                     <a class="item" href="{% url "tasks:task_management" %}">
                         <i selenium="tasks" class="ui small file icon"></i>
                         Resources

@@ -25,7 +25,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr each="{ competition in running_competitions.results }" no-reorder>
+                            <tr each="{ competition in running_competitions }" no-reorder>
                                 <td><a href="{ URLS.COMPETITION_DETAIL(competition.id) }">{ competition.title }</a></td>
                                 <td class="center aligned">{ competition.competition_type }</td>
                                 <td>{ timeSince(Date.parse(competition.created_when)) } ago</td>
@@ -55,8 +55,6 @@
                             <tfoot>
                             </tfoot>
                         </table>
-                        <button if="{ running_competitions.previous }" onclick="{ change_page.bind(self, 'running', running_competitions.previous) }">PREV</button>
-                        <button if="{ running_competitions.next }" onclick="{ change_page.bind(self, 'running', running_competitions.next) }">NEXT</button>
                     </div>
                     <div class="ui tab" data-tab="participating">
                         <table class="ui celled compact table">
@@ -67,7 +65,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr each="{ competition in participating_competitions.results }" style="height: 42px;">
+                            <tr each="{ competition in participating_competitions }" style="height: 42px;">
                                 <td><a href="{ URLS.COMPETITION_DETAIL(competition.id) }">{ competition.title }</a></td>
                                 <td>{ timeSince(Date.parse(competition.created_when)) } ago</td>
                             </tr>
@@ -75,8 +73,6 @@
                             <tfoot>
                             </tfoot>
                         </table>
-                        <button if="{ participating_competitions.previous }" onclick="{ change_page.bind(self, 'participating', participating_competitions.previous) }">PREV</button>
-                        <button if="{ participating_competitions.next }" onclick="{ change_page.bind(self, 'participating', participating_competitions.next) }">NEXT</button>
                     </div>
                 </div>
             </div>
@@ -106,7 +102,6 @@
             self.get_competitions_wrapper({participating_in: true})
                 .done(function (data) {
                     self.participating_competitions = data
-                    console.log("Participating Comps", self.participating_competitions)
                     self.update()
                 })
         }
@@ -118,7 +113,6 @@
             })
                 .done(function (data) {
                     self.running_competitions = data
-                    console.log("Running Competitions", self.running_competitions)
                     self.update()
                 })
         }
@@ -134,25 +128,6 @@
                         toastr.error("Competition could not be deleted")
                     })
             }
-        }
-
-        self.change_page = function (page, url) {
-            resp = $.ajax({
-                type: 'get',
-                url: url,
-                contentType: "application/json",
-                dataType: 'json'
-            }).done(function (){
-                console.log("RESP parsed JSON", JSON.parse(JSON.stringify(resp["responseJSON"])))
-                self.update()
-                if(page === "running"){
-                    self.running_competitions = resp.responseJSON
-                }
-                else if(page === "participating"){
-                    self.participating_competitions = resp.responseJSON
-                }
-                self.update()
-            })
         }
 
         self.toggle_competition_publish = function (competition) {
