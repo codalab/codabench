@@ -19,7 +19,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -498,3 +497,4 @@ class CompetitionPublicViewSet(ModelViewSet):
     queryset = Competition.objects.filter(published=True).order_by("-created_when")
     pagination_class = LargePagination
     serializer_class = CompetitionSerializerSimple
+    permission_classes = [IsAuthenticated]

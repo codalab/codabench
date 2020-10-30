@@ -46,13 +46,3 @@ def get_featured_competitions(limit=3, excluded_competitions=None):
         return competitions
     else:
         return random.sample(list(competitions), limit)
-
-
-def get_competition_page(page=0, amount=25):
-    '''
-    Function to return a page of public competitions.
-
-    :param page:
-    :param amount:
-    :return:
-    '''
