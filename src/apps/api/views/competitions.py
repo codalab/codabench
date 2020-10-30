@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 
-from api.pagination import SmallPagination, LargePagination
+from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
