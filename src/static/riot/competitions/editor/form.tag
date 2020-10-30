@@ -230,12 +230,17 @@
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
 
             self.competition_return = JSON.parse(JSON.stringify(self.competition))
-            for(phase of self.competition_return.phases){
+            delete self.competition_return.leaderboards
+            for([phase_index, phase] of self.competition_return.phases.entries()){
                 for(taskord of phase.task_instances){
                     taskord.phase = phase.id
                 }
                 phase.tasks = phase.task_instances
                 delete phase.task_instances
+                phase.leaderboard = self.competition.leaderboards[0]
+                if (phase_index > 0){
+                    delete phase.leaderboard.columns
+                }
             }
 
             // Send competition_id for either create or update, won't hurt anything but is
@@ -250,7 +255,12 @@
                 })
                 .fail(function (response) {
                     if (response) {
-                        var errors = JSON.parse(response.responseText);
+                        console.log(response)
+                        try {
+                            var errors = JSON.parse(response.responseText);
+                        } catch (e) {
+                            var errors = {"error": response.responseText.toString()}
+                        }
 
                         // to make errors clearer, move errors for "detail" page into the errors "details" key
                         var details_section_fields = ['title', 'logo']

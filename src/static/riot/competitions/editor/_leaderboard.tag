@@ -5,7 +5,12 @@
                 <table class="ui padded table">
                     <thead>
                     <tr>
-                        <th colspan="2">Leaderboards</th>
+                        <th colspan="2">
+                            Leaderboards
+                            <p style="font-size: .9em; font-weight: 100; color: slategray">
+                                Note: Currently only supports 1 leaderboard. Only the First Entry will be saved
+                            </p>
+                        </th>
                     </tr>
                     </thead>
                     <tbody>

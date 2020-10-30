@@ -73,6 +73,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
 
 class PhaseUpdateSerializer(PhaseSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    leaderboard = LeaderboardSerializer(many=False)
 
 
 class PageSerializer(WritableNestedModelSerializer):
