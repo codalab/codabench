@@ -499,6 +499,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         else:
             child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
             sub.start(tasks=child_tasks)
+        return sub
 
     def cancel(self):
         from celery_config import app

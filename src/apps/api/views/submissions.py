@@ -164,8 +164,8 @@ class SubmissionViewSet(ModelViewSet):
                 'is_private': bool(request.query_params.get('private'))
             }
 
-        submission.re_run(**rerun_kwargs)
-        return Response({})
+        new_sub = submission.re_run(**rerun_kwargs)
+        return Response({'id': new_sub.id})
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):

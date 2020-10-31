@@ -31,9 +31,9 @@ Usage
 CODALAB_URL = 'http://localhost/'
 USERNAME = 'admin'
 PASSWORD = 'admin'
-PHASE_ID = None
+PHASE_ID = 28
 TASK_LIST = []
-SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
+SUBMISSION_ZIP_PATH = '../../src/tests/functional/test_files/submission.zip'
 
 
 # ----------------------------------------------------------------------------

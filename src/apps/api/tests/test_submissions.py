@@ -343,7 +343,7 @@ class TaskSelectionTests(APITestCase):
 
     def test_can_re_run_submissions_with_specific_task_with_bot_user_without_original_submission_secret(self):
         bot_user = UserFactory(username="botman", password="botman", is_bot=True)
-        self.client.login(username="botman", password="botman")
+        self.client.login(username=bot_user.username, password="botman")
 
         pre_existing_sub = Submission.objects.create(**{
             'phase': self.phase,
@@ -374,7 +374,7 @@ class TaskSelectionTests(APITestCase):
 
     def test_cannot_re_run_submissions_with_specific_task_without_bot_user(self):
         non_bot_user = UserFactory(username="nonbotman", password="nonbotman")
-        self.client.login(username="nonbotman", password="nonbotman")
+        self.client.login(username=non_bot_user.username, password="nonbotman")
 
         pre_existing_sub = Submission.objects.create(**{
             'phase': self.phase,
