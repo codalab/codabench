@@ -1,10 +1,7 @@
 import uuid
 
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
-from competitions.models import Submission, Phase, CompetitionParticipant
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from leaderboards.models import SubmissionScore, Column
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
 from django.http import Http404

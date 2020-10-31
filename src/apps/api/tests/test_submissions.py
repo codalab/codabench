@@ -364,7 +364,7 @@ class TaskSelectionTests(APITestCase):
 
         # Mock _send_submission so submissions don't actually run
         with mock.patch('competitions.tasks._send_submission'):
-            resp = self.client.post(url)
+            self.client.post(url)
             sub = Submission.objects.get(task=new_task)
             assert sub.owner == new_task.created_by
             assert sub.phase == self.phase
