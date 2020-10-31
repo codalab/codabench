@@ -54,7 +54,7 @@ Usage
 
    e.g.
 
-   ./rerun_submission.py 42 TODO: put example key here
+   ./rerun_submission.py 42 a217a322-6ddf-400c-ac7d-336a42863724
 """
 # ----------------------------------------------------------------------------
 # Configure these
