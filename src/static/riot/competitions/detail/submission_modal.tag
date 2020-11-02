@@ -4,7 +4,6 @@
         <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" show="{!opts.hide_output}">LOGS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{!opts.hide_output && opts.show_visualization}">VISUALIZATION</div>
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}fact_sheet" show="{submission.fact_sheet_answers}">FACT SHEET ANSWERS</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
@@ -129,11 +128,6 @@
             </div>
         </div>
     </div>
-    <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}fact_sheet">
-        <div class="ui inverted segment log">
-            <pre> { JSON.stringify(submission.fact_sheet_answers, null, 2) } </pre>
-        </div>
-    </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
         <iframe sandbox="allow-scripts" src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
@@ -169,7 +163,6 @@
                         $.get(item.data_file)
                             .done(function (content) {
                                 self.logs[item.name] = content
-                                console.log(content)
                                 self.update()
                             })
                     })
