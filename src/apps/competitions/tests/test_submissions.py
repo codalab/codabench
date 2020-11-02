@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from api.serializers.submissions import SubmissionCreationSerializer
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
@@ -250,3 +251,55 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
             self.client.put(url, json.dumps(competition_data), content_type="application/json")
             run_new_task_submission.assert_called_once()
+
+
+class FactSheetTests(SubmissionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.competition.fact_sheet = {
+            "boolean": [True, False],
+            "selection": ["value1", "value2", "value3", "value4"],
+            "text": "",
+        }
+        self.competition.save()
+
+    def test_fact_sheet_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "value3",
+            "text": "accept any",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        assert serializer.is_valid()
+
+    def test_fact_sheet_with_extra_keys_is_not_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "value3",
+            "text": "accept any",
+            "extrakey": True,
+            "extrakey2": "NotInFactSheet",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        assert not serializer.is_valid()
+
+    def test_fact_sheet_with_missing_key_is_not_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "value3",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        assert not serializer.is_valid()
+
+    def test_fact_sheet_with_wrong_selection_is_not_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "new_value",
+            "text": "accept any",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        assert not serializer.is_valid()
