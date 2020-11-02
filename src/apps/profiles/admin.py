@@ -10,3 +10,7 @@ class UserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, UserAdmin)
+
+
+def su_login_callback(user):
+    return user.is_superuser

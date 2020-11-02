@@ -415,5 +415,5 @@ CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 
 
 # Django-Su (User impersonation)
-SU_LOGIN_CALLBACK = lambda user: user.is_superuser
-AJAX_LOOKUP_CHANNELS = {'django_su':  dict(model='profiles.User', search_field='username')}
+SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
+AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='username')}
