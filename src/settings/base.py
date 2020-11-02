@@ -20,6 +20,7 @@ SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
+    'ajax_select',  # For django_su
 
     'django.contrib.sites',
     'django.contrib.admin',
@@ -415,3 +416,4 @@ CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 
 # Django-Su (User impersonation)
 SU_LOGIN_CALLBACK = lambda user: user.is_superuser
+AJAX_LOOKUP_CHANNELS = {'django_su':  dict(model='profiles.User', search_field='username')}

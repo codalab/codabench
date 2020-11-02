@@ -4,6 +4,9 @@ from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
 
+from ajax_select import urls as ajax_select_urls
+
+
 urlpatterns = [
     # Our URLS
     path('', include('pages.urls', namespace='pages')),
@@ -19,6 +22,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('su/', include('django_su.urls')),
+    path('ajax_select/', include(ajax_select_urls)),
 
     # Django built in
     # path('accounts/', include('django.contrib.auth.urls')),
