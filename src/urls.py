@@ -18,6 +18,7 @@ urlpatterns = [
     # Third party
     path('api/', include('api.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('su/', include('django_su.urls')),
 
     # Django built in
     # path('accounts/', include('django.contrib.auth.urls')),
