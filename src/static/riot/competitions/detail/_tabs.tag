@@ -410,6 +410,10 @@
             margin 0 auto
             width 100%
 
+            .ui.vertical.tabular.menu.pages-menu
+                width 100% !important
+                padding-right 3px
+
             .vertical.tabular.menu > .item
                 cursor pointer
 
