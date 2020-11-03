@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <competition-details>
     <div class="ui form">
         <div class="field required">
@@ -38,35 +39,73 @@
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
                 <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
                     <p>Type: Boolean</p>
+                    <input type="hidden" name="type" value="checkbox">
                     <p>
-                        <input type="hidden" name="type" value="checkbox">
-                        <label for="q{question.id}">Key name: </label>
-                        <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                        <label for="key">Key name: </label>
+                        <input name="key" id="key" type="text" value="{question.label}">
                     </p>
                     <p>
-                        <label for="is-on-leaderboard-{question.id}">Show On Leaderboard: </label>
-                        <input type="hidden" name="is-on-leaderboard-{question.id}" value="false">
-                        <input type="checkbox" name="is-on-leaderboard-{question.id}" value="true">
+                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
+                        <input type="hidden" name="is_on_leaderboard" value="false">
+                        <input type="checkbox" name="is_on_leaderboard" value="true">
                     </p>
                     <p>
-                        <label for="is-required-{question.id}">Is Required:</label>
-                        <input type="hidden" name="is-required-{question.id}" value="false">
-                        <input type="checkbox" name="is-required-{question.id}" value="true">
+                        <label for="title">Display Name: </label>
+                        <input name="title" id="title" type="text" value="{question.title}">
+                    </p>
+                    <p>
+                        <label for="is-required">Is Required:</label>
+                        <input type="hidden" name="is_required" value="false">
+                        <input type="checkbox" name="is_required" value="true">
                     </p>
                 </div>
                 <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
                     <p>Type: Text</p>
                     <input type="hidden" name="type" value="text">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                    <p>
+                        <label for="key">Key name: </label>
+                        <input name="key" id="key" type="text" value="{question.label}">
+                    </p>
+                    <p>
+                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
+                        <input type="hidden" name="is_on_leaderboard" value="false">
+                        <input type="checkbox" name="is_on_leaderboard" value="true">
+                    </p>
+                    <p>
+                        <label for="title">Display Name: </label>
+                        <input name="title" id="title" type="text" value="{question.title}">
+                    </p>
+                    <p>
+                        <label for="is-required">Is Required:</label>
+                        <input type="hidden" name="is_required" value="false">
+                        <input type="checkbox" name="is_required" value="true">
+                    </p>
                 </div>
                 <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
                     <p>Type: Select</p>
                     <input type="hidden" name="type" value="select">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
-                    <label for="choice{question.id}">Choices (Comma Separated): </label>
-                    <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
+                    <p>
+                        <label for="key">Key name: </label>
+                        <input name="key" id="key" type="text" value="{question.label}">
+                    </p>
+                    <p>
+                        <label for="selection">Choices (Comma Separated): </label>
+                        <input name="selection" id="selection" type="text" value="{question.selection.join()}">
+                    </p>
+                    <p>
+                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
+                        <input type="hidden" name="is_on_leaderboard" value="false">
+                        <input type="checkbox" name="is_on_leaderboard" value="true">
+                    </p>
+                    <p>
+                        <label for="title">Display Name: </label>
+                        <input name="title" id="title" type="text" value="{question.title}">
+                    </p>
+                    <p>
+                        <label for="is-required">Is Required:</label>
+                        <input type="hidden" name="is_required" value="false">
+                        <input type="checkbox" name="is_required" value="true">
+                    </p>
                 </div>
                 <br>
                 <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>
@@ -238,14 +277,21 @@
             let form_json = {}
             for(question of form){
              let q_serialized = $(question).find(":input").serializeArray()
+                console.log(q_serialized)
+                let question_key = q_serialized[1].value
+                form_json[question_key] = {}
                 if(q_serialized[0].value === "checkbox"){
-                    form_json[q_serialized[1].value] = [true, false]
-                } else if(q_serialized[0].value === "text"){
-                    form_json[q_serialized[1].value] = ""
-                } else if(q_serialized[0].value === "select"){
-                    form_json[q_serialized[1].value] = q_serialized[2].value.split(',')
+                    form_json[question_key]['selection'] = [true, false]
+                } else if(q_serialized[0].value === "text") {
+                    form_json[question_key]['selection'] = ""
                 }
-
+                for(entry of q_serialized){
+                    if(entry.name === 'selection'){
+                        form_json[question_key][entry.name] = entry.value.split(',')
+                    } else {
+                        form_json[question_key][entry.name] = entry.value
+                    }
+                }
             }
             if(form_json.length === 0){
                 return null

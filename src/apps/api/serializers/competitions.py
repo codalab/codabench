@@ -155,7 +155,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
-    fact_sheet = serializers.SerializerMethodField(read_only=True)
+    # fact_sheet = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Competition
@@ -186,33 +186,33 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             # 'fact_sheet_questions',
         )
 
-    def get_fact_sheet(self, instance):
-        fact_sheet = instance.fact_sheet
-        if fact_sheet:
-            fact_sheet_questions = []
-            for key in fact_sheet.keys():
-                if not fact_sheet[key]:
-                    fact_sheet_questions.append({
-                        "label": key,
-                        "type": "text",
-                    })
-                elif type(fact_sheet[key]) is list:
-                    if type(fact_sheet[key][0]) is bool:
-                        fact_sheet_questions.append({
-                            "label": key,
-                            "type": "checkbox",
-                        })
-                    else:
-                        fact_sheet_questions.append({
-                            "label": key,
-                            "type": "select",
-                            "selection": fact_sheet[key],
-                        })
-                else:
-                    raise ValidationError("Fact Sheet Format Error")
-            return fact_sheet_questions
-        else:
-            return None
+    # def get_fact_sheet(self, instance):
+    #     fact_sheet = instance.fact_sheet
+    #     if fact_sheet:
+    #         fact_sheet_questions = []
+    #         for key in fact_sheet.keys():
+    #             if not fact_sheet[key]:
+    #                 fact_sheet_questions.append({
+    #                     "label": key,
+    #                     "type": "text",
+    #                 })
+    #             elif type(fact_sheet[key]) is list:
+    #                 if type(fact_sheet[key][0]) is bool:
+    #                     fact_sheet_questions.append({
+    #                         "label": key,
+    #                         "type": "checkbox",
+    #                     })
+    #                 else:
+    #                     fact_sheet_questions.append({
+    #                         "label": key,
+    #                         "type": "select",
+    #                         "selection": fact_sheet[key],
+    #                     })
+    #             else:
+    #                 raise ValidationError("Fact Sheet Format Error")
+    #         return fact_sheet_questions
+    #     else:
+    #         return None
 
     def get_leaderboards(self, instance):
         try:
