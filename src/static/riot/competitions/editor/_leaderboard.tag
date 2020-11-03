@@ -80,7 +80,7 @@
                                     <i class="help icon circle"></i>
                                 </span>
                             </label>
-                            <input selenium="key" name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
+                            <input selenium="key" name="key" value="{_.get(selected_leaderboard, 'key', 'Add')}" onchange="{ modal_updated }">
                         </div>
                     </div>
                     <div class="field">
@@ -90,6 +90,18 @@
                         </div>
                     </div>
                 </div>
+                <div class="field" style="width: 50%; padding: 0 7px">
+                    <label>Submission Rule</label>
+                    <div class="ui fluid submission-rule selection dropdown">
+                        <input type="hidden" name="submission_rule" ref="submission_rule" value="{_.get(selected_leaderboard, 'submission_rule')}" onchange="{ modal_updated }">
+                        <div class="default text"></div>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <div each="{rule in submission_rules}" class="item" data-value="{rule}">{rule.replaceAll("_", " ")}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <table class="ui celled definition table">
                     <thead>
                     <tr>
@@ -200,7 +212,11 @@
         self.columns = []
         self.modal_is_valid = false
         self.error_messages = []
-
+        self.submission_rules = [
+            "Add",
+            "Add_And_Delete",
+            "Add_And_Delete_Multiple",
+        ]
         self.on('mount', () => {
             $(self.refs.modal).modal({
                 closable: false,
@@ -215,6 +231,7 @@
         self.initialize_dropdowns = function () {
             $('.ui.sorting.dropdown').dropdown()
             $('.ui.multiselect.dropdown').dropdown()
+            $('.ui.submission-rule.dropdown').dropdown()
             $('.ui.computation.dropdown').dropdown({
                 onChange: (value, text, element) => {
                     let index = element.data().index
@@ -295,6 +312,7 @@
         }
 
         self.modal_updated = function () {
+            console.log(self.selected_leaderboard)
             self.modal_is_valid = self.validate_leaderboard(self.get_leaderboard_data())
             self.update()
         }
@@ -357,6 +375,7 @@
             let leaderboard = {
                 title: data.title,
                 key: data.key,
+                submission_rule: self.refs.submission_rule.value,
                 hidden: self.refs.hidden_leaderboard.checked,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
                 columns: _.map(_.range(_.get(self.selected_leaderboard, 'columns.length', 0)), i => {
