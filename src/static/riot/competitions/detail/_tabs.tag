@@ -356,6 +356,9 @@
         .details-menu
             width 100%
 
+        .details-menu .item
+            font-size 1.3em
+
         .details-menu .active.item, .details-menu .item
             margin -2px auto !important
             cursor pointer
