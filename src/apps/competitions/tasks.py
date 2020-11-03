@@ -5,9 +5,10 @@ import re
 import traceback
 import zipfile
 from io import BytesIO
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import oyaml as yaml
+import requests
 from celery._state import app_or_default
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -298,6 +299,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(status_pk):
+    logger.info(f"Starting unpack with status pk = {status_pk}")
     status = CompetitionCreationTaskStatus.objects.get(pk=status_pk)
     competition_dataset = status.dataset
     creator = competition_dataset.created_by
@@ -315,8 +317,20 @@ def unpack_competition(status_pk):
             # ---------------------------------------------------------------------
             # Extract bundle
             try:
-                with zipfile.ZipFile(competition_dataset.data_file, 'r') as zip_pointer:
-                    zip_pointer.extractall(temp_directory)
+                with NamedTemporaryFile(mode="w+b") as temp_file:
+                    logger.info(f"Download competition bundle: {competition_dataset.data_file.name}")
+                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.url)
+                    with requests.get(competition_bundle_url, stream=True) as r:
+                        r.raise_for_status()
+                        for chunk in r.iter_content(chunk_size=8192):
+                            temp_file.write(chunk)
+                        r.close()
+
+                    # seek back to the start of the tempfile after writing to it..
+                    temp_file.seek(0)
+
+                    with zipfile.ZipFile(temp_file.name, 'r') as zip_pointer:
+                        zip_pointer.extractall(temp_directory)
             except zipfile.BadZipFile:
                 raise CompetitionUnpackingException("Bad zip file uploaded.")
 

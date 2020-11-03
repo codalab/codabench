@@ -165,7 +165,7 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -Ofast -Ofair -l info -n site-worker@%n"
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -Ofast -Ofair -l info -n site-worker@%n --concurrency=1"
     working_dir: /app/src
     build:
       context: .
@@ -180,6 +180,12 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
+    deploy:
+      resources:
+        limits:
+          # Limit memory substantially here so we see any problems that may
+          # appear on Heroku ahead of time
+          memory: 256M
 
   compute_worker:
     command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n -Ofast -Ofair"
