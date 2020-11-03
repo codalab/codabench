@@ -356,6 +356,9 @@
         .details-menu
             width 100%
 
+        .details-menu .item
+            font-size 1.3em
+
         .details-menu .active.item, .details-menu .item
             margin -2px auto !important
             cursor pointer
@@ -409,6 +412,10 @@
         .pages-tab
             margin 0 auto
             width 100%
+
+            .ui.vertical.tabular.menu.pages-menu
+                width 100% !important
+                padding-right 3px
 
             .vertical.tabular.menu > .item
                 cursor pointer
