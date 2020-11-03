@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from datetime import timedelta
@@ -9,6 +10,9 @@ from django.utils.deconstruct import deconstructible
 from django.utils.timezone import now
 
 from utils.storage import BundleStorage
+
+
+logger = logging.getLogger(__name__)
 
 
 @deconstructible
@@ -39,6 +43,10 @@ def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='ap
     if settings.STORAGE_IS_S3:
         # Remove the beginning of the URL (before bucket name) so we just have the path to the file
         path = path.split(settings.AWS_STORAGE_PRIVATE_BUCKET_NAME)[-1]
+
+        # remove prepended slash
+        if path.startswith('/'):
+            path = path[1:]
 
         # Spaces replaced with +'s, so we have to replace those...
         path = path.replace('+', ' ')

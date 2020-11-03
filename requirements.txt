@@ -26,6 +26,10 @@ bleach==3.1.4
 django-debug-toolbar==1.11
 django-querycount==0.7.0
 
+# User impersonation
+django-su==0.9.0
+django-ajax-selects==2.0.0
+
 # Database
 dj-database-url==0.4.2
 psycopg2-binary==2.8.6
