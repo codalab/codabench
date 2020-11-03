@@ -35,7 +35,10 @@
                     <tfoot>
                     <tr>
                         <th colspan="2" class="right aligned">
-                            <button class="ui tiny inverted green icon button" onclick="{ add }">
+                            <button if="{leaderboards.length === 0}" class="ui tiny inverted green icon button" onclick="{ add }">
+                                <i selenium='add-leaderboard' class="add icon"></i> Add leaderboard
+                            </button>
+                            <button if="{leaderboards.length > 0}" disabled="disabled" class="ui tiny inverted green icon button disabled">
                                 <i selenium='add-leaderboard' class="add icon"></i> Add leaderboard
                             </button>
                         </th>
