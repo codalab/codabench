@@ -19,6 +19,9 @@ SITE_ID = 1
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 
 THIRD_PARTY_APPS = (
+    'django_su',  # Must come before django.contrib.admin
+    'ajax_select',  # For django_su
+
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -108,6 +111,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
     'utils.oauth_backends.ChahubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
+    'django_su.backends.SuBackend',
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -408,3 +412,8 @@ SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL')
 CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
 CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
+
+
+# Django-Su (User impersonation)
+SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
+AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='username')}
