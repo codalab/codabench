@@ -370,7 +370,6 @@ class TaskSelectionTests(APITestCase):
             assert sub.phase == self.phase
             assert sub.data == self.data
             assert sub.is_specific_task_re_run
-            assert sub.is_private
 
     def test_cannot_re_run_submissions_with_specific_task_without_bot_user(self):
         non_bot_user = UserFactory(username="nonbotman", password="nonbotman")

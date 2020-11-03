@@ -447,7 +447,6 @@ class Submission(ChaHubSaveMixin, models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
-    is_private = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
 
     is_migrated = models.BooleanField(default=False)
@@ -485,14 +484,13 @@ class Submission(ChaHubSaveMixin, models.Model):
         from .tasks import run_submission
         run_submission(self.pk, tasks=tasks)
 
-    def re_run(self, task=None, is_private=False):
+    def re_run(self, task=None):
         submission_arg_dict = {
             'owner': task.created_by if task else self.owner,
             'task': task or self.task,
             'phase': self.phase,
             'data': self.data,
             'is_specific_task_re_run': bool(task),
-            'is_private': is_private,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)

@@ -30,7 +30,7 @@ class SubmissionViewSet(ModelViewSet):
 
     def check_object_permissions(self, request, obj):
         if self.action in ['submission_leaderboard_connection']:
-            if obj.is_private or obj.is_specific_task_re_run:
+            if obj.is_specific_task_re_run:
                 raise PermissionDenied("Cannot add task-specific submission re-runs to leaderboards.")
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -158,7 +158,6 @@ class SubmissionViewSet(ModelViewSet):
             task_key = request.query_params.get('task_key')
             rerun_kwargs = {
                 'task': get_object_or_404(Task, key=task_key),
-                'is_private': bool(request.query_params.get('private'))
             }
 
         new_sub = submission.re_run(**rerun_kwargs)

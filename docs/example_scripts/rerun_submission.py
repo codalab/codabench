@@ -152,7 +152,6 @@ And the task data is retrieved from the task passed as a task_pk.
 rerun_submission_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/re_run_submission/')
 submission_params = {
     "task_key": TASK_KEY,
-    "is_private": True,
 }
 
 print(f"Rerunning submission {SUBMISSION_ID} using data: {submission_params}")

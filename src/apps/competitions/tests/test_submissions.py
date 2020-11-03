@@ -156,17 +156,6 @@ class SubmissionManagerTests(SubmissionTestCase):
         resp = self.client.post(url)
         assert resp.status_code == 404
 
-    def test_cannot_add_private_submission_to_leaderboard(self):
-        sub = SubmissionFactory(is_private=True)
-        leaderboard = LeaderboardFactory()
-        sub.phase.leaderboard = leaderboard
-        sub.phase.save()
-
-        self.client.force_login(sub.owner)
-        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': sub.pk})
-        resp = self.client.post(url)
-        assert resp.status_code == 403
-
     def test_cannot_add_task_specific_submission_to_leaderboard(self):
         sub = SubmissionFactory(is_specific_task_re_run=True)
         leaderboard = LeaderboardFactory()
