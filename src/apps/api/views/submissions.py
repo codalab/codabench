@@ -116,7 +116,7 @@ class SubmissionViewSet(ModelViewSet):
             if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE_MULTIPLE:
                 Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
 
-            leaderboard = submission.phase.leaderboard
+            leaderboard = phase.leaderboard
 
             if submission.has_children:
                 for s in Submission.objects.filter(parent=submission):
