@@ -38,9 +38,21 @@
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
                 <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
                     <p>Type: Boolean</p>
-                    <input type="hidden" name="type" value="checkbox">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                    <p>
+                        <input type="hidden" name="type" value="checkbox">
+                        <label for="q{question.id}">Key name: </label>
+                        <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                    </p>
+                    <p>
+                        <label for="is-on-leaderboard-{question.id}">Show On Leaderboard: </label>
+                        <input type="hidden" name="is-on-leaderboard-{question.id}" value="false">
+                        <input type="checkbox" name="is-on-leaderboard-{question.id}" value="true">
+                    </p>
+                    <p>
+                        <label for="is-required-{question.id}">Is Required:</label>
+                        <input type="hidden" name="is-required-{question.id}" value="false">
+                        <input type="checkbox" name="is-required-{question.id}" value="true">
+                    </p>
                 </div>
                 <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
                     <p>Type: Text</p>
@@ -233,10 +245,12 @@
                 } else if(q_serialized[0].value === "select"){
                     form_json[q_serialized[1].value] = q_serialized[2].value.split(',')
                 }
+
             }
             if(form_json.length === 0){
                 return null
             }
+            console.log(form_json)
             return form_json
         }
 
