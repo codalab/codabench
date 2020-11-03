@@ -143,7 +143,7 @@ class CompetitionViewSet(ModelViewSet):
         instance = self.get_object()
         data = request.data
 
-        # save leaderboard indiviually, then pass pk to each phase
+        # save leaderboard individually, then pass pk to each phase
         if 'leaderboards' in data:
             leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
             leaderboard.is_valid()
