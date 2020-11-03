@@ -447,6 +447,8 @@ class Submission(ChaHubSaveMixin, models.Model):
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
+    is_specific_task_re_run = models.BooleanField(default=False)
+
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,
@@ -482,16 +484,25 @@ class Submission(ChaHubSaveMixin, models.Model):
         from .tasks import run_submission
         run_submission(self.pk, tasks=tasks)
 
-    def re_run(self):
-        sub = Submission(owner=self.owner, phase=self.phase, data=self.data)
+    def re_run(self, task=None):
+        submission_arg_dict = {
+            'owner': task.created_by if task else self.owner,
+            'task': task or self.task,
+            'phase': self.phase,
+            'data': self.data,
+            'is_specific_task_re_run': bool(task),
+        }
+        sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
 
-        if not self.has_children:
+        # No need to rerun on children if this is running on a specific task
+        if not self.has_children or sub.is_specific_task_re_run:
             self.refresh_from_db()
-            sub.start(tasks=[self.task])
+            sub.start(tasks=[task or self.task])
         else:
             child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
             sub.start(tasks=child_tasks)
+        return sub
 
     def cancel(self):
         from celery_config import app

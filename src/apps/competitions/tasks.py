@@ -24,6 +24,7 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
+from tasks.models import Task
 from datasets.models import Data
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
@@ -256,10 +257,15 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
         "is_scoring": is_scoring,
     }
 
-    if task_pks is None:
-        tasks = submission.phase.tasks.all().order_by('pk')
+    if submission.is_specific_task_re_run:
+        # Should only be one task for a specified task submission
+        tasks = Task.objects.filter(pk__in=task_pks)
+    elif task_pks is None:
+        tasks = submission.phase.tasks.all()
     else:
-        tasks = submission.phase.tasks.filter(pk__in=task_pks).order_by('pk')
+        tasks = submission.phase.tasks.filter(pk__in=task_pks)
+
+    tasks = tasks.order_by('pk')
 
     # TODO: Make the following code DRY!
     if len(tasks) > 1:
