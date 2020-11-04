@@ -36,18 +36,29 @@
             <br>
             <form ref="comp_fact_sheet">
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
-                <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
-                    <p>Type: Boolean</p>
+                <div class="row" id="q-div-{question.id}">
+                    <p  if="{ question.type === 'checkbox' }">Type: Boolean
                     <input type="hidden" name="type" value="checkbox">
+                    </p>
+                    <p if="{ question.type === 'text' }">Type: Text
+                    <input type="hidden" name="type" value="text">
+                    </p>
+                    <p if="{ question.type === 'select' }">Type: Select
+                    <input type="hidden" name="type" value="select">
+                    </p>
                     <p>
                         <label for="key">Key name: </label>
                         <input name="key" id="key" type="text" value="{question.key}">
                     </p>
+                    <p if="{ question.type === 'select' }">
+                        <label for="selection">Choices (Comma Separated): </label>
+                        <input name="selection" id="selection" type="text" value="{question.selection.join()}">
+                    </p>
                     <p>
                         <label for="is_on_leaderboard">Show On Leaderboard: </label>
                         <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
-                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true" onchange="{form_updated}">
                     </p>
                     <p>
                         <label for="title">Display Name: </label>
@@ -56,60 +67,8 @@
                     <p>
                         <label for="is-required">Is Required:</label>
                         <input type="hidden" name="is_required" value="false">
-                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
-                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
-                    </p>
-                </div>
-                <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
-                    <p>Type: Text</p>
-                    <input type="hidden" name="type" value="text">
-                    <p>
-                        <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.key}">
-                    </p>
-                    <p>
-                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
-                        <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
-                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
-                    </p>
-                    <p>
-                        <label for="title">Display Name: </label>
-                        <input name="title" id="title" type="text" value="{question.title}">
-                    </p>
-                    <p>
-                        <label for="is-required">Is Required:</label>
-                        <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
-                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
-                    </p>
-                </div>
-                <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
-                    <p>Type: Select</p>
-                    <input type="hidden" name="type" value="select">
-                    <p>
-                        <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.key}">
-                    </p>
-                    <p>
-                        <label for="selection">Choices (Comma Separated): </label>
-                        <input name="selection" id="selection" type="text" value="{question.selection.join()}">
-                    </p>
-                    <p>
-                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
-                        <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
-                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
-                    </p>
-                    <p>
-                        <label for="title">Display Name: </label>
-                        <input name="title" id="title" type="text" value="{question.title}">
-                    </p>
-                    <p>
-                        <label for="is-required">Is Required:</label>
-                        <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
-                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true" onchange="{form_updated}">
                     </p>
                 </div>
                 <br>
