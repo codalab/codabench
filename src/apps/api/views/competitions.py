@@ -441,7 +441,11 @@ class PhaseViewSet(ModelViewSet):
         for submission in query['submissions']:
             if submission['owner'] not in users.keys():
                 users.update({submission['owner']: len(users)})
-                response['submissions'].append({'owner': submission['owner'], 'scores': []})
+                response['submissions'].append({
+                    'owner': submission['owner'],
+                    'scores': [],
+                    'fact_sheet_answers': submission['fact_sheet_answers']
+                })
             for score in submission['scores']:
                 tempScore = score
                 tempScore.update({'task_id': submission['task']})

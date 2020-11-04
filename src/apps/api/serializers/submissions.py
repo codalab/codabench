@@ -87,6 +87,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
             'owner',
             'task',
             'leaderboard_id',
+            'fact_sheet_answers',
         )
         extra_kwargs = {
             "scores": {"read_only": True},

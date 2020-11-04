@@ -21,7 +21,7 @@
         <tr class="task-row">
             <th>Task:</th>
             <th></th>
-            <th if="{selected_leaderboard.fact_sheet_keys}" class="center aligned"  colspan="{selected_leaderboard.fact_sheet_keys.length}">Meta-data</th>
+<!--            <th if="{selected_leaderboard.fact_sheet_keys}" class="center aligned"  colspan="{selected_leaderboard.fact_sheet_keys.length}">Meta-data</th>-->
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
@@ -46,7 +46,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ column in filtered_columns }">{ get_score(column, submission.scores) } </td>
+            <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
         </tr>
         </tbody>
     </table>
@@ -60,10 +60,17 @@
         self.phase_id = null
         self.competition_id = null
 
-        self.get_score = function(column, scores) {
-            let score = _.get(_.find(scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
-            if (score) {
-                return score
+        self.get_score = function(column, submission) {
+            if(column.task_id === -1){
+                let fact_sheet_answer = _.get(submission, 'fact_sheet_answers[' + column.key + ']')
+                if (fact_sheet_answer){
+                    return fact_sheet_answer.toString()
+                }
+            } else {
+                let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
+                if (score) {
+                    return score
+                }
             }
             return 'n/a'
         }
@@ -103,12 +110,20 @@
                     self.selected_leaderboard = responseData
                     console.log(responseData)
                     self.columns = []
-                    for(let question in self.selected_leaderboard.fact_sheet_keys){
-                        console.log("question", question)
-                        self.columns.push({
-                            key: self.selected_leaderboard.fact_sheet_keys[question][0],
-                            title: self.selected_leaderboard.fact_sheet_keys[question][1]
-                        })
+                    if(self.selected_leaderboard.fact_sheet_keys){
+                        let fake_metadata_task = {
+                            id: -1,
+                            colWidth: self.selected_leaderboard.fact_sheet_keys.length,
+                            columns: [],
+                            name: "Meta-data"
+                        }
+                        for(question of self.selected_leaderboard.fact_sheet_keys){
+                            fake_metadata_task.columns.push({
+                                key: question[0],
+                                title: question[1],
+                            })
+                        }
+                        self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
                         for(column of task.columns){
