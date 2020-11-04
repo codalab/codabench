@@ -435,19 +435,17 @@ class PhaseViewSet(ModelViewSet):
             'tasks': [],
         }
         columns = [col for col in query['columns']]
-        users = {}
+        submissions_keys = {}
         for submission in query['submissions']:
             if submission['parent']:
-                submission_key = f"{submission['owner']}{submission['parent']}"
-            else:
-                submission_key = f"{submission['owner']}{submission['id']}"
-            if submission_key not in users.keys():
-                users.update({submission_key: len(users)})
+                submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            if submission_key not in submissions_keys:
+                submissions_keys[submission_key] = len(submissions_keys)
                 response['submissions'].append({'owner': submission['owner'], 'scores': []})
             for score in submission['scores']:
                 tempScore = score
-                tempScore.update({'task_id': submission['task']})
-                response['submissions'][users[submission_key]]['scores'].append(tempScore)
+                tempScore['task_id'] = submission['task']
+                response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task

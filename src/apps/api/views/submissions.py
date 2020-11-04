@@ -120,7 +120,7 @@ class SubmissionViewSet(ModelViewSet):
                 Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
             leaderboard = phase.leaderboard
             if submission.has_children:
-                 Submission.objects.filter(parent=submission).update(leaderboard=leaderboard)
+                Submission.objects.filter(parent=submission).update(leaderboard=leaderboard)
             else:
                 submission.leaderboard = leaderboard
                 submission.save()
