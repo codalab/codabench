@@ -1,4 +1,3 @@
-<!--suppress ALL -->
 <competition-details>
     <div class="ui form">
         <div class="field required">
@@ -42,12 +41,13 @@
                     <input type="hidden" name="type" value="checkbox">
                     <p>
                         <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.label}">
+                        <input name="key" id="key" type="text" value="{question.key}">
                     </p>
                     <p>
                         <label for="is_on_leaderboard">Show On Leaderboard: </label>
                         <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input type="checkbox" name="is_on_leaderboard" value="true">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
                     </p>
                     <p>
                         <label for="title">Display Name: </label>
@@ -56,7 +56,8 @@
                     <p>
                         <label for="is-required">Is Required:</label>
                         <input type="hidden" name="is_required" value="false">
-                        <input type="checkbox" name="is_required" value="true">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
                     </p>
                 </div>
                 <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
@@ -64,12 +65,13 @@
                     <input type="hidden" name="type" value="text">
                     <p>
                         <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.label}">
+                        <input name="key" id="key" type="text" value="{question.key}">
                     </p>
                     <p>
                         <label for="is_on_leaderboard">Show On Leaderboard: </label>
                         <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input type="checkbox" name="is_on_leaderboard" value="true">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
                     </p>
                     <p>
                         <label for="title">Display Name: </label>
@@ -77,8 +79,9 @@
                     </p>
                     <p>
                         <label for="is-required">Is Required:</label>
-                        <input type="hidden" name="is_required" value="false">
-                        <input type="checkbox" name="is_required" value="true">
+                        <input type="hidden" name="is_on_leaderboard" value="false">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
                     </p>
                 </div>
                 <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
@@ -86,7 +89,7 @@
                     <input type="hidden" name="type" value="select">
                     <p>
                         <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.label}">
+                        <input name="key" id="key" type="text" value="{question.key}">
                     </p>
                     <p>
                         <label for="selection">Choices (Comma Separated): </label>
@@ -95,7 +98,8 @@
                     <p>
                         <label for="is_on_leaderboard">Show On Leaderboard: </label>
                         <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input type="checkbox" name="is_on_leaderboard" value="true">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true">
                     </p>
                     <p>
                         <label for="title">Display Name: </label>
@@ -103,8 +107,9 @@
                     </p>
                     <p>
                         <label for="is-required">Is Required:</label>
-                        <input type="hidden" name="is_required" value="false">
-                        <input type="checkbox" name="is_required" value="true">
+                        <input type="hidden" name="is_on_leaderboard" value="false">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true">
                     </p>
                 </div>
                 <br>
@@ -331,11 +336,12 @@
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             if(competition.fact_sheet !== null){
-                competition.fact_sheet.forEach( q => {
-                    var q_json = q
+                console.log(competition.fact_sheet)
+                for(question in competition.fact_sheet){
+                    var q_json = competition.fact_sheet[question]
                     q_json.id = self.fact_sheet_questions.length
                     self.fact_sheet_questions.push(q_json)
-                })
+                }
             }
             self.form_updated()
         })
