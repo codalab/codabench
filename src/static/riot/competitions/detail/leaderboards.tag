@@ -21,6 +21,7 @@
         <tr class="task-row">
             <th>Task:</th>
             <th></th>
+            <th if="{selected_leaderboard.fact_sheet_keys}" class="center aligned"  colspan="{selected_leaderboard.fact_sheet_keys.length}">Meta-data</th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
@@ -100,7 +101,15 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+                    console.log(responseData)
                     self.columns = []
+                    for(let question in self.selected_leaderboard.fact_sheet_keys){
+                        console.log("question", question)
+                        self.columns.push({
+                            key: self.selected_leaderboard.fact_sheet_keys[question][0],
+                            title: self.selected_leaderboard.fact_sheet_keys[question][1]
+                        })
+                    }
                     for(task of self.selected_leaderboard.tasks){
                         for(column of task.columns){
                             column.task_id = task.id
@@ -108,6 +117,8 @@
                         }
                     }
                     self.filter_columns()
+                    console.log("columns", self.columns)
+                    console.log("filteredcols", self.filtered_columns)
                     self.update()
                 })
         }

@@ -426,12 +426,15 @@ class PhaseViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
+        fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
+                           for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
         query = LeaderboardPhaseSerializer(phase).data
         response = {
             'title': query['leaderboard']['title'],
             'id': phase.id,
             'submissions': [],
             'tasks': [],
+            'fact_sheet_keys': fact_sheet_keys or None,
         }
         columns = [col for col in query['columns']]
         users = {}
