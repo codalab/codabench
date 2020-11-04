@@ -315,7 +315,6 @@
         }
 
         self.modal_updated = function () {
-            console.log(self.selected_leaderboard)
             self.modal_is_valid = self.validate_leaderboard(self.get_leaderboard_data())
             self.update()
         }
