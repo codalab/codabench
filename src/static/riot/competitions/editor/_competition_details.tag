@@ -26,6 +26,41 @@
             <label>Description</label>
             <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
         </div>
+        <div class="field smaller-mde">
+            <label>Fact Sheet</label>
+            <div class="row">
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'boolean') }">Boolean +</button>
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'text') }">Text +</button>
+                <button class="ui basic blue button" onclick="{ add_question.bind(this, 'selection') }">Selection +</button>
+            </div>
+            <br>
+            <form ref="comp_fact_sheet">
+            <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
+                <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
+                    <p>Type: Boolean</p>
+                    <input type="hidden" name="type" value="checkbox">
+                    <label for="q{question.id}">Key name: </label>
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                </div>
+                <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
+                    <p>Type: Text</p>
+                    <input type="hidden" name="type" value="text">
+                    <label for="q{question.id}">Key name: </label>
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                </div>
+                <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
+                    <p>Type: Select</p>
+                    <input type="hidden" name="type" value="select">
+                    <label for="q{question.id}">Key name: </label>
+                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
+                    <label for="choice{question.id}">Choices (Comma Separated): </label>
+                    <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
+                </div>
+                <br>
+                <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>
+            </div>
+            </form>
+        </div>
         <div class="field">
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
@@ -63,7 +98,7 @@
 
     <script>
         var self = this
-
+        self.fact_sheet_questions = []
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
@@ -74,6 +109,8 @@
         self.logo_file_name = ''
 
         self.one("mount", function () {
+            // Set placeholder here so we can have multiple lines
+            $(self.refs.comp_fact_sheet).attr('placeholder', '{\n  "key": ["value1","value2",true,false]\n  "leave_blank_to_accept_any": ""\n}\n')
             self.markdown_editor = create_easyMDE(self.refs.comp_description)
             $('.ui.checkbox', self.root).checkbox({
                 onChange: self.form_updated
@@ -126,6 +163,7 @@
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
+            self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -144,6 +182,64 @@
             }
         }
 
+        self.add_question = (type) => {
+            let current_id = 0
+            if(self.fact_sheet_questions[0] !== undefined) {
+                current_id = self.fact_sheet_questions[self.fact_sheet_questions.length - 1].id + 1
+            }
+            if(type === 'boolean'){
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "checkbox"
+                })
+            }
+            else if(type === 'text'){
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "text"
+                })
+            }
+            else if(type === 'selection'){
+                self.fact_sheet_questions.push({
+                    "id": current_id,
+                    "label": "",
+                    "type": "select",
+                    "selection": []
+                })
+            }
+            self.update()
+            $(':input', self.refs.comp_fact_sheet).not('button').not('[readonly]').each(function (i, field) {
+                this.addEventListener('keyup', self.form_updated)
+            })
+        }
+
+        self.remove_question = function (id) {
+            self.fact_sheet_questions = self.fact_sheet_questions.filter(q => q.id !== id)
+            self.update()
+            self.form_updated()
+        }
+
+        self.serialize_fact_sheet_questions = function (){
+            let form = $(self.refs.comp_fact_sheet).children()
+            let form_json = {}
+            for(question of form){
+             let q_serialized = $(question).find(":input").serializeArray()
+                if(q_serialized[0].value === "checkbox"){
+                    form_json[q_serialized[1].value] = [true, false]
+                } else if(q_serialized[0].value === "text"){
+                    form_json[q_serialized[1].value] = ""
+                } else if(q_serialized[0].value === "select"){
+                    form_json[q_serialized[1].value] = q_serialized[2].value.split(',')
+                }
+            }
+            if(form_json.length === 0){
+                return null
+            }
+            return form_json
+        }
+
         self.filter_queues = function (filters) {
             filters = filters || {}
             _.defaults(filters, {
@@ -153,6 +249,7 @@
             self.page = filters.page
             self.get_available_queues(filters)
         }
+
 
         /*---------------------------------------------------------------------
          Events
@@ -173,10 +270,24 @@
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
+            if(competition.fact_sheet !== null){
+                competition.fact_sheet.forEach( q => {
+                    var q_json = q
+                    q_json.id = self.fact_sheet_questions.length
+                    self.fact_sheet_questions.push(q_json)
+                })
+            }
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {
             self.markdown_editor.codemirror.refresh()
         })
     </script>
+    <style>
+        .fact-sheet-question {
+            border: 1px solid #dcdcdcdc;
+            background-color: white;
+            padding: 1.5em;
+        }
+    </style>
 </competition-details>

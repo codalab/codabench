@@ -1,12 +1,33 @@
 <submission-upload>
     <div class="ui sixteen wide column submission-container"
          show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
-        <h1>Submission upload</h1>
 
-        <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-            <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-        </form>
-
+        <div class="submission-form">
+            <h1>Submission upload</h1>
+            <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+                <div class="submission-form" if="{ opts.fact_sheet !== null }">
+                    <h2>Metadata or Fact Sheet</h2>
+                    <div class="submission-form-question" each="{ question in opts.fact_sheet }">
+                        <span if="{ question.type === 'text' }">
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <input type="text" name="{ question.label }">
+                        </span>
+                        <span if="{ question.type === 'checkbox' }">
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <input type="hidden" name="{ question.label }" value="false">
+                            <input type="checkbox" name="{ question.label }" value="true">
+                        </span>
+                        <span if="{ question.type == 'select' }">
+                            <label for="{ question.label }">{ question.label }:</label>
+                            <select name="{ question.label }">
+                                <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
+                            </select>
+                        </span>
+                    </div>
+                </div>
+                <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+            </form>
+        </div>
 
         <div class="ui indicating progress" ref="progress">
             <div class="bar">
@@ -115,7 +136,6 @@
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
-
             self.setup_autoscroll()
             self.setup_websocket()
         })
@@ -271,12 +291,17 @@
         }
 
         self.clear_form = function () {
-            $(':input', self.root)
-                .not(':button, :submit, :reset, :hidden')
-                .val('')
-
+            $('input-file[ref="data_file"]').find("input").val('')
             self.errors = {}
             self.update()
+        }
+
+        self.set_difference = function (setA, setB) {
+            let difference = new Set(setA)
+            for (ele of setB){
+                difference.delete(ele)
+            }
+            return difference
         }
 
         self.check_can_upload = function () {
@@ -291,6 +316,22 @@
                 .fail(function (data) {
                     toastr.error('Could not verify your ability to make a submission')
                 })
+        }
+
+        self.get_fact_sheet_answers = function () {
+            let form_array = $(self.refs.form).serializeArray()
+            let form_json = {}
+            for (answer of form_array) {
+                if(answer['value'] === 'true'){
+                    form_json[answer['name']] = true
+                }
+                else if(answer['value'] === 'false'){
+                    form_json[answer['name']] = false
+                } else {
+                form_json[answer['name']] = answer['value']
+                }
+            }
+            return form_json
         }
 
         self.upload = function () {
@@ -311,17 +352,27 @@
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": self.selected_phase.id
+                        "phase": self.selected_phase.id,
+                        "fact_sheet_answers": self.get_fact_sheet_answers(),
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
                             CODALAB.events.trigger('submission_selected', data)
                         })
+                        .fail(function (response) {
+                            try {
+                                let errors = JSON.parse(response.responseText)
+                                let error_str = Object.keys( errors ).map(function (key) { return errors[key] }).join("; ")
+                                toastr.error("Submission Failed: ".concat(error_str))
+                            } catch (e) {
+                                toastr.error("Submission Failed")
+                            }
+                        })
                 })
                 .fail(function (response) {
                     if (response) {
                         try {
-                            var errors = JSON.parse(response.responseText)
+                            let errors = JSON.parse(response.responseText);
 
                             // Clean up errors to not be arrays but plain text
                             Object.keys(errors).map(function (key, index) {
@@ -377,6 +428,20 @@
     </script>
 
     <style type="text/stylus">
+        .submission-form
+            background-color white
+            padding 2em
+            margin 0, -2.9em
+            border solid 1px #dcdcdcdc
+            margin-bottom 2em
+
+        .submission-form-question
+            padding .66em 2em
+
+            label
+                font-size 16px
+                font-weight 600
+
         :scope
             display block
             width 100%

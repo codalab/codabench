@@ -86,7 +86,7 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
     },
     re_run_submission: function (id) {
-        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/re_run_submission/`)
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
     },
     get_submission_csv_URL: function (filters) {
         filters.format = "csv"

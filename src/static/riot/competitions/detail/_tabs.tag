@@ -199,7 +199,7 @@
                         </div>
                     </div>
                     <div>
-                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }"></submission-upload>
+                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
@@ -356,6 +356,9 @@
         .details-menu
             width 100%
 
+        .details-menu .item
+            font-size 1.3em
+
         .details-menu .active.item, .details-menu .item
             margin -2px auto !important
             cursor pointer
@@ -409,6 +412,10 @@
         .pages-tab
             margin 0 auto
             width 100%
+
+            .ui.vertical.tabular.menu.pages-menu
+                width 100% !important
+                padding-right 3px
 
             .vertical.tabular.menu > .item
                 cursor pointer

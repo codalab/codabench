@@ -62,8 +62,8 @@ class SubmissionAPITests(APITestCase):
         url = reverse('submission-detail', args=(self.existing_submission.pk,))
         # As anonymous user
         resp = self.client.patch(url, {"status": Submission.FINISHED})
-        assert resp.status_code == 400
-        assert "Secret: (None) not a valid UUID" in str(resp.content)
+        assert resp.status_code == 403
+        assert "Submission secrets do not match" in str(resp.content)
         assert Submission.objects.filter(pk=self.existing_submission.pk, status=Submission.SUBMITTED)
 
         # As superuser (bad secret)
@@ -289,12 +289,13 @@ class TaskSelectionTests(APITestCase):
 
         # Extra phase for testing tasks can't be run on the wrong phase
         self.other_phase = PhaseFactory(competition=self.comp)
+        self.data = Data.objects.create(created_by=self.creator, type=Data.SUBMISSION)
 
         # URL and data for making submissions
         self.submission_url = reverse('submission-list')
         self.submission_data = {
             'phase': self.phase.id,
-            'data': Data.objects.create(created_by=self.creator, type=Data.SUBMISSION).key,
+            'data': self.data.key,
             'tasks': random.sample(list(self.phase.tasks.all().values_list('id', flat=True)), 2)
         }
         self.sorted_tasks = sorted(self.submission_data['tasks'])
@@ -339,3 +340,55 @@ class TaskSelectionTests(APITestCase):
             assert sub.pk != sub_copy.pk
             # Make sure the selected tasks were run in the duplicate submission's children
             assert list(sub_copy.children.all().order_by('task__pk').values_list('task', flat=True)) == self.sorted_tasks
+
+    def test_can_re_run_submissions_with_specific_task_with_bot_user_without_original_submission_secret(self):
+        bot_user = UserFactory(username="botman", password="botman", is_bot=True)
+        self.client.login(username=bot_user.username, password="botman")
+
+        pre_existing_sub = Submission.objects.create(**{
+            'phase': self.phase,
+            'owner': self.creator,
+            'task': self.phase.tasks.first(),
+            'data': self.data,
+        })
+
+        new_task = TaskFactory()
+
+        query_params = f'task_key={new_task.key}&private=true'
+        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
+
+        self.creator.is_bot = True
+        self.creator.save()
+
+        assert not Submission.objects.filter(task=new_task).exists()
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            self.client.post(url)
+            sub = Submission.objects.get(task=new_task)
+            assert sub.owner == new_task.created_by
+            assert sub.phase == self.phase
+            assert sub.data == self.data
+            assert sub.is_specific_task_re_run
+
+    def test_cannot_re_run_submissions_with_specific_task_without_bot_user(self):
+        non_bot_user = UserFactory(username="nonbotman", password="nonbotman")
+        self.client.login(username=non_bot_user.username, password="nonbotman")
+
+        pre_existing_sub = Submission.objects.create(**{
+            'phase': self.phase,
+            'owner': self.creator,
+            'task': self.phase.tasks.first(),
+            'data': self.data,
+        })
+
+        new_task = TaskFactory()
+
+        query_params = f'task_key={new_task.key}'
+        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
+
+        # Mock _send_submission so submissions don't actually run
+        with mock.patch('competitions.tasks._send_submission'):
+            resp = self.client.post(url)
+            assert resp.status_code == 403
+            assert resp.data["detail"] == "Submission secrets do not match"
