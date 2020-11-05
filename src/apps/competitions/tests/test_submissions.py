@@ -237,7 +237,8 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.client.force_login(self.comp.created_by)
 
         # during our put we should expect 1 new run to happen
-        with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
+        with mock.patch(
+            'api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
             self.client.put(url, json.dumps(competition_data), content_type="application/json")
             run_new_task_submission.assert_called_once()
 
@@ -246,20 +247,53 @@ class FactSheetTests(SubmissionTestCase):
     def setUp(self):
         super().setUp()
         self.competition.fact_sheet = {
-            "boolean": [True, False],
-            "selection": ["value1", "value2", "value3", "value4"],
-            "text": "",
+            "boolean": {
+                "key": "boolean",
+                "type": "checkbox",
+                "title": "boolean",
+                "selection": [True, False],
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text": {
+                "key": "text",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text_required": {
+                "key": "text_required",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "true",
+                "is_on_leaderboard": "false"
+            },
+            "selection": {
+                "key": "select",
+                "type": "select",
+                "title": "selection",
+                "selection": ["", "v1", "v2", "v3"],
+                "is_required": "false",
+                "is_on_leaderboard": "true"
+            }
         }
         self.competition.save()
 
     def test_fact_sheet_valid(self):
         submission = SubmissionCreationSerializer(super().make_submission()).data
+        from pprint import pprint
+        pprint(submission)
         submission['fact_sheet_answers'] = {
             "boolean": True,
-            "selection": "value3",
-            "text": "accept any",
+            "selection": "v3",
+            "text_required": "accept_text",
+            "text": "",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(instance='PATCH', data=submission)
+
         assert serializer.is_valid()
 
     def test_fact_sheet_with_extra_keys_is_not_valid(self):
@@ -267,6 +301,7 @@ class FactSheetTests(SubmissionTestCase):
         submission['fact_sheet_answers'] = {
             "boolean": True,
             "selection": "value3",
+            "text_required": "accept_text",
             "text": "accept any",
             "extrakey": True,
             "extrakey2": "NotInFactSheet",

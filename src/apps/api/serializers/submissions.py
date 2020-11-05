@@ -148,7 +148,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
                     raise ValidationError(f'{fact_sheet_answers[key]} should be string not {type(fact_sheet_answers[key])}')
                 elif fact_sheet_answers[key] not in fact_sheet[key]['selection'] and fact_sheet[key]['selection']:
                     raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
-                elif not fact_sheet_answers[key] and bool(fact_sheet[key]['is_required']):
+                elif not fact_sheet_answers[key] and fact_sheet[key]['is_required'] == 'true':
                     raise ValidationError(f'{fact_sheet[key]["title"]}({key}) requires an answer')
 
         # Make sure selected tasks are part of the phase
