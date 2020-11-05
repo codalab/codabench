@@ -38,37 +38,37 @@
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
                 <div class="row" id="q-div-{question.id}">
                     <p  if="{ question.type === 'checkbox' }">Type: Boolean
-                    <input type="hidden" name="type" value="checkbox">
+                    <input type="hidden" name="type-{question.id}" value="checkbox">
                     </p>
                     <p if="{ question.type === 'text' }">Type: Text
-                    <input type="hidden" name="type" value="text">
+                    <input type="hidden" name="type-{question.id}" value="text">
                     </p>
                     <p if="{ question.type === 'select' }">Type: Select
-                    <input type="hidden" name="type" value="select">
+                    <input type="hidden" name="type-{question.id}" value="select">
                     </p>
                     <p>
-                        <label for="key">Key name: </label>
-                        <input name="key" id="key" type="text" value="{question.key}">
+                        <label for="key-{question.id}">Key name: </label>
+                        <input name="key-{question.id}" id="key-{question.id}" type="text" value="{question.key}">
                     </p>
                     <p if="{ question.type === 'select' }">
-                        <label for="selection">Choices (Comma Separated): </label>
-                        <input name="selection" id="selection" type="text" value="{question.selection.join()}">
+                        <label for="selection-{question.id}">Choices (Comma Separated): </label>
+                        <input name="selection-{question.id}" id="selection-{question.id}" type="text" value="{question.selection.join()}">
                     </p>
                     <p>
-                        <label for="is_on_leaderboard">Show On Leaderboard: </label>
-                        <input type="hidden" name="is_on_leaderboard" value="false">
-                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard" value="true" onchange="{form_updated}" checked>
-                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard" value="true" onchange="{form_updated}">
+                        <label for="is_on_leaderboard-{question.id}">Show On Leaderboard: </label>
+                        <input type="hidden" name="is_on_leaderboard-{question.id}" value="false">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard-{question.id}" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard-{question.id}" value="true" onchange="{form_updated}">
                     </p>
                     <p>
-                        <label for="title">Display Name: </label>
-                        <input name="title" id="title" type="text" value="{question.title}">
+                        <label for="title-{question.id}">Display Name: </label>
+                        <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">
                     </p>
                     <p>
-                        <label for="is-required">Is Required:</label>
-                        <input type="hidden" name="is_required" value="false">
-                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required" value="true" onchange="{form_updated}" checked>
-                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required" value="true" onchange="{form_updated}">
+                        <label for="is-required-{question.id}">Is Required:</label>
+                        <input type="hidden" name="is_required-{question.id}" value="false">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}">
                     </p>
                 </div>
                 <br>
@@ -163,6 +163,7 @@
                 maxResults: 5,
                 onChange: self.form_updated
             })
+            self.update()
         })
 
         /*---------------------------------------------------------------------
@@ -241,7 +242,6 @@
             let form_json = {}
             for(question of form){
              let q_serialized = $(question).find(":input").serializeArray()
-                console.log(q_serialized)
                 let question_key = q_serialized[1].value
                 form_json[question_key] = {}
                 if(q_serialized[0].value === "checkbox"){
@@ -250,10 +250,10 @@
                     form_json[question_key]['selection'] = ""
                 }
                 for(entry of q_serialized){
-                    if(entry.name === 'selection'){
-                        form_json[question_key][entry.name] = entry.value.split(',')
+                    if(entry.name.split('-')[0] === 'selection'){
+                        form_json[question_key][entry.name.split('-')[0]] = entry.value.split(',')
                     } else {
-                        form_json[question_key][entry.name] = entry.value
+                        form_json[question_key][entry.name.split('-')[0]] = entry.value
                     }
                 }
             }
@@ -302,6 +302,7 @@
                     self.fact_sheet_questions.push(q_json)
                 }
             }
+            self.update()
             self.form_updated()
         })
         CODALAB.events.on('update_codemirror', () => {
