@@ -329,7 +329,7 @@
                 else if(answer['value'] === 'false'){
                     form_json[answer['name']] = false
                 } else {
-                form_json[answer['name']] = answer['value']
+                form_json[answer['name']] = answer['value'].trim()
                 }
             }
             return form_json

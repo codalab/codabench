@@ -271,7 +271,6 @@
             if(form_json.length === 0){
                 return null
             }
-            console.log(form_json)
             return form_json
         }
 

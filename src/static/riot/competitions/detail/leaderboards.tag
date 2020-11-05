@@ -108,7 +108,6 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
-                    console.log(responseData)
                     self.columns = []
                     if(self.selected_leaderboard.fact_sheet_keys){
                         let fake_metadata_task = {
@@ -132,8 +131,6 @@
                         }
                     }
                     self.filter_columns()
-                    console.log("columns", self.columns)
-                    console.log("filteredcols", self.filtered_columns)
                     self.update()
                 })
         }
