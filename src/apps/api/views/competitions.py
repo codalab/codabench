@@ -438,8 +438,7 @@ class PhaseViewSet(ModelViewSet):
         columns = [col for col in query['columns']]
         submissions_keys = {}
         for submission in query['submissions']:
-            if submission['parent']:
-                submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(submissions_keys)
                 response['submissions'].append({'owner': submission['owner'], 'scores': []})

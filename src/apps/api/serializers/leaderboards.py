@@ -54,7 +54,7 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
             'key',
             'columns',
             'hidden',
-            'submission_rule'
+            'submission_rule',
         )
 
     def validate_columns(self, columns):
