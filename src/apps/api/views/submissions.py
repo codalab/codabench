@@ -17,6 +17,7 @@ from rest_framework_csv import renderers
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
+from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
@@ -191,6 +192,7 @@ class SubmissionViewSet(ModelViewSet):
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
+    submission_rule = submission.phase.leaderboard.submission_rule
 
     try:
         if uuid.UUID(request.data.get("secret")) != submission.secret:
@@ -217,6 +219,7 @@ def upload_submission_scores(request, submission_pk):
         else:
             submission.calculate_scores()
 
+    put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
     return Response()
 
 
