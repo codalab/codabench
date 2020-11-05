@@ -46,8 +46,8 @@
                     <p if="{ question.type === 'select' }">Type: Select
                     <input type="hidden" name="type-{question.id}" value="select">
                     </p>
-                    <p>
-                        <label for="key-{question.id}">Key name: </label>
+                    <p class="field required">
+                        <label style="font-size: 1em; font-weight: 500;" for="key-{question.id}">Key name: </label>
                         <input name="key-{question.id}" id="key-{question.id}" type="text" value="{question.key}">
                     </p>
                     <p if="{ question.type === 'select' }">
@@ -130,10 +130,6 @@
             $('.ui.checkbox', self.root).checkbox({
                 onChange: self.form_updated
             })
-            // Form change events
-            $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
-                this.addEventListener('keyup', self.form_updated)
-            })
 
             // Draw in logo filename as it's changed
             $(self.refs.logo).change(function () {
@@ -180,6 +176,9 @@
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
+            if (self.data.fact_sheet === false){
+                is_valid = false
+            }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -250,8 +249,9 @@
                     form_json[question_key]['selection'] = ""
                 }
                 for(entry of q_serialized){
-                    if(entry.name.split('-')[0] === 'selection'){
+                    if(entry.name.split('-')[0] === 'selection') {
                         form_json[question_key][entry.name.split('-')[0]] = entry.value.split(',')
+                    } else if (entry.name.split('-')[0] === 'key'){
                     } else {
                         form_json[question_key][entry.name.split('-')[0]] = entry.value
                     }
@@ -260,7 +260,6 @@
             if(form_json.length === 0){
                 return null
             }
-            console.log(form_json)
             return form_json
         }
 
@@ -295,7 +294,6 @@
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             if(competition.fact_sheet !== null){
-                console.log(competition.fact_sheet)
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]
                     q_json.id = self.fact_sheet_questions.length
@@ -304,6 +302,10 @@
             }
             self.update()
             self.form_updated()
+            // Form change events
+            $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
+                this.addEventListener('keyup', self.form_updated)
+            })
         })
         CODALAB.events.on('update_codemirror', () => {
             self.markdown_editor.codemirror.refresh()
