@@ -219,6 +219,9 @@
             "Add",
             "Add_And_Delete",
             "Add_And_Delete_Multiple",
+            "Force_Last",
+            "Force_Latest_Multiple",
+            "Force_Best",
         ]
         self.on('mount', () => {
             $(self.refs.modal).modal({
@@ -374,6 +377,7 @@
 
         self.get_leaderboard_data = function () {
             let data = get_form_data(self.refs.leaderboard_form)
+            console.log(self.refs.submission_rule.value)
             let leaderboard = {
                 title: data.title,
                 key: data.key,

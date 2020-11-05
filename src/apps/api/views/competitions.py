@@ -154,6 +154,7 @@ class CompetitionViewSet(ModelViewSet):
                 phase['leaderboard'] = leaderboard_id
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        serializer.save()
         self.perform_update(serializer)
 
         if getattr(instance, '_prefetched_objects_cache', None):
