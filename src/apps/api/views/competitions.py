@@ -38,6 +38,7 @@ from api.permissions import IsOrganizerOrCollaborator
 
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
+    permission_classes = (AllowAny,)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -340,6 +341,20 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
+    @action(detail=False, methods=('GET',), pagination_class=LargePagination)
+    def public(self, request):
+        qs = self.get_queryset()
+        qs = qs.filter(published=True)
+        queryset = self.filter_queryset(qs)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def run_new_task_submissions(self, phase, tasks):
         tasks_ids = set([task.id for task in tasks])
         submissions = phase.submissions.filter(has_children=True).prefetch_related("children").all()
@@ -491,10 +506,3 @@ class CompetitionParticipantViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         send_direct_participant_email(participant=participant, content=message)
         return Response({}, status=status.HTTP_200_OK)
-
-
-class CompetitionPublicViewSet(ModelViewSet):
-    queryset = Competition.objects.filter(published=True).order_by("-created_when")
-    pagination_class = LargePagination
-    serializer_class = CompetitionSerializerSimple
-    permission_classes = [IsAuthenticated]

@@ -21,7 +21,6 @@ router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submi
 router.register('tasks', tasks.TaskViewSet)
 router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
 router.register('queues', queues.QueueViewSet, 'queues')
-router.register('public-competitions', competitions.CompetitionPublicViewSet, 'public-competitions')
 
 schema_view = get_schema_view(
     openapi.Info(

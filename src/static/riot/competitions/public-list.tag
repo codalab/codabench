@@ -27,7 +27,7 @@
                 <div class="comp-stats">
                     {pretty_date(competition.created_when)}
                     <div class="ui divider"></div>
-                    <strong>{competition.participants_count}</strong> Participants
+                    <strong>{competition.participant_count}</strong> Participants
                 </div>
             </div>
         </a>

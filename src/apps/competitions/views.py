@@ -9,7 +9,7 @@ class CompetitionManagement(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/management.html'
 
 
-class CompetitionPublic(LoginRequiredMixin, TemplateView):
+class CompetitionPublic(TemplateView):
     template_name = 'competitions/public.html'
 
 
