@@ -142,16 +142,23 @@ class CompetitionViewSet(ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         data = request.data
-
         # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
         # save leaderboard individually, then pass pk to each phase
         if 'leaderboards' in data:
-            leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+            leaderboard_data = data['leaderboards'][0]
+            from pprint import pprint
+            pprint(leaderboard_data)
+            if(leaderboard_data['id']):
+                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+            else:
+                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
             leaderboard.is_valid()
             leaderboard.save()
             leaderboard_id = leaderboard["id"].value
             for phase in data['phases']:
                 phase['leaderboard'] = leaderboard_id
+
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()

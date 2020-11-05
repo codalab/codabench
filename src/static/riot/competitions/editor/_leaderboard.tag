@@ -97,7 +97,7 @@
                 <div class="field" style="width: 50%; padding: 0 7px">
                     <label>Submission Rule</label>
                     <div class="ui fluid submission-rule selection dropdown">
-                        <input type="hidden" name="submission_rule" ref="submission_rule" value="{_.get(selected_leaderboard, 'submission_rule')}" onchange="{ modal_updated }">
+                        <input type="hidden" name="submission_rule" ref="submission_rule" value="{_.get(selected_leaderboard, 'submission_rule')}">
                         <div class="default text"></div>
                         <i class="dropdown icon"></i>
                         <div class="menu">
@@ -213,6 +213,7 @@
         self.leaderboards = []
         self.selected_leaderboard_index = undefined
         self.selected_leaderboard = undefined
+        self.selected_submission_rule = undefined
         self.columns = []
         self.modal_is_valid = false
         self.error_messages = []
@@ -224,6 +225,7 @@
             "Force_Latest_Multiple",
             "Force_Best",
         ]
+        self.selected_submission_rule = undefined
         self.on('mount', () => {
             $(self.refs.modal).modal({
                 closable: false,
@@ -238,7 +240,12 @@
         self.initialize_dropdowns = function () {
             $('.ui.sorting.dropdown').dropdown()
             $('.ui.multiselect.dropdown').dropdown()
-            $('.ui.submission-rule.dropdown').dropdown()
+            $('.ui.submission-rule.dropdown').dropdown({
+                onChange: (value, text, element) => {
+                    self.change_submission_rule(value)
+                    self.update()
+                }
+            })
             $('.ui.computation.dropdown').dropdown({
                 onChange: (value, text, element) => {
                     let index = element.data().index
@@ -282,6 +289,10 @@
             self.show_modal()
         }
 
+        self.change_submission_rule = function (rule) {
+            self.selected_submission_rule = rule
+        }
+
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
             self.modal_updated()
@@ -304,11 +315,11 @@
                 self.leaderboards[self.selected_leaderboard_index] = self.get_leaderboard_data()
             } else {
                 self.leaderboards.push(self.get_leaderboard_data())
-
             }
-            self.close_modal()
             self.form_updated()
+            self.close_modal()
             self.update()
+            self.selected_submission_rule = undefined
         }
 
         self.clear_form = function () {
@@ -378,12 +389,11 @@
 
         self.get_leaderboard_data = function () {
             let data = get_form_data(self.refs.leaderboard_form)
-            console.log(self.refs.submission_rule.value)
             let leaderboard = {
                 id: data.id,
                 title: data.title,
                 key: data.key,
-                submission_rule: self.refs.submission_rule.value,
+                submission_rule: self.selected_submission_rule,
                 hidden: self.refs.hidden_leaderboard.checked,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
                 columns: _.map(_.range(_.get(self.selected_leaderboard, 'columns.length', 0)), i => {
@@ -406,10 +416,6 @@
                     return column
                 })
             }
-            let id = _.get(self.selected_leaderboard, 'id')
-            if (id) {
-                leaderboard.id = id
-            }
             return leaderboard
         }
 
@@ -417,8 +423,8 @@
             self.selected_leaderboard = self.get_leaderboard_data()
             self.columns = self.selected_leaderboard.columns
             self.update()
-            self.modal_updated()
             self.initialize_dropdowns()
+            self.modal_updated()
         }
 
         self.add_column = function () {
