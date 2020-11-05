@@ -9,7 +9,8 @@
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
-                            <label for="{ question.key }">{ question.title }:</label>
+                            <label if="{question.is_required}" class="required-answer" for="{ question.key }">{ question.title }:</label>
+                            <label if="{!question.is_required}" for="{ question.key }">{ question.title }:</label>
                             <input type="text" name="{ question.key }">
                         </span>
                         <span if="{ question.type === 'checkbox' }">
@@ -428,6 +429,11 @@
     </script>
 
     <style type="text/stylus">
+        .required-answer::after
+            margin -.2em 0 0 .2em
+            content '*'
+            color #db2828
+
         .submission-form
             background-color white
             padding 2em
