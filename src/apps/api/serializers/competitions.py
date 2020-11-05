@@ -209,7 +209,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'description',
             'competition_type',
         )
-        
+
 
 PageSerializer.competition = CompetitionSerializer(many=True, source='competition')
 

@@ -156,6 +156,7 @@
         transition all 75ms ease-in-out
         color #909090
         width 100%
+        margin-bottom 6px
 
     .tile-wrapper:hover
         box-shadow 0 3px 4px -1px #9c9c9c
