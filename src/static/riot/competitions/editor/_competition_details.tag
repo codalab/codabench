@@ -64,12 +64,13 @@
                         <label for="title-{question.id}">Display Name: </label>
                         <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">
                     </p>
-                    <p>
+                    <p if="{ question.type !== 'checkbox' }">
                         <label for="is-required-{question.id}">Is Required:</label>
                         <input type="hidden" name="is_required-{question.id}" value="false">
                         <input if="{question.is_required === 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}" checked>
                         <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}">
                     </p>
+                    <input if="{ question.type === 'checkbox' }" type="hidden" name="is_required-{question.id}" value="false">
                 </div>
                 <br>
                 <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>
@@ -250,16 +251,27 @@
                 }
                 for(entry of q_serialized){
                     if(entry.name.split('-')[0] === 'selection') {
-                        form_json[question_key][entry.name.split('-')[0]] = entry.value.split(',')
+                        let selection = entry.value.split(',')
+                        selection = selection.map(s => s.trim()).filter(s => s !== '')
+                        form_json[question_key][entry.name.split('-')[0]] = selection
                     } else if (entry.name.split('-')[0] === 'key'){
+                        // Check to make sure key isn't empty
+                        if(!entry.value){
+                            return false
+                        }
+                        form_json[question_key][entry.name.split('-')[0]] = entry.value
                     } else {
                         form_json[question_key][entry.name.split('-')[0]] = entry.value
                     }
+                }
+                if(form_json[question_key]['type'] === 'select' && form_json[question_key]['is_required'] === 'false'){
+                    form_json[question_key]['selection'].unshift('')
                 }
             }
             if(form_json.length === 0){
                 return null
             }
+            console.log(form_json)
             return form_json
         }
 
@@ -297,6 +309,9 @@
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]
                     q_json.id = self.fact_sheet_questions.length
+                    if(q_json.type === "select"){
+                        q_json.selection = q_json.selection.filter(s => s !== "")
+                    }
                     self.fact_sheet_questions.push(q_json)
                 }
             }
