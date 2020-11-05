@@ -21,7 +21,6 @@
         <tr class="task-row">
             <th>Task:</th>
             <th></th>
-<!--            <th if="{selected_leaderboard.fact_sheet_keys}" class="center aligned"  colspan="{selected_leaderboard.fact_sheet_keys.length}">Meta-data</th>-->
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
