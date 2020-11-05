@@ -350,8 +350,6 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
-        logger.info(f"Connecting to {self.websocket_url}")
-
         start = time.time()
         proc = await asyncio.create_subprocess_exec(
             *docker_cmd,
@@ -378,6 +376,7 @@ class Run:
         }
 
         # Start websocket, it will reconnect in the stdout/stderr listener loop below
+        logger.info(f"Connecting to {self.websocket_url}")
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
@@ -706,11 +705,12 @@ class Run:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 
         url = f"{self.submissions_api_url}/upload_submission_scores/{self.submission_id}/"
-        logger.info(f"Submitting these scores to {url}: {scores}")
-        resp = self.requests_session.post(url, json={
+        data = {
             "secret": self.secret,
             "scores": scores,
-        })
+        }
+        logger.info(f"Submitting these scores to {url}: {scores} with data = {data}")
+        resp = self.requests_session.post(url, json=data)
         logger.info(resp)
         logger.info(str(resp.content))
 

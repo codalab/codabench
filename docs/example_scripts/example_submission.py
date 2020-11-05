@@ -33,7 +33,7 @@ USERNAME = 'admin'
 PASSWORD = 'admin'
 PHASE_ID = None
 TASK_LIST = []
-SUBMISSION_ZIP_PATH = '../tests/functional/test_files/submission.zip'
+SUBMISSION_ZIP_PATH = '../../src/tests/functional/test_files/submission.zip'
 
 
 # ----------------------------------------------------------------------------

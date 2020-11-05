@@ -37,10 +37,11 @@ class TaskViewSet(ModelViewSet):
                 'solutions',
                 'solutions__data'
             )
-            if self.request.query_params.get('public'):
-                qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
-            else:
-                qs = qs.filter(created_by=self.request.user)
+            if not self.request.user.is_authenticated or not self.request.user.is_bot:
+                if self.request.query_params.get('public'):
+                    qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
+                else:
+                    qs = qs.filter(created_by=self.request.user)
 
             # Determine whether a task is "valid" by finding some solution with a
             # passing submission

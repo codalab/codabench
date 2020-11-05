@@ -162,6 +162,7 @@ class SubmissionFactory(DjangoModelFactory):
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
     )
+    task = factory.LazyAttribute(lambda submission: random.choice(submission.phase.tasks.all()))
 
 
 class CompetitionParticipantFactory(DjangoModelFactory):

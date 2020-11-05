@@ -47,6 +47,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'description',
             'created_when',
             'is_public',
+            'is_specific_task_re_run',
             'status',
             'status_details',
             'owner',
@@ -57,6 +58,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'id',
             'phase',
             'scores',
+            'fact_sheet_answers',
             'leaderboard',
             'on_leaderboard',
             'task',
@@ -65,6 +67,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'pk',
             'phase',
             'scores',
+            'is_specific_task_re_run',
             'leaderboard',
             'on_leaderboard',
         )
@@ -112,6 +115,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'secret',
             'md5',
             'tasks',
+            'fact_sheet_answers',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -132,6 +136,17 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
 
     def validate(self, attrs):
         data = super().validate(attrs)
+
+        if attrs.get('fact_sheet_answers'):
+            fact_sheet_answers = data['fact_sheet_answers']
+            fact_sheet = data['phase'].competition.fact_sheet
+            if set(fact_sheet_answers.keys()) != set(fact_sheet.keys()):
+                raise ValidationError("Fact Sheet keys do not match Answer keys")
+            for key in fact_sheet_answers.keys():
+                if not fact_sheet[key] and not isinstance(fact_sheet_answers[key], str):
+                    raise ValidationError(f'{fact_sheet_answers[key]} should be string not {type(fact_sheet_answers[key])}')
+                elif fact_sheet_answers[key] not in fact_sheet[key] and fact_sheet[key]:
+                    raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
 
         # Make sure selected tasks are part of the phase
         if attrs.get('tasks'):
