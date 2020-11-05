@@ -66,6 +66,7 @@
                 </ul>
             </div>
             <div ref="leaderboard_form" class="ui form">
+                <input type="hidden" name="id" value="{_.get(selected_leaderboard, 'id', null)}">
                 <div class="field">
                     <label>Leaderboard Settings</label>
                     <div class="two fields">
@@ -379,6 +380,7 @@
             let data = get_form_data(self.refs.leaderboard_form)
             console.log(self.refs.submission_rule.value)
             let leaderboard = {
+                id: data.id,
                 title: data.title,
                 key: data.key,
                 submission_rule: self.refs.submission_rule.value,
