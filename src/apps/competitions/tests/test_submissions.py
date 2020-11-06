@@ -237,8 +237,7 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
         self.client.force_login(self.comp.created_by)
 
         # during our put we should expect 1 new run to happen
-        with mock.patch(
-            'api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
+        with mock.patch('api.views.competitions.CompetitionViewSet.run_new_task_submissions') as run_new_task_submission:
             self.client.put(url, json.dumps(competition_data), content_type="application/json")
             run_new_task_submission.assert_called_once()
 
