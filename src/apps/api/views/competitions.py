@@ -146,8 +146,6 @@ class CompetitionViewSet(ModelViewSet):
         # save leaderboard individually, then pass pk to each phase
         if 'leaderboards' in data:
             leaderboard_data = data['leaderboards'][0]
-            from pprint import pprint
-            pprint(leaderboard_data)
             if(leaderboard_data['id']):
                 leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                 leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
@@ -389,20 +387,13 @@ class CompetitionViewSet(ModelViewSet):
     def perform_update(self, serializer):
         instance = self.get_object()
         initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
-        from pprint import pprint
-        print(f'\nInitial Tasks @@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
-        pprint(initial_tasks)
 
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
 
         saved_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.filter(pk__in=initial_tasks.keys()).prefetch_related('tasks')}
-        print(f'\nSaved Tasks @@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
-        pprint(saved_tasks)
         for phase_id in saved_tasks:
             new_tasks = list(saved_tasks[phase_id] - initial_tasks[phase_id])
-            print(f'New tasks for phase: {phase_id}')
-            pprint(new_tasks)
             if new_tasks:
                 self.run_new_task_submissions(instance.phases.get(pk=phase_id), new_tasks)
 
