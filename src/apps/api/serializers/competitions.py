@@ -195,6 +195,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
+    participant_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Competition
