@@ -2,7 +2,7 @@
     <div class="ui form">
         <div class="field required">
             <label>Title</label>
-            <input ref="title">
+            <input type="text" ref="title" onchange="{form_updated}">
         </div>
 
         <div class="field required">
@@ -24,7 +24,7 @@
         </div>
         <div class="field smaller-mde">
             <label>Description</label>
-            <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
+            <textarea class="markdown-editor" ref="comp_description" name="description" onchange="{form_updated}"></textarea>
         </div>
         <div class="field smaller-mde">
             <label>Fact Sheet</label>
@@ -83,12 +83,12 @@
         </div>
         <div class="field required">
             <label>Competition Docker Image</label>
-            <input type="text" ref="docker_image">
+            <input type="text" ref="docker_image" onchange="{form_updated}">
         </div>
         <div class="field">
             <label>Competition Type</label>
             <div ref="competition_type" class="ui selection dropdown">
-                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }">
+                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }" onchange="{form_updated}">
                 <div class="text">Competition</div>
                 <i class="dropdown icon"></i>
                 <div class="menu">
@@ -100,7 +100,7 @@
         <div class="field">
             <div class="ui checkbox">
                 <label>Enable Visualizations</label>
-                <input type="checkbox" ref="detailed_results">
+                <input type="checkbox" ref="detailed_results" onchange="{form_updated}">
             </div>
             <sup>
                 <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
@@ -241,7 +241,7 @@
             let form = $(self.refs.comp_fact_sheet).children()
             let form_json = {}
             for(question of form){
-             let q_serialized = $(question).find(":input").serializeArray()
+                let q_serialized = $(question).find(":input").serializeArray()
                 let question_key = q_serialized[1].value
                 form_json[question_key] = {}
                 if(q_serialized[0].value === "checkbox"){
@@ -257,6 +257,7 @@
                     } else if (entry.name.split('-')[0] === 'key'){
                         // Check to make sure key isn't empty
                         if(!entry.value){
+                            console.log("returning false")
                             return false
                         }
                         form_json[question_key][entry.name.split('-')[0]] = entry.value
