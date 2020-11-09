@@ -3,7 +3,7 @@
     <div class="pagination-nav" hide="{(get_array_length(competitions.results) === competitions.count) || (get_array_length(competitions.results) < 10)}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
-        { current_page } of {Math.ceil(competitions.count/20)}
+        { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
         <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
@@ -35,7 +35,7 @@
     <div class="pagination-nav" hide="{get_array_length(competitions.results) === competitions.count}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
-        { current_page } of {Math.ceil(competitions.count/20)}
+        { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
         <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
