@@ -3,8 +3,11 @@
         <button type="button" class="ui icon button" id="search-leaderboard-button">
             <i class="search icon"></i>
         </button>
-        <input ref="leaderboardFilter" type="text" placeholder="Filter Columns">
+        <input ref="leaderboardFilter" type="text" placeholder="Filter Leaderboard by Columns">
     </div>
+    <a data-tooltip="Start typing to filter columns under 'Meta-data' or Tasks." data-position="right center">
+        <i class="grey question circle icon"></i>
+    </a>
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
