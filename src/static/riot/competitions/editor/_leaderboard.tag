@@ -225,7 +225,6 @@
             "Force_Latest_Multiple",
             "Force_Best",
         ]
-        self.selected_submission_rule = undefined
         self.on('mount', () => {
             $(self.refs.modal).modal({
                 closable: false,
