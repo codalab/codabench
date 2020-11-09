@@ -283,15 +283,13 @@ class FactSheetTests(SubmissionTestCase):
 
     def test_fact_sheet_valid(self):
         submission = SubmissionCreationSerializer(super().make_submission()).data
-        from pprint import pprint
-        pprint(submission)
         submission['fact_sheet_answers'] = {
             "boolean": True,
             "selection": "v3",
             "text_required": "accept_text",
             "text": "",
         }
-        serializer = SubmissionCreationSerializer(instance='PATCH', data=submission)
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
 
         assert serializer.is_valid()
 
@@ -305,7 +303,7 @@ class FactSheetTests(SubmissionTestCase):
             "extrakey": True,
             "extrakey2": "NotInFactSheet",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
 
     def test_fact_sheet_with_missing_key_is_not_valid(self):
@@ -314,7 +312,7 @@ class FactSheetTests(SubmissionTestCase):
             "boolean": True,
             "selection": "value3",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
 
     def test_fact_sheet_with_wrong_selection_is_not_valid(self):
@@ -324,5 +322,5 @@ class FactSheetTests(SubmissionTestCase):
             "selection": "new_value",
             "text": "accept any",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
