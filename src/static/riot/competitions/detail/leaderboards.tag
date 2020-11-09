@@ -1,5 +1,10 @@
 <leaderboards>
-    <input ref="leaderboardFilter" type="text" placeholder="Filter Columns" style="margin-top: 32px">
+    <div class="ui left action input" style="margin-top: 32px; width: 33%">
+        <button type="button" class="ui icon button" id="search-leaderboard-button">
+            <i class="search icon"></i>
+        </button>
+        <input ref="leaderboardFilter" type="text" placeholder="Filter Columns">
+    </div>
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
@@ -71,6 +76,9 @@
             this.refs.leaderboardFilter.onkeyup = function (e) {
                 self.filter_columns()
             }
+            $('#search-leaderboard-button').click(function() {
+                $(self.refs.leaderboardFilter).focus()
+            })
         })
 
         self.filter_columns = () => {
