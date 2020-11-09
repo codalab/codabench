@@ -25,6 +25,8 @@
                         </span>
                     </div>
                 </div>
+                <label for="selected_tasks">Selected Tasks</label>
+                <input type="text" name="selected_tasks" id="selected_tasks" ref="selected_tasks">
                 <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
             </form>
         </div>
@@ -337,6 +339,7 @@
         self.upload = function () {
             self.display_output = true
 
+            console.log(self.refs.selected_tasks.value)
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -354,6 +357,7 @@
                         "data": data.key,
                         "phase": self.selected_phase.id,
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
+                        "tasks": [29,30]
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
@@ -380,6 +384,7 @@
                             })
 
                             self.update({errors: errors})
+                            console.log(errors)
                         } catch (e) {
 
                         }
