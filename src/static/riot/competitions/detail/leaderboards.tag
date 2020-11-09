@@ -108,6 +108,7 @@
                 .done(responseData => {
                     self.selected_leaderboard = responseData
                     self.columns = []
+                    // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
                         let fake_metadata_task = {
                             id: -1,
