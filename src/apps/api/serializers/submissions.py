@@ -143,12 +143,12 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             fact_sheet = data['phase'].competition.fact_sheet
             if set(fact_sheet_answers.keys()) != set(fact_sheet.keys()):
                 raise ValidationError("Fact Sheet keys do not match Answer keys")
-            for key in fact_sheet_answers:
-                if not fact_sheet[key] and not isinstance(fact_sheet_answers[key], str):
-                    raise ValidationError(f'{fact_sheet_answers[key]} should be string not {type(fact_sheet_answers[key])}')
-                elif fact_sheet_answers[key] not in fact_sheet[key]['selection'] and fact_sheet[key]['selection']:
-                    raise ValidationError(f'{key}: {fact_sheet_answers[key]} is not a valid selection from {fact_sheet[key]}')
-                elif not fact_sheet_answers[key] and fact_sheet[key]['is_required'] == 'true':
+            for key, value in fact_sheet_answers.items():
+                if not fact_sheet[key] and not isinstance(value, str):
+                    raise ValidationError(f'{value} should be string not {type(value)}')
+                elif value not in fact_sheet[key]['selection'] and fact_sheet[key]['selection']:
+                    raise ValidationError(f'{key}: {value} is not a valid selection from {fact_sheet[key]}')
+                elif not value and fact_sheet[key]['is_required'] == 'true':
                     raise ValidationError(f'{fact_sheet[key]["title"]}({key}) requires an answer')
 
         # Make sure selected tasks are part of the phase
