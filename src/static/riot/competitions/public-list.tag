@@ -89,12 +89,7 @@
     }
 
     self.pretty_description = function(description){
-        if (description) {
-            description = render_markdown(description).replaceAll("<p>", "").replaceAll("</p>", "")
-            return description.substring(0,120) + (description.length > 120 ? '...' : '')
-        } else {
-            return ''
-        }
+        return description.substring(0,120) + (description.length > 120 ? '...' : '') || ''
     }
 
     self.get_url_page_number_or_default = function (){
