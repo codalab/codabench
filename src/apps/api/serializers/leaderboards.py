@@ -54,6 +54,7 @@ class LeaderboardSerializer(WritableNestedModelSerializer):
             'key',
             'columns',
             'hidden',
+            'submission_rule',
         )
 
     def validate_columns(self, columns):
@@ -100,7 +101,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         primary_col = instance.columns.get(index=instance.primary_index)
         # Order first by primary column. Then order by other columns after for tie breakers.
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
-        submissions = Submission.objects.filter(leaderboard=instance)\
+        submissions = Submission.objects.filter(leaderboard=instance, is_specific_task_re_run=False)\
             .select_related('owner').prefetch_related('scores')\
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
         # TODO: Look at why we have primary_col in the above annotation
@@ -149,6 +150,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         submissions = Submission.objects.filter(
             phase=instance,
             has_children=False,
+            is_specific_task_re_run=False,
             leaderboard__isnull=False, ) \
             .select_related('owner').prefetch_related('scores') \
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))

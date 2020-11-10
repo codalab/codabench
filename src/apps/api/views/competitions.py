@@ -25,7 +25,7 @@ from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer
-from api.serializers.leaderboards import LeaderboardPhaseSerializer
+from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
@@ -143,7 +143,23 @@ class CompetitionViewSet(ModelViewSet):
         in the response to remove a GET from the frontend"""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        data = request.data
+        # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
+        # save leaderboard individually, then pass pk to each phase
+        if 'leaderboards' in data:
+            leaderboard_data = data['leaderboards'][0]
+            if(leaderboard_data['id']):
+                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+            else:
+                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+            leaderboard.is_valid()
+            leaderboard.save()
+            leaderboard_id = leaderboard["id"].value
+            for phase in data['phases']:
+                phase['leaderboard'] = leaderboard_id
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
@@ -440,15 +456,16 @@ class PhaseViewSet(ModelViewSet):
             'tasks': [],
         }
         columns = [col for col in query['columns']]
-        users = {}
+        submissions_keys = {}
         for submission in query['submissions']:
-            if submission['owner'] not in users.keys():
-                users.update({submission['owner']: len(users)})
+            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            if submission_key not in submissions_keys:
+                submissions_keys[submission_key] = len(submissions_keys)
                 response['submissions'].append({'owner': submission['owner'], 'scores': []})
             for score in submission['scores']:
                 tempScore = score
-                tempScore.update({'task_id': submission['task']})
-                response['submissions'][users[submission['owner']]]['scores'].append(tempScore)
+                tempScore['task_id'] = submission['task']
+                response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
@@ -461,7 +478,6 @@ class PhaseViewSet(ModelViewSet):
             for col in columns:
                 tempTask['columns'].append(col)
             response['tasks'].append(tempTask)
-
         return Response(response)
 
 
