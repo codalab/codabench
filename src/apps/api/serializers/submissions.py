@@ -83,11 +83,13 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Submission
         fields = (
-            'scores',
+            'id',
+            'parent',
             'owner',
-            'task',
             'leaderboard_id',
             'fact_sheet_answers',
+            'task',
+            'scores',
         )
         extra_kwargs = {
             "scores": {"read_only": True},

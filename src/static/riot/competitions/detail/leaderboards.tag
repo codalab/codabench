@@ -1,5 +1,13 @@
 <leaderboards>
-    <input ref="leaderboardFilter" type="text" placeholder="Filter Columns" style="margin-top: 32px">
+    <div class="ui left action input" style="margin-top: 32px; width: 33%">
+        <button type="button" class="ui icon button" id="search-leaderboard-button">
+            <i class="search icon"></i>
+        </button>
+        <input ref="leaderboardFilter" type="text" placeholder="Filter Leaderboard by Columns">
+    </div>
+    <a data-tooltip="Start typing to filter columns under 'Meta-data' or Tasks." data-position="right center">
+        <i class="grey question circle icon"></i>
+    </a>
     <table id="leadboardTable" class="ui celled selectable table">
         <thead>
         <tr>
@@ -78,6 +86,9 @@
             this.refs.leaderboardFilter.onkeyup = function (e) {
                 self.filter_columns()
             }
+            $('#search-leaderboard-button').click(function() {
+                $(self.refs.leaderboardFilter).focus()
+            })
         })
 
         self.filter_columns = () => {
