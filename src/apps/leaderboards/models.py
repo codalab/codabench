@@ -6,7 +6,6 @@ class Leaderboard(models.Model):
     ADD = "Add"
     ADD_DELETE = "Add_And_Delete"
     ADD_DELETE_MULTIPLE = "Add_And_Delete_Multiple"
-    ADD_BY_REVIEW = "Add_By_Review"
     FORCE_LAST = "Force_Last"
     FORCE_LATEST_MULTIPLE = "Force_Latest_Multiple"
     FORCE_BEST = "Force_Best"
@@ -14,7 +13,6 @@ class Leaderboard(models.Model):
         (ADD, "Only allow adding one submission"),
         (ADD_DELETE, "Allow users to add a single submission and remove that submission"),
         (ADD_DELETE_MULTIPLE, "Allow users to add a multiple submissions and remove those submission"),
-        (ADD_BY_REVIEW, "Only allow adding one submission that is approved by review"),
         (FORCE_LAST, "Force only the last submission"),
         (FORCE_LATEST_MULTIPLE, "Force latest submission to be added to leaderboard (multiple)"),
         (FORCE_BEST, 'Force only the best submission to the leaderboard')
@@ -26,7 +24,7 @@ class Leaderboard(models.Model):
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
     hidden = models.BooleanField(default=False)
-    submission_rule = models.TextField(choices=SUBMISSION_RULES, null=True, blank=True)
+    submission_rule = models.TextField(choices=SUBMISSION_RULES, default=ADD, null=False, blank=False)
 
     def __str__(self):
         return f'{self.title} - {self.id}'
