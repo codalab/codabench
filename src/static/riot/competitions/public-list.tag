@@ -64,7 +64,6 @@
                     toastr.error("Could not load competition list")
                 })
                 .done(function (response){
-                    console.log(response)
                     self.competitions = response
                     self.competitions_cache[self.current_page.toString()] = response
                     history.pushState("", document.title, "?page="+self.current_page)
