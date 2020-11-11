@@ -213,7 +213,7 @@ def upload_submission_scores(request, submission_pk):
         )
         submission.scores.add(score)
         if submission.parent:
-            # This might not be the best place to put this, but I couldn't find a better way to attach
+            # TODO: This might not be the best place to put this, but I couldn't find a better way to attach
             # fact_sheet_answers to a child.
             if not submission.fact_sheet_answers and submission.parent.fact_sheet_answers:
                 submission.fact_sheet_answers = submission.parent.fact_sheet_answers
