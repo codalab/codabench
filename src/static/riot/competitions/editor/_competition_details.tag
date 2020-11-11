@@ -257,7 +257,6 @@
                     } else if (entry.name.split('-')[0] === 'key'){
                         // Check to make sure key isn't empty
                         if(!entry.value){
-                            console.log("returning false")
                             return false
                         }
                         form_json[question_key][entry.name.split('-')[0]] = entry.value
