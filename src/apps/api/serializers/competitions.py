@@ -142,7 +142,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             raise ValidationError("Not valid JSON")
 
         expected_keys = {"key", "type", "title", "selection", "is_required", "is_on_leaderboard"}
-        valid_question_types = {"boolean", "text", "select"}
+        valid_question_types = {"checkbox", "text", "select"}
         for key, value in fact_sheet.items():
             missing_keys = expected_keys.symmetric_difference(set(value.keys()))
             if missing_keys:

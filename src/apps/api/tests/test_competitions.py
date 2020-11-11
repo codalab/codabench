@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from api.serializers.competitions import CompetitionSerializer
-from competitions.models import CompetitionParticipant, Submission, Competition
+from competitions.models import CompetitionParticipant, Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
 
@@ -257,7 +257,7 @@ class TestCompetitionFactSheets(APITestCase):
         self.competition_fact_sheet = {
             "boolean": {
                 "key": "boolean",
-                "type": "checkbox",
+                "type": "select",
                 "title": "boolean",
                 "selection": [True, False],
                 "is_required": "false",
@@ -280,7 +280,7 @@ class TestCompetitionFactSheets(APITestCase):
                 "is_on_leaderboard": "false"
             },
             "selection": {
-                "key": "select",
+                "key": "selection",
                 "type": "select",
                 "title": "selection",
                 "selection": ["", "v1", "v2", "v3"],
