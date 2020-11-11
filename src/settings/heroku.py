@@ -16,3 +16,8 @@ RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', rabbit_url_piece
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', rabbit_url_pieces.hostname)
 # RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+
+# Force domain redirect
+ENFORCE_HOST = os.environ.get('ENFORCE_HOST')
+if ENFORCE_HOST:
+    MIDDLEWARE = ('enforce_host.EnforceHostMiddleware',) + MIDDLEWARE
