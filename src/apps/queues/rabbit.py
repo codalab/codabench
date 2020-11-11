@@ -2,16 +2,19 @@ import logging
 import uuid
 
 from django.conf import settings
-from pyrabbit.api import Client
-from pyrabbit.http import HTTPError, NetworkError
+from pyrabbit2.api import Client
+from pyrabbit2.http import HTTPError, NetworkError
 
 logger = logging.getLogger()
 
 
 def _get_rabbit_connection():
     """Helper giving us a rabbit connection from settings.BROKER_URL"""
-    host_with_port = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
-    return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS, scheme=settings.RABBITMQ_SCHEME)
+    if settings.RABBITMQ_PYRABBIT_URL:
+        rabbit_api_url = settings.RABBITMQ_PYRABBIT_URL
+    else:
+        rabbit_api_url = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
+    return Client(rabbit_api_url, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS, scheme=settings.RABBITMQ_SCHEME)
 
 
 def check_user_needs_initialization(user, connection):

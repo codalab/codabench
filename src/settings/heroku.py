@@ -16,4 +16,5 @@ RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', rabbit_url_piece
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', rabbit_url_pieces.hostname)
 # RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_SCHEME = os.environ.get('RABBITMQ_SCHEME', 'https')
+RABBITMQ_PYRABBIT_URL = os.environ.get('RABBITMQ_PYRABBIT_URL', rabbit_url_pieces.netloc.split('@')[-1])
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')

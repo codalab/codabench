@@ -190,6 +190,7 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 RABBITMQ_SCHEME = os.environ.get('RABBITMQ_SCHEME', 'http')
+RABBITMQ_PYRABBIT_URL = None  # used in Heroku settings, mainly
 FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 
 # ============================================================================
