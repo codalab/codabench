@@ -11,7 +11,7 @@ logger = logging.getLogger()
 def _get_rabbit_connection():
     """Helper giving us a rabbit connection from settings.BROKER_URL"""
     host_with_port = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
-    return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS)
+    return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS, scheme=settings.RABBITMQ_SCHEME)
 
 
 def check_user_needs_initialization(user, connection):
