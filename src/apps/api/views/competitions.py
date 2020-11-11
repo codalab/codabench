@@ -465,10 +465,6 @@ class PhaseViewSet(ModelViewSet):
         submissions_keys = {}
         for submission in query['submissions']:
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
-            print(f'\n\n\n@@@@@@@@@@@@@@@@@@\n{submission["fact_sheet_answers"]}')
-            print(f'\n\n\n@@@@@@@@@@@@@@@@@@\n{submission["parent"]}')
-            from pprint import pprint
-            pprint(submission)
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
