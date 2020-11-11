@@ -5,7 +5,7 @@
         <div class="submission-form">
             <h1>Submission upload</h1>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" if="{ opts.fact_sheet !== null and opts.fact_sheet !== ''}">
+                <div class="submission-form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">

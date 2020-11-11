@@ -69,10 +69,7 @@
 
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
-                let fact_sheet_answer = _.get(submission, 'fact_sheet_answers[' + column.key + ']')
-                if (fact_sheet_answer){
-                    return fact_sheet_answer.toString()
-                }
+                return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
             } else {
                 let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
                 if (score) {

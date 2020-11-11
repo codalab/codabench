@@ -135,6 +135,24 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             raise ValidationError("You cannot auto migrate to the first phase of a competition")
         return phases
 
+    def validate_fact_sheet(self, fact_sheet):
+        if not bool(fact_sheet):
+            return None
+        if not isinstance(fact_sheet, dict):
+            raise ValidationError("Not valid JSON")
+
+        expected_keys = {"key", "type", "title", "selection", "is_required", "is_on_leaderboard"}
+        valid_question_types = {"boolean", "text", "select"}
+        for key, value in fact_sheet.items():
+            missing_keys = expected_keys.symmetric_difference(set(value.keys()))
+            if missing_keys:
+                raise ValidationError(f'Missing {missing_keys} values for {key}')
+            if key != value['key']:
+                raise ValidationError(f"key:{value['key']}  does not match JSON key:{key}")
+            if value['type'] not in valid_question_types:
+                raise ValidationError(f"{value['type']} is not a valid question type")
+        return fact_sheet
+
     def create(self, validated_data):
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
