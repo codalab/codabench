@@ -14,7 +14,12 @@ def _get_rabbit_connection():
         rabbit_api_url = settings.RABBITMQ_PYRABBIT_URL
     else:
         rabbit_api_url = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
-    return Client(rabbit_api_url, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS, scheme=settings.RABBITMQ_SCHEME)
+    return Client(
+        rabbit_api_url,
+        settings.RABBITMQ_DEFAULT_USER,
+        settings.RABBITMQ_DEFAULT_PASS,
+        scheme=settings.RABBITMQ_SCHEME
+    )
 
 
 def check_user_needs_initialization(user, connection):
