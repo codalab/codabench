@@ -293,7 +293,9 @@ class TestCompetitionFactSheets(APITestCase):
         new_comp_data = self.competition_data
         new_comp_data['fact_sheet'] = self.competition_fact_sheet
         competition_serializer = CompetitionSerializer(instance=self.competition, data=new_comp_data)
-        assert competition_serializer.is_valid()
+        assert competition_serializer.is_valid(raise_exception=True)
+        comp = competition_serializer.save()
+        assert comp.fact_sheet == self.competition_fact_sheet
 
     def test_competition_fact_sheet_with_missing_values(self):
         new_comp_data = self.competition_data
