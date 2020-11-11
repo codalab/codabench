@@ -156,6 +156,52 @@ class SubmissionManagerTests(SubmissionTestCase):
         resp = self.client.post(url)
         assert resp.status_code == 404
 
+    def test_adding_submission_removes_other_submissions_from_owner(self):
+        leaderboard = LeaderboardFactory()
+        phase = PhaseFactory(leaderboard=leaderboard)
+        user = UserFactory()
+        first_parent_sub = SubmissionFactory(has_children=True, phase=phase, owner=user)
+        second_parent_sub = SubmissionFactory(has_children=True, phase=phase, owner=user)
+
+        for _ in range(10):
+            SubmissionFactory(parent=first_parent_sub, owner=user, phase=phase)
+            SubmissionFactory(parent=second_parent_sub, owner=user, phase=phase)
+
+        self.client.force_login(user)
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': first_parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': second_parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        for submission in Submission.objects.filter(parent=first_parent_sub):
+            assert submission.leaderboard is None
+        for submission in Submission.objects.filter(parent=second_parent_sub):
+            assert submission.leaderboard == leaderboard
+
+    def test_adding_multiple_submissions_to_leaderboard(self):
+        leaderboard = LeaderboardFactory(submission_rule=Leaderboard.ADD_DELETE_MULTIPLE)
+        phase = PhaseFactory(leaderboard=leaderboard)
+        user = UserFactory()
+        first_parent_sub = SubmissionFactory(has_children=True, phase=phase, owner=user)
+        second_parent_sub = SubmissionFactory(has_children=True, phase=phase, owner=user)
+
+        for _ in range(10):
+            SubmissionFactory(parent=first_parent_sub, phase=phase, owner=user)
+            SubmissionFactory(parent=second_parent_sub, phase=phase, owner=user)
+
+        self.client.force_login(user)
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': first_parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': second_parent_sub.pk})
+        resp = self.client.post(url)
+        assert resp.status_code == 200
+        for submission in Submission.objects.filter(parent=first_parent_sub):
+            assert submission.leaderboard == leaderboard
+        for submission in Submission.objects.filter(parent=second_parent_sub):
+            assert submission.leaderboard == leaderboard
+
     def test_cannot_add_task_specific_submission_to_leaderboard(self):
         sub = SubmissionFactory(is_specific_task_re_run=True)
         leaderboard = LeaderboardFactory()

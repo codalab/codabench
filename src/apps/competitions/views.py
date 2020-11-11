@@ -9,6 +9,10 @@ class CompetitionManagement(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/management.html'
 
 
+class CompetitionPublic(TemplateView):
+    template_name = 'competitions/public.html'
+
+
 class CompetitionForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
 
