@@ -338,7 +338,6 @@ class FactSheetTests(SubmissionTestCase):
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert serializer.is_valid(raise_exception=True)
 
-
     def test_fact_sheet_with_extra_keys_is_not_valid(self):
         submission = SubmissionCreationSerializer(super().make_submission()).data
         submission['fact_sheet_answers'] = {
