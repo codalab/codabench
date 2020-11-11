@@ -115,6 +115,7 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+                    console.log(responseData)
                     self.columns = []
                     // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
