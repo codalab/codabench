@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.sites.models import Site
+# from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
 from pyrabbit2.http import HTTPError
