@@ -51,7 +51,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
-    fact_sheet = JSONField(blank=True, null=True, max_length=4096)
+    fact_sheet = JSONField(blank=True, null=True, max_length=4096, default=None)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"

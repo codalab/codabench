@@ -5,21 +5,22 @@
         <div class="submission-form">
             <h1>Submission upload</h1>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" if="{ opts.fact_sheet !== null }">
+                <div class="submission-form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
-                            <label for="{ question.label }">{ question.label }:</label>
-                            <input type="text" name="{ question.label }">
+                            <label if="{question.is_required}" class="required-answer" for="{ question.key }">{ question.title }:</label>
+                            <label if="{!question.is_required}" for="{ question.key }">{ question.title }:</label>
+                            <input type="text" name="{ question.key }">
                         </span>
                         <span if="{ question.type === 'checkbox' }">
-                            <label for="{ question.label }">{ question.label }:</label>
-                            <input type="hidden" name="{ question.label }" value="false">
-                            <input type="checkbox" name="{ question.label }" value="true">
+                            <label for="{ question.key }">{ question.title }:</label>
+                            <input type="hidden" name="{ question.key }" value="false">
+                            <input type="checkbox" name="{ question.key }" value="true">
                         </span>
                         <span if="{ question.type == 'select' }">
-                            <label for="{ question.label }">{ question.label }:</label>
-                            <select name="{ question.label }">
+                            <label for="{ question.key }">{ question.title }:</label>
+                            <select name="{ question.key }">
                                 <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
                             </select>
                         </span>
@@ -351,7 +352,7 @@
                 else if(answer['value'] === 'false'){
                     form_json[answer['name']] = false
                 } else {
-                form_json[answer['name']] = answer['value']
+                form_json[answer['name']] = answer['value'].trim()
                 }
             }
             return form_json
@@ -465,6 +466,11 @@
     </script>
 
     <style type="text/stylus">
+        .required-answer::after
+            margin -.2em 0 0 .2em
+            content '*'
+            color #db2828
+
         .submission-form
             background-color white
             padding 2em

@@ -448,20 +448,30 @@ class PhaseViewSet(ModelViewSet):
     @action(detail=True, methods=['GET'])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
+        if phase.competition.fact_sheet:
+            fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
+                               for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
+        else:
+            fact_sheet_keys = None
         query = LeaderboardPhaseSerializer(phase).data
         response = {
             'title': query['leaderboard']['title'],
             'id': phase.id,
             'submissions': [],
             'tasks': [],
+            'fact_sheet_keys': fact_sheet_keys or None,
         }
         columns = [col for col in query['columns']]
         submissions_keys = {}
         for submission in query['submissions']:
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
             if submission_key not in submissions_keys:
-                submissions_keys[submission_key] = len(submissions_keys)
-                response['submissions'].append({'owner': submission['owner'], 'scores': []})
+                submissions_keys[submission_key] = len(response['submissions'])
+                response['submissions'].append({
+                    'owner': submission['owner'],
+                    'scores': [],
+                    'fact_sheet_answers': submission['fact_sheet_answers']
+                })
             for score in submission['scores']:
                 tempScore = score
                 tempScore['task_id'] = submission['task']

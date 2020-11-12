@@ -284,7 +284,8 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 data=submission.data,
                 participant=submission.participant,
                 parent=submission,
-                task=task
+                task=task,
+                fact_sheet_answers=submission.fact_sheet_answers
             )
             child_sub.save(ignore_submission_limit=True)
             run_submission(child_sub.id, [task])

@@ -7,6 +7,7 @@ from unittest import mock
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from api.serializers.competitions import CompetitionSerializer
 from competitions.models import CompetitionParticipant, Submission
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
@@ -240,3 +241,102 @@ class CompetitionResultDatatypesTests(APITestCase):
             self.assertIsNone(zipped_file.testzip())
             for phase in self.phases:
                 self.assertIn(f'{self.leaderboard.title} - {phase.name}({phase.id}).csv', zipped_file.namelist())
+
+
+class TestCompetitionFactSheets(APITestCase):
+    def setUp(self):
+        self.leaderboard = LeaderboardFactory()
+        self.phase = PhaseFactory()
+        self.phase.leaderboard = self.leaderboard
+        self.phase.save()
+        self.competition = CompetitionFactory()
+        self.competition.phases.add(self.phase)
+        self.competition.save()
+        self.competition_data = CompetitionSerializer(self.competition).data
+        self.competition_data['logo'] = None
+        self.competition_fact_sheet = {
+            "boolean": {
+                "key": "boolean",
+                "type": "select",
+                "title": "boolean",
+                "selection": [True, False],
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text": {
+                "key": "text",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text_required": {
+                "key": "text_required",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "true",
+                "is_on_leaderboard": "false"
+            },
+            "selection": {
+                "key": "selection",
+                "type": "select",
+                "title": "selection",
+                "selection": ["", "v1", "v2", "v3"],
+                "is_required": "false",
+                "is_on_leaderboard": "true"
+            }
+        }
+
+    def test_competition_working_fact_sheet(self):
+        new_comp_data = self.competition_data
+        new_comp_data['fact_sheet'] = self.competition_fact_sheet
+        competition_serializer = CompetitionSerializer(instance=self.competition, data=new_comp_data)
+        assert competition_serializer.is_valid(raise_exception=True)
+        comp = competition_serializer.save()
+        assert comp.fact_sheet == self.competition_fact_sheet
+
+    def test_competition_fact_sheet_with_missing_values(self):
+        new_comp_data = self.competition_data
+        new_comp_data['fact_sheet'] = {
+            "boolean": {
+                "key": "boolean",
+                "type": "checkbox",
+                "title": "boolean",
+                "selection": [True, False],
+                "is_required": "false",
+            }
+        }
+        competition_serializer = CompetitionSerializer(data=new_comp_data)
+        assert not competition_serializer.is_valid()
+
+    def test_competition_fact_sheet_with_mismatched_keys(self):
+        new_comp_data = self.competition_data
+        new_comp_data['fact_sheet'] = {
+            "key_value1": {
+                "key": "different_key_value",
+                "type": "checkbox",
+                "title": "boolean",
+                "selection": [True, False],
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            }
+        }
+        competition_serializer = CompetitionSerializer(data=new_comp_data)
+        assert not competition_serializer.is_valid()
+
+    def test_competition_fact_sheet_bad_question_type(self):
+        new_comp_data = self.competition_data
+        new_comp_data['fact_sheet'] = {
+            "text_required": {
+                "key": "text_required",
+                "type": "invalid_question",
+                "title": "text",
+                "selection": "",
+                "is_required": "true",
+                "is_on_leaderboard": "false"
+            },
+        }
+        competition_serializer = CompetitionSerializer(data=new_comp_data)
+        assert not competition_serializer.is_valid()
