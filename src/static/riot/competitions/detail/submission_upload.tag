@@ -5,7 +5,7 @@
         <div class="submission-form">
             <h1>Submission upload</h1>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" if="{ opts.fact_sheet !== null}">
+                <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
@@ -26,6 +26,28 @@
                         </span>
                     </div>
                 </div>
+
+            <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion" if="{selected_tasks}" hide="{selected_tasks.length < 2}">
+                <div class="item">
+                    <a class="title">
+                        <i class="dropdown icon"></i>
+                        Selected Tasks
+                    </a>
+                    <div class="content">
+                        <div class="ui form">
+                            <div class="grouped fields">
+                                <div each="{task in selected_tasks}" class="field">
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
+                                        <label for="task-{task.id}" >{task.name}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
                 <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
             </form>
         </div>
@@ -122,6 +144,7 @@
         self.display_output = false
         self.autoscroll_selected = true
         self.ingestion_during_scoring = undefined
+        self.selected_tasks = undefined
 
         self.children = []
         self.children_statuses = {}
@@ -323,21 +346,34 @@
             let form_array = $(self.refs.form).serializeArray()
             let form_json = {}
             for (answer of form_array) {
-                if(answer['value'] === 'true'){
-                    form_json[answer['name']] = true
-                }
-                else if(answer['value'] === 'false'){
-                    form_json[answer['name']] = false
-                } else {
-                form_json[answer['name']] = answer['value'].trim()
+                if(!answer['name'].startsWith('task-')){
+                    if(answer['value'] === 'true'){
+                        form_json[answer['name']] = true
+                    }
+                    else if(answer['value'] === 'false'){
+                        form_json[answer['name']] = false
+                    } else {
+                    form_json[answer['name']] = answer['value'].trim()
+                    }
                 }
             }
-            return form_json
+            return form_json === {} ? null : form_json
         }
 
         self.upload = function () {
             self.display_output = true
 
+            let checkbox_answers = $('#select_tasks_accordion').find('.ui.checkbox').checkbox('is checked')
+            let task_ids_to_run = []
+            if(self.selected_tasks.length > 1){
+                for(let i = 0; i < self.selected_tasks.length; i++){
+                    if(checkbox_answers[i]){
+                        task_ids_to_run.push(self.selected_tasks[i].id)
+                    }
+                }
+            } else if(self.selected_tasks.length === 1){
+                task_ids_to_run = [self.selected_tasks[0].id]
+            }
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -355,6 +391,7 @@
                         "data": data.key,
                         "phase": self.selected_phase.id,
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
+                        "tasks": task_ids_to_run
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
@@ -395,8 +432,10 @@
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
+            self.selected_tasks = self.selected_phase.tasks.map(task => task)
             self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
             self.update()
+            $('.ui.accordion').accordion('refresh');
         })
 
         CODALAB.events.on('submissions_loaded', submissions => {
