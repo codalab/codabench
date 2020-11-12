@@ -292,9 +292,38 @@ class FactSheetTests(SubmissionTestCase):
     def setUp(self):
         super().setUp()
         self.competition.fact_sheet = {
-            "boolean": [True, False],
-            "selection": ["value1", "value2", "value3", "value4"],
-            "text": "",
+            "boolean": {
+                "key": "boolean",
+                "type": "checkbox",
+                "title": "boolean",
+                "selection": [True, False],
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text": {
+                "key": "text",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "false",
+                "is_on_leaderboard": "false"
+            },
+            "text_required": {
+                "key": "text_required",
+                "type": "text",
+                "title": "text",
+                "selection": "",
+                "is_required": "true",
+                "is_on_leaderboard": "false"
+            },
+            "selection": {
+                "key": "select",
+                "type": "select",
+                "title": "selection",
+                "selection": ["", "v1", "v2", "v3"],
+                "is_required": "false",
+                "is_on_leaderboard": "true"
+            }
         }
         self.competition.save()
 
@@ -302,22 +331,24 @@ class FactSheetTests(SubmissionTestCase):
         submission = SubmissionCreationSerializer(super().make_submission()).data
         submission['fact_sheet_answers'] = {
             "boolean": True,
-            "selection": "value3",
-            "text": "accept any",
+            "selection": "v3",
+            "text_required": "accept_text",
+            "text": "",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
-        assert serializer.is_valid()
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
+        assert serializer.is_valid(raise_exception=True)
 
     def test_fact_sheet_with_extra_keys_is_not_valid(self):
         submission = SubmissionCreationSerializer(super().make_submission()).data
         submission['fact_sheet_answers'] = {
             "boolean": True,
             "selection": "value3",
+            "text_required": "accept_text",
             "text": "accept any",
             "extrakey": True,
             "extrakey2": "NotInFactSheet",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
 
     def test_fact_sheet_with_missing_key_is_not_valid(self):
@@ -326,7 +357,7 @@ class FactSheetTests(SubmissionTestCase):
             "boolean": True,
             "selection": "value3",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
 
     def test_fact_sheet_with_wrong_selection_is_not_valid(self):
@@ -336,5 +367,16 @@ class FactSheetTests(SubmissionTestCase):
             "selection": "new_value",
             "text": "accept any",
         }
-        serializer = SubmissionCreationSerializer(data=submission, instance="PATCH")
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
+        assert not serializer.is_valid()
+
+    def test_fact_sheet_with_blank_required_text_is_not_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "v3",
+            "text_required": "",
+            "text": "",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()

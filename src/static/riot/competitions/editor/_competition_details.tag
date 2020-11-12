@@ -2,7 +2,7 @@
     <div class="ui form">
         <div class="field required">
             <label>Title</label>
-            <input ref="title">
+            <input type="text" ref="title" onchange="{form_updated}">
         </div>
 
         <div class="field required">
@@ -24,7 +24,7 @@
         </div>
         <div class="field smaller-mde">
             <label>Description</label>
-            <textarea class="markdown-editor" ref="comp_description" name="description"></textarea>
+            <textarea class="markdown-editor" ref="comp_description" name="description" onchange="{form_updated}"></textarea>
         </div>
         <div class="field smaller-mde">
             <label>Fact Sheet</label>
@@ -36,25 +36,47 @@
             <br>
             <form ref="comp_fact_sheet">
             <div class="fact-sheet-question" each="{question in fact_sheet_questions}">
-                <div class="row" if="{ question.type === 'checkbox' }" id="q-div-{question.id}">
-                    <p>Type: Boolean</p>
-                    <input type="hidden" name="type" value="checkbox">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
-                </div>
-                <div class="row" if="{ question.type === 'text' }" id="q-div-{question.id}">
-                    <p>Type: Text</p>
-                    <input type="hidden" name="type" value="text">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
-                </div>
-                <div class="row" if="{ question.type === 'select' }" id="q-div-{question.id}">
-                    <p>Type: Select</p>
-                    <input type="hidden" name="type" value="select">
-                    <label for="q{question.id}">Key name: </label>
-                    <input name="q{question.id}" id="q{question.id}" type="text" value="{question.label}">
-                    <label for="choice{question.id}">Choices (Comma Separated): </label>
-                    <input name="choice{question.id}" id="choice{question.id}" type="text" value="{question.selection.join()}">
+                <div class="row" id="q-div-{question.id}">
+                    <p  if="{ question.type === 'checkbox' }">Type: Boolean
+                    <input type="hidden" name="type-{question.id}" value="checkbox">
+                    </p>
+                    <p if="{ question.type === 'text' }">Type: Text
+                    <input type="hidden" name="type-{question.id}" value="text">
+                    </p>
+                    <p if="{ question.type === 'select' }">Type: Select
+                    <input type="hidden" name="type-{question.id}" value="select">
+                    </p>
+                    <p>
+                        <label style="font-size: 1em; font-weight: 500;" for="key-{question.id}">Key name: </label>
+                        <a class="float-right" data-tooltip="Key is required for programmatic access to data. Best Practice is to have no whitespace." data-position="right center">
+                            <i class="grey question circle icon"></i>
+                        </a>
+                        <input name="key-{question.id}" id="key-{question.id}" type="text" value="{question.key}">
+                    </p>
+                    <p if="{ question.type === 'select' }">
+                        <label for="selection-{question.id}">Choices (Comma Separated): </label>
+                        <input name="selection-{question.id}" id="selection-{question.id}" type="text" value="{question.selection.join()}">
+                    </p>
+                    <p>
+                        <label for="is_on_leaderboard-{question.id}">Show On Leaderboard: </label>
+                        <input type="hidden" name="is_on_leaderboard-{question.id}" value="false">
+                        <input if="{question.is_on_leaderboard === 'true'}" type="checkbox" name="is_on_leaderboard-{question.id}" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_on_leaderboard !== 'true'}" type="checkbox" name="is_on_leaderboard-{question.id}" value="true" onchange="{form_updated}">
+                    </p>
+                    <p>
+                        <label for="title-{question.id}">Display Name: </label>
+                        <a class="float-right" data-tooltip="This is will be what the user sees when prompted for an answer and will be the category name on the leaderboard." data-position="right center">
+                            <i class="grey question circle icon"></i>
+                        </a>
+                        <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">
+                    </p>
+                    <p if="{ question.type !== 'checkbox' }">
+                        <label for="is-required-{question.id}">Is Required:</label>
+                        <input type="hidden" name="is_required-{question.id}" value="false">
+                        <input if="{question.is_required === 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}" checked>
+                        <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}">
+                    </p>
+                    <input if="{ question.type === 'checkbox' }" type="hidden" name="is_required-{question.id}" value="false">
                 </div>
                 <br>
                 <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>
@@ -67,12 +89,12 @@
         </div>
         <div class="field required">
             <label>Competition Docker Image</label>
-            <input type="text" ref="docker_image">
+            <input type="text" ref="docker_image" onchange="{form_updated}">
         </div>
         <div class="field">
             <label>Competition Type</label>
             <div ref="competition_type" class="ui selection dropdown">
-                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }">
+                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }" onchange="{form_updated}">
                 <div class="text">Competition</div>
                 <i class="dropdown icon"></i>
                 <div class="menu">
@@ -84,7 +106,7 @@
         <div class="field">
             <div class="ui checkbox">
                 <label>Enable Visualizations</label>
-                <input type="checkbox" ref="detailed_results">
+                <input type="checkbox" ref="detailed_results" onchange="{form_updated}">
             </div>
             <sup>
                 <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
@@ -115,10 +137,6 @@
             $('.ui.checkbox', self.root).checkbox({
                 onChange: self.form_updated
             })
-            // Form change events
-            $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
-                this.addEventListener('keyup', self.form_updated)
-            })
 
             // Draw in logo filename as it's changed
             $(self.refs.logo).change(function () {
@@ -148,6 +166,7 @@
                 maxResults: 5,
                 onChange: self.form_updated
             })
+            self.update()
         })
 
         /*---------------------------------------------------------------------
@@ -164,6 +183,9 @@
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
+            if (self.data.fact_sheet === false){
+                is_valid = false
+            }
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -225,13 +247,31 @@
             let form = $(self.refs.comp_fact_sheet).children()
             let form_json = {}
             for(question of form){
-             let q_serialized = $(question).find(":input").serializeArray()
+                let q_serialized = $(question).find(":input").serializeArray()
+                let question_key = q_serialized[1].value
+                form_json[question_key] = {}
                 if(q_serialized[0].value === "checkbox"){
-                    form_json[q_serialized[1].value] = [true, false]
-                } else if(q_serialized[0].value === "text"){
-                    form_json[q_serialized[1].value] = ""
-                } else if(q_serialized[0].value === "select"){
-                    form_json[q_serialized[1].value] = q_serialized[2].value.split(',')
+                    form_json[question_key]['selection'] = [true, false]
+                } else if(q_serialized[0].value === "text") {
+                    form_json[question_key]['selection'] = ""
+                }
+                for(entry of q_serialized){
+                    if(entry.name.split('-')[0] === 'selection') {
+                        let selection = entry.value.split(',')
+                        selection = selection.map(s => s.trim()).filter(s => s !== '')
+                        form_json[question_key][entry.name.split('-')[0]] = selection
+                    } else if (entry.name.split('-')[0] === 'key'){
+                        // Check to make sure key isn't empty
+                        if(!entry.value){
+                            return false
+                        }
+                        form_json[question_key][entry.name.split('-')[0]] = entry.value
+                    } else {
+                        form_json[question_key][entry.name.split('-')[0]] = entry.value
+                    }
+                }
+                if(form_json[question_key]['type'] === 'select' && form_json[question_key]['is_required'] === 'false'){
+                    form_json[question_key]['selection'].unshift('')
                 }
             }
             if(form_json.length === 0){
@@ -271,13 +311,21 @@
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             if(competition.fact_sheet !== null){
-                competition.fact_sheet.forEach( q => {
-                    var q_json = q
+                for(question in competition.fact_sheet){
+                    var q_json = competition.fact_sheet[question]
                     q_json.id = self.fact_sheet_questions.length
+                    if(q_json.type === "select"){
+                        q_json.selection = q_json.selection.filter(s => s !== "")
+                    }
                     self.fact_sheet_questions.push(q_json)
-                })
+                }
             }
+            self.update()
             self.form_updated()
+            // Form change events
+            $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
+                this.addEventListener('keyup', self.form_updated)
+            })
         })
         CODALAB.events.on('update_codemirror', () => {
             self.markdown_editor.codemirror.refresh()

@@ -53,7 +53,7 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td>{ submission.owner }</td>
-            <td each="{ column in filtered_columns }">{ get_score(column, submission.scores) } </td>
+            <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
         </tr>
         </tbody>
     </table>
@@ -67,10 +67,14 @@
         self.phase_id = null
         self.competition_id = null
 
-        self.get_score = function(column, scores) {
-            let score = _.get(_.find(scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
-            if (score) {
-                return score
+        self.get_score = function(column, submission) {
+            if(column.task_id === -1){
+                return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
+            } else {
+                let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
+                if (score) {
+                    return score
+                }
             }
             return 'n/a'
         }
@@ -112,6 +116,22 @@
                 .done(responseData => {
                     self.selected_leaderboard = responseData
                     self.columns = []
+                    // Make fake task and columns for Metadata so it can be filtered like columns
+                    if(self.selected_leaderboard.fact_sheet_keys){
+                        let fake_metadata_task = {
+                            id: -1,
+                            colWidth: self.selected_leaderboard.fact_sheet_keys.length,
+                            columns: [],
+                            name: "Fact Sheet Answers"
+                        }
+                        for(question of self.selected_leaderboard.fact_sheet_keys){
+                            fake_metadata_task.columns.push({
+                                key: question[0],
+                                title: question[1],
+                            })
+                        }
+                        self.selected_leaderboard.tasks.unshift(fake_metadata_task)
+                    }
                     for(task of self.selected_leaderboard.tasks){
                         for(column of task.columns){
                             column.task_id = task.id

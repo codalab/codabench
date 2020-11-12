@@ -135,6 +135,24 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             raise ValidationError("You cannot auto migrate to the first phase of a competition")
         return phases
 
+    def validate_fact_sheet(self, fact_sheet):
+        if not bool(fact_sheet):
+            return None
+        if not isinstance(fact_sheet, dict):
+            raise ValidationError("Not valid JSON")
+
+        expected_keys = {"key", "type", "title", "selection", "is_required", "is_on_leaderboard"}
+        valid_question_types = {"checkbox", "text", "select"}
+        for key, value in fact_sheet.items():
+            missing_keys = expected_keys.symmetric_difference(set(value.keys()))
+            if missing_keys:
+                raise ValidationError(f'Missing {missing_keys} values for {key}')
+            if key != value['key']:
+                raise ValidationError(f"key:{value['key']}  does not match JSON key:{key}")
+            if value['type'] not in valid_question_types:
+                raise ValidationError(f"{value['type']} is not a valid question type")
+        return fact_sheet
+
     def create(self, validated_data):
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
@@ -155,7 +173,6 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
-    fact_sheet = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Competition
@@ -183,36 +200,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
-            # 'fact_sheet_questions',
         )
-
-    def get_fact_sheet(self, instance):
-        fact_sheet = instance.fact_sheet
-        if fact_sheet:
-            fact_sheet_questions = []
-            for key in fact_sheet.keys():
-                if not fact_sheet[key]:
-                    fact_sheet_questions.append({
-                        "label": key,
-                        "type": "text",
-                    })
-                elif type(fact_sheet[key]) is list:
-                    if type(fact_sheet[key][0]) is bool:
-                        fact_sheet_questions.append({
-                            "label": key,
-                            "type": "checkbox",
-                        })
-                    else:
-                        fact_sheet_questions.append({
-                            "label": key,
-                            "type": "select",
-                            "selection": fact_sheet[key],
-                        })
-                else:
-                    raise ValidationError("Fact Sheet Format Error")
-            return fact_sheet_questions
-        else:
-            return None
 
     def get_leaderboards(self, instance):
         try:
