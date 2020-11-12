@@ -27,7 +27,7 @@
                     </div>
                 </div>
 
-            <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion">
+            <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion" if="{selected_tasks}" hide="{selected_tasks.length < 2}">
                 <div class="item">
                     <a class="title">
                         <i class="dropdown icon"></i>
@@ -35,7 +35,7 @@
                     </a>
                     <div class="content">
                         <div class="ui form">
-                            <div if="{selected_tasks}" class="grouped fields">
+                            <div class="grouped fields">
                                 <div each="{task in selected_tasks}" class="field">
                                     <div class="ui checkbox">
                                         <input type="checkbox" name="{task.id}" id="{task.id}" checked>
@@ -434,6 +434,7 @@
             console.log("sel_tasks", self.selected_tasks)
             self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
             self.update()
+            $('.ui.accordion').accordion('refresh');
         })
 
         CODALAB.events.on('submissions_loaded', submissions => {
