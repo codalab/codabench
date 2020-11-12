@@ -5,7 +5,7 @@
         <div class="submission-form">
             <h1>Submission upload</h1>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" if="{ opts.fact_sheet !== null}">
+                <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
@@ -38,8 +38,8 @@
                             <div class="grouped fields">
                                 <div each="{task in selected_tasks}" class="field">
                                     <div class="ui checkbox">
-                                        <input type="checkbox" name="{task.id}" id="{task.id}" checked>
-                                        <label for="{task.id}" >{task.name}</label>
+                                        <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
+                                        <label for="task-{task.id}" >{task.name}</label>
                                     </div>
                                 </div>
                             </div>
@@ -344,18 +344,21 @@
 
         self.get_fact_sheet_answers = function () {
             let form_array = $(self.refs.form).serializeArray()
+            console.log(form_array)
             let form_json = {}
             for (answer of form_array) {
-                if(answer['value'] === 'true'){
-                    form_json[answer['name']] = true
-                }
-                else if(answer['value'] === 'false'){
-                    form_json[answer['name']] = false
-                } else {
-                form_json[answer['name']] = answer['value'].trim()
+                if(!answer['name'].startsWith('task-')){
+                    if(answer['value'] === 'true'){
+                        form_json[answer['name']] = true
+                    }
+                    else if(answer['value'] === 'false'){
+                        form_json[answer['name']] = false
+                    } else {
+                    form_json[answer['name']] = answer['value'].trim()
+                    }
                 }
             }
-            return form_json
+            return form_json === {} ? null : form_json
         }
 
         self.upload = function () {
@@ -363,11 +366,14 @@
 
             let checkbox_answers = $('#select_tasks_accordion').find('.ui.checkbox').checkbox('is checked')
             let task_ids_to_run = []
-            for(let i = 0; i < self.selected_tasks.length; i++){
-                console.log("checkbox answer", i, checkbox_answers[i])
-                if(checkbox_answers[i]){
-                    task_ids_to_run.push(self.selected_tasks[i].id)
+            if(self.selected_tasks.length > 1){
+                for(let i = 0; i < self.selected_tasks.length; i++){
+                    if(checkbox_answers[i]){
+                        task_ids_to_run.push(self.selected_tasks[i].id)
+                    }
                 }
+            } else if(self.selected_tasks.length === 1){
+                task_ids_to_run = [self.selected_tasks[0].id]
             }
             console.log("tasks to run", task_ids_to_run)
 
