@@ -344,7 +344,6 @@
 
         self.get_fact_sheet_answers = function () {
             let form_array = $(self.refs.form).serializeArray()
-            console.log(form_array)
             let form_json = {}
             for (answer of form_array) {
                 if(!answer['name'].startsWith('task-')){
@@ -375,8 +374,6 @@
             } else if(self.selected_tasks.length === 1){
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
-            console.log("tasks to run", task_ids_to_run)
-
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -421,7 +418,6 @@
                             })
 
                             self.update({errors: errors})
-                            console.log(errors)
                         } catch (e) {
 
                         }
@@ -437,7 +433,6 @@
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
             self.selected_tasks = self.selected_phase.tasks.map(task => task)
-            console.log("sel_tasks", self.selected_tasks)
             self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
             self.update()
             $('.ui.accordion').accordion('refresh');
