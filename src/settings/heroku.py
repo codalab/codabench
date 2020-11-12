@@ -11,6 +11,7 @@ CELERY_BROKER_URL = BROKER_URL
 
 rabbit_url_pieces = urlsplit(BROKER_URL)
 
+# Different defaults from base settings
 RABBITMQ_DEFAULT_USER = os.environ.get('RABBITMQ_DEFAULT_USER', rabbit_url_pieces.username)
 RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', rabbit_url_pieces.password)
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', rabbit_url_pieces.hostname)
