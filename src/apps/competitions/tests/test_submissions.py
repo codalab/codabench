@@ -369,3 +369,14 @@ class FactSheetTests(SubmissionTestCase):
         }
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
+
+    def test_fact_sheet_with_blank_required_text_is_not_valid(self):
+        submission = SubmissionCreationSerializer(super().make_submission()).data
+        submission['fact_sheet_answers'] = {
+            "boolean": True,
+            "selection": "v3",
+            "text_required": "",
+            "text": "",
+        }
+        serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
+        assert not serializer.is_valid()
