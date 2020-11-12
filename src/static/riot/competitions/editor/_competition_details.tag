@@ -46,8 +46,11 @@
                     <p if="{ question.type === 'select' }">Type: Select
                     <input type="hidden" name="type-{question.id}" value="select">
                     </p>
-                    <p class="field required">
+                    <p>
                         <label style="font-size: 1em; font-weight: 500;" for="key-{question.id}">Key name: </label>
+                        <a class="float-right" data-tooltip="Key is required for programmatic access to data. Best Practice is to have no whitespace." data-position="right center">
+                            <i class="grey question circle icon"></i>
+                        </a>
                         <input name="key-{question.id}" id="key-{question.id}" type="text" value="{question.key}">
                     </p>
                     <p if="{ question.type === 'select' }">
@@ -62,6 +65,9 @@
                     </p>
                     <p>
                         <label for="title-{question.id}">Display Name: </label>
+                        <a class="float-right" data-tooltip="This is will be what the user sees when prompted for an answer and will be the category name on the leaderboard." data-position="right center">
+                            <i class="grey question circle icon"></i>
+                        </a>
                         <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">
                     </p>
                     <p if="{ question.type !== 'checkbox' }">

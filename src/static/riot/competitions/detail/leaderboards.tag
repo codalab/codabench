@@ -122,7 +122,7 @@
                             id: -1,
                             colWidth: self.selected_leaderboard.fact_sheet_keys.length,
                             columns: [],
-                            name: "Meta-data"
+                            name: "Fact Sheet Answers"
                         }
                         for(question of self.selected_leaderboard.fact_sheet_keys){
                             fake_metadata_task.columns.push({
