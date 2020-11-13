@@ -245,6 +245,7 @@ class CompetitionViewSet(ModelViewSet):
         return Response({}, status=status.HTTP_200_OK)
 
     def collect_leaderboard_data(self, competition, phase_pk=None):
+        from pprint import pprint
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
             submission_query = [self.get_serializer(phase).data]
@@ -255,6 +256,7 @@ class CompetitionViewSet(ModelViewSet):
             if not len(phases):
                 raise ValidationError(f"No Phases found on competition id:{competition.id}")
             phase_id = phases[0].id
+        pprint(submission_query)
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
         leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
@@ -266,13 +268,16 @@ class CompetitionViewSet(ModelViewSet):
                 for col in leaderboard.columns.all():
                     generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
             for submission in phase['submissions']:
-                if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission["owner"]: OrderedDict()})
+                if f'{submission["owner"]}{submission["parent"] or submission["id"]}' not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
+                    leaderboard_data[leaderboard_titles[phase['id']]].update({f'{submission["owner"]}{submission["parent"] or submission["id"]}': OrderedDict()})
+                    if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
+                        leaderboard_data[leaderboard_titles[phase['id']]][f'{submission["owner"]}{submission["parent"] or submission["id"]}']\
+                            .update({'fact_sheet_answers': submission['fact_sheet_answers']})
                     for col_title in generated_columns.values():
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({col_title: ""})
+                        leaderboard_data[leaderboard_titles[phase['id']]][f'{submission["owner"]}{submission["parent"] or submission["id"]}'].update({col_title: ""})
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
+                    leaderboard_data[leaderboard_titles[phase['id']]][f'{submission["owner"]}{submission["parent"] or submission["id"]}'].update({score_column: score['score']})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
@@ -289,7 +294,7 @@ class CompetitionViewSet(ModelViewSet):
                     for leaderboard in data:
                         stringIO = StringIO()
                         columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
-                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username"] + columns))
+                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username", "fact_sheet_answers"] + columns))
                         dict_writer.writeheader()
                         for submission in data[leaderboard]:
                             line = {"Username": submission}
@@ -313,7 +318,7 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             columns = list(data[leaderboard_title][list(data[leaderboard_title].keys())[0]].keys())
-            dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username", "fact_sheet_answers"] + columns))
 
             dict_writer.writeheader()
             for submission in data[leaderboard_title]:
