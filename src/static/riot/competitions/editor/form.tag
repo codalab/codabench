@@ -178,7 +178,8 @@
         }
 
         self.save = function () {
-            if (typeof(self.competition["queue"]) === "string" ) {
+            self.competition["queue"] = parseInt(self.competition["queue"])
+            if (typeof(self.competition["queue"]) === "NaN" ) {
                 self.competition["queue"] = null
             }
             self.competition.published = self.refs.publish.checked
