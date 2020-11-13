@@ -245,7 +245,6 @@ class CompetitionViewSet(ModelViewSet):
         return Response({}, status=status.HTTP_200_OK)
 
     def collect_leaderboard_data(self, competition, phase_pk=None):
-        from pprint import pprint
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
             submission_query = [self.get_serializer(phase).data]
@@ -256,7 +255,6 @@ class CompetitionViewSet(ModelViewSet):
             if not len(phases):
                 raise ValidationError(f"No Phases found on competition id:{competition.id}")
             phase_id = phases[0].id
-        pprint(submission_query)
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
         leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
