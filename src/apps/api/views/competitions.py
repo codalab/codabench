@@ -266,7 +266,7 @@ class CompetitionViewSet(ModelViewSet):
                 for col in leaderboard.columns.all():
                     generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
             for submission in phase['submissions']:
-                submission_key = f'{submission["owner"]}{submission["parent"] or submission["id"]}'
+                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
                 if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
                     leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
                     if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:

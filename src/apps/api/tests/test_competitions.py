@@ -152,22 +152,20 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.comp = CompetitionFactory(created_by=self.creator)
         self.leaderboard = LeaderboardFactory(primary_index=0)
         self.phases = []
-        for i in range(3):
+        for i in range(2):
             self.phases.append(PhaseFactory(leaderboard=self.leaderboard, leaderboard_id=self.leaderboard.id,
                                             competition=self.comp, index=0))
-        self.usernames = set()
         self.column_title_to_id = {}
 
-        self.usernames.add(self.creator.username)
         self.users = [self.creator]
-        for standard_users in range(5):
+        for standard_users in range(3):
             user = UserFactory()
             self.users.append(user)
-            self.usernames.add(user.username)
 
+        self.user_keys = set()
         self.columns = []
         self.tasks = []
-        for i in range(4):
+        for i in range(2):
             column = ColumnFactory(leaderboard=self.leaderboard, index=i)
             self.columns.append(column)
             self.column_title_to_id.update({column.title: column.id})
@@ -176,6 +174,7 @@ class CompetitionResultDatatypesTests(APITestCase):
         for user in self.users:
             for phase in self.phases:
                 parent_sub = SubmissionFactory(owner=user, phase=phase, leaderboard=self.leaderboard)
+                self.user_keys.add(f'{user.username}-{parent_sub.id}')
                 for task in self.tasks:
                     phase.tasks.add(task)
                     submission = SubmissionFactory(parent=parent_sub, task=task)
@@ -189,16 +188,17 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         content = json.loads(response.content)
 
-        self.response_titles = set()
+
+        response_titles = set()
+        response_users = set()
         for key in content.keys():
-            response_users = set()
             title, id = key.rsplit("(", 1)
-            self.response_titles.add(title)
+            response_titles.add(title)
             for user in content[key].keys():
                 response_users.add(user)
-            assert self.usernames == response_users
+        assert self.user_keys == response_users
 
-        response_title = str(list(self.response_titles)[0]).split(' ')[0]
+        response_title = str(list(response_titles)[0]).split(' ')[0]
         assert self.leaderboard.title in response_title
 
     def test_get_competition_leaderboard_by_id_as_json(self):
