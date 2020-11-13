@@ -161,6 +161,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
 
 class CompetitionUpdateSerializer(CompetitionSerializer):
     phases = PhaseUpdateSerializer(many=True)
+    queue = None
 
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
