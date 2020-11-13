@@ -188,7 +188,6 @@ class CompetitionResultDatatypesTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         content = json.loads(response.content)
 
-
         response_titles = set()
         response_users = set()
         for key in content.keys():
