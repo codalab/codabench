@@ -255,16 +255,16 @@ class TestCompetitionFactSheets(APITestCase):
         self.competition_data = CompetitionSerializer(self.competition).data
         self.competition_data['logo'] = None
         self.competition_fact_sheet = {
-            "boolean": {
-                "key": "boolean",
-                "type": "select",
+            "bool_question": {
+                "key": "bool_question",
+                "type": "checkbox",
                 "title": "boolean",
                 "selection": [True, False],
                 "is_required": "false",
                 "is_on_leaderboard": "false"
             },
-            "text": {
-                "key": "text",
+            "text_question": {
+                "key": "text_question",
                 "type": "text",
                 "title": "text",
                 "selection": "",
@@ -289,7 +289,7 @@ class TestCompetitionFactSheets(APITestCase):
             }
         }
 
-    def test_competition_working_fact_sheet(self):
+    def test_competition_fact_sheet_working(self):
         new_comp_data = self.competition_data
         new_comp_data['fact_sheet'] = self.competition_fact_sheet
         competition_serializer = CompetitionSerializer(instance=self.competition, data=new_comp_data)

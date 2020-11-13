@@ -84,7 +84,7 @@
                                     <i class="help icon circle"></i>
                                 </span>
                             </label>
-                            <input selenium="key" name="key" value="{_.get(selected_leaderboard, 'key', 'Add')}" onchange="{ modal_updated }">
+                            <input selenium="key" name="key" value="{_.get(selected_leaderboard, 'key')}" onchange="{ modal_updated }">
                         </div>
                     </div>
                     <div class="field">
@@ -97,7 +97,7 @@
                 <div class="field" style="width: 50%; padding: 0 7px">
                     <label>Submission Rule</label>
                     <div class="ui fluid submission-rule selection dropdown">
-                        <input type="hidden" name="submission_rule" ref="submission_rule" value="{_.get(selected_leaderboard, 'submission_rule')}">
+                        <input type="hidden" name="submission_rule" ref="submission_rule" value="{_.get(selected_leaderboard, 'submission_rule', 'Add')}">
                         <div class="default text"></div>
                         <i class="dropdown icon"></i>
                         <div class="menu">
