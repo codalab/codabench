@@ -107,14 +107,14 @@ class StrategyFactory:
 
     @staticmethod
     def create_by_submission_rule(submission_rule):
-        if submission_rule is None:
-            return ManualModeStrategy()
-        elif Leaderboard.FORCE_LAST == submission_rule:
+        if Leaderboard.FORCE_LAST == submission_rule:
             return LastestModeStrategy()
         elif Leaderboard.FORCE_LATEST_MULTIPLE == submission_rule:
             return AllModeStrategy()
         elif Leaderboard.FORCE_BEST == submission_rule:
             return BestModeStrategy()
+        else:
+            return ManualModeStrategy()
 
 
 def put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule):
