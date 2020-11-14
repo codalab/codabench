@@ -58,3 +58,14 @@ class CollaboratorSerializer(ModelSerializer):
             'name',
             'username',
         )
+
+
+class UserProfileSerializer(ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'name',
+            'username',
+        )
