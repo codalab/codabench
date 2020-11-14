@@ -266,13 +266,17 @@ class CompetitionViewSet(ModelViewSet):
                 for col in leaderboard.columns.all():
                     generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
             for submission in phase['submissions']:
-                if submission["owner"] not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission["owner"]: OrderedDict()})
+                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
+                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
+                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
+                    if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key]\
+                            .update({'fact_sheet_answers': submission['fact_sheet_answers']})
                     for col_title in generated_columns.values():
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({col_title: ""})
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({col_title: ""})
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission["owner"]].update({score_column: score['score']})
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
@@ -289,7 +293,7 @@ class CompetitionViewSet(ModelViewSet):
                     for leaderboard in data:
                         stringIO = StringIO()
                         columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
-                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username"] + columns))
+                        dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username", "fact_sheet_answers"] + columns))
                         dict_writer.writeheader()
                         for submission in data[leaderboard]:
                             line = {"Username": submission}
@@ -313,7 +317,7 @@ class CompetitionViewSet(ModelViewSet):
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             columns = list(data[leaderboard_title][list(data[leaderboard_title].keys())[0]].keys())
-            dict_writer = csv.DictWriter(response, fieldnames=(["Username"] + columns))
+            dict_writer = csv.DictWriter(response, fieldnames=(["Username", "fact_sheet_answers"] + columns))
 
             dict_writer.writeheader()
             for submission in data[leaderboard_title]:
