@@ -38,7 +38,18 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
+    # TODO this should probably be a models.EmailField
     email = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    # display_name = models.CharField(max_length=50, unique=True, null=True, blank=True, default=username)
+    first_name = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    last_name = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    title = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    location = models.CharField(max_length=250, unique=True, null=True, blank=True)
+    biography = models.CharField(max_length=2048, unique=True, null=True, blank=True)
+    personal_website_url = models.URLField(unique=True, null=True, blank=True)
+    linked_in_url = models.URLField(unique=True, null=True, blank=True)
+    twitter_url = models.URLField(unique=True, null=True, blank=True)
 
     # Utility Attributes
     date_joined = models.DateTimeField(default=now)
