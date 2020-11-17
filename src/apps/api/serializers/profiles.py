@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework.serializers import ModelSerializer
 
+from api.fields import NamedBase64ImageField
 from profiles.models import GithubUserInfo
 
 User = get_user_model()
@@ -61,6 +62,7 @@ class CollaboratorSerializer(ModelSerializer):
 
 
 class UserSerializer(ModelSerializer):
+    photo = NamedBase64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -68,6 +70,7 @@ class UserSerializer(ModelSerializer):
             'id',
             'name',
             'username',
+            'photo',
             'email',
             'display_name',
             'first_name',

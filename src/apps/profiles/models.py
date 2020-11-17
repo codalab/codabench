@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
+from utils.data import PathWrapper
 
 
 PROFILE_DATA_BLACKLIST = [
@@ -41,18 +42,18 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, default='', unique=True)
+    photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
     # TODO this should probably be a models.EmailField
     email = models.CharField(max_length=200, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    # display_name = models.CharField(max_length=50, unique=True, null=True, blank=True, default=username)
-    first_name = models.CharField(max_length=200, unique=True, null=True, blank=True)
-    last_name = models.CharField(max_length=200, unique=True, null=True, blank=True)
-    title = models.CharField(max_length=200, unique=True, null=True, blank=True)
-    location = models.CharField(max_length=250, unique=True, null=True, blank=True)
-    biography = models.CharField(max_length=2048, unique=True, null=True, blank=True)
-    personal_url = models.URLField(unique=True, null=True, blank=True)
-    linkedin_url = models.URLField(unique=True, null=True, blank=True)
-    twitter_url = models.URLField(unique=True, null=True, blank=True)
+    first_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    last_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    title = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    location = models.CharField(max_length=250, unique=False, null=True, blank=True)
+    biography = models.CharField(max_length=2048, unique=False, null=True, blank=True)
+    personal_url = models.URLField(unique=False, null=True, blank=True)
+    linkedin_url = models.URLField(unique=False, null=True, blank=True)
+    twitter_url = models.URLField(unique=False, null=True, blank=True)
 
     # Utility Attributes
     date_joined = models.DateTimeField(default=now)
@@ -79,7 +80,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return self.name if self.name else self.username
+        return f'Username-{self.username} | Name-{self.name}'
 
     @staticmethod
     def get_chahub_endpoint():

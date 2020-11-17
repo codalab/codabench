@@ -39,7 +39,6 @@ class UserViewSet(ModelViewSet):
         return Response(resp.data)
 
 
-
 class GetMyProfile(RetrieveAPIView, GenericAPIView):
     # queryset = User.objects.all()
     serializer_class = MyProfileSerializer
