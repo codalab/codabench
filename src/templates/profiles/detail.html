@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <user-detail></user-detail>
+    <script>
+    const selected_user = JSON.parse("{{ serialized_user | escapejs }}")
+    </script>
+{% endblock %}

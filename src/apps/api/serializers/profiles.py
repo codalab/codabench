@@ -60,7 +60,7 @@ class CollaboratorSerializer(ModelSerializer):
         )
 
 
-class UserProfileSerializer(ModelSerializer):
+class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
@@ -75,7 +75,7 @@ class UserProfileSerializer(ModelSerializer):
             'title',
             'location',
             'biography',
-            'personal_website_url',
-            'linked_in_url',
+            'personal_url',
+            'linkedin_url',
             'twitter_url',
         )

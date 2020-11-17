@@ -2,6 +2,7 @@ from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserM
 from django.db import models
 from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
+from django.utils.text import slugify
 
 
 PROFILE_DATA_BLACKLIST = [
@@ -25,6 +26,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
+
     # Github user attributes.
     github_uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
     avatar_url = models.CharField(max_length=100, null=True, blank=True)
@@ -38,6 +40,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, default='', unique=True)
     # TODO this should probably be a models.EmailField
     email = models.CharField(max_length=200, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
@@ -47,8 +50,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     title = models.CharField(max_length=200, unique=True, null=True, blank=True)
     location = models.CharField(max_length=250, unique=True, null=True, blank=True)
     biography = models.CharField(max_length=2048, unique=True, null=True, blank=True)
-    personal_website_url = models.URLField(unique=True, null=True, blank=True)
-    linked_in_url = models.URLField(unique=True, null=True, blank=True)
+    personal_url = models.URLField(unique=True, null=True, blank=True)
+    linkedin_url = models.URLField(unique=True, null=True, blank=True)
     twitter_url = models.URLField(unique=True, null=True, blank=True)
 
     # Utility Attributes
@@ -63,6 +66,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     is_bot = models.BooleanField(default=False)
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
+
+    def save(self, *args, **kwargs):
+        value = self.username
+        self.slug = slugify(value, allow_unicode=True)
+        super().save(*args, **kwargs)
 
     def get_short_name(self):
         return self.name

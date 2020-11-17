@@ -6,10 +6,38 @@ from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 
-from api.serializers.profiles import MyProfileSerializer
+from api.permissions import IsUserAdminOrIsSelf
+from api.serializers.profiles import MyProfileSerializer, UserSerializer
 
 User = get_user_model()
+
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        return UserSerializer
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update']:
+            self.permission_classes = [IsUserAdminOrIsSelf]
+        return [permission() for permission in self.permission_classes]
+
+    def get_serializer_class(self):
+        return UserSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        resp = self.get_serializer(instance)
+        return Response(resp.data)
+
 
 
 class GetMyProfile(RetrieveAPIView, GenericAPIView):
