@@ -79,6 +79,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
 class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
     owner = serializers.CharField(source='owner.username')
+    display_name = serializers.CharField(source='owner.display_name')
 
     class Meta:
         model = Submission
@@ -90,6 +91,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
             'fact_sheet_answers',
             'task',
             'scores',
+            'display_name',
         )
         extra_kwargs = {
             "scores": {"read_only": True},
