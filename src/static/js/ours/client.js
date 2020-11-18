@@ -224,7 +224,7 @@ CODALAB.api = {
         return CODALAB.api.request('PATCH', `${URLS.API}queues/${pk}/`, data)
     },
     create_queue: (data) => {
-        return CODALAB.api.request('PATCH', `${URLS.API}queues/`, data)
+        return CODALAB.api.request('POST', `${URLS.API}queues/`, data)
     },
 
     /*---------------------------------------------------------------------
