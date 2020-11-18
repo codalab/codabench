@@ -43,17 +43,17 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, default='', unique=True)
     photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
-    # TODO this should probably be a models.EmailField
     email = models.EmailField(max_length=200, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
     first_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
     last_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
     title = models.CharField(max_length=200, unique=False, null=True, blank=True)
     location = models.CharField(max_length=250, unique=False, null=True, blank=True)
-    biography = models.CharField(max_length=2048, unique=False, null=True, blank=True)
+    biography = models.CharField(max_length=4096, unique=False, null=True, blank=True)
     personal_url = models.URLField(unique=False, null=True, blank=True)
     linkedin_url = models.URLField(unique=False, null=True, blank=True)
     twitter_url = models.URLField(unique=False, null=True, blank=True)
+    github_url = models.URLField(unique=False, null=True, blank=True)
 
     # Utility Attributes
     date_joined = models.DateTimeField(default=now)

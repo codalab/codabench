@@ -44,6 +44,18 @@ class UserDetail(LoginRequiredMixin, DetailView):
         return context
 
 
+class UserProfile(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'pages/user_profile.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        return context
+
+
 def sign_up(request):
     context = {}
     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
@@ -65,9 +77,3 @@ def sign_up(request):
     if not context.get('form'):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
-
-
-def user_profile(request):
-    return render(request, 'pages/user_profile.html')
-
-

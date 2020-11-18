@@ -42,18 +42,24 @@
             <label>Email</label>
             <input type="text" name="email" placeholder="Email">
         </div>
-        <div class="fields">
+        <div class="two fields">
             <div class="field">
                 <label>Personal Website</label>
                 <input type="text" name="personal_url" placeholder="Personal URL">
             </div>
             <div class="field">
-                <label>Twitter</label>
+                <label>Twitter URL</label>
                 <input type="text" name="twitter_url" placeholder="Twitter URL">
             </div>
+        </div>
+        <div class="two fields">
             <div class="field">
                 <label>LinkedIn URL</label>
-                <input type="text" name="linkedin_url" placeholder="Linkedin URL">
+                <input type="text" name="linkedin_url" placeholder="LinkedIn URL">
+            </div>
+            <div class="field">
+                <label>Github URL</label>
+                <input type="text" name="github_url" placeholder="Github URL">
             </div>
         </div>
         <div class="field">
@@ -79,8 +85,10 @@
                 personal_url:   selected_user.personal_url,
                 twitter_url:    selected_user.twitter_url,
                 linkedin_url:   selected_user.linkedin_url,
+                github_url:     selected_user.linkedin_url,
                 title:          selected_user.title,
-                location:       selected_user.location
+                location:       selected_user.location,
+                biography:      selected_user.biography,
                 })
              $('#user-form').form({
                  fields: {
@@ -120,7 +128,17 @@
                          rules: [
                              {
                                  type: 'url',
-                                 prompt: 'Please enter a valid url. Example: https://www.linkedin.com/in/logan-ruf'
+                                 prompt: 'Please enter a valid url. Example: https://www.linkedin.com/in/john-doe'
+                             }
+                         ]
+                     },
+                     github_url: {
+                         identifier: 'github_url',
+                         optional: true,
+                         rules: [
+                             {
+                                 type: 'url',
+                                 prompt: 'Please enter a valid url. Example: https://github.com/john-doe'
                              }
                          ]
                      },

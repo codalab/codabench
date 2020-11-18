@@ -3,4 +3,7 @@
 
 {% block content %}
     <user-profile></user-profile>
+    <script>
+        const selected_user = JSON.parse("{{ serialized_user | escapejs }}")
+    </script>
 {% endblock %}

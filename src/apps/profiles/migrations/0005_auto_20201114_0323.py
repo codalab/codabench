@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='biography',
-            field=models.CharField(blank=True, max_length=2048, null=True, unique=False),
+            field=models.CharField(blank=True, max_length=4096, null=True, unique=False),
         ),
         migrations.AddField(
             model_name='user',
@@ -54,6 +54,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='twitter_url',
+            field=models.URLField(blank=True, null=True, unique=False),
+        ),
+        migrations.AddField(
+            model_name='user',
+            name='github_url',
             field=models.URLField(blank=True, null=True, unique=False),
         ),
         migrations.AddField(

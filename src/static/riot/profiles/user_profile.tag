@@ -3,7 +3,9 @@
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
             <div class="column">
-                <div><img id="avatar" class="ui centered rounded image" src="http://via.placeholder.com/150x150"></div>
+                <div if="{!selected_user.photo}"><img id="avatar" class="ui centered rounded image" src="http://via.placeholder.com/150x150"></div>
+                <div if="{selected_user.photo}"><img id="avatar" class="ui centered rounded image" src="{selected_user.photo}"></div>
+
 
                 <!-- Competition Divider -->
                 <div class="ui horizontal divider">Competitions</div>
@@ -57,37 +59,28 @@
             </div>
             <!-- Second Column -->
             <div class="eight wide column">
-                <span class="header content">John Doe</span>
+                <span class="header content">{selected_user.first_name} {selected_user.last_name}</span>
                 <i class="marker alternate icon"></i>
-                <span id="location">Spokane, WA</span>
-                <div id="job_title">Backend Engineer</div>
-                <div class="ui justified container">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sit amet sapien eleifend,
-                        aliquam mauris quis, aliquam turpis. Donec eget risus vitae neque faucibus pulvinar. Curabitur
-                        mollis enim vel lacus venenatis aliquet. Donec porta, turpis ut dapibus ultricies, libero sapien
-                        egestas nisi, id tristique nisl nunc ut nisi. Ut molestie commodo dolor, non ultrices eros. Vivamus
-                        sollicitudin metus ligula, ac pharetra urna faucibus eu. Maecenas varius sem nec tellus semper, in
-                        porttitor libero iaculis. Proin nibh elit, ultrices at nisi vitae, mattis laoreet risus. Fusce et
-                        commodo nisi. </p>
-                    <p>Praesent ut leo venenatis magna iaculis laoreet quis in diam. Curabitur tristique nisi volutpat risus
-                        venenatis, non semper magna convallis. Nulla ac pharetra nulla, in ultrices massa. Donec non consectetur
-                        odio. Praesent vel nisl vitae libero vulputate pulvinar. Donec sagittis, risus ac consectetur mollis,
-                        eros nunc rutrum purus, vitae viverra...</p>
-                </div>
+                <span id="location">{selected_user.location}</span>
+                <div id="job_title">{selected_user.title}</div>
+                <div class="ui justified container">{selected_user.biography}</div>
                 <div id="horiz-margin" class="ui horizontal divider"><i class="user icon"></i>About Me</div>
                 <div id="grid-margin" class="ui grid">
-                    <span class="three wide column"><i class="world icon"></i>Website:</span>
-                    <a href="https://google.com/" class="thirteen wide column">https://myweb.site/</a>
-                    <span class="three wide column"><i class="github icon"></i>GitHub:</span>
-                    <a href="https://github.com/" class="thirteen wide column">https://github.com/my/</a>
-                    <span class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
-                    <a href="https://linkedin.com/" class="thirteen wide column">https://linkedin.com/my/</a>
-                    <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
-                    <a href="https://twitter.com/" class="thirteen wide column">https://twitter.com/my/</a>
+                    <span if="{selected_user.personal_url}" class="three wide column"><i class="world icon"></i>Website:</span>
+                    <a if="{selected_user.personal_url}" href="{selected_user.personal_url}" class="thirteen wide column">{selected_user.personal_url}</a>
+                    <span if="{selected_user.github_url}" class="three wide column"><i class="github icon"></i>GitHub:</span>
+                    <a if="{selected_user.github_url}" href="https://github.com/" class="thirteen wide column">{selected_user.github_url}</a>
+                    <span if="{selected_user.linkedin_url}" class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
+                    <a if="{selected_user.linkedin_url}" href="https://linkedin.com/" class="thirteen wide column">{selected_user.linkedin_url}</a>
+                    <span if="{selected_user.twitter_url}" class="three wide column"><i class="twitter icon"></i>Twitter:</span>
+                    <a if="{selected_user.twitter_url}" href="https://twitter.com/" class="thirteen wide column">{selected_user.twitter_url}</a>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        self.selected_user = selected_user
+    </script>
     <!------------------------------------------ CSS Styling ------------------------------------>
     <style type="text/stylus">
         :scope
@@ -95,6 +88,8 @@
 
         #avatar
             border solid 1px black
+            max-height 200px
+            max-width 200px
 
         .ui.horizontal.divider
             color #9e9e9e !important
