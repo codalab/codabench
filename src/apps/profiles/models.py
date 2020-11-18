@@ -44,7 +44,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     slug = models.SlugField(max_length=50, default='', unique=True)
     photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
     # TODO this should probably be a models.EmailField
-    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    email = models.EmailField(max_length=200, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
     first_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
     last_name = models.CharField(max_length=200, unique=False, null=True, blank=True)

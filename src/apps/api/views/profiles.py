@@ -8,6 +8,7 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf
 from api.serializers.profiles import MyProfileSerializer, UserSerializer
@@ -36,7 +37,8 @@ class UserViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         resp = self.get_serializer(instance)
-        return Response(resp.data)
+        print(resp.data['username'])
+        return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
 
 
 class GetMyProfile(RetrieveAPIView, GenericAPIView):

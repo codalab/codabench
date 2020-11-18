@@ -60,8 +60,8 @@
             <label>Bio</label>
             <textarea name="biography"></textarea>
         </div>
-
-        <button type="button" class="ui button" onclick="{save.bind(this)}">Submit</button>
+        <div class="ui error message"></div>
+        <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
     </form>
 
     <script>
@@ -82,7 +82,64 @@
                 title:          selected_user.title,
                 location:       selected_user.location
                 })
-            self.photo_name = typeof self.photo == 'undefined' ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
+             $('#user-form').form({
+                 fields: {
+                     email: {
+                         identifier: 'email',
+                         optional: true,
+                         rules: [
+                             {
+                                 type: 'email',
+                                 prompt: 'Please enter a valid e-mail'
+                             }
+                         ]
+                     },
+                     personal_url: {
+                         identifier: 'personal_url',
+                         optional: true,
+                         rules: [
+                             {
+                                 type: 'url',
+                                 prompt: 'Please enter a valid url. Example: https://www.xyz.com'
+                             }
+                         ]
+                     },
+                     twitter_url: {
+                         identifier: 'twitter_url',
+                         optional: true,
+                         rules: [
+                             {
+                                 type: 'url',
+                                 prompt: 'Please enter a valid twitter url. Example: https://twitter.com/BobRoss'
+                             }
+                         ]
+                     },
+                     linkedin_url: {
+                         identifier: 'linkedin_url',
+                         optional: true,
+                         rules: [
+                             {
+                                 type: 'url',
+                                 prompt: 'Please enter a valid url. Example: https://www.linkedin.com/in/logan-ruf'
+                             }
+                         ]
+                     },
+                 },
+                 onSuccess: function (){
+                     _.extend(self.selected_user, $('#user-form').form('get values'))
+                     CODALAB.api.update_user_details(self.selected_user.id, self.selected_user)
+                         .done( data => {
+                             toastr.success("Details Saved")
+                             window.location.href = data
+                         })
+                         .fail(errors =>{
+                             toastr.error(JSON.stringify(errors))
+                             self.refs.submit_button.disabled = false
+                         })
+                     return false
+                 }
+             })
+            self.photo_name = typeof self.photo == 'undefined' || self.photo === null ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
             // Draw in logo filename as it's changed
             $(self.refs.photo).change(function () {
                 self.logo_file_name = self.refs.photo.value.replace(/\\/g, '/').replace(/.*\//, '')
@@ -95,15 +152,8 @@
         })
 
         self.save = () => {
-            // delete form_data['photo']
-            _.extend(self.selected_user, $('#user-form').form('get values'))
-            CODALAB.api.update_user_details(self.selected_user.id, self.selected_user)
-                .done( data => {
-                    toastr.success("Details Saved")
-                })
-                .fail(errors =>{
-                    toastr.error(JSON.stringify(errors))
-                })
+            self.refs.submit_button.disabled = true
+            $('#user-form').form('validate form')
         }
     </script>
 </user-detail>
