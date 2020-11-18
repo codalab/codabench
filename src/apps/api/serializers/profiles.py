@@ -47,7 +47,7 @@ class MyProfileSerializer(ModelSerializer):
             'username',
             'name',
             'email',
-            'github_info',
+            'github_info'
         )
 
 

@@ -27,9 +27,6 @@ class UserViewSet(ModelViewSet):
             self.permission_classes = [IsUserAdminOrIsSelf]
         return [permission() for permission in self.permission_classes]
 
-    def get_serializer_class(self):
-        return UserSerializer
-
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
@@ -37,7 +34,6 @@ class UserViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         resp = self.get_serializer(instance)
-        print(resp.data['username'])
         return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
 
 

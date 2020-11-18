@@ -66,4 +66,9 @@ class Migration(migrations.Migration):
             name='photo',
             field=models.ImageField(blank=True, null=True, upload_to=utils.data.PathWrapper('profile_photos')),
         ),
+        migrations.AlterField(
+            model_name='user',
+            name='email',
+            field=models.EmailField(blank=True, max_length=200, null=True, unique=True),
+        ),
     ]

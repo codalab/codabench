@@ -27,7 +27,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['email']
 
-
     # Github user attributes.
     github_uid = models.CharField(max_length=30, unique=True, blank=True, null=True)
     avatar_url = models.CharField(max_length=100, null=True, blank=True)
