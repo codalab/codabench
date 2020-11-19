@@ -53,7 +53,7 @@ def send_to_chahub(app_label, pk, data, data_hash):
         resp = None
 
     if resp and resp.status_code in (200, 201):
-        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}")
+        logger.info(f"ChaHub :: Received response {resp.status_code} {resp.content}\n\n OBJ: {obj}")
         obj.chahub_timestamp = timezone.now()
         obj.chahub_data_hash = data_hash
         obj.chahub_needs_retry = False
