@@ -411,9 +411,9 @@ SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 # =============================================================================
 # Chahub
 # =============================================================================
-CHAHUB_API_URL = 'http://docker.for.mac.localhost:8080/api/v1/'
-CHAHUB_API_KEY = '47bae7d0-c4aa-4a1f-a329-3c1a73b6637b'
-CHAHUB_PRODUCER_ID = '47bae7d0-c4aa-4a1f-a329-3c1a73b6637b'
+CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL')
+CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
+CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 
 
 # Django-Su (User impersonation)

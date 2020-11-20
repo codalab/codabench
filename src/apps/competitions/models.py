@@ -472,7 +472,6 @@ class Submission(ChaHubSaveMixin, models.Model):
         super().delete(**kwargs)
 
     def save(self, ignore_submission_limit=False, **kwargs):
-        logger.info(f'Save kwargs:: {kwargs}')
         created = not self.pk
         if created and not ignore_submission_limit:
             can_make_submission, reason_why_not = self.phase.can_user_make_submissions(self.owner)
