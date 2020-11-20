@@ -92,7 +92,7 @@ class Solution(ChaHubSaveMixin, models.Model):
             'remote_id',
             'is_public',
             'data',
-            'tasks'
+            'tasks',
         ]
 
     def get_chahub_data(self, include_tasks=True):
