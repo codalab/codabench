@@ -45,11 +45,18 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    # Notifications
+    organizer_direct_message_updates = models.BooleanField(default=True)
+    allow_forum_notifications = models.BooleanField(default=True)
+
+    # Queues
     rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)
     rabbitmq_username = models.CharField(max_length=36, null=True, blank=True)
     rabbitmq_password = models.CharField(max_length=36, null=True, blank=True)
 
+    # Robot submissions
     is_bot = models.BooleanField(default=False)
+
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 

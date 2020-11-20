@@ -1,0 +1,16 @@
+{% extends 'forums/base_forum.html' %}
+
+{% block content %}
+    <form action="." method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-sm-4">
+                    <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock content %}
