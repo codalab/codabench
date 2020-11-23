@@ -17,52 +17,52 @@
             </div>
         </div>
         <div class="two fields">
-            <div class="field">
+            <div class="field" id="first_name">
                 <label>First Name</label>
                 <input type="text" name="first_name" placeholder="First Name">
             </div>
-            <div class="field">
+            <div class="field" id="last_name">
                 <label>Last Name</label>
                 <input type="text" name="last_name" placeholder="Last Name">
             </div>
         </div>
         <div class="two fields">
-            <div class="field">
+            <div class="field" id="display_name">
                 <label>Display Name</label>
                 <input type="text" name="display_name" placeholder="Display Name">
             </div>
-            <div class="field">
+            <div class="field" id="title">
                 <label>Job Title</label>
                 <input type="text" name="title" placeholder="Job Title"></div>
         </div>
-        <div class="field">
+        <div class="field" id="location">
             <label>Location</label>
             <input type="text" name="location" placeholder="Location"></div>
-        <div class="field">
+        <div class="field" id="email">
             <label>Email</label>
             <input type="text" name="email" placeholder="Email">
         </div>
         <div class="two fields">
-            <div class="field">
+            <div class="field" id="personal_url">
                 <label>Personal Website</label>
                 <input type="text" name="personal_url" placeholder="Personal URL">
             </div>
-            <div class="field">
+            <div class="field" id="twitter_url">
                 <label>Twitter URL</label>
                 <input type="text" name="twitter_url" placeholder="Twitter URL">
             </div>
         </div>
         <div class="two fields">
-            <div class="field">
+            <div class="field" id="linkedin_url">
                 <label>LinkedIn URL</label>
                 <input type="text" name="linkedin_url" placeholder="LinkedIn URL">
             </div>
-            <div class="field">
+            <div class="field" id="github_url">
                 <label>Github URL</label>
                 <input type="text" name="github_url" placeholder="Github URL">
             </div>
         </div>
-        <div class="field">
+        <div class="field" id="biography">
             <label>Bio</label>
             <textarea name="biography"></textarea>
         </div>
@@ -166,8 +166,14 @@
                              toastr.success("Details Saved")
                              window.location.href = data
                          })
-                         .fail(errors => {
-                             toastr.error(JSON.stringify(errors))
+                         .fail(data => {
+                             let errorsJSON = data.responseJSON
+                             let errors = []
+                             for(let key in errorsJSON){
+                                 errors.push(self.camel_case_to_regular(key) + ' - ' + errorsJSON[key])
+                                 $('#'+key).addClass('error')
+                             }
+                             $('#user-form').form('add errors', errors)
                              self.refs.submit_button.disabled = false
                          })
                      return false
@@ -187,6 +193,11 @@
             })
             self.update()
         })
+
+        self.camel_case_to_regular = (str) => {
+            str = str.replaceAll('_', ' ')
+            return str.replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase())
+        }
 
         self.save = () => {
             self.refs.submit_button.disabled = true
