@@ -4,6 +4,7 @@ from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
 from utils.data import PathWrapper
+from django.urls import reverse
 
 
 PROFILE_DATA_BLACKLIST = [
@@ -79,6 +80,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'Username-{self.username} | Name-{self.name}'
+
+    @property
+    def slug_url(self):
+        return reverse('profiles:user_profile', args=[self.slug])
 
     @staticmethod
     def get_chahub_endpoint():

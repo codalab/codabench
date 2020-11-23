@@ -474,7 +474,8 @@ class PhaseViewSet(ModelViewSet):
                 response['submissions'].append({
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
-                    'fact_sheet_answers': submission['fact_sheet_answers']
+                    'fact_sheet_answers': submission['fact_sheet_answers'],
+                    'slug_url': submission['slug_url']
                 })
             for score in submission['scores']:
                 tempScore = score

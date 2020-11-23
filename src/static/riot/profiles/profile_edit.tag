@@ -7,7 +7,7 @@
                 Uploaded Photo: <a href="{ photo }" target="_blank">{ photo_name }</a>
             </label>
             <div class="ui left action file input">
-                <button class="ui icon button" onclick="document.getElementById('profile_phtoto').click()">
+                <button class="ui icon button" type="button" onclick="document.getElementById('profile_phtoto').click()">
                     <i class="attach icon"></i>
                 </button>
                 <input id="profile_phtoto" type="file" ref="photo" accept="image/*">
