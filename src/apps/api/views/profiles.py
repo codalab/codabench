@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
-from rest_framework import permissions
-from rest_framework.viewsets import ModelViewSet
+from rest_framework import permissions, mixins
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from django.urls import reverse
 
@@ -16,11 +16,10 @@ from api.serializers.profiles import MyProfileSerializer, UserSerializer
 User = get_user_model()
 
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(mixins.UpdateModelMixin,
+                  GenericViewSet):
     queryset = User.objects.all()
-
-    def get_serializer_class(self):
-        return UserSerializer
+    serializer_class = UserSerializer
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:

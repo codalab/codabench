@@ -1,4 +1,4 @@
-<user-profile>
+<profile-detail>
     <!------------------------------------------ HTML ------------------------------------------->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
@@ -167,4 +167,4 @@
         .linkedin.icon
             color #0077B5
     </style>
-</user-profile>
+</profile-detail>

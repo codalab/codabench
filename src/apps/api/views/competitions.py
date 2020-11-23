@@ -458,8 +458,6 @@ class PhaseViewSet(ModelViewSet):
         else:
             fact_sheet_keys = None
         query = LeaderboardPhaseSerializer(phase).data
-        from pprint import pprint
-        pprint(query)
         response = {
             'title': query['leaderboard']['title'],
             'id': phase.id,

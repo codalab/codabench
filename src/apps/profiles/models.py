@@ -68,8 +68,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     objects = ChaHubUserManager()
 
     def save(self, *args, **kwargs):
-        value = self.username
-        self.slug = slugify(value, allow_unicode=True)
+        self.slug = slugify(self.username, allow_unicode=True)
         super().save(*args, **kwargs)
 
     def get_short_name(self):

@@ -25,9 +25,9 @@ class LogoutView(auth_views.LogoutView):
     pass
 
 
-class UserDetail(LoginRequiredMixin, DetailView):
+class UserEditView(LoginRequiredMixin, DetailView):
     queryset = User.objects.all()
-    template_name = 'profiles/detail.html'
+    template_name = 'profiles/user_edit.html'
     slug_url_kwarg = 'username'
     query_pk_and_slug = True
 
@@ -44,9 +44,9 @@ class UserDetail(LoginRequiredMixin, DetailView):
         return context
 
 
-class UserProfile(LoginRequiredMixin, DetailView):
+class UserDetailView(LoginRequiredMixin, DetailView):
     queryset = User.objects.all()
-    template_name = 'pages/user_profile.html'
+    template_name = 'profiles/user_profile.html'
     slug_url_kwarg = 'username'
     query_pk_and_slug = True
 

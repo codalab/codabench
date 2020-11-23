@@ -1,4 +1,4 @@
-<user-detail>
+<profile-edit>
     <h1>User Edit Screen</h1>
     <form class="ui form" id="user-form">
         <div class="field">
@@ -98,7 +98,7 @@
                          rules: [
                              {
                                  type: 'email',
-                                 prompt: 'Please enter a valid e-mail'
+                                 prompt: 'Please enter a valid {name}'
                              }
                          ]
                      },
@@ -109,6 +109,10 @@
                              {
                                  type: 'url',
                                  prompt: 'Please enter a valid url. Example: https://www.xyz.com'
+                             },
+                             {
+                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
                      },
@@ -118,7 +122,11 @@
                          rules: [
                              {
                                  type: 'url',
-                                 prompt: 'Please enter a valid twitter url. Example: https://twitter.com/BobRoss'
+                                 prompt: 'Please enter a valid {name}. Example: https://twitter.com/BobRoss'
+                             },
+                             {
+                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
                      },
@@ -128,7 +136,11 @@
                          rules: [
                              {
                                  type: 'url',
-                                 prompt: 'Please enter a valid url. Example: https://www.linkedin.com/in/john-doe'
+                                 prompt: 'Please enter a valid {name}. Example: https://www.linkedin.com/in/john-doe'
+                             },
+                             {
+                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
                      },
@@ -138,23 +150,30 @@
                          rules: [
                              {
                                  type: 'url',
-                                 prompt: 'Please enter a valid url. Example: https://github.com/john-doe'
+                                 prompt: 'Please enter a valid {name}. Example: https://github.com/john-doe'
+                             },
+                             {
+                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
                      },
                  },
-                 onSuccess: function (){
+                 onSuccess: function () {
                      _.extend(self.selected_user, $('#user-form').form('get values'))
                      CODALAB.api.update_user_details(self.selected_user.id, self.selected_user)
-                         .done( data => {
+                         .done(data => {
                              toastr.success("Details Saved")
                              window.location.href = data
                          })
-                         .fail(errors =>{
+                         .fail(errors => {
                              toastr.error(JSON.stringify(errors))
                              self.refs.submit_button.disabled = false
                          })
                      return false
+                 },
+                 onFailure: function (){
+                     self.refs.submit_button.disabled = false
                  }
              })
             self.photo_name = typeof self.photo == 'undefined' || self.photo === null ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
@@ -174,4 +193,4 @@
             $('#user-form').form('validate form')
         }
     </script>
-</user-detail>
+</profile-edit>
