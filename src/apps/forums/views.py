@@ -85,8 +85,8 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
 
         if self.object.thread.forum.competition.created_by == request.user or \
-            request.user in self.object.thread.forum.competition.admins.all() or \
-            self.object.posted_by == request.user:
+                request.user in self.object.thread.forum.competition.admins.all() or \
+                self.object.posted_by == request.user:
 
             # If there are more posts in the thread, leave it around, otherwise delete it
             if self.object.thread.posts.count() == 1:
@@ -129,8 +129,8 @@ class DeleteThreadView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
 
         if self.object.forum.competition.created_by == request.user or \
-            request.user in self.object.forum.competition.admins.all() or \
-            self.object.started_by == request.user:
+                request.user in self.object.forum.competition.admins.all() or \
+                self.object.started_by == request.user:
 
             success_url = self.object.forum.get_absolute_url()
             self.object.delete()
