@@ -10,7 +10,7 @@ class Forum(models.Model):
     """
     Base Forum model.
     """
-    competition = models.OneToOneField('competitions.Competition', unique=True, related_name="forums", on_delete=models.CASCADE)
+    competition = models.OneToOneField('competitions.Competition', unique=True, related_name="forum", on_delete=models.CASCADE)
 
     def get_absolute_url(self):
         return reverse('forum_detail', kwargs={'forum_pk': self.pk})

@@ -5,6 +5,13 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def create_forums_for_competitions(apps, schema_editor):
+    Competition = apps.get_model('competitions', 'Competition')
+    Forum = apps.get_model('forums', 'Forum')
+    for competition in Competition.objects.all():
+        Forum.objects.create(competition=competition)
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -19,7 +26,7 @@ class Migration(migrations.Migration):
             name='Forum',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('competition', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='forums', to='competitions.Competition')),
+                ('competition', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='forum', to='competitions.Competition')),
             ],
         ),
         migrations.CreateModel(
@@ -47,4 +54,5 @@ class Migration(migrations.Migration):
                 ('thread', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='posts', to='forums.Thread')),
             ],
         ),
+        migrations.RunPython(create_forums_for_competitions),
     ]
