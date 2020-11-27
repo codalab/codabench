@@ -124,14 +124,14 @@ headers = {
 
 # If importing this, make sure to call .cleanup() in response
 def get_verbose(SUBMISSION_ID):
-    submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}')
+    submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/')
     resp = requests.get(submissions_detail_url, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to get submission: {resp.content}")
         exit(-3)
     resp_json = resp.json()
 
-    submissions_get_details_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/get_details')
+    submissions_get_details_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/get_details/')
     detail_resp = requests.get(submissions_get_details_url, headers=headers)
     if detail_resp.status_code != 200:
         print(f"Failed to get submission: {detail_resp.content}")
@@ -193,7 +193,7 @@ elif SUBMISSION_ID and VERBOSE:
 
 
 elif SUBMISSION_ID:
-    submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}')
+    submissions_detail_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/')
     resp = requests.get(submissions_detail_url, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to get submission: {resp.content}")
@@ -205,7 +205,7 @@ elif SUBMISSION_ID:
     pprint(resp.json())
     print()
 
-    submissions_get_details_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/get_details')
+    submissions_get_details_url = urljoin(CODALAB_URL, f'/api/submissions/{SUBMISSION_ID}/get_details/')
     resp = requests.get(submissions_get_details_url, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to get submission: {resp.content}")
