@@ -1,21 +1,30 @@
 {% extends "forums/base_forum.html" %}
+{#{% extends "base.html" %}#}
 
 {% block forum_content %}
-    <h1>THREAD DETAIL PAGE</h1>
-    <h2 class="thread_title"> > {{ thread.title }}</h2>
-    {% for post in ordered_posts %}
-        {% if thread.forum.competition.creator == request.user or request.user in thread.forum.competition.admins.all or post.posted_by == request.user %}
-            <i class="remove-button glyphicon glyphicon-remove pull-right" data-submission-pk="{{ post.pk }}"></i>
-        {% endif %}
+    <div class="ui horizontal divider">Thread</div>
 
-        {{ post.content|linebreaks }}
+    <h2 class="thread_title"> > tests {{ thread.title }}</h2>
 
-        <span class="posted_by">Posted by: {{ post.posted_by }} @ {{ post.date_created }}</span>
+    <div class="ui horizontal divider">Posts</div>
+    <div class="ui divided items">
+        {% for post in ordered_posts %}
+            <div class="item">
+                <div class="content">
+                    {% if thread.forum.competition.creator == request.user or request.user in thread.forum.competition.admins.all or post.posted_by == request.user %}
+                        <i class="remove-button glyphicon glyphicon-remove pull-right" data-submission-pk="{{ post.pk }}"></i>
+                    {% endif %}
 
-        {% if not forloop.last %}
-            <hr>
-        {% endif %}
-    {% endfor %}
+                    {{ post.content|linebreaks }}
+
+                    <div class="extra">
+                        Posted by: {{ post.posted_by }} @ {{ post.date_created }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
 
     <script>
         function redirect_post(url) {
