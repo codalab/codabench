@@ -53,13 +53,14 @@ def initialize_user(user, connection):
     user.save()
 
 
-def create_queue(user):
+def create_queue(user, vhost=None):
     """Create a new queue with a random name and give full permissions to the owner AND our base account"""
     conn = _get_rabbit_connection()
     if check_user_needs_initialization(user, conn):
         initialize_user(user, conn)
 
-    vhost = str(uuid.uuid4())
+    if not vhost:
+        vhost = str(uuid.uuid4())
     conn.create_vhost(vhost)
 
     # Set permissions for our end user
