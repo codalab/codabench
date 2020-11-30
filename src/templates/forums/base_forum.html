@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block page_title %}Forums{% endblock page_title %}
 
 {% block extra_headers %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}forums/forums.css">
+    <link rel="stylesheet" href="{% static "css/forums.css" %}">
 {% endblock extra_headers %}
 
-{% block content_wrapper %}
+{% block content %}
     <div class="container-fluid">
         <div class="row">
             <div class="col-lg-12">
                 <h2>{{ forum.competition.title }} Forum</h2>
-                <a href="{% url 'competitions:view' pk=forum.competition.pk %}" class="btn btn-default pull-left">Go back to competition</a>
+                <a href="{% url 'competitions:detail' pk=forum.competition.pk %}" class="btn btn-default pull-left">Go back to competition</a>
                 {% if thread or 'new_thread' in request.path %}
                     <a href="{% url 'forum_detail' forum_pk=forum.pk %}" class="btn btn-default pull-left">Back to thread list</a>
                 {% endif %}
@@ -28,8 +29,8 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="panel forum-panel">
-                    {% block content %}
-                    {% endblock content %}
+                    {% block forum_content %}
+                    {% endblock forum_content %}
                 </div>
 
                 {% if thread and 'new_post' not in request.path %}
@@ -38,5 +39,5 @@
             </div>
         </div>
     </div>
-{% endblock content_wrapper %}
+{% endblock content %}
 

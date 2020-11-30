@@ -1,6 +1,7 @@
 {% extends "forums/base_forum.html" %}
 
-{% block content %}
+{% block forum_content %}
+    <h1>THREAD DETAIL PAGE</h1>
     <h2 class="thread_title"> > {{ thread.title }}</h2>
     {% for post in ordered_posts %}
         {% if thread.forum.competition.creator == request.user or request.user in thread.forum.competition.admins.all or post.posted_by == request.user %}
