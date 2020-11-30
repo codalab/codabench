@@ -197,7 +197,7 @@ FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 # ============================================================================
 # Celery
 # ============================================================================
-BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
+CELERY_BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
 CELERY_BROKER_URL = os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
