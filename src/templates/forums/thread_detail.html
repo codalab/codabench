@@ -15,7 +15,7 @@
                         <i class="remove-button glyphicon glyphicon-remove pull-right" data-submission-pk="{{ post.pk }}"></i>
                     {% endif %}
 
-                    {{ post.content|linebreaks }}
+                    <div class="markdown-content" data-content="{{ post.content }}"></div>
 
                     <div class="extra">
                         Posted by: {{ post.posted_by }} @ {{ post.date_created }}
@@ -30,14 +30,16 @@
         font-size: 15px !important;
     }
     </style>
+{% endblock %}
 
+{% block extra_js %}
     <script>
         function redirect_post(url) {
             var form = document.createElement('form');
             document.body.appendChild(form);
             form.method = 'post';
             form.action = url;
-            $(form).append("{% csrf_token %}")
+            $(form).append(`{% csrf_token %}`)
             form.submit();
         }
 
@@ -47,6 +49,9 @@
                 if (confirm("Are you sure you want to delete this?")) {
                     redirect_post("/forums/{{ thread.forum.pk }}/{{ thread.pk }}/delete/" + submission_pk + "/")
                 }
+            })
+            $('.markdown-content').each(function () {
+                $(this).append(render_markdown($(this).data('content')))
             })
         })
     </script>
