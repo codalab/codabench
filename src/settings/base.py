@@ -281,15 +281,6 @@ CHANNEL_LAYERS = {
         # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },
 }
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "asgi_redis.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("my_domain.com", 6379)],
-#         },
-#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
-#     },
-# }
 
 SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
 
