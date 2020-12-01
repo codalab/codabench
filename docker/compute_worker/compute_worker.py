@@ -23,12 +23,20 @@ import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, task
+from kombu import Queue, Exchange
 from urllib3 import Retry
 
-app = Celery()
-app.config_from_object('celery_config')  # grabs celery_config.py
 
 logger = logging.getLogger()
+
+# Init celery + rabbit queue definitions
+app = Celery()
+app.config_from_object('celery_config')  # grabs celery_config.py
+app.conf.task_queues = [
+    # Mostly defining queue here so we can set x-max-priority
+    Queue('compute-worker', Exchange('compute-worker'), routing_key='compute-worker', queue_arguments={'x-max-priority': 10}),
+]
+
 
 # Setup base directories used by all submissions
 BASE_DIR = "/tmp/codalab-v2"
