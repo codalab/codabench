@@ -101,8 +101,12 @@
                                 {% endif %}
                                 <div class="ui divider"></div>
                                 <div class="header">Account</div>
-                                <a class="item" href="{% url 'profiles:user_profile' %}">
+                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}">
                                     <i class="icon user"></i>
+                                    View Profile
+                                </a>
+                                <a class="item" href="{% url 'profiles:edit' username=user.username %}">
+                                    </i><i class="edit icon"></i>
                                     Edit profile
                                 </a>
                                 <a class="item" href="{% url 'accounts:logout' %}">

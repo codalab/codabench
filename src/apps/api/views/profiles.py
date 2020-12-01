@@ -5,11 +5,35 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
-from rest_framework import permissions
+from rest_framework import permissions, mixins
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.response import Response
+from django.urls import reverse
 
-from api.serializers.profiles import MyProfileSerializer
+from api.permissions import IsUserAdminOrIsSelf
+from api.serializers.profiles import MyProfileSerializer, UserSerializer
 
 User = get_user_model()
+
+
+class UserViewSet(mixins.UpdateModelMixin,
+                  GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update']:
+            self.permission_classes = [IsUserAdminOrIsSelf]
+        return [permission() for permission in self.permission_classes]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        resp = self.get_serializer(instance)
+        return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
 
 
 class GetMyProfile(RetrieveAPIView, GenericAPIView):
