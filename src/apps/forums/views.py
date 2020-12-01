@@ -103,7 +103,7 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
 class CreateThreadView(ForumBaseMixin, RedirectToThreadMixin, LoginRequiredMixin, CreateView):
     """ View to post on current thread."""
     model = Thread
-    template_name = "forums/post_form.html"
+    template_name = "forums/thread_form.html"
     form_class = ThreadForm
 
     def form_valid(self, form):

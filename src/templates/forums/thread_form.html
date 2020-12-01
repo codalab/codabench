@@ -1,0 +1,26 @@
+{% extends 'forums/base_forum.html' %}
+
+{% block forum_content %}
+    <div class="ui horizontal divider">Create Post</div>
+
+    <form action="." method="POST" class="ui form">
+        {% csrf_token %}
+{#        {{ form.as_p }}#}
+        <div class="field">
+            <label>Title</label>
+            <input type="text" name="title" id="id_title" required maxlength="255">
+        </div>
+        <div class="field">
+            <label>Content</label>
+            <textarea name="content" id="id_content" required spellcheck="true"></textarea>
+        </div>
+        <div class="field">
+            <button type="submit" class="ui button green">Submit</button>
+        </div>
+    </form>
+<style>
+    label {
+        font-size: 16px;
+    }
+</style>
+{% endblock %}
