@@ -115,9 +115,9 @@ def _send_submission(submission, task, is_scoring, run_args):
     # many submissions to be scored while we're waiting for results
     if is_scoring:
         # higher numbers are higher priority
-        priority = 0
-    else:
         priority = 10
+    else:
+        priority = 0
 
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
@@ -201,7 +201,7 @@ def _send_submission(submission, task, is_scoring, run_args):
     if submission.status != Submission.SUBMITTED:
         # Don't want to mark an already-prepared submission as "submitted" again, could be confusing
         submission.status = Submission.SUBMITTED
-        
+
     submission.save()
 
 
