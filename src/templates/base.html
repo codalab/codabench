@@ -252,12 +252,15 @@
                 let urlParam = "?phase=" + phase_id
                 return urlBase.slice(0, -1) + ".json" + urlParam
             },
+            // Forums
+            FORUM: function (pk) {
+               return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
+            },
             // Datasets
             DATASET_MANAGEMENT: "{% url "datasets:management" %}",
             DATASET_DOWNLOAD: function (key) {
                 return "{% url "datasets:download" key=0 %}".replace(0, key)
             },
-
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
             TASK_DETAIL: function (pk) {

@@ -208,6 +208,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
+            'forum',
         )
 
     def get_leaderboards(self, instance):
