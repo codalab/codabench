@@ -35,8 +35,11 @@ def check_user_needs_initialization(user, connection):
 def initialize_user(user, connection):
     """Check whether user has a rabbitmq account already, creates it if not."""
     logger.info(f"Making new rabbitmq user for {user}")
-    user.rabbitmq_username = str(uuid.uuid4())
-    user.rabbitmq_password = str(uuid.uuid4())
+
+    # Only create a username/pass if none are set
+    if not user.rabbitmq_username:
+        user.rabbitmq_username = str(uuid.uuid4())
+        user.rabbitmq_password = str(uuid.uuid4())
 
     connection.create_user(str(user.rabbitmq_username), str(user.rabbitmq_password))
 
@@ -53,13 +56,14 @@ def initialize_user(user, connection):
     user.save()
 
 
-def create_queue(user):
+def create_queue(user, vhost=None):
     """Create a new queue with a random name and give full permissions to the owner AND our base account"""
     conn = _get_rabbit_connection()
     if check_user_needs_initialization(user, conn):
         initialize_user(user, conn)
 
-    vhost = str(uuid.uuid4())
+    if not vhost:
+        vhost = str(uuid.uuid4())
     conn.create_vhost(vhost)
 
     # Set permissions for our end user
