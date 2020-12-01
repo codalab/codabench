@@ -120,3 +120,6 @@ class GithubUserInfo(models.Model):
     repos_url = models.URLField(max_length=100, null=True, blank=True)
     events_url = models.URLField(max_length=100, null=True, blank=True)
     received_events_url = models.URLField(max_length=100, null=True, blank=True)
+
+class Organization(models.Model):
+    pass
