@@ -118,6 +118,9 @@ services:
   #-----------------------------------------------
   rabbit:
     image: rabbitmq:3.6-management
+    # setting hostname here makes data persist properly between
+    # containers being destroyed..!
+    hostname: rabbit
     env_file: .env
     ports:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672

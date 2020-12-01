@@ -82,12 +82,18 @@ $ sudo usermod -aG docker $USER
 
 ## Start CPU worker
 
+Make a file `.env` and put this in it:
+```
+BROKER_URL=<desired broker url>
+```
+
+Then run it:
 ```bash
 $ docker run \
     -v /tmp/codalab-v2:/tmp/codalab-v2 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
-    --env BROKER_URL=<queue broker url> \
+    --env-file .env \
     --restart unless-stopped \
     --log-opt max-size=50m \
     --log-opt max-file=3 \

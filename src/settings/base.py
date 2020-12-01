@@ -191,11 +191,13 @@ RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
 RABBITMQ_SCHEME = os.environ.get('RABBITMQ_SCHEME', 'http')
 RABBITMQ_PYRABBIT_URL = None  # used in Heroku settings, mainly
+FLOWER_HOST = os.environ.get('FLOWER_HOST', RABBITMQ_HOST)
 FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 
 # ============================================================================
 # Celery
 # ============================================================================
+CELERY_BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
 CELERY_BROKER_URL = os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
