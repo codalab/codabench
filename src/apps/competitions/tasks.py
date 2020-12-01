@@ -197,7 +197,11 @@ def _send_submission(submission, task, is_scoring, run_args):
             priority=priority,
         )
     submission.celery_task_id = task.id
-    submission.status = Submission.SUBMITTED
+
+    if submission.status != Submission.SUBMITTED:
+        # Don't want to mark an already-prepared submission as "submitted" again, could be confusing
+        submission.status = Submission.SUBMITTED
+        
     submission.save()
 
 
