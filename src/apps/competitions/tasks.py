@@ -115,7 +115,7 @@ def _send_submission(submission, task, is_scoring, run_args):
     # many submissions to be scored while we're waiting for results
     if is_scoring:
         # higher numbers are higher priority
-        priority = 1
+        priority = 10
     else:
         priority = 0
 
