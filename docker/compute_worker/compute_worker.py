@@ -584,7 +584,9 @@ class Run:
             delete_files_in_folder(CACHE_DIR)
 
     def prepare(self):
-        self._update_status(STATUS_PREPARING)
+        if not self.is_scoring:
+            # Only during prediction step do we want to announce "preparing"
+            self._update_status(STATUS_PREPARING)
 
         # Setup cache and prune if it's out of control
         if not os.path.exists(CACHE_DIR):
