@@ -2,12 +2,12 @@
 {#{% extends "base.html" %}#}
 
 {% block forum_content %}
-    <div class="ui horizontal divider">Thread</div>
+{#    <div class="ui horizontal divider">Thread</div>#}
 
-    <h2 class="thread_title"> > {{ thread.title }}</h2>
+{#    <h2 class="thread_title"> > {{ thread.title }}</h2>#}
 
-    <div class="ui horizontal divider">Posts</div>
-    <div class="ui divided items">
+    <div class="ui horizontal divider">{{ thread.title }}</div>
+    <div class="ui divided items form-content">
         {% for post in ordered_posts %}
             <div class="item">
                 <div class="content">
@@ -23,8 +23,13 @@
                 </div>
             </div>
         {% endfor %}
-
     </div>
+
+    <style>
+    .form-content {
+        font-size: 15px !important;
+    }
+    </style>
 
     <script>
         function redirect_post(url) {
