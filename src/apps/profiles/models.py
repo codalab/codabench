@@ -2,6 +2,9 @@ from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserM
 from django.db import models
 from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
+from django.utils.text import slugify
+from utils.data import PathWrapper
+from django.urls import reverse
 
 
 PROFILE_DATA_BLACKLIST = [
@@ -38,7 +41,19 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
-    email = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    slug = models.SlugField(max_length=50, default='', unique=True)
+    photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
+    email = models.EmailField(max_length=200, unique=True, null=True, blank=True)
+    display_name = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    first_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    last_name = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    title = models.CharField(max_length=200, unique=False, null=True, blank=True)
+    location = models.CharField(max_length=250, unique=False, null=True, blank=True)
+    biography = models.CharField(max_length=4096, unique=False, null=True, blank=True)
+    personal_url = models.URLField(unique=False, null=True, blank=True)
+    linkedin_url = models.URLField(unique=False, null=True, blank=True)
+    twitter_url = models.URLField(unique=False, null=True, blank=True)
+    github_url = models.URLField(unique=False, null=True, blank=True)
 
     # Utility Attributes
     date_joined = models.DateTimeField(default=now)
@@ -60,6 +75,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.username, allow_unicode=True)
+        super().save(*args, **kwargs)
+
     def get_short_name(self):
         return self.name
 
@@ -67,7 +86,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return self.name if self.name else self.username
+        return f'Username-{self.username} | Name-{self.name}'
+
+    @property
+    def slug_url(self):
+        return reverse('profiles:user_profile', args=[self.slug])
 
     @staticmethod
     def get_chahub_endpoint():

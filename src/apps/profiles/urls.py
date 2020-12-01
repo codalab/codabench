@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
@@ -6,5 +6,6 @@ app_name = "profiles"
 
 urlpatterns = [
     # url(r'^signup', views.sign_up, name="signup"),
-    url(r'^user_profile', views.user_profile, name="user_profile"),
+    path('<slug:username>/edit/', views.UserEditView.as_view(), name='edit'),
+    path('<slug:username>/', views.UserDetailView.as_view(), name="user_profile"),
 ]
