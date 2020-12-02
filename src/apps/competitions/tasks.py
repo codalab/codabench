@@ -198,8 +198,9 @@ def _send_submission(submission, task, is_scoring, run_args):
         )
     submission.celery_task_id = task.id
 
-    if submission.status != Submission.SUBMITTED:
-        # Don't want to mark an already-prepared submission as "submitted" again, could be confusing
+    if submission.status == Submission.SUBMITTING:
+        # Don't want to mark an already-prepared submission as "submitted" again, so
+        # only do this if we were previously "SUBMITTING"
         submission.status = Submission.SUBMITTED
 
     submission.save()
