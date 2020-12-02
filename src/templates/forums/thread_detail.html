@@ -18,7 +18,7 @@
                     <div class="markdown-content" data-content="{{ post.content }}"></div>
 
                     <div class="extra">
-                        Posted by: {{ post.posted_by }} @ {{ post.date_created }}
+                        Posted by: <a href="{% url "profiles:user_profile" username=post.posted_by.slug %}">{{ post.posted_by }}</a> @ {{ post.date_created }}
                     </div>
                 </div>
             </div>
