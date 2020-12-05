@@ -13,7 +13,7 @@ class Forum(models.Model):
     competition = models.OneToOneField('competitions.Competition', unique=True, related_name="forum", on_delete=models.CASCADE)
 
     def get_absolute_url(self):
-        return reverse('forum_detail', kwargs={'forum_pk': self.pk})
+        return reverse('forums:forum_detail', kwargs={'forum_pk': self.pk})
 
 
 class Thread(models.Model):
