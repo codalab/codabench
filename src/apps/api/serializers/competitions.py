@@ -9,6 +9,7 @@ from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
+from forums.models import Forum
 from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
@@ -156,7 +157,13 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     def create(self, validated_data):
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
-        return super().create(validated_data)
+
+        instance = super().create(validated_data)
+
+        # Ensure a forum is created for this competition
+        Forum.objects.create(competition=instance)
+
+        return instance
 
 
 class CompetitionUpdateSerializer(CompetitionSerializer):
@@ -201,6 +208,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
+            'forum',
         )
 
     def get_leaderboards(self, instance):
