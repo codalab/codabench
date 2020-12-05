@@ -131,9 +131,9 @@ class AnalyticsView(APIView):
                 'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
             }]
 
-            l = max(len(users), len(competitions), len(submissions))
+            max_len = max(len(users), len(competitions), len(submissions))
 
-            for i in range(l):
+            for i in range(max_len):
                 d = {}
                 for data_list in [users, competitions, submissions]:
                     if i < len(data_list):
