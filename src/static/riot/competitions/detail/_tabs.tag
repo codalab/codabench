@@ -319,9 +319,11 @@
         }
 
         self.phase_selected = function (data, event) {
-            self.selected_phase_index = data.id
-            self.update()
-            CODALAB.events.trigger('phase_selected', data)
+            if(data) {
+                self.selected_phase_index = data.id
+                self.update()
+                CODALAB.events.trigger('phase_selected', data)
+            }
         }
 
         self.update()
