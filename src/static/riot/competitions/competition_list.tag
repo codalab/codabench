@@ -4,8 +4,8 @@
             <div class="row">
                 <div class="fourteen wide column">
                     <div class="ui fluid secondary pointing tabular menu">
-                        <a class="active item" data-tab="running">Competitions I'm Running</a>
-                        <a class="item" data-tab="participating">Competitions I'm In</a>
+                        <a class="active item" data-tab="running">Benchmarks I'm Running</a>
+                        <a class="item" data-tab="participating">Benchmarks I'm In</a>
                         <div class="right menu">
                             <div class="item">
                                 <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Management-&-List"></help_button>

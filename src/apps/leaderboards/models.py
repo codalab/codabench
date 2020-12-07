@@ -3,6 +3,7 @@ from django.db import models
 
 
 class Leaderboard(models.Model):
+
     ADD = "Add"
     ADD_DELETE = "Add_And_Delete"
     ADD_DELETE_MULTIPLE = "Add_And_Delete_Multiple"
