@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView
+from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer
 from .forms import SignUpForm
@@ -77,3 +77,7 @@ def sign_up(request):
     if not context.get('form'):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
+
+
+class OrganizationCreateView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/orgazation_create.html'

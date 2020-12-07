@@ -8,10 +8,12 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions, mixins
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
+from rest_framework import status
 from django.urls import reverse
 
-from api.permissions import IsUserAdminOrIsSelf
-from api.serializers.profiles import MyProfileSerializer, UserSerializer
+from api.permissions import IsUserAdminOrIsSelf, IsOrganizerOrCollaborator
+from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer
+from profiles.models import Organization
 
 User = get_user_model()
 
@@ -68,3 +70,30 @@ def user_lookup(request):
     return HttpResponse(
         json.dumps({"results": [_get_data(u) for u in users]}),
     )
+
+
+class OrganizationViewSet(mixins.CreateModelMixin,
+                          mixins.UpdateModelMixin,
+                          GenericViewSet):
+    # mixins.RetrieveModelMixin,
+    # mixins.DestroyModelMixin,
+    # mixins.ListModelMixin,
+    queryset = Organization.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return OrganizationCreationSerializer
+        else:
+            return None
+
+    def get_permissions(self):
+        if self.action == 'create':
+            self.permission_classes = [IsOrganizerOrCollaborator]
+        return [permission() for permission in self.permission_classes]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

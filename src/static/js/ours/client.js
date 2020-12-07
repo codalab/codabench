@@ -237,6 +237,12 @@ CODALAB.api = {
         return CODALAB.api.request('PATCH',`${URLS.API}users/${id}/`, data)
     },
     /*---------------------------------------------------------------------
+         Users
+    ---------------------------------------------------------------------*/
+    create_organization: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/`, data)
+    },
+    /*---------------------------------------------------------------------
          Participants
     ---------------------------------------------------------------------*/
     get_participants: filters => {

@@ -1,5 +1,5 @@
 <profile-edit>
-    <h1>User Edit Screen</h1>
+    <h1>User Edit:</h1>
     <form class="ui form" id="user-form">
         <div class="field">
             <label>Profile Photo</label>

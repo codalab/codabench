@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.serializers import ModelSerializer
 
 from api.fields import NamedBase64ImageField
-from profiles.models import GithubUserInfo
+from profiles.models import GithubUserInfo, Organization
 
 User = get_user_model()
 
@@ -79,6 +79,25 @@ class UserSerializer(ModelSerializer):
             'location',
             'biography',
             'personal_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
+        )
+
+
+class OrganizationCreationSerializer(ModelSerializer):
+    photo = NamedBase64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'email',
+            'location',
+            'description',
+            'website_url',
             'linkedin_url',
             'twitter_url',
             'github_url',
