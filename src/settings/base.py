@@ -54,6 +54,7 @@ OUR_APPS = (
     'commands',
     'queues',
     'health',
+    'forums',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 

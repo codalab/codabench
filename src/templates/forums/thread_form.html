@@ -1,0 +1,57 @@
+{% extends 'forums/base_forum.html' %}
+
+{% block forum_content %}
+    <div class="ui horizontal divider">Create Thread</div>
+    <div class="ui top attached tabular menu">
+      <a class="item active" data-tab="edit">Edit</a>
+      <a class="item" data-tab="preview" id="preview-tab">Preview</a>
+    </div>
+
+    <div class="ui bottom attached tab segment active" data-tab="edit">
+        <form action="." method="POST" class="ui form">
+            {% csrf_token %}
+    {#        {{ form.as_p }}#}
+            <div class="field">
+                <label>Title</label>
+                <input type="text" name="title" id="id_title" required maxlength="255">
+            </div>
+            <div class="field">
+                <label>Content</label>
+                <textarea name="content" id="id_content" required spellcheck="true"></textarea>
+            </div>
+            <div class="field">
+                <button type="submit" class="ui button green">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="preview">
+        <div class="ui divided items">
+            <div class="item">
+                <h1 id="title-preview"></h1>
+            </div>
+            <div class="item">
+                <div class="content" id="markdown-preview"></div>
+            </div>
+        </div>
+    </div>
+<style>
+    label {
+        font-size: 16px !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+
+    $(document).ready(function () {
+        $('.menu .item').tab()
+        $('#preview-tab').tab({'onVisible':function(){
+            $('#title-preview').html('> ' + $('#id_title').val())
+            $('#markdown-preview').html(render_markdown($('#id_content').val()))
+        }})
+    })
+
+    </script>
+{% endblock %}

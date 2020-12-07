@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_title %}Forums{% endblock page_title %}
+
+{% block extra_headers %}
+    <link rel="stylesheet" href="{% static "css/forums.css" %}">
+{% endblock extra_headers %}
+
+{% block content %}
+    <div class="ui container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1>{{ forum.competition.title }} Forum</h1>
+                <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
+                    <button class="ui button">
+                        Go back to competition
+                    </button>
+                </a>
+                {% if thread or 'new_thread' in request.path %}
+                <a href="{% url 'forums:forum_detail' forum_pk=forum.pk %}">
+                    <button class="ui button">
+                        Back to thread list
+                    </button>
+                </a>
+                {% endif %}
+
+                {% if not thread %}
+                    <a href="{% url 'forums:forum_new_thread' forum_pk=forum.pk %}">
+                        <button class="ui button primary">
+                            Start a new topic
+                        </button>
+                    </a>
+                {% elif 'new_post' not in request.path %}
+                    <a href="{% url 'forums:forum_new_post' forum_pk=forum.pk thread_pk=thread.pk %}">
+                        <button class="ui button primary">
+                            Post in this thread
+                        </button>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel forum-panel">
+                    {% block forum_content %}
+                    {% endblock forum_content %}
+                </div>
+
+                {% if thread and 'new_post' not in request.path %}
+                    <a href="{% url 'forums:forum_new_post' forum_pk=forum.pk thread_pk=thread.pk %}">
+                        <button class="ui button primary">
+                            Post in this thread
+                        </button>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <style>
+        .ui.horizontal.divider {
+            font-size: 1.66rem !important;
+        }
+    </style>
+{% endblock content %}
+
