@@ -371,7 +371,7 @@ class PhaseTaskInstance(models.Model):
     order_index = models.PositiveIntegerField(default=999)
 
     class Meta:
-        ordering = ["order_index"]
+        ordering = ["order_index", "task"]
 
     def __str__(self):
         return f'Task:{self.task.name}, Phase:{self.phase.name}, Order:{int(self.order_index)}'
