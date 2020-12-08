@@ -10,5 +10,5 @@ urlpatterns = [
     path('user/<slug:username>/', views.UserDetailView.as_view(), name="user_profile"),
     path('organization/create/', views.OrganizationCreateView.as_view(), name='organization_create'),
     # path('organization/<int:pk>/edit/', views.UserEditView.as_view(), name='organization_edit'),
-    # path('organization/<int:pk>/', views.UserDetailView.as_view(), name="organization_profile"),
+    path('organization/<int:pk>/', views.OrganizationDetailView.as_view(), name="organization_profile"),
 ]

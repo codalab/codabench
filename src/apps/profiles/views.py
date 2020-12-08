@@ -10,7 +10,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer
 from .forms import SignUpForm
-from .models import User
+from .models import User, Organization
 
 
 class LoginView(auth_views.LoginView):
@@ -80,4 +80,9 @@ def sign_up(request):
 
 
 class OrganizationCreateView(LoginRequiredMixin, TemplateView):
-    template_name = 'profiles/orgazation_create.html'
+    template_name = 'profiles/organization_create.html'
+
+
+class OrganizationDetailView(LoginRequiredMixin, DetailView):
+    queryset = Organization.objects.all()
+

@@ -6,12 +6,13 @@ from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions, mixins
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.urls import reverse
 
-from api.permissions import IsUserAdminOrIsSelf, IsOrganizerOrCollaborator
+from api.permissions import IsUserAdminOrIsSelf
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer
 from profiles.models import Organization
 
@@ -80,6 +81,8 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     # mixins.ListModelMixin,
     queryset = Organization.objects.all()
 
+    # TODO add queryset authentication checks
+
     def get_serializer_class(self):
         if self.action == 'create':
             return OrganizationCreationSerializer
@@ -88,7 +91,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
     def get_permissions(self):
         if self.action == 'create':
-            self.permission_classes = [IsOrganizerOrCollaborator]
+            self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
 
     def create(self, request, *args, **kwargs):
@@ -96,4 +99,6 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        resp = serializer.data
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+

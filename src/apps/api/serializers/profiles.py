@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from rest_framework.serializers import ModelSerializer
+from django.urls import reverse
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
 from api.fields import NamedBase64ImageField
 from profiles.models import GithubUserInfo, Organization
@@ -87,6 +88,7 @@ class UserSerializer(ModelSerializer):
 
 class OrganizationCreationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
+    redirect_url = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Organization
@@ -101,4 +103,9 @@ class OrganizationCreationSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
+            'redirect_url',
         )
+
+    def get_redirect_url(self, instance):
+        return reverse('profiles:organization_profile', args=[instance.id])
+

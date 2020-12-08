@@ -41,7 +41,7 @@
             </div>
             <div class="field" id="linkedin_url">
                 <label>LinkedIn URL</label>
-                <input type="text" name="website_url" placeholder="https://www.linkedin.com/company/organization">
+                <input type="text" name="linkedin_url" placeholder="https://www.linkedin.com/company/organization">
             </div>
         </div>
         <div class="two fields">
@@ -51,7 +51,7 @@
             </div>
             <div class="field" id="github_url">
                 <label>LinkedIn URL</label>
-                <input type="text" name="website_url" placeholder="https://github.com/organization">
+                <input type="text" name="github_url" placeholder="https://github.com/organization">
             </div>
         </div>
         <div class="ui error message"></div>
@@ -63,7 +63,11 @@
         self.org_photo = null
 
         self.one("mount", function () {
+            $.fn.form.settings.rules.test_http = function(param) {
+                return /^(http|https):\/\/(.*)/.test(param)
+            }
             $('#organization-form').form({
+                keyboardShortcuts: false,
                 fields: {
                     name: {
                         identifier: 'name',
@@ -89,7 +93,7 @@
                                 prompt: 'Please enter a valid {name}. Example: https://organization.com'
                             },
                             {
-                                type: 'regex[/^((http|https):\/\/)/]',
+                                type: 'test_http',
                                 prompt: '{name} must start with "http://" or "https://"'
                             }
                         ]
@@ -102,10 +106,10 @@
                                 type: 'url',
                                 prompt: 'Please enter a valid {name}. Example: https://organization.com'
                             },
-                            // {
-                            //     type: 'regex[/^((http|https):\/\/)/]',
-                            //     prompt: '{name} must start with "http://" or "https://"'
-                            // }
+                            {
+                                type: 'test_http',
+                                prompt: '{name} must start with "http://" or "https://"'
+                            }
                         ]
                     },
                     linkedin_url: {
@@ -117,7 +121,7 @@
                                 prompt: 'Please enter a valid {name}. Example: https://www.linkedin.com/company/organization'
                             },
                             {
-                                type: 'regex[/^((http|https):\/\/)/]',
+                                type: 'test_http',
                                 prompt: '{name} must start with "http://" or "https://"'
                             }
                         ]
@@ -131,7 +135,7 @@
                                 prompt: 'Please enter a valid {name}. Example: https://github.com/organization'
                             },
                             {
-                                type: 'regex[/^((http|https):\/\/)/]',
+                                type: 'test_http',
                                 prompt: '{name} must start with "http://" or "https://"'
                             }
                         ]
@@ -143,7 +147,8 @@
                     CODALAB.api.create_organization(data)
                         .done(data => {
                             toastr.success("Organization Created")
-                            // window.location.href = data
+                            window.location.href = data.redirect_url
+                            console.log(data)
                         })
                         .fail(data => {
                             let errorsJSON = data.responseJSON

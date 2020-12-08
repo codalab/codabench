@@ -157,7 +157,7 @@ class Organization(models.Model):
 
     # slug = models.SlugField(max_length=50, default='', unique=True)
     name = models.CharField(max_length=50, unique=True, null=False, blank=False)
-    photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
+    photo = models.ImageField(upload_to=PathWrapper('organization_photos'), null=True, blank=True)
     email = models.EmailField(max_length=200, unique=True, null=False, blank=False)
     location = models.CharField(max_length=250, unique=False, null=True, blank=True)
     description = models.CharField(max_length=4096, unique=False, null=True, blank=True)
