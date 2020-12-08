@@ -1,6 +1,68 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load humanize %}
 
 {% block content %}
-    <h1>test page</h1>
+    <div class="ui main container">
+        <div class="ui items">
+            <div class="item">
+                {% if organization.photo %}
+                    <div class="image">
+                        <img src="{{ organization.photo }}" alt="Organization Photo">
+                    </div>
+                {% endif %}
+                <div class="content">
+                    <h1 class="header">{{ organization.name }}</h1>
+                    <div class="meta">
+                        {% if organization.location %}
+                            <span><i class="marker alternate icon"></i>
+                            {{ organization.location }}
+                        </span>
+                        {% endif %}
+                        <div class="description" style="max-width: 500px">
+                            <p>{{ organization.description | linebreaks }}</p>
+                        </div>
+                        <div class="extra">
+                            Participating in Codalab since {{ organization.date_created }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if organization.email %}
+                <div class="item">
+                    <div class="content">
+                        <div class="header">Organization Email > <a href="mailto:{{ organization.email }}">{{ organization.email }}</a></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if organization.website_url %}
+                <div class="item">
+                    <div class="content">
+                        <div class="header">Organization Website > <a href="{{ organization.website_url }}">{{ organization.website_url }}</a></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if organization.linkedin_url %}
+                <div class="item">
+                    <div class="content">
+                        <div class="header">Organization LinkedIn > <a href="{{ organization.linkedin_url }}">{{ organization.linkedin_url }}</a></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if organization.twitter_url %}
+                <div class="item">
+                    <div class="content">
+                        <div class="header">Organization Twitter > <a href="{{ organization.twitter_url }}">{{ organization.twitter_url }}</a></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if organization.github_url %}
+                <div class="item">
+                    <div class="content">
+                        <div class="header">Organization Github > <a href="{{ organization.github_url }}">{{ organization.github_url }}</a></div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

@@ -8,7 +8,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer
+from api.serializers.profiles import UserSerializer, OrganizationSerializer, OrganizationDetailSerializer
 from .forms import SignUpForm
 from .models import User, Organization
 
@@ -85,4 +85,11 @@ class OrganizationCreateView(LoginRequiredMixin, TemplateView):
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     queryset = Organization.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            context['organization'] = OrganizationDetailSerializer(self.object).data
+        return context
+
 

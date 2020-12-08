@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from rest_framework.fields import DateTimeField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
 from api.fields import NamedBase64ImageField
@@ -116,3 +117,11 @@ class OrganizationCreationSerializer(OrganizationSerializer):
     def get_redirect_url(self, instance):
         return reverse('profiles:organization_profile', args=[instance.id])
 
+
+class OrganizationDetailSerializer(OrganizationSerializer):
+    date_created = DateTimeField(format="%d-%m-%Y", read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
+            'date_created',
+        )

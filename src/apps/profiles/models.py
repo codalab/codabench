@@ -156,7 +156,7 @@ class Organization(models.Model):
     users = models.ManyToManyField(User, related_name='organizations', through='Membership')
 
     # slug = models.SlugField(max_length=50, default='', unique=True)
-    name = models.CharField(max_length=50, unique=True, null=False, blank=False)
+    name = models.CharField(max_length=100, unique=True, null=False, blank=False)
     photo = models.ImageField(upload_to=PathWrapper('organization_photos'), null=True, blank=True)
     email = models.EmailField(max_length=200, unique=True, null=False, blank=False)
     location = models.CharField(max_length=250, unique=False, null=True, blank=True)
