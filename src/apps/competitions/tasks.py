@@ -24,6 +24,7 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
+from leaderboards.models import Leaderboard
 from tasks.models import Task
 from datasets.models import Data
 from utils.data import make_url_sassy
@@ -597,7 +598,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         # -------- Leaderboards -------
 
         yaml_data['leaderboards'] = []
-        for index, leaderboard in enumerate(comp.leaderboards.all()):
+        # Have to grab leaderboards from phases
+        leaderboards = Leaderboard.objects.filter(id__in=comp.phases.all().values_list('leaderboard', flat=True))
+        for index, leaderboard in enumerate(leaderboards):
             ldb_data = {
                 'index': index
             }
