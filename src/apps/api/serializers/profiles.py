@@ -1,7 +1,10 @@
 from django.contrib.auth import get_user_model
-from rest_framework.serializers import ModelSerializer
+from django.urls import reverse
+from rest_framework.fields import DateTimeField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
-from profiles.models import GithubUserInfo
+from api.fields import NamedBase64ImageField
+from profiles.models import GithubUserInfo, Organization
 
 User = get_user_model()
 
@@ -57,4 +60,68 @@ class CollaboratorSerializer(ModelSerializer):
             'id',
             'name',
             'username',
+        )
+
+
+class UserSerializer(ModelSerializer):
+    photo = NamedBase64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'name',
+            'username',
+            'photo',
+            'email',
+            'display_name',
+            'first_name',
+            'last_name',
+            'title',
+            'location',
+            'biography',
+            'personal_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
+        )
+
+
+class OrganizationSerializer(ModelSerializer):
+    photo = NamedBase64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'email',
+            'location',
+            'description',
+            'website_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
+        )
+
+
+class OrganizationCreationSerializer(OrganizationSerializer):
+    redirect_url = SerializerMethodField(read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
+            'redirect_url',
+        )
+
+    def get_redirect_url(self, instance):
+        return reverse('profiles:organization_profile', args=[instance.id])
+
+
+class OrganizationDetailSerializer(OrganizationSerializer):
+    date_created = DateTimeField(format="%d-%m-%Y", read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
+            'date_created',
         )

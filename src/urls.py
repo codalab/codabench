@@ -17,6 +17,7 @@ urlpatterns = [
     path('profiles/', include('profiles.urls', namespace='profiles')),
     path('tasks/', include('tasks.urls', namespace='tasks')),
     path('queues/', include('queues.urls', namespace="queues")),
+    path('forums/', include('forums.urls', namespace="forums")),
 
     # Third party
     path('api/', include('api.urls')),

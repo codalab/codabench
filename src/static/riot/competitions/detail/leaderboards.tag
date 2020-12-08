@@ -52,7 +52,7 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td>{ submission.owner }</td>
+            <td><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
         </tr>
         </tbody>

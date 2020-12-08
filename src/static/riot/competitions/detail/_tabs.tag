@@ -8,6 +8,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
+            <a class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
@@ -318,9 +319,11 @@
         }
 
         self.phase_selected = function (data, event) {
-            self.selected_phase_index = data.id
-            self.update()
-            CODALAB.events.trigger('phase_selected', data)
+            if(data) {
+                self.selected_phase_index = data.id
+                self.update()
+                CODALAB.events.trigger('phase_selected', data)
+            }
         }
 
         self.update()

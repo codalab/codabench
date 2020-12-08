@@ -108,7 +108,16 @@ def _send_submission(submission, task, is_scoring, run_args):
     if not submission.scoring_result.name:
         submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         submission.save(update_fields=['scoring_result'])
+
     submission = Submission.objects.get(id=submission.id)
+
+    # priority of scoring tasks is higher, we don't want to wait around for
+    # many submissions to be scored while we're waiting for results
+    if is_scoring:
+        # higher numbers are higher priority
+        priority = 10
+    else:
+        priority = 0
 
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
@@ -176,17 +185,24 @@ def _send_submission(submission, task, is_scoring, run_args):
                 args=(run_args,),
                 queue='compute-worker',
                 soft_time_limit=time_limit,
-                connection=new_connection
+                connection=new_connection,
+                priority=priority,
             )
     else:
         task = app.send_task(
             'compute_worker_run',
             args=(run_args,),
             queue='compute-worker',
-            soft_time_limit=time_limit
+            soft_time_limit=time_limit,
+            priority=priority,
         )
     submission.celery_task_id = task.id
-    submission.status = Submission.SUBMITTED
+
+    if submission.status == Submission.SUBMITTING:
+        # Don't want to mark an already-prepared submission as "submitted" again, so
+        # only do this if we were previously "SUBMITTING"
+        submission.status = Submission.SUBMITTED
+
     submission.save()
 
 
@@ -403,7 +419,7 @@ def unpack_competition(status_pk):
         mark_status_as_failed_and_delete_dataset(status, message)
         raise e
 
-    except Exception as e:
+    except:  # noqa: E722
         # These are critical uncaught exceptions, make sure the end user is at least informed
         # that unpacking has failed -- do not share unhandled exception details
         logger.error(traceback.format_exc())

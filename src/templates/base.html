@@ -61,7 +61,7 @@
                     <div id="competition_dropdown" class="ui dropdown item">
                         <div class="text">
                             <i class="ui small trophy icon"></i>
-                            Competitions
+                            Benchmarks
                         </div>
                         <i class="dropdown icon"></i>
                         <div class="menu">
@@ -101,8 +101,12 @@
                                 {% endif %}
                                 <div class="ui divider"></div>
                                 <div class="header">Account</div>
-                                <a class="item" href="{% url 'profiles:user_profile' %}">
+                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}">
                                     <i class="icon user"></i>
+                                    View Profile
+                                </a>
+                                <a class="item" href="{% url 'profiles:user_edit' username=user.username %}">
+                                    </i><i class="edit icon"></i>
                                     Edit profile
                                 </a>
                                 <a class="item" href="{% url 'accounts:logout' %}">
@@ -252,12 +256,15 @@
                 let urlParam = "?phase=" + phase_id
                 return urlBase.slice(0, -1) + ".json" + urlParam
             },
+            // Forums
+            FORUM: function (pk) {
+               return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
+            },
             // Datasets
             DATASET_MANAGEMENT: "{% url "datasets:management" %}",
             DATASET_DOWNLOAD: function (key) {
                 return "{% url "datasets:download" key=0 %}".replace(0, key)
             },
-
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
             TASK_DETAIL: function (pk) {

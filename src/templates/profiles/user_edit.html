@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <profile-edit style="width: 75%; margin: auto;"></profile-edit>
+    <script>
+        const selected_user = JSON.parse("{{ serialized_user | escapejs }}")
+    </script>
+{% endblock %}

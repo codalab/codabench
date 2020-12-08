@@ -30,6 +30,7 @@ THIRD_PARTY_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'django.contrib.humanize',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -54,6 +55,7 @@ OUR_APPS = (
     'commands',
     'queues',
     'health',
+    'forums',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -281,15 +283,6 @@ CHANNEL_LAYERS = {
         # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },
 }
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "asgi_redis.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("my_domain.com", 6379)],
-#         },
-#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
-#     },
-# }
 
 SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
 

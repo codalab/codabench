@@ -126,8 +126,7 @@ services:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
     volumes:
-      # To save rabbit state between container ups/downs
-      - ./var/rabbit:/var/lib/rabbit/:delegated
+      - ./var/rabbit:/var/lib/rabbitmq
     restart: unless-stopped
     logging:
       options:

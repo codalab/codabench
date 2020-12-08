@@ -1,9 +1,16 @@
+import json
+
 from django.conf import settings
 from django.contrib.auth import authenticate, login
+from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView, TemplateView
 
+from api.serializers.profiles import UserSerializer, OrganizationSerializer, OrganizationDetailSerializer
 from .forms import SignUpForm
+from .models import User, Organization
 
 
 class LoginView(auth_views.LoginView):
@@ -16,6 +23,37 @@ class LoginView(auth_views.LoginView):
 
 class LogoutView(auth_views.LogoutView):
     pass
+
+
+class UserEditView(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_edit.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_object(self, *args, **kwargs):
+        user = super().get_object(*args, **kwargs)
+        authorized = self.request.user.is_superuser or self.request.user == user
+        if authorized:
+            return user
+        raise Http404()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        return context
+
+
+class UserDetailView(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_profile.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        return context
 
 
 def sign_up(request):
@@ -41,5 +79,17 @@ def sign_up(request):
     return render(request, 'registration/signup.html', context)
 
 
-def user_profile(request):
-    return render(request, 'pages/user_profile.html')
+class OrganizationCreateView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/organization_create.html'
+
+
+class OrganizationDetailView(LoginRequiredMixin, DetailView):
+    queryset = Organization.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            context['organization'] = OrganizationDetailSerializer(self.object).data
+        return context
+
+
