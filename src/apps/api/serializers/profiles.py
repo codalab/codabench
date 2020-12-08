@@ -86,9 +86,8 @@ class UserSerializer(ModelSerializer):
         )
 
 
-class OrganizationCreationSerializer(ModelSerializer):
+class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
-    redirect_url = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Organization
@@ -103,6 +102,14 @@ class OrganizationCreationSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
+        )
+
+
+class OrganizationCreationSerializer(OrganizationSerializer):
+    redirect_url = SerializerMethodField(read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
             'redirect_url',
         )
 

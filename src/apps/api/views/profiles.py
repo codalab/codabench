@@ -13,8 +13,9 @@ from rest_framework import status
 from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf
-from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer
-from profiles.models import Organization
+from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer, \
+    OrganizationSerializer
+from profiles.models import Organization, Membership
 
 User = get_user_model()
 
@@ -87,18 +88,26 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         if self.action == 'create':
             return OrganizationCreationSerializer
         else:
-            return None
+            return OrganizationSerializer
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'retrieve', 'list']:
             self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        obj = self.perform_create(serializer)
+
+        # Set Creator to Owner
+        obj.users.add(request.user)
+        member = obj.membership_set.first()
+        member.group = Membership.OWNER
+        member.save()
+
         headers = self.get_success_headers(serializer.data)
-        resp = serializer.data
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        return serializer.save()
