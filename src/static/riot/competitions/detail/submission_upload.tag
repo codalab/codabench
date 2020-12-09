@@ -217,8 +217,12 @@
                         break
                 }
             })
+            self.ws.addEventListener("open", function(event){
+                // we're connected, so now try to pull logs (otherwise we may hit a race condition,
+                // maybe we don't have submissions yet?)
+                self.pull_logs()
+            })
             self.ws.open()
-
         }
 
         self.handle_websocket = function (submission_id, data) {
@@ -447,7 +451,9 @@
                     self.update()
                     $('.menu .item', self.root).tab()
                 }
-                self.pull_logs()
+                // Commented this out as it seems to hit a race condition some times with websocket
+                // not being connected yet. moved running after websocket open
+                // self.pull_logs()
             }
         })
 

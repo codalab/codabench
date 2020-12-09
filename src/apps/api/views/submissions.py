@@ -36,7 +36,11 @@ class SubmissionViewSet(ModelViewSet):
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
-            if not self.request.user.is_authenticated or not_bot_user:
+
+            if self.action == 're_run_submission':
+                # get_queryset will stop us from re-running something we're not supposed to
+                pass
+            elif not self.request.user.is_authenticated or not_bot_user:
                 try:
                     if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
                         raise PermissionDenied("Submission secrets do not match")
