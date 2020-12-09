@@ -83,7 +83,7 @@
                                     </div>
                                 </div>
                                 <div if="{children}">
-                                    <div class="ui secondary menu">
+                                    <div class="ui secondary menu submission-tabs">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
                                             Submission ID: { child }
@@ -468,6 +468,12 @@
     </script>
 
     <style type="text/stylus">
+        :scope
+            display block
+            width 100%
+            height 100%
+            margin-bottom 15px
+
         .required-answer::after
             margin -.2em 0 0 .2em
             content '*'
@@ -487,11 +493,18 @@
                 font-size 16px
                 font-weight 600
 
-        :scope
-            display block
-            width 100%
-            height 100%
-            margin-bottom 15px
+        #submission-output
+            .submission-tabs
+                overflow-x scroll
+                padding-bottom 10px
+
+                .item
+                    border solid 1px #efefef
+                    cursor pointer
+                    &:hover
+                        background-color #f5f5f5
+                .item.active
+                    border solid 1px #03bbbbad
 
         code
             background hsl(220, 80%, 90%)
