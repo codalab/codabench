@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions, mixins
 from rest_framework.permissions import IsAuthenticated
@@ -114,3 +116,14 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         return serializer.save()
+
+    @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
+    def update_user_group(self, request, pk=None):
+        member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+        if member.group == Membership.OWNER:
+            raise PermissionDenied('Cannot change the organization Owner')
+        if len([group for group in Membership.PERMISSION_GROUPS if group[0] == request.data['group']]) != 1:
+            raise ValidationError('Could not validate group to change to')
+        member.group = request.data['group']
+        member.save()
+        return Response({f'Member{member.user} permission changed to {member.group}'}, status=status.HTTP_200_OK)

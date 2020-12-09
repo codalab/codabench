@@ -114,6 +114,7 @@ class OrganizationMembershipSerializer(ModelSerializer):
     class Meta:
         model = Membership
         fields = (
+            'id',
             'group',
             'date_joined',
             'user'

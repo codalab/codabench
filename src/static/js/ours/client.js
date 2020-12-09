@@ -245,6 +245,9 @@ CODALAB.api = {
     update_organization: (data, id) => {
         return CODALAB.api.request('PUT', `${URLS.API}organizations/${id}/`, data)
     },
+    update_user_group: (data, id) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/update_user_group/`, data)
+    },
     /*---------------------------------------------------------------------
          Participants
     ---------------------------------------------------------------------*/
