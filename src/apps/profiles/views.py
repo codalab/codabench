@@ -8,9 +8,10 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, OrganizationSerializer, OrganizationDetailSerializer
+from api.serializers.profiles import UserSerializer, OrganizationSerializer, OrganizationDetailSerializer, \
+    OrganizationEditSerializer
 from .forms import SignUpForm
-from .models import User, Organization
+from .models import User, Organization, Membership
 
 
 class LoginView(auth_views.LoginView):
@@ -92,4 +93,22 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             context['organization'] = OrganizationDetailSerializer(self.object).data
         return context
 
+
+class OrganizationEditView(LoginRequiredMixin, DetailView):
+    queryset = Organization.objects.all()
+    template_name = 'profiles/organization_edit.html'
+
+    def get_object(self, *args, **kwargs):
+        organization = super().get_object(*args, **kwargs)
+
+        member = organization.membership_set.get(user=self.request.user)
+        if member is None or member.group not in Membership.EDITORS_GROUP:
+            raise Http404()
+        return organization
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            context['organization'] = json.dumps(OrganizationEditSerializer(self.object).data)
+        return context
 

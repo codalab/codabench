@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.urls import reverse
 
-from api.permissions import IsUserAdminOrIsSelf
+from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer, \
     OrganizationSerializer
 from profiles.models import Organization, Membership
@@ -77,12 +77,13 @@ def user_lookup(request):
 class OrganizationViewSet(mixins.CreateModelMixin,
                           mixins.UpdateModelMixin,
                           GenericViewSet):
-    # mixins.RetrieveModelMixin,
-    # mixins.DestroyModelMixin,
-    # mixins.ListModelMixin,
-    queryset = Organization.objects.all()
 
-    # TODO add queryset authentication checks
+    def get_queryset(self):
+        orgs = Organization.objects.all()
+        if self.request.method in ['GET', 'LIST', 'CREATE']:
+            return orgs
+        elif self.request.method in ['PUT', 'PATCH']:
+            return orgs.filter(users__in=[self.request.user])
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -93,6 +94,8 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def get_permissions(self):
         if self.action in ['create', 'retrieve', 'list']:
             self.permission_classes = [IsAuthenticated]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOrganizationEditor]
         return [permission() for permission in self.permission_classes]
 
     def create(self, request, *args, **kwargs):

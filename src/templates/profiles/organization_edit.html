@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <script>
+        const organization = {{ organization | safe }}
+    </script>
+    <organization-edit class="ui text container"></organization-edit>
+    <organization-user-management class="ui text container"></organization-user-management>
+{% endblock %}

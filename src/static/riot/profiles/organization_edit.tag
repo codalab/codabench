@@ -1,8 +1,12 @@
-<organization-create>
-    <h1>Create an Organization:</h1>
+<organization-edit>
+    <div class="ui raised segment">
+    <h1 class="ui header">Organization Edit:</h1>
     <form class="ui form" id="organization-form">
         <div class="field">
             <label>Profile Photo</label>
+            <label show="{ original_org_photo }">
+                Uploaded Photo: <a href="{ original_org_photo }" target="_blank">{ original_org_photo_name }</a>
+            </label>
             <div class="ui left action file input">
                 <button class="ui icon button" type="button" onclick="document.getElementById('profile_phtoto').click()">
                     <i class="attach icon"></i>
@@ -54,15 +58,29 @@
         <div class="ui error message"></div>
         <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
     </form>
-
+    </div>
     <script>
         self = this
-        self.org_photo = null
+        self.organization = organization
+        self.original_org_photo_name = self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
+        self.original_org_photo = self.organization.photo
+        delete self.organization.photo
 
         self.one("mount", function () {
             $.fn.form.settings.rules.test_http = function(param) {
                 return /^(http|https):\/\/(.*)/.test(param)
             }
+
+            $('#organization-form').form('set values', {
+                name: self.organization.name,
+                email: self.organization.email,
+                location: self.organization.location,
+                description: self.organization.description,
+                website_url: self.organization.website_url,
+                linkedin_url: self.organization.linkedin_url,
+                twitter_url: self.organization.twitter_url,
+                github_url: self.organization.github_url,
+            })
 
             $('#organization-form').form({
                 keyboardShortcuts: false,
@@ -142,14 +160,15 @@
                 onSuccess: function () {
                     data = $('#organization-form').form('get values')
                     data.photo = self.org_photo
-                    CODALAB.api.create_organization(data)
+                    CODALAB.api.update_organization(data, self.organization.id)
                         .done(data => {
-                            toastr.success("Organization Created")
-                            window.location.href = data.redirect_url
-                            console.log(data)
+                            toastr.success("Organization Saved")
+                            // window.location.href = window.location.href.replace('edit/', '')
+                            self.refs.submit_button.disabled = false
                         })
                         .fail(data => {
                             let errorsJSON = data.responseJSON
+                            console.log(data)
                             let errors = []
                             for(let key in errorsJSON){
                                 errors.push(self.camel_case_to_regular(key) + ' - ' + errorsJSON[key])
@@ -185,4 +204,4 @@
             $('#organization-form').form('validate form')
         }
     </script>
-</organization-create>
+</organization-edit>

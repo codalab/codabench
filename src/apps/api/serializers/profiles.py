@@ -63,6 +63,26 @@ class CollaboratorSerializer(ModelSerializer):
         )
 
 
+class SimpleUserSerializer(ModelSerializer):
+    name = SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'name',
+            'email'
+        )
+
+    def get_name(self, instance):
+        if instance.display_name:
+            return instance.display_name
+        elif instance.first_name or instance.last_name:
+            return f'{instance.first_name} {instance.last_name}'
+        else:
+            return instance.username
+
+
 class UserSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
 
@@ -124,4 +144,13 @@ class OrganizationDetailSerializer(OrganizationSerializer):
     class Meta(OrganizationSerializer.Meta):
         fields = OrganizationSerializer.Meta.fields + (
             'date_created',
+        )
+
+
+class OrganizationEditSerializer(OrganizationSerializer):
+    users = SimpleUserSerializer(many=True, read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
+            'users',
         )

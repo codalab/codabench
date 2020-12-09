@@ -185,4 +185,6 @@ class Membership(models.Model):
     MEMBER = 'MEMBER'
     PERMISSION_GROUPS = ((OWNER, 'Owner'), (MANAGER, 'Manager'), (PARTICIPANT, 'Participant'), (MEMBER, 'Member'))
     group = models.TextField(choices=PERMISSION_GROUPS, default=MEMBER, null=False, blank=False)
->>>>>>> 352-forums
+
+    # Groups
+    EDITORS_GROUP = [OWNER, MANAGER]

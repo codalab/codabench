@@ -237,10 +237,13 @@ CODALAB.api = {
         return CODALAB.api.request('PATCH',`${URLS.API}users/${id}/`, data)
     },
     /*---------------------------------------------------------------------
-         Users
+         Organizations
     ---------------------------------------------------------------------*/
     create_organization: (data) => {
         return CODALAB.api.request('POST', `${URLS.API}organizations/`, data)
+    },
+    update_organization: (data, id) => {
+        return CODALAB.api.request('PUT', `${URLS.API}organizations/${id}/`, data)
     },
     /*---------------------------------------------------------------------
          Participants

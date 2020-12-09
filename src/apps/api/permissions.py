@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.generics import get_object_or_404
 
 
 class IsOrganizerOrCollaborator(permissions.BasePermission):
@@ -25,3 +26,16 @@ class LeaderboardNotHidden(permissions.BasePermission):
 class IsUserAdminOrIsSelf(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_superuser or request.user == obj
+
+
+class IsOrganizationEditor(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, obj):
+        print('Checking Permissions')
+        try:
+            membership = obj.membership_set.get(user=request.user)
+        except:
+            print('Could not find membership')
+            return False
+        print(f'Editor Privileges evaluated to {membership.group in membership.EDITORS_GROUP}')
+        return membership.group in membership.EDITORS_GROUP
+
