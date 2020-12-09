@@ -169,6 +169,7 @@ class Run:
         self.watch = True
         self.completed_program_counter = 0
         self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
         self.logs = {}
@@ -335,7 +336,9 @@ class Run:
             bundle_file = os.path.join(CACHE_DIR, url_hash)
             download_needed = not os.path.exists(bundle_file)
         else:
-            bundle_file = tempfile.NamedTemporaryFile(delete=False).name
+            if not os.path.exists(self.bundle_dir):
+                os.mkdir(self.bundle_dir)
+            bundle_file = tempfile.NamedTemporaryFile(dir=self.bundle_dir, delete=False).name
 
         if download_needed:
             try:
