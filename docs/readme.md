@@ -1,7 +1,7 @@
 ## GET READY
 
 - This new platform is an upgraded version of [Codalab](https://competitions.codalab.org/) allowing you to create either competitions or benchmarks
-- This getting started tutorial shows you a simple example of how to create a competition (fancier examples can be found at [[here](https://github.com/codalab/competitions-v2/tree/codabench/sample_bundle/src/tests/functional/test_files/AutoWSL_sample)]; the full documentation at [[here](https://github.com/codalab/competitions-v2/tree/develop/docs/tutorial)])
+- This getting started tutorial shows you a simple example of how to create a competition (fancier examples can be found at [[here](https://github.com/codalab/competitions-v2/tree/codabench/sample_bundle/src/tests/functional/test_files/AutoWSL_sample)]; the full documentation at [[here](https://github.com/codalab/competitions-v2/wiki)])
 - Create a Codalab account (if not done yet)
 - Download the [sample competition bundle](https://github.com/codalab/competitions-v2/tree/develop/docs) and a [sample submission](https://github.com/codalab/competitions-v2/tree/develop/docs)
 - Do not unzip them.
