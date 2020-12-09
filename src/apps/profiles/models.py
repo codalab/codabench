@@ -174,17 +174,19 @@ class Organization(models.Model):
 
 
 class Membership(models.Model):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date_joined = models.DateField(default=now)
-
     # Permissions
     OWNER = 'OWNER'
     MANAGER = 'MANAGER'
     PARTICIPANT = 'PARTICIPANT'
     MEMBER = 'MEMBER'
     PERMISSION_GROUPS = ((OWNER, 'Owner'), (MANAGER, 'Manager'), (PARTICIPANT, 'Participant'), (MEMBER, 'Member'))
-    group = models.TextField(choices=PERMISSION_GROUPS, default=MEMBER, null=False, blank=False)
-
     # Groups
     EDITORS_GROUP = [OWNER, MANAGER]
+
+    group = models.TextField(choices=PERMISSION_GROUPS, default=MEMBER, null=False, blank=False)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date_joined = models.DateField(default=now)
+
+    class Meta:
+        ordering = ["date_joined"]

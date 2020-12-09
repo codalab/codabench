@@ -3,7 +3,7 @@
 {% load humanize %}
 
 {% block content %}
-    <div class="ui main container">
+    <div class="ui text container">
         <div class="ui items">
             <div class="item">
                 {% if organization.photo %}
@@ -63,6 +63,27 @@
                     </div>
                 </div>
             {% endif %}
+        </div>
+    </div>
+    <div class="ui text container">
+        <div class="ui raised segment">
+            <h1 class="ui dividing header">Users</h1>
+            <table class="ui striped table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>E-mail</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for user in organization.users %}
+                    <tr>
+                        <td><a href="/profiles/user/{{ user.slug }}/">{{ user.name }}</a></td>
+                        <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 {% endblock %}

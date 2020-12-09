@@ -1,6 +1,6 @@
 <organization-edit>
     <div class="ui raised segment">
-    <h1 class="ui header">Organization Edit:</h1>
+    <h1 class="ui dividing header">Organization Edit:</h1>
     <form class="ui form" id="organization-form">
         <div class="field">
             <label>Profile Photo</label>

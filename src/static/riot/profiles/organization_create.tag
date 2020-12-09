@@ -1,5 +1,6 @@
 <organization-create>
-    <h1>Create an Organization:</h1>
+    <div class="ui raised segment">
+    <h1 class="ui dividing header">Create an Organization:</h1>
     <form class="ui form" id="organization-form">
         <div class="field">
             <label>Profile Photo</label>
@@ -54,6 +55,7 @@
         <div class="ui error message"></div>
         <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
     </form>
+    </div>
 
     <script>
         self = this

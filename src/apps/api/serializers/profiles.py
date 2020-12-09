@@ -4,7 +4,7 @@ from rest_framework.fields import DateTimeField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 
 from api.fields import NamedBase64ImageField
-from profiles.models import GithubUserInfo, Organization
+from profiles.models import GithubUserInfo, Organization, Membership
 
 User = get_user_model()
 
@@ -71,7 +71,8 @@ class SimpleUserSerializer(ModelSerializer):
         fields = (
             'id',
             'name',
-            'email'
+            'email',
+            'slug'
         )
 
     def get_name(self, instance):
@@ -104,6 +105,18 @@ class UserSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
+        )
+
+
+class OrganizationMembershipSerializer(ModelSerializer):
+    user = SimpleUserSerializer(read_only=True, many=False)
+
+    class Meta:
+        model = Membership
+        fields = (
+            'group',
+            'date_joined',
+            'user'
         )
 
 
@@ -140,17 +153,19 @@ class OrganizationCreationSerializer(OrganizationSerializer):
 
 class OrganizationDetailSerializer(OrganizationSerializer):
     date_created = DateTimeField(format="%d-%m-%Y", read_only=True)
-
-    class Meta(OrganizationSerializer.Meta):
-        fields = OrganizationSerializer.Meta.fields + (
-            'date_created',
-        )
-
-
-class OrganizationEditSerializer(OrganizationSerializer):
     users = SimpleUserSerializer(many=True, read_only=True)
 
     class Meta(OrganizationSerializer.Meta):
         fields = OrganizationSerializer.Meta.fields + (
+            'date_created',
             'users',
+        )
+
+
+class OrganizationEditSerializer(OrganizationSerializer):
+    members = OrganizationMembershipSerializer(source='membership_set', many=True, read_only=True)
+
+    class Meta(OrganizationSerializer.Meta):
+        fields = OrganizationSerializer.Meta.fields + (
+            'members',
         )
