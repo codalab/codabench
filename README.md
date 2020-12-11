@@ -88,7 +88,7 @@ Make a file `.env` and put this in it:
 BROKER_URL=<desired broker url>
 
 # Location to store submissions/cache -- absolute path!
-STORAGE_LOCATION=/tmp/codabench
+HOST_DIRECTORY=/tmp/codabench
 
 # If SSL is enabled, then uncomment the following line
 #BROKER_USE_SSL=True
