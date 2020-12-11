@@ -84,8 +84,28 @@ class SimpleUserSerializer(ModelSerializer):
             return instance.username
 
 
+class OrganizationSerializer(ModelSerializer):
+    photo = NamedBase64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'id',
+            'name',
+            'photo',
+            'email',
+            'location',
+            'description',
+            'website_url',
+            'linkedin_url',
+            'twitter_url',
+            'github_url',
+        )
+
+
 class UserSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
+    organizations = OrganizationSerializer(many=True)
 
     class Meta:
         model = User
@@ -105,6 +125,7 @@ class UserSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
+            'organizations',
         )
 
 
@@ -133,25 +154,6 @@ class OrganizationMembershipSerializer(ModelSerializer):
             'group',
             'date_joined',
             'user'
-        )
-
-
-class OrganizationSerializer(ModelSerializer):
-    photo = NamedBase64ImageField(required=False, allow_null=True)
-
-    class Meta:
-        model = Organization
-        fields = (
-            'id',
-            'name',
-            'photo',
-            'email',
-            'location',
-            'description',
-            'website_url',
-            'linkedin_url',
-            'twitter_url',
-            'github_url',
         )
 
 

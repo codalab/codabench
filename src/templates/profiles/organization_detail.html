@@ -5,6 +5,11 @@
 {% block content %}
     <div class="ui text container">
         <div class="ui items">
+        {% if is_editor %}
+            <div class="item">
+                <a href="javascript:window.location.href += 'edit/';"><button type="button" class="ui left floated button">Edit Competition</button></a>
+            </div>
+        {% endif %}
             <div class="item">
                 {% if organization.photo %}
                     <div class="image">

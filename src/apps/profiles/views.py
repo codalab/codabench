@@ -8,8 +8,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, \
-    OrganizationEditSerializer
+from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer
 from .forms import SignUpForm
 from .models import User, Organization, Membership
 
@@ -91,6 +90,12 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
         context = {}
         if self.object:
             context['organization'] = OrganizationDetailSerializer(self.object).data
+        membership = self.object.membership_set.filter(user=self.request.user)
+        print(membership)
+        if len(membership) == 1:
+            context['is_editor'] = membership.first().group in Membership.EDITORS_GROUP
+        else:
+            context['is_editor'] = False
         return context
 
 

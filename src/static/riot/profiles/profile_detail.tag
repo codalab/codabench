@@ -6,57 +6,83 @@
                 <div if="{!selected_user.photo}"><img id="avatar" class="ui centered rounded image" src="http://via.placeholder.com/150x150"></div>
                 <div if="{selected_user.photo}"><img id="avatar" class="ui centered rounded image" src="{selected_user.photo}"></div>
 
+<!--                &lt;!&ndash; Competition Divider &ndash;&gt;-->
+<!--                <div class="ui horizontal divider">Competitions</div>-->
+
+<!--                &lt;!&ndash; Competition Cards &ndash;&gt;-->
+<!--                <div class="ui fluid card">-->
+<!--                    <div class="comp_card center aligned image">-->
+<!--                        <div  class="comp_header center aligned header content">-->
+<!--                            <div class="comp_name">Competition Name</div>-->
+<!--                            <img class="ui centered circular image"-->
+<!--                                 src="http://via.placeholder.com/50x50">-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="content">-->
+<!--                        <div class="description">-->
+<!--                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque-->
+<!--                                distinct...</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="right aligned extra content">-->
+<!--                        <a class="status">-->
+<!--                            <i class="exchange icon"></i>-->
+<!--                            In Progress-->
+<!--                        </a>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="ui fluid card">-->
+<!--                    <div class="comp_card center aligned image">-->
+<!--                        <div  class="comp_header center aligned header content">-->
+<!--                            <div class="comp_name">Competition Name</div>-->
+<!--                            <img class="ui centered circular image"-->
+<!--                                 src="http://via.placeholder.com/50x50">-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="content">-->
+<!--                        <div class="description">-->
+<!--                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque-->
+<!--                                distinct...</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="right aligned extra content">-->
+<!--                        <a class="status">-->
+<!--                            <i class="exchange icon"></i>-->
+<!--                            In Progress-->
+<!--                        </a>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <button class="ui basic fluid button">-->
+<!--                    See More Competitions...-->
+<!--                </button>-->
+<!--            </div>-->
 
                 <!-- Competition Divider -->
-                <div class="ui horizontal divider">Competitions</div>
+                <div class="ui horizontal divider">Organizations</div>
 
                 <!-- Competition Cards -->
-                <div class="ui fluid card">
+                <div each="{org in selected_user.organizations}" class="ui fluid card">
                     <div class="comp_card center aligned image">
                         <div  class="comp_header center aligned header content">
-                            <div class="comp_name">Competition Name</div>
-                            <img class="ui centered circular image"
-                                 src="http://via.placeholder.com/50x50">
+                            <div class="comp_name">{org.name}</div>
+                            <img class="ui centered mini circular image"
+                                 src="{org.photo}">
                         </div>
                     </div>
                     <div class="content">
                         <div class="description">
-                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
-                                distinct...</p>
+                            <p>{ org.description.length > 225 ? org.description.substring(0, 222) + "..." : org.description}</p>
                         </div>
                     </div>
                     <div class="right aligned extra content">
-                        <a class="status">
-                            <i class="exchange icon"></i>
-                            In Progress
+                        <a class="status" href="/profiles/organization/{org.id}/">
+                            View Organization
+                            <i class="angle right icon"></i>
                         </a>
                     </div>
                 </div>
-                <div class="ui fluid card">
-                    <div class="comp_card center aligned image">
-                        <div  class="comp_header center aligned header content">
-                            <div class="comp_name">Competition Name</div>
-                            <img class="ui centered circular image"
-                                 src="http://via.placeholder.com/50x50">
-                        </div>
-                    </div>
-                    <div class="content">
-                        <div class="description">
-                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque
-                                distinct...</p>
-                        </div>
-                    </div>
-                    <div class="right aligned extra content">
-                        <a class="status">
-                            <i class="exchange icon"></i>
-                            In Progress
-                        </a>
-                    </div>
-                </div>
-                <button class="ui basic fluid button">
-                    See More Competitions...
-                </button>
             </div>
+
             <!-- Second Column -->
             <div class="eight wide column">
                 <span class="header content">{selected_user.first_name} {selected_user.last_name}</span>
@@ -80,6 +106,7 @@
     </div>
     <script>
         self.selected_user = selected_user
+        console.log('orgs', self.selected_user.organizations)
     </script>
     <!------------------------------------------ CSS Styling ------------------------------------>
     <style type="text/stylus">

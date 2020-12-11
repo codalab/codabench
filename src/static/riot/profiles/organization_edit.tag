@@ -57,6 +57,9 @@
         </div>
         <div class="ui error message"></div>
         <div class="ui primary button" onclick="{save.bind(this)}" id="submit_button">Submit</div>
+        <a href="javascript:window.location.href = window.location.href.replace(new RegExp('edit/.*$'), '')">
+            <button type="button" class="ui button">Back to Organization Page</button>
+        </a>
     </form>
     </div>
     <script>
