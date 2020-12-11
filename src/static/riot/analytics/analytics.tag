@@ -57,7 +57,7 @@
 
 
     <div class="ui top attached tabular menu">
-        <a class="active item" data-tab="competitions">Competitions</a>
+        <a class="active item" data-tab="competitions">Benchmarks</a>
         <a class="item" data-tab="submissions">Submissions</a>
         <a class="item" data-tab="users">Users</a>
     </div>
@@ -68,7 +68,7 @@
                 {competitions}
             </div>
             <div class="label">
-                Competitions Created
+                Benchmarks Created
             </div>
         </div>
 
@@ -77,7 +77,7 @@
                 {competitions_published}
             </div>
             <div class="label">
-                Competitions Published
+                Benchmarks Published
             </div>
         </div>
 

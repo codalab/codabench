@@ -3,7 +3,7 @@
         <div class="eight wide column centered form-empty">
             <div class="ui segment">
                 <div class="flex-header">
-                    <h1 class="ui header">Competition upload</h1>
+                    <h1 class="ui header">Benchmark upload</h1>
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
                                  tooltip="More information on bundle creation">
                     </help_button>
