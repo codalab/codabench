@@ -200,7 +200,7 @@ services:
       - rabbit
     volumes:
       - ./docker/compute_worker:/app
-      - ./var/compute_worker:/tmp/codalab-v2
+      - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
