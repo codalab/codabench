@@ -56,7 +56,7 @@
             </div>
         </div>
         <div class="ui error message"></div>
-        <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
+        <div class="ui primary button" onclick="{save.bind(this)}" id="submit_button">Submit</div>
     </form>
     </div>
     <script>
@@ -66,7 +66,9 @@
         self.original_org_photo = self.organization.photo
         delete self.organization.photo
 
+
         self.one("mount", function () {
+            self.submit_button = $('#submit_button')
             $.fn.form.settings.rules.test_http = function(param) {
                 return /^(http|https):\/\/(.*)/.test(param)
             }
@@ -164,7 +166,7 @@
                         .done(data => {
                             toastr.success("Organization Saved")
                             // window.location.href = window.location.href.replace('edit/', '')
-                            self.refs.submit_button.disabled = false
+                            self.submit_button.prop('disabled', false)
                         })
                         .fail(data => {
                             let errorsJSON = data.responseJSON
@@ -175,12 +177,12 @@
                                 $('#'+key).addClass('error')
                             }
                             $('#organization-form').form('add errors', errors)
-                            self.refs.submit_button.disabled = false
+                            self.submit_button.prop('disabled', false)
                         })
                     return false
                 },
                 onFailure: function () {
-                    self.refs.submit_button.disabled = false
+                    self.submit_button.prop('disabled', false)
                 }
             })
 
@@ -200,7 +202,7 @@
         }
 
         self.save = () => {
-            self.refs.submit_button.disabled = true
+            self.submit_button.prop('disabled', true)
             $('#organization-form').form('validate form')
         }
     </script>

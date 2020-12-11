@@ -1,5 +1,4 @@
 from rest_framework import permissions
-from rest_framework.generics import get_object_or_404
 
 
 class IsOrganizerOrCollaborator(permissions.BasePermission):
@@ -38,4 +37,3 @@ class IsOrganizationEditor(permissions.IsAuthenticated):
             return False
         print(f'Editor Privileges evaluated to {membership.group in membership.EDITORS_GROUP}')
         return membership.group in membership.EDITORS_GROUP
-

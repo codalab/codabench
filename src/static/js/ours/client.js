@@ -246,7 +246,19 @@ CODALAB.api = {
         return CODALAB.api.request('PUT', `${URLS.API}organizations/${id}/`, data)
     },
     update_user_group: (data, id) => {
-        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/update_user_group/`, data)
+        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/update_member_group/`, data)
+    },
+    update_organization_invite: (data, method) => {
+        return CODALAB.api.request(method, `${URLS.API}organizations/invite_response/`, data)
+    },
+    validate_organization_invite: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/validate_invite/`, data)
+    },
+    invite_user_to_organization: (id, data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/invite_users/`, data)
+    },
+    delete_organization_member: (id, data) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_member/`, data)
     },
     /*---------------------------------------------------------------------
          Participants

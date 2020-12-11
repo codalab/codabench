@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
@@ -86,7 +88,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return f'Username-{self.username} | Name-{self.name}'
+        return f'{self.username} | {self.email}'
 
     @property
     def slug_url(self):
@@ -154,6 +156,7 @@ class GithubUserInfo(models.Model):
 
 class Organization(models.Model):
     users = models.ManyToManyField(User, related_name='organizations', through='Membership')
+    user_record = models.ManyToManyField(User)
 
     # slug = models.SlugField(max_length=50, default='', unique=True)
     name = models.CharField(max_length=100, unique=True, null=False, blank=False)
@@ -179,14 +182,23 @@ class Membership(models.Model):
     MANAGER = 'MANAGER'
     PARTICIPANT = 'PARTICIPANT'
     MEMBER = 'MEMBER'
-    PERMISSION_GROUPS = ((OWNER, 'Owner'), (MANAGER, 'Manager'), (PARTICIPANT, 'Participant'), (MEMBER, 'Member'))
+    INVITED = 'INVITED'
+    PERMISSION_GROUPS = (
+        (OWNER, 'Owner'),
+        (MANAGER, 'Manager'),
+        (PARTICIPANT, 'Participant'),
+        (MEMBER, 'Member'),
+        (INVITED, 'Invited'),
+    )
     # Groups
     EDITORS_GROUP = [OWNER, MANAGER]
+    SETTABLE_GROUP = [MANAGER, PARTICIPANT, MEMBER]
 
-    group = models.TextField(choices=PERMISSION_GROUPS, default=MEMBER, null=False, blank=False)
+    group = models.TextField(choices=PERMISSION_GROUPS, default=INVITED, null=False, blank=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date_joined = models.DateField(default=now)
+    date_joined = models.DateTimeField(default=now)
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
 
     class Meta:
         ordering = ["date_joined"]

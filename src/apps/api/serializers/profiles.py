@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.fields import DateTimeField
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, CharField
 
 from api.fields import NamedBase64ImageField
 from profiles.models import GithubUserInfo, Organization, Membership
@@ -108,8 +108,23 @@ class UserSerializer(ModelSerializer):
         )
 
 
+class MembershipSerializer(ModelSerializer):
+    user = SimpleUserSerializer(many=False, read_only=True)
+    organization_name = CharField(source='organization.name')
+    # date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
+
+    class Meta:
+        model = Membership
+        fields = (
+            'date_joined',
+            'user',
+            'organization_name',
+        )
+
+
 class OrganizationMembershipSerializer(ModelSerializer):
     user = SimpleUserSerializer(read_only=True, many=False)
+    # date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
 
     class Meta:
         model = Membership
@@ -153,7 +168,7 @@ class OrganizationCreationSerializer(OrganizationSerializer):
 
 
 class OrganizationDetailSerializer(OrganizationSerializer):
-    date_created = DateTimeField(format="%d-%m-%Y", read_only=True)
+    date_created = DateTimeField(format="%m-%d-%Y", read_only=True)
     users = SimpleUserSerializer(many=True, read_only=True)
 
     class Meta(OrganizationSerializer.Meta):

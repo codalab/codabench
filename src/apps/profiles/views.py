@@ -8,7 +8,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, OrganizationSerializer, OrganizationDetailSerializer, \
+from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, \
     OrganizationEditSerializer
 from .forms import SignUpForm
 from .models import User, Organization, Membership
@@ -100,9 +100,8 @@ class OrganizationEditView(LoginRequiredMixin, DetailView):
 
     def get_object(self, *args, **kwargs):
         organization = super().get_object(*args, **kwargs)
-
-        member = organization.membership_set.get(user=self.request.user)
-        if member is None or member.group not in Membership.EDITORS_GROUP:
+        member = organization.membership_set.filter(user=self.request.user)
+        if len(member) == 0 or member.first().group not in Membership.EDITORS_GROUP:
             raise Http404()
         return organization
 
@@ -112,3 +111,6 @@ class OrganizationEditView(LoginRequiredMixin, DetailView):
             context['organization'] = json.dumps(OrganizationEditSerializer(self.object).data)
         return context
 
+
+class OrganizationInviteView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/organization_invite.html'

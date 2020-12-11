@@ -16,7 +16,8 @@ from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer, \
-    OrganizationSerializer
+    OrganizationSerializer, MembershipSerializer
+from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 
 User = get_user_model()
@@ -110,6 +111,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         member = obj.membership_set.first()
         member.group = Membership.OWNER
         member.save()
+        obj.user_record.add(request.user)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -118,12 +120,104 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         return serializer.save()
 
     @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
-    def update_user_group(self, request, pk=None):
-        member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+    def update_member_group(self, request, pk=None):
+        try:
+            member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+        except:
+            raise ValidationError('Could not find organization member')
         if member.group == Membership.OWNER:
             raise PermissionDenied('Cannot change the organization Owner')
+        if member.group == Membership.INVITED:
+            raise PermissionDenied('The User must accept their invite before you can change their permissions')
         if len([group for group in Membership.PERMISSION_GROUPS if group[0] == request.data['group']]) != 1:
             raise ValidationError('Could not validate group to change to')
+        if request.data['group'] not in Membership.SETTABLE_GROUP:
+            raise ValidationError(f'Cannot set a member to {request.data["group"]}.')
         member.group = request.data['group']
         member.save()
         return Response({f'Member{member.user} permission changed to {member.group}'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
+    def invite_users(self, request, pk=None):
+        if type(request.data) != list:
+            raise ValidationError('Required data is an Array of User ID\'s')
+        users = User.objects.filter(id__in=request.data).exclude(organizations=pk)
+        org = Organization.objects.get(pk=pk)
+        org.users.add(*users)
+        members = org.membership_set.filter(user__in=[user.id for user in users])
+        for member in members:
+            pass
+            send_mail(
+                context={
+                    'user': member.user,
+                    'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
+                    'organization': org.name,
+                },
+                subject=f'You have been invited to join {org.name}',
+                html_file="profiles/emails/invite.html",
+                text_file="profiles/emails/invite.txt",
+                to_email=member.user.email
+            )
+
+        return Response({})
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsOrganizationEditor])
+    def delete_member(self, request, pk=None):
+        try:
+            member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+        except:
+            raise ValidationError('Could not find organization member')
+        if member.group == Membership.OWNER:
+            raise PermissionDenied('Cannot change the organization Owner')
+        member.organization.users.remove(member.user)
+        return Response('Member removed from Organization', status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def invite_response(self, request):
+        token = request.data['token']
+        try:
+            membership = Membership.objects.get(token=token)
+        except:
+            raise ValidationError('No Invite found')
+        if membership.user != request.user:
+            raise PermissionDenied('This invite was not sent to you. Make sure you are logged in as the right account')
+        # If the invite has already been accepted, do nothing.
+        if membership.user != request.user:
+            resp = {
+                'invite_status': 'already accepted',
+                'redirect_url': reverse('profiles:organization_profile', args=[membership.organization_id])
+            }
+            return Response(resp, status=status.HTTP_200_OK)
+
+        if request.method == 'DELETE':
+            membership.organization.users.remove(request.user)
+            return Response('Deleted Invite', status=status.HTTP_200_OK)
+
+        elif request.method == 'POST':
+            membership.group = Membership.MEMBER
+            membership.save()
+            membership.organization.user_record.add(request.user)
+            resp = {
+                'invite_status': 'accepted',
+                'redirect_url': reverse('profiles:organization_profile', args=[membership.organization_id])
+            }
+            return Response(resp, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def validate_invite(self, request):
+        token = request.data['token']
+        try:
+            membership = Membership.objects.get(token=token)
+        except:
+            raise ValidationError('No Invite found')
+        if membership.user != request.user:
+            raise PermissionDenied('This invite was not sent to you. Make sure you are logged in as the right account')
+        # TODO Should add some sort of system that deletes users that don't accept invites within a certain time period
+
+        # If the User has already accept the invite, redirect them to the Organization page
+        if membership.group != Membership.INVITED:
+            url = reverse('profiles:organization_profile', args=[membership.organization_id])
+            return Response({'redirect_url': url}, status=status.HTTP_301_MOVED_PERMANENTLY)
+
+        mem_ser = MembershipSerializer(membership)
+        return Response(mem_ser.data, status=status.HTTP_200_OK)
