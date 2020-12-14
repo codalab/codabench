@@ -236,6 +236,9 @@ CODALAB.api = {
     update_user_details: (id, data) => {
         return CODALAB.api.request('PATCH',`${URLS.API}users/${id}/`, data)
     },
+    get_user_participant_organizations: () => {
+        return CODALAB.api.request('GET',`${URLS.API}users/participant_organizations/`)
+    },
     /*---------------------------------------------------------------------
          Organizations
     ---------------------------------------------------------------------*/

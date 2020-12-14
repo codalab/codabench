@@ -21,8 +21,10 @@
                 <td><a href="mailto:{user.user.email}">{user.user.email}</a></td>
                 <td>{user.date_joined}</td>
                 <td if="{user['group'] !== 'OWNER' && user['group'] !== 'INVITED'}">
+                    <span>
                     <div class="ui inline dropdown">
-                        <span class="text">{capitalize(user['group'])}</span>
+                        <div class="text">{capitalize(user['group'])}
+                        </div>
                         <i class="dropdown icon"></i>
                         <div class="menu">
                             <div class="header">Adjust Member Permissions</div>
@@ -32,6 +34,7 @@
                         </div>
                     </div>
                     <div class="ui tiny inline loader"></div>
+                </span>
                 </td>
                 <td if="{user['group'] === 'OWNER' || user['group'] === 'INVITED'}">
                     <span class="text">{capitalize(user['group'])}</span>

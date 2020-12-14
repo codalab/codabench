@@ -16,7 +16,7 @@ from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer, \
-    OrganizationSerializer, MembershipSerializer
+    OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 
@@ -41,6 +41,12 @@ class UserViewSet(mixins.UpdateModelMixin,
         instance = serializer.save()
         resp = self.get_serializer(instance)
         return Response(reverse('profiles:user_profile', args=[resp.data['username']]))
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def participant_organizations(self, request):
+        memberships = request.user.membership_set.filter(group__in=Membership.PARTICIPANT_GROUP).prefetch_related('organization')
+        data = SimpleOrganizationSerializer([member.organization for member in memberships], many=True).data
+        return Response(data)
 
 
 class GetMyProfile(RetrieveAPIView, GenericAPIView):
@@ -131,7 +137,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
             raise PermissionDenied('The User must accept their invite before you can change their permissions')
         if len([group for group in Membership.PERMISSION_GROUPS if group[0] == request.data['group']]) != 1:
             raise ValidationError('Could not validate group to change to')
-        if request.data['group'] not in Membership.SETTABLE_GROUP:
+        if request.data['group'] not in Membership.SETTABLE_PERMISSIONS:
             raise ValidationError(f'Cannot set a member to {request.data["group"]}.')
         member.group = request.data['group']
         member.save()

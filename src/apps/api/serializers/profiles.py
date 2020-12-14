@@ -84,6 +84,16 @@ class SimpleUserSerializer(ModelSerializer):
             return instance.username
 
 
+class SimpleOrganizationSerializer(ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = (
+            'id',
+            'name',
+            'url',
+        )
+
+
 class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
 
@@ -105,7 +115,7 @@ class OrganizationSerializer(ModelSerializer):
 
 class UserSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
-    organizations = OrganizationSerializer(many=True)
+    organizations = OrganizationSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -132,7 +142,7 @@ class UserSerializer(ModelSerializer):
 class MembershipSerializer(ModelSerializer):
     user = SimpleUserSerializer(many=False, read_only=True)
     organization_name = CharField(source='organization.name')
-    # date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
+    date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
 
     class Meta:
         model = Membership
@@ -145,7 +155,7 @@ class MembershipSerializer(ModelSerializer):
 
 class OrganizationMembershipSerializer(ModelSerializer):
     user = SimpleUserSerializer(read_only=True, many=False)
-    # date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
+    date_joined = DateTimeField(format="%m-%d-%Y", read_only=True)
 
     class Meta:
         model = Membership

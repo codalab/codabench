@@ -8,7 +8,6 @@ from django.utils.text import slugify
 from utils.data import PathWrapper
 from django.urls import reverse
 
-
 PROFILE_DATA_BLACKLIST = [
     'password',
     'groups',
@@ -39,7 +38,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     company = models.CharField(max_length=100, null=True, blank=True)
     bio = models.CharField(max_length=300, null=True, blank=True)
 
-    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True, on_delete=models.CASCADE)
+    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True,
+                                       on_delete=models.CASCADE)
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
@@ -175,6 +175,10 @@ class Organization(models.Model):
     def __str__(self):
         return f'{self.name}({self.email})'
 
+    @property
+    def url(self):
+        return reverse('profiles:organization_profile', args=[self.id])
+
 
 class Membership(models.Model):
     # Permissions
@@ -183,7 +187,7 @@ class Membership(models.Model):
     PARTICIPANT = 'PARTICIPANT'
     MEMBER = 'MEMBER'
     INVITED = 'INVITED'
-    PERMISSION_GROUPS = (
+    PERMISSIONS = (
         (OWNER, 'Owner'),
         (MANAGER, 'Manager'),
         (PARTICIPANT, 'Participant'),
@@ -192,9 +196,10 @@ class Membership(models.Model):
     )
     # Groups
     EDITORS_GROUP = [OWNER, MANAGER]
-    SETTABLE_GROUP = [MANAGER, PARTICIPANT, MEMBER]
+    PARTICIPANT_GROUP = EDITORS_GROUP + [PARTICIPANT]
+    SETTABLE_PERMISSIONS = [MANAGER, PARTICIPANT, MEMBER]
 
-    group = models.TextField(choices=PERMISSION_GROUPS, default=INVITED, null=False, blank=False)
+    group = models.TextField(choices=PERMISSIONS, default=INVITED, null=False, blank=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date_joined = models.DateTimeField(default=now)

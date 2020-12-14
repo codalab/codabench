@@ -65,8 +65,9 @@
     <script>
         self = this
         self.organization = organization
-        self.original_org_photo_name = self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
+        self.original_org_photo_name = typeof self.organization.photo !== 'undefined' ? null : self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
         self.original_org_photo = self.organization.photo
+        // self.logo_file_name = ''
         delete self.organization.photo
 
 
@@ -173,7 +174,6 @@
                         })
                         .fail(data => {
                             let errorsJSON = data.responseJSON
-                            console.log(data)
                             let errors = []
                             for(let key in errorsJSON){
                                 errors.push(self.camel_case_to_regular(key) + ' - ' + errorsJSON[key])
