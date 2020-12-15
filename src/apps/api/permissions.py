@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from profiles.models import Membership
+
 
 class IsOrganizerOrCollaborator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -29,11 +31,9 @@ class IsUserAdminOrIsSelf(permissions.BasePermission):
 
 class IsOrganizationEditor(permissions.IsAuthenticated):
     def has_object_permission(self, request, view, obj):
-        print('Checking Permissions')
         try:
             membership = obj.membership_set.get(user=request.user)
-        except:
-            print('Could not find membership')
+        except Membership.DoesNotExist:
             return False
         print(f'Editor Privileges evaluated to {membership.group in membership.EDITORS_GROUP}')
         return membership.group in membership.EDITORS_GROUP

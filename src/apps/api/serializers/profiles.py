@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework.fields import DateTimeField
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, CharField
 

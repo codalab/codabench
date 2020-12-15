@@ -126,7 +126,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def update_member_group(self, request, pk=None):
         try:
             member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
-        except:
+        except Membership.DoesNotExist:
             raise ValidationError('Could not find organization member')
         if member.group == Membership.OWNER:
             raise PermissionDenied('Cannot change the organization Owner')
@@ -168,7 +168,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def delete_member(self, request, pk=None):
         try:
             member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
-        except:
+        except Membership.DoesNotExist:
             raise ValidationError('Could not find organization member')
         if member.group == Membership.OWNER:
             raise PermissionDenied('Cannot change the organization Owner')
@@ -180,7 +180,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         token = request.data['token']
         try:
             membership = Membership.objects.get(token=token)
-        except:
+        except Membership.DoesNotExist:
             raise ValidationError('No Invite found')
         if membership.user != request.user:
             raise PermissionDenied('This invite was not sent to you. Make sure you are logged in as the right account')
@@ -211,7 +211,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         token = request.data['token']
         try:
             membership = Membership.objects.get(token=token)
-        except:
+        except Membership.DoesNotExist:
             raise ValidationError('No Invite found')
         if membership.user != request.user:
             raise PermissionDenied('This invite was not sent to you. Make sure you are logged in as the right account')
