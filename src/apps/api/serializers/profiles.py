@@ -110,6 +110,7 @@ class OrganizationSerializer(ModelSerializer):
             'linkedin_url',
             'twitter_url',
             'github_url',
+            'url'
         )
 
 
@@ -165,18 +166,6 @@ class OrganizationMembershipSerializer(ModelSerializer):
             'date_joined',
             'user'
         )
-
-
-class OrganizationCreationSerializer(OrganizationSerializer):
-    redirect_url = SerializerMethodField(read_only=True)
-
-    class Meta(OrganizationSerializer.Meta):
-        fields = OrganizationSerializer.Meta.fields + (
-            'redirect_url',
-        )
-
-    def get_redirect_url(self, instance):
-        return reverse('profiles:organization_profile', args=[instance.id])
 
 
 class OrganizationDetailSerializer(OrganizationSerializer):

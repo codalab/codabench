@@ -15,7 +15,7 @@ from rest_framework import status
 from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
-from api.serializers.profiles import MyProfileSerializer, UserSerializer, OrganizationCreationSerializer, \
+from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
     OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
@@ -95,10 +95,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
             return orgs.filter(users__in=[self.request.user])
 
     def get_serializer_class(self):
-        if self.action == 'create':
-            return OrganizationCreationSerializer
-        else:
-            return OrganizationSerializer
+        return OrganizationSerializer
 
     def get_permissions(self):
         if self.action in ['create', 'retrieve', 'list']:

@@ -113,6 +113,16 @@
                                     <i class="icon sign out"></i>
                                     Logout
                                 </a>
+                            {% if user.organizations %}
+                                <div class="ui divider"></div>
+                                <div class="header">Organizations</i></div>
+                            {% for org in user.organizations.all %}
+                                <a class="item" href="{% url 'profiles:organization_profile' pk=org.id %}">
+                                    <i class="users icon"></i>
+                                    {{ org.name }}
+                                </a>
+                            {% endfor %}
+                            {% endif %}
                             </div>
                         </div>
                     {% else %}

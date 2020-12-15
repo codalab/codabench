@@ -147,7 +147,7 @@
                     CODALAB.api.create_organization(data)
                         .done(data => {
                             toastr.success("Organization Created")
-                            window.location.href = data.redirect_url
+                            window.location.href = data.url
                             console.log(data)
                         })
                         .fail(data => {
