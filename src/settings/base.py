@@ -215,6 +215,7 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 CELERY_TIMEZONE = 'UTC'
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
 # =============================================================================
 # DRF
