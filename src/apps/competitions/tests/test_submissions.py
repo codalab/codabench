@@ -88,7 +88,7 @@ class MaxSubmissionsTests(SubmissionTestCase):
 class SubmissionManagerTests(SubmissionTestCase):
     def test_re_run_submission_creates_new_submission_with_same_data_owner_and_phase(self):
         sub = self.make_submission()
-        with mock.patch('competitions.tasks._send_submission'):
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             sub.start()
             assert Submission.objects.all().count() == 1
             sub.re_run()

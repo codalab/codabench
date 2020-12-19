@@ -279,6 +279,9 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
+
+            # To hold large submission outputs
+            "capacity": 1500,  # default 100
         },
         # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },

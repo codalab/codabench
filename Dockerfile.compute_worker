@@ -15,6 +15,4 @@ CMD celery -A compute_worker worker \
     -l info \
     -Q compute-worker \
     -n compute-worker@%n \
-    -Ofast \
-    -Ofair \
     --concurrency=1

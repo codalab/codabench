@@ -303,8 +303,8 @@ class TaskSelectionTests(APITestCase):
     def test_can_select_tasks_when_making_submissions(self):
         self.client.login(username="creator", password="creator")
 
-        # Mock _send_submission so submissions don't actually run
-        with mock.patch('competitions.tasks._send_submission'):
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             resp = self.client.post(self.submission_url, self.submission_data)
             # Check that the submission was created
             assert resp.status_code == 201
@@ -318,8 +318,8 @@ class TaskSelectionTests(APITestCase):
         submission_data = self.submission_data
         submission_data['tasks'] = [*self.submission_data['tasks'], self.other_phase.tasks.first().pk]
 
-        # Mock _send_submission so submissions don't actually run
-        with mock.patch('competitions.tasks._send_submission'):
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             resp = self.client.post(self.submission_url, submission_data)
             # Don't run any tasks if any task isn't a part of the phase
             assert resp.status_code == 400
@@ -328,8 +328,8 @@ class TaskSelectionTests(APITestCase):
     def test_can_re_run_submissions_with_multiple_tasks(self):
         self.client.login(username="creator", password="creator")
 
-        # Mock _send_submission so submissions don't actually run
-        with mock.patch('competitions.tasks._send_submission'):
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             resp = self.client.post(self.submission_url, self.submission_data)
 
             sub = Submission.objects.get(id=resp.json().get('id'))
@@ -362,8 +362,8 @@ class TaskSelectionTests(APITestCase):
 
         assert not Submission.objects.filter(task=new_task).exists()
 
-        # Mock _send_submission so submissions don't actually run
-        with mock.patch('competitions.tasks._send_submission'):
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             self.client.post(url)
             sub = Submission.objects.get(task=new_task)
             assert sub.owner == new_task.created_by
@@ -387,8 +387,8 @@ class TaskSelectionTests(APITestCase):
         query_params = f'task_key={new_task.key}'
         url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
 
-        # Mock _send_submission so submissions don't actually run
-        with mock.patch('competitions.tasks._send_submission'):
+        # Mock _send_to_compute_worker so submissions don't actually run
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
             resp = self.client.post(url)
             assert resp.status_code == 403
             assert resp.data["detail"] == "Submission secrets do not match"

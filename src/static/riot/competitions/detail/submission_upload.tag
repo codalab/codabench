@@ -58,12 +58,11 @@
             </div>
         </div>
 
-        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output}"
+        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output || _.isEmpty(selected_submission.filename)}"
              ref="accordion">
             <div class="title">
                 <i class="dropdown icon"></i>
-                {(status_received && selected_submission.filename) ? "Running " + selected_submission.filename :
-                "Uploading..."}
+                Running {selected_submission.filename} (ID = {selected_submission.id})
             </div>
             <div class="ui basic segment">
                 <div class="content">

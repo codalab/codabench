@@ -78,6 +78,7 @@ class SubmissionViewSet(ModelViewSet):
                 'children',
                 'scores',
                 'scores__column',
+                'task',
             )
         return qs
 

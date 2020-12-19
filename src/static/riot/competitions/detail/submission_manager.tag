@@ -1,18 +1,21 @@
 <submission-manager class="submission-manager">
     <div if="{ opts.admin }" class="admin-buttons">
-        <a class="ui button" href="{csv_link}">
-            <i class="icon download"></i>Download as CSV
-        </a>
         <div class="ui dropdown button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item" each="{phase in opts.competition.phases}"
-                     onclick="{rerun_phase.bind(this, phase)}">{ phase.name }
+                <div class="parent-modal item"
+                     each="{phase in opts.competition.phases}"
+                     onclick="{rerun_phase.bind(this, phase)}"
+                >
+                    { phase.name }
                 </div>
             </div>
         </div>
+        <a class="ui button" href="{csv_link}">
+            <i class="icon download"></i>Download as CSV
+        </a>
     </div>
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter }">
@@ -133,8 +136,15 @@
                          data-tab="{admin_: is_admin()}child_{i}">
                         Task {i + 1}
                     </div>
+
                     <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
+
+                    <!-- Sometimes submissions end up in a bad state with no children..  -->
+                    <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
+                        <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error during creation.</i>
+                    </div>
                 </div>
+
                 <div each="{child, i in _.get(selected_submission, 'children')}"
                      class="ui tab"
                      data-tab="{admin_: is_admin()}child_{i}">
@@ -159,10 +169,10 @@
         self.loading = true
 
         self.on("mount", function () {
-            $(self.refs.search).dropdown();
-            $(self.refs.status).dropdown();
-            $(self.refs.phase).dropdown();
-            $(self.refs.rerun_button).dropdown();
+            $(self.refs.search).dropdown()
+            $(self.refs.status).dropdown()
+            $(self.refs.phase).dropdown()
+            $(self.refs.rerun_button).dropdown()
         })
 
         self.is_admin = () => {
@@ -171,10 +181,6 @@
 
         self.do_nothing = event => {
             event.stopPropagation()
-        }
-
-        self.is_admin = () => {
-            return _.get(self.selected_submission, 'admin', false)
         }
 
         self.filter_children = submissions => {
@@ -244,11 +250,13 @@
             event.stopPropagation()
         }
         self.rerun_phase = function (phase) {
-            CODALAB.api.re_run_phase_submissions(phase.id)
-                .done(function (response) {
-                    toastr.success(`Rerunning ${response.count} submissions`)
-                    self.update_submissions()
-                })
+            if(confirm("Are you sure? This could take hours .. you are re-running all of the submissions in a phase.")) {
+                CODALAB.api.re_run_phase_submissions(phase.id)
+                    .done(function (response) {
+                        toastr.success(`Rerunning ${response.count} submissions`)
+                        self.update_submissions()
+                    })
+            }
         }
         self.filter = function () {
             delay(() => {
@@ -405,10 +413,12 @@
 
     <style type="text/stylus">
         :scope
+            display block
             margin 2em 0
+            min-height 90vh
 
         .admin-buttons
-            padding-bottom: 20px;
+            padding-bottom 20px
 
         .on-leaderboard
             &:hover
@@ -423,8 +433,8 @@
 
         .submission_row
             &:hover
-                cursor: pointer
-            height: 52px
+                cursor pointer
+            height 52px
 
         table tbody .center.aligned td
             color #8c8c8c

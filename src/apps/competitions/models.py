@@ -117,6 +117,7 @@ class Competition(ChaHubSaveMixin, models.Model):
                 created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
+                task=submission.task,
                 owner=submission.owner,
                 data=submission.data,
             )
@@ -486,11 +487,13 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     def re_run(self, task=None):
         submission_arg_dict = {
-            'owner': task.created_by if task else self.owner,
+            'owner': self.owner,
             'task': task or self.task,
             'phase': self.phase,
             'data': self.data,
+            'has_children': self.has_children,
             'is_specific_task_re_run': bool(task),
+            'fact_sheet_answers': self.fact_sheet_answers,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
@@ -498,10 +501,10 @@ class Submission(ChaHubSaveMixin, models.Model):
         # No need to rerun on children if this is running on a specific task
         if not self.has_children or sub.is_specific_task_re_run:
             self.refresh_from_db()
-            sub.start(tasks=[task or self.task])
+            tasks = [sub.task]
         else:
-            child_tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
-            sub.start(tasks=child_tasks)
+            tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+        sub.start(tasks=tasks)
         return sub
 
     def cancel(self):
