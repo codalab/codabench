@@ -366,7 +366,7 @@ class TaskSelectionTests(APITestCase):
         with mock.patch('competitions.tasks._send_to_compute_worker'):
             self.client.post(url)
             sub = Submission.objects.get(task=new_task)
-            assert sub.owner == new_task.created_by
+            assert sub.owner == self.creator
             assert sub.phase == self.phase
             assert sub.data == self.data
             assert sub.is_specific_task_re_run
@@ -384,11 +384,10 @@ class TaskSelectionTests(APITestCase):
 
         new_task = TaskFactory()
 
-        query_params = f'task_key={new_task.key}'
-        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?{query_params}"
+        url = f"{reverse('submission-re-run-submission', args=(pre_existing_sub.pk,))}?task_key={new_task.key}"
 
         # Mock _send_to_compute_worker so submissions don't actually run
         with mock.patch('competitions.tasks._send_to_compute_worker'):
             resp = self.client.post(url)
             assert resp.status_code == 403
-            assert resp.data["detail"] == "Submission secrets do not match"
+            assert resp.data["detail"] == "You do not have permission to re-run submissions"
