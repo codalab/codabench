@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework.fields import DateTimeField
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, CharField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, CharField, IntegerField, Serializer
 
 from api.fields import NamedBase64ImageField
 from profiles.models import GithubUserInfo, Organization, Membership
@@ -185,3 +185,7 @@ class OrganizationEditSerializer(OrganizationSerializer):
         fields = OrganizationSerializer.Meta.fields + (
             'members',
         )
+
+
+class DeleteMembershipSerializer(Serializer):
+    membership = IntegerField()

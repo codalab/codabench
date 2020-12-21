@@ -107,17 +107,17 @@
                         .done((data) => {
                             self_manage.members = self_manage.members.filter(user => user.id !== self_manage.pending_member_id)
                             self_manage.update()
+                            self_manage.pending_member_id = undefined
+                            self_manage.pending_member_name = undefined
                             return true
                         })
                         .fail((response) => {
                             toastr.error('Failed to remove member.')
+                            self_manage.pending_member_id = undefined
+                            self_manage.pending_member_name = undefined
                             return true
                         })
                 },
-                onHide: function () {
-                    self_manage.pending_member_id = undefined
-                    self_manage.pending_member_name = undefined
-                }
             })
 
             $('#user_search').dropdown({
@@ -139,9 +139,11 @@
                     CODALAB.api.invite_user_to_organization(self_manage.organization_id, users)
                         .done((data) => {
                             toastr.success('Invites Sent')
+                            location.reload()
                         })
                         .fail((response) => {
                             toastr.error('An error has occurred')
+                            return true
                         })
                 }
             })

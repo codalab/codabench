@@ -16,7 +16,7 @@ from django.urls import reverse
 
 from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
-    OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer
+    OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer, DeleteMembershipSerializer
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 
@@ -144,12 +144,13 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def invite_users(self, request, pk=None):
         if type(request.data) != list:
             raise ValidationError('Required data is an Array of User ID\'s')
+        # Getting users, but filtering out any that are already in the organization
         users = User.objects.filter(id__in=request.data).exclude(organizations=pk)
         org = Organization.objects.get(pk=pk)
         org.users.add(*users)
+        # Getting membership so we can access invite token
         members = org.membership_set.filter(user__in=[user.id for user in users])
         for member in members:
-            pass
             send_mail(
                 context={
                     'user': member.user,
@@ -166,6 +167,8 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
     @action(detail=True, methods=['delete'], permission_classes=[IsOrganizationEditor])
     def delete_member(self, request, pk=None):
+        ser = DeleteMembershipSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
         try:
             member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
         except Membership.DoesNotExist:
