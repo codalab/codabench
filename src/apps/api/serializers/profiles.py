@@ -103,6 +103,7 @@ class SimpleOrganizationSerializer(ModelSerializer):
             'url',
         )
 
+
 class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
 
