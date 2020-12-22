@@ -4,6 +4,7 @@ import os
 import re
 import traceback
 import zipfile
+from datetime import timedelta
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
@@ -744,3 +745,13 @@ def update_phase_statuses():
     competitions = Competition.objects.exclude(phases__in=Phase.objects.filter(is_final_phase=True, end__lt=now()))
     for comp in competitions:
         comp.update_phase_statuses()
+
+
+@app.task(queue='site-worker')
+def submission_status_cleanup():
+    submissions = Submission.objects.filter(status=Submission.RUNNING)
+
+    for sub in submissions:
+        # Check if the submission has been running for 24 hours longer than execution_time_limit
+        if (now() - sub.created_when) > timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
+            sub.status = Submission.FAILED
