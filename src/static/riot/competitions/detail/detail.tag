@@ -29,7 +29,7 @@
                     self.update()
                 })
                 .fail(function (response) {
-                    toastr.error("Could not find competition")
+                    toastr.error("Could not find benchmark")
                 })
         }
 

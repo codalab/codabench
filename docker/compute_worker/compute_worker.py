@@ -39,7 +39,8 @@ app.conf.task_queues = [
 
 
 # Setup base directories used by all submissions
-BASE_DIR = "/tmp/codalab-v2"
+HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
+BASE_DIR = "/codabench/"
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
@@ -168,7 +169,8 @@ class Run:
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(dir="/tmp/codalab-v2")
+        self.root_dir = tempfile.mkdtemp(dir=BASE_DIR)
+        self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
         self.logs = {}
@@ -325,7 +327,7 @@ class Run:
         during the prepare step and cleared if it's over MAX_CACHE_DIR_SIZE_GB.
 
         :returns zip file path"""
-        logger.info(f"Getting bundle {url} to unpack @{destination}")
+        logger.info(f"Getting bundle {url} to unpack @ {destination}")
         download_needed = True
 
         if cache:
@@ -335,7 +337,9 @@ class Run:
             bundle_file = os.path.join(CACHE_DIR, url_hash)
             download_needed = not os.path.exists(bundle_file)
         else:
-            bundle_file = tempfile.NamedTemporaryFile(delete=False).name
+            if not os.path.exists(self.bundle_dir):
+                os.mkdir(self.bundle_dir)
+            bundle_file = tempfile.NamedTemporaryFile(dir=self.bundle_dir, delete=False).name
 
         if download_needed:
             try:
@@ -434,6 +438,20 @@ class Run:
 
         await websocket.close()
 
+    def _get_host_path(self, *paths):
+        """Turns an absolute path inside our docker container, into what the path
+        would be on the host machine"""
+        # Take our list of paths and smash 'em together
+        path = os.path.join(*paths)
+
+        # pull front of path, which points to the location inside docker
+        path = path[len(BASE_DIR):]
+
+        # add host to front, so when we run commands in docker on the host they
+        # can be seen properly
+        path = os.path.join(HOST_DIRECTORY, path)
+        return path
+
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
@@ -441,7 +459,6 @@ class Run:
 
             # Communicate that the program is closing
             self.completed_program_counter += 1
-
             return
 
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
@@ -490,8 +507,8 @@ class Run:
             '--security-opt=no-new-privileges',
 
             # Set the volumes
-            '-v', f'{program_dir}:/app/program',
-            '-v', f'{self.output_dir}:/app/output',
+            '-v', f'{self._get_host_path(program_dir)}:/app/program',
+            '-v', f'{self._get_host_path(self.output_dir)}:/app/output',
 
             # Start in the right directory
             '-w', '/app/program',
@@ -508,18 +525,18 @@ class Run:
             else:
                 ingested_program_location = "program"
 
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, ingested_program_location)}:/app/ingested_program']
+            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, ingested_program_location)}:/app/ingested_program']
 
         if self.input_data:
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "input_data")}:/app/input_data']
+            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, "input_data")}:/app/input_data']
 
         if self.is_scoring:
             # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
             # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
-            docker_cmd += ['-v', f'{os.path.join(self.root_dir, "shared")}:/app/shared']
+            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, "shared")}:/app/shared']
 
             # Input from submission (or submission + ingestion combo)
-            docker_cmd += ['-v', f'{self.input_dir}:/app/input']
+            docker_cmd += ['-v', f'{self._get_host_path(self.input_dir)}:/app/input']
 
         # Set the image name (i.e. "codalab/codalab-legacy") for the container
         docker_cmd += [self.docker_image]

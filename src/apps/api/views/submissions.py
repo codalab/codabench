@@ -36,7 +36,11 @@ class SubmissionViewSet(ModelViewSet):
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
-            if not self.request.user.is_authenticated or not_bot_user:
+
+            if self.action == 're_run_submission':
+                # get_queryset will stop us from re-running something we're not supposed to
+                pass
+            elif not self.request.user.is_authenticated or not_bot_user:
                 try:
                     if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
                         raise PermissionDenied("Submission secrets do not match")
@@ -74,6 +78,7 @@ class SubmissionViewSet(ModelViewSet):
                 'children',
                 'scores',
                 'scores__column',
+                'task',
             )
         return qs
 
@@ -149,16 +154,25 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
         submission = self.get_object()
+        task_key = request.query_params.get('task_key')
+
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
 
-        rerun_kwargs = {}
+        # We want to avoid re-running a submission that isn't finished yet, because the tasks associated
+        # with the submission and maybe other important details have not been finalized yet. I.e. if you
+        # rapidly click the "re-run submission" button, a submission may not have been processed by a
+        # site worker and be in a funky state (race condition) -- this should resolve that
+        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
+            raise PermissionDenied('Cannot request a re-run on a submission that has not finished processing.')
+
         # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
-        if request.query_params.get('task_key'):
-            task_key = request.query_params.get('task_key')
+        if task_key:
             rerun_kwargs = {
                 'task': get_object_or_404(Task, key=task_key),
             }
+        else:
+            rerun_kwargs = {}
 
         new_sub = submission.re_run(**rerun_kwargs)
         return Response({'id': new_sub.id})

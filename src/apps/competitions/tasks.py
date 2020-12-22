@@ -24,6 +24,7 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
+from leaderboards.models import Leaderboard
 from tasks.models import Task
 from datasets.models import Data
 from utils.data import make_url_sassy
@@ -98,7 +99,17 @@ COLUMN_FIELDS = [
 ]
 
 
-def _send_submission(submission, task, is_scoring, run_args):
+def _send_to_compute_worker(submission, is_scoring):
+    run_args = {
+        "user_pk": submission.owner.pk,
+        "submissions_api_url": settings.SUBMISSIONS_API_URL,
+        "secret": submission.secret,
+        "docker_image": submission.phase.competition.docker_image,
+        "execution_time_limit": submission.phase.execution_time_limit,
+        "id": submission.pk,
+        "is_scoring": is_scoring,
+    }
+
     if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
         submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))  # must encode here for GCS
         submission.save(update_fields=['detailed_result'])
@@ -110,6 +121,7 @@ def _send_submission(submission, task, is_scoring, run_args):
         submission.save(update_fields=['scoring_result'])
 
     submission = Submission.objects.get(id=submission.id)
+    task = submission.task
 
     # priority of scoring tasks is higher, we don't want to wait around for
     # many submissions to be scored while we're waiting for results
@@ -263,16 +275,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
     submission = qs.get(pk=submission_pk)
 
-    run_arguments = {
-        "user_pk": submission.owner.pk,
-        "submissions_api_url": settings.SUBMISSIONS_API_URL,
-        "secret": submission.secret,
-        "docker_image": submission.phase.competition.docker_image,
-        "execution_time_limit": submission.phase.execution_time_limit,
-        "id": submission.pk,
-        "is_scoring": is_scoring,
-    }
-
     if submission.is_specific_task_re_run:
         # Should only be one task for a specified task submission
         tasks = Task.objects.filter(pk__in=task_pks)
@@ -283,11 +285,10 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
     tasks = tasks.order_by('pk')
 
-    # TODO: Make the following code DRY!
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
-        submission.status = 'Running'
+        submission.status = Submission.RUNNING
         submission.save()
 
         send_parent_status(submission)
@@ -304,20 +305,14 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 fact_sheet_answers=submission.fact_sheet_answers
             )
             child_sub.save(ignore_submission_limit=True)
-            run_submission(child_sub.id, [task])
+            _send_to_compute_worker(child_sub, is_scoring=False)
             send_child_id(submission, child_sub.id)
     else:
-        # The initial submission object will be the only submission
-        task = tasks[0]
+        # The initial submission object is the only submission
         if not submission.task:
-            submission.task = task
+            submission.task = tasks[0]
             submission.save()
-        _send_submission(
-            submission=submission,
-            task=task,
-            run_args=run_arguments,
-            is_scoring=is_scoring
-        )
+        _send_to_compute_worker(submission, is_scoring)
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
@@ -597,7 +592,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         # -------- Leaderboards -------
 
         yaml_data['leaderboards'] = []
-        for index, leaderboard in enumerate(comp.leaderboards.all()):
+        # Have to grab leaderboards from phases
+        leaderboards = Leaderboard.objects.filter(id__in=comp.phases.all().values_list('leaderboard', flat=True))
+        for index, leaderboard in enumerate(leaderboards):
             ldb_data = {
                 'index': index
             }

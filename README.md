@@ -84,13 +84,22 @@ $ sudo usermod -aG docker $USER
 
 Make a file `.env` and put this in it:
 ```
+# Queue URL
 BROKER_URL=<desired broker url>
+
+# Location to store submissions/cache -- absolute path!
+HOST_DIRECTORY=/your/path/to/codabench/storage
+
+# If SSL is enabled, then uncomment the following line
+#BROKER_USE_SSL=True
 ```
 
-Then run it:
+NOTE `/your/path/to/codabench` -- this path needs to be volumed into `/codabench` on the worker, as you can 
+see below.
+
 ```bash
 $ docker run \
-    -v /tmp/codalab-v2:/tmp/codalab-v2 \
+    -v /your/path/to/codabench/storage:/codabench \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -d \
     --env-file .env \
@@ -107,11 +116,11 @@ $ docker run \
 
 ```bash
 $ nvidia-docker run \
-    -v /tmp/codalab-v2:/tmp/codalab-v2 \
+    -v /your/path/to/codabench/storage:/codabench \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
     -d \
-    --env BROKER_URL=<queue broker url> \
+    --env-file .env \
     --restart unless-stopped \
     --log-opt max-size=50m \
     --log-opt max-file=3 \

@@ -26,7 +26,7 @@
 
                 <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
                     <div class="header">
-                        Error(s) saving competition
+                        Error(s) saving benchmark
                     </div>
                     <errors errors="{errors}"></errors>
                 </div>
