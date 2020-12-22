@@ -65,6 +65,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Notifications
     organizer_direct_message_updates = models.BooleanField(default=True)
     allow_forum_notifications = models.BooleanField(default=True)
+    allow_organization_invite_emails = models.BooleanField(default=True)
 
     # Queues
     rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)

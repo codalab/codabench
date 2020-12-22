@@ -8,7 +8,8 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer
+from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
+    UserNotificationSerializer
 from .forms import SignUpForm
 from .models import User, Organization, Membership
 
@@ -77,6 +78,18 @@ def sign_up(request):
     if not context.get('form'):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
+
+
+class UserNotificationEdit(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_notifications.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['notifications'] = json.dumps(UserNotificationSerializer(self.get_object()).data)
+        return context
 
 
 class OrganizationCreateView(LoginRequiredMixin, TemplateView):

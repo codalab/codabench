@@ -7,6 +7,7 @@ app_name = "profiles"
 urlpatterns = [
     # url(r'^signup', views.sign_up, name="signup"),
     path('user/<slug:username>/edit/', views.UserEditView.as_view(), name='user_edit'),
+    path('user/<slug:username>/notifications/', views.UserNotificationEdit.as_view(), name="user_notifications"),
     path('user/<slug:username>/', views.UserDetailView.as_view(), name="user_profile"),
     path('organization/create/', views.OrganizationCreateView.as_view(), name='organization_create'),
     path('organization/accept_invite/', views.OrganizationInviteView.as_view(), name='organization_accept_invite'),

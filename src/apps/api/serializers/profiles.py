@@ -62,6 +62,17 @@ class CollaboratorSerializer(ModelSerializer):
         )
 
 
+class UserNotificationSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'organizer_direct_message_updates',
+            'allow_forum_notifications',
+            'allow_organization_invite_emails',
+        )
+
+
 class SimpleUserSerializer(ModelSerializer):
     name = SerializerMethodField(read_only=True)
 
@@ -91,7 +102,6 @@ class SimpleOrganizationSerializer(ModelSerializer):
             'name',
             'url',
         )
-
 
 class OrganizationSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
@@ -136,6 +146,9 @@ class UserSerializer(ModelSerializer):
             'twitter_url',
             'github_url',
             'organizations',
+            'organizer_direct_message_updates',
+            'allow_forum_notifications',
+            'allow_organization_invite_emails',
         )
 
 

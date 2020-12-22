@@ -34,9 +34,10 @@ class UserViewSet(mixins.UpdateModelMixin,
         return [permission() for permission in self.permission_classes]
 
     def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
         instance = self.get_object()
         data = request.data
-        serializer = self.get_serializer(instance, data=data)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         resp = self.get_serializer(instance)
@@ -151,17 +152,18 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         # Getting membership so we can access invite token
         members = org.membership_set.filter(user__in=[user.id for user in users])
         for member in members:
-            send_mail(
-                context={
-                    'user': member.user,
-                    'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
-                    'organization': org.name,
-                },
-                subject=f'You have been invited to join {org.name}',
-                html_file="profiles/emails/invite.html",
-                text_file="profiles/emails/invite.txt",
-                to_email=member.user.email
-            )
+            if member.user.allow_organization_invite_emails:
+                send_mail(
+                    context={
+                        'user': member.user,
+                        'invite_url': f'{reverse("profiles:organization_accept_invite")}?token={member.token}',
+                        'organization': org.name,
+                    },
+                    subject=f'You have been invited to join {org.name}',
+                    html_file="profiles/emails/invite.html",
+                    text_file="profiles/emails/invite.txt",
+                    to_email=member.user.email
+                )
 
         return Response({})
 
