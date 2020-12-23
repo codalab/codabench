@@ -11,6 +11,8 @@ from api.serializers.submissions import SubmissionCreationSerializer
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
 from competitions.tasks import run_submission
+
+from apps.competitions.tasks import submission_status_cleanup
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
 from leaderboards.models import Leaderboard
 
@@ -380,3 +382,14 @@ class FactSheetTests(SubmissionTestCase):
         }
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
+
+
+class TestSubmissionTasks(SubmissionTestCase):
+    def test_submissions_are_cancelled_if_running_24_hours_past_execution_time_limit(self):
+        self.submission = self.make_submission()
+        self.submission.status = Submission.RUNNING
+        self.submission.created_when = timezone.now() - timedelta(milliseconds=(3600000 * 24) + self.submission.phase.execution_time_limit)
+        self.submission.save()
+        submission_status_cleanup()
+        self.submission.refresh_from_db()
+        assert self.submission.status == Submission.FAILED

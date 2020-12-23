@@ -754,4 +754,6 @@ def submission_status_cleanup():
     for sub in submissions:
         # Check if the submission has been running for 24 hours longer than execution_time_limit
         if sub.created_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
-            sub.cancel()
+            app.control.revoke(sub.celery_task_id, terminate=True)
+            sub.status = Submission.FAILED
+            sub.save()
