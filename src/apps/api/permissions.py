@@ -35,5 +35,4 @@ class IsOrganizationEditor(permissions.IsAuthenticated):
             membership = obj.membership_set.get(user=request.user)
         except Membership.DoesNotExist:
             return False
-        print(f'Editor Privileges evaluated to {membership.group in membership.EDITORS_GROUP}')
         return membership.group in membership.EDITORS_GROUP

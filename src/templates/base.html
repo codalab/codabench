@@ -117,7 +117,6 @@
                                     <i class="icon sign out"></i>
                                     Logout
                                 </a>
-                            {% if user.organizations.count > 0 %}
                                 <div class="ui divider"></div>
                                 <div class="header">Organizations</div>
                             {% for org in user.organizations.all %}
@@ -126,7 +125,10 @@
                                     {{ org.name }}
                                 </a>
                             {% endfor %}
-                            {% endif %}
+                                <a class="item" href="{% url 'profiles:organization_create' %}">
+                                    <i class="plus icon"></i>
+                                    Create Organization
+                                </a>
                             </div>
                         </div>
                     {% else %}

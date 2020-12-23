@@ -82,7 +82,7 @@
                 return /^(http|https):\/\/(.*)/.test(param)
             }
 
-        //     // Prefill form with saved data
+            // Prefill form with saved data
             $('#user-form').form('set values', {
                 first_name:     selected_user.first_name,
                 last_name:      selected_user.last_name,

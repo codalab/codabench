@@ -92,7 +92,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         orgs = Organization.objects.all()
         if self.request.method in ['GET', 'LIST', 'CREATE']:
             return orgs
-        elif self.request.method in ['PUT', 'PATCH']:
+        elif self.request.method in ['PUT', 'PATCH', 'POST', 'DELETE']:
             return orgs.filter(users__in=[self.request.user])
 
     def get_serializer_class(self):
@@ -125,16 +125,15 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
     @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
     def update_member_group(self, request, pk=None):
+        organization = self.get_object()
         try:
-            member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+            member = organization.membership_set.get(pk=request.data['membership'])
         except Membership.DoesNotExist:
             raise ValidationError('Could not find organization member')
         if member.group == Membership.OWNER:
             raise PermissionDenied('Cannot change the organization Owner')
         if member.group == Membership.INVITED:
             raise PermissionDenied('The User must accept their invite before you can change their permissions')
-        if len([group for group in Membership.PERMISSION_GROUPS if group[0] == request.data['group']]) != 1:
-            raise ValidationError('Could not validate group to change to')
         if request.data['group'] not in Membership.SETTABLE_PERMISSIONS:
             raise ValidationError(f'Cannot set a member to {request.data["group"]}.')
         member.group = request.data['group']
@@ -143,11 +142,11 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
     @action(detail=True, methods=['post'], permission_classes=[IsOrganizationEditor])
     def invite_users(self, request, pk=None):
-        if type(request.data) != list:
+        org = self.get_object()
+        if type(request.data['users']) != list:
             raise ValidationError('Required data is an Array of User ID\'s')
         # Getting users, but filtering out any that are already in the organization
-        users = User.objects.filter(id__in=request.data).exclude(organizations=pk)
-        org = Organization.objects.get(pk=pk)
+        users = User.objects.filter(id__in=request.data['users']).exclude(organizations=pk)
         org.users.add(*users)
         # Getting membership so we can access invite token
         members = org.membership_set.filter(user__in=[user.id for user in users])
@@ -171,8 +170,9 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def delete_member(self, request, pk=None):
         ser = DeleteMembershipSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
+        organization = self.get_object()
         try:
-            member = Organization.objects.get(pk=pk).membership_set.get(pk=request.data['membership'])
+            member = organization.membership_set.get(pk=request.data['membership'])
         except Membership.DoesNotExist:
             raise ValidationError('Could not find organization member')
         if member.group == Membership.OWNER:

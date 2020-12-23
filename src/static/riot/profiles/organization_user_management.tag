@@ -136,7 +136,7 @@
             $(self_manage.refs.invite_users).modal({
                 onApprove: function () {
                     let users = $('#user_search').dropdown('get value')
-                    CODALAB.api.invite_user_to_organization(self_manage.organization_id, users)
+                    CODALAB.api.invite_user_to_organization(self_manage.organization_id, {users: users})
                         .done((data) => {
                             toastr.success('Invites Sent')
                             location.reload()

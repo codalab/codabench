@@ -18,11 +18,11 @@
             </div>
         </div>
         <div class="two fields">
-            <div class="field" id="name">
+            <div class="required field" id="name">
                 <label>Organization Name</label>
                 <input type="text" name="name" placeholder="Name">
             </div>
-            <div class="field" id="email">
+            <div class="required field" id="email">
                 <label>Organization Email</label>
                 <input type="text" name="email" placeholder="email@organization.com">
             </div>
@@ -67,7 +67,6 @@
         self.organization = organization
         self.original_org_photo_name = typeof self.organization.photo !== 'undefined' ? null : self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
         self.original_org_photo = self.organization.photo
-        // self.logo_file_name = ''
         delete self.organization.photo
 
 
@@ -169,7 +168,6 @@
                     CODALAB.api.update_organization(data, self.organization.id)
                         .done(data => {
                             toastr.success("Organization Saved")
-                            // window.location.href = window.location.href.replace('edit/', '')
                             self.submit_button.prop('disabled', false)
                         })
                         .fail(data => {

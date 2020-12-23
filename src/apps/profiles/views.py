@@ -104,7 +104,6 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
         if self.object:
             context['organization'] = OrganizationDetailSerializer(self.object).data
         membership = self.object.membership_set.filter(user=self.request.user)
-        print(membership)
         if len(membership) == 1:
             context['is_editor'] = membership.first().group in Membership.EDITORS_GROUP
         else:

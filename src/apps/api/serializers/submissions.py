@@ -82,7 +82,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     owner = serializers.CharField(source='owner.username')
     display_name = serializers.CharField(source='owner.display_name')
     slug_url = serializers.CharField(source='owner.slug_url')
-    organization = SimpleOrganizationSerializer(many=False, allow_null=True)
+    organization = SimpleOrganizationSerializer(allow_null=True)
 
     class Meta:
         model = Submission
