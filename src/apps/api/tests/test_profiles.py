@@ -1,8 +1,7 @@
-import pytest
-from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from api.serializers.profiles import OrganizationSerializer
 from factories import UserFactory, OrganizationFactory
 from profiles.models import Membership
 
@@ -39,6 +38,7 @@ class OrganizationPermissionTests(APITestCase):
         self.validate_invite = reverse('organizations-validate-invite')
         self.invite_response = reverse('organizations-invite-response')
         self.invite_user = reverse('organizations-invite-users', args=[self.organization.id])
+        self.url_organizations = reverse('organizations-detail', args=[self.organization.id])
 
     def get_membership_id_for_user(self, user_id):
         return self.organization.membership_set.get(user=user_id).id
@@ -198,5 +198,21 @@ class OrganizationPermissionTests(APITestCase):
         data = {
             'users': [self.random_user.id],
         }
-        resp = self.client.post(self.invite_user, data)
+        resp = self.client.put(self.invite_user, data=data)
         assert resp.status_code == 200
+
+    def test_admin_org_member_can_edit_organization(self):
+        self.client.force_login(user=self.manager)
+        data = OrganizationSerializer(instance=self.organization).data
+        data['name'] = "Changed_Name"
+        data = {k: v for k, v in data.items() if v}
+        resp = self.client.put(self.url_organizations, data=data)
+        assert resp.status_code == 200
+
+    def test_org_member_cannot_edit_organization(self):
+        self.client.force_login(user=self.member)
+        data = OrganizationSerializer(instance=self.organization).data
+        data['name'] = "Changed_Name2"
+        data = {k: v for k, v in data.items() if v}
+        resp = self.client.put(self.url_organizations, data=data)
+        assert resp.status_code == 403
