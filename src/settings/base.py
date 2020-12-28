@@ -215,7 +215,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
-        'schedule': timedelta(seconds=10)
+        'schedule': timedelta(seconds=3600)
     },
 }
 CELERY_TIMEZONE = 'UTC'
