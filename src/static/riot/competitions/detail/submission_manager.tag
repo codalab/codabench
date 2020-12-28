@@ -45,6 +45,7 @@
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
+            <th>Date</th>
             <th class="right aligned">Status</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
@@ -64,6 +65,7 @@
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
+            <td>{ submission.created_when}</td>
             <td class="right aligned collapsing">
                 { submission.status }
                 <sup data-tooltip="{submission.status_details}">

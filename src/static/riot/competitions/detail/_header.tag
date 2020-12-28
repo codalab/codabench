@@ -115,7 +115,7 @@
         </div>
     </div>
     <!-- Manage Submissions Modal -->
-    <div class="ui manage-submissions modal" ref="sub_modal">
+    <div class="ui manage-submissions large modal" ref="sub_modal">
         <div class="content">
             <submission-manager admin="{competition.admin}" competition="{ competition }"></submission-manager>
         </div>
