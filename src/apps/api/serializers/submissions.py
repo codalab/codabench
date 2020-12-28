@@ -37,7 +37,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     phase_name = serializers.CharField(source='phase.name')
     on_leaderboard = serializers.BooleanField(read_only=True)
     task = TaskSerializer()
-    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
 
     class Meta:
         model = Submission
