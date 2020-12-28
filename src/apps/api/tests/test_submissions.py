@@ -350,6 +350,7 @@ class TaskSelectionTests(APITestCase):
             'owner': self.creator,
             'task': self.phase.tasks.first(),
             'data': self.data,
+            'status': Submission.FINISHED,
         })
 
         new_task = TaskFactory()
