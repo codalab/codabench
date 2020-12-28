@@ -120,6 +120,12 @@ class CompetitionViewSet(ModelViewSet):
         else:
             return CompetitionSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        data = super().retrieve(request, *args, **kwargs)
+        from pprint import pprint
+        pprint(data.data['fact_sheet'])
+        return data
+
     def create(self, request, *args, **kwargs):
         """Mostly a copy of the underlying base create, however we return some additional data
         in the response to remove a GET from the frontend"""

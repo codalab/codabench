@@ -295,6 +295,7 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function (competition) {
+            console.log('competition fs', JSON.parse(JSON.stringify(competition.fact_sheet)))
             self.is_editing_competition = true
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')
@@ -317,6 +318,7 @@
                     if(q_json.type === "select"){
                         q_json.selection = q_json.selection.filter(s => s !== "")
                     }
+                    console.log(question, q_json)
                     self.fact_sheet_questions.push(q_json)
                 }
             }
