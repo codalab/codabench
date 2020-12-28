@@ -749,11 +749,16 @@ def update_phase_statuses():
 
 @app.task(queue='site-worker')
 def submission_status_cleanup():
-    submissions = Submission.objects.filter(status=Submission.RUNNING).select_related('phase')
+    submissions = Submission.objects.filter(status=Submission.RUNNING).exclude(has_children=True).select_related('phase')
 
     for sub in submissions:
         # Check if the submission has been running for 24 hours longer than execution_time_limit
-        if sub.created_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
-            app.control.revoke(sub.celery_task_id, terminate=True)
-            sub.status = Submission.FAILED
-            sub.save()
+        if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
+            if sub.parent is not None:
+                app.control.revoke(sub.parent.celery_task_id, terminate=True)
+                sub.parent.status = Submission.FAILED
+                sub.parent.save()
+            else:
+                app.control.revoke(sub.celery_task_id, terminate=True)
+                sub.status = Submission.FAILED
+                sub.save()

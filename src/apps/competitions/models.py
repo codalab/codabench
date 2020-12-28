@@ -447,6 +447,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
+    started_when = models.DateTimeField(null=True)
     is_public = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
 
@@ -478,6 +479,9 @@ class Submission(ChaHubSaveMixin, models.Model):
             can_make_submission, reason_why_not = self.phase.can_user_make_submissions(self.owner)
             if not can_make_submission:
                 raise PermissionError(reason_why_not)
+
+        if self.status == Submission.RUNNING and not self.started_when:
+            self.started_when = now()
 
         super().save(**kwargs)
 

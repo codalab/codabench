@@ -387,7 +387,7 @@ class TestSubmissionTasks(SubmissionTestCase):
     def test_submissions_are_cancelled_if_running_24_hours_past_execution_time_limit(self):
         self.submission_fail, self.submission_pass = self.make_submission(), self.make_submission()
         self.submission_fail.status = self.submission_pass.status = Submission.RUNNING
-        self.submission_fail.created_when = timezone.now() - timedelta(milliseconds=(3600000 * 24) + self.submission_fail.phase.execution_time_limit)
+        self.submission_fail.started_when = timezone.now() - timedelta(milliseconds=(3600000 * 24) + self.submission_fail.phase.execution_time_limit)
         self.submission_fail.save()
         self.submission_pass.save()
         submission_status_cleanup()
