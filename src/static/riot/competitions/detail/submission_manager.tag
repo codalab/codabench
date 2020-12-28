@@ -171,10 +171,10 @@
         self.loading = true
 
         self.on("mount", function () {
-            $(self.refs.rerun_button).dropdown()
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
             $(self.refs.phase).dropdown()
+            $(self.refs.rerun_button).dropdown()
         })
 
         self.is_admin = () => {
