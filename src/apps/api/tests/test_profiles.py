@@ -1,6 +1,6 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
-
+from json import dumps
 from api.serializers.profiles import OrganizationSerializer
 from factories import UserFactory, OrganizationFactory
 from profiles.models import Membership
@@ -190,7 +190,7 @@ class OrganizationPermissionTests(APITestCase):
     def test_org_member_cannot_invite_user(self):
         self.client.force_login(user=self.member)
         data = {'users': [self.random_user.id]}
-        resp = self.client.post(self.invite_user, data=data)
+        resp = self.client.post(self.invite_user, data=dumps(data), content_type='application/json')
         assert resp.status_code == 403
 
     def test_admin_org_member_can_invite_user(self):
@@ -198,7 +198,7 @@ class OrganizationPermissionTests(APITestCase):
         data = {
             'users': [self.random_user.id],
         }
-        resp = self.client.post(self.invite_user, data=data)
+        resp = self.client.post(self.invite_user, data=dumps(data), content_type='application/json')
         assert resp.status_code == 200
 
     def test_admin_org_member_can_edit_organization(self):
@@ -206,7 +206,7 @@ class OrganizationPermissionTests(APITestCase):
         data = OrganizationSerializer(instance=self.organization).data
         data['name'] = "Changed_Name"
         data = {k: v for k, v in data.items() if v}
-        resp = self.client.put(self.url_organizations, data=data)
+        resp = self.client.put(self.url_organizations, data=dumps(data), content_type='application/json')
         assert resp.status_code == 200
 
     def test_org_member_cannot_edit_organization(self):
@@ -214,5 +214,5 @@ class OrganizationPermissionTests(APITestCase):
         data = OrganizationSerializer(instance=self.organization).data
         data['name'] = "Changed_Name2"
         data = {k: v for k, v in data.items() if v}
-        resp = self.client.put(self.url_organizations, data=data)
+        resp = self.client.put(self.url_organizations, data=dumps(data), content_type='application/json')
         assert resp.status_code == 403

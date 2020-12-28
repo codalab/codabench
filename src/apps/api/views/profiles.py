@@ -144,7 +144,7 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def invite_users(self, request, pk=None):
         org = self.get_object()
         if type(request.data['users']) != list:
-            raise ValidationError('Required data is an Array of User ID\'s')
+            raise ValidationError(f'Required data is an Array of User ID\'s not a {type(request.data["users"])} ')
         # Getting users, but filtering out any that are already in the organization
         users = User.objects.filter(id__in=request.data['users']).exclude(organizations=pk)
         org.users.add(*users)
