@@ -198,7 +198,7 @@ class OrganizationPermissionTests(APITestCase):
         data = {
             'users': [self.random_user.id],
         }
-        resp = self.client.put(self.invite_user, data=data)
+        resp = self.client.post(self.invite_user, data=data)
         assert resp.status_code == 200
 
     def test_admin_org_member_can_edit_organization(self):
