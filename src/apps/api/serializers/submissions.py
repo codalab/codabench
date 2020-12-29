@@ -198,6 +198,10 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
                 'submission_id': submission.id,
             }))
 
+        if validated_data.get('status') == Submission.RUNNING and self.instance.parent is not None and self.instance.parent.status is not Submission.RUNNING:
+            self.instance.parent.status = Submission.RUNNING
+            self.instance.parent.save()
+
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
