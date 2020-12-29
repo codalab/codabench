@@ -146,7 +146,6 @@
         self.update_competition_data = (id) => {
             CODALAB.api.get_competition(id)
                 .done(function (data) {
-                    console.log('data', JSON.parse(JSON.stringify(data)))
                     self.competition = data
                     for(phase of self.competition.phases){
                         phase.task_instances = []
