@@ -295,7 +295,6 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function (competition) {
-            console.log('competition fs', JSON.parse(JSON.stringify(competition.fact_sheet)))
             self.is_editing_competition = true
             self.refs.title.value = competition.title
             self.markdown_editor.value(competition.description || '')
@@ -310,7 +309,6 @@
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
-            $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             if(competition.fact_sheet !== null){
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]
@@ -318,12 +316,12 @@
                     if(q_json.type === "select"){
                         q_json.selection = q_json.selection.filter(s => s !== "")
                     }
-                    console.log(question, q_json)
                     self.fact_sheet_questions.push(q_json)
                 }
             }
             self.update()
-            self.form_updated()
+            // Put dropdown 'set selected' here so it doesn't trigger on_change:form_updated() before fact_sheet_questions is set
+            $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
