@@ -78,10 +78,10 @@
         self.photo = self.selected_user.photo
         delete self.selected_user.photo
         self.one("mount", function () {
+            // Create http validation rule
             $.fn.form.settings.rules.test_http = function(param) {
                 return /^(http|https):\/\/(.*)/.test(param)
             }
-
             // Prefill form with saved data
             $('#user-form').form('set values', {
                 first_name:     selected_user.first_name,
@@ -118,7 +118,7 @@
                                  prompt: 'Please enter a valid url. Example: https://www.xyz.com'
                              },
                              {
-                                 type: 'test_http',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -132,7 +132,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://twitter.com/BobRoss'
                              },
                              {
-                                 type: 'test_http',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -146,7 +146,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://www.linkedin.com/in/john-doe'
                              },
                              {
-                                 type: 'test_http',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -160,7 +160,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://github.com/john-doe'
                              },
                              {
-                                 type: 'test_http',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
