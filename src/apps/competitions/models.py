@@ -11,7 +11,7 @@ from django.utils.timezone import now
 
 from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
-from profiles.models import User
+from profiles.models import User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 
@@ -422,6 +422,7 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     description = models.CharField(max_length=240, default="", blank=True, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='submission', on_delete=models.DO_NOTHING)
+    organization = models.ForeignKey(Organization, related_name='submissions', on_delete=models.DO_NOTHING, null=True)
     status = models.CharField(max_length=128, choices=STATUS_CHOICES, default=SUBMITTING, null=False, blank=False)
     status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)

@@ -1,4 +1,5 @@
 <profile-edit>
+    <div class="ui raised segment">
     <h1>User Edit:</h1>
     <form class="ui form" id="user-form">
         <div class="field">
@@ -69,6 +70,7 @@
         <div class="ui error message"></div>
         <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
     </form>
+    </div>
 
     <script>
         self = this
@@ -95,6 +97,7 @@
                 biography:      selected_user.biography,
                 })
              $('#user-form').form({
+                 keyboardShortcuts: false,
                  fields: {
                      email: {
                          identifier: 'email',
@@ -186,6 +189,7 @@
                      self.refs.submit_button.disabled = false
                  }
              })
+
             self.photo_name = typeof self.photo == 'undefined' || self.photo === null ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
             // Draw in logo filename as it's changed
             $(self.refs.photo).change(function () {

@@ -33,7 +33,7 @@
         </tr>
         <tr>
             <th class="center aligned">#</th>
-            <th>Username</th>
+            <th>Participant</th>
             <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
         </tr>
         </thead>
@@ -52,7 +52,8 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td><a href="{submission.slug_url}">{ submission.owner }</a></td>
+            <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
+            <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
         </tr>
         </tbody>

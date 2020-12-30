@@ -169,7 +169,6 @@
                         $.get(item.data_file)
                             .done(function (content) {
                                 self.logs[item.name] = content
-                                console.log(content)
                                 self.update()
                             })
                     })

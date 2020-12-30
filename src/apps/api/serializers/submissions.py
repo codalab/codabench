@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
+from api.serializers.profiles import SimpleOrganizationSerializer
 from api.serializers.tasks import TaskSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
@@ -82,6 +83,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     owner = serializers.CharField(source='owner.username')
     display_name = serializers.CharField(source='owner.display_name')
     slug_url = serializers.CharField(source='owner.slug_url')
+    organization = SimpleOrganizationSerializer(allow_null=True)
 
     class Meta:
         model = Submission
@@ -95,6 +97,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
             'scores',
             'display_name',
             'slug_url',
+            'organization'
         )
         extra_kwargs = {
             "scores": {"read_only": True},
@@ -124,6 +127,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'md5',
             'tasks',
             'fact_sheet_answers',
+            'organization',
         )
         extra_kwargs = {
             'secret': {"write_only": True},

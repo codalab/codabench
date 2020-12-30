@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User, Organization
+from .models import User, Organization, Membership
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -11,6 +11,7 @@ class UserAdmin(admin.ModelAdmin):
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Organization)
+admin.site.register(Membership)
 
 
 def su_login_callback(user):
