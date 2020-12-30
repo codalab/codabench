@@ -392,5 +392,6 @@ class TestSubmissionTasks(SubmissionTestCase):
         self.submission_pass.save()
         submission_status_cleanup()
         self.submission_fail.refresh_from_db()
+        self.submission_pass.refresh_from_db()
         assert self.submission_pass.status == Submission.RUNNING
         assert self.submission_fail.status == Submission.FAILED

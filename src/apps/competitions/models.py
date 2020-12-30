@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 
+from celery_config import app
 from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
 from profiles.models import User
@@ -511,11 +512,10 @@ class Submission(ChaHubSaveMixin, models.Model):
         sub.start(tasks=tasks)
         return sub
 
-    def cancel(self):
-        from celery_config import app
+    def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
             app.control.revoke(self.celery_task_id, terminate=True)
-            self.status = Submission.CANCELLED
+            self.status = status
             self.save()
             return True
         return False
