@@ -51,7 +51,7 @@
                 <input type="text" name="twitter_url" placeholder="https://twitter.com/organization">
             </div>
             <div class="field" id="github_url">
-                <label>LinkedIn URL</label>
+                <label>Github URL</label>
                 <input type="text" name="github_url" placeholder="https://github.com/organization">
             </div>
         </div>
