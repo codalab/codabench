@@ -320,6 +320,7 @@
                 }
             }
             self.update()
+            self.form_updated()
             // Put dropdown 'set selected' here so it doesn't trigger on_change:form_updated() before fact_sheet_questions is set
             $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             // Form change events

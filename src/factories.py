@@ -10,7 +10,7 @@ from pytz import UTC
 from competitions.models import Competition, Phase, Submission, CompetitionParticipant, PhaseTaskInstance
 from datasets.models import Data
 from leaderboards.models import Leaderboard, Column, SubmissionScore
-from profiles.models import User
+from profiles.models import User, Organization
 from tasks.models import Task, Solution
 from queues.models import Queue
 
@@ -31,6 +31,11 @@ class UserFactory(DjangoModelFactory):
     password = "test"
 
     date_joined = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
+
+    # Set Notifications to False
+    organizer_direct_message_updates = False
+    allow_forum_notifications = False
+    allow_organization_invite_emails = False
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -89,6 +94,7 @@ class DataFactory(DjangoModelFactory):
 class TaskFactory(DjangoModelFactory):
     class Meta:
         model = Task
+
     name = factory.Sequence(lambda n: f'Task {n}')
     created_by = factory.SubFactory(UserFactory)
 
@@ -105,12 +111,14 @@ class TaskFactory(DjangoModelFactory):
 class SolutionFactory(DjangoModelFactory):
     class Meta:
         model = Solution
+
     name = factory.Sequence(lambda n: f'Solution {n}')
 
 
 class QueueFactory(DjangoModelFactory):
     class Meta:
         model = Queue
+
     name = factory.Sequence(lambda n: f'Queue {n}')
     owner = factory.SubFactory(UserFactory)
     is_public = False
@@ -210,3 +218,11 @@ class SubmissionScoreFactory(DjangoModelFactory):
             else:
                 for sub in submissions:
                     self.submissions.add(sub)
+
+
+class OrganizationFactory(DjangoModelFactory):
+    class Meta:
+        model = Organization
+
+    name = factory.Faker('word')
+    email = factory.Faker('email')
