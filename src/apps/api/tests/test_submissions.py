@@ -6,9 +6,11 @@ from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
-from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, TaskFactory
+from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, \
+    TaskFactory, OrganizationFactory, DataFactory
 
 from datasets.models import Data
+from profiles.models import Membership
 
 
 class SubmissionAPITests(APITestCase):
@@ -179,6 +181,50 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.superuser)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+
+class OrganizationSubmissionTests(APITestCase):
+    def setUp(self):
+        # Competition and creator
+        self.creator = UserFactory()
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase = PhaseFactory(competition=self.comp)
+
+        self.org_participant = UserFactory()
+        CompetitionParticipantFactory(user=self.org_participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        self.non_member = UserFactory()
+        CompetitionParticipantFactory(user=self.non_member, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        self.organization = OrganizationFactory()
+        self.organization.users.add(self.org_participant)
+        self.organization.membership_set.filter(user=self.org_participant).update(group=Membership.PARTICIPANT)
+
+        self.dataset = DataFactory(type='Submission')
+
+        # urls
+        self.url_submission = reverse('submission-list')
+
+    def test_org_participant_can_make_submission_as_organization(self):
+        self.client.force_login(user=self.org_participant)
+        data = {
+            'phase': self.phase.id,
+            'data': self.dataset.key,
+            'organization': self.organization.id
+        }
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            resp = self.client.post(self.url_submission, data=data)
+            assert resp.status_code == 201
+
+    def test_non_org_participant_cannot_make_submission_as_organization(self):
+        self.client.force_login(user=self.non_member)
+        data = {
+            'phase': self.phase.id,
+            'data': self.dataset.key,
+            'organization': self.organization.id
+        }
+        with mock.patch('competitions.tasks._send_to_compute_worker'):
+            resp = self.client.post(self.url_submission, data=data)
+            assert resp.status_code == 400
 
 
 class BotUserSubmissionTests(APITestCase):

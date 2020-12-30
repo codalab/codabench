@@ -14,6 +14,7 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 
+from profiles.models import Organization, Membership
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
@@ -81,6 +82,17 @@ class SubmissionViewSet(ModelViewSet):
                 'task',
             )
         return qs
+
+    def create(self, request, *args, **kwargs):
+        if 'organization' in request.data and request.data['organization'] is not None:
+            organization = get_object_or_404(Organization, pk=request.data['organization'])
+            try:
+                membership = organization.membership_set.get(user=request.user)
+            except Membership.DoesNotExist:
+                raise ValidationError('You must be apart of a organization to submit for them')
+            if membership.group not in Membership.PARTICIPANT_GROUP:
+                raise ValidationError('You do not have participant permissions for this group')
+        return super(SubmissionViewSet, self).create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         submission = self.get_object()

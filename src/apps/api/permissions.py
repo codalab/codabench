@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from profiles.models import Membership
+
 
 class IsOrganizerOrCollaborator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -25,3 +27,12 @@ class LeaderboardNotHidden(permissions.BasePermission):
 class IsUserAdminOrIsSelf(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_superuser or request.user == obj
+
+
+class IsOrganizationEditor(permissions.IsAuthenticated):
+    def has_object_permission(self, request, view, obj):
+        try:
+            membership = obj.membership_set.get(user=request.user)
+        except Membership.DoesNotExist:
+            return False
+        return membership.group in membership.EDITORS_GROUP

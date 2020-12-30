@@ -289,7 +289,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
-        submission.status = Submission.RUNNING
         submission.save()
 
         send_parent_status(submission)

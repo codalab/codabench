@@ -1,4 +1,5 @@
 <profile-edit>
+    <div class="ui raised segment">
     <h1>User Edit:</h1>
     <form class="ui form" id="user-form">
         <div class="field">
@@ -69,6 +70,7 @@
         <div class="ui error message"></div>
         <button type="button" class="ui primary button" onclick="{save.bind(this)}" ref="submit_button">Submit</button>
     </form>
+    </div>
 
     <script>
         self = this
@@ -76,6 +78,10 @@
         self.photo = self.selected_user.photo
         delete self.selected_user.photo
         self.one("mount", function () {
+            // Create http validation rule
+            $.fn.form.settings.rules.test_http = function(param) {
+                return /^(http|https):\/\/(.*)/.test(param)
+            }
             // Prefill form with saved data
             $('#user-form').form('set values', {
                 first_name:     selected_user.first_name,
@@ -91,6 +97,7 @@
                 biography:      selected_user.biography,
                 })
              $('#user-form').form({
+                 keyboardShortcuts: false,
                  fields: {
                      email: {
                          identifier: 'email',
@@ -111,7 +118,7 @@
                                  prompt: 'Please enter a valid url. Example: https://www.xyz.com'
                              },
                              {
-                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -125,7 +132,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://twitter.com/BobRoss'
                              },
                              {
-                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -139,7 +146,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://www.linkedin.com/in/john-doe'
                              },
                              {
-                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -153,7 +160,7 @@
                                  prompt: 'Please enter a valid {name}. Example: https://github.com/john-doe'
                              },
                              {
-                                 type: 'regex[/^((http|https):\/\/)/]',
+                                 type: "test_http",
                                  prompt: '{name} must start with "http://" or "https://"'
                              }
                          ]
@@ -182,6 +189,7 @@
                      self.refs.submit_button.disabled = false
                  }
              })
+
             self.photo_name = typeof self.photo == 'undefined' || self.photo === null ? null : self.photo.replace(/\\/g, '/').replace(/.*\//, '')
             // Draw in logo filename as it's changed
             $(self.refs.photo).change(function () {

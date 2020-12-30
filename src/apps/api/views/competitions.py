@@ -475,7 +475,8 @@ class PhaseViewSet(ModelViewSet):
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
                     'fact_sheet_answers': submission['fact_sheet_answers'],
-                    'slug_url': submission['slug_url']
+                    'slug_url': submission['slug_url'],
+                    'organization': submission['organization'],
                 })
             for score in submission['scores']:
                 tempScore = score

@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
@@ -5,7 +7,6 @@ from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
 from utils.data import PathWrapper
 from django.urls import reverse
-
 
 PROFILE_DATA_BLACKLIST = [
     'password',
@@ -37,7 +38,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     company = models.CharField(max_length=100, null=True, blank=True)
     bio = models.CharField(max_length=300, null=True, blank=True)
 
-    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True, on_delete=models.CASCADE)
+    github_info = models.OneToOneField('GithubUserInfo', related_name='user', null=True, blank=True,
+                                       on_delete=models.CASCADE)
 
     # Any User Attributes
     username = models.CharField(max_length=50, unique=True)
@@ -63,6 +65,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Notifications
     organizer_direct_message_updates = models.BooleanField(default=True)
     allow_forum_notifications = models.BooleanField(default=True)
+    allow_organization_invite_emails = models.BooleanField(default=True)
 
     # Queues
     rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)
@@ -86,7 +89,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return f'Username-{self.username} | Name-{self.name}'
+        return f'{self.username} | {self.email}'
 
     @property
     def slug_url(self):
@@ -154,10 +157,11 @@ class GithubUserInfo(models.Model):
 
 class Organization(models.Model):
     users = models.ManyToManyField(User, related_name='organizations', through='Membership')
+    user_record = models.ManyToManyField(User)
 
     # slug = models.SlugField(max_length=50, default='', unique=True)
-    name = models.CharField(max_length=50, unique=True, null=False, blank=False)
-    photo = models.ImageField(upload_to=PathWrapper('profile_photos'), null=True, blank=True)
+    name = models.CharField(max_length=100, unique=True, null=False, blank=False)
+    photo = models.ImageField(upload_to=PathWrapper('organization_photos'), null=True, blank=True)
     email = models.EmailField(max_length=200, unique=True, null=False, blank=False)
     location = models.CharField(max_length=250, unique=False, null=True, blank=True)
     description = models.CharField(max_length=4096, unique=False, null=True, blank=True)
@@ -172,16 +176,35 @@ class Organization(models.Model):
     def __str__(self):
         return f'{self.name}({self.email})'
 
+    @property
+    def url(self):
+        return reverse('profiles:organization_profile', args=[self.id])
+
 
 class Membership(models.Model):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date_joined = models.DateField(default=now)
-
     # Permissions
     OWNER = 'OWNER'
     MANAGER = 'MANAGER'
     PARTICIPANT = 'PARTICIPANT'
     MEMBER = 'MEMBER'
-    PERMISSION_GROUPS = ((OWNER, 'Owner'), (MANAGER, 'Manager'), (PARTICIPANT, 'Participant'), (MEMBER, 'Member'))
-    group = models.TextField(choices=PERMISSION_GROUPS, default=MEMBER, null=False, blank=False)
+    INVITED = 'INVITED'
+    PERMISSIONS = (
+        (OWNER, 'Owner'),
+        (MANAGER, 'Manager'),
+        (PARTICIPANT, 'Participant'),
+        (MEMBER, 'Member'),
+        (INVITED, 'Invited'),
+    )
+    # Groups
+    EDITORS_GROUP = [OWNER, MANAGER]
+    PARTICIPANT_GROUP = EDITORS_GROUP + [PARTICIPANT]
+    SETTABLE_PERMISSIONS = [MANAGER, PARTICIPANT, MEMBER]
+
+    group = models.TextField(choices=PERMISSIONS, default=INVITED, null=False, blank=False)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date_joined = models.DateTimeField(default=now)
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
+
+    class Meta:
+        ordering = ["date_joined"]
