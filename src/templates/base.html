@@ -120,10 +120,12 @@
                                 <div class="ui divider"></div>
                                 <div class="header">Organizations</div>
                             {% for org in user.organizations.all %}
+                                {% if user in org.user_record.all %}
                                 <a class="item" href="{% url 'profiles:organization_profile' pk=org.id %}">
                                     <i class="users icon"></i>
                                     {{ org.name }}
                                 </a>
+                                {% endif %}
                             {% endfor %}
                                 <a class="item" href="{% url 'profiles:organization_create' %}">
                                     <i class="plus icon"></i>

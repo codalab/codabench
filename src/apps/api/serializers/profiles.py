@@ -126,7 +126,7 @@ class OrganizationSerializer(ModelSerializer):
 
 class UserSerializer(ModelSerializer):
     photo = NamedBase64ImageField(required=False, allow_null=True)
-    organizations = OrganizationSerializer(many=True, read_only=True)
+    organizations = SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
@@ -151,6 +151,13 @@ class UserSerializer(ModelSerializer):
             'allow_forum_notifications',
             'allow_organization_invite_emails',
         )
+
+    def get_organizations(self, instance):
+        participant_orgs = []
+        for org in instance.organizations.all():
+            if instance in org.user_record.all():
+                participant_orgs.append(org)
+        return OrganizationSerializer(participant_orgs, many=True).data
 
 
 class MembershipSerializer(ModelSerializer):
@@ -189,6 +196,7 @@ class OrganizationDetailSerializer(OrganizationSerializer):
         fields = OrganizationSerializer.Meta.fields + (
             'date_created',
             'users',
+            'user_record',
         )
 
 

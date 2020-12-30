@@ -64,10 +64,12 @@
                     </thead>
                     <tbody>
                     {% for user in organization.users %}
+                        {% if user.id in organization.user_record %}
                         <tr>
                             <td><a href="/profiles/user/{{ user.slug }}/">{{ user.name }}</a></td>
                             <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
                         </tr>
+                        {% endif %}
                     {% endfor %}
                     </tbody>
                 </table>
