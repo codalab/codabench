@@ -8,9 +8,10 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, TemplateView
 
-from api.serializers.profiles import UserSerializer
+from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
+    UserNotificationSerializer
 from .forms import SignUpForm
-from .models import User
+from .models import User, Organization, Membership
 
 
 class LoginView(auth_views.LoginView):
@@ -79,5 +80,54 @@ def sign_up(request):
     return render(request, 'registration/signup.html', context)
 
 
+class UserNotificationEdit(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_notifications.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['notifications'] = json.dumps(UserNotificationSerializer(self.get_object()).data)
+        return context
+
+
 class OrganizationCreateView(LoginRequiredMixin, TemplateView):
-    template_name = 'profiles/orgazation_create.html'
+    template_name = 'profiles/organization_create.html'
+
+
+class OrganizationDetailView(LoginRequiredMixin, DetailView):
+    queryset = Organization.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            context['organization'] = OrganizationDetailSerializer(self.object).data
+        membership = self.object.membership_set.filter(user=self.request.user)
+        if len(membership) == 1:
+            context['is_editor'] = membership.first().group in Membership.EDITORS_GROUP
+        else:
+            context['is_editor'] = False
+        return context
+
+
+class OrganizationEditView(LoginRequiredMixin, DetailView):
+    queryset = Organization.objects.all()
+    template_name = 'profiles/organization_edit.html'
+
+    def get_object(self, *args, **kwargs):
+        organization = super().get_object(*args, **kwargs)
+        member = organization.membership_set.filter(user=self.request.user)
+        if len(member) == 0 or member.first().group not in Membership.EDITORS_GROUP:
+            raise Http404()
+        return organization
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        if self.object:
+            context['organization'] = json.dumps(OrganizationEditSerializer(self.object).data)
+        return context
+
+
+class OrganizationInviteView(LoginRequiredMixin, TemplateView):
+    template_name = 'profiles/organization_invite.html'

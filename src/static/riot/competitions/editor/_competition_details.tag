@@ -309,7 +309,6 @@
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
-            $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             if(competition.fact_sheet !== null){
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]
@@ -322,6 +321,8 @@
             }
             self.update()
             self.form_updated()
+            // Put dropdown 'set selected' here so it doesn't trigger on_change:form_updated() before fact_sheet_questions is set
+            $(self.refs.competition_type).dropdown('set selected', competition.competition_type)
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)

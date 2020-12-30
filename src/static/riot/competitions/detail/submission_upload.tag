@@ -27,26 +27,34 @@
                     </div>
                 </div>
 
-            <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion" if="{selected_tasks}" hide="{selected_tasks.length < 2}">
-                <div class="item">
-                    <a class="title">
-                        <i class="dropdown icon"></i>
-                        Selected Tasks
-                    </a>
-                    <div class="content">
-                        <div class="ui form">
-                            <div class="grouped fields">
-                                <div each="{task in selected_tasks}" class="field">
-                                    <div class="ui checkbox">
-                                        <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
-                                        <label for="task-{task.id}" >{task.name}</label>
+                <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion" if="{selected_tasks}" hide="{selected_tasks.length < 2}">
+                    <div class="item">
+                        <a class="title">
+                            <i class="dropdown icon"></i>
+                            Selected Tasks
+                        </a>
+                        <div class="content">
+                            <div class="ui form">
+                                <div class="grouped fields">
+                                    <div each="{task in selected_tasks}" class="field">
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
+                                            <label for="task-{task.id}" >{task.name}</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="ui six wide field">
+                    <label>Submit as:</label>
+                    <select name="organizations" id="organization_dropdown" class="ui dropdown">
+                        <option value="None">Yourself</option>
+                        <option each="{org in organizations}" value="{org.id}">{org.name}</option>
+                    </select>
+                </div>
 
                 <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
             </form>
@@ -148,8 +156,17 @@
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
+        self.organizations = []
 
         self.one('mount', function () {
+            CODALAB.api.get_user_participant_organizations()
+                .done((data) => {
+                    self.organizations = data
+                    if (self.organizations.length === 0){
+                        $('#organization_dropdown').hide()
+                    }
+                    self.update()
+                })
             $('.dropdown', self.root).dropdown()
             let segment = $('.submission-output-container .ui.basic.segment')
             $('.ui.accordion', self.root).accordion({
@@ -386,6 +403,10 @@
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     self.lines = {}
+                    let dropdown = $('#organization_dropdown')
+                    let organization = dropdown.dropdown('get value')
+                    organization = organization === 'None' ? null : organization
+                    dropdown.attr('disabled', 'disabled')
 
 
                     // Call start_submission with dataset key
@@ -394,11 +415,13 @@
                         "data": data.key,
                         "phase": self.selected_phase.id,
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
-                        "tasks": task_ids_to_run
+                        "tasks": task_ids_to_run,
+                        "organization": organization,
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
                             CODALAB.events.trigger('submission_selected', data)
+                            $('#organization_dropdown').removeAttr('disabled')
                         })
                         .fail(function (response) {
                             try {
