@@ -515,6 +515,9 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
+            if self.has_children:
+                for sub in self.children.all():
+                    sub.cancel(status=status)
             app.control.revoke(self.celery_task_id, terminate=True)
             self.status = status
             self.save()

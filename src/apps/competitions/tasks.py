@@ -755,4 +755,5 @@ def submission_status_cleanup():
         if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
             if sub.parent is not None:
                 sub.parent.cancel(status=Submission.FAILED)
-            sub.cancel(status=Submission.FAILED)
+            else:
+                sub.cancel(status=Submission.FAILED)

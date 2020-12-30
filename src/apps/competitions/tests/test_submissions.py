@@ -395,3 +395,23 @@ class TestSubmissionTasks(SubmissionTestCase):
         self.submission_pass.refresh_from_db()
         assert self.submission_pass.status == Submission.RUNNING
         assert self.submission_fail.status == Submission.FAILED
+
+    def test_cancelling_parent_submission_cancels_all_children(self):
+        self.parent_submission = self.make_submission()
+        self.parent_submission.has_children = True
+        self.parent_submission.save()
+        for i in range(2):
+            sub = self.make_submission()
+            sub.parent = self.parent_submission
+            sub.save()
+
+        assert self.parent_submission.status != Submission.FAILED
+        for sub in self.parent_submission.children.all():
+            assert sub.status != Submission.FAILED
+
+        self.parent_submission.cancel(status=Submission.FAILED)
+        self.parent_submission.refresh_from_db()
+
+        assert self.parent_submission.status == Submission.FAILED
+        for sub in self.parent_submission.children.all():
+            assert sub.status == Submission.FAILED
