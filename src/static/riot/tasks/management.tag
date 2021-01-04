@@ -58,7 +58,7 @@
                   Pagination
         ------------------------------------->
         <tr if="{tasks.length > 0}">
-            <th colspan="5">
+            <th colspan="6">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
