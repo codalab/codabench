@@ -79,6 +79,9 @@ CODALAB.api = {
     get_submission: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/`)
     },
+    update_submission_fact_sheet: function (pk, data) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${pk}/update_fact_sheet/`, data)
+    },
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },

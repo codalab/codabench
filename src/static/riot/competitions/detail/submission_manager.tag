@@ -246,7 +246,6 @@
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    console.log(response)
                     toastr.error(response.responseJSON)
                 })
             event.stopPropagation()

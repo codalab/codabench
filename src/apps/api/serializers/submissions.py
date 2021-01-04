@@ -247,6 +247,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'detailed_result',
             'scoring_result',
             'leaderboards',
+            'fact_sheet_answers',
         )
 
     def get_logs(self, instance):
