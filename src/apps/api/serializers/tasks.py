@@ -113,6 +113,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
+    competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -125,7 +126,11 @@ class TaskListSerializer(serializers.ModelSerializer):
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
+            'competitions'
         )
+
+    def get_competitions(self, instance):
+        return self.context['task_titles'][instance.pk]
 
 
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):

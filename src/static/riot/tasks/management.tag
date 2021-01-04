@@ -19,6 +19,7 @@
         <thead>
         <tr>
             <th>Name</th>
+            <th class="benchmark-row">Benchmarks</th>
             <th width="125px">Uploaded...</th>
             <th width="50px">Public</th>
             <th width="50px">Delete?</th>
@@ -28,6 +29,7 @@
         <tbody>
         <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
             <td>{ task.name }</td>
+            <td class="benchmark-row">{ task.competitions.join(', ') }</td>
             <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
@@ -433,5 +435,10 @@
         .task-row
             height 42px
             cursor pointer
+        .benchmark-row
+            overflow: hidden
+            white-space: nowrap
+            text-overflow: ellipsis
+            max-width: 100px
     </style>
 </task-management>

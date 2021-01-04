@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db.models import Q, OuterRef, Subquery
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,7 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
-from competitions.models import Submission
+from competitions.models import Submission, Phase
 from tasks.models import Task
 
 
@@ -60,6 +62,16 @@ class TaskViewSet(ModelViewSet):
                 return serializers.TaskListSerializer
             return serializers.TaskDetailSerializer
         return serializers.TaskSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        qs = self.get_queryset()
+        phases = Phase.objects.filter(tasks__pk__in=qs.values_list('pk', flat=True).values_list('phases__pk', flat=True))
+        context['task_titles'] = defaultdict(list)
+        for task in phases.values('tasks__pk', 'competition__title', 'competition__pk'):
+            context['task_titles'][task['tasks__pk']].append(task['competition__title'])
+        return context
+
 
     def update(self, request, *args, **kwargs):
         task = self.get_object()
