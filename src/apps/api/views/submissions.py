@@ -212,7 +212,7 @@ class SubmissionViewSet(ModelViewSet):
         submission.save()
         return Response({})
 
-    @action(detail=True, methods=('POST',))
+    @action(detail=True, methods=('PATCH',))
     def update_fact_sheet(self, request, pk):
         request_submission = super().get_object()
         top_level_submission = request_submission.parent or request_submission
