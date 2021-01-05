@@ -191,8 +191,6 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
-        for sub in self.get_queryset():
-            print(sub.owner)
         submission = super().get_object()
 
         if submission.phase.hide_output:
