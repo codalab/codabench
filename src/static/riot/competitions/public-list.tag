@@ -49,6 +49,7 @@
     })
 
     self.handle_ajax_pages = function (num){
+        $('.pagination-nav > button').prop('disabled', true)
         self.update_competitions_list(self.get_url_page_number_or_default() + num)
     }
 
@@ -57,6 +58,7 @@
         if (self.competitions_cache[self.current_page]){
             self.competitions = self.competitions_cache[self.current_page]
             history.pushState("", document.title, "?page="+self.current_page)
+            $('.pagination-nav > button').prop('disabled', false)
             self.update()
         } else {
             return CODALAB.api.get_public_competitions({"page":self.current_page})
@@ -67,6 +69,7 @@
                     self.competitions = response
                     self.competitions_cache[self.current_page.toString()] = response
                     history.pushState("", document.title, "?page="+self.current_page)
+                    $('.pagination-nav > button').prop('disabled', false)
                     self.update()
                 })
         }
