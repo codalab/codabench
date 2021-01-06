@@ -219,7 +219,7 @@ class SubmissionViewSet(ModelViewSet):
             if isinstance(request.data, str):
                 try:
                     request_data = json.loads(request.data)
-                except ValueError as e:
+                except ValueError:
                     return ValidationError('Invalid JSON')
         else:
             request_data = request.data
