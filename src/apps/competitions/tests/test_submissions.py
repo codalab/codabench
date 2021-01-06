@@ -394,4 +394,3 @@ class FactSheetTests(SubmissionTestCase):
         data = json.dumps(data)
         resp = self.client.post(url, data, content_type='application/json')
         assert resp.status_code == 200
-
