@@ -219,7 +219,7 @@ class SubmissionViewSet(ModelViewSet):
         # Validate fact_sheet using serializer
         data = self.get_serializer(top_level_submission).data
         data['fact_sheet_answers'] = request.data
-        serializer = self.get_serializer(top_level_submission, data=data)
+        serializer = self.get_serializer(data=data, instance=top_level_submission)
         serializer.is_valid(raise_exception=True)
         # Use Queryset to update Submissions
         Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=serializer.data['fact_sheet_answers'])
