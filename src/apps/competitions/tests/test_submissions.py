@@ -10,7 +10,8 @@ from django.utils import timezone
 from api.serializers.submissions import SubmissionCreationSerializer
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import Submission
-from competitions.tasks import run_submission
+from competitions.tasks import run_submission, submission_status_cleanup
+
 from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory, LeaderboardFactory
 from leaderboards.models import Leaderboard
 
@@ -380,7 +381,7 @@ class FactSheetTests(SubmissionTestCase):
         }
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
-
+        
     def test_edit_fact_sheet_endpoint(self):
         submission = super().make_submission()
         self.client.login(username=self.user.username, password=self.user.password)
@@ -396,3 +397,37 @@ class FactSheetTests(SubmissionTestCase):
         assert resp.status_code == 200
         submission.refresh_from_db()
         assert json.loads(data) == submission.fact_sheet_answers
+
+
+class TestSubmissionTasks(SubmissionTestCase):
+    def test_submissions_are_cancelled_if_running_24_hours_past_execution_time_limit(self):
+        self.submission_fail, self.submission_pass = self.make_submission(), self.make_submission()
+        self.submission_fail.status = self.submission_pass.status = Submission.RUNNING
+        self.submission_fail.started_when = timezone.now() - timedelta(milliseconds=(3600000 * 24) + self.submission_fail.phase.execution_time_limit)
+        self.submission_fail.save()
+        self.submission_pass.save()
+        submission_status_cleanup()
+        self.submission_fail.refresh_from_db()
+        self.submission_pass.refresh_from_db()
+        assert self.submission_pass.status == Submission.RUNNING
+        assert self.submission_fail.status == Submission.FAILED
+
+    def test_cancelling_parent_submission_cancels_all_children(self):
+        self.parent_submission = self.make_submission()
+        self.parent_submission.has_children = True
+        self.parent_submission.save()
+        for i in range(2):
+            sub = self.make_submission()
+            sub.parent = self.parent_submission
+            sub.save()
+
+        assert self.parent_submission.status != Submission.FAILED
+        for sub in self.parent_submission.children.all():
+            assert sub.status != Submission.FAILED
+
+        self.parent_submission.cancel(status=Submission.FAILED)
+        self.parent_submission.refresh_from_db()
+
+        assert self.parent_submission.status == Submission.FAILED
+        for sub in self.parent_submission.children.all():
+            assert sub.status == Submission.FAILED

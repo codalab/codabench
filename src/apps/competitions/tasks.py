@@ -4,6 +4,7 @@ import os
 import re
 import traceback
 import zipfile
+from datetime import timedelta
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
@@ -288,7 +289,6 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
-        submission.status = Submission.RUNNING
         submission.save()
 
         send_parent_status(submission)
@@ -744,3 +744,16 @@ def update_phase_statuses():
     competitions = Competition.objects.exclude(phases__in=Phase.objects.filter(is_final_phase=True, end__lt=now()))
     for comp in competitions:
         comp.update_phase_statuses()
+
+
+@app.task(queue='site-worker')
+def submission_status_cleanup():
+    submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')
+
+    for sub in submissions:
+        # Check if the submission has been running for 24 hours longer than execution_time_limit
+        if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
+            if sub.parent is not None:
+                sub.parent.cancel(status=Submission.FAILED)
+            else:
+                sub.cancel(status=Submission.FAILED)
