@@ -381,7 +381,7 @@ class FactSheetTests(SubmissionTestCase):
         }
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
-        
+
     def test_edit_fact_sheet_endpoint(self):
         submission = super().make_submission()
         self.client.login(username=self.user.username, password=self.user.password)
