@@ -392,5 +392,7 @@ class FactSheetTests(SubmissionTestCase):
             "text": "",
         }
         data = json.dumps(data)
-        resp = self.client.post(url, data, content_type='application/json')
+        resp = self.client.patch(url, data, content_type='application/json')
         assert resp.status_code == 200
+        submission.refresh_from_db()
+        assert json.loads(data) == submission.fact_sheet_answers

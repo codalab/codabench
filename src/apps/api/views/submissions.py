@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.db.models import Q
@@ -214,6 +215,14 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('PATCH',))
     def update_fact_sheet(self, request, pk):
+        if not isinstance(request.data, dict):
+            if isinstance(request.data, str):
+                try:
+                    request_data = json.loads(request.data)
+                except ValueError as e:
+                    return ValidationError('Invalid JSON')
+        else:
+            request_data = request.data
         request_submission = super().get_object()
         top_level_submission = request_submission.parent or request_submission
         # Validate fact_sheet using serializer
@@ -222,7 +231,7 @@ class SubmissionViewSet(ModelViewSet):
         serializer = self.get_serializer(data=data, instance=top_level_submission)
         serializer.is_valid(raise_exception=True)
         # Use Queryset to update Submissions
-        Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=serializer.data['fact_sheet_answers'])
+        Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
 
 
