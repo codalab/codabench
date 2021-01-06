@@ -382,6 +382,22 @@ class FactSheetTests(SubmissionTestCase):
         serializer = SubmissionCreationSerializer(data=submission, instance=Submission)
         assert not serializer.is_valid()
 
+    def test_edit_fact_sheet_endpoint(self):
+        submission = super().make_submission()
+        self.client.login(username=self.user.username, password=self.user.password)
+        url = reverse('submission-update-fact-sheet', args=[submission.id])
+        data = {
+            "boolean": True,
+            "selection": "v3",
+            "text_required": "accept_text",
+            "text": "",
+        }
+        data = json.dumps(data)
+        resp = self.client.patch(url, data, content_type='application/json')
+        assert resp.status_code == 200
+        submission.refresh_from_db()
+        assert json.loads(data) == submission.fact_sheet_answers
+
 
 class TestSubmissionTasks(SubmissionTestCase):
     def test_submissions_are_cancelled_if_running_24_hours_past_execution_time_limit(self):

@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.db.models import Q
@@ -38,7 +39,7 @@ class SubmissionViewSet(ModelViewSet):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
-            if self.action == 're_run_submission':
+            if self.action in ['update_fact_sheet', 're_run_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             elif not self.request.user.is_authenticated or not_bot_user:
@@ -210,6 +211,27 @@ class SubmissionViewSet(ModelViewSet):
         submission.data.save(send=False)
         submission.is_public = is_public
         submission.save()
+        return Response({})
+
+    @action(detail=True, methods=('PATCH',))
+    def update_fact_sheet(self, request, pk):
+        if not isinstance(request.data, dict):
+            if isinstance(request.data, str):
+                try:
+                    request_data = json.loads(request.data)
+                except ValueError:
+                    return ValidationError('Invalid JSON')
+        else:
+            request_data = request.data
+        request_submission = super().get_object()
+        top_level_submission = request_submission.parent or request_submission
+        # Validate fact_sheet using serializer
+        data = self.get_serializer(top_level_submission).data
+        data['fact_sheet_answers'] = request.data
+        serializer = self.get_serializer(data=data, instance=top_level_submission)
+        serializer.is_valid(raise_exception=True)
+        # Use Queryset to update Submissions
+        Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
 
 
