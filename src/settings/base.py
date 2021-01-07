@@ -214,6 +214,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'competitions.tasks.update_phase_statuses',
         'schedule': timedelta(seconds=3600)
     },
+    'submission_status_cleanup': {
+        'task': 'competitions.tasks.submission_status_cleanup',
+        'schedule': timedelta(seconds=3600)
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1

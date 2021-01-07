@@ -70,13 +70,12 @@
                         </a>
                         <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">
                     </p>
-                    <p if="{ question.type !== 'checkbox' }">
+                    <p>
                         <label for="is-required-{question.id}">Is Required:</label>
                         <input type="hidden" name="is_required-{question.id}" value="false">
                         <input if="{question.is_required === 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}" checked>
                         <input if="{question.is_required !== 'true'}" type="checkbox" name="is_required-{question.id}" value="true" onchange="{form_updated}">
                     </p>
-                    <input if="{ question.type === 'checkbox' }" type="hidden" name="is_required-{question.id}" value="false">
                 </div>
                 <br>
                 <button class="ui basic red button" onclick="{remove_question.bind(this, question.id)}">Remove</button>

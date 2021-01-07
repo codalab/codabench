@@ -79,6 +79,9 @@ CODALAB.api = {
     get_submission: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/`)
     },
+    update_submission_fact_sheet: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}submissions/${pk}/update_fact_sheet/`, data)
+    },
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },
@@ -157,7 +160,7 @@ CODALAB.api = {
                     url: result.sassy_url,
                     data: data_file,
                     processData: false,
-                    contentType: false,
+                    contentType: data_file.type === 'application/x-zip-compressed' ? 'application/zip' : data_file.type,
                     beforeSend: function (request) {
                         if (STORAGE_TYPE === 'azure') {
                             request.setRequestHeader('x-ms-blob-type', 'BlockBlob')

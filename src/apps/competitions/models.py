@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 
+from celery_config import app
 from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
 from profiles.models import User, Organization
@@ -448,6 +449,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     participant = models.ForeignKey('CompetitionParticipant', related_name='submissions', on_delete=models.CASCADE,
                                     null=True, blank=True)
     created_when = models.DateTimeField(default=now)
+    started_when = models.DateTimeField(null=True)
     is_public = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
 
@@ -480,6 +482,9 @@ class Submission(ChaHubSaveMixin, models.Model):
             if not can_make_submission:
                 raise PermissionError(reason_why_not)
 
+        if self.status == Submission.RUNNING and not self.started_when:
+            self.started_when = now()
+
         super().save(**kwargs)
 
     def start(self, tasks=None):
@@ -508,11 +513,13 @@ class Submission(ChaHubSaveMixin, models.Model):
         sub.start(tasks=tasks)
         return sub
 
-    def cancel(self):
-        from celery_config import app
+    def cancel(self, status=CANCELLED):
         if self.status not in [Submission.CANCELLED, Submission.FAILED, Submission.FINISHED]:
+            if self.has_children:
+                for sub in self.children.all():
+                    sub.cancel(status=status)
             app.control.revoke(self.celery_task_id, terminate=True)
-            self.status = Submission.CANCELLED
+            self.status = status
             self.save()
             return True
         return False
