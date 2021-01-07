@@ -46,6 +46,7 @@ whitenoise==3.3.0
 coreapi==2.3.3
 djangorestframework==3.9.1
 djangorestframework-csv==2.1.0
+drf-extensions==0.4.0
 markdown==2.6.11
 pygments==2.2.0
 drf-writable-nested==0.5.4

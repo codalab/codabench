@@ -1,13 +1,15 @@
 import zipfile
 import json
 import csv
+import datetime
 from collections import OrderedDict
 from io import StringIO
-
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
+from django.core.cache import cache
+from django.utils.encoding import force_text
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
@@ -19,6 +21,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
+from rest_framework_extensions.cache.decorators import cache_response
+from rest_framework_extensions.key_constructor.constructors import DefaultKeyConstructor
+from rest_framework_extensions.key_constructor.bits import KeyBitBase, ListSqlQueryKeyBit, PaginationKeyBit
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -34,6 +39,22 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
+
+
+class UpdatedAtKeyBit(KeyBitBase):
+    def get_data(self, **kwargs):
+        key = 'api_updated_at_timestamp'
+        value = cache.get(key, None)
+        if not value:
+            value = datetime.datetime.utcnow()
+            cache.set(key, value=value)
+        return force_text(value)
+
+
+class CustomListKeyConstructor(DefaultKeyConstructor):
+    list_sql = ListSqlQueryKeyBit()
+    pagination = PaginationKeyBit()
+    updated_at = UpdatedAtKeyBit()
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -361,6 +382,7 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
+    @cache_response(key_func=CustomListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
         qs = self.get_queryset()
