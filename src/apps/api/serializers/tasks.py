@@ -1,3 +1,4 @@
+from profiles.models import User
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -42,6 +43,7 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     validated = serializers.SerializerMethodField()
+    shared_with = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
     class Meta:
         model = Task
@@ -62,6 +64,7 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
             'ingestion_program',
             'reference_data',
             'scoring_program',
+            'shared_with',
         )
         read_only_fields = (
             'created_by',
@@ -114,6 +117,7 @@ class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
     competitions = serializers.SerializerMethodField()
+    shared_with = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -126,11 +130,15 @@ class TaskListSerializer(serializers.ModelSerializer):
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
-            'competitions'
+            'competitions',
+            'shared_with',
         )
 
     def get_competitions(self, instance):
         return self.context['task_titles'][instance.pk]
+
+    def get_shared_with(self, instance):
+        return self.context['shared_with'][instance.pk]
 
 
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):

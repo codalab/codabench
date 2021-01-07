@@ -207,6 +207,9 @@ CODALAB.api = {
     create_task: (data) => {
         return CODALAB.api.request('POST', `${URLS.API}tasks/`, data)
     },
+    share_task: (pk, data) => {
+        return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
+    },
 
     /*---------------------------------------------------------------------
          Queues

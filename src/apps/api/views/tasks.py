@@ -12,6 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
 from competitions.models import Submission, Phase
+from profiles.models import User
 from tasks.models import Task
 
 
@@ -39,17 +40,20 @@ class TaskViewSet(ModelViewSet):
                 'solutions',
                 'solutions__data'
             )
+
+            task_filter = Q(created_by=self.request.user) | Q(shared_with=self.request.user)
             if self.request.query_params.get('public'):
-                qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
-            else:
-                qs = qs.filter(created_by=self.request.user)
+                task_filter |= Q(is_public=True)
+
+            qs = qs.filter(task_filter)
 
             # Determine whether a task is "valid" by finding some solution with a
             # passing submission
             task_validate_qs = Submission.objects.filter(
                 md5__in=OuterRef("solutions__md5"),
                 status=Submission.FINISHED,
-                phase__in=OuterRef("phases")
+                # TODO: This line causes our query to take ~10 seconds. Is this important?
+                # phase__in=OuterRef("phases")
             )
             # We have to grab something from task_validate_qs here, so i grab pk
             qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
@@ -66,10 +70,17 @@ class TaskViewSet(ModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         qs = self.get_queryset()
-        phases = Phase.objects.filter(tasks__pk__in=qs.values_list('pk', flat=True).values_list('phases__pk', flat=True))
+
+        phases = Phase.objects.filter(tasks__pk__in=qs.values_list('pk', flat=True))
         context['task_titles'] = defaultdict(list)
-        for task in phases.values('tasks__pk', 'competition__title', 'competition__pk'):
+        for task in phases.values('tasks__pk', 'competition__title'):
             context['task_titles'][task['tasks__pk']].append(task['competition__title'])
+
+        users = User.objects.filter(shared_tasks__pk__in=qs.values_list('pk', flat=True))
+        context['shared_with'] = defaultdict(list)
+        for user in users.values('username', 'shared_tasks__pk'):
+            context['shared_with'][user['shared_tasks__pk']].append(user['username'])
+
         return context
 
 
