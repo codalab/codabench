@@ -37,6 +37,7 @@ from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 
+
 class CompetitionViewSet(ModelViewSet):
     queryset = Competition.objects.all()
     permission_classes = (AllowAny,)
