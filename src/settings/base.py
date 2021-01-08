@@ -244,7 +244,6 @@ CACHES = {
 }
 REST_FRAMEWORK_EXTENSIONS = {
     'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 15,
-    'DEFAULT_USE_CACHE': 'default'
 }
 
 # =============================================================================
