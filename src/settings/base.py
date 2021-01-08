@@ -226,10 +226,26 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 # ============================================================================
 # Caching
 # ============================================================================
+
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379")
+
+# This splits up the REDIS_URL into parts usable by redis
+url_parts = REDIS_URL.split(':')
+
+if '@' in url_parts[-2]:
+    username_and_host = url_parts[-2].split('@')
+    REDIS_PASSWORD = username_and_host[0]
+    REDIS_HOST = username_and_host[1]
+else:
+    REDIS_PASSWORD = None
+    REDIS_HOST = url_parts[-2][2:]
+
+REDIS_PORT = url_parts[-1]
+
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.RedisCache',
-        'LOCATION': [os.environ.get("REDIS_URL", "redis://redis:6379")],
+        'LOCATION': [REDIS_URL],
         'OPTIONS': {
             'PARSER_CLASS': 'redis.connection.HiredisParser',
             'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
@@ -306,7 +322,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
+            "hosts": [REDIS_URL],
 
             # To hold large submission outputs
             "capacity": 1500,  # default 100

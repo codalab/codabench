@@ -3,6 +3,7 @@ import logging
 import os
 
 import aiofiles
+import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 
@@ -11,10 +12,9 @@ from utils.data import make_url_sassy
 
 
 logger = logging.getLogger(__name__)
-
+redis_instance = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD, db=0)
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
-    #
     async def connect(self):
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         secret = self.scope['url_route']['kwargs']['secret']
@@ -39,16 +39,13 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         if sub.phase.hide_output and not sub.phase.competition.user_has_admin_permission(user_pk):
             return
 
-        submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
-        os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
         data = json.loads(text_data)
         if data['kind'] == 'detailed_result_update':
             data['result_url'] = make_url_sassy(Submission.objects.get(id=submission_id).detailed_result.name)
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
-        async with aiofiles.open(submission_output_path, 'a+') as f:
-            await f.write(f'{text_data}\n')
+        redis_instance.set(f"{submission_id}.txt", text_data)
 
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
@@ -81,7 +78,6 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         """We expect to receive a message at this endpoint containing the ID(s) of submissions to get
         details about; typically on page load, looking up the previous submission details"""
         data = json.loads(text_data)
-
         submission_ids = data.get("submission_ids", [])
 
         if submission_ids:
@@ -89,11 +85,9 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
             submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
 
             for sub in submissions:
-                text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{sub.id}.txt")
-                if os.path.exists(text_path):
-                    with open(text_path) as f:
-                        text = f.read()
-                    await self.group_send(text, sub.id, full_text=True)
+                text = redis_instance.get(f"{sub.id}.txt")
+                if text is not None:
+                    await self.group_send(text.decode(), sub.id, full_text=True)
 
     async def submission_message(self, event):
         data = {
