@@ -43,7 +43,6 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     validated = serializers.SerializerMethodField()
-    shared_with = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
     class Meta:
         model = Task
