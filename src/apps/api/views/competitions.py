@@ -19,8 +19,7 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
 from rest_framework_extensions.cache.decorators import cache_response
-from rest_framework_extensions.key_constructor.constructors import DefaultKeyConstructor, DefaultListKeyConstructor
-from rest_framework_extensions.key_constructor.bits import PaginationKeyBit
+from rest_framework_extensions.key_constructor.constructors import DefaultListKeyConstructor
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
