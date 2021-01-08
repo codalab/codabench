@@ -296,16 +296,29 @@
             $(self.refs.share_modal).modal({
                 onApprove: function () {
                     let users = $('#share_search').dropdown('get value')
-                    console.log('users: ', users)
                     CODALAB.api.share_task(self.selected_task.id, {shared_with: users})
                         .done((data) => {
                             toastr.success('Task Shared')
+                            $('#share_search').dropdown('clear')
+                            CODALAB.api.get_task(self.selected_task.id)
+                                .done((data) => {
+                                    console.log(data)
+                                    _.forEach(self.tasks, (task) => {
+                                        if (task.id === self.selected_task.id) {
+                                            task.shared_with = data.shared_with
+                                            self.update()
+                                            return false
+                                        }
+                                    })
+                                })
                         })
                         .fail((response) => {
                             toastr.error('An error has occurred')
+                            $('#share_search').dropdown('clear')
                             return true
                         })
                 }
+
             })
         })
 

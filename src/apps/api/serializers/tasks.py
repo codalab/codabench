@@ -86,6 +86,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     scoring_program = DataSimpleSerializer(read_only=True)
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     validated = serializers.SerializerMethodField(required=False)
+    shared_with = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -105,10 +106,14 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
             'solutions',
+            'shared_with',
         )
 
     def get_validated(self, task):
         return task.validated is not None
+
+    def get_shared_with(self, instance):
+        return self.context['shared_with'][instance.pk]
 
 
 class TaskListSerializer(serializers.ModelSerializer):
