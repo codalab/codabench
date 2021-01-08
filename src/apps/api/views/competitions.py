@@ -3,7 +3,6 @@ import json
 import csv
 from collections import OrderedDict
 from io import StringIO
-
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
@@ -19,6 +18,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
+from rest_framework_extensions.cache.decorators import cache_response
+from rest_framework_extensions.key_constructor.constructors import DefaultListKeyConstructor
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -361,6 +362,7 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
+    @cache_response(key_func=DefaultListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
         qs = self.get_queryset()
