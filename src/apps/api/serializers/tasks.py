@@ -38,10 +38,11 @@ class SolutionListSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
-    input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
-    scoring_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    data_query = Data.objects.all()
+    input_data = serializers.SlugRelatedField(queryset=data_query, required=False, allow_null=True, slug_field='key')
+    ingestion_program = serializers.SlugRelatedField(queryset=data_query, required=False, allow_null=True, slug_field='key')
+    reference_data = serializers.SlugRelatedField(queryset=data_query, required=False, allow_null=True, slug_field='key')
+    scoring_program = serializers.SlugRelatedField(queryset=data_query, required=False, allow_null=True, slug_field='key')
     validated = serializers.SerializerMethodField()
     shared_with = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
 
