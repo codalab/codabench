@@ -83,7 +83,6 @@ class TaskViewSet(ModelViewSet):
 
         return context
 
-
     def update(self, request, *args, **kwargs):
         task = self.get_object()
         if request.user != task.created_by and not request.user.is_superuser:
