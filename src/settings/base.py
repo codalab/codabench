@@ -42,6 +42,7 @@ THIRD_PARTY_APPS = (
     'storages',
     'channels',
     'drf_yasg',
+    'redis',
 )
 OUR_APPS = (
     'chahub',
@@ -222,6 +223,29 @@ CELERY_BEAT_SCHEDULE = {
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
+# ============================================================================
+# Caching
+# ============================================================================
+CACHES = {
+    'default': {
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': [os.environ.get("REDIS_URL", "redis://redis:6379")],
+        'OPTIONS': {
+            'PARSER_CLASS': 'redis.connection.HiredisParser',
+            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 30,
+                'timeout': 20,
+            },
+            'MAX_CONNECTIONS': 30,
+            'PICKLE_VERSION': -1,
+        },
+    },
+}
+REST_FRAMEWORK_EXTENSIONS = {
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 15,
+}
+
 # =============================================================================
 # DRF
 # =============================================================================
@@ -239,7 +263,6 @@ REST_FRAMEWORK = {
         '%B %d, %Y',
     )
 }
-
 # OAuth Toolkit
 OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
