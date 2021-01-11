@@ -1,10 +1,7 @@
 import json
 import logging
-import os
 
-import aiofiles
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.conf import settings
 from django.core.cache import cache
 
 from competitions.models import Submission
