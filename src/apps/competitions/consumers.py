@@ -43,7 +43,11 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
-        cache.set(f'submission-{submission_id}-log', f'{text_data}\n', 3600 * 25)
+        old_cache = cache.get(f'submission-{submission_id}-log')
+        if old_cache is not None:
+            cache.set(f'submission-{submission_id}-log', old_cache + f'{text_data}\n', 3600 * 25)
+        else:
+            cache.set(f'submission-{submission_id}-log', f'{text_data}\n', 3600 * 25)
 
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
