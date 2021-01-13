@@ -2,6 +2,7 @@ import json
 import logging
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.core.cache import cache
 from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
@@ -87,8 +88,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
             for sub in submissions:
                 text = (con.get(f':1:submission-{sub.id}-log'))
                 if text:
-                    text = str(text, 'utf-8')
-                    await self.group_send(text, sub.id, full_text=True)
+                    await self.group_send(text.decode('utf-8'), sub.id, full_text=True)
 
     async def submission_message(self, event):
         data = {
