@@ -3,7 +3,7 @@ import logging
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
-
+from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
 
@@ -43,11 +43,13 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
-        old_cache = cache.get(f'submission-{submission_id}-log')
-        if old_cache is not None:
-            cache.set(f'submission-{submission_id}-log', old_cache + f'{text_data}\n', 3600 * 25)
-        else:
-            cache.set(f'submission-{submission_id}-log', f'{text_data}\n', 3600 * 25)
+        con = get_redis_connection("default")
+        con.append(f':1:submission-{submission_id}-log', f'{text_data}\n')
+        # old_cache = cache.get(f'submission-{submission_id}-log')
+        # if old_cache is not None:
+        #     cache.set(f'submission-{submission_id}-log', old_cache + f'{text_data}\n', 3600 * 25)
+        # else:
+        #     cache.set(f'submission-{submission_id}-log', f'{text_data}\n', 3600 * 25)
 
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
@@ -86,10 +88,12 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         if submission_ids:
             # Filter out submissions not by this user
             submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+            con = get_redis_connection("default")
 
             for sub in submissions:
-                text = cache.get(f'submission-{sub.id}-log')
+                text = (con.get(f':1:submission-{sub.id}-log'))
                 if text:
+                    text = str(text, 'utf-8')
                     await self.group_send(text, sub.id, full_text=True)
 
     async def submission_message(self, event):

@@ -228,17 +228,15 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 # ============================================================================
 CACHES = {
     'default': {
-        'BACKEND': 'redis_cache.RedisCache',
+        "BACKEND": "django_redis.cache.RedisCache",
         'LOCATION': [os.environ.get("REDIS_URL", "redis://redis:6379")],
         'OPTIONS': {
-            'PARSER_CLASS': 'redis.connection.HiredisParser',
-            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
-            'CONNECTION_POOL_CLASS_KWARGS': {
-                'max_connections': 30,
-                'timeout': 20,
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 30,
+                "retry_on_timeout": True
             },
-            'MAX_CONNECTIONS': 30,
-            'PICKLE_VERSION': -1,
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
     },
 }
