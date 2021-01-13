@@ -44,11 +44,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
 
         con = get_redis_connection("default")
         con.append(f':1:submission-{submission_id}-log', f'{text_data}\n')
-        # old_cache = cache.get(f'submission-{submission_id}-log')
-        # if old_cache is not None:
-        #     cache.set(f'submission-{submission_id}-log', old_cache + f'{text_data}\n', 3600 * 25)
-        # else:
-        #     cache.set(f'submission-{submission_id}-log', f'{text_data}\n', 3600 * 25)
 
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
