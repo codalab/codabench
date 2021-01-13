@@ -2,7 +2,6 @@ import json
 import logging
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.core.cache import cache
 from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
