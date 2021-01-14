@@ -62,6 +62,7 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
             'ingestion_program',
             'reference_data',
             'scoring_program',
+            'shared_with',
         )
         read_only_fields = (
             'created_by',
@@ -85,6 +86,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     scoring_program = DataSimpleSerializer(read_only=True)
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     validated = serializers.SerializerMethodField(required=False)
+    shared_with = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -104,15 +106,21 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
             'solutions',
+            'shared_with',
         )
 
     def get_validated(self, task):
         return task.validated is not None
 
+    def get_shared_with(self, instance):
+        return self.context['shared_with'][instance.pk]
+
 
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
+    competitions = serializers.SerializerMethodField()
+    shared_with = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -125,7 +133,15 @@ class TaskListSerializer(serializers.ModelSerializer):
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
+            'competitions',
+            'shared_with',
         )
+
+    def get_competitions(self, instance):
+        return self.context['task_titles'][instance.pk]
+
+    def get_shared_with(self, instance):
+        return self.context['shared_with'][instance.pk]
 
 
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
