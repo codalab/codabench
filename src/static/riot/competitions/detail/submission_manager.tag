@@ -38,10 +38,10 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
-    <table class="ui celled selectable table">
+    <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
         <tr>
-            <th class="collapsing">ID #</th>
+            <th class="sorted descending collapsing">ID #</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
@@ -175,6 +175,7 @@
             $(self.refs.status).dropdown()
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
+            $(self.refs.submission_table).tablesort()
         })
 
         self.is_admin = () => {
