@@ -71,7 +71,7 @@ class TestSubmissions(SeleniumTestCase):
         assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
 
     def test_v15_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=1250)
+        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=2000)
 
     def test_v18_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
