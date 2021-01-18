@@ -16,6 +16,16 @@
         <a class="ui button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
         </a>
+        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
+                onclick="{delete_selected_submissions.bind(this)}">
+            <i class="icon trash alternate"></i>
+            Delete Submissions
+        </button>
+        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
+                onclick="{rerun_selected_submissions.bind(this)}">
+            <i class="icon redo"></i>
+            Rerun Submissions
+        </button>
     </div>
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter }">
@@ -41,6 +51,12 @@
     <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
         <tr>
+            <th if="{opts.admin}">
+                <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
+                    <input type="checkbox" name="select_all">
+                    <label>All</label>
+                </div>
+            </th>
             <th class="sorted descending collapsing">ID #</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
@@ -61,6 +77,12 @@
         </tr>
         <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
+            <td if="{opts.admin}">
+                <div class="ui checkbox" onclick="{submission_checked.bind(this)}">
+                    <input type="checkbox" name="{submission.id}">
+                    <label></label>
+                </div>
+            </td>
             <td>{ submission.id }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
@@ -169,6 +191,7 @@
         self.hide_output = false
         self.leaderboards = {}
         self.loading = true
+        self.checked_submissions = []
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -217,6 +240,7 @@
                     }
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
                     self.update()
+                    self.submission_checked()
 
                     // Timeout here so loader doesn't flicker
                     _.delay(() => {
@@ -294,6 +318,14 @@
             event.stopPropagation()
         }
 
+        self.rerun_selected_submissions = function () {
+            CODALAB.api.re_run_many_submissions(self.checked_submissions)
+                .done(function (response) {
+                    toastr.success('Submissions queued')
+                    self.update_submissions()
+                })
+        }
+
         self.cancel_submission = function (submission) {
             CODALAB.api.cancel_submission(submission.id)
                 .done(function (response) {
@@ -317,6 +349,20 @@
             }
             event.stopPropagation()
         }
+
+        self.delete_selected_submissions = function () {
+            if (confirm(`Are you sure you want to delete the selected submissions?`)) {
+                console.log()
+                CODALAB.api.delete_many_submissions(self.checked_submissions)
+                    .done(function (response) {
+                        toastr.success('Submissions deleted')
+                        self.update_submissions()
+                    })
+                    .fail(function (response){
+                        toastr.error('Something went wrong')
+                    })
+            }
+            }
 
         self.get_score_details = function (submission, column) {
             try {
@@ -345,6 +391,22 @@
                     })
             }
         }
+
+        self.submission_checked = function () {
+            event.stopPropagation()
+            let inputs = $(self.refs.submission_table).find('input')
+            let checked_boxes = inputs.not(':first').filter('input:checked')
+            let unchecked_boxes = inputs.not(':first').filter('input:not(:checked)')
+            inputs.first().prop('checked', unchecked_boxes.length === 0)
+            self.checked_submissions = checked_boxes.serializeArray().map((x) => {return x.name})
+        }
+
+        self.select_all_pressed = function () {
+            let check_boxes = $(self.refs.submission_table).find('input')
+            // Set checkboxes to be equal to Select_All checkbox
+            check_boxes.prop('checked', check_boxes.first().is(':checked'))
+        }
+
 
 
         self.submission_clicked = function (submission) {
