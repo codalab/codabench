@@ -39,7 +39,8 @@ app.conf.task_queues = [
 
 
 # Setup base directories used by all submissions
-HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
+HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")  # note: we need to pass this directory to
+                                                                      # docker compose so it knows where to store things!
 BASE_DIR = "/codabench/"
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
@@ -286,12 +287,14 @@ class Run:
 
     def _update_submission(self, data):
         url = f"{self.submissions_api_url}/submissions/{self.submission_id}/"
-        logger.info(f"Updating submission @ {url} with data = {data}")
-
         data["secret"] = self.secret
 
-        resp = self.requests_session.patch(url, data)
-        if resp.status_code != 200:
+        logger.info(f"Updating submission @ {url} with data = {data}")
+
+        resp = self.requests_session.patch(url, data, timeout=15)
+        if resp.status_code == 200:
+            logger.info("Submission updated successfully!")
+        else:
             logger.info(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
             raise SubmissionException("Failure updating submission data.")
 
@@ -596,9 +599,15 @@ class Run:
         logger.info(f'response: {resp}')
         logger.info(f'content: {resp.content}')
 
-    def _prune_cache_dir(self, max_size=MAX_CACHE_DIR_SIZE_GB):
+    def _prep_cache_dir(self, max_size=MAX_CACHE_DIR_SIZE_GB):
+        if not os.path.exists(CACHE_DIR):
+            os.mkdir(CACHE_DIR)
+        logger.info("Checking if cache directory needs to be pruned...")
         if get_folder_size_in_gb(CACHE_DIR) > max_size:
+            logger.info("Pruning cache directory")
             delete_files_in_folder(CACHE_DIR)
+        else:
+            logger.info("Cache directory does not need to be pruned!")
 
     def prepare(self):
         if not self.is_scoring:
@@ -606,9 +615,7 @@ class Run:
             self._update_status(STATUS_PREPARING)
 
         # Setup cache and prune if it's out of control
-        if not os.path.exists(CACHE_DIR):
-            os.mkdir(CACHE_DIR)
-        self._prune_cache_dir()
+        self._prep_cache_dir()
 
         # A run *may* contain the following bundles, let's grab them and dump them in the appropriate
         # sub folder.
