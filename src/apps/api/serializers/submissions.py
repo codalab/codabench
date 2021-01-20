@@ -1,6 +1,7 @@
 import asyncio
 from os.path import basename
 
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -214,6 +215,11 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             #     raise ValidationError('Cannot update submission. Task pk was not provided')
             # task = Task.objects.get(id=task)
             run_submission(submission.pk, tasks=[submission.task], is_scoring=True)
+
+        elif validated_data.get("status") == Submission.FINISHED:
+            # We finished submission, no longer need to store submission stuff in Redis, free it up!
+            cache.delete(f"submission-{submission.pk}-log")
+
         resp = super().update(submission, validated_data)
         if submission.parent:
             submission.parent.check_child_submission_statuses()
