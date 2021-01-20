@@ -1,6 +1,8 @@
 import yaml
 
+from fabric import network
 from fabric.api import env, run
+from fabric.state import connections
 
 
 # Load in server config, here's a quick example:
@@ -14,6 +16,22 @@ from fabric.api import env, run
 # You select the role to run with like s:
 #   $ fab -R role_name <command>
 env.roledefs = yaml.load(open('server_config.yaml').read())
+
+# ----------------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------------
+def _reconnect_current_host():
+    network.disconnect_all()
+    connections.connect(env.host + ':%s' % env.port)
+
+# ----------------------------------------------------------------------------
+# Tasks
+# ----------------------------------------------------------------------------
+def setup():
+    """Sets up a machine to have compute worker reqs"""
+    run("curl -sSL https://get.docker.com/ | sh")
+    run("sudo usermod -aG docker $USER")
+    _reconnect_current_host()
 
 
 def status():
@@ -36,6 +54,7 @@ def update():
     # Read settings from our server_config.yaml config
     role = env.effective_roles[0]
     broker_url = env.roledefs[role]["broker_url"]
+    broker_use_ssl = bool(env.roledefs[role]["broker_use_ssl"])
     is_gpu = env.roledefs[role]["is_gpu"]
     docker_image = env.roledefs[role]["docker_image"]
 
@@ -48,11 +67,12 @@ def update():
 
     # Build our docker command ensuring the nvidia socket is attached if we're in gpu mode
     docker_command = f"""{docker_process} run \
-        -v /tmp/codalab-v2:/tmp/codalab-v2 \
+        -v /tmp/codabench:/codabench \
         -v /var/run/docker.sock:/var/run/docker.sock \
         {nvidia_sock} \
         -d \
         --env BROKER_URL={broker_url} \
+        --env BROKER_USE_SSL={broker_use_ssl} \
         --restart unless-stopped \
         --log-opt max-size=50m \
         --log-opt max-file=3 \
