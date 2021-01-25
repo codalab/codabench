@@ -26,7 +26,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         user_pk = self.scope['url_route']['kwargs']['user_pk']
         submission_id = self.scope['url_route']['kwargs']['submission_id']
 
-        logger.info(f"Received websocket input for user = {user_pk}, submission = {submission_id}, text_data = {text_data}")
+        logger.debug(f"Received websocket input for user = {user_pk}, submission = {submission_id}, text_data = {text_data}")
 
         try:
             sub = Submission.objects.get(pk=submission_id)

@@ -144,6 +144,8 @@ services:
     restart: unless-stopped
     ports:
       - ${FLOWER_PUBLIC_PORT:-5555}:5555
+    depends_on:
+      - rabbit
     logging:
         options:
             max-size: "20k"
