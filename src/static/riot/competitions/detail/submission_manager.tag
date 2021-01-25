@@ -291,6 +291,13 @@
                     toastr.success('Submission queued')
                     self.update_submissions()
                 })
+                .fail(function (response) {
+                    if(response.responseJSON.detail){
+                        toastr.error(response.responseJSON.detail)
+                    } else {
+                        toastr.error(response.responseText)
+                    }
+                })
             event.stopPropagation()
         }
 
