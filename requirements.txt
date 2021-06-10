@@ -1,4 +1,4 @@
-Django==2.2.17
+Django==2.2.24
 django-oauth-toolkit==1.0.0
 django-cors-middleware==1.5.0
 social-auth-core==2.0.0
