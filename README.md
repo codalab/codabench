@@ -178,4 +178,3 @@ You can execute commands against a role:
 ```
 
 See available commands with `fab -l`
-
