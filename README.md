@@ -1,5 +1,4 @@
 # Codabench 
-## (formerly Codalab Competitions v2)
 
 ## Installation
 
