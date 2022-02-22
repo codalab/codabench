@@ -17,6 +17,7 @@ jobs:
           #         $ open vnc://0.0.0.0:5900
           name: Download and start X for VNC viewing
           command: |
+            sudo apt-get update
             sudo apt-get install -y x11vnc
             x11vnc -forever -nopw
           background: true
