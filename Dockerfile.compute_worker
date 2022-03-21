@@ -7,7 +7,9 @@ ENV PYTHONUNBUFFERED 1
 #RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 #RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 #RUN apt-get update && curl -sSL https://get.docker.com/ | sed 's/docker-ce/docker-ce=18.03.1~ce-0~debian/' | sh
-RUN apt-get update && curl -sSL https://get.docker.com/ | sed 's/docker-ce/docker-ce=18.06.3~ce~3-0~debian/' | sh
+#RUN apt-get update && curl -sSL https://get.docker.com/ | sed 's/docker-ce/docker-ce=18.06.3~ce~3-0~debian/' | sh
+RUN apt-get update && curl -fsSL https://get.docker.com | sh
+
 
 ADD docker/compute_worker/compute_worker_requirements.txt .
 RUN pip install -r compute_worker_requirements.txt
