@@ -9,8 +9,8 @@ class CompetitionLeaderboardStressTests(APITestCase):
         self.creator = factories.UserFactory(username='creator', password='creator')
         self.other_user = factories.UserFactory(username='other_user', password='other')
         self.comp = factories.CompetitionFactory(created_by=self.creator)
-        self.leaderboard = factories.LeaderboardFactory()
-        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.leaderboard)
+        self.phase = factories.PhaseFactory(competition=self.comp)
+        self.leaderboard = factories.LeaderboardFactory(competition=self.comp)
         factories.ColumnFactory(leaderboard=self.leaderboard, index=0)  # need to set index here otherwise it's seq
 
         for _ in range(10):
@@ -18,7 +18,7 @@ class CompetitionLeaderboardStressTests(APITestCase):
 
     def test_getting_many_submissions_doesnt_cause_too_many_queries(self):
         self.client.login(username='creator', password='creator')
-        with self.assertNumQueries(11):
+        with self.assertNumQueries(10):
             resp = self.client.get(reverse('leaderboard-detail', args=(self.leaderboard.pk,)))
             assert resp.status_code == 200
 
@@ -33,8 +33,7 @@ class HiddenLeaderboardTests(APITestCase):
         self.collab = factories.UserFactory(username='collab', password='test')
         self.norm = factories.UserFactory(username='norm', password='test')
         self.comp = factories.CompetitionFactory(created_by=self.creator, collaborators=[self.collab])
-        self.lb = factories.LeaderboardFactory(hidden=True)
-        self.phase = factories.PhaseFactory(competition=self.comp, leaderboard=self.lb)
+        self.lb = factories.LeaderboardFactory(competition=self.comp, hidden=True)
         factories.ColumnFactory(leaderboard=self.lb, index=0)
 
     def get_comp(self):

@@ -11,5 +11,4 @@ urlpatterns = [
     path('create/', views.CompetitionForm.as_view(), name="create"),
     path('edit/<int:pk>/', views.CompetitionForm.as_view(), name="edit"),
     path('upload/', views.CompetitionUpload.as_view(), name="upload"),
-    path('public/', views.CompetitionPublic.as_view(), name="public"),
 ]

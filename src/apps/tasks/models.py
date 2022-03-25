@@ -14,7 +14,6 @@ class Task(ChaHubSaveMixin, models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     created_when = models.DateTimeField(default=now)
     is_public = models.BooleanField(default=False)
-    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='shared_tasks', blank=True)
 
     ingestion_program = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="task_ingestion_programs")
     input_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="task_input_datas")
@@ -93,7 +92,7 @@ class Solution(ChaHubSaveMixin, models.Model):
             'remote_id',
             'is_public',
             'data',
-            'tasks',
+            'tasks'
         ]
 
     def get_chahub_data(self, include_tasks=True):

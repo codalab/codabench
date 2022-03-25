@@ -1,6 +1,7 @@
 from django.urls import reverse
 from faker import Factory
 from rest_framework.test import APITestCase
+
 from datasets.models import Data
 from factories import UserFactory, DataFactory
 
@@ -11,6 +12,7 @@ faker = Factory.create()
 class DatasetAPITests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')
+
         self.existing_dataset = DataFactory(created_by=self.creator, name="Test!")
 
     def test_dataset_api_checks_duplicate_names_for_same_user(self):
@@ -34,11 +36,4 @@ class DatasetAPITests(APITestCase):
         })
         assert resp.status_code == 200
 
-    def test_dataset_api_checks_for_authentication(self):
-        self.client.logout()
-        resp = self.client.post(reverse("data-list"), {
-            'name': 'Test!',
-            'type': Data.COMPETITION_BUNDLE,
-            'request_sassy_file_name': faker.file_name(extension='.zip'),
-        })
-        assert resp.status_code == 403
+    # todo: test non logged in user can't create data

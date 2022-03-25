@@ -130,7 +130,7 @@
             <div show="{!!_.get(selected_row.in_use, 'length')}"><strong>Used by:</strong>
                 <div class="ui bulleted list">
                     <div class="item" each="{id in selected_row.in_use}">
-                        <a href="{URLS.COMPETITION_DETAIL(id)}" target="_blank">Benchmark id: {id}</a>
+                        <a href="{URLS.COMPETITION_DETAIL(id)}" target="_blank">Competition id: {id}</a>
                     </div>
                 </div>
             </div>

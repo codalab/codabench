@@ -1,34 +1,18 @@
 from statistics import mean
+
 from django.db import models
 
 
 class Leaderboard(models.Model):
-
-    ADD = "Add"
-    ADD_DELETE = "Add_And_Delete"
-    ADD_DELETE_MULTIPLE = "Add_And_Delete_Multiple"
-    FORCE_LAST = "Force_Last"
-    FORCE_LATEST_MULTIPLE = "Force_Latest_Multiple"
-    FORCE_BEST = "Force_Best"
-    SUBMISSION_RULES = (
-        (ADD, "Only allow adding one submission"),
-        (ADD_DELETE, "Allow users to add a single submission and remove that submission"),
-        (ADD_DELETE_MULTIPLE, "Allow users to add a multiple submissions and remove those submission"),
-        (FORCE_LAST, "Force only the last submission"),
-        (FORCE_LATEST_MULTIPLE, "Force latest submission to be added to leaderboard (multiple)"),
-        (FORCE_BEST, 'Force only the best submission to the leaderboard')
-    )
-
-    AUTO_SUBMISSION_RULES = [FORCE_LAST, FORCE_BEST, FORCE_LATEST_MULTIPLE]
-
+    competition = models.ForeignKey('competitions.Competition', on_delete=models.CASCADE, related_name="leaderboards",
+                                    null=True, blank=True)
     primary_index = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=64)
     key = models.CharField(max_length=36)
     hidden = models.BooleanField(default=False)
-    submission_rule = models.TextField(choices=SUBMISSION_RULES, default=ADD, null=False, blank=False)
 
     def __str__(self):
-        return f'{self.title} - {self.id}'
+        return f'{self.title} - {self.competition}'
 
 
 class Column(models.Model):
@@ -68,7 +52,7 @@ class Column(models.Model):
         ordering = ('index',)
 
     def __str__(self):
-        return f'ID={self.id} - {self.title}'
+        return f'{self.title} ({self.index})'
 
     def compute(self, scores):
         return self.COMPUTATION_FUNCTIONS[self.computation](scores)
@@ -82,4 +66,4 @@ class SubmissionScore(models.Model):
         ordering = ('column__index',)
 
     def __str__(self):
-        return f'ID={self.id} - Column={self.column}'
+        return f'{self.column} - {self.score}'

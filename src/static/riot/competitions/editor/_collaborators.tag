@@ -115,7 +115,7 @@
                 if (self.new_collab.id === CODALAB.state.user.id) {
                     self.errors = "You cannot add yourself as a collaborator"
                 } else if (self.new_collab.username === self.created_by) {
-                    self.errors = "You cannot add the benchmark creator as a collaborator"
+                    self.errors = "You cannot add the competition creator as a collaborator"
                 } else if (_.filter(self.collabs, collab => collab.id === self.new_collab.id).length === 0) {
                     self.collabs.push(self.new_collab)
                     self.new_collab = {}

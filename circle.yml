@@ -17,7 +17,6 @@ jobs:
           #         $ open vnc://0.0.0.0:5900
           name: Download and start X for VNC viewing
           command: |
-            sudo apt-get update
             sudo apt-get install -y x11vnc
             x11vnc -forever -nopw
           background: true
@@ -37,8 +36,6 @@ jobs:
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
-      - run: docker-compose exec django flake8 src/
-
       - run:
           name: pytest
           command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
@@ -47,6 +44,8 @@ jobs:
           name: e2e tests
           command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
+
+      - run: docker-compose exec django flake8 src/ --ignore E501,F405
 
       - store_artifacts:
           path: artifacts/

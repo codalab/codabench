@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% load staticfiles %}
-
-{% block content %}
-    <profile-edit class="ui container"></profile-edit>
-    <script>
-        const selected_user = JSON.parse("{{ serialized_user | escapejs }}")
-    </script>
-{% endblock %}

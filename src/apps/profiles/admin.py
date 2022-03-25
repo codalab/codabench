@@ -1,18 +1,5 @@
 from django.contrib import admin
-
-from .models import User, Organization, Membership
-
-
-class UserAdmin(admin.ModelAdmin):
-    # The following two lines are needed for Django-su:
-    change_form_template = "admin/auth/user/change_form.html"
-    change_list_template = "admin/auth/user/change_list.html"
+from .models import User
 
 
-admin.site.register(User, UserAdmin)
-admin.site.register(Organization)
-admin.site.register(Membership)
-
-
-def su_login_callback(user):
-    return user.is_superuser
+admin.site.register(User)

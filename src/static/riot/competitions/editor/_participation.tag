@@ -8,7 +8,7 @@
             <div class="ui checkbox">
                 <input selenium="auto-approve" type="checkbox" name="registration_auto_approve" ref="registration_auto_approve" onchange="{form_updated}">
                 <label>Auto approve registration requests
-                    <span data-tooltip="If left unchecked, registration requests must be manually approved by the benchmark creator or collaborators"
+                    <span data-tooltip="If left unchecked, registration requests must be manually approved by the competition creator or collaborators"
                           data-inverted=""
                           data-position="bottom center">
                     <i class="help icon circle"></i></span>
@@ -19,7 +19,7 @@
             <div class="ui checkbox">
                 <input type="checkbox" name="allow_robot_submissions" ref="allow_robot_submissions" onchange="{form_updated}">
                 <label>Allow robot submissions
-                    <span data-tooltip="If left unchecked, robot users will have to be manually approved by the benchmark creator or collaborators. This can be changed later."
+                    <span data-tooltip="If left unchecked, robot users will have to be manually approved by the competition creator or collaborators. This can be changed later."
                           data-inverted=""
                           data-position="bottom center">
                     <i class="help icon circle"></i></span>

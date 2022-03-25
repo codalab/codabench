@@ -6,7 +6,7 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Codabench</title>
+    <title>Codalab Competitions</title>
     <link rel="icon" type="image/ico" href="{% static 'img/favicon.ico' %}"/>
 
     <!-- Vendor -->
@@ -58,18 +58,10 @@
                     </div>
                 </span>
                 <div class="right menu item">
-                    <div id="competition_dropdown" class="ui dropdown item">
-                        <div class="text">
-                            <i class="ui small trophy icon"></i>
-                            Benchmarks
-                        </div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="header"></div>
-                            <a class="item" href="{% url "competitions:management" %}">Management</a>
-                            <a class="item" href="{% url "competitions:public" %}">Public</a>
-                        </div>
-                    </div>
+                    <a class="item" href="{% url "competitions:management" %}">
+                        <i class="ui small trophy icon"></i>
+                        Competitions
+                    </a>
                     <a class="item" href="{% url "tasks:task_management" %}">
                         <i selenium="tasks" class="ui small file icon"></i>
                         Resources
@@ -90,8 +82,7 @@
                                     <div class="header">Admin management</div>
 {#                                    <a class="item" href="#">Customize Codalab</a>#}
                                     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
-                                    <a class="item" href="{% url "admin:index" %}">Django Admin</a>
-                                    <a class="item" href="{% url "su_login" %}">Change User</a>
+                                    <a class="item" href="{% url "admin:index" %}">Django admin</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
 {#                                    <a class="item" href="#">Health</a>#}
 {#                                    <a class="item" href="#">Users</a>#}
@@ -101,35 +92,13 @@
                                 {% endif %}
                                 <div class="ui divider"></div>
                                 <div class="header">Account</div>
-                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}">
+                                <a class="item" href="{% url 'profiles:user_profile' %}">
                                     <i class="icon user"></i>
-                                    View Profile
-                                </a>
-                                <a class="item" href="{% url 'profiles:user_edit' username=user.username %}">
-                                    </i><i class="edit icon"></i>
                                     Edit profile
-                                </a>
-                                <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}">
-                                    </i><i class="bell icon"></i>
-                                    Notifications
                                 </a>
                                 <a class="item" href="{% url 'accounts:logout' %}">
                                     <i class="icon sign out"></i>
                                     Logout
-                                </a>
-                                <div class="ui divider"></div>
-                                <div class="header">Organizations</div>
-                            {% for org in user.organizations.all %}
-                                {% if user in org.user_record.all %}
-                                <a class="item" href="{% url 'profiles:organization_profile' pk=org.id %}">
-                                    <i class="users icon"></i>
-                                    {{ org.name }}
-                                </a>
-                                {% endif %}
-                            {% endfor %}
-                                <a class="item" href="{% url 'profiles:organization_create' %}">
-                                    <i class="plus icon"></i>
-                                    Create Organization
                                 </a>
                             </div>
                         </div>
@@ -256,33 +225,16 @@
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
                 return `{{ request.get_host }}${url}?secret_key=${secret_key}`
             },
-            COMPETITION_GET_ZIP: function (pk) {
-                let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
-                return urlBase.slice(0, -1) + ".zip"
+            COMPETITION_GET_CSV: function (pk) {
+                return "{% url "competition-get-csv" pk=0 %}".replace(0, pk)
             },
-            COMPETITION_GET_CSV: function (pk, phase_id) {
-                let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
-                let urlParam = "?phase=" + phase_id
-                return urlBase.slice(0, -1) + ".csv" + urlParam
-            },
-            COMPETITION_GET_JSON: function (pk) {
-                let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
-                return urlBase.slice(0, -1) + ".json"
-            },
-            COMPETITION_GET_JSON_BY_ID: function (pk, phase_id) {
-                let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
-                let urlParam = "?phase=" + phase_id
-                return urlBase.slice(0, -1) + ".json" + urlParam
-            },
-            // Forums
-            FORUM: function (pk) {
-               return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
-            },
+
             // Datasets
             DATASET_MANAGEMENT: "{% url "datasets:management" %}",
             DATASET_DOWNLOAD: function (key) {
                 return "{% url "datasets:download" key=0 %}".replace(0, key)
             },
+
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
             TASK_DETAIL: function (pk) {
