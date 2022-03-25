@@ -1,6 +1,5 @@
 import os
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.http import Http404
@@ -13,8 +12,8 @@ from rest_framework.viewsets import ModelViewSet
 
 from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
-from competitions.models import Competition
 from datasets.models import Data, DataGroup
+from competitions.models import CompetitionCreationTaskStatus
 from utils.data import make_url_sassy
 
 
@@ -114,7 +113,9 @@ class DataGroupViewSet(ModelViewSet):
 
 @api_view(['PUT'])
 def upload_completed(request, key):
-    # TODO: This view is weird. We have competitions, submissions, etc. that may not need to call this? We might need special behavior/metadata for "submission finalization" for example. Competitions are a unique usecase where they hold all of the metadata in the bundle itself
+    # TODO: This view is weird. We have competitions, submissions, etc. that may not need to call this?
+    #  We might need special behavior/metadata for "submission finalization" for example.
+    #  Competitions are a unique use case where they hold all of the metadata in the bundle itself
 
     try:
         dataset = Data.objects.get(created_by=request.user, key=key)
@@ -127,23 +128,13 @@ def upload_completed(request, key):
     if dataset.type == Data.COMPETITION_BUNDLE:
         # Doing a local import here to avoid circular imports
         from competitions.tasks import unpack_competition
-        unpack_competition.apply_async((dataset.pk,))
+
+        status = CompetitionCreationTaskStatus.objects.create(
+            created_by=request.user,
+            dataset=dataset,
+            status=CompetitionCreationTaskStatus.STARTING,
+        )
+        unpack_competition.apply_async((status.pk,))
+        return Response({"status_id": status.pk})
 
     return Response({"key": dataset.key})
-
-
-@api_view(['POST'])
-def create_competition_dump(request, competition_id):
-    try:
-        comp = Competition.objects.get(pk=competition_id)
-        if not request.user == comp.created_by:
-            return Response({"error": "Denied. You do not have access"}, status=status.HTTP_403_FORBIDDEN)
-        from competitions.tasks import create_competition_dump
-        create_competition_dump.delay(competition_id)
-        return Response(
-            {
-                "status": "Success. Competition dump is being created."
-            },
-            status=status.HTTP_202_ACCEPTED)
-    except ObjectDoesNotExist:
-        return Response({"error": "Competition not found!"}, status=status.HTTP_403_FORBIDDEN)

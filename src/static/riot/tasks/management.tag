@@ -19,6 +19,8 @@
         <thead>
         <tr>
             <th>Name</th>
+            <th class="benchmark-row">Benchmarks</th>
+            <th width="125px">Shared With</th>
             <th width="125px">Uploaded...</th>
             <th width="50px">Public</th>
             <th width="50px">Delete?</th>
@@ -28,6 +30,8 @@
         <tbody>
         <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
             <td>{ task.name }</td>
+            <td class="benchmark-row">{ task.competitions.join(', ') }</td>
+            <td>{ task.shared_with.join(', ') }</td>
             <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
@@ -56,7 +60,7 @@
                   Pagination
         ------------------------------------->
         <tr if="{tasks.length > 0}">
-            <th colspan="5">
+            <th colspan="7">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -76,6 +80,10 @@
     <div class="ui modal" ref="detail_modal">
         <div class="header">
             {selected_task.name}
+            <button class="ui right floated primary button" onclick="{ open_share_modal.bind(this) }">
+                Share Task
+                <i class="share square icon right"></i>
+            </button>
         </div>
         <div class="content">
             <h4>{selected_task.description}</h4>
@@ -194,6 +202,23 @@
                 </div>
             </form>
         </div>
+
+
+        <div class="ui modal" ref="share_modal">
+            <div class="ui header">Share</div>
+            <div class="content">
+                <select class="ui fluid search multiple selection dropdown" multiple id="share_search">
+                    <i class="dropdown icon"></i>
+                    <div class="default text">Select a User to Share with</div>
+                    <div class="menu">
+                    </div>
+                </select>
+            </div>
+            <div class="actions">
+                <div class="ui positive button">Share</div>
+                <div class="ui cancel button">Cancel</div>
+            </div>
+        </div>
         <div class="actions">
             <div selenium="save-task" class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
             <div class="ui basic red cancel button">Cancel</div>
@@ -252,6 +277,48 @@
                             self.form_updated()
                         }
                     })
+            })
+
+            $('#share_search').dropdown({
+                apiSettings: {
+                    url: `${URLS.API}user_lookup/?q={query}`,
+                },
+                clearable: true,
+                preserveHTML: false,
+                fields: {
+                    title: 'name',
+                    value: 'id',
+                },
+                cache: false,
+                maxResults: 5,
+            })
+
+            $(self.refs.share_modal).modal({
+                onApprove: function () {
+                    let users = $('#share_search').dropdown('get value')
+                    CODALAB.api.share_task(self.selected_task.id, {shared_with: users})
+                        .done((data) => {
+                            toastr.success('Task Shared')
+                            $('#share_search').dropdown('clear')
+                            CODALAB.api.get_task(self.selected_task.id)
+                                .done((data) => {
+                                    console.log(data)
+                                    _.forEach(self.tasks, (task) => {
+                                        if (task.id === self.selected_task.id) {
+                                            task.shared_with = data.shared_with
+                                            self.update()
+                                            return false
+                                        }
+                                    })
+                                })
+                        })
+                        .fail((response) => {
+                            toastr.error('An error has occurred')
+                            $('#share_search').dropdown('clear')
+                            return true
+                        })
+                }
+
             })
         })
 
@@ -428,10 +495,21 @@
                 self.marked_tasks.splice(self.marked_tasks.indexOf(task.id), 1)
             }
         }
+
+        self.open_share_modal = () => {
+            $(self.refs.share_modal)
+                .modal('show')
+        }
+
     </script>
     <style type="text/stylus">
         .task-row
             height 42px
             cursor pointer
+        .benchmark-row
+            overflow: hidden
+            white-space: nowrap
+            text-overflow: ellipsis
+            max-width: 125px
     </style>
 </task-management>

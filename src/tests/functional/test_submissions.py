@@ -63,7 +63,7 @@ class TestSubmissions(SeleniumTestCase):
         submission_id = int(self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(1)').text)
 
         # Add the submission to the leaderboard and go to results tab
-        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(4) span[data-tooltip="Add to Leaderboard"]').click()
+        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(5) span[data-tooltip="Add to Leaderboard"]').click()
         self.find('.item[data-tab="results-tab"]').click()
 
         # The leaderboard table lists our submission
@@ -71,7 +71,10 @@ class TestSubmissions(SeleniumTestCase):
         assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
 
     def test_v15_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
+        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=2000)
+
+    def test_v18_submission_end_to_end(self):
+        self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
 
     def test_v2_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition.zip', 'submission.zip', 'Scores')

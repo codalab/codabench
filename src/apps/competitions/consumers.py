@@ -1,12 +1,13 @@
 import json
-import os
+import logging
 
-import aiofiles
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.conf import settings
-
+from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
+
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
@@ -24,6 +25,9 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         user_pk = self.scope['url_route']['kwargs']['user_pk']
         submission_id = self.scope['url_route']['kwargs']['submission_id']
+
+        logger.debug(f"Received websocket input for user = {user_pk}, submission = {submission_id}, text_data = {text_data}")
+
         try:
             sub = Submission.objects.get(pk=submission_id)
         except Submission.DoesNotExist:
@@ -31,16 +35,15 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
 
         if sub.phase.hide_output and not sub.phase.competition.user_has_admin_permission(user_pk):
             return
-        submission_output_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{submission_id}.txt")
-        os.makedirs(os.path.dirname(submission_output_path), exist_ok=True)
+
         data = json.loads(text_data)
         if data['kind'] == 'detailed_result_update':
             data['result_url'] = make_url_sassy(Submission.objects.get(id=submission_id).detailed_result.name)
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
-        async with aiofiles.open(submission_output_path, 'a+') as f:
-            await f.write(f'{text_data}\n')
+        con = get_redis_connection("default")
+        con.append(f':1:submission-{submission_id}-log', f'{text_data}\n')
 
         await self.channel_layer.group_send(f"submission_listening_{user_pk}", {
             'type': 'submission.message',
@@ -79,13 +82,12 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         if submission_ids:
             # Filter out submissions not by this user
             submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+            con = get_redis_connection("default")
 
             for sub in submissions:
-                text_path = os.path.join(settings.TEMP_SUBMISSION_STORAGE, f"{sub.id}.txt")
-                if os.path.exists(text_path):
-                    with open(text_path) as f:
-                        text = f.read()
-                    await self.group_send(text, sub.id, full_text=True)
+                text = (con.get(f':1:submission-{sub.id}-log'))
+                if text:
+                    await self.group_send(text.decode('utf-8'), sub.id, full_text=True)
 
     async def submission_message(self, event):
         data = {

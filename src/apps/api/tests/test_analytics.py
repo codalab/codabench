@@ -1,19 +1,29 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from factories import SubmissionFactory, UserFactory, CompetitionFactory
-
 import datetime
 import pytz
 from random import randint
 
 
+from factories import SubmissionFactory, UserFactory, CompetitionFactory, PhaseFactory, TaskFactory
+from competitions.models import Competition
+
+
 class AnalyticsTests(APITestCase):
     def setUp(self):
-        self.user = UserFactory(username='user')
-        self.admin = UserFactory(username='admin', super_user=True)
-        self.day_range = 10
         self.first_day = datetime.datetime(2019, 1, 1, tzinfo=pytz.UTC)
+        self.year_before_first_day = self.first_day - datetime.timedelta(days=-356)
+        self.user = UserFactory(
+            username='user',
+            date_joined=self.year_before_first_day
+        )
+        self.admin = UserFactory(
+            username='admin',
+            super_user=True,
+            date_joined=self.year_before_first_day
+        )
+        self.day_range = 10
         self.object_data = [
             {
                 'factory': UserFactory,
@@ -29,7 +39,6 @@ class AnalyticsTests(APITestCase):
                 'countfield_name': 'submissions_made_count',
             }
         ]
-
         self.dummy_objects = []
         self.create_dummy_objects()
 
@@ -42,6 +51,14 @@ class AnalyticsTests(APITestCase):
             datefield = {
                 datefield_name: self.create_datetime_with_days_offset(i),
             }
+            if factory == CompetitionFactory:
+                kwargs['created_by'] = self.user
+            if factory == SubmissionFactory:
+                kwargs['phase'] = PhaseFactory(
+                    competition=Competition.objects.first(),
+                    tasks=[TaskFactory(created_by=self.user)]
+                )
+                kwargs['owner'] = self.user
             self.dummy_objects.append(factory(**kwargs, **datefield))
 
     def create_datetime_with_days_offset(self, offset):

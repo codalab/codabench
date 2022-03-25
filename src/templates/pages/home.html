@@ -8,8 +8,8 @@
 {% block top_div_extra_content %}
 
     <div class="ui text container">
-        <img id="jumbo_logo" src="{% static "img/codalab-logo-futuraLT-light2.png" %}">
-        <h2>Accelerating reproducible computational research.</h2>
+        <img id="jumbo_logo" src="{% static "img/codabench.png" %}">
+        <h2 class="subtitle"><h1> BETA </h1></h2>
     </div>
 
 {% endblock %}
@@ -21,7 +21,7 @@
 
         <div id="action-container" class="segment-container ui segment full-width">
             <div class="ui header">
-                About Codalab
+                About CodaBench
             </div>
             <div class="container-content">
                 <div class="center aligned column">
@@ -30,9 +30,7 @@
                         Participate
                     </h3>
                     <div>
-                        <p>Find competitions that pique your interest! Chahub gives users an aggregate of some of the
-                            best competitions machine learning has to offer!</p>
-                        <button class="ui blue chahub button">Participate</button>
+                        <p>Find benchmarks that pique your interest! A benchmark allows you to test new algorithms against reference datasets OR (inverted benchmark) submit challenging data to reference algorithms.</p>
                     </div>
                 </div>
                 <div class="center aligned column">
@@ -41,20 +39,16 @@
                         Organize
                     </h3>
                     <div>
-                        <p>Organize a competition on Chalab. Start with the <a href="#">competitions
-                            roadmap</a>, and then giving it a try!</p>
-                        <button class="ui blue chahub button">Wizard</button>
+                        <p>Organize a benchmark on Codabench. Start with our <a href="https://github.com/codalab/competitions-v2/wiki/Getting-started-with-Codabench">tutorial</a>.</p>
                     </div>
                 </div>
                 <div class="center aligned column">
                     <h3 class="ui icon header">
                         <i class="code icon"></i>
-                        Develop
+                        Contribute
                     </h3>
                     <div>
-                        <p>Interested in the development and future success of the Codalab platform? Join us on <a
-                                href="#">Github</a> or <a href="#">Slack</a> to get up-to-date information on the
-                            Codalab platform!</p>
+                        <p>Interested in joining the development team? Join us on <a href="https://github.com/codalab/competitions-v2">Github</a> or <a href="mailto:info@codalab.org">contact us</a> directly.</p>
                     </div>
                 </div>
             </div>
@@ -77,11 +71,18 @@
 
         <div id="about-container" class="segment-container ui segment full-width">
             <div class="ui header">
-                About Codalab
+                About CodaBench
             </div>
             <div class="container-content">
                 <div class="ui middle stackable grid container">
                     <div class="eight wide left aligned column">
+                        <div class="row column-bottom-padding">
+                            <h3 class="ui color-header header">What is CodaBench?</h3>
+                            <div class="ui divider"></div>
+                            <p>Codabench is a platform allowing you to flexibly specify a benchmark. First you define tasks, e.g. datasets and metrics of success, then you specify the API for submissions of code (algorithms), add some documentation pages, and [CLICK] your benchmark is created, ready to accept submissions of new algorithms. Participant results get appended to an ever-growing leaderboard.</p>
+                            <p>You may also create inverted benchmarks in which the role of datasets and algorithms are swapped. You specify reference algorithms and your participants submit datasets.</p>
+                        </div>
+
                         <div class="row column-bottom-padding">
                             <h3 class="ui color-header header">What is Codalab?</h3>
                             <div class="ui divider"></div>
@@ -112,7 +113,7 @@
                                 competitions.
                                 Worksheets capture complex research pipelines in a reproducible way and create
                                 "executable
-                                papers".</p>
+                                papers". Currently, we are developing the V2 of Codalab, which will be able to organize benchmarks.</p>
                             <p>Some competitions have been organized using worksheets, but the competition platform
                                 and the worksheet platform have both a large user base and can be used independently. In
                                 2014,
@@ -131,22 +132,31 @@
                         <div class="row column-bottom-padding">
                             <h3 class="ui color-header header">Codalab in Research</h3>
                             <div class="ui divider"></div>
-                            <p>Codalab in research
-                                Codalab is used actively in research. In 2016/2017, 88 new challenges were launched.
-                                Recent high
-                                profile challenges organized with Codalab include the <a class="large_links"
-                                                                                         href="https://web.see4c.eu/">2
-                                    million
-                                    Euro prize of the EU, organized
-                                    by the See.4C consortium</a>, the <a class="large_links"
-                                                                         href="https://competitions.codalab.org/competitions/16652">CIKM
-                                    AnalytiCup 2017</a>,
-                                which attracted 493 participants,
-                                <a class="large_links"
-                                   href="https://competitions.codalab.org/competitions/3221">MSCOCO</a>
-                                (633 participants) and the <a class="large_links"
-                                                              href="https://competitions.codalab.org/competitions/2321">ChaLearn
-                                    AutoML challenge 2017</a> (687 participants).</p>
+                            <p>Codalab is used actively in research. In
+                                2019/2020, 400 new challenges were launched. Recent
+                                popular challenges organized with Codalab include the
+                                <a
+                                  href="https://competitions.codalab.org/competitions/25276">COVID-19
+                                  retweet prediction challenge,</a>&nbsp; the <a
+                                  href="https://competitions.codalab.org/competitions/24184">ECCV
+                                  2020 ChaLearn LAP Fair face recognition challenge</a>,
+                                the 2020 <a
+                                  href="https://competitions.codalab.org/competitions/21639">DriveML
+                                  Huawei Autonomous Vehicle Challenge</a>, and high
+                                profile challenges include the</font> <a
+                                class="large_links" href="https://web.see4c.eu/">2
+                                million Euro prize of the EU, organized by the See.4C
+                                consortium</a>, the <a class="large_links"
+                                href="https://competitions.codalab.org/competitions/16652">CIKM
+
+                                AnalytiCup 2017</a>, which attracted 493 participants,
+                              <a class="large_links"
+                                href="https://competitions.codalab.org/competitions/3221">MSCOCO</a>
+                              (633 participants) and the <a class="large_links"
+                                href="https://competitions.codalab.org/competitions/2321">ChaLearn
+
+                                AutoML challenge 2017</a> (687 participants).</p>
+
                             <p>Since 2016, Codalab offers the possibility of organizing machine learning challenges with
                                 code
                                 submission. The simplest machine learning challenges require only the submission of
@@ -172,17 +182,59 @@
                     <div class="eight wide center aligned column">
                         <div class="row news-column-bottom-padding">
                             <h1 class="ui color-header header">News</h1>
-                            <h3>AutoDL</h3>
+
+                            <a href="https://codalab.lri.fr/#"><h3>Codalab statistics</h3>
                             <p>
-                                <u>October 2018:</u>
-                                We are preparing a challenge on
-                                <a href="https://docs.google.com/a/chalearn.org/viewer?a=v&amp;pid=sites&amp;srcid=Y2hhbGVhcm4ub3JnfHdvcmtzaG9wfGd4OjJiMTU0MTlmZjY5NGZiOGI">
-                                    Automatic Deep Learning (AutoDL)
-                                </a>
-                                challenging participants to design code eliminating the need of human expertise to
-                                choose the architecture and hyper-parameters of
-                                deep neural networks. The challenge is co-organized and sponsored by Google. The
-                                protocol will be tested on Codalab in October.
+                                <u>August 2020:</u> Codalab
+                                exceeds 50,000 users, 1000 competitions (over 400 in
+                                the last year), and ~600 submissions per day!
+                            </p>
+
+                            <a href="https://l2rpn.chalearn.org/"><h3>L2RPN</h3>
+                            <p>
+                                <u>July
+                                    2020:</u> We launched a new Learning to Run a
+                                  Power Network competition, in collaboration with <a
+                                    href="http://www.chalearn.org/">ChaLearn</a> and
+                                  <a href="https://www.rte-france.com/">RTE</a>. We
+                                  have a <a
+                                    href="https://competitions.codalab.org/competitions/25426">robustness</a>
+                                  and an <a
+                                    href="https://competitions.codalab.org/competitions/25427">adaptability</a>
+                                  track. This is an <a
+                                    href="https://neurips.cc/Conferences/2020/CompetitionTrack">NeurIPS
+                                    2020 competition</a>.
+                            </p>
+
+                            <a href="https://chagrade.lri.fr/"><h3>Chagrade</h3>
+                            <p>
+                                <u>May 2020</u>: We released a
+                                new application to help instructors use challenges in
+                                the classroom and grade them called <a
+                                    href="https://chagrade.lri.fr/">Chagrade</a>.
+                            </p>
+
+                            <a href="https://autodl.chalearn.org/"><h3>AutoDL</h3>
+                            <p>
+                                <u>April 2020:</u> The <a
+                                    href="https://nips.cc/Conferences/2019/CallForCompetitions">NeurIPS</a>
+                                AutoDL challenge ended. But the series of challenges
+                                on Automated Deep Learning, in collaboration with <a
+                                    href="http://www.chalearn.org/">ChaLearn</a>, <a
+                                    href="https://ai.google/research/join-us/zurich/">Google
+                                    Zurich</a>, and <a
+                                    href="https://www.4paradigm.com/">4Paradigm</a>
+                                continues with <a
+                                    href="https://autodl.lri.fr/competitions/149">AutoSeries</a>
+                                and <a href="https://www.automl.ai/competitions/3">AutoGraph</a>.
+                            </p>
+
+                            <a href="https://codalab.lri.fr/competitions/522"><h3>Data Science Africa 2019</h3></a>
+                            <p>
+                                <u>June 2019:</u> We organized a data science
+                                bootcamp at <a href="https://codalab.lri.fr/competitions/522">Data
+                                Science Africa 2019</a> in the form of a challenge
+                                to detect Malaria parasites in microscope images.
                             </p>
                         </div>
 
@@ -257,7 +309,7 @@
                                 simulators
                                 providing data on demand (with your own "ingestion program"); use the ChaLab wizard to
                                 create
-                                competitions in minutes.
+                                competitions in minutes. Thanks!
                             </p>
                         </div>
                     </div>

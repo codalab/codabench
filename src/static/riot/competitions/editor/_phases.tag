@@ -86,13 +86,13 @@
                     </div>
                 </div>
 
-                <div class="fluid field required">
+                <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
-                        Tasks
+                        Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
                         <span data-tooltip="Use task manager to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
-                    <select  name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
+                    <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
                             multiple="multiple">
                     </select>
                 </div>
@@ -184,6 +184,7 @@
 
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
+
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
@@ -257,6 +258,7 @@
                         self.form_updated()
                     }
                 }
+
                 var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
                 var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
 
@@ -265,6 +267,8 @@
 
                 self.has_initialized_calendars = true
             }
+            $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
+            $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
         }
 
         self.close_modal = function () {
@@ -325,7 +329,7 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            self.form_is_valid = !!data.name && !!data.start && !!data.description && self.phase_tasks.length > 0
+            self.form_is_valid = !!data.name && !!data.start && self.phase_tasks.length > 0
         }
 
         self.clear_form = function () {
@@ -374,10 +378,10 @@
 
             // Setting Tasks
             $(self.refs.multiselect)
-                .dropdown('change values', _.map(phase.tasks, task => {
+                .dropdown('change values', _.map(self.phase_tasks, task => {
                     // renaming things to work w/ semantic UI multiselect
                     return {
-                        value: task.key,
+                        value: task.value,
                         text: task.name,
                         name: task.name,
                         selected: true,
@@ -385,6 +389,10 @@
                 }))
 
             self.show_modal()
+
+            // make semantic multiselect sortable -- Sortable library imported in competitions/form.html
+            Sortable.create($('.search.dropdown.multiple', self.refs.tasks_select_container)[0])
+
             self.form_check_is_valid()
             self.update()
         }
@@ -403,8 +411,34 @@
                 'max_submissions_per_day',
                 'execution_time_limit'
             ]
+            // Get tasks order from DOM and order the task array by that.
+            let tasks_from_dom = []
+            $("#tasks_select_container a").each(function () {
+                tasks_from_dom.push($(this).data("value"))
+            })
+            let sorted_phase_tasks = []
+            tasks_from_dom.forEach( function(key) {
+                let found = false;
+                self.phase_tasks = self.phase_tasks.filter(function (item) {
+                    if(!found && item['value'] == key){
+                        sorted_phase_tasks.push(item)
+                        found = true
+                        return false
+                    } else
+                        return true
+                })
+            })
+            self.phase_tasks = sorted_phase_tasks.slice()
+
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
+            data.task_instances = []
+            for(task of self.phase_tasks){
+                data.task_instances.push({
+                    order_index: data.task_instances.length,
+                    task: task.value,
+                })
+            }
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
             data.hide_output = self.refs.hide_output.checked
             _.forEach(number_fields, field => {

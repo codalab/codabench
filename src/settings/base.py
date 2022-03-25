@@ -19,6 +19,9 @@ SITE_ID = 1
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 
 THIRD_PARTY_APPS = (
+    'django_su',  # Must come before django.contrib.admin
+    'ajax_select',  # For django_su
+
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -27,6 +30,7 @@ THIRD_PARTY_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'django.contrib.humanize',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -38,6 +42,7 @@ THIRD_PARTY_APPS = (
     'storages',
     'channels',
     'drf_yasg',
+    'redis',
 )
 OUR_APPS = (
     'chahub',
@@ -51,6 +56,7 @@ OUR_APPS = (
     'commands',
     'queues',
     'health',
+    'forums',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -108,6 +114,7 @@ AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
     'utils.oauth_backends.ChahubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
+    'django_su.backends.SuBackend',
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -185,12 +192,16 @@ RABBITMQ_DEFAULT_PASS = os.environ.get('RABBITMQ_DEFAULT_PASS', 'guest')
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbit')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', '5672')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT', '15672')
+RABBITMQ_SCHEME = os.environ.get('RABBITMQ_SCHEME', 'http')
+RABBITMQ_PYRABBIT_URL = None  # used in Heroku settings, mainly
+FLOWER_HOST = os.environ.get('FLOWER_HOST', RABBITMQ_HOST)
 FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 
 # ============================================================================
 # Celery
 # ============================================================================
-CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL") or os.environ.get('BROKER_URL')
+CELERY_BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
+CELERY_BROKER_URL = os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
 CELERY_TASK_SERIALIZER = 'json'
@@ -200,8 +211,38 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'competitions.tasks.do_phase_migrations',
         'schedule': timedelta(seconds=300),
     },
+    'update_phase_statuses': {
+        'task': 'competitions.tasks.update_phase_statuses',
+        'schedule': timedelta(seconds=3600)
+    },
+    'submission_status_cleanup': {
+        'task': 'competitions.tasks.submission_status_cleanup',
+        'schedule': timedelta(seconds=3600)
+    },
 }
 CELERY_TIMEZONE = 'UTC'
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# ============================================================================
+# Caching
+# ============================================================================
+CACHES = {
+    'default': {
+        "BACKEND": "django_redis.cache.RedisCache",
+        'LOCATION': [os.environ.get("REDIS_URL", "redis://redis:6379")],
+        'OPTIONS': {
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": os.environ.get("REDIS_MAX_CONNECTIONS", 20),
+                "retry_on_timeout": True
+            },
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    },
+}
+REST_FRAMEWORK_EXTENSIONS = {
+    'DEFAULT_CACHE_RESPONSE_TIMEOUT': 60 * 15,
+}
 
 # =============================================================================
 # DRF
@@ -220,7 +261,6 @@ REST_FRAMEWORK = {
         '%B %d, %Y',
     )
 }
-
 # OAuth Toolkit
 OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
@@ -253,7 +293,6 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
         },
     },
-
 }
 
 # =============================================================================
@@ -266,19 +305,13 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379")],
+
+            # To hold large submission outputs
+            "capacity": 1500,  # default 100
         },
         # "ROUTING": "ProblemSolverCentral.routing.channel_routing",
     },
 }
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "asgi_redis.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("my_domain.com", 6379)],
-#         },
-#         "ROUTING": "ProblemSolverCentral.routing.channel_routing",
-#     },
-# }
 
 SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
 
@@ -289,6 +322,10 @@ STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
 DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
 
 TEMP_SUBMISSION_STORAGE = os.environ.get('TEMP_SUBMISSION_STORAGE', '/codalab_tmp')
+
+# Make sure storage exists
+if not os.path.exists(TEMP_SUBMISSION_STORAGE):
+    os.makedirs(TEMP_SUBMISSION_STORAGE)
 
 STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
 STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'
@@ -401,3 +438,8 @@ SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL')
 CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
 CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
+
+
+# Django-Su (User impersonation)
+SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
+AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='username')}

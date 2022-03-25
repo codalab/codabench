@@ -8,6 +8,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
+            <a class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
@@ -199,7 +200,7 @@
                         </div>
                     </div>
                     <div>
-                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }"></submission-upload>
+                        <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>
                         <submission-manager id="user-submission-table" competition="{ competition }"></submission-manager>
@@ -217,17 +218,27 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading && !_.isEmpty(competition.leaderboards)}">
-                <div class="ui button-container">
-                    <div class="ui inline button {active: selected_leaderboard_index == leaderboard.id}"
-                         each="{ leaderboard in competition.leaderboards }"
-                         onclick="{ leaderboard_selected.bind(this, leaderboard) }">{ leaderboard.title }
+            <div show="{!loading}">
+                <div class="ui button-container inline">
+                    <div class="ui button {active: selected_phase_index == phase.id}"
+                         each="{ phase in competition.phases }"
+                         onclick="{ phase_selected.bind(this, phase) }">{ phase.name }
                     </div>
-                    <a if="{competition.admin}" href="{URLS.COMPETITION_GET_CSV(competition.id)}" target="new"><button class="ui inline button right">CSV</button></a>                </div>
-
+                </div>
+                    <div show="{competition.admin}" class="float-right">
+                        <div class="ui compact menu">
+                            <div class="ui simple dropdown item" style="padding: 0px 5px">
+                                <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
+                                <div style="padding-top: 8px; right: 0; left: auto;" class="menu">
+                                    <a href="{URLS.COMPETITION_GET_ZIP(competition.id)}" target="new" class="item">All CSV</a>
+                                    <a href="{URLS.COMPETITION_GET_JSON(competition.id)}" target="new" class="item">All JSON</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 <leaderboards class="leaderboard-table"
-                              competition_pk="{ competition.id }"
-                              leaderboards="{ competition.leaderboards }">
+                              phase_id="{ self.selected_phase_index }"
+                              is_admin="{competition.admin}">
                 </leaderboards>
             </div>
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
@@ -242,9 +253,8 @@
         self.competition = {}
         self.files = {}
         self.selected_phase_index = undefined
-        self.selected_leaderboard_index = undefined
+        self.leaderboard_phases = []
         self.loading = true
-        self.csvURL = '{% url competitions.views.get_csv %}'
 
         self.on('mount', function () {
             $('.tabular.menu.details-menu .item', self.root).tab({
@@ -269,29 +279,35 @@
                     })
                 })
             })
-            if (!_.isEmpty(self.competition.leaderboards)) {
-                self.selected_leaderboard_index = self.competition.leaderboards[0].id
-            }
-            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
-            self.update()
+            self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
+            }
+            self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()
 
             $('.tabular.pages-menu.menu .item', self.root).tab()
 
-            _.forEach(competition.pages, (page, index) => {
+            // Need to run update() to build tags to render html in
+            self.update()
+            _.forEach(self.competition.pages, (page, index) => {
                 $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
             })
-            _.forEach(competition.phases, (phase, index) => {
+            _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
             })
-            // Not strictly necessary, but makes the loader show up long enough to be recognized as such,
-            // rather than a weird flicker
             _.delay(() => {
                 self.loading = false
                 self.update()
             }, 500)
+        })
+
+        CODALAB.events.on('phase_selected', function (selected_phase) {
+            self.selected_phase = selected_phase
+            self.update()
         })
 
         self.pretty_date = function (date_string) {
@@ -303,18 +319,16 @@
         }
 
         self.phase_selected = function (data, event) {
-            self.selected_phase_index = data.id
-            self.update()
-
-            CODALAB.events.trigger('phase_selected', data)
+            if(data) {
+                self.selected_phase_index = data.id
+                self.update()
+                CODALAB.events.trigger('phase_selected', data)
+            }
         }
 
-        self.leaderboard_selected = function (data, event) {
-            self.selected_leaderboard_index = data.id
-            self.update()
+        self.update()
 
-            CODALAB.events.trigger('leaderboard_selected', data)
-        }
+
     </script>
 
     <style type="text/stylus">
@@ -336,11 +350,17 @@
             border-color rgba(42, 68, 88, .5)
             color rgb(42, 68, 88)
 
+        .inline
+            display inline-block
+
         .float-right
             float right
 
         .details-menu
             width 100%
+
+        .details-menu .item
+            font-size 1.3em
 
         .details-menu .active.item, .details-menu .item
             margin -2px auto !important
@@ -387,20 +407,18 @@
         .submission-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         .results-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         .pages-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
+
+            .ui.vertical.tabular.menu.pages-menu
+                width 100% !important
+                padding-right 3px
 
             .vertical.tabular.menu > .item
                 cursor pointer
@@ -420,9 +438,6 @@
             width 100%
             color #2c3f4c
             padding 50px 0 150px
-
-            @media screen and (min-width 768px)
-                width 85%
 
             .underline
                 border-bottom 1px solid $teal
@@ -466,8 +481,6 @@
         .admin-tab
             margin 0 auto
             width 100%
-            @media screen and (min-width 768px)
-                width 85%
 
         pre
             background #f4f4f4

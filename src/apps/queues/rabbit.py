@@ -2,16 +2,24 @@ import logging
 import uuid
 
 from django.conf import settings
-from pyrabbit.api import Client
-from pyrabbit.http import HTTPError, NetworkError
+from pyrabbit2.api import Client
+from pyrabbit2.http import HTTPError, NetworkError
 
 logger = logging.getLogger()
 
 
 def _get_rabbit_connection():
     """Helper giving us a rabbit connection from settings.BROKER_URL"""
-    host_with_port = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
-    return Client(host_with_port, settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS)
+    if settings.RABBITMQ_PYRABBIT_URL:
+        rabbit_api_url = settings.RABBITMQ_PYRABBIT_URL
+    else:
+        rabbit_api_url = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
+    return Client(
+        rabbit_api_url,
+        settings.RABBITMQ_DEFAULT_USER,
+        settings.RABBITMQ_DEFAULT_PASS,
+        scheme=settings.RABBITMQ_SCHEME
+    )
 
 
 def check_user_needs_initialization(user, connection):
@@ -27,8 +35,11 @@ def check_user_needs_initialization(user, connection):
 def initialize_user(user, connection):
     """Check whether user has a rabbitmq account already, creates it if not."""
     logger.info(f"Making new rabbitmq user for {user}")
-    user.rabbitmq_username = str(uuid.uuid4())
-    user.rabbitmq_password = str(uuid.uuid4())
+
+    # Only create a username/pass if none are set
+    if not user.rabbitmq_username:
+        user.rabbitmq_username = str(uuid.uuid4())
+        user.rabbitmq_password = str(uuid.uuid4())
 
     connection.create_user(str(user.rabbitmq_username), str(user.rabbitmq_password))
 
@@ -45,13 +56,14 @@ def initialize_user(user, connection):
     user.save()
 
 
-def create_queue(user):
+def create_queue(user, vhost=None):
     """Create a new queue with a random name and give full permissions to the owner AND our base account"""
     conn = _get_rabbit_connection()
     if check_user_needs_initialization(user, conn):
         initialize_user(user, conn)
 
-    vhost = str(uuid.uuid4())
+    if not vhost:
+        vhost = str(uuid.uuid4())
     conn.create_vhost(vhost)
 
     # Set permissions for our end user

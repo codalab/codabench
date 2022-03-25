@@ -115,7 +115,7 @@
         </div>
     </div>
     <!-- Manage Submissions Modal -->
-    <div class="ui manage-submissions modal" ref="sub_modal">
+    <div class="ui manage-submissions large modal" ref="sub_modal">
         <div class="content">
             <submission-manager admin="{competition.admin}" competition="{ competition }"></submission-manager>
         </div>
@@ -176,7 +176,7 @@
         self.show_modal = selector => $(selector).modal('show')
 
         self.create_dump = () => {
-            CODALAB.api.create_dump(self.competition.id)
+            CODALAB.api.create_competition_dump(self.competition.id)
                 .done(data => {
                     self.tr_show = true
                     toastr.success("Success! Your competition dump is being created.")
@@ -193,11 +193,6 @@
                     self.files = data
                     self.tr_show = false
                     self.update()
-
-                    if (e) {
-                        // Only display toast if activated from button, not CODALAB.event
-                        toastr.success('Table Updated')
-                    }
                 })
                 .fail(response => {
                     toastr.error('Error Retrieving Competition Files')

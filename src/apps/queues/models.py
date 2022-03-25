@@ -1,8 +1,8 @@
 from django.conf import settings
-from django.contrib.sites.models import Site
+# from django.contrib.sites.models import Site
 from django.db import models
 from django.utils import timezone
-from pyrabbit.http import HTTPError
+from pyrabbit2.http import HTTPError
 
 from queues import rabbit
 
@@ -30,9 +30,9 @@ class Queue(models.Model):
 
     @property
     def broker_url(self):
-        host = Site.objects.get_current().domain
+        # host = Site.objects.get_current().domain
         if self.owner:
-            return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{host}:{settings.RABBITMQ_PORT}/{self.vhost}"
+            return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/{self.vhost}"
 
     def delete(self, *args, **kwargs):
         try:

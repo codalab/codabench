@@ -5,6 +5,7 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
+from django.http import Http404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
@@ -14,9 +15,12 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 
+from profiles.models import Organization, Membership
+from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, Phase, CompetitionParticipant
-from leaderboards.models import SubmissionScore, Column
+from leaderboards.strategies import put_on_leaderboard_by_submission_rule
+from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -28,12 +32,22 @@ class SubmissionViewSet(ModelViewSet):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
 
     def check_object_permissions(self, request, obj):
+        if self.action in ['submission_leaderboard_connection']:
+            if obj.is_specific_task_re_run:
+                raise PermissionDenied("Cannot add task-specific submission re-runs to leaderboards.")
+            return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
-            try:
-                if uuid.UUID(request.data.get('secret')) != obj.secret:
-                    raise PermissionDenied("Submission secrets do not match")
-            except TypeError:
-                raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
+            not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
+
+            if self.action in ['update_fact_sheet', 're_run_submission']:
+                # get_queryset will stop us from re-running something we're not supposed to
+                pass
+            elif not self.request.user.is_authenticated or not_bot_user:
+                try:
+                    if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
+                        raise PermissionDenied("Submission secrets do not match")
+                except TypeError:
+                    raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
 
     def get_serializer_class(self):
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
@@ -48,7 +62,7 @@ class SubmissionViewSet(ModelViewSet):
             if not self.request.user.is_authenticated:
                 return Submission.objects.none()
 
-            if not self.request.user.is_superuser and not self.request.user.is_staff:
+            if not self.request.user.is_superuser and not self.request.user.is_staff and not self.request.user.is_bot:
                 # if you're the creator of the submission or a collaborator on the competition
                 qs = qs.filter(
                     Q(owner=self.request.user) |
@@ -66,8 +80,38 @@ class SubmissionViewSet(ModelViewSet):
                 'children',
                 'scores',
                 'scores__column',
+                'task',
             )
+        elif self.action in ['delete_many', 're_run_many_submissions']:
+            try:
+                pks = list(self.request.data)
+            except TypeError as err:
+                raise ValidationError(f'Error {err}')
+            qs = qs.filter(pk__in=pks)
+            if not self.request.user.is_superuser and not self.request.user.is_staff:
+                if qs.filter(
+                    Q(owner=self.request.user) |
+                    Q(phase__competition__created_by=self.request.user) |
+                    Q(phase__competition__collaborators__in=[self.request.user.pk])
+                ) is not qs:
+                    ValidationError("Request Contained Submissions you don't have authorization for")
+            if self.action in ['re_run_many_submissions']:
+                print(f'debug {qs}')
+                print(f'debug {qs.first().status}')
+                qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
+                print(f'debug {qs}')
         return qs
+
+    def create(self, request, *args, **kwargs):
+        if 'organization' in request.data and request.data['organization'] is not None:
+            organization = get_object_or_404(Organization, pk=request.data['organization'])
+            try:
+                membership = organization.membership_set.get(user=request.user)
+            except Membership.DoesNotExist:
+                raise ValidationError('You must be apart of a organization to submit for them')
+            if membership.group not in Membership.PARTICIPANT_GROUP:
+                raise ValidationError('You do not have participant permissions for this group')
+        return super(SubmissionViewSet, self).create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         submission = self.get_object()
@@ -77,6 +121,14 @@ class SubmissionViewSet(ModelViewSet):
 
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=('DELETE',))
+    def delete_many(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        if not qs:
+            return Response({'Submission search returned empty'}, status=status.HTTP_404_NOT_FOUND)
+        qs.delete()
+        return Response({})
 
     def get_renderer_context(self):
         """We override this to pass some context to the CSV renderer"""
@@ -94,7 +146,38 @@ class SubmissionViewSet(ModelViewSet):
 
     def has_admin_permission(self, user, submission):
         competition = submission.phase.competition
-        return user.is_superuser or user in competition.all_organizers
+        return user.is_authenticated and (user.is_superuser or user in competition.all_organizers or user.is_bot)
+
+    @action(detail=True, methods=('POST', 'DELETE'))
+    def submission_leaderboard_connection(self, request, pk):
+        submission = self.get_object()
+        phase = submission.phase
+
+        if not (request.user.is_superuser or request.user == submission.owner):
+            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
+                raise Http404
+        if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
+            raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
+
+        if request.method == 'POST':
+            # Removing any existing submissions on leaderboard unless multiples are allowed
+            if submission.phase.leaderboard.submission_rule != Leaderboard.ADD_DELETE_MULTIPLE:
+                Submission.objects.filter(phase=phase, owner=submission.owner).update(leaderboard=None)
+            leaderboard = phase.leaderboard
+            if submission.has_children:
+                Submission.objects.filter(parent=submission).update(leaderboard=leaderboard)
+            else:
+                submission.leaderboard = leaderboard
+                submission.save()
+
+        if request.method == 'DELETE':
+            if submission.phase.leaderboard.submission_rule not in [Leaderboard.ADD_DELETE, Leaderboard.ADD_DELETE_MULTIPLE]:
+                raise ValidationError("You are not allowed to remove a submission on this phase")
+            submission.leaderboard = None
+            submission.save()
+            Submission.objects.filter(parent=submission).update(leaderboard=None)
+
+        return Response({})
 
     @action(detail=True, methods=('GET',))
     def cancel_submission(self, request, pk):
@@ -105,15 +188,39 @@ class SubmissionViewSet(ModelViewSet):
         for child in submission.children.all():
             child.cancel()
         canceled = submission.cancel()
-
         return Response({'canceled': canceled})
 
-    @action(detail=True, methods=('GET',))
+    @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
         submission = self.get_object()
+        task_key = request.query_params.get('task_key')
+
         if not self.has_admin_permission(request.user, submission):
             raise PermissionDenied('You do not have permission to re-run submissions')
-        submission.re_run()
+
+        # We want to avoid re-running a submission that isn't finished yet, because the tasks associated
+        # with the submission and maybe other important details have not been finalized yet. I.e. if you
+        # rapidly click the "re-run submission" button, a submission may not have been processed by a
+        # site worker and be in a funky state (race condition) -- this should resolve that
+        if submission.status not in (Submission.FINISHED, Submission.FAILED, Submission.CANCELLED):
+            raise PermissionDenied('Cannot request a re-run on a submission that has not finished processing.')
+
+        # Rerun submission on different task. Will flag submission with is_specific_task_re_run=True
+        if task_key:
+            rerun_kwargs = {
+                'task': get_object_or_404(Task, key=task_key),
+            }
+        else:
+            rerun_kwargs = {}
+
+        new_sub = submission.re_run(**rerun_kwargs)
+        return Response({'id': new_sub.id})
+
+    @action(detail=False, methods=('POST',))
+    def re_run_many_submissions(self, request):
+        qs = self.get_queryset()
+        for submission in qs:
+            submission.re_run()
         return Response({})
 
     @action(detail=True, methods=('GET',))
@@ -139,28 +246,51 @@ class SubmissionViewSet(ModelViewSet):
         submission.save()
         return Response({})
 
+    @action(detail=True, methods=('PATCH',))
+    def update_fact_sheet(self, request, pk):
+        if not isinstance(request.data, dict):
+            if isinstance(request.data, str):
+                try:
+                    request_data = json.loads(request.data)
+                except ValueError:
+                    return ValidationError('Invalid JSON')
+        else:
+            request_data = request.data
+        request_submission = super().get_object()
+        top_level_submission = request_submission.parent or request_submission
+        # Validate fact_sheet using serializer
+        data = self.get_serializer(top_level_submission).data
+        data['fact_sheet_answers'] = request.data
+        serializer = self.get_serializer(data=data, instance=top_level_submission)
+        serializer.is_valid(raise_exception=True)
+        # Use Queryset to update Submissions
+        Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
+        return Response({})
+
 
 @api_view(['POST'])
-@permission_classes((AllowAny, ))  # permissions are checked via the submission secret
+@permission_classes((AllowAny,))  # permissions are checked via the submission secret
 def upload_submission_scores(request, submission_pk):
     submission = get_object_or_404(Submission, pk=submission_pk)
-
-    data = json.loads(request.body)
+    submission_rule = submission.phase.leaderboard.submission_rule
 
     try:
-        if uuid.UUID(data.get("secret")) != submission.secret:
+        if uuid.UUID(request.data.get("secret")) != submission.secret:
             raise PermissionDenied("Submission secrets do not match")
     except TypeError:
         raise ValidationError("Secret not a valid UUID")
 
-    competition_columns = submission.phase.competition.leaderboards.values_list('columns__key', flat=True)
+    if "scores" not in request.data:
+        raise ValidationError("'scores' required.")
 
-    for column_key, score in data["scores"].items():
+    competition_columns = submission.phase.leaderboard.columns.values_list('key', flat=True)
+
+    for column_key, score in request.data.get("scores").items():
         if column_key not in competition_columns:
             continue
         score = SubmissionScore.objects.create(
             score=score,
-            column=Column.objects.get(leaderboard__competition=submission.phase.competition, key=column_key)
+            column=Column.objects.get(leaderboard=submission.phase.leaderboard, key=column_key)
         )
         submission.scores.add(score)
         if submission.parent:
@@ -169,16 +299,24 @@ def upload_submission_scores(request, submission_pk):
         else:
             submission.calculate_scores()
 
+    put_on_leaderboard_by_submission_rule(request, submission_pk, submission_rule)
     return Response()
 
 
 @api_view(('GET',))
 def can_make_submission(request, phase_id):
     phase = get_object_or_404(Phase, id=phase_id)
-    user_is_approved = phase.competition.participants.filter(user=request.user, status=CompetitionParticipant.APPROVED).exists()
+    user_is_approved = phase.competition.participants.filter(
+        user=request.user,
+        status=CompetitionParticipant.APPROVED
+    ).exists()
 
     if request.user.is_bot and phase.competition.allow_robot_submissions and not user_is_approved:
-        CompetitionParticipant.objects.create(user=request.user, competition=phase.competition, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipant.objects.create(
+            user=request.user,
+            competition=phase.competition,
+            status=CompetitionParticipant.APPROVED
+        )
         user_is_approved = True
 
     if user_is_approved:

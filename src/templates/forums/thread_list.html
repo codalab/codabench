@@ -1,0 +1,102 @@
+{% extends "forums/base_forum.html" %}
+{% load static %}
+
+{% block forum_content %}
+    <div class="ui horizontal divider">Threads</div>
+
+    {% if forum.threads.all %}
+        <table class="ui single line table threads_list">
+            <thead>
+            <tr>
+                <th width="500px">
+                    Title
+                </th>
+                <th>
+                    Started by
+                </th>
+                <th>
+                    Date created
+                </th>
+                <th>
+                    Latest post
+                </th>
+                <th>
+                    Posts
+                </th>
+                {% if forum.competition.creator == request.user %}
+                    <th>
+
+                    </th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for thread in thread_list_sorted %}
+                <tr data-href="{% url 'forums:forum_thread_detail' forum_pk=forum.pk thread_pk=thread.pk %}" class="clickable-row">
+                    <td>
+                        {% if thread.pinned_date %}
+                            <i class="pinned-thread-icon glyphicon glyphicon-pushpin" data-thread-pk="{{ thread.pk }}"></i>
+                        {% endif %}
+
+                        {{ thread.title }}
+                    </td>
+                    <td>{{ thread.started_by }}</td>
+                    <td>{{ thread.date_created|date:"M d, Y" }}</td>
+                    <td>{{ thread.last_post_date|timesince }}</td>
+                    {# date:"g:iA M d" #}
+                    <td>{{ thread.posts.count }}</td>
+                    {% if forum.competition.creator == request.user or request.user in forum.competition.admins.all %}
+                        <td>
+                            <a href="{% url "forum_thread_pin" thread_pk=thread.pk %}"><i class="pin-button glyphicon glyphicon-pushpin" data-thread-pk="{{ thread.pk }}"></i></a>
+                            <i class="remove-button glyphicon glyphicon-remove" data-thread-pk="{{ thread.pk }}"></i>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <i>No topics started yet, <a href="{% url 'forums:forum_new_thread' forum_pk=forum.pk %}">start one now</a>!</i>
+    {% endif %}
+
+<style>
+    .threads_list {
+        font-size: 15px !important;
+    }
+
+    .clickable-row {
+        transition: background-color 0.1s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #e0e1e2;
+        cursor: pointer;
+    }
+
+</style>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        function redirect_post(url) {
+            var form = document.createElement('form');
+            document.body.appendChild(form);
+            form.method = 'post';
+            form.action = url;
+            $(form).append(`{% csrf_token %}`);
+            form.submit();
+        }
+
+        $(document).ready( function () {
+            $('.remove-button').click(function (event) {
+                var thread_pk = event.target.dataset.threadPk
+                if (confirm("Are you sure you want to delete this?")) {
+                    redirect_post("/forums/{{ forum.pk }}/" + thread_pk + "/delete/")
+                }
+            })
+            $(".clickable-row").click(function(event) {
+                window.location = $(this).data("href")
+            })
+        })
+    </script>
+{% endblock %}

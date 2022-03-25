@@ -28,11 +28,14 @@ CODALAB.api = {
     get_competitions: function (query) {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
+    get_public_competitions: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "competitions/public/", query)
+    },
     create_competition: function (data) {
         return CODALAB.api.request('POST', URLS.API + "competitions/", data)
     },
-    get_competition_creation_status: function (key) {
-        return CODALAB.api.request('GET', `${URLS.API}competition_status/${key}/`)
+    get_competition_creation_status: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}competitions/${id}/creation_status/`)
     },
     update_competition: function (data, pk) {
         return CODALAB.api.request('PATCH', URLS.API + "competitions/" + pk + "/", data)
@@ -56,10 +59,13 @@ CODALAB.api = {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})
     },
     get_front_page_competitions: function (data) {
-        return CODALAB.api.request('GET', URLS.API + "front_page_competitions/", data)
+        return CODALAB.api.request('GET', `${URLS.API}competitions/front_page/`, data)
     },
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
+    },
+    create_competition_dump: function (pk) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/create_dump/`)
     },
     /*---------------------------------------------------------------------
          Submissions
@@ -73,8 +79,14 @@ CODALAB.api = {
     get_submission: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/`)
     },
+    update_submission_fact_sheet: function (pk, data) {
+        return CODALAB.api.request('PATCH', `${URLS.API}submissions/${pk}/update_fact_sheet/`, data)
+    },
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
+    },
+    delete_many_submissions: function (pks) {
+        return CODALAB.api.request('DELETE', `${URLS.API}submissions/delete_many/`, pks)
     },
     toggle_submission_is_public: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/toggle_public/`)
@@ -83,7 +95,10 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
     },
     re_run_submission: function (id) {
-        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/re_run_submission/`)
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
+    },
+    re_run_many_submissions: function (data) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/re_run_many_submissions/`, data)
     },
     get_submission_csv_URL: function (filters) {
         filters.format = "csv"
@@ -100,10 +115,13 @@ CODALAB.api = {
          Leaderboards
     ---------------------------------------------------------------------*/
     add_submission_to_leaderboard: function (submission_pk) {
-        return CODALAB.api.request('POST', URLS.API + "add_submission_to_leaderboard/" + submission_pk + '/')
+        return CODALAB.api.request('POST', URLS.API + "submissions/" + submission_pk + '/submission_leaderboard_connection/')
     },
-    get_leaderboard: function (leaderboard_pk) {
-        return CODALAB.api.request('GET', URLS.API + `leaderboards/` + leaderboard_pk)
+    remove_submission_from_leaderboard: function (submission_pk) {
+        return CODALAB.api.request('DELETE', URLS.API + "submissions/" + submission_pk + '/submission_leaderboard_connection/')
+    },
+    get_leaderboard_for_render: function (phase_pk) {
+        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`)
     },
     update_submission_score: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
@@ -125,9 +143,6 @@ CODALAB.api = {
     },
     delete_datasets: function(pk_list) {
         return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
-    },
-    create_dump: function (competition_id) {
-        return CODALAB.api.request('POST', URLS.API + "datasets/create_dump/" + competition_id + "/")
     },
     /**
      * Creates a dataset
@@ -151,7 +166,7 @@ CODALAB.api = {
                     url: result.sassy_url,
                     data: data_file,
                     processData: false,
-                    contentType: false,
+                    contentType: data_file.type === 'application/x-zip-compressed' ? 'application/zip' : data_file.type,
                     beforeSend: function (request) {
                         if (STORAGE_TYPE === 'azure') {
                             request.setRequestHeader('x-ms-blob-type', 'BlockBlob')
@@ -201,6 +216,9 @@ CODALAB.api = {
     create_task: (data) => {
         return CODALAB.api.request('POST', `${URLS.API}tasks/`, data)
     },
+    share_task: (pk, data) => {
+        return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
+    },
 
     /*---------------------------------------------------------------------
          Queues
@@ -226,6 +244,36 @@ CODALAB.api = {
     ---------------------------------------------------------------------*/
     user_lookup: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}user_lookup/`, filters)
+    },
+    update_user_details: (id, data) => {
+        return CODALAB.api.request('PATCH',`${URLS.API}users/${id}/`, data)
+    },
+    get_user_participant_organizations: () => {
+        return CODALAB.api.request('GET',`${URLS.API}users/participant_organizations/`)
+    },
+    /*---------------------------------------------------------------------
+         Organizations
+    ---------------------------------------------------------------------*/
+    create_organization: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/`, data)
+    },
+    update_organization: (data, id) => {
+        return CODALAB.api.request('PUT', `${URLS.API}organizations/${id}/`, data)
+    },
+    update_user_group: (data, id) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/update_member_group/`, data)
+    },
+    update_organization_invite: (data, method) => {
+        return CODALAB.api.request(method, `${URLS.API}organizations/invite_response/`, data)
+    },
+    validate_organization_invite: (data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/validate_invite/`, data)
+    },
+    invite_user_to_organization: (id, data) => {
+        return CODALAB.api.request('POST', `${URLS.API}organizations/${id}/invite_users/`, data)
+    },
+    delete_organization_member: (id, data) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_member/`, data)
     },
     /*---------------------------------------------------------------------
          Participants

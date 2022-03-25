@@ -3,7 +3,7 @@
         <div class="eight wide column centered form-empty">
             <div class="ui segment">
                 <div class="flex-header">
-                    <h1 class="ui header">Competition upload</h1>
+                    <h1 class="ui header">Benchmark upload</h1>
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
                                  tooltip="More information on bundle creation">
                     </help_button>
@@ -113,7 +113,7 @@
             CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     setTimeout(function() {
-                        self.status_listening_loop(data.key)
+                        self.status_listening_loop(data.status_id)
                     }, 501)  // do this after the always() hide progress bar's 500ms wait
                 })
                 .fail(function (response) {
@@ -139,7 +139,7 @@
                 })
         }
 
-        self.status_listening_loop = function(key) {
+        self.status_listening_loop = function(id) {
             // Show listen section nicely, changing max height does animation for us
             self.refs.task_status_display.style.maxHeight = '1000px'
             self.listening_for_status = true
@@ -147,7 +147,7 @@
 
             // Every 2 seconds get status
             setTimeout(function() {
-                CODALAB.api.get_competition_creation_status(key)
+                CODALAB.api.get_competition_creation_status(id)
                     .done(function(data){
                         var status = data.status.toLowerCase()
                         if(status === "finished" || status === "failed") {
@@ -157,9 +157,13 @@
                             self.update()
                         } else {
                             // Continue looping, we're not done yet!
-                            self.status_listening_loop(key)
+                            self.status_listening_loop(id)
                         }
                     })
+                    .fail(function(data) {
+                        self.status_listening_loop(id)
+                    })
+
                     //.always(function() {
                     //    // Hide the task status display now
                     //    self.refs.task_status_display.style.maxHeight = '0'
