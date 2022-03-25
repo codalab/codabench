@@ -4,12 +4,10 @@ import os
 import re
 import traceback
 import zipfile
-from datetime import timedelta
 from io import BytesIO
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import TemporaryDirectory
 
 import oyaml as yaml
-import requests
 from celery._state import app_or_default
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -25,8 +23,6 @@ from competitions.models import Submission, CompetitionCreationTaskStatus, Submi
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
-from leaderboards.models import Leaderboard
-from tasks.models import Task
 from datasets.models import Data
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
@@ -100,17 +96,7 @@ COLUMN_FIELDS = [
 ]
 
 
-def _send_to_compute_worker(submission, is_scoring):
-    run_args = {
-        "user_pk": submission.owner.pk,
-        "submissions_api_url": settings.SUBMISSIONS_API_URL,
-        "secret": submission.secret,
-        "docker_image": submission.phase.competition.docker_image,
-        "execution_time_limit": submission.phase.execution_time_limit,
-        "id": submission.pk,
-        "is_scoring": is_scoring,
-    }
-
+def _send_submission(submission, task, is_scoring, run_args):
     if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
         submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))  # must encode here for GCS
         submission.save(update_fields=['detailed_result'])
@@ -120,17 +106,7 @@ def _send_to_compute_worker(submission, is_scoring):
     if not submission.scoring_result.name:
         submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
         submission.save(update_fields=['scoring_result'])
-
     submission = Submission.objects.get(id=submission.id)
-    task = submission.task
-
-    # priority of scoring tasks is higher, we don't want to wait around for
-    # many submissions to be scored while we're waiting for results
-    if is_scoring:
-        # higher numbers are higher priority
-        priority = 10
-    else:
-        priority = 0
 
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
@@ -198,24 +174,17 @@ def _send_to_compute_worker(submission, is_scoring):
                 args=(run_args,),
                 queue='compute-worker',
                 soft_time_limit=time_limit,
-                connection=new_connection,
-                priority=priority,
+                connection=new_connection
             )
     else:
         task = app.send_task(
             'compute_worker_run',
             args=(run_args,),
             queue='compute-worker',
-            soft_time_limit=time_limit,
-            priority=priority,
+            soft_time_limit=time_limit
         )
     submission.celery_task_id = task.id
-
-    if submission.status == Submission.SUBMITTING:
-        # Don't want to mark an already-prepared submission as "submitted" again, so
-        # only do this if we were previously "SUBMITTING"
-        submission.status = Submission.SUBMITTED
-
+    submission.status = Submission.SUBMITTED
     submission.save()
 
 
@@ -276,19 +245,26 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     qs = Submission.objects.select_related(*select_models).prefetch_related(*prefetch_models)
     submission = qs.get(pk=submission_pk)
 
-    if submission.is_specific_task_re_run:
-        # Should only be one task for a specified task submission
-        tasks = Task.objects.filter(pk__in=task_pks)
-    elif task_pks is None:
-        tasks = submission.phase.tasks.all()
+    run_arguments = {
+        "user_pk": submission.owner.pk,
+        "submissions_api_url": settings.SUBMISSIONS_API_URL,
+        "secret": submission.secret,
+        "docker_image": submission.phase.competition.docker_image,
+        "execution_time_limit": submission.phase.execution_time_limit,
+        "id": submission.pk,
+        "is_scoring": is_scoring,
+    }
+
+    if task_pks is None:
+        tasks = submission.phase.tasks.all().order_by('pk')
     else:
-        tasks = submission.phase.tasks.filter(pk__in=task_pks)
+        tasks = submission.phase.tasks.filter(pk__in=task_pks).order_by('pk')
 
-    tasks = tasks.order_by('pk')
-
+    # TODO: Make the following code DRY!
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
+        submission.status = 'Running'
         submission.save()
 
         send_parent_status(submission)
@@ -301,54 +277,42 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 data=submission.data,
                 participant=submission.participant,
                 parent=submission,
-                task=task,
-                fact_sheet_answers=submission.fact_sheet_answers
+                task=task
             )
             child_sub.save(ignore_submission_limit=True)
-            _send_to_compute_worker(child_sub, is_scoring=False)
+            run_submission(child_sub.id, [task])
             send_child_id(submission, child_sub.id)
     else:
-        # The initial submission object is the only submission
+        # The initial submission object will be the only submission
+        task = tasks[0]
         if not submission.task:
-            submission.task = tasks[0]
+            submission.task = task
             submission.save()
-        _send_to_compute_worker(submission, is_scoring)
+        _send_submission(
+            submission=submission,
+            task=task,
+            run_args=run_arguments,
+            is_scoring=is_scoring
+        )
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
-def unpack_competition(status_pk):
-    logger.info(f"Starting unpack with status pk = {status_pk}")
-    status = CompetitionCreationTaskStatus.objects.get(pk=status_pk)
-    competition_dataset = status.dataset
+def unpack_competition(competition_dataset_pk):
+    competition_dataset = Data.objects.get(pk=competition_dataset_pk)
     creator = competition_dataset.created_by
 
-    def mark_status_as_failed_and_delete_dataset(competition_creation_status, details):
-        competition_creation_status.details = details
-        competition_creation_status.status = CompetitionCreationTaskStatus.FAILED
-        competition_creation_status.save()
-
-        # Cleans up associated data if competition unpacker fails
-        competition_creation_status.dataset.delete()
+    status = CompetitionCreationTaskStatus.objects.create(
+        dataset=competition_dataset,
+        status=CompetitionCreationTaskStatus.STARTING,
+    )
 
     try:
         with TemporaryDirectory() as temp_directory:
             # ---------------------------------------------------------------------
             # Extract bundle
             try:
-                with NamedTemporaryFile(mode="w+b") as temp_file:
-                    logger.info(f"Download competition bundle: {competition_dataset.data_file.name}")
-                    competition_bundle_url = make_url_sassy(competition_dataset.data_file.url)
-                    with requests.get(competition_bundle_url, stream=True) as r:
-                        r.raise_for_status()
-                        for chunk in r.iter_content(chunk_size=8192):
-                            temp_file.write(chunk)
-                        r.close()
-
-                    # seek back to the start of the tempfile after writing to it..
-                    temp_file.seek(0)
-
-                    with zipfile.ZipFile(temp_file.name, 'r') as zip_pointer:
-                        zip_pointer.extractall(temp_directory)
+                with zipfile.ZipFile(competition_dataset.data_file, 'r') as zip_pointer:
+                    zip_pointer.extractall(temp_directory)
             except zipfile.BadZipFile:
                 raise CompetitionUnpackingException("Bad zip file uploaded.")
 
@@ -409,17 +373,19 @@ def unpack_competition(status_pk):
 
     except CompetitionUnpackingException as e:
         # We want to catch well handled exceptions and display them to the user
-        message = str(e)
-        logger.info(message)
-        mark_status_as_failed_and_delete_dataset(status, message)
+        logger.info(str(e))
+        status.details = str(e)
+        status.status = CompetitionCreationTaskStatus.FAILED
+        status.save()
         raise e
 
-    except:  # noqa: E722
+    except Exception as e:
         # These are critical uncaught exceptions, make sure the end user is at least informed
         # that unpacking has failed -- do not share unhandled exception details
         logger.error(traceback.format_exc())
-        message = "Contact an administrator, competition failed to unpack in a critical way."
-        mark_status_as_failed_and_delete_dataset(status, message)
+        status.details = "Contact an administrator, competition failed to unpack in a critical way."
+        status.status = CompetitionCreationTaskStatus.FAILED
+        status.save()
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
@@ -453,9 +419,8 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
                 )
 
         # -------- Competition Terms -------
-        if comp.terms:
-            yaml_data['terms'] = 'terms.md'
-            zip_file.writestr('terms.md', comp.terms)
+        yaml_data['terms'] = 'terms.md'
+        zip_file.writestr('terms.md', comp.terms)
 
         # -------- Competition Pages -------
         yaml_data['pages'] = []
@@ -592,9 +557,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         # -------- Leaderboards -------
 
         yaml_data['leaderboards'] = []
-        # Have to grab leaderboards from phases
-        leaderboards = Leaderboard.objects.filter(id__in=comp.phases.all().values_list('leaderboard', flat=True))
-        for index, leaderboard in enumerate(leaderboards):
+        for index, leaderboard in enumerate(comp.leaderboards.all()):
             ldb_data = {
                 'index': index
             }
@@ -737,23 +700,3 @@ def batch_send_email(comp_id, content):
         markdown_content=content,
         recipient_list=[participant.user.email for participant in competition.participants.all()]
     )
-
-
-@app.task(queue='site-worker', soft_time_limit=60 * 5)
-def update_phase_statuses():
-    competitions = Competition.objects.exclude(phases__in=Phase.objects.filter(is_final_phase=True, end__lt=now()))
-    for comp in competitions:
-        comp.update_phase_statuses()
-
-
-@app.task(queue='site-worker')
-def submission_status_cleanup():
-    submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')
-
-    for sub in submissions:
-        # Check if the submission has been running for 24 hours longer than execution_time_limit
-        if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
-            if sub.parent is not None:
-                sub.parent.cancel(status=Submission.FAILED)
-            else:
-                sub.cancel(status=Submission.FAILED)

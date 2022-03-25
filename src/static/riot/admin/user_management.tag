@@ -33,7 +33,7 @@
                 <td>John Doe</td>
                 <td>JDoe40</td>
                 <td>john@jdoe.com</td>
-                <td>Benchmark Admin</td>
+                <td>Competition Admin</td>
             </tr>
         </table>
         <!-- DELETE USER MODAL -->

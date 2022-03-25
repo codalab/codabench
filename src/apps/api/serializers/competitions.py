@@ -4,13 +4,10 @@ from rest_framework.exceptions import ValidationError
 
 from api.fields import NamedBase64ImageField
 from api.mixins import DefaultUserCreateMixin
-from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
+from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.profiles import CollaboratorSerializer
-from api.serializers.submissions import SubmissionScoreSerializer
-from api.serializers.tasks import PhaseTaskInstanceSerializer
+from api.serializers.tasks import TaskListSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
-from forums.models import Forum
-from leaderboards.models import Leaderboard
 from profiles.models import User
 from tasks.models import Task
 
@@ -18,7 +15,7 @@ from api.serializers.queues import QueueSerializer
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
-    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
+    tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key',
                                          many=True)
 
     class Meta:
@@ -38,18 +35,11 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
-            'leaderboard',
-            'is_final_phase',
         )
-
-    def validate_leaderboard(self, value):
-        if not value:
-            raise ValidationError("Phases require a leaderboard")
-        return value
 
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
-    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    tasks = TaskListSerializer(many=True)
 
     class Meta:
         model = Phase
@@ -68,12 +58,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'max_submissions_per_person',
             'execution_time_limit',
             'hide_output',
-            'is_final_phase',
         )
-
-
-class PhaseUpdateSerializer(PhaseSerializer):
-    tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
 
 class PageSerializer(WritableNestedModelSerializer):
@@ -95,6 +80,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
     phases = PhaseSerializer(many=True)
+    leaderboards = LeaderboardSerializer(many=True)
     collaborators = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, required=False)
     queue = QueueSerializer(required=False, allow_null=True)
     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
@@ -115,6 +101,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'docker_image',
             'pages',
             'phases',
+            'leaderboards',
             'collaborators',
             'description',
             'terms',
@@ -124,8 +111,12 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
-            'fact_sheet',
         )
+
+    def validate_leaderboards(self, value):
+        if not value:
+            raise ValidationError("Competitions require at least 1 leaderboard")
+        return value
 
     def validate_phases(self, phases):
         if not phases or len(phases) <= 0:
@@ -136,39 +127,10 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             raise ValidationError("You cannot auto migrate to the first phase of a competition")
         return phases
 
-    def validate_fact_sheet(self, fact_sheet):
-        if not bool(fact_sheet):
-            return None
-        if not isinstance(fact_sheet, dict):
-            raise ValidationError("Not valid JSON")
-
-        expected_keys = {"key", "type", "title", "selection", "is_required", "is_on_leaderboard"}
-        valid_question_types = {"checkbox", "text", "select"}
-        for key, value in fact_sheet.items():
-            missing_keys = expected_keys.symmetric_difference(set(value.keys()))
-            if missing_keys:
-                raise ValidationError(f'Missing {missing_keys} values for {key}')
-            if key != value['key']:
-                raise ValidationError(f"key:{value['key']}  does not match JSON key:{key}")
-            if value['type'] not in valid_question_types:
-                raise ValidationError(f"{value['type']} is not a valid question type")
-        return fact_sheet
-
     def create(self, validated_data):
         if 'logo' not in validated_data:
             raise ValidationError("Competitions require a logo upon creation")
-
-        instance = super().create(validated_data)
-
-        # Ensure a forum is created for this competition
-        Forum.objects.create(competition=instance)
-
-        return instance
-
-
-class CompetitionUpdateSerializer(CompetitionSerializer):
-    phases = PhaseUpdateSerializer(many=True)
-    queue = None
+        return super().create(validated_data)
 
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
@@ -207,16 +169,14 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
-            'fact_sheet',
-            'forum',
         )
 
     def get_leaderboards(self, instance):
         try:
             if instance.user_has_admin_permission(self.context['request'].user):
-                qs = Leaderboard.objects.filter(phases__competition=instance).distinct('id')
+                qs = instance.leaderboards.all()
             else:
-                qs = Leaderboard.objects.filter(phases__competition=instance, hidden=False).distinct('id')
+                qs = instance.leaderboards.filter(hidden=False)
         except KeyError:
             raise Exception(f'KeyError on context. Context: {self.context}')
         return LeaderboardSerializer(qs, many=True).data
@@ -224,7 +184,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
-    participant_count = serializers.IntegerField(read_only=True)
+    participant_count = serializers.CharField(read_only=True)
 
     class Meta:
         model = Competition
@@ -251,7 +211,6 @@ class CompetitionCreationTaskStatusSerializer(serializers.ModelSerializer):
             'status',
             'details',
             'resulting_competition',
-            'created_by',
         )
 
 
@@ -269,27 +228,3 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'email',
             'status',
         )
-
-
-class FrontPageCompetitionsSerializer(serializers.Serializer):
-    popular_comps = CompetitionSerializerSimple(many=True)
-    featured_comps = CompetitionSerializerSimple(many=True)
-
-
-class PhaseResultsSubmissionSerializer(serializers.Serializer):
-    owner = serializers.CharField()
-    scores = SubmissionScoreSerializer(many=True)
-
-
-class PhaseResultsTaskSerializer(serializers.Serializer):
-    colWidth = serializers.IntegerField()
-    id = serializers.IntegerField()
-    columns = ColumnSerializer(many=True)
-    name = serializers.CharField()
-
-
-class PhaseResultsSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    id = serializers.IntegerField()
-    tasks = PhaseResultsTaskSerializer(many=True, read_only=True)
-    submissions = PhaseResultsSubmissionSerializer(many=True)

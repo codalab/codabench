@@ -1,7 +1,7 @@
 <competition-management>
     <div class="ui center aligned grid">
         <div class="fourteen wide column">
-            <h1 style="float: left; display: inline-block;">Benchmark Management</h1>
+            <h1 style="float: left; display: inline-block;">Competition Management</h1>
             <a class="ui right floated green button" href="{ URLS.COMPETITION_UPLOAD }">
                 <i class="upload icon"></i> Upload
             </a>

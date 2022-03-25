@@ -22,9 +22,6 @@ $(document).ready(function () {
         action: 'hide'
     })
 
-    $("#competition_dropdown").dropdown({
-        action: 'hide'
-    })
     // Sidebar helpers
     $('.ui.thin.sidebar')
         .sidebar({

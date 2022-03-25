@@ -1,15 +1,12 @@
 import asyncio
 from os.path import basename
 
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from api.serializers.profiles import SimpleOrganizationSerializer
-from api.serializers.tasks import TaskSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
 from leaderboards.models import SubmissionScore
@@ -38,8 +35,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
     owner = serializers.CharField(source='owner.username')
     phase_name = serializers.CharField(source='phase.name')
     on_leaderboard = serializers.BooleanField(read_only=True)
-    task = TaskSerializer()
-    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
 
     class Meta:
         model = Submission
@@ -50,7 +45,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'description',
             'created_when',
             'is_public',
-            'is_specific_task_re_run',
             'status',
             'status_details',
             'owner',
@@ -61,16 +55,13 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'id',
             'phase',
             'scores',
-            'fact_sheet_answers',
             'leaderboard',
             'on_leaderboard',
-            'task',
         )
         read_only_fields = (
             'pk',
             'phase',
             'scores',
-            'is_specific_task_re_run',
             'leaderboard',
             'on_leaderboard',
         )
@@ -82,23 +73,12 @@ class SubmissionSerializer(serializers.ModelSerializer):
 class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     scores = SubmissionScoreSerializer(many=True)
     owner = serializers.CharField(source='owner.username')
-    display_name = serializers.CharField(source='owner.display_name')
-    slug_url = serializers.CharField(source='owner.slug_url')
-    organization = SimpleOrganizationSerializer(allow_null=True)
 
     class Meta:
         model = Submission
         fields = (
-            'id',
-            'parent',
-            'owner',
-            'leaderboard_id',
-            'fact_sheet_answers',
-            'task',
             'scores',
-            'display_name',
-            'slug_url',
-            'organization'
+            'owner',
         )
         extra_kwargs = {
             "scores": {"read_only": True},
@@ -127,8 +107,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'secret',
             'md5',
             'tasks',
-            'fact_sheet_answers',
-            'organization',
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -149,19 +127,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
 
     def validate(self, attrs):
         data = super().validate(attrs)
-
-        if attrs.get('fact_sheet_answers'):
-            fact_sheet_answers = data['fact_sheet_answers']
-            fact_sheet = data['phase'].competition.fact_sheet
-            if set(fact_sheet_answers.keys()) != set(fact_sheet.keys()):
-                raise ValidationError("Fact Sheet keys do not match Answer keys")
-            for key, value in fact_sheet_answers.items():
-                if not fact_sheet[key] and not isinstance(value, str):
-                    raise ValidationError(f'{value} should be string not {type(value)}')
-                elif value not in fact_sheet[key]['selection'] and fact_sheet[key]['selection']:
-                    raise ValidationError(f'{key}: {value} is not a valid selection from {fact_sheet[key]}')
-                elif not value and fact_sheet[key]['is_required'] == 'true' and not isinstance(value, bool):
-                    raise ValidationError(f'{fact_sheet[key]["title"]}({key}) requires an answer')
 
         # Make sure selected tasks are part of the phase
         if attrs.get('tasks'):
@@ -203,10 +168,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
                 'submission_id': submission.id,
             }))
 
-        if validated_data.get('status') == Submission.RUNNING and self.instance.parent is not None and self.instance.parent.status is not Submission.RUNNING:
-            self.instance.parent.status = Submission.RUNNING
-            self.instance.parent.save()
-
         if validated_data.get("status") == Submission.SCORING:
             # Start scoring because we're "SCORING" status now from compute worker
             from competitions.tasks import run_submission
@@ -215,11 +176,6 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             #     raise ValidationError('Cannot update submission. Task pk was not provided')
             # task = Task.objects.get(id=task)
             run_submission(submission.pk, tasks=[submission.task], is_scoring=True)
-
-        elif validated_data.get("status") == Submission.FINISHED:
-            # We finished submission, no longer need to store submission stuff in Redis, free it up!
-            cache.delete(f"submission-{submission.pk}-log")
-
         resp = super().update(submission, validated_data)
         if submission.parent:
             submission.parent.check_child_submission_statuses()
@@ -257,7 +213,6 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'detailed_result',
             'scoring_result',
             'leaderboards',
-            'fact_sheet_answers',
         )
 
     def get_logs(self, instance):

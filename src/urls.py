@@ -1,11 +1,8 @@
 from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
-
-from ajax_select import urls as ajax_select_urls
-
 
 urlpatterns = [
     # Our URLS
@@ -17,13 +14,10 @@ urlpatterns = [
     path('profiles/', include('profiles.urls', namespace='profiles')),
     path('tasks/', include('tasks.urls', namespace='tasks')),
     path('queues/', include('queues.urls', namespace="queues")),
-    path('forums/', include('forums.urls', namespace="forums")),
 
     # Third party
     path('api/', include('api.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    path('su/', include('django_su.urls')),
-    path('ajax_select/', include(ajax_select_urls)),
 
     # Django built in
     # path('accounts/', include('django.contrib.auth.urls')),
@@ -35,7 +29,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     # Static files for local dev, so we don't have to collectstatic and such
-    urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_URL)
 
     # Django debug toolbar
     import debug_toolbar

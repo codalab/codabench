@@ -1,64 +1,12 @@
 <submission-upload>
     <div class="ui sixteen wide column submission-container"
          show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
+        <h1>Submission upload</h1>
 
-        <div class="submission-form">
-            <h1>Submission upload</h1>
-            <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
-                <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
-                    <h2>Metadata or Fact Sheet</h2>
-                    <div class="submission-form-question" each="{ question in opts.fact_sheet }">
-                        <span if="{ question.type === 'text' }">
-                            <label if="{question.is_required}" class="required-answer" for="{ question.key }">{ question.title }:</label>
-                            <label if="{!question.is_required}" for="{ question.key }">{ question.title }:</label>
-                            <input type="text" name="{ question.key }">
-                        </span>
-                        <span if="{ question.type === 'checkbox' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <input type="hidden" name="{ question.key }" value="false">
-                            <input type="checkbox" name="{ question.key }" value="true">
-                        </span>
-                        <span if="{ question.type == 'select' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <select name="{ question.key }">
-                                <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
-                            </select>
-                        </span>
-                    </div>
-                </div>
+        <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
+            <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
+        </form>
 
-                <div class="ui vertical accordion menu" style="width: 36%;" id="select_tasks_accordion" if="{selected_tasks}" hide="{selected_tasks.length < 2}">
-                    <div class="item">
-                        <a class="title">
-                            <i class="dropdown icon"></i>
-                            Selected Tasks
-                        </a>
-                        <div class="content">
-                            <div class="ui form">
-                                <div class="grouped fields">
-                                    <div each="{task in selected_tasks}" class="field">
-                                        <div class="ui checkbox">
-                                            <input type="checkbox" name="task-{task.id}" id="task-{task.id}" checked>
-                                            <label for="task-{task.id}" >{task.name}</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ui six wide field">
-                    <label>Submit as:</label>
-                    <select name="organizations" id="organization_dropdown" class="ui dropdown">
-                        <option value="None">Yourself</option>
-                        <option each="{org in organizations}" value="{org.id}">{org.name}</option>
-                    </select>
-                </div>
-
-                <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
-            </form>
-        </div>
 
         <div class="ui indicating progress" ref="progress">
             <div class="bar">
@@ -66,11 +14,12 @@
             </div>
         </div>
 
-        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output || _.isEmpty(selected_submission.filename)}"
+        <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output}"
              ref="accordion">
             <div class="title">
                 <i class="dropdown icon"></i>
-                Running {selected_submission.filename} (ID = {selected_submission.id})
+                {(status_received && selected_submission.filename) ? "Running " + selected_submission.filename :
+                "Uploading..."}
             </div>
             <div class="ui basic segment">
                 <div class="content">
@@ -90,7 +39,7 @@
                                     </div>
                                 </div>
                                 <div if="{children}">
-                                    <div class="ui secondary menu submission-tabs">
+                                    <div class="ui secondary menu">
                                         <div each="{child, index in children}" class="item {active: index === 0}"
                                              data-tab="child{child}_tab">
                                             Submission ID: { child }
@@ -151,22 +100,12 @@
         self.display_output = false
         self.autoscroll_selected = true
         self.ingestion_during_scoring = undefined
-        self.selected_tasks = undefined
 
         self.children = []
         self.children_statuses = {}
         self.datasets = {}
-        self.organizations = []
 
         self.one('mount', function () {
-            CODALAB.api.get_user_participant_organizations()
-                .done((data) => {
-                    self.organizations = data
-                    if (self.organizations.length === 0){
-                        $('#organization_dropdown').hide()
-                    }
-                    self.update()
-                })
             $('.dropdown', self.root).dropdown()
             let segment = $('.submission-output-container .ui.basic.segment')
             $('.ui.accordion', self.root).accordion({
@@ -176,6 +115,7 @@
 
             // File upload handler
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
+
             self.setup_autoscroll()
             self.setup_websocket()
         })
@@ -233,12 +173,8 @@
                         break
                 }
             })
-            self.ws.addEventListener("open", function(event){
-                // we're connected, so now try to pull logs (otherwise we may hit a race condition,
-                // maybe we don't have submissions yet?)
-                self.pull_logs()
-            })
             self.ws.open()
+
         }
 
         self.handle_websocket = function (submission_id, data) {
@@ -335,17 +271,12 @@
         }
 
         self.clear_form = function () {
-            $('input-file[ref="data_file"]').find("input").val('')
+            $(':input', self.root)
+                .not(':button, :submit, :reset, :hidden')
+                .val('')
+
             self.errors = {}
             self.update()
-        }
-
-        self.set_difference = function (setA, setB) {
-            let difference = new Set(setA)
-            for (ele of setB){
-                difference.delete(ele)
-            }
-            return difference
         }
 
         self.check_can_upload = function () {
@@ -362,38 +293,9 @@
                 })
         }
 
-        self.get_fact_sheet_answers = function () {
-            let form_array = $(self.refs.form).serializeArray()
-            let form_json = {}
-            for (answer of form_array) {
-                if(!answer['name'].startsWith('task-')){
-                    if(answer['value'] === 'true'){
-                        form_json[answer['name']] = true
-                    }
-                    else if(answer['value'] === 'false'){
-                        form_json[answer['name']] = false
-                    } else {
-                    form_json[answer['name']] = answer['value'].trim()
-                    }
-                }
-            }
-            return form_json === {} ? null : form_json
-        }
-
         self.upload = function () {
             self.display_output = true
 
-            let checkbox_answers = $('#select_tasks_accordion').find('.ui.checkbox').checkbox('is checked')
-            let task_ids_to_run = []
-            if(self.selected_tasks.length > 1){
-                for(let i = 0; i < self.selected_tasks.length; i++){
-                    if(checkbox_answers[i]){
-                        task_ids_to_run.push(self.selected_tasks[i].id)
-                    }
-                }
-            } else if(self.selected_tasks.length === 1){
-                task_ids_to_run = [self.selected_tasks[0].id]
-            }
             var data_file_metadata = {
                 type: 'submission'
             }
@@ -403,40 +305,23 @@
             CODALAB.api.create_dataset(data_file_metadata, data_file, self.file_upload_progress_handler)
                 .done(function (data) {
                     self.lines = {}
-                    let dropdown = $('#organization_dropdown')
-                    let organization = dropdown.dropdown('get value')
-                    organization = organization === 'None' ? null : organization
-                    dropdown.attr('disabled', 'disabled')
 
 
                     // Call start_submission with dataset key
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
                         "data": data.key,
-                        "phase": self.selected_phase.id,
-                        "fact_sheet_answers": self.get_fact_sheet_answers(),
-                        "tasks": task_ids_to_run,
-                        "organization": organization,
+                        "phase": self.selected_phase.id
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)
                             CODALAB.events.trigger('submission_selected', data)
-                            $('#organization_dropdown').removeAttr('disabled')
-                        })
-                        .fail(function (response) {
-                            try {
-                                let errors = JSON.parse(response.responseText)
-                                let error_str = Object.keys( errors ).map(function (key) { return errors[key] }).join("; ")
-                                toastr.error("Submission Failed: ".concat(error_str))
-                            } catch (e) {
-                                toastr.error("Submission Failed")
-                            }
                         })
                 })
                 .fail(function (response) {
                     if (response) {
                         try {
-                            let errors = JSON.parse(response.responseText);
+                            var errors = JSON.parse(response.responseText)
 
                             // Clean up errors to not be arrays but plain text
                             Object.keys(errors).map(function (key, index) {
@@ -458,10 +343,8 @@
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
-            self.selected_tasks = self.selected_phase.tasks.map(task => task)
             self.ingestion_during_scoring = _.some(selected_phase.tasks, t => t.ingestion_only_during_scoring)
             self.update()
-            $('.ui.accordion').accordion('refresh');
         })
 
         CODALAB.events.on('submissions_loaded', submissions => {
@@ -473,9 +356,7 @@
                     self.update()
                     $('.menu .item', self.root).tab()
                 }
-                // Commented this out as it seems to hit a race condition some times with websocket
-                // not being connected yet. moved running after websocket open
-                // self.pull_logs()
+                self.pull_logs()
             }
         })
 
@@ -501,38 +382,6 @@
             width 100%
             height 100%
             margin-bottom 15px
-
-        .required-answer::after
-            margin -.2em 0 0 .2em
-            content '*'
-            color #db2828
-
-        .submission-form
-            background-color white
-            padding 2em
-            margin 0, -2.9em
-            border solid 1px #dcdcdcdc
-            margin-bottom 2em
-
-        .submission-form-question
-            padding .66em 2em
-
-            label
-                font-size 16px
-                font-weight 600
-
-        #submission-output
-            .submission-tabs
-                overflow-x scroll
-                padding-bottom 10px
-
-                .item
-                    border solid 1px #efefef
-                    cursor pointer
-                    &:hover
-                        background-color #f5f5f5
-                .item.active
-                    border solid 1px #03bbbbad
 
         code
             background hsl(220, 80%, 90%)

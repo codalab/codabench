@@ -16,8 +16,4 @@ class Migration(migrations.Migration):
             name='data',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='submission', to='datasets.Data'),
         ),
-        migrations.AlterUniqueTogether(
-            name='submission',
-            unique_together=set(),
-        ),
     ]

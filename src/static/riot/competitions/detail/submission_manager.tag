@@ -1,31 +1,18 @@
 <submission-manager class="submission-manager">
     <div if="{ opts.admin }" class="admin-buttons">
+        <a class="ui button" href="{csv_link}">
+            <i class="icon download"></i>Download as CSV
+        </a>
         <div class="ui dropdown button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item"
-                     each="{phase in opts.competition.phases}"
-                     onclick="{rerun_phase.bind(this, phase)}"
-                >
-                    { phase.name }
+                <div class="parent-modal item" each="{phase in opts.competition.phases}"
+                     onclick="{rerun_phase.bind(this, phase)}">{ phase.name }
                 </div>
             </div>
         </div>
-        <a class="ui button" href="{csv_link}">
-            <i class="icon download"></i>Download as CSV
-        </a>
-        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
-                onclick="{delete_selected_submissions.bind(this)}">
-            <i class="icon trash alternate"></i>
-            Delete Submissions
-        </button>
-        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
-                onclick="{rerun_selected_submissions.bind(this)}">
-            <i class="icon redo"></i>
-            Rerun Submissions
-        </button>
     </div>
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter }">
@@ -48,20 +35,13 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
-    <table class="ui celled selectable sortable table" ref="submission_table">
+    <table class="ui celled selectable table">
         <thead>
         <tr>
-            <th if="{opts.admin}">
-                <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
-                    <input type="checkbox" name="select_all">
-                    <label>All</label>
-                </div>
-            </th>
-            <th class="sorted descending collapsing">ID #</th>
+            <th class="collapsing">ID #</th>
             <th>File name</th>
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
-            <th>Date</th>
             <th class="right aligned">Status</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
@@ -77,17 +57,10 @@
         </tr>
         <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
-            <td if="{opts.admin}">
-                <div class="ui checkbox" onclick="{submission_checked.bind(this)}">
-                    <input type="checkbox" name="{submission.id}">
-                    <label></label>
-                </div>
-            </td>
             <td>{ submission.id }</td>
             <td>{ submission.filename }</td>
             <td if="{ opts.admin }">{ submission.owner }</td>
             <td if="{ opts.admin }">{ submission.phase.name }</td>
-            <td>{ submission.created_when}</td>
             <td class="right aligned collapsing">
                 { submission.status }
                 <sup data-tooltip="{submission.status_details}">
@@ -126,7 +99,7 @@
                 <span if="{ submission.on_leaderboard }"
                      data-tooltip="On the Leaderboard"
                      data-inverted=""
-                     onclick="{ remove_from_leaderboard.bind(this, submission) }">
+                     onclick="{do_nothing}">
                     <i class="icon green check"></i>
                 </span>
                 <span if="{!submission.is_public && submission.status === 'Finished'}"
@@ -160,15 +133,8 @@
                          data-tab="{admin_: is_admin()}child_{i}">
                         Task {i + 1}
                     </div>
-
                     <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
-
-                    <!-- Sometimes submissions end up in a bad state with no children..  -->
-                    <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
-                        <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error during creation.</i>
-                    </div>
                 </div>
-
                 <div each="{child, i in _.get(selected_submission, 'children')}"
                      class="ui tab"
                      data-tab="{admin_: is_admin()}child_{i}">
@@ -191,14 +157,12 @@
         self.hide_output = false
         self.leaderboards = {}
         self.loading = true
-        self.checked_submissions = []
 
         self.on("mount", function () {
-            $(self.refs.search).dropdown()
-            $(self.refs.status).dropdown()
-            $(self.refs.phase).dropdown()
-            $(self.refs.rerun_button).dropdown()
-            $(self.refs.submission_table).tablesort()
+            $(self.refs.search).dropdown();
+            $(self.refs.status).dropdown();
+            $(self.refs.phase).dropdown();
+            $(self.refs.rerun_button).dropdown();
         })
 
         self.is_admin = () => {
@@ -207,6 +171,10 @@
 
         self.do_nothing = event => {
             event.stopPropagation()
+        }
+
+        self.is_admin = () => {
+            return _.get(self.selected_submission, 'admin', false)
         }
 
         self.filter_children = submissions => {
@@ -240,7 +208,6 @@
                     }
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
                     self.update()
-                    self.submission_checked()
 
                     // Timeout here so loader doesn't flicker
                     _.delay(() => {
@@ -257,32 +224,19 @@
             CODALAB.api.add_submission_to_leaderboard(submission.id)
                 .done(function (data) {
                     self.update_submissions()
-                    CODALAB.events.trigger('submission_changed_on_leaderboard')
+                    CODALAB.events.trigger('submission_added_to_leaderboard')
                 })
                 .fail(function (response) {
-                    toastr.error(response.responseJSON)
-                })
-            event.stopPropagation()
-        }
-        self.remove_from_leaderboard = function (submission) {
-            CODALAB.api.remove_submission_from_leaderboard(submission.id)
-                .done(function (data) {
-                    self.update_submissions()
-                    CODALAB.events.trigger('submission_changed_on_leaderboard')
-                })
-                .fail(function (response) {
-                    toastr.error(response.responseJSON)
+                    toastr.error("Could not find competition")
                 })
             event.stopPropagation()
         }
         self.rerun_phase = function (phase) {
-            if(confirm("Are you sure? This could take hours .. you are re-running all of the submissions in a phase.")) {
-                CODALAB.api.re_run_phase_submissions(phase.id)
-                    .done(function (response) {
-                        toastr.success(`Rerunning ${response.count} submissions`)
-                        self.update_submissions()
-                    })
-            }
+            CODALAB.api.re_run_phase_submissions(phase.id)
+                .done(function (response) {
+                    toastr.success(`Rerunning ${response.count} submissions`)
+                    self.update_submissions()
+                })
         }
         self.filter = function () {
             delay(() => {
@@ -315,22 +269,7 @@
                     toastr.success('Submission queued')
                     self.update_submissions()
                 })
-                .fail(function (response) {
-                    if(response.responseJSON.detail){
-                        toastr.error(response.responseJSON.detail)
-                    } else {
-                        toastr.error(response.responseText)
-                    }
-                })
             event.stopPropagation()
-        }
-
-        self.rerun_selected_submissions = function () {
-            CODALAB.api.re_run_many_submissions(self.checked_submissions)
-                .done(function (response) {
-                    toastr.success('Submissions queued')
-                    self.update_submissions()
-                })
         }
 
         self.cancel_submission = function (submission) {
@@ -356,20 +295,6 @@
             }
             event.stopPropagation()
         }
-
-        self.delete_selected_submissions = function () {
-            if (confirm(`Are you sure you want to delete the selected submissions?`)) {
-                console.log()
-                CODALAB.api.delete_many_submissions(self.checked_submissions)
-                    .done(function (response) {
-                        toastr.success('Submissions deleted')
-                        self.update_submissions()
-                    })
-                    .fail(function (response){
-                        toastr.error('Something went wrong')
-                    })
-            }
-            }
 
         self.get_score_details = function (submission, column) {
             try {
@@ -398,22 +323,6 @@
                     })
             }
         }
-
-        self.submission_checked = function () {
-            event.stopPropagation()
-            let inputs = $(self.refs.submission_table).find('input')
-            let checked_boxes = inputs.not(':first').filter('input:checked')
-            let unchecked_boxes = inputs.not(':first').filter('input:not(:checked)')
-            inputs.first().prop('checked', unchecked_boxes.length === 0)
-            self.checked_submissions = checked_boxes.serializeArray().map((x) => {return x.name})
-        }
-
-        self.select_all_pressed = function () {
-            let check_boxes = $(self.refs.submission_table).find('input')
-            // Set checkboxes to be equal to Select_All checkbox
-            check_boxes.prop('checked', check_boxes.first().is(':checked'))
-        }
-
 
 
         self.submission_clicked = function (submission) {
@@ -484,12 +393,10 @@
 
     <style type="text/stylus">
         :scope
-            display block
             margin 2em 0
-            min-height 90vh
 
         .admin-buttons
-            padding-bottom 20px
+            padding-bottom: 20px;
 
         .on-leaderboard
             &:hover
@@ -504,8 +411,8 @@
 
         .submission_row
             &:hover
-                cursor pointer
-            height 52px
+                cursor: pointer
+            height: 52px
 
         table tbody .center.aligned td
             color #8c8c8c
