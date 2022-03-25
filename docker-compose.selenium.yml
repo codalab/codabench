@@ -14,4 +14,4 @@ services:
       - ./artifacts:/artifacts/:z
     ports:
       - 4444:4444
-      - 5900:5900
+      - 5904:5900
