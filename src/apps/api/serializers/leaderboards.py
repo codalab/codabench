@@ -128,7 +128,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         if len(columns) == 0:
             raise serializers.ValidationError("No columns exist on the leaderboard")
         else:
-            return ColumnSerializer(columns, many=len(columns) > 1).data
+            return ColumnSerializer(columns, many=len(columns) >= 1).data
 
     class Meta:
         model = Phase

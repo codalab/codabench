@@ -734,7 +734,7 @@ class Run:
         elif os.path.exists(os.path.join(self.output_dir, "scores.txt")):
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
-                scores = yaml.load(f)
+                scores = yaml.load(f, yaml.Loader)
         else:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 
