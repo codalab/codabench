@@ -142,7 +142,7 @@ def _send_to_compute_worker(submission, is_scoring):
             run_args['detailed_results_url'] = make_url_sassy(
                 path=submission.detailed_result.name,
                 permission='w',
-                content_type=''
+                content_type='text/html'
             )
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,

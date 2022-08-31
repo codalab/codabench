@@ -261,7 +261,7 @@ class Run:
 
     async def send_detailed_results(self, file_path):
         logger.info(f"Updating detailed results {file_path} - {self.detailed_results_url}")
-        self._put_file(self.detailed_results_url, file=file_path, content_type='')
+        self._put_file(self.detailed_results_url, file=file_path, content_type='text/html')
         async with websockets.connect(self.websocket_url) as websocket:
             await websocket.send(json.dumps({
                 "kind": 'detailed_result_update',
