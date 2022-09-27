@@ -2,7 +2,7 @@
 """
 Usage, in `crontab -e`:
 
-    @daily /home/ubuntu/competitions-v2/bin/pg_dump.py
+    @daily /home/ubuntu/codabench/bin/pg_dump.py
 
 """
 import time
@@ -17,13 +17,15 @@ print(f"Making dump {dump_name}")
 call([
     'docker',
     'exec',
-    'competitions-v2_db_1',
+    'codabench-db-1',
     'bash',
     '-c',
-    f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USER $DB_NAME > /app/backups/{dump_name}'
+    f'PGPASSWORD=$DB_PASSWORD pg_dump -Fc -U $DB_USERNAME $DB_NAME > /app/backups/{dump_name}'
 ])
 
 # Push/destroy dump
 call([
-    'docker', 'exec', 'competitions-v2_django_1', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
+    'docker', 'exec', 'codabench-django-1', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
 ])
+
+
