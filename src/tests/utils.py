@@ -88,7 +88,7 @@ class SeleniumTestCase(CodalabTestHelpersMixin, ChannelsLiveServerTestCase):
         cls.circle_dir = os.environ.get('CIRCLE_ARTIFACTS', os.path.join(os.getcwd(), "artifacts/"))
 
         # Setup console.log logging
-        desired_capabilities = DesiredCapabilities.FIREFOX
+        desired_capabilities = DesiredCapabilities.CHROME
         desired_capabilities['loggingPrefs'] = {'browser': 'ALL'}
 
         cls.selenium = webdriver.Remote(
