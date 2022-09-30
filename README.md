@@ -12,7 +12,7 @@ To see CodaBench in action, visit [codabench.org](https://www.codabench.org/).
 - [CodaBench Wiki](https://github.com/codalab/codabench/wiki)
 
 
-## Quick installation
+## Quick installation (for Linux)
 
 _To participate, or even organize your own benchmarks or competitions, **you don't need to install anything**, you just need to sign in an instance of the platform (e.g. [this one](https://www.codabench.org/)). 
 If you wish to configure your own instance of CodaBench platform, here are the instructions:_
