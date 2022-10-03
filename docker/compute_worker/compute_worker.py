@@ -261,7 +261,7 @@ class Run:
 
     async def send_detailed_results(self, file_path):
         logger.info(f"Updating detailed results {file_path} - {self.detailed_results_url}")
-        self._put_file(self.detailed_results_url, file=file_path, content_type='')
+        self._put_file(self.detailed_results_url, file=file_path, content_type='text/html')
         async with websockets.connect(self.websocket_url) as websocket:
             await websocket.send(json.dumps({
                 "kind": 'detailed_result_update',
@@ -734,7 +734,7 @@ class Run:
         elif os.path.exists(os.path.join(self.output_dir, "scores.txt")):
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
-                scores = yaml.load(f)
+                scores = yaml.load(f, yaml.Loader)
         else:
             raise SubmissionException("Could not find scores file, did the scoring program output it?")
 

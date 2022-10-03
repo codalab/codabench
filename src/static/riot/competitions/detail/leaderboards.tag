@@ -8,7 +8,7 @@
     <a data-tooltip="Start typing to filter columns under 'Meta-data' or Tasks." data-position="right center">
         <i class="grey question circle icon"></i>
     </a>
-    <table id="leadboardTable" class="ui celled selectable table">
+    <table id="leaderboardTable" class="ui celled selectable sortable table">
         <thead>
         <tr>
             <th colspan="100%" class="center aligned">
@@ -87,6 +87,7 @@
             $('#search-leaderboard-button').click(function() {
                 $(self.refs.leaderboardFilter).focus()
             })
+            $('#leaderboardTable').tablesort()
         })
 
         self.filter_columns = () => {
@@ -140,6 +141,7 @@
                         }
                     }
                     self.filter_columns()
+                    $('#leaderboardTable').tablesort()
                     self.update()
                 })
         }

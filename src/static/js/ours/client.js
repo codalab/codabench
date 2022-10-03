@@ -85,6 +85,9 @@ CODALAB.api = {
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },
+    delete_many_submissions: function (pks) {
+        return CODALAB.api.request('DELETE', `${URLS.API}submissions/delete_many/`, pks)
+    },
     toggle_submission_is_public: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/toggle_public/`)
     },
@@ -93,6 +96,9 @@ CODALAB.api = {
     },
     re_run_submission: function (id) {
         return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
+    },
+    re_run_many_submissions: function (data) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/re_run_many_submissions/`, data)
     },
     get_submission_csv_URL: function (filters) {
         filters.format = "csv"
