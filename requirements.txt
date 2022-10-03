@@ -23,7 +23,7 @@ oyaml==0.7
 factory_boy==2.11.1
 bleach==3.1.4
 # Heroku staging debug tools
-django-debug-toolbar==3.2
+django-debug-toolbar==3.2.1
 django-querycount==0.7.0
 
 # User impersonation
