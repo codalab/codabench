@@ -400,7 +400,11 @@
         }
 
         self.submission_checked = function () {
-            event.stopPropagation()
+            if (typeof(event) === "object" ){
+                // We can't stop upon page load as there is no "event" (button click).
+                // We can when we we check the checkboxes as that is an "event". 
+                event.stopPropagation() 
+            }
             let inputs = $(self.refs.submission_table).find('input')
             let checked_boxes = inputs.not(':first').filter('input:checked')
             let unchecked_boxes = inputs.not(':first').filter('input:not(:checked)')

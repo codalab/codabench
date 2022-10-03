@@ -95,6 +95,7 @@ class TestCompetitions(SeleniumTestCase):
         self.find('i[class="add icon"]').click()
         self.find('input[selenium="title"]').send_keys('Title')
         self.execute_script('$("textarea[ref=\'content\']")[0].EASY_MDE.value("Testing123")')
+        sleep(1)
         self.find('div[selenium="save1"]').click()
         sleep(1)
 
