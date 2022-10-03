@@ -82,24 +82,6 @@ class SubmissionViewSet(ModelViewSet):
                 'scores__column',
                 'task',
             )
-        elif self.action in ['delete_many', 're_run_many_submissions']:
-            try:
-                pks = list(self.request.data)
-            except TypeError as err:
-                raise ValidationError(f'Error {err}')
-            qs = qs.filter(pk__in=pks)
-            if not self.request.user.is_superuser and not self.request.user.is_staff:
-                if qs.filter(
-                    Q(owner=self.request.user) |
-                    Q(phase__competition__created_by=self.request.user) |
-                    Q(phase__competition__collaborators__in=[self.request.user.pk])
-                ) is not qs:
-                    ValidationError("Request Contained Submissions you don't have authorization for")
-            if self.action in ['re_run_many_submissions']:
-                print(f'debug {qs}')
-                print(f'debug {qs.first().status}')
-                qs = qs.filter(status__in=[Submission.FINISHED, Submission.FAILED, Submission.CANCELLED])
-                print(f'debug {qs}')
         return qs
 
     def create(self, request, *args, **kwargs):
@@ -121,14 +103,6 @@ class SubmissionViewSet(ModelViewSet):
 
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(detail=False, methods=('DELETE',))
-    def delete_many(self, request, *args, **kwargs):
-        qs = self.get_queryset()
-        if not qs:
-            return Response({'Submission search returned empty'}, status=status.HTTP_404_NOT_FOUND)
-        qs.delete()
-        return Response({})
 
     def get_renderer_context(self):
         """We override this to pass some context to the CSV renderer"""
@@ -215,13 +189,6 @@ class SubmissionViewSet(ModelViewSet):
 
         new_sub = submission.re_run(**rerun_kwargs)
         return Response({'id': new_sub.id})
-
-    @action(detail=False, methods=('POST',))
-    def re_run_many_submissions(self, request):
-        qs = self.get_queryset()
-        for submission in qs:
-            submission.re_run()
-        return Response({})
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):

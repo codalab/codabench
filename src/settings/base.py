@@ -232,7 +232,7 @@ CACHES = {
         'LOCATION': [os.environ.get("REDIS_URL", "redis://redis:6379")],
         'OPTIONS': {
             "CONNECTION_POOL_KWARGS": {
-                "max_connections": os.environ.get("REDIS_MAX_CONNECTIONS", 20),
+                "max_connections": 30,
                 "retry_on_timeout": True
             },
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
