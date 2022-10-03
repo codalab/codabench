@@ -8,7 +8,7 @@ services:
       - 36475:36475
 
   selenium:
-    image: selenium/standalone-chrome-debug:3.141.59
+    image: selenium/standalone-firefox-debug:3.141.59
     volumes:
       - ./src/tests/functional/test_files:/test_files/
       - ./artifacts:/artifacts/:z
