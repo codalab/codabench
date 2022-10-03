@@ -69,4 +69,4 @@ pyrabbit2==1.0.7
 django-enforce-host==1.0.1
 
 # Fix on 6-3-21 for: TypeError: SelectorEventLoop required, instead got: <uvloop.Loop running=False closed=False debug=False>
-Twisted==20.3.0
+Twisted==22.4.0
