@@ -78,7 +78,7 @@
         <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
             onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
             <td if="{opts.admin}">
-                <div class="ui checkbox" onclick="{submission_checked.bind(this)}">
+                <div class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
                     <input type="checkbox" name="{submission.id}">
                     <label></label>
                 </div>
@@ -399,12 +399,12 @@
             }
         }
 
+        self.on_submission_checked = function(event){
+            event.stopPropagation()
+            self.submission_checked()
+        }
+
         self.submission_checked = function () {
-            if (typeof(event) === "object" ){
-                // We can't stop upon page load as there is no "event" (button click).
-                // We can when we we check the checkboxes as that is an "event". 
-                event.stopPropagation() 
-            }
             let inputs = $(self.refs.submission_table).find('input')
             let checked_boxes = inputs.not(':first').filter('input:checked')
             let unchecked_boxes = inputs.not(':first').filter('input:not(:checked)')
