@@ -207,7 +207,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     environment:
-      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${DOMAIN_NAME}:${RABBITMQ_PORT}//
       # Make the worker leave behind the submission so we can examine it
       - CODALAB_IGNORE_CLEANUP_STEP=1
     logging:
