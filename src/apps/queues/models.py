@@ -32,7 +32,7 @@ class Queue(models.Model):
     def broker_url(self):
         # host = Site.objects.get_current().domain
         if self.owner:
-            return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/{self.vhost}"
+            return f"pyamqp://{self.owner.rabbitmq_username}:{self.owner.rabbitmq_password}@{settings.DOMAIN_NAME}:{settings.RABBITMQ_PORT}/{self.vhost}"
 
     def delete(self, *args, **kwargs):
         try:
