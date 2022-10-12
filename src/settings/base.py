@@ -198,6 +198,8 @@ RABBITMQ_PYRABBIT_URL = None  # used in Heroku settings, mainly
 FLOWER_HOST = os.environ.get('FLOWER_HOST', RABBITMQ_HOST)
 FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
 
+DOMAIN_NAME = os.environ.get('DOMAIN_NAME', RABBITMQ_HOST).split(':')[0]
+
 # ============================================================================
 # Celery
 # ============================================================================

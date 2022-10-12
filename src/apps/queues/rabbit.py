@@ -13,7 +13,7 @@ def _get_rabbit_connection():
     if settings.RABBITMQ_PYRABBIT_URL:
         rabbit_api_url = settings.RABBITMQ_PYRABBIT_URL
     else:
-        rabbit_api_url = f"{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
+        rabbit_api_url = f"{settings.DOMAIN_NAME}:{settings.RABBITMQ_MANAGEMENT_PORT}/"
     return Client(
         rabbit_api_url,
         settings.RABBITMQ_DEFAULT_USER,
