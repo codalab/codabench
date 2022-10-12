@@ -16,7 +16,6 @@ USE_X_FORWARDED_HOST = True
 
 SITE_ID = 1
 
-DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 
 THIRD_PARTY_APPS = (
@@ -198,6 +197,8 @@ RABBITMQ_SCHEME = os.environ.get('RABBITMQ_SCHEME', 'http')
 RABBITMQ_PYRABBIT_URL = None  # used in Heroku settings, mainly
 FLOWER_HOST = os.environ.get('FLOWER_HOST', RABBITMQ_HOST)
 FLOWER_PUBLIC_PORT = os.environ.get('FLOWER_PUBLIC_PORT', '5555')
+
+DOMAIN_NAME = os.environ.get('DOMAIN_NAME', RABBITMQ_HOST).split(':')[0]
 
 # ============================================================================
 # Celery
