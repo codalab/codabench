@@ -17,6 +17,7 @@ USE_X_FORWARDED_HOST = True
 SITE_ID = 1
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
+DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
