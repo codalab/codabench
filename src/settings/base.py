@@ -17,6 +17,7 @@ USE_X_FORWARDED_HOST = True
 SITE_ID = 1
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
+DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
@@ -105,6 +106,7 @@ USE_L10N = True
 USE_TZ = True
 SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 
 # =============================================================================
