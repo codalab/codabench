@@ -1,17 +1,24 @@
 import json
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
 from .forms import SignUpForm
 from .models import User, Organization, Membership
+from .tokens import account_activation_token
 
 
 class LoginView(auth_views.LoginView):
@@ -56,6 +63,42 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
         return context
 
+def activate(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except:
+        user = None
+        messages.error(request, f"User not found. Please sign up again.")
+        return redirect('accounts:signup')
+    
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, f'Your account is fully setup! Please login.')
+        return redirect('accounts:login')
+    else:
+        user.delete()
+        messages.error(request, f"Activation link is invalid. Please sign up again.")
+        return redirect('accounts:signup')
+    
+    return redirect('pages:home')
+
+def activateEmail(request, user, to_email):
+    mail_subject = 'Activate your user account.'
+    message = render_to_string('profiles/emails/template_activate_account.html', {
+        'user': user.username,
+        'domain': get_current_site(request).domain,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': account_activation_token.make_token(user),
+        'protocol': 'https' if request.is_secure() else 'http'
+    })
+    email = EmailMessage(mail_subject, message, to=[to_email])
+    if email.send():
+        messages.success(request, f'Dear {user.username}, please go to you email {to_email} inbox and click on \
+            received activation link to confirm and complete the registration. *Note: Check your spam folder.')
+    else:
+        messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
 
 def sign_up(request):
     context = {}
@@ -70,7 +113,9 @@ def sign_up(request):
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            user.is_active = False
+            user.save()
+            activateEmail(request, user, form.cleaned_data.get('email'))
             return redirect('pages:home')
         else:
             context['form'] = form

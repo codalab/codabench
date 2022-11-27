@@ -25,6 +25,37 @@
     {% endblock %}
 </head>
 <body>
+
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success'%}
+        <script type=text/javascript>
+            window.addEventListener('load', function () {
+                toastr.{{ message.tags }}('{{ message }}')
+                })
+        </script>
+        {% elif message.tags == 'info' %}
+        <script type=text/javascript>
+            window.addEventListener('load', function () {
+                toastr.{{ message.tags }}('{{ message }}')
+                })
+        </script>
+        {% elif message.tags == 'warning' %}
+        <script type=text/javascript>
+            window.addEventListener('load', function () {
+                toastr.{{ message.tags }}('{{ message }}')
+                })
+        </script>
+        {% elif message.tags == 'error' %}
+        <script type=text/javascript>
+            window.addEventListener('load', function () {
+                toastr.{{ message.tags }}('{{ message }}')
+                })
+        </script>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
 <!-- Sidebar Menu -->
 <div class="ui thin sidebar left inverted vertical overlay menu">
     <div class="ui container">
@@ -33,6 +64,7 @@
         <a href="https://chagrade.lri.fr/" class="item">Chagrade</a>
     </div>
 </div>
+
 <div class="pusher">
     <div id="hamburger_button">
         <div class="ui icon button">
