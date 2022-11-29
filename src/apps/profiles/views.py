@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.http import Http404
@@ -63,15 +63,16 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
         return context
 
+
 def activate(request, uidb64, token):
     try:
+        # import pdb; pdb.set_trace();
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
-    except:
+    except User.DoesNotExist:
         user = None
         messages.error(request, f"User not found. Please sign up again.")
         return redirect('accounts:signup')
-    
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
@@ -81,8 +82,8 @@ def activate(request, uidb64, token):
         user.delete()
         messages.error(request, f"Activation link is invalid. Please sign up again.")
         return redirect('accounts:signup')
-    
     return redirect('pages:home')
+
 
 def activateEmail(request, user, to_email):
     mail_subject = 'Activate your user account.'
@@ -99,6 +100,7 @@ def activateEmail(request, user, to_email):
             received activation link to confirm and complete the registration. *Note: Check your spam folder.')
     else:
         messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
+
 
 def sign_up(request):
     context = {}
