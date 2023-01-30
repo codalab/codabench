@@ -451,7 +451,9 @@ class Run:
 
     def _get_host_path(self, *paths):
         """Turns an absolute path inside our container, into what the path
-        would be on the host machine"""
+        would be on the host machine. We also ensure that the directory exists,
+        docker will create if necessary, but other container engines such as
+        podman may not."""
         # Take our list of paths and smash 'em together
         path = os.path.join(*paths)
 
@@ -461,6 +463,10 @@ class Run:
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
         path = os.path.join(HOST_DIRECTORY, path)
+
+        # Create if necessary
+        os.makedirs(path, exist_ok=True)
+
         return path
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
