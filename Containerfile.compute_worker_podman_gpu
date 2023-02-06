@@ -34,7 +34,8 @@ RUN sed -e 's|^#mount_program|mount_program|g' \
            -e '/additionalimage.*/a "/var/lib/shared",' \
            -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
            /usr/share/containers/storage.conf \
-           > /etc/containers/storage.conf
+           > /etc/containers/storage.conf; sed -i 's/^#no-cgroups = false/no-cgroups = true/;' /etc/nvidia-container-runtime/config.toml
+
 
 # Add volume for containers
 VOLUME /home/worker/.local/share/containers
