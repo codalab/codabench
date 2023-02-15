@@ -19,9 +19,9 @@ RUN apt-get update && apt-get install -y nvidia-docker2
 ENV NVIDIA_DOCKER 1
 
 # Python reqs and actual worker stuff
-ADD docker/compute_worker/compute_worker_requirements.txt .
+ADD compute_worker/compute_worker_requirements.txt .
 RUN pip3 install -r compute_worker_requirements.txt
-ADD docker/compute_worker .
+ADD compute_worker .
 
 CMD celery -A compute_worker worker \
     -l info \

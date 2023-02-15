@@ -201,7 +201,7 @@ services:
       - django
       - rabbit
     volumes:
-      - ./docker/compute_worker:/app
+      - ./compute_worker:/app
       - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
