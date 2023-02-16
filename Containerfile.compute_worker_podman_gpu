@@ -1,8 +1,8 @@
 FROM fedora:37
 
 # Include deps
-RUN curl -s -L https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo | sudo tee /etc/yum.repos.d/cuda.repo && \
-    curl -s -L https://nvidia.github.io/nvidia-docker/rhel9.0/nvidia-docker.repo | sudo tee /etc/yum.repos.d/nvidia-docker.repo && \
+RUN curl -s -L https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo | tee /etc/yum.repos.d/cuda.repo && \
+    curl -s -L https://nvidia.github.io/nvidia-docker/rhel9.0/nvidia-docker.repo | tee /etc/yum.repos.d/nvidia-docker.repo && \
     rpm -Uvh http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
     rpm -Uvh http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
     dnf -y update && \

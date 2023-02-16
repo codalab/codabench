@@ -2,6 +2,8 @@ FROM fedora:37
 
 # Include deps
 RUN dnf -y update && \
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1995337#c3
+    rpm --setcaps shadow-utils 2>/dev/null && \
     dnf -y install podman fuse-overlayfs python3.8 python3-pip \
         --exclude container-selinux && \
     dnf clean all && \
