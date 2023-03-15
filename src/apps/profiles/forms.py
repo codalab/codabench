@@ -15,8 +15,8 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError("Usernames should be in lowercase")
         if not data.isalnum():
             raise forms.ValidationError(
-                "Usernames should be alpha numeric and not \
-                have special characters."
+                "Usernames should be alpha numeric and not"
+                "have special characters."
             )
         return data
 
