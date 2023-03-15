@@ -79,8 +79,7 @@ def activate(request, uidb64, token):
         messages.success(request, f'Your account is fully setup! Please login.')
         return redirect('accounts:login')
     else:
-        user.delete()
-        messages.error(request, f"Activation link is invalid. Please sign up again.")
+        messages.error(request, f"Activation link is invalid. Please double check your link.")
         return redirect('accounts:signup')
     return redirect('pages:home')
 
@@ -113,6 +112,10 @@ def sign_up(request):
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
+            #import pdb
+            #pdb.set_trace()
+            #if username.find(".") != -1 or username.find("/") != -1:
+            #    message.error(request)
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             user.is_active = False
