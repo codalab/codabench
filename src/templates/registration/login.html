@@ -9,14 +9,6 @@
     <div class="ui stacked segment">
         <form class="ui form" method="POST">
             {% csrf_token %}
-
-            <div class="field">
-                <a class="ui fluid basic button" href="{% url 'social:begin' 'chahub' %}">Log in with ChaHub</a>
-            </div>
-            <div class="ui horizontal divider form-divider-line">
-                <span class="form-divider-words">or</span>
-            </div>
-
             {% if form.non_field_errors %}
             <div class="ui red message">
                 {{ form.non_field_errors }}

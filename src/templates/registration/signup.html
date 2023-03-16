@@ -14,17 +14,6 @@
     <div class="ui stacked segment">
         <form class="ui form" method="post">
             {% csrf_token %}
-
-            <div class="field">
-                <a class="ui fluid button" href="{% url 'social:begin' 'chahub' %}">Sign up with ChaHub</a>
-            </div>
-            <div class="field">
-                <a class="ui fluid basic button" href="{{ chahub_signup_url }}" target="_blank">Create a ChaHub
-                    Account</a>
-            </div>
-            <div class="ui horizontal divider form-divider-line">
-                <span class="form-divider-words">Or</span>
-            </div>
             <div class="field">
                 <div class="ui left icon input">
                     <i class="user icon"></i>
