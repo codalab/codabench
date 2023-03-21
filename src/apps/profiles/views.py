@@ -79,8 +79,7 @@ def activate(request, uidb64, token):
         messages.success(request, f'Your account is fully setup! Please login.')
         return redirect('accounts:login')
     else:
-        user.delete()
-        messages.error(request, f"Activation link is invalid. Please sign up again.")
+        messages.error(request, f"Activation link is invalid. Please double check your link.")
         return redirect('accounts:signup')
     return redirect('pages:home')
 
