@@ -73,7 +73,7 @@ services:
       until (/usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY) do echo '...waiting...' && sleep 1; done;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
       /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
-      /usr/bin/mc policy set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc policy set readwrite minio_docker/$AWS_STORAGE_BUCKET_NAME;
       exit 0;
       "
 
