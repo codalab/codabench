@@ -11,6 +11,9 @@ from competitions.models import Competition
 from tasks.models import Task
 from ..utils import SeleniumTestCase
 
+SHORT_WAIT = 0.1
+LONG_WAIT = 2
+
 
 class TestCompetitions(SeleniumTestCase):
     def setUp(self):
@@ -64,8 +67,8 @@ class TestCompetitions(SeleniumTestCase):
         self.execute_script('$("select[selenium=\'type\']").dropdown("set selected", "scoring_program")')
         self.find('input-file[selenium="file"] input').send_keys(os.path.join(self.test_files_dir, 'scoring_program.zip'))
         self.find('i[selenium="upload"]').click()
+        sleep(LONG_WAIT)
 
-        sleep(2)
         # Task Creation
         self.find('div[data-tab="tasks"]').click()
         self.find('div[selenium="create-task"]').click()
@@ -73,7 +76,7 @@ class TestCompetitions(SeleniumTestCase):
         self.find('textarea[selenium="task-desc"]').send_keys('textbox')
         self.find('div[data-tab="data"]').click()
         self.find('input[id="scoring_program"]').send_keys('sco')
-        sleep(.5)
+        sleep(LONG_WAIT)
         self.execute_script('$("div[selenium=\'scoring-program\'] a")[0].click()')
         self.find('div[selenium="save-task"]').click()
 
@@ -87,7 +90,7 @@ class TestCompetitions(SeleniumTestCase):
         # Participation Tab
         self.find('a[data-tab="participation"]').click()
         self.execute_script('$("textarea[ref=\'terms\']")[0].EASY_MDE.value("pArTiCiPaTe")')
-        sleep(2)
+        sleep(LONG_WAIT)
         self.find('input[selenium="auto-approve"]').click()
 
         # Pages Tab
@@ -95,25 +98,25 @@ class TestCompetitions(SeleniumTestCase):
         self.find('i[class="add icon"]').click()
         self.find('input[selenium="title"]').send_keys('Title')
         self.execute_script('$("textarea[ref=\'content\']")[0].EASY_MDE.value("Testing123")')
-        sleep(1)
+        sleep(LONG_WAIT)
         self.find('div[selenium="save1"]').click()
-        sleep(1)
+        sleep(LONG_WAIT)
 
         # Phases Tab
         self.find('a[data-tab="phases"]').click()
         self.find('i[selenium="add-phase"]').click()
-        sleep(1)
+        sleep(LONG_WAIT)
         self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
-        sleep(.1)
+        sleep(SHORT_WAIT)
         self.find('input[name="start"]').click()
         self.find('input[name="start"]').send_keys(2)
         self.find('input[name="start"]').send_keys(Keys.ENTER)
         self.find('input[name="end"]').send_keys(3)
         self.find('input[name="end"]').send_keys(Keys.ENTER)
         self.find('label[for="tasks"]').click()
-        sleep(.1)
+        sleep(SHORT_WAIT)
         self.find("form[selenium='phase-form'] input.search").send_keys("Wheat")
-        sleep(.1)
+        sleep(SHORT_WAIT)
         tasks = Task.objects.all()
         import random
         random_task = random.choice(tasks)
@@ -121,9 +124,9 @@ class TestCompetitions(SeleniumTestCase):
         self.find(f"form[selenium='phase-form'] .menu .item[data-value='{task}']").click()
         self.execute_script('$("textarea[ref=\'description\']")[0].EASY_MDE.value("Testing123")')
         self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
-        sleep(1)
+        sleep(LONG_WAIT)
         self.find('div[selenium="save2"]').click()
-        sleep(1)
+        sleep(LONG_WAIT)
 
         # Leaderboard Tab
         leaderboard_title = 'tItLe'
@@ -132,12 +135,12 @@ class TestCompetitions(SeleniumTestCase):
         self.find('input[selenium="title1"]').send_keys(leaderboard_title)
         self.find('input[selenium="key"]').send_keys('kEy')
         self.find('div[selenium="add-column"]').click()
-        sleep(1)
+        sleep(LONG_WAIT)
         self.find('input[selenium="column-key"]').send_keys('cOlUmN kEy')
         self.find('input[selenium="hidden"]').click()
         self.find('div[selenium="save3"]').click()
-        sleep(2)
+        sleep(LONG_WAIT)
         assert not Competition.objects.filter(title=competition_title).exists()
         self.find('button[selenium="save4"]').click()
-        sleep(1)
+        sleep(LONG_WAIT)
         assert Competition.objects.filter(title=competition_title).exists()
