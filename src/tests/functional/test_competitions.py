@@ -68,7 +68,7 @@ class TestCompetitions(SeleniumTestCase):
         self.find('input-file[selenium="file"] input').send_keys(os.path.join(self.test_files_dir, 'scoring_program.zip'))
         self.find('i[selenium="upload"]').click()
         sleep(LONG_WAIT)
-        
+
         # Task Creation
         self.find('div[data-tab="tasks"]').click()
         self.find('div[selenium="create-task"]').click()
