@@ -1,6 +1,5 @@
 from django.test import TestCase
-from docker.compute_worker.compute_worker import replace_legacy_metadata_command
-
+from compute_worker.compute_worker import replace_legacy_metadata_command
 
 class LegacyConverterCommandTests(TestCase):
     def test_ingestion_command_is_converted_correctly(self):
