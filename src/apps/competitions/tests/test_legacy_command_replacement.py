@@ -1,6 +1,7 @@
 from django.test import TestCase
 from compute_worker.compute_worker import replace_legacy_metadata_command
 
+
 class LegacyConverterCommandTests(TestCase):
     def test_ingestion_command_is_converted_correctly(self):
         v15 = 'python $ingestion_program/ingestion.py $input $output $ingestion_program $submission_program'
