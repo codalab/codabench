@@ -1,5 +1,5 @@
 celery==4.4.0
 requests==2.20.0
 watchdog==0.8.3
-websockets==8.1
+websockets==9.1
 aiofiles==0.4.0
