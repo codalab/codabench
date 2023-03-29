@@ -7,45 +7,56 @@ RUN dnf -y update && \
     dnf -y install podman fuse-overlayfs python3.8 python3-pip \
         --exclude container-selinux && \
     dnf clean all && \
-    rm -rf /var/cache /var/log/dnf* /var/log/yum.* && \
-    # Setup user 
-    useradd worker; \
-    echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
-    echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
+    rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
-# Copy over the podman container and storage configurations
+# Setup user 
+RUN useradd worker; \
+echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
+echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
+
+# Copy over the podman container configuration
 COPY podman/containers.conf /etc/containers/containers.conf
-COPY podman/worker-*.conf /home/worker/.config/containers/
+COPY podman/worker-containers.conf /home/worker/.config/containers/containers.conf
+
+# Copy over the podman storage configuration
+COPY podman/worker-storage.conf /home/worker/.config/containers/storage.conf
+
+RUN mkdir -p /home/worker/.local/share/containers && \
+    chown worker:worker -R /home/worker && \
+    chmod 644 /etc/containers/containers.conf
 
 # Copy & modify the defaults to provide reference if runtime changes needed.
 # Changes here are required for running with fuse-overlay storage inside container.
-RUN mkdir -p /home/worker/.local/share/containers && \
-    chown worker:worker -R /home/worker && \
-    chmod 644 /etc/containers/containers.conf && \
-    sed -e 's|^#mount_program|mount_program|g' \
-        -e '/additionalimage.*/a "/var/lib/shared",' \
-        -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
-        /usr/share/containers/storage.conf > /etc/containers/storage.conf
+RUN sed -e 's|^#mount_program|mount_program|g' \
+           -e '/additionalimage.*/a "/var/lib/shared",' \
+           -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
+           /usr/share/containers/storage.conf \
+           > /etc/containers/storage.conf
 
 # Add volume for containers
 VOLUME /home/worker/.local/share/containers
 
+# Create directory for tmp space
+RUN mkdir /codabench && \
+    chown worker:worker /codabench
+
+# Set up podman registry for dockerhub
+RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf
+
 # This makes output not buffer and return immediately, nice for seeing results in stdout
-ENV PYTHONUNBUFFERED=1 CONTAINER_ENGINE_EXECUTABLE=podman
+ENV PYTHONUNBUFFERED 1
+ENV CONTAINER_ENGINE_EXECUTABLE podman
+
+# Get pip for 3.8 
+RUN python3.8 -m ensurepip --upgrade
 
 WORKDIR /home/worker/compute_worker
 
 ADD compute_worker/ /home/worker/compute_worker
 
-# Create directory for tmp space
-# Set up podman registry for dockerhub
-RUN mkdir /codabench && \
-    chown worker:worker /codabench && \
-    echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf && \
-    # Get pip for 3.8 
-    python3.8 -m ensurepip --upgrade && \
-    chown worker:worker -R /home/worker/compute_worker && \
-    pip3.8 install -r /home/worker/compute_worker/compute_worker_requirements.txt
+RUN chown worker:worker -R /home/worker/compute_worker
+
+RUN pip3.8 install -r /home/worker/compute_worker/compute_worker_requirements.txt
 
 CMD celery -A compute_worker worker \
     -l info \
