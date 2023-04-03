@@ -31,3 +31,6 @@ docker-compose.override.yml
 server_config.yaml
 /graphs/
 /codabench/
+
+.DS_Store
+.DS_Store?

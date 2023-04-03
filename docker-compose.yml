@@ -192,7 +192,8 @@ services:
           memory: 256M
 
   compute_worker:
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+    # command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+    command: bash -c "celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
     working_dir: /app
     build:
       context: .
