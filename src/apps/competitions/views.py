@@ -17,7 +17,6 @@ class CompetitionForm(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/form.html'
 
 
-
 class CompetitionUpload(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/upload.html'
 
@@ -34,6 +33,7 @@ class CompetitionDetail(DetailView):
         if is_creator or is_collaborator or competition.published or valid_secret_key:
             return competition
         raise Http404()
+
 
 class CompetitionDetailedResults(LoginRequiredMixin, TemplateView):
     template_name = 'competitions/detailed_results.html'
