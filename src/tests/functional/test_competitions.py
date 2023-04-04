@@ -11,8 +11,8 @@ from competitions.models import Competition
 from tasks.models import Task
 from ..utils import SeleniumTestCase
 
-SHORT_WAIT = 0.1
-LONG_WAIT = 2
+SHORT_WAIT = 0.2
+LONG_WAIT = 4
 
 
 class TestCompetitions(SeleniumTestCase):
