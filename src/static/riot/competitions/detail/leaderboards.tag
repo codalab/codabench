@@ -30,11 +30,13 @@
             <th>Task:</th>
             <th></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
+            <th if="{enable_detailed_results}"></th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
             <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th if="{enable_detailed_results}">Detailed Results</th>
         </tr>
         </thead>
         <tbody>
@@ -55,6 +57,7 @@
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
+            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}">Show detailed results</a></td>
         </tr>
         </tbody>
     </table>
@@ -67,6 +70,7 @@
         self.filtered_columns = []
         self.phase_id = null
         self.competition_id = null
+        self.enable_detailed_results = false
 
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
@@ -117,6 +121,8 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+
+                   
                     self.columns = []
                     // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
@@ -154,6 +160,8 @@
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
+            self.enable_detailed_results = competition.enable_detailed_results
+            
         })
 
         CODALAB.events.on('submission_changed_on_leaderboard', self.update_leaderboard)
