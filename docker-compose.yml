@@ -69,11 +69,15 @@ services:
     entrypoint: >
       /bin/sh -c "
       set -x
-      while ! nc -z minio 9000; echo 'Waiting for minio to startup...' && sleep 0.1; sleep 3;
-      until (/usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY) do echo '...waiting...' && sleep 3; done;
-      /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
-      /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
-      /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      while ! nc -z minio 9000; echo 'Waiting for minio to startup...' && sleep 5;
+      if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
+        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do echo '...waiting...' && sleep 5; done;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+        /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      else
+        echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';
+      fi
       exit 0;
       "
 
