@@ -78,6 +78,8 @@
             } else {
                 let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
                 if (score) {
+                    // rounding score to 2 decimal places
+                    score = parseFloat(score).toFixed(2)
                     return score
                 }
             }
