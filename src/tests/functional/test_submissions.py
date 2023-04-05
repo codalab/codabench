@@ -9,6 +9,8 @@ from tasks.models import Solution
 from utils.storage import md5
 from ..utils import SeleniumTestCase
 
+LONG_WAIT = 4
+
 
 class TestSubmissions(SeleniumTestCase):
     def setUp(self):
@@ -36,7 +38,7 @@ class TestSubmissions(SeleniumTestCase):
         self.assert_current_url(comp_url)
 
         # This clicks the page before it loads fully, delay it a bit...
-        self.wait(1)
+        self.wait(LONG_WAIT)
         self.find('.item[data-tab="participate-tab"]').click()
 
         self.circleci_screenshot("set_submission_file_name.png")
