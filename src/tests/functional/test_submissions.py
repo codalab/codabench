@@ -10,6 +10,7 @@ from utils.storage import md5
 from ..utils import SeleniumTestCase
 
 LONG_WAIT = 4
+SHORT_WAIT = 0.2
 
 
 class TestSubmissions(SeleniumTestCase):
@@ -50,6 +51,7 @@ class TestSubmissions(SeleniumTestCase):
 
         # Inside the accordion the output is being streamed
         self.find('.submission-output-container .title').click()
+        self.wait(SHORT_WAIT)
         assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
         # The submission table lists our submission!
