@@ -9,8 +9,13 @@
             .done(function (data) {
                 self.detailed_result = data.detailed_result
                 self.update()
-            })   
-        
-         
+            })  
+
+
     </script>
+
+    <style type="text/stylus">
+        competition-detailed-results
+            width 100%
+    </style>
 </competition-detailed-results>
