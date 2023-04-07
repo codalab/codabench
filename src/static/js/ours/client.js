@@ -5,7 +5,7 @@ CODALAB.api = {
         if (method.toLowerCase() !== "get") {
             data = JSON.stringify(data)
         }
-
+        
         return $.ajax({
             type: method,
             url: url,

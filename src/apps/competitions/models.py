@@ -536,7 +536,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
-                                                                                                             flat=True)
+                                                                                               flat=True)
             if scores.exists():
                 score = column.compute(scores)
                 try:
