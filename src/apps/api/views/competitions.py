@@ -481,7 +481,6 @@ class PhaseViewSet(ModelViewSet):
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
                 })
-            
             for score in submission['scores']:
 
                 # default precision is set to 2
