@@ -137,7 +137,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     # subject_template_name = '' # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
-    from_email = "codabench@codabench.org"
+    from_email = "info@codalab.org"
 
 
 class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
