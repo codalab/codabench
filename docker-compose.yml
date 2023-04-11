@@ -77,7 +77,7 @@ services:
         /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
       else
         echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';
-      fi
+      fi;
       exit 0;
       "
 
