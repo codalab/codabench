@@ -1,4 +1,5 @@
 import json
+import django
 
 from django.conf import settings
 from django.contrib import messages
@@ -125,6 +126,33 @@ def sign_up(request):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
 
+# Password Reset views below
+# https://devdocs.io/django~2.2/topics/auth/default#django.contrib.auth.views.PasswordChangeView
+# Search for PasswordResetView
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    # form_class = auth_forms.PasswordResetForm
+    # template_name = 'registration/password_reset_form.html'
+    # email_template_name = '' # Defaults to registration/password_reset_email.html if not supplied.
+    # subject_template_name = '' # Defaults to registration/password_reset_subject.txt if not supplied.
+    # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
+    success_url = django.urls.reverse_lazy("accounts:password_reset_done")
+    from_email = "codabench@codabench.org"
+
+class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
+    pass
+    # template_name = '' # Defaults to registration/password_reset_done.html if not supplied.
+
+class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
+    # template_name = '' # Default value is registration/password_reset_confirm.html.
+    # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
+    # post_reset_login = '' # Defaults to False.
+    # form_class = '' # Defaults to django.contrib.auth.forms.SetPasswordForm.
+    # success_url = '' # Defaults to 'password_reset_complete'
+
+class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
+    pass
+# Password Reset views above
 
 class UserNotificationEdit(LoginRequiredMixin, DetailView):
     queryset = User.objects.all()
