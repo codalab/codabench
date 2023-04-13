@@ -9,6 +9,7 @@ from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
+# from django.contrib.auth import forms as auth_forms ##
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -130,10 +131,29 @@ def sign_up(request):
 # Password Reset views below
 # https://devdocs.io/django~2.2/topics/auth/default#django.contrib.auth.views.PasswordChangeView
 # Search for PasswordResetView
+
+# class PasswordResetForm(forms.Form):
+    
+
+# auth_forms
 class CustomPasswordResetView(auth_views.PasswordResetView):
+    # def get_context_data(self, *args, **kwargs):
+    #     context = super(LoginView, self).get_context_data(*args, **kwargs)
+    #     # "http://localhost:8888/profiles/signup?next=http://localhost/social/login/chahub"
+    #     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
+    #     return context
+    # import pdb; pdb.set_trace()
+    # def send_mail(self, subject_template_name, email_template_name,
+    #               context, from_email, to_email, html_email_template_name=None):
+    #     # Render the email message
+    #     email_message = render_to_string(email_template_name, context)
+
+    #     # Print the email message to the console
+    #     print(email_message)
     # form_class = auth_forms.PasswordResetForm
     # template_name = 'registration/password_reset_form.html'
     # email_template_name = '' # Defaults to registration/password_reset_email.html if not supplied.
+    print("CustomPasswordResetView")
     # subject_template_name = '' # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
