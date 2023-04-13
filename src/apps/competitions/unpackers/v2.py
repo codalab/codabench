@@ -13,7 +13,7 @@ class V2Unpacker(BaseUnpacker):
             "title": self.competition_yaml.get('title'),
             "logo": None,
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
-            "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py3'),
+            "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "description": self.competition_yaml.get("description", ""),
             "competition_type": self.competition_yaml.get("competition_type", "competition"),
