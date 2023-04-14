@@ -182,7 +182,7 @@
                     <tr>
                         <td>Column Precision <span style="color: red;">*</span></td>
                         <td each="{ column, index in columns || [] }">
-                            <input selenium="column-precision" type="number" class="ui field" name="column_precision_{index}" value="{_.get(column, 'precision')}" min="1" max="10" onchange="{ modal_updated }">
+                            <input selenium="column-precision" type="number" class="ui field" name="column_precision_{index}" value="{_.get(column, 'precision') || 2}" min="1" max="10" onchange="{ modal_updated }">
                         </td>
                     </tr>
                     <tr>
@@ -398,7 +398,7 @@
                 id: data.id,
                 title: data.title,
                 key: data.key,
-                precision : data.precision,
+                precision : (data.precision=== undefined) ? 2 : data.precision ,
                 submission_rule: self.selected_submission_rule,
                 hidden: self.refs.hidden_leaderboard.checked,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
