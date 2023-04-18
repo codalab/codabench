@@ -160,7 +160,8 @@ class CustomPasswordResetForm(auth_forms.PasswordResetForm):
             email_message.attach_alternative(html_email, "text/html")
 
         email_message.send()
-    
+
+
 # auth_views
 # https://devdocs.io/django~2.2/topics/auth/default#django.contrib.auth.views.PasswordChangeView # Search for PasswordResetView
 class CustomPasswordResetView(auth_views.PasswordResetView):
@@ -172,14 +173,14 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
        able to find the view.
     3. from_email: We want to set the from_email to info@codalab.org - may eventually put in .env file.
     #  The other commented sections are the defaults for other attributes in auth_views.PasswordResetView.
-       They are in here in case someone wants to customize in the future. All attributes show up in the order 
+       They are in here in case someone wants to customize in the future. All attributes show up in the order
        shown in the docs.
     """
     # template_name = 'registration/password_reset_form.html'
-    form_class = CustomPasswordResetForm # auth_forms.PasswordResetForm
-    # email_template_name = '' # Defaults to registration/password_reset_email.html if not supplied.
-    # subject_template_name = '' # Defaults to registration/password_reset_subject.txt if not supplied.
-    # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
+    form_class = CustomPasswordResetForm  # auth_forms.PasswordResetForm
+    # email_template_name = ''  # Defaults to registration/password_reset_email.html if not supplied.
+    # subject_template_name = ''  # Defaults to registration/password_reset_subject.txt if not supplied.
+    # token_generator = ''  # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
     from_email = "info@codalab.org"
 
