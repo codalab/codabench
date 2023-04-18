@@ -5,11 +5,11 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
-# from django.contrib.auth import forms as auth_forms ##
+from django.contrib.auth import forms as auth_forms
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -128,55 +128,83 @@ def sign_up(request):
     return render(request, 'registration/signup.html', context)
 
 
-# Password Reset views below
-# https://devdocs.io/django~2.2/topics/auth/default#django.contrib.auth.views.PasswordChangeView
-# Search for PasswordResetView
-
-# class PasswordResetForm(forms.Form):
-    
-
+# Password Reset views/forms below
 # auth_forms
-class CustomPasswordResetView(auth_views.PasswordResetView):
-    # def get_context_data(self, *args, **kwargs):
-    #     context = super(LoginView, self).get_context_data(*args, **kwargs)
-    #     # "http://localhost:8888/profiles/signup?next=http://localhost/social/login/chahub"
-    #     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
-    #     return context
-    # import pdb; pdb.set_trace()
-    # def send_mail(self, subject_template_name, email_template_name,
-    #               context, from_email, to_email, html_email_template_name=None):
-    #     # Render the email message
-    #     email_message = render_to_string(email_template_name, context)
+class CustomPasswordResetForm(auth_forms.PasswordResetForm):
+    """
+        Subclassed auth_forms.PasswordResetForm in order to add a print statement
+        to see the email in the logs.
+        Source: https://github.com/django/django/blob/8b1ff0da4b162e87edebd94e61f2cd153e9e159d/django/contrib/auth/forms.py#L287
+    """
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        """
+        Send a django.core.mail.EmailMultiAlternatives to `to_email`.
+        """
+        subject = render_to_string(subject_template_name, context)
+        # Email subject *must not* contain newlines
+        subject = "".join(subject.splitlines())
+        body = render_to_string(email_template_name, context)
 
-    #     # Print the email message to the console
-    #     print(email_message)
-    # form_class = auth_forms.PasswordResetForm
+        email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+        print(email_message.message())
+        if html_email_template_name is not None:
+            html_email = render_to_string(html_email_template_name, context)
+            email_message.attach_alternative(html_email, "text/html")
+
+        email_message.send()
+    
+# auth_views
+# https://devdocs.io/django~2.2/topics/auth/default#django.contrib.auth.views.PasswordChangeView # Search for PasswordResetView
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    """
+    1. form_class: subclassing auth_views.PasswordResetView to use a custom form "CustomPasswordResetForm" above
+    2. success_url: Our src/apps/profiles/urls_accounts.py has become an "app" with the use of "app_name".
+       We have to use app:view_name syntax in templates like " {% url 'accounts:password_reset_confirm'%} "
+       Therefore we need to tell this view to find the right success_url with that syntax or django won't be
+       able to find the view.
+    3. from_email: We want to set the from_email to info@codalab.org - may eventually put in .env file.
+    #  The other commented sections are the defaults for other attributes in auth_views.PasswordResetView.
+       They are in here in case someone wants to customize in the future. All attributes show up in the order 
+       shown in the docs.
+    """
     # template_name = 'registration/password_reset_form.html'
+    form_class = CustomPasswordResetForm # auth_forms.PasswordResetForm
     # email_template_name = '' # Defaults to registration/password_reset_email.html if not supplied.
-    print("CustomPasswordResetView")
     # subject_template_name = '' # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
     from_email = "info@codalab.org"
 
 
-class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
-    pass
+# class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
+#     pass
     # template_name = '' # Defaults to registration/password_reset_done.html if not supplied.
 
 
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
-    success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
+    """
+    1. success_url: Our src/apps/profiles/urls_accounts.py has become an "app" with the use of "app_name".
+       We have to use app:view_name syntax in templates like " {% url 'accounts:password_reset_confirm'%} "
+       Therefore we need to tell this view to find the right success_url with that syntax or django won't be
+       able to find the view.
+    """
     # template_name = '' # Default value is registration/password_reset_confirm.html.
+    # form_class = '' # Defaults to django.contrib.auth.forms.SetPasswordForm.
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     # post_reset_login = '' # Defaults to False.
-    # form_class = '' # Defaults to django.contrib.auth.forms.SetPasswordForm.
-    # success_url = '' # Defaults to 'password_reset_complete'
+    success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
 
 
-class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
-    pass
-# Password Reset views above
+# class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
+#     pass
 
 
 class UserNotificationEdit(LoginRequiredMixin, DetailView):
