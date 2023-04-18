@@ -184,11 +184,6 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     from_email = "info@codalab.org"
 
 
-# class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
-#     pass
-    # template_name = '' # Defaults to registration/password_reset_done.html if not supplied.
-
-
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     """
     1. success_url: Our src/apps/profiles/urls_accounts.py has become an "app" with the use of "app_name".
@@ -201,10 +196,6 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     # token_generator = '' # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     # post_reset_login = '' # Defaults to False.
     success_url = django.urls.reverse_lazy("accounts:password_reset_complete")
-
-
-# class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
-#     pass
 
 
 class UserNotificationEdit(LoginRequiredMixin, DetailView):
