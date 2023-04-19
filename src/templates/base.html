@@ -11,7 +11,7 @@
 
     <!-- Vendor -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
     <link rel="stylesheet" href="{% static "css/calendar.min.css" %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
@@ -145,6 +145,10 @@
                                     </i><i class="bell icon"></i>
                                     Notifications
                                 </a>
+                                <a class="item" href="{% url 'accounts:password_reset' %}">
+                                    <i class="icon sign out"></i>
+                                    Change Password
+                                </a>
                                 <a class="item" href="{% url 'accounts:logout' %}">
                                     <i class="icon sign out"></i>
                                     Logout
@@ -227,7 +231,7 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="{% static "js/calendar.min.js" %}"></script>
-    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/1.0.10/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@1.13.1/build/global/luxon.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/filesize/4.2.1/filesize.min.js"></script>

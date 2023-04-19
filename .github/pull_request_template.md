@@ -14,9 +14,6 @@ more information is better.
 ...
 
 
-# Known issues to be addressed in a separate PR
-...
-
 
 # A checklist for hand testing
 - [ ] add checklist here
@@ -26,15 +23,12 @@ more information is better.
 [link]('#') to any relevant files (or drag and drop into github)
 
 
-# Misc. comments
-...
-
-
 # Checklist
 - [ ] Code review by me 
 - [ ] Hand tested by me 
 - [ ] I'm proud of my work
 - [ ] Code review by reviewer
 - [ ] Hand tested by reviewer
+- [ ] CircleCi tests are passing
 - [ ] Ready to merge
 

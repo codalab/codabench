@@ -42,7 +42,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     terms = models.TextField(null=True, blank=True)
     is_migrating = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
-    docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py3")
+    docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py37")
     enable_detailed_results = models.BooleanField(default=False)
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,

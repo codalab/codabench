@@ -6,10 +6,10 @@ ENV PYTHONUNBUFFERED 1
 # Install Docker
 RUN apt-get update && curl -fsSL https://get.docker.com | sh
 
-ADD docker/compute_worker/compute_worker_requirements.txt .
+ADD compute_worker/compute_worker_requirements.txt .
 RUN pip install -r compute_worker_requirements.txt
 
-ADD docker/compute_worker .
+ADD compute_worker .
 
 CMD celery -A compute_worker worker \
     -l info \

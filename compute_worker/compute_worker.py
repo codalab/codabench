@@ -65,6 +65,14 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
+# Setup the container engine that we are using
+if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
+    CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
+# We could probably depreciate this now that we can specify the executable
+elif os.environ.get("NVIDIA_DOCKER"):
+    CONTAINER_ENGINE_EXECUTABLE = "nvidia-docker"
+else:
+    CONTAINER_ENGINE_EXECUTABLE = "docker"
 
 class SubmissionException(Exception):
     pass
@@ -181,7 +189,7 @@ class Run:
         self.user_pk = run_args["user_pk"]
         self.submission_id = run_args["id"]
         self.submissions_api_url = run_args["submissions_api_url"]
-        self.docker_image = run_args["docker_image"]
+        self.container_image = run_args["docker_image"]
         self.secret = run_args["secret"]
         self.prediction_result = run_args["prediction_result"]
         self.scoring_result = run_args.get("scoring_result")
@@ -221,7 +229,7 @@ class Run:
         self.requests_session.mount('https://', adapter)
 
     async def watch_detailed_results(self):
-        """Watches files alongside scoring + program docker containers, currently only used
+        """Watches files alongside scoring + program containers, currently only used
         for detailed_results.html"""
         if not self.detailed_results_url:
             return
@@ -314,15 +322,15 @@ class Run:
         #     })
         self._update_submission(data)
 
-    def _get_docker_image(self, image_name):
-        logger.info("Running docker pull for image: {}".format(image_name))
+    def _get_container_image(self, image_name):
+        logger.info("Running pull for image: {}".format(image_name))
         try:
-            cmd = ['docker', 'pull', image_name]
-            docker_pull = check_output(cmd)
-            logger.info("Docker pull complete for image: {0} with output of {1}".format(image_name, docker_pull))
+            cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
+            container_engine_pull = check_output(cmd)
+            logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
         except CalledProcessError:
-            logger.info("Docker pull for image: {} returned a non-zero exit code!")
-            raise SubmissionException(f"Docker pull for {image_name} failed!")
+            logger.info("Pull for image: {} returned a non-zero exit code!")
+            raise SubmissionException(f"Pull for {image_name} failed!")
 
     def _get_bundle(self, url, destination, cache=True):
         """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
@@ -357,17 +365,17 @@ class Run:
         # Give back zip file path for other uses, i.e. md5'ing the zip to ID it
         return bundle_file
 
-    async def _run_docker_cmd(self, docker_cmd, kind):
+    async def _run_container_engine_cmd(self, engine_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
 
-        :param docker_cmd: the list of docker command arguments
+        :param engine_cmd: the list of container engine command arguments
         :param kind: either 'ingestion' or 'program'
         :return:
         """
         start = time.time()
         proc = await asyncio.create_subprocess_exec(
-            *docker_cmd,
+            *engine_cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
@@ -442,17 +450,23 @@ class Run:
         await websocket.close()
 
     def _get_host_path(self, *paths):
-        """Turns an absolute path inside our docker container, into what the path
-        would be on the host machine"""
+        """Turns an absolute path inside our container, into what the path
+        would be on the host machine. We also ensure that the directory exists,
+        docker will create if necessary, but other container engines such as
+        podman may not."""
         # Take our list of paths and smash 'em together
         path = os.path.join(*paths)
 
-        # pull front of path, which points to the location inside docker
+        # pull front of path, which points to the location inside the container
         path = path[len(BASE_DIR):]
 
-        # add host to front, so when we run commands in docker on the host they
+        # add host to front, so when we run commands in the container on the host they
         # can be seen properly
         path = os.path.join(HOST_DIRECTORY, path)
+
+        # Create if necessary
+        os.makedirs(path, exist_ok=True)
+
         return path
 
     async def _run_program_directory(self, program_dir, kind, can_be_output=False):
@@ -494,13 +508,8 @@ class Run:
                 )
                 return
 
-        if os.environ.get("NVIDIA_DOCKER"):
-            docker_process_name = "nvidia-docker"
-        else:
-            docker_process_name = "docker"
-
-        docker_cmd = [
-            docker_process_name,
+        engine_cmd = [
+            CONTAINER_ENGINE_EXECUTABLE,
             'run',
             # Remove it after run
             '--rm',
@@ -528,21 +537,21 @@ class Run:
             else:
                 ingested_program_location = "program"
 
-            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, ingested_program_location)}:/app/ingested_program']
+            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, ingested_program_location)}:/app/ingested_program']
 
         if self.input_data:
-            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, "input_data")}:/app/input_data']
+            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, "input_data")}:/app/input_data']
 
         if self.is_scoring:
             # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
             # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
-            docker_cmd += ['-v', f'{self._get_host_path(self.root_dir, "shared")}:/app/shared']
+            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, "shared")}:/app/shared']
 
             # Input from submission (or submission + ingestion combo)
-            docker_cmd += ['-v', f'{self._get_host_path(self.input_dir)}:/app/input']
+            engine_cmd += ['-v', f'{self._get_host_path(self.input_dir)}:/app/input']
 
-        # Set the image name (i.e. "codalab/codalab-legacy") for the container
-        docker_cmd += [self.docker_image]
+        # Set the image name (i.e. "codalab/codalab-legacy:py37") for the container
+        engine_cmd += [self.container_image]
 
         # Handle Legacy competitions by replacing anything in the run command
         command = replace_legacy_metadata_command(
@@ -553,12 +562,12 @@ class Run:
         )
 
         # Append the actual program to run
-        docker_cmd += command.split(' ')
+        engine_cmd += command.split(' ')
 
-        logger.info(f"Running program = {' '.join(docker_cmd)}")
+        logger.info(f"Running program = {' '.join(engine_cmd)}")
 
-        # This runs the docker command and asynchronously passes data back via websocket
-        return await self._run_docker_cmd(docker_cmd, kind=kind)
+        # This runs the container engine command and asynchronously passes data back via websocket
+        return await self._run_container_engine_cmd(engine_cmd, kind=kind)
 
     def _put_dir(self, url, directory):
         logger.info("Putting dir %s in %s" % (directory, url))
@@ -649,9 +658,9 @@ class Run:
         for filename in glob.iglob(self.root_dir + '**/*.*', recursive=True):
             logger.info(filename)
 
-        # Before the run starts we want to download docker images, they may take a while to download
+        # Before the run starts we want to download images, they may take a while to download
         # and to do this during the run would subtract from the participants time.
-        self._get_docker_image(self.docker_image)
+        self._get_container_image(self.container_image)
 
     def start(self):
         if not self.is_scoring:
@@ -690,7 +699,7 @@ class Run:
                     else:
                         program_to_kill = self.program_container_name
                     # Try and stop the program. If stop does not succeed
-                    kill_code = subprocess.call(['docker', 'stop', str(program_to_kill)])
+                    kill_code = subprocess.call([CONTAINER_ENGINE_EXECUTABLE, 'stop', str(program_to_kill)])
                     logger.info(f'Kill process returned {kill_code}')
                 if kind == 'program':
                     self.program_exit_code = return_code
