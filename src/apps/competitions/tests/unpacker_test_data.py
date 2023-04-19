@@ -6,7 +6,7 @@ v15_yaml_data = {
     "title": "Sample time series competition",
     "description": "Sample competition for time series prediction",
     "image": "logo.jpg",
-    "competition_docker_image": "codalab/codalab-legacy:py3",
+    "competition_docker_image": "codalab/codalab-legacy:py37",
     "end_date": None,
     "html": {
         "data": "data.txt",
