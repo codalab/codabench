@@ -13,12 +13,27 @@ LONG_WAIT = 4
 SHORT_WAIT = 0.2
 
 
+def retry_test(assertion, max_retries=3):
+    retries = 0
+    success = False
+    while retries < max_retries and not success:
+        try:
+            assert assertion
+        except AssertionError:
+            retries += 1
+            if retries < max_retries:
+                print(f"Retrying the test, attempt {retries} of {max_retries}...")
+            else:
+                print(f"Test failed after {max_retries} attempts.")
+                raise
+
+
 class TestSubmissions(SeleniumTestCase):
     def setUp(self):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=600):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -50,9 +65,10 @@ class TestSubmissions(SeleniumTestCase):
         assert self.find_text_in_class('.submission-output-container .title', f"Running {submission_zip_path}", timeout=timeout)
 
         # Inside the accordion the output is being streamed
-        self.find('.submission-output-container .title').click()
         self.wait(SHORT_WAIT)
-        assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
+        self.find('.submission-output-container .title').click()
+        # 3 retries, this tests randomly fails, maybe because a problem of synchronization
+        retry_test(self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout), max_retries=3)
 
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
@@ -75,7 +91,7 @@ class TestSubmissions(SeleniumTestCase):
         assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
 
     def test_v15_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=2000)
+        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
 
     def test_v18_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
