@@ -63,7 +63,8 @@ class ServerStatusView(TemplateView):
 
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
-        return context
+        return context    
+
 
 def page_not_found_view(request, exception):
     print(request)
