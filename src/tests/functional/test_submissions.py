@@ -13,21 +13,6 @@ LONG_WAIT = 4
 SHORT_WAIT = 0.2
 
 
-def retry_test(assertion, max_retries=3):
-    retries = 0
-    success = False
-    while retries < max_retries and not success:
-        try:
-            assert assertion
-        except AssertionError:
-            retries += 1
-            if retries < max_retries:
-                print(f"Retrying the test, attempt {retries} of {max_retries}...")
-            else:
-                print(f"Test failed after {max_retries} attempts.")
-                raise
-
-
 class TestSubmissions(SeleniumTestCase):
     def setUp(self):
         super().setUp()
@@ -65,10 +50,10 @@ class TestSubmissions(SeleniumTestCase):
         assert self.find_text_in_class('.submission-output-container .title', f"Running {submission_zip_path}", timeout=timeout)
 
         # Inside the accordion the output is being streamed
-        self.wait(SHORT_WAIT)
+        self.wait(LONG_WAIT)
         self.find('.submission-output-container .title').click()
-        # 3 retries, this tests randomly fails, maybe because a problem of synchronization
-        retry_test(self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout), max_retries=3)
+        self.wait(LONG_WAIT)
+        assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
