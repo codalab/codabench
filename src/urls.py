@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls import handler404
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
@@ -31,6 +32,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('social/', include('social_django.urls', namespace='social')),
 ]
+
+handler404 = "pages.views.page_not_found_view"
 
 
 if settings.DEBUG:
