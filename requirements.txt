@@ -18,7 +18,7 @@ pyyaml==5.3.1
 watchdog==0.8.3
 python-dateutil==2.7.3
 bpython==0.17.1
-websockets==8.1
+websockets==9.1
 aiofiles==0.4.0
 oyaml==0.7
 factory_boy==2.11.1
