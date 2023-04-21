@@ -8,6 +8,8 @@ from django.db.models import Count, Q
 from competitions.models import Competition, Submission, CompetitionParticipant
 from profiles.models import User
 
+from django.shortcuts import render
+
 
 class HomeView(TemplateView):
     template_name = 'pages/home.html'
@@ -62,3 +64,8 @@ class ServerStatusView(TemplateView):
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
         return context
+
+
+def page_not_found_view(request, exception):
+    print(request)
+    return render(request, '404.html', status=404)
