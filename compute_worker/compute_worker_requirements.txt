@@ -1,4 +1,4 @@
-celery==4.4.0
+celery==5.2.2
 requests==2.20.0
 watchdog==0.8.3
 websockets==8.1
