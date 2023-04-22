@@ -17,6 +17,10 @@ class SignUpForm(UserCreationForm):
             raise forms.ValidationError(
                 "Usernames should not contain special characters."
             )
+        if (len(data) > 15 or len(data)< 5):
+            raise forms.ValidationError(
+                "Username must have at least 5 characters and at most 15 characters"
+            )
         return data
 
     class Meta:
