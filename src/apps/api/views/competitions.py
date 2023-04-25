@@ -70,11 +70,10 @@ class CompetitionViewSet(ModelViewSet):
             if (not mine) and (not participating_in):
                 # User is logged in
                 # filter his own competitions
-                # or 
+                # or
                 # filter published competitions by other users
                 qs = qs.filter(
-                    (Q(created_by=self.request.user))
-                    |
+                    (Q(created_by=self.request.user)) |
                     (Q(published=True) & ~Q(created_by=self.request.user))
                 )
 
