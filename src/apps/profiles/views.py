@@ -137,7 +137,7 @@ def log_in(request):
     )
     if request.method == 'POST':
         form = LoginForm(request.POST)
-        
+
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
@@ -149,12 +149,11 @@ def log_in(request):
                 messages.error(request, "Wrong Credentials!")
         else:
             context['form'] = form
-            
+
     if not context.get('form'):
         context['form'] = LoginForm()
     return render(request, 'registration/login.html', context)
-        
-    
+
 
 # Password Reset views/forms below
 # auth_forms

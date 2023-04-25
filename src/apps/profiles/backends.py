@@ -12,11 +12,10 @@ class EmailAuthenticationBackend(ModelBackend):
             if user.check_password(password):
                 return user
             else:
-                 return None
+                return None
         except ObjectDoesNotExist:
             return None
 
-    
     def get_user(self, user_id):
         try:
             user = User.objects.get(id=user_id)
