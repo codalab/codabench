@@ -2,8 +2,7 @@ import os
 
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
-import logging
-logger = logging.getLogger()
+
 
 class V15Unpacker(BaseUnpacker):
     def __init__(self, *args, **kwargs):
@@ -161,7 +160,7 @@ class V15Unpacker(BaseUnpacker):
                 'index': index,
                 'sorting': column.get('sort') or 'desc',
                 # get precision as numeric_format, if not found, use default value = 2
-                'precision' : column.get('numeric_format', 2)
+                'precision': column.get('numeric_format', 2)
             }
 
             for leaderboard_data in self.competition['leaderboards']:
