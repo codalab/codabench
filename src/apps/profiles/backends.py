@@ -23,9 +23,3 @@ class EmailAuthenticationBackend(ModelBackend):
             return user
         except ObjectDoesNotExist:
             return None
-        
-
-AUTHENTICATION_BACKENDS = (
-    "django.contrib.auth.backends.ModelBackend",
-    "profile.backends.EmailAuthenticationBackend"
-)
