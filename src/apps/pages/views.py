@@ -23,7 +23,6 @@ class HomeView(TemplateView):
 
         total_competitions = data['count']
         public_competitions = data['published_comps']
-        private_competitions = data['unpublished_comps']
         users = User.objects.all().count()
         competition_participants = CompetitionParticipant.objects.all().count()
         submissions = Submission.objects.all().count()
@@ -31,7 +30,6 @@ class HomeView(TemplateView):
         context['general_stats'] = [
             {'label': "Total Competitions", 'count': total_competitions},
             {'label': "Public Competitions", 'count': public_competitions},
-            {'label': "Private Competitions", 'count': private_competitions},
             {'label': "Users", 'count': users},
             {'label': "Competition Participants", 'count': competition_participants},
             {'label': "Submissions", 'count': submissions},
