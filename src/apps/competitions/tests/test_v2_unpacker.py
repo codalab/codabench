@@ -37,7 +37,7 @@ class V2UnpackerTests(TestCase):
 
     def test_leaderboard_unpacking(self):
         self.unpacker._unpack_leaderboards()
-        assert self.unpacker.competition['leaderboards'] == test_data.LEADERBOARDS
+        assert self.unpacker.competition['leaderboards'] == test_data.V2_LEADERBOARDS
 
     def test_competition_type_if_not_set(self):
         assert self.unpacker.competition['competition_type'] == 'competition'
