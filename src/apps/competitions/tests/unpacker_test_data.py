@@ -53,7 +53,7 @@ v15_yaml_data = {
                     "rank": 1
                 },
                 "label": "Prediction score",
-                "numeric_format": 4,
+                "numeric_format": 2,
                 "rank": 1
             },
             "Duration": {
