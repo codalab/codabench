@@ -152,7 +152,7 @@ V1_LEADERBOARDS = [{
             "key": "prediction_score",
             "index": 0,
             "sorting": "desc",
-            "precision": 4,
+            "precision": 2,
         },
         {
             "title": "Duration",
