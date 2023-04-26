@@ -91,7 +91,7 @@
                 personal_url:   selected_user.personal_url,
                 twitter_url:    selected_user.twitter_url,
                 linkedin_url:   selected_user.linkedin_url,
-                github_url:     selected_user.linkedin_url,
+                github_url:     selected_user.github_url,
                 title:          selected_user.title,
                 location:       selected_user.location,
                 biography:      selected_user.biography,
