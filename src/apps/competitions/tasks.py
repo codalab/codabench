@@ -414,11 +414,12 @@ def unpack_competition(status_pk):
         mark_status_as_failed_and_delete_dataset(status, message)
         raise e
 
-    except:  # noqa: E722
+    except Exception as e:  # noqa: E722
         # These are critical uncaught exceptions, make sure the end user is at least informed
         # that unpacking has failed -- do not share unhandled exception details
         logger.error(traceback.format_exc())
-        message = "Contact an administrator, competition failed to unpack in a critical way."
+        # message = "Contact an administrator, competition failed to unpack in a critical way."
+        message = e
         mark_status_as_failed_and_delete_dataset(status, message)
 
 
