@@ -76,10 +76,11 @@ class TestSubmissions(SeleniumTestCase):
         assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == prediction_score
 
     def test_v15_submission_end_to_end(self):
+        # SNCF bundle, code submission
         self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False)
-
-    def test_v15_iris_submission_end_to_end(self):
+        # Iris bundle, result submission
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_result.zip', '======= Set 1 (Iris_test)', has_solutions=False)
+        # Iris bundle, code submission
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_code.zip', '======= Set 1 (Iris_test)', has_solutions=False)
 
     def test_v18_submission_end_to_end(self):
