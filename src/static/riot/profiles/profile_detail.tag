@@ -85,21 +85,46 @@
 
             <!-- Second Column -->
             <div class="eight wide column">
+                <!--  Name  -->
                 <span class="header content">{selected_user.first_name} {selected_user.last_name}</span>
-                <i class="marker alternate icon"></i>
-                <span id="location">{selected_user.location}</span>
-                <div id="job_title">{selected_user.title}</div>
-                <div class="ui justified container">{selected_user.biography}</div>
-                <div id="horiz-margin" class="ui horizontal divider"><i class="user icon"></i>About Me</div>
+                
+                <!--  About  -->
+                <div id="horiz-margin" class="ui horizontal divider">About</div>
+                <div class="about-block">
+                    <i class="marker icon"></i>
+                    <span if="{!selected_user.location}" class="text-placeholder">Location</span>
+                    <span if="{selected_user.location}">{selected_user.location}</span>
+                </div>
+                <div  class="about-block">
+                    <i class="user icon"></i>
+                    <span if="{!selected_user.title}" class="text-placeholder">Job Title</span>
+                    <span if="{selected_user.title}">{selected_user.title}</span>
+                </div>
+
+                <!--  Bio  -->
+                <div id="horiz-margin" class="ui horizontal divider">Bio</div>
+                <span if="{!selected_user.biography}" class="text-placeholder">No bio found! Update your profile to show your bio here.</span>
+                <div if="{selected_user.biography}"  class="ui justified container">{selected_user.biography}</div>
+                
+                <!--  Links  -->
+                <div id="horiz-margin" class="ui horizontal divider">Links</div>
                 <div id="grid-margin" class="ui grid">
-                    <span if="{selected_user.personal_url}" class="three wide column"><i class="world icon"></i>Website:</span>
-                    <a if="{selected_user.personal_url}" href="{selected_user.personal_url}" class="thirteen wide column">{selected_user.personal_url}</a>
-                    <span if="{selected_user.github_url}" class="three wide column"><i class="github icon"></i>GitHub:</span>
-                    <a if="{selected_user.github_url}" href="https://github.com/" class="thirteen wide column">{selected_user.github_url}</a>
-                    <span if="{selected_user.linkedin_url}" class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
-                    <a if="{selected_user.linkedin_url}" href="https://linkedin.com/" class="thirteen wide column">{selected_user.linkedin_url}</a>
-                    <span if="{selected_user.twitter_url}" class="three wide column"><i class="twitter icon"></i>Twitter:</span>
-                    <a if="{selected_user.twitter_url}" href="https://twitter.com/" class="thirteen wide column">{selected_user.twitter_url}</a>
+                    <div class="social-block">
+                        <span class="three wide column"><i class="world icon"></i>Website:</span>
+                        <a if="{selected_user.personal_url}" href="{selected_user.personal_url}" class="thirteen wide column">{selected_user.personal_url}</a>
+                    </div>
+                    <div class="social-block">
+                        <span class="three wide column"><i class="github icon"></i>GitHub:</span>
+                        <a if="{selected_user.github_url}" href="https://github.com/" class="thirteen wide column">{selected_user.github_url}</a>
+                    </div>
+                    <div class="social-block">
+                        <span class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
+                        <a if="{selected_user.linkedin_url}" href="https://linkedin.com/" class="thirteen wide column">{selected_user.linkedin_url}</a>
+                    </div>
+                    <div class="social-block">
+                        <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
+                        <a if="{selected_user.twitter_url}" href="https://twitter.com/" class="thirteen wide column">{selected_user.twitter_url}</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -150,21 +175,6 @@
             font-size 30px
             font-weight bolder
 
-        .marker.alternate.icon
-            margin-left 5px
-            font-size 14px
-            margin-right -5px
-            color #9e9e9e
-
-        #location
-            color #9e9e9e
-
-        #job_title
-            color darkblue
-            font-size 14px
-            font-weight bold
-            margin-top 5px
-
         .ui.justified.container
             margin-top 30px
             font-size 12px
@@ -177,7 +187,7 @@
             margin-bottom -5px
 
         #horiz-margin
-            margin-top 20px
+            margin-top 30px
 
         #grid-margin
             margin-top 20px
@@ -193,5 +203,15 @@
 
         .linkedin.icon
             color #0077B5
+        
+        .social-block
+            margin-bottom 10px
+            margin-top 5px
+
+        .about-block
+            margin-top 10px
+
+        .text-placeholder
+            color #9e9e9e
     </style>
 </profile-detail>
