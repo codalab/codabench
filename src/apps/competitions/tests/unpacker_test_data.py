@@ -53,7 +53,7 @@ v15_yaml_data = {
                     "rank": 1
                 },
                 "label": "Prediction score",
-                "numeric_format": 2,
+                "numeric_format": 4,
                 "rank": 1
             },
             "Duration": {
@@ -152,7 +152,7 @@ V1_LEADERBOARDS = [{
             "key": "prediction_score",
             "index": 0,
             "sorting": "desc",
-            "precision": 2,
+            "precision": 4,
         },
         {
             "title": "Duration",

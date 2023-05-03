@@ -18,7 +18,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=999, precision=2):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -72,10 +72,10 @@ class TestSubmissions(SeleniumTestCase):
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
-        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == round(Decimal(prediction_score), 2)
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(3)').text) == round(Decimal(prediction_score), precision)
 
     def test_v15_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=2000)
+        self._run_submission_and_add_to_leaderboard('competition_15.zip', 'submission_15.zip', '*** prediction_score', has_solutions=False, timeout=2000, precision=4)
 
     def test_v18_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
