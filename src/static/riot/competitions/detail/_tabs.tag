@@ -280,6 +280,23 @@
                 })
             })
 
+            // loop over competition phases to mark active and inactive phases
+            self.competition.phases.forEach(function (phase, index) {
+                // check if end data exists for this phase
+                if (phase["end"]){
+                    if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
+                        // Phase cannote accept submissions if end date is in the past
+                        self.competition.phases[index]["accept_submissions"] = false
+                    }else{
+                        // Phase can accept submissions if end date is in the future
+                        self.competition.phases[index]["accept_submissions"] = true
+                    }
+                }else{
+                    // Phase can accept submissions if end date is not given
+                    self.competition.phases[index]["accept_submissions"] = true
+                }
+            })
+
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
             if (self.selected_phase_index == null) {

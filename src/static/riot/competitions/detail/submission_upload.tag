@@ -4,6 +4,7 @@
 
         <div class="submission-form">
             <h1>Submission upload</h1>
+            <div if="{!_.get(selected_phase, 'accept_submissions')}" class="ui yellow message">Submissions are closed for this phase!</div>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
@@ -349,7 +350,10 @@
         }
 
         self.check_can_upload = function () {
-            CODALAB.api.can_make_submissions(self.selected_phase.id)
+            // Check if selected phase accepts submissions (within the deadline of the phase)
+            if(self.selected_phase.accept_submissions){
+
+                CODALAB.api.can_make_submissions(self.selected_phase.id)
                 .done(function (data) {
                     if (data.can) {
                         self.prepare_upload(self.upload)()
@@ -360,6 +364,12 @@
                 .fail(function (data) {
                     toastr.error('Could not verify your ability to make a submission')
                 })
+            }else{
+                // Error when phase is not accepting submissions
+                toastr.error('This phase no longer accepts submissions!')
+                self.clear_form()
+            }
+            
         }
 
         self.get_fact_sheet_answers = function () {
