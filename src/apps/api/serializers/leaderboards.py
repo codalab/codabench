@@ -24,6 +24,7 @@ class ColumnSerializer(WritableNestedModelSerializer):
             'sorting',
             'index',
             'hidden',
+            'precision',
         )
 
     def validate(self, attrs):

@@ -180,6 +180,12 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>Column Precision <span style="color: red;">*</span></td>
+                        <td each="{ column, index in columns || [] }">
+                            <input selenium="column-precision" type="number" class="ui field" name="column_precision_{index}" value="{_.get(column, 'precision') || 2}" min="1" max="10" onchange="{ modal_updated }">
+                        </td>
+                    </tr>
+                    <tr>
                         <td>Hidden</td>
                         <td each="{ column, index in columns || [] }" style="text-align: center;">
                             <input selenium="hidden" type="checkbox" ref="hidden_{index}" checked="{column.hidden}" onchange="{ modal_updated }">
@@ -392,6 +398,7 @@
                 id: data.id,
                 title: data.title,
                 key: data.key,
+                precision : (data.precision === undefined) ? 2 : data.precision ,
                 submission_rule: self.selected_submission_rule,
                 hidden: self.refs.hidden_leaderboard.checked,
                 primary_index: _.get($('input[name=primary_index]:checked').data(), 'index', 0),
@@ -400,6 +407,7 @@
                         index: i,
                         title: _.get(data, `title_${i}`),
                         key: _.get(data, `column_key_${i}`),
+                        precision: _.get(data, `column_precision_${i}`),
                         sorting: _.get(data, `sorting_${i}`),
                         hidden: self.refs[`hidden_${i}`].checked,
                     }

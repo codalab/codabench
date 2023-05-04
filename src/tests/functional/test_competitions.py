@@ -137,6 +137,7 @@ class TestCompetitions(SeleniumTestCase):
         self.find('div[selenium="add-column"]').click()
         sleep(LONG_WAIT)
         self.find('input[selenium="column-key"]').send_keys('cOlUmN kEy')
+        self.find('input[selenium="column-precision"]').send_keys('cOlUmN pReCiSiOn')
         self.find('input[selenium="hidden"]').click()
         self.find('div[selenium="save3"]').click()
         sleep(LONG_WAIT)
