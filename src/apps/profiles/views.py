@@ -3,7 +3,7 @@ import django
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.http import Http404
@@ -18,7 +18,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
-from .forms import SignUpForm
+from .forms import SignUpForm, LoginForm
 from .models import User, Organization, Membership
 from .tokens import account_activation_token
 
@@ -126,6 +126,33 @@ def sign_up(request):
     if not context.get('form'):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
+
+
+def log_in(request):
+
+    context = {}
+    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
+        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
+        settings.SITE_DOMAIN
+    )
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user:
+                login(request, user)
+                return redirect('pages:home')
+            else:
+                messages.error(request, "Wrong Credentials!")
+        else:
+            context['form'] = form
+
+    if not context.get('form'):
+        context['form'] = LoginForm()
+    return render(request, 'registration/login.html', context)
 
 
 # Password Reset views/forms below

@@ -482,8 +482,21 @@ class PhaseViewSet(ModelViewSet):
                     'organization': submission['organization'],
                 })
             for score in submission['scores']:
+
+                # default precision is set to 2
+                precision = 2
+
+                # loop over columns to find a column with the same index
+                # replace default precision with column precision
+                for col in columns:
+                    if col["index"] == score["index"]:
+                        precision = col["precision"]
+                        break
+
                 tempScore = score
                 tempScore['task_id'] = submission['task']
+                # round the score to 'precision' decimal points
+                tempScore['score'] = str(round(float(tempScore["score"]), precision))
                 response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
         for task in query['tasks']:
