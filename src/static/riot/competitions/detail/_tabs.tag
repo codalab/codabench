@@ -281,20 +281,44 @@
             })
 
             // loop over competition phases to mark active and inactive phases
+            accept_submissions = false 
+            phase_ended = false 
+            phase_started = false
             self.competition.phases.forEach(function (phase, index) {
-                // check if end data exists for this phase
-                if (phase["end"]){
-                    if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
-                        // Phase cannote accept submissions if end date is in the past
-                        self.competition.phases[index]["accept_submissions"] = false
-                    }else{
-                        // Phase can accept submissions if end date is in the future
-                        self.competition.phases[index]["accept_submissions"] = true
-                    }
+                
+                // check if phase has started
+                if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
+                    // start date is in the future, phase started = NO
+                    phase_started = false
+                    accept_submissions = false 
+                    phase_ended = false
                 }else{
-                    // Phase can accept submissions if end date is not given
-                    self.competition.phases[index]["accept_submissions"] = true
+                    // start date is not in the future, phase started = YES
+                    phase_started = true
                 }
+
+                if(phase_started){
+                    // check if end data exists for this phase
+                    if(phase["end"]){
+                        if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
+                            // Phase cannote accept submissions if end date is in the past
+                            // accept submission = NO
+                            // phase ended = YES
+                            accept_submissions = false
+                            phase_ended = true
+                        }else{
+                            // Phase can accept submissions if end date is in the future
+                            accept_submissions = true
+                            phase_ended = false
+                        }
+                    }else{
+                        // Phase can accept submissions if end date is not given
+                        accept_submissions = true
+                    }
+                }
+                self.competition.phases[index]["accept_submissions"] = accept_submissions
+                self.competition.phases[index]["phase_ended"] = phase_ended
+                self.competition.phases[index]["phase_started"] = phase_started
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)

@@ -4,7 +4,8 @@
 
         <div class="submission-form">
             <h1>Submission upload</h1>
-            <div if="{!_.get(selected_phase, 'accept_submissions')}" class="ui yellow message">Submissions are closed for this phase!</div>
+            <div if="{_.get(selected_phase, 'phase_ended')}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
+            <div if="{!_.get(selected_phase, 'phase_started')}" class="ui yellow message">This phase hasn't started yet!</div>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
@@ -367,7 +368,12 @@
                     })
             }else{
                 // Error when phase is not accepting submissions
-                toastr.error('This phase no longer accepts submissions!')
+                if(self.selected_phase.phase_ended){
+                    toastr.error('This phase has ended and no longer accepts submissions!')
+                }else{
+                    toastr.error('This phase has not started yet. Please check the phase start date!')
+                }
+                
                 self.clear_form()
             }
         }
