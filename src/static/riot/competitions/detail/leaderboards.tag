@@ -57,7 +57,7 @@
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
-            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}">Show detailed results</a></td>
+            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
         </tr>
         </tbody>
     </table>
@@ -121,8 +121,6 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
-
-                   
                     self.columns = []
                     // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
