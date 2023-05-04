@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from django.views.generic import TemplateView, DetailView
 
-from .models import Competition
+from .models import Competition, CompetitionParticipant
 
 
 class CompetitionManagement(LoginRequiredMixin, TemplateView):
@@ -29,8 +29,12 @@ class CompetitionDetail(DetailView):
         competition = super().get_object(*args, **kwargs)
         is_creator = self.request.user.is_superuser or self.request.user == competition.created_by
         is_collaborator = self.request.user in competition.collaborators.all()
+
+        # get participants from CompetitionParticipant where user=user and competition=competition
+        is_participant = CompetitionParticipant.objects.filter(user=self.request.user, competition=competition).count() > 0
+
         valid_secret_key = self.request.GET.get('secret_key') == str(competition.secret_key)
-        if is_creator or is_collaborator or competition.published or valid_secret_key:
+        if is_creator or is_collaborator or competition.published or valid_secret_key or is_participant:
             return competition
         raise Http404()
 
