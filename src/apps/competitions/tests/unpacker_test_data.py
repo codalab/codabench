@@ -143,7 +143,28 @@ v2_yaml_data = {
 # Truth Data
 # -------------------------------------------------
 
-LEADERBOARDS = [{
+V1_LEADERBOARDS = [{
+    "title": "Results",
+    "key": "Results",
+    "columns": [
+        {
+            "title": "prediction_score",
+            "key": "prediction_score",
+            "index": 0,
+            "sorting": "desc",
+            "precision": 4,
+        },
+        {
+            "title": "Duration",
+            "key": "Duration",
+            "index": 1,
+            "sorting": "desc",
+            "precision": 2,
+        }
+    ]
+}]
+
+V2_LEADERBOARDS = [{
     "title": "Results",
     "key": "Results",
     "columns": [
