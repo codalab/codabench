@@ -280,18 +280,16 @@
                 })
             })
 
-            // loop over competition phases to mark active and inactive phases
-            accept_submissions = false 
-            phase_ended = false 
-            phase_started = false
+            // loop over competition phases to mark if phase has started or ended
             self.competition.phases.forEach(function (phase, index) {
                 
+                phase_ended = false 
+                phase_started = false
+
                 // check if phase has started
                 if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
                     // start date is in the future, phase started = NO
                     phase_started = false
-                    accept_submissions = false 
-                    phase_ended = false
                 }else{
                     // start date is not in the future, phase started = YES
                     phase_started = true
@@ -302,21 +300,16 @@
                     if(phase["end"]){
                         if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
                             // Phase cannote accept submissions if end date is in the past
-                            // accept submission = NO
-                            // phase ended = YES
-                            accept_submissions = false
                             phase_ended = true
                         }else{
                             // Phase can accept submissions if end date is in the future
-                            accept_submissions = true
                             phase_ended = false
                         }
                     }else{
                         // Phase can accept submissions if end date is not given
-                        accept_submissions = true
+                        phase_ended = false
                     }
                 }
-                self.competition.phases[index]["accept_submissions"] = accept_submissions
                 self.competition.phases[index]["phase_ended"] = phase_ended
                 self.competition.phases[index]["phase_started"] = phase_started
             })

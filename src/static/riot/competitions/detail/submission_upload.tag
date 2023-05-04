@@ -353,7 +353,7 @@
         self.check_can_upload = function () {
             
             // Check if selected phase accepts submissions (within the deadline of the phase)
-            if(self.selected_phase.accept_submissions){
+            if(self.selected_phase.phase_started && !self.selected_phase.phase_ended){
 
                 CODALAB.api.can_make_submissions(self.selected_phase.id)
                     .done(function (data) {
@@ -368,12 +368,14 @@
                     })
             }else{
                 // Error when phase is not accepting submissions
-                if(self.selected_phase.phase_ended){
-                    toastr.error('This phase has ended and no longer accepts submissions!')
-                }else{
+                if(!self.selected_phase.phase_started){
                     toastr.error('This phase has not started yet. Please check the phase start date!')
+                   
+                }else {
+                    if(self.selected_phase.phase_ended){
+                        toastr.error('This phase has ended and no longer accepts submissions!')
+                    }
                 }
-                
                 self.clear_form()
             }
         }
