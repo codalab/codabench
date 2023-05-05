@@ -146,6 +146,7 @@ v2_yaml_data = {
 V1_LEADERBOARDS = [{
     "title": "Results",
     "key": "Results",
+    "label": "Results",
     "columns": [
         {
             "title": "prediction_score",
