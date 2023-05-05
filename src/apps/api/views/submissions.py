@@ -22,6 +22,9 @@ from competitions.models import Submission, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
+import logging 
+logger = logging.getLogger()
+
 
 class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
@@ -68,7 +71,7 @@ class SubmissionViewSet(ModelViewSet):
                     Q(owner=self.request.user) |
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
-                )
+                ).distinct()
             qs = qs.select_related(
                 'phase',
                 'phase__competition',
