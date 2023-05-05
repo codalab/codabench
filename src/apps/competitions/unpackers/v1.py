@@ -2,6 +2,8 @@ import os
 
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
+import logging
+logger = logging.getLogger()
 
 
 class V15Unpacker(BaseUnpacker):
@@ -149,6 +151,7 @@ class V15Unpacker(BaseUnpacker):
             new_ldb_data = {
                 'title': ldb_key,
                 'key': ldb_key,
+                'label': ldb_data['label'],
                 'columns': []
             }
             self.competition['leaderboards'].append(new_ldb_data)
@@ -164,7 +167,7 @@ class V15Unpacker(BaseUnpacker):
             }
 
             for leaderboard_data in self.competition['leaderboards']:
-                if column['leaderboard']['label'].lower() == leaderboard_data['key'].lower():
+                if column['leaderboard']['label'].lower() == leaderboard_data['label'].lower():
                     leaderboard_data['columns'].append(new_col_data)
 
     def _unpack_terms(self):
