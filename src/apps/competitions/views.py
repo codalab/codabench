@@ -32,10 +32,10 @@ class CompetitionDetail(DetailView):
 
         # check if user is loggedin
         if self.request.user.is_authenticated:
-            
+
             # check if user is the creator of this competition
             is_creator = self.request.user.is_superuser or self.request.user == competition.created_by
-            
+
             # check if user is collaborator of this competition
             is_collaborator = self.request.user in competition.collaborators.all()
 
