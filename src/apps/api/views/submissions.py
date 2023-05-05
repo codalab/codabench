@@ -22,9 +22,6 @@ from competitions.models import Submission, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
-import logging 
-logger = logging.getLogger()
-
 
 class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
