@@ -190,6 +190,7 @@
         self.update_files = (e) => {
             CODALAB.api.get_competition_files(self.competition.id)
                 .done(data => {
+                    console.log(data)
                     self.files = data
                     self.tr_show = false
                     self.update()

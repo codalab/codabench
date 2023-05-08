@@ -4,7 +4,8 @@ import os
 import re
 import traceback
 import zipfile
-from datetime import timedelta
+from datetime import timedelta, datetime
+
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
@@ -431,7 +432,9 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         logger.info(f"Finding competition {competition_pk}")
         comp = Competition.objects.get(pk=competition_pk)
         zip_buffer = BytesIO()
-        zip_name = f"{comp.title}-{comp.created_when.isoformat()}.zip"
+        current_date_time = datetime.now()
+        current_date = datetime.today().strftime('%Y-%m-%d')
+        zip_name = f"{comp.title}-{current_date_time.isoformat()}.zip"
         zip_file = zipfile.ZipFile(zip_buffer, "w")
 
         # -------- Main Competition Details -------
@@ -626,7 +629,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         bundle_count = CompetitionDump.objects.count() + 1
         temp_dataset_bundle = Data.objects.create(
             created_by=comp.created_by,
-            name=f"{comp.title} Dump #{bundle_count} Created {comp.created_when.date()}",
+            name=f"{comp.title} Dump #{bundle_count} Created {current_date}",
             type='competition_bundle',
             description='Automatically created competition dump',
             # 'data_file'=,
