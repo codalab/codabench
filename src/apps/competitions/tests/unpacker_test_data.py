@@ -158,7 +158,7 @@ V1_LEADERBOARDS = [{
         },
         {
             "title": "Duration",
-            "label": "Duration"
+            "label": "Duration",
             "key": "Duration",
             "index": 1,
             "sorting": "desc",
