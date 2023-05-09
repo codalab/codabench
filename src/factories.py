@@ -58,7 +58,7 @@ class CompetitionFactory(DjangoModelFactory):
     title = factory.Sequence(lambda n: f'Competition {n}')
     created_by = factory.SubFactory(UserFactory)
     logo = factory.django.ImageField()
-    published = factory.LazyAttribute(lambda n: random.choice([True, False]))
+    published = factory.LazyAttribute(lambda n: random.choice([True, True]))
     description = factory.Faker('paragraph')
 
     created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
