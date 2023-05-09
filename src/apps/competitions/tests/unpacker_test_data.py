@@ -149,7 +149,7 @@ V1_LEADERBOARDS = [{
     "label": "RESULTS",
     "columns": [
         {
-            "title": "prediction_score",
+            "title": "Prediction score",
             "key": "prediction_score",
             "index": 0,
             "sorting": "desc",
