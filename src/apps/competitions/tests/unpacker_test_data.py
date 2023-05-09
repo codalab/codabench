@@ -150,6 +150,7 @@ V1_LEADERBOARDS = [{
     "columns": [
         {
             "title": "prediction_score",
+            "label": "Prediction score",
             "key": "prediction_score",
             "index": 0,
             "sorting": "desc",
@@ -157,6 +158,7 @@ V1_LEADERBOARDS = [{
         },
         {
             "title": "Duration",
+            "label": "Duration"
             "key": "Duration",
             "index": 1,
             "sorting": "desc",
