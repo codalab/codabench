@@ -68,7 +68,7 @@ class SubmissionViewSet(ModelViewSet):
                     Q(owner=self.request.user) |
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
-                )
+                ).distinct()
             qs = qs.select_related(
                 'phase',
                 'phase__competition',

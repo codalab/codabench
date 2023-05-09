@@ -69,6 +69,23 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
+            # new condition for search bar
+            # `mine` is true when this is called from "Benchmarks I'm Running"
+            # `participating_in` is true when this is called from "Benchmarks I'm in"
+            # `mine` and `participating_in` are none when this is called from Search bar
+            if (not mine) and (not participating_in):
+                # User is logged in
+                # filter his own competitions
+                # or
+                # filter published competitions by other users
+                qs = qs.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(published=True) & ~Q(created_by=self.request.user))
+                )
+        else:
+            # if user is not authenticated only filter published/public competitions
+            qs = qs.filter(Q(published=True))
+
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
             qs = qs.select_related('created_by')
