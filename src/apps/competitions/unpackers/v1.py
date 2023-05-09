@@ -159,6 +159,8 @@ class V15Unpacker(BaseUnpacker):
         for index, column in enumerate(columns):
             new_col_data = {
                 'title': column['title'],
+                # get label from columns, if not found use title as default
+                'label': column.get('label', column['title']),
                 'key': column['title'],
                 'index': index,
                 'sorting': column.get('sort') or 'desc',

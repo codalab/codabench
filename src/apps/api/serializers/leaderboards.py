@@ -20,6 +20,7 @@ class ColumnSerializer(WritableNestedModelSerializer):
             'computation',
             'computation_indexes',
             'title',
+            'label',
             'key',
             'sorting',
             'index',

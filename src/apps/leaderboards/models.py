@@ -57,6 +57,7 @@ class Column(models.Model):
     computation = models.TextField(choices=COMPUTATION_CHOICES, null=True, blank=True)
     computation_indexes = models.TextField(max_length=255, null=True, blank=True)
     title = models.CharField(max_length=36)
+    label = models.CharField(max_length=36, default='')
     key = models.CharField(max_length=36)
     sorting = models.TextField(choices=SORTING, default=SORTING[0][0])
     index = models.PositiveIntegerField()

@@ -35,7 +35,7 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{ get_title(column) }</th>
             <th if="{enable_detailed_results}">Detailed Results</th>
         </tr>
         </thead>
@@ -71,6 +71,15 @@
         self.phase_id = null
         self.competition_id = null
         self.enable_detailed_results = false
+
+        self.get_title = function(column) {
+            if ('label' in column){
+                if (column['label'] != ''){
+                    return column['label']
+                }
+            }
+            return column['title']
+        }
 
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
