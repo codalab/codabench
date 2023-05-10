@@ -35,7 +35,6 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-import logging; logger = logging.getLogger()
 
 
 class CompetitionViewSet(ModelViewSet):
