@@ -38,9 +38,7 @@ class SubmissionViewSet(ModelViewSet):
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
             dir(self.request)
-            # import pdb; pdb.set_trace()
-            # self.request.data
-            # Set hostname of submission - could be better
+            # Set hostname of submission
             if "status_details" in self.request.data.keys():
                 if request.data['status_details'].find('hostname') != -1:
                     # import pdb; pdb.set_trace()
