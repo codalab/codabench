@@ -47,7 +47,6 @@ class SubmissionViewSet(ModelViewSet):
                     hostname = request.data['status_details'].replace('hostname-','')
                     obj.worker_hostname = hostname
                     obj.save()
-                
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
             if self.action in ['update_fact_sheet', 're_run_submission']:
