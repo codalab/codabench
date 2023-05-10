@@ -58,7 +58,7 @@ class CompetitionViewSet(ModelViewSet):
             mine = self.request.query_params.get('mine', None)
 
             if mine:
-                # either competition is mine 
+                # either competition is mine
                 # or
                 # I am one of the collaborator
                 qs = Competition.objects.filter(
