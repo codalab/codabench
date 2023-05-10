@@ -75,13 +75,18 @@ class CompetitionViewSet(ModelViewSet):
             # `mine` and `participating_in` are none when this is called either from Search bar
             # or from competition detail page
             if (not mine) and (not participating_in):
-                # User is logged in
-                # filter his own competitions
+                # User is logged in then show
+                # compeitions which this user owns
                 # or
-                # filter published competitions by other users
+                # compeititions in which this user is collaborator
+                # or
+                # competitions in which this user is participant and status is approved
+                # or
+                # compeitions is published and belongs to someone else
                 qs = qs.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user])) |
+                    (Q(participants__user=self.request.user, participants__status="approved")) |
                     (Q(published=True) & ~Q(created_by=self.request.user))
                 )
         else:
