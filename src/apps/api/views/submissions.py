@@ -44,7 +44,7 @@ class SubmissionViewSet(ModelViewSet):
             if "status_details" in self.request.data.keys():
                 if request.data['status_details'].find('hostname') != -1:
                     # import pdb; pdb.set_trace()
-                    hostname = request.data['status_details'].replace('hostname-','')
+                    hostname = request.data['status_details'].replace('hostname-', '')
                     obj.worker_hostname = hostname
                     obj.save()
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
