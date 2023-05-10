@@ -35,6 +35,7 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
+import logging; logger = logging.getLogger()
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -69,10 +70,11 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
-            # new condition for search bar
+            # new condition
             # `mine` is true when this is called from "Benchmarks I'm Running"
             # `participating_in` is true when this is called from "Benchmarks I'm in"
-            # `mine` and `participating_in` are none when this is called from Search bar
+            # `mine` and `participating_in` are none when this is called either from Search bar
+            # or from competition detail page
             if (not mine) and (not participating_in):
                 # User is logged in
                 # filter his own competitions
@@ -80,6 +82,7 @@ class CompetitionViewSet(ModelViewSet):
                 # filter published competitions by other users
                 qs = qs.filter(
                     (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user])) |
                     (Q(published=True) & ~Q(created_by=self.request.user))
                 )
         else:
@@ -111,6 +114,7 @@ class CompetitionViewSet(ModelViewSet):
                 )
 
         search_query = self.request.query_params.get('search')
+        # search_query is true when called from searchbar
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
