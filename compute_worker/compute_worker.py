@@ -309,9 +309,7 @@ class Run:
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
-        
-        # from celery.contrib import rdb
-        # rdb.set_trace()
+
         data = {
             "status": status,
             "status_details": extra_information,
