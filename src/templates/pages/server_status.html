@@ -12,6 +12,7 @@
             <th>Competition</th>
             <th>Submission PK</th>
             <th>Submitter</th>
+            <th>Hostname</th>
             <th>Submitted at</th>
             <th>Status</th>
             </thead>
@@ -26,6 +27,7 @@
                     <td>{{ submission.phase.competition }}</td>
                     <td>{{ submission.pk }}</td>
                     <td>{{ submission.owner.username }}</td>
+                    <td>{{ submission.worker_hostname }}</td>
                     <td>{{ submission.created_when|timesince }} ago</td>
                     <td>{{ submission.status }}</td>
                 </tr>

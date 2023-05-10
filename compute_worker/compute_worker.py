@@ -22,7 +22,7 @@ import requests
 import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
-from celery import Celery, task
+from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
@@ -309,6 +309,7 @@ class Run:
     def _update_status(self, status, extra_information=None):
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}")
+
         data = {
             "status": status,
             "status_details": extra_information,
@@ -663,8 +664,9 @@ class Run:
         self._get_container_image(self.container_image)
 
     def start(self):
+        hostname = utils.nodenames.gethostname()
         if not self.is_scoring:
-            self._update_status(STATUS_RUNNING)
+            self._update_status(STATUS_RUNNING, extra_information=f"hostname-{hostname}")
 
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
