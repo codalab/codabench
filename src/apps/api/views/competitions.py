@@ -35,6 +35,8 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
+import logging
+logger = logging.getLogger()
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -56,7 +58,14 @@ class CompetitionViewSet(ModelViewSet):
             mine = self.request.query_params.get('mine', None)
 
             if mine:
-                qs = qs.filter(created_by=self.request.user)
+                # either competition is mine
+                # or
+                # I am one of the collaborator
+                qs = Competition.objects.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user]))
+
+                )
 
             participating_in = self.request.query_params.get('participating_in', None)
 
