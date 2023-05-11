@@ -45,21 +45,15 @@ class CompetitionViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-
         # Filter for search bar
         search_query = self.request.query_params.get('search')
-
-        if self.request.user.is_authenticated:
-
+        if self.request.user.is_authenticated: # user is logged in
             # filter by competition_type first, 'competition' by default
             competition_type = self.request.query_params.get('type', Competition.COMPETITION)
-
             if competition_type != 'any' and self.detail is False:
                 qs = qs.filter(competition_type=competition_type)
-
             # Filter to only see competitions you own
             mine = self.request.query_params.get('mine', None)
-
             if mine:
                 # either competition is mine
                 # or
@@ -67,26 +61,19 @@ class CompetitionViewSet(ModelViewSet):
                 qs = Competition.objects.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user]))
-
                 )
-
             participating_in = self.request.query_params.get('participating_in', None)
-
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
-
             participant_status_query = CompetitionParticipant.objects.filter(
                 competition=OuterRef('pk'),
                 user=self.request.user
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
-
             # `mine` is true when this is called from "Benchmarks I'm Running"
             # `participating_in` is true when this is called from "Benchmarks I'm in"
-            # `mine` and `participating_in` are none when this is called either from Search bar
-            # or from competition detail page
-            # if (not mine) and (not participating_in):
-            if (search_query):
+            # `search_query` is true when this is called from the search bar
+            if search_query:
                 # User is logged in then filter
                 # competitions which this user owns
                 # or
@@ -101,10 +88,9 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(published=True) & ~Q(created_by=self.request.user)) |
                     (Q(participants__user=self.request.user) & Q(participants__status="approved"))
                 ).distinct()
-
         else:
+            # if user is not authenticated only show public competitions in the search
             if (search_query):
-                # if user is not authenticated only filter published/public competitions
                 qs = qs.filter(Q(published=True))
 
         # On GETs lets optimize the query to reduce DB calls
