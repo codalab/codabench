@@ -47,7 +47,8 @@ class CompetitionViewSet(ModelViewSet):
         qs = super().get_queryset()
         # Filter for search bar
         search_query = self.request.query_params.get('search')
-        if self.request.user.is_authenticated: # user is logged in
+        # If user is logged in
+        if self.request.user.is_authenticated:
             # filter by competition_type first, 'competition' by default
             competition_type = self.request.query_params.get('type', Competition.COMPETITION)
             if competition_type != 'any' and self.detail is False:
