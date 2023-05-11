@@ -209,7 +209,16 @@ class BaseUnpacker:
                     all_queue_organizer_names = queue.organizers.all().values_list('username', flat=True)
                     if queue.owner != self.creator and self.creator.username not in all_queue_organizer_names:
                         raise CompetitionUnpackingException("You do not have access to the specified queue!")
-                self.competition['queue'] = queue.id
+                self.competition['queue'] = {
+                    'name': queue.name,
+                    'vhost': queue.vhost,
+                    'is_public': queue.is_public,
+                    'owner': queue.owner,
+                    'organizers': queue.organizers,
+                    'broker_url': queue.broker_url,
+                    'created_when': queue.broker_url,
+                    'id': queue.id,
+                }
             except Queue.DoesNotExist:
                 raise CompetitionUnpackingException("The specified Queue does not exist!")
 
