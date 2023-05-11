@@ -81,14 +81,14 @@ class CompetitionViewSet(ModelViewSet):
                 # compeititions in which this user is collaborator
                 # or
                 # compeitions is published and belongs to someone else
+                # or
+                # competitions in which this user is participant and status is approved
                 qs = qs.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user))
-                )
-                # or
-                # competitions in which this user is participant and status is approved
-                qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+                    (Q(published=True) & ~Q(created_by=self.request.user)) |
+                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                ).distinct()
         else:
             # if user is not authenticated only filter published/public competitions
             qs = qs.filter(Q(published=True))
