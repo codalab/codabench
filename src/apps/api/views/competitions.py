@@ -69,7 +69,6 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
-            # new condition
             # `mine` is true when this is called from "Benchmarks I'm Running"
             # `participating_in` is true when this is called from "Benchmarks I'm in"
             # `mine` and `participating_in` are none when this is called either from Search bar
@@ -78,7 +77,7 @@ class CompetitionViewSet(ModelViewSet):
                 # User is logged in then filter
                 # compeitions which this user owns
                 # or
-                # compeititions in which this user is collaborator
+                # competitions in which this user is collaborator
                 # or
                 # compeitions is published and belongs to someone else
                 # or
