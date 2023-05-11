@@ -75,11 +75,11 @@ class CompetitionViewSet(ModelViewSet):
             # or from competition detail page
             if (not mine) and (not participating_in):
                 # User is logged in then filter
-                # compeitions which this user owns
+                # competitions which this user owns
                 # or
                 # competitions in which this user is collaborator
                 # or
-                # compeitions is published and belongs to someone else
+                # competitions is published and belongs to someone else
                 # or
                 # competitions in which this user is participant and status is approved
                 qs = qs.filter(
