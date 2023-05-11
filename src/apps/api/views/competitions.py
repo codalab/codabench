@@ -384,7 +384,11 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You don't have access")
-        create_competition_dump.delay(pk)
+
+        # arg 1: pk: competition primary key
+        # arg 2: False: keys_instead_of_files (if false: files will be dowloaded in dumps, if true: only keys)
+        create_competition_dump.delay(pk, False)
+
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 

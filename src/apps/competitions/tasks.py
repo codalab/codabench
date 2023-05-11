@@ -4,7 +4,8 @@ import os
 import re
 import traceback
 import zipfile
-from datetime import timedelta
+from datetime import timedelta, datetime
+
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
@@ -423,7 +424,7 @@ def unpack_competition(status_pk):
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 10)
-def create_competition_dump(competition_pk, keys_instead_of_files=True):
+def create_competition_dump(competition_pk, keys_instead_of_files=False):
     yaml_data = {"version": "2"}
     try:
         # -------- SetUp -------
@@ -431,7 +432,8 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         logger.info(f"Finding competition {competition_pk}")
         comp = Competition.objects.get(pk=competition_pk)
         zip_buffer = BytesIO()
-        zip_name = f"{comp.title}-{comp.created_when.isoformat()}.zip"
+        current_date_time = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        zip_name = f"{comp.title}-{current_date_time}.zip"
         zip_file = zipfile.ZipFile(zip_buffer, "w")
 
         # -------- Main Competition Details -------
@@ -626,7 +628,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=True):
         bundle_count = CompetitionDump.objects.count() + 1
         temp_dataset_bundle = Data.objects.create(
             created_by=comp.created_by,
-            name=f"{comp.title} Dump #{bundle_count} Created {comp.created_when.date()}",
+            name=f"{comp.title} Dump #{bundle_count} Created {current_date_time}",
             type='competition_bundle',
             description='Automatically created competition dump',
             # 'data_file'=,
