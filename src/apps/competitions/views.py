@@ -28,13 +28,16 @@ class CompetitionDetail(DetailView):
     def get_object(self, *args, **kwargs):
         competition = super().get_object(*args, **kwargs)
 
-        is_creator, is_collaborator, is_participant = False, False, False
+        is_admin, is_creator, is_collaborator, is_participant = False, False, False, False
 
         # check if user is loggedin
         if self.request.user.is_authenticated:
 
+            # check if user is admin
+            is_admin = self.request.user.is_superuser
+
             # check if user is the creator of this competition
-            is_creator = self.request.user.is_superuser or self.request.user == competition.created_by
+            is_creator = self.request.user == competition.created_by
 
             # check if user is collaborator of this competition
             is_collaborator = self.request.user in competition.collaborators.all()
@@ -46,7 +49,14 @@ class CompetitionDetail(DetailView):
         # check if secret key provided is valid
         valid_secret_key = self.request.GET.get('secret_key') == str(competition.secret_key)
 
-        if is_creator or is_collaborator or competition.published or valid_secret_key or is_participant:
+        if (
+            is_admin or
+            is_creator or
+            is_collaborator or
+            competition.published or
+            valid_secret_key or
+            is_participant
+        ):
             return competition
         raise Http404()
 
