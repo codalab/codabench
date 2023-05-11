@@ -452,7 +452,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     started_when = models.DateTimeField(null=True)
     is_public = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
-
+    worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,

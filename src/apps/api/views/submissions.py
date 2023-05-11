@@ -37,6 +37,13 @@ class SubmissionViewSet(ModelViewSet):
                 raise PermissionDenied("Cannot add task-specific submission re-runs to leaderboards.")
             return
         if self.request and self.request.method in ('POST', 'PUT', 'PATCH'):
+            dir(self.request)
+            # Set hostname of submission
+            if "status_details" in self.request.data.keys():
+                if request.data['status_details'].find('hostname') != -1:
+                    hostname = request.data['status_details'].replace('hostname-', '')
+                    obj.worker_hostname = hostname
+                    obj.save()
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
             if self.action in ['update_fact_sheet', 're_run_submission']:

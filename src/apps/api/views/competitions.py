@@ -35,6 +35,8 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
+import logging
+logger = logging.getLogger()
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -56,7 +58,14 @@ class CompetitionViewSet(ModelViewSet):
             mine = self.request.query_params.get('mine', None)
 
             if mine:
-                qs = qs.filter(created_by=self.request.user)
+                # either competition is mine
+                # or
+                # I am one of the collaborator
+                qs = Competition.objects.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user]))
+
+                )
 
             participating_in = self.request.query_params.get('participating_in', None)
 
@@ -69,19 +78,25 @@ class CompetitionViewSet(ModelViewSet):
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
 
-            # new condition for search bar
             # `mine` is true when this is called from "Benchmarks I'm Running"
             # `participating_in` is true when this is called from "Benchmarks I'm in"
-            # `mine` and `participating_in` are none when this is called from Search bar
+            # `mine` and `participating_in` are none when this is called either from Search bar
+            # or from competition detail page
             if (not mine) and (not participating_in):
-                # User is logged in
-                # filter his own competitions
+                # User is logged in then filter
+                # competitions which this user owns
                 # or
-                # filter published competitions by other users
+                # competitions in which this user is collaborator
+                # or
+                # competitions is published and belongs to someone else
+                # or
+                # competitions in which this user is participant and status is approved
                 qs = qs.filter(
                     (Q(created_by=self.request.user)) |
-                    (Q(published=True) & ~Q(created_by=self.request.user))
-                )
+                    (Q(collaborators__in=[self.request.user])) |
+                    (Q(published=True) & ~Q(created_by=self.request.user)) |
+                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                ).distinct()
         else:
             # if user is not authenticated only filter published/public competitions
             qs = qs.filter(Q(published=True))
@@ -111,6 +126,7 @@ class CompetitionViewSet(ModelViewSet):
                 )
 
         search_query = self.request.query_params.get('search')
+        # search_query is true when called from searchbar
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
@@ -375,7 +391,11 @@ class CompetitionViewSet(ModelViewSet):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You don't have access")
-        create_competition_dump.delay(pk)
+
+        # arg 1: pk: competition primary key
+        # arg 2: False: keys_instead_of_files (if false: files will be dowloaded in dumps, if true: only keys)
+        create_competition_dump.delay(pk, False)
+
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
