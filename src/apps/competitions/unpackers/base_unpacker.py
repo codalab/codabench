@@ -201,10 +201,10 @@ class BaseUnpacker:
 
     def _unpack_queue(self):
         # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!
-        queue_name = self.competition_yaml.get('queue')
-        if queue_name:
+        vhost = self.competition_yaml.get('queue')
+        if vhost:
             try:
-                queue = Queue.objects.get(name=queue_name)
+                queue = Queue.objects.get(vhost=vhost)
                 if not queue.is_public:
                     all_queue_organizer_names = queue.organizers.all().values_list('username', flat=True)
                     if queue.owner != self.creator and self.creator.username not in all_queue_organizer_names:
