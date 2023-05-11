@@ -46,6 +46,9 @@ class CompetitionViewSet(ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
 
+        # Filter for search bar
+        search_query = self.request.query_params.get('search')
+
         if self.request.user.is_authenticated:
 
             # filter by competition_type first, 'competition' by default
@@ -82,7 +85,8 @@ class CompetitionViewSet(ModelViewSet):
             # `participating_in` is true when this is called from "Benchmarks I'm in"
             # `mine` and `participating_in` are none when this is called either from Search bar
             # or from competition detail page
-            if (not mine) and (not participating_in):
+            # if (not mine) and (not participating_in):
+            if (search_query):
                 # User is logged in then filter
                 # competitions which this user owns
                 # or
@@ -97,12 +101,16 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(published=True) & ~Q(created_by=self.request.user)) |
                     (Q(participants__user=self.request.user) & Q(participants__status="approved"))
                 ).distinct()
+
         else:
-            # if user is not authenticated only filter published/public competitions
-            qs = qs.filter(Q(published=True))
+            if (search_query):
+                # if user is not authenticated only filter published/public competitions
+                qs = qs.filter(Q(published=True))
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
+
+            logger.warning("\n\nGET\n\n")
             qs = qs.select_related('created_by')
             if self.action != 'list':
                 qs = qs.select_related('created_by')
@@ -125,7 +133,6 @@ class CompetitionViewSet(ModelViewSet):
                     ), distinct=True)
                 )
 
-        search_query = self.request.query_params.get('search')
         # search_query is true when called from searchbar
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
