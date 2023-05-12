@@ -28,14 +28,16 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th></th>
+            <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
             <th if="{enable_detailed_results}"></th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th>Entries</th>
+            <th>Date of last entry</th>
+            <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             <th if="{enable_detailed_results}">Detailed Results</th>
         </tr>
         </thead>
@@ -55,6 +57,8 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
+            <td>{submission.num_entries}</td>
+            <td>{submission.last_entry_date}</td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
             <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
