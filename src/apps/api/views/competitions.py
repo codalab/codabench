@@ -502,11 +502,11 @@ class PhaseViewSet(ModelViewSet):
         submissions_keys = {}
         for submission in query['submissions']:
 
-            # count number of entried/ number of submissions for user of the submission
-            num_entries = Submission.objects.filter(owner__username=submission['owner']).count()
+            # count number of entries/number of submissions for the owner of this submission for this phase
+            num_entries = Submission.objects.filter(owner__username=submission['owner'], phase=phase).count()
 
-            # get date of last submission
-            last_entry_date = Submission.objects.filter(owner__username=submission['owner'])\
+            # get date of last submission by the owner of this submission for this phase
+            last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
                 .values('created_when')\
                 .order_by('-created_when')[0]['created_when']\
                 .strftime('%Y-%m-%d')

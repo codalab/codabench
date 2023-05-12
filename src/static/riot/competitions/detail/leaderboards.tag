@@ -28,7 +28,7 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th></th>
+            <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
             <th if="{enable_detailed_results}"></th>
         </tr>
