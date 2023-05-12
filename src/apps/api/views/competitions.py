@@ -509,7 +509,7 @@ class PhaseViewSet(ModelViewSet):
             last_entry_date = Submission.objects.filter(owner__username=submission['owner'])\
                 .values('created_when')\
                 .order_by('-created_when')[0]['created_when']\
-                .strftime('%Y-%m-%d %H:%M:%S')
+                .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
             if submission_key not in submissions_keys:
