@@ -35,7 +35,9 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th class="center aligned" each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+            <th>Entries</th>
+            <th>Date of last entry</th>
+            <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             <th if="{enable_detailed_results}">Detailed Results</th>
         </tr>
         </thead>
@@ -55,6 +57,8 @@
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
+            <td>{submission.num_entries}</td>
+            <td>{submission.last_entry_date}</td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
             <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
@@ -120,6 +124,7 @@
         self.update_leaderboard = () => {
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
+                    console.log(responseData)
                     self.selected_leaderboard = responseData
                     self.columns = []
                     // Make fake task and columns for Metadata so it can be filtered like columns
