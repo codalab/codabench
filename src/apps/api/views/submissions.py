@@ -289,7 +289,7 @@ class SubmissionViewSet(ModelViewSet):
         primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
 
         # Leaderboard primary column
-        columns = leaderboard.columns.order_by('index')    
+        columns = leaderboard.columns.order_by('index')
 
         # Get submissions of this phase
         submissions = Submission.objects.filter(phase=phase)
