@@ -274,6 +274,57 @@ class SubmissionViewSet(ModelViewSet):
         Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
 
+    @action(detail=True, methods=('GET',))
+    def get_submission_panel_submissions(self, request, pk):
+
+        response = {}
+
+        # Get phase by id
+        phase = Phase.objects.get(id=pk)
+
+        # Get phase leaderboard
+        leaderboard = Leaderboard.objects.get(id=phase.leaderboard_id)
+
+        # Get Leaderboard primary column
+        primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
+
+        # Leaderboard primary column
+        columns = leaderboard.columns.order_by('index')    
+
+        # Get submissions of this phase
+        submissions = Submission.objects.filter(phase=phase)
+
+        # Serialize fetched submissions
+        serialized_submissions = SubmissionSerializer(submissions, many=True).data
+
+        # Loop over submissions to access scores list inside each submission
+        for submission_index, submission in enumerate(serialized_submissions):
+
+            # Loop over scores in each submission
+            for score_index, score in enumerate(submission['scores']):
+
+                if score['column_key'] == primary_col.key:
+                    # Mark is_primary_col True if this column key == primary_col key
+                    serialized_submissions[submission_index]["scores"][score_index]["is_primary_col"] = True
+                else:
+                    # Mark is_primary_col False if this column key != primary_col key
+                    serialized_submissions[submission_index]["scores"][score_index]["is_primary_col"] = False
+
+                # default precision is set to 2
+                precision = 2
+
+                # loop over columns to find a column with the same key
+                # replace default precision with column precision
+                for col in columns:
+                    if col.key == score["column_key"]:
+                        precision = col.precision
+                        break
+
+                # set precision
+                serialized_submissions[submission_index]["scores"][score_index]['score'] = str(round(float(score["score"]), precision))
+        response['submissions'] = serialized_submissions
+        return Response(response)
+
 
 @api_view(['POST'])
 @permission_classes((AllowAny,))  # permissions are checked via the submission secret

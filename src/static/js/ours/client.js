@@ -73,8 +73,11 @@ CODALAB.api = {
     can_make_submissions: function (phase_id) {
         return CODALAB.api.request('GET', `${URLS.API}can_make_submission/${phase_id}`)
     },
-    get_submissions: function (filters) {
-        return CODALAB.api.request('GET', `${URLS.API}submissions/`, filters)
+    // get_submissions: function (filters) {
+    //     return CODALAB.api.request('GET', `${URLS.API}submissions/`, filters)
+    // },
+    get_submissions_for_panel: function (phase_id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${phase_id}/get_submission_panel_submissions/`)
     },
     get_submission: function (pk) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${pk}/`)

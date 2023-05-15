@@ -62,7 +62,8 @@
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
             <th>Date</th>
-            <th class="right aligned">Status</th>
+            <th>Status</th>
+            <th>Score</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
@@ -94,6 +95,7 @@
                     <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
                 </sup>
             </td>
+            <td>{get_score(submission)}</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <span data-tooltip="Rerun Submission"
@@ -216,14 +218,17 @@
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
-            if (opts.admin) {
-                filters = filters || {phase__competition: opts.competition.id}
-            } else {
-                filters = filters || {phase: self.selected_phase.id}
-            }
-            filters = filters || {phase: self.selected_phase.id}
-            CODALAB.api.get_submissions(filters)
-                .done(function (submissions) {
+            //if (opts.admin) {
+            //    filters = filters || {phase__competition: opts.competition.id}
+            //} else {
+            //    filters = filters || {phase: self.selected_phase.id}
+            //}
+            //filters = filters || {phase: self.selected_phase.id}
+            phase_id = self.selected_phase.id
+            // CODALAB.api.get_submissions_for_panel(filters)
+            CODALAB.api.get_submissions_for_panel(phase_id)
+                .done(function (data) {
+                    submissions = data.submissions
                     // TODO: should be able to do this with a serializer?
                     if (opts.admin) {
                         self.submissions = submissions.map((item) => {
@@ -380,6 +385,16 @@
             } catch {
                 return ['', '']
             }
+        }
+
+        self.get_score = function (submission) {
+            return_score = ""
+            _.forEach(submission.scores, score => {
+                if (score.is_primary_col){
+                    return_score = score.score
+                }
+            })
+            return return_score
         }
 
         self.toggle_submission_is_public = function (submission) {

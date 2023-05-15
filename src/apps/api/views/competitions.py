@@ -97,7 +97,6 @@ class CompetitionViewSet(ModelViewSet):
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
 
-            logger.warning("\n\nGET\n\n")
             qs = qs.select_related('created_by')
             if self.action != 'list':
                 qs = qs.select_related('created_by')
