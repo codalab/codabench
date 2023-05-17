@@ -68,7 +68,7 @@ class TestSubmissions(SeleniumTestCase):
         submission_id = int(self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(1)').text)
 
         # Add the submission to the leaderboard and go to results tab
-        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(5) span[data-tooltip="Add to Leaderboard"]').click()
+        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(6) span[data-tooltip="Add to Leaderboard"]').click()
         self.find('.item[data-tab="results-tab"]').click()
 
         # The leaderboard table lists our submission
