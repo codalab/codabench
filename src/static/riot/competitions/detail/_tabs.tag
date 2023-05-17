@@ -328,7 +328,14 @@
             // Need to run update() to build tags to render html in
             self.update()
             _.forEach(self.competition.pages, (page, index) => {
-                $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+
+                if (self.isHTML(page.content)){
+                    $(`#page_${index}`)[0].innerHTML = sanitize_HTML(page.content)
+                }else{
+                    $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+                }
+                
+                
             })
             _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
@@ -358,6 +365,12 @@
                 self.update()
                 CODALAB.events.trigger('phase_selected', data)
             }
+        }
+        // To check if page content has HTML
+        // Return true if content is html
+        // Return false if content is not html i.e. MarkDown
+        self.isHTML = function (page_content) {
+            return /<(?=.*? .*?\/ ?>|br|hr|input|!--|wbr)[a-z]+.*?>|<([a-z]+).*?<\/\1>/i.test(page_content);
         }
 
         self.update()
