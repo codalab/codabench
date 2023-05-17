@@ -39,9 +39,9 @@ app.conf.task_queues = [
 
 
 # Setup base directories used by all submissions
-HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")  # note: we need to pass this directory to
-                                                                      # docker compose so it knows where to store things!
-BASE_DIR = "/codabench/"
+# note: we need to pass this directory to docker-compose so it knows where to store things!
+HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
+BASE_DIR = "/codabench/" # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
@@ -182,6 +182,7 @@ class Run:
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
+        self.data_dir = os.path.join(HOST_DIRECTORY, "data") # absolute path to data in the host
         self.logs = {}
 
         # Details for submission
@@ -522,6 +523,7 @@ class Run:
             # Set the volumes
             '-v', f'{self._get_host_path(program_dir)}:/app/program',
             '-v', f'{self._get_host_path(self.output_dir)}:/app/output',
+            '-v', f'{self.data_dir}:/app/data',
 
             # Start in the right directory
             '-w', '/app/program',
