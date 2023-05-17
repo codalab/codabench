@@ -523,7 +523,7 @@ class Run:
             # Set the volumes
             '-v', f'{self._get_host_path(program_dir)}:/app/program',
             '-v', f'{self._get_host_path(self.output_dir)}:/app/output',
-            '-v', f'{self.data_dir}:/app/data',
+            '-v', f'{self.data_dir}:/app/data:ro',
 
             # Start in the right directory
             '-w', '/app/program',
