@@ -62,7 +62,8 @@
             <th if="{ opts.admin }">Owner</th>
             <th if="{ opts.admin }">Phase</th>
             <th>Date</th>
-            <th class="right aligned">Status</th>
+            <th>Status</th>
+            <th>Score</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
@@ -94,6 +95,7 @@
                     <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
                 </sup>
             </td>
+            <td>{get_score(submission)}</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <span data-tooltip="Rerun Submission"
@@ -379,6 +381,15 @@
                 return [score.score, score.id]
             } catch {
                 return ['', '']
+            }
+        }
+
+        self.get_score = function (submission) {
+            try{
+                return parseFloat(submission.scores[0].score).toFixed(2)
+                
+            } catch {
+                return ""
             }
         }
 
