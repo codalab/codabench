@@ -218,7 +218,15 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading}">
+            <div class="row" if="{!CODALAB.state.user.logged_in}">
+                <div class="column">
+                    <div class="ui yellow message">
+                        <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                        <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to view this competition results.
+                    </div>
+                </div>
+            </div>
+            <div if="{CODALAB.state.user.logged_in}" show="{!loading}">
                 <div class="ui button-container inline">
                     <div class="ui button {active: selected_phase_index == phase.id}"
                          each="{ phase in competition.phases }"
@@ -244,6 +252,7 @@
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
                 <div class="center aligned"><h2>No Visible Leaderboards for this competition</h2></div>
             </div>
+            
         </div>
     </div>
 
