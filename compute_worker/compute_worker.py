@@ -250,7 +250,6 @@ class Run:
                 if time.time() - start > expiration_seconds:
                     timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
                     logger.warning(timeout_error_message)
-                    raise SubmissionException(timeout_error_message)
             await asyncio.sleep(5)
             file_path = self.get_detailed_results_file_path()
         else:
