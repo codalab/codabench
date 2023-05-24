@@ -97,7 +97,6 @@ class CompetitionViewSet(ModelViewSet):
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
 
-            logger.warning("\n\nGET\n\n")
             qs = qs.select_related('created_by')
             if self.action != 'list':
                 qs = qs.select_related('created_by')
@@ -501,6 +500,16 @@ class PhaseViewSet(ModelViewSet):
         columns = [col for col in query['columns']]
         submissions_keys = {}
         for submission in query['submissions']:
+
+            # count number of entries/number of submissions for the owner of this submission for this phase
+            num_entries = Submission.objects.filter(owner__username=submission['owner'], phase=phase).count()
+
+            # get date of last submission by the owner of this submission for this phase
+            last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
+                .values('created_when')\
+                .order_by('-created_when')[0]['created_when']\
+                .strftime('%Y-%m-%d')
+
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
@@ -511,6 +520,8 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
+                    'num_entries': num_entries,
+                    'last_entry_date': last_entry_date
                 })
             for score in submission['scores']:
 

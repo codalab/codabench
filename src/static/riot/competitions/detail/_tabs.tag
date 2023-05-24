@@ -218,7 +218,15 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div show="{!loading}">
+            <div class="row" if="{!CODALAB.state.user.logged_in}">
+                <div class="column">
+                    <div class="ui yellow message">
+                        <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                        <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to view this competition results.
+                    </div>
+                </div>
+            </div>
+            <div if="{CODALAB.state.user.logged_in}" show="{!loading}">
                 <div class="ui button-container inline">
                     <div class="ui button {active: selected_phase_index == phase.id}"
                          each="{ phase in competition.phases }"
@@ -244,6 +252,7 @@
             <div show="{!loading && _.isEmpty(competition.leaderboards)}">
                 <div class="center aligned"><h2>No Visible Leaderboards for this competition</h2></div>
             </div>
+            
         </div>
     </div>
 
@@ -328,7 +337,14 @@
             // Need to run update() to build tags to render html in
             self.update()
             _.forEach(self.competition.pages, (page, index) => {
-                $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+
+                if (self.isHTML(page.content)){
+                    $(`#page_${index}`)[0].innerHTML = sanitize_HTML(page.content)
+                }else{
+                    $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
+                }
+                
+                
             })
             _.forEach(self.competition.phases, (phase, index) => {
                 $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
@@ -358,6 +374,12 @@
                 self.update()
                 CODALAB.events.trigger('phase_selected', data)
             }
+        }
+        // To check if page content has HTML
+        // Return true if content is html
+        // Return false if content is not html i.e. MarkDown
+        self.isHTML = function (page_content) {
+            return /<(?=.*? .*?\/ ?>|br|hr|input|!--|wbr)[a-z]+.*?>|<([a-z]+).*?<\/\1>/i.test(page_content);
         }
 
         self.update()
