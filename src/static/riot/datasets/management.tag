@@ -75,7 +75,7 @@
 
         <!-------------------------------------
                       Pagination
-        ------------------------------------->
+        -------------------------------------->
         <tr>
             <th colspan="7" if="{datasets.length > 0}">
                 <div class="ui right floated pagination menu" if="{datasets.length > 0}">
@@ -136,7 +136,8 @@
             </div>
         </div>
         <div class="actions">
-            <button class="ui primary icon button" onclick="{toggle_is_public}">
+            <button show="{selected_row.created_by === CODALAB.state.user.username}"
+                class="ui primary icon button" onclick="{toggle_is_public}">
                 <i class="share icon"></i> {selected_row.is_public ? "Make Private" : "Make Public"}
             </button>
             <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}" class="ui green icon button">
