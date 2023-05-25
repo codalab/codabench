@@ -62,7 +62,8 @@ class CompetitionViewSet(ModelViewSet):
                 qs = Competition.objects.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user]))
-                )
+                ).distinct()
+
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
