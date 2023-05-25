@@ -418,8 +418,6 @@
         }
 
         self.toggle_is_public = () => {
-            console.log(self.selected_row.created_by)
-            console.log(CODALAB.state.user.username)
             let message = self.selected_row.is_public
                 ? 'Are you sure you want to make this dataset private? It will no longer be available to other users.'
                 : 'Are you sure you want to make this dataset public? It will become visible to everyone'
