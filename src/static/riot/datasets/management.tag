@@ -75,7 +75,7 @@
 
         <!-------------------------------------
                       Pagination
-        ------------------------------------->
+        -------------------------------------->
         <tr>
             <th colspan="7" if="{datasets.length > 0}">
                 <div class="ui right floated pagination menu" if="{datasets.length > 0}">

@@ -58,7 +58,7 @@
         <tfoot>
         <!-------------------------------------
                   Pagination
-        ------------------------------------->
+        -------------------------------------->
         <tr if="{tasks.length > 0}">
             <th colspan="7">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
