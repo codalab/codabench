@@ -80,7 +80,7 @@
                       Pagination
         -------------------------------------->
         <tr>
-            <th colspan="7" if="{datasets.length > 0}">
+            <th colspan="8" if="{datasets.length > 0}">
                 <div class="ui right floated pagination menu" if="{datasets.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
