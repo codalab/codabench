@@ -448,7 +448,6 @@
 
         // Function to format file size 
         self.format_file_size = function(file_size) {
-            
             // parse file size from string to float
             try {
                 n = parseFloat(file_size)
@@ -456,23 +455,18 @@
             catch(err) {
                 // return empty string if parsing fails
                 return ""
-            }   
-
+            }
             // constant units to show with files size
             // file size is in KB, converting it to MB and GB 
             const units = ['KB', 'MB', 'GB']
-
             // loop incrementer for selecting desired unit
             let i = 0
-
             // loop over n until it is greater than 1000
             while(n >= 1000 && ++i){
                 n = n/1000;
             }
-
             // restrict file size to 1 decimal number concatinated with unit
             return(n.toFixed(1) + ' ' + units[i]);
-            
         }
 
     </script>
