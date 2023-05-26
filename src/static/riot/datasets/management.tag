@@ -1,7 +1,8 @@
 <data-management>
     <!-------------------------------------
              Search and filter bits
-      ------------------------------------->
+      -------------------------------------->
+      
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
@@ -26,13 +27,14 @@
 
     <!-------------------------------------
                   Data Table
-      ------------------------------------->
+      -------------------------------------->
     <table class="ui {selectable: datasets.length > 0} celled compact table">
         <thead>
         <tr>
             <th>Name</th>
             <th width="175px">Type</th>
-            <th width="125px">Uploaded...</th>
+            <th width="175px">Size</th>
+            <th width="125px">Uploaded</th>
             <th width="60px">In Use</th>
             <th width="60px">Public</th>
             <th width="50px">Delete?</th>
@@ -45,6 +47,7 @@
             onclick="{show_info_modal.bind(this, dataset)}">
             <td>{ dataset.name }</td>
             <td>{ dataset.type }</td>
+            <td>{ format_file_size(dataset.file_size) }</td>
             <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ dataset.in_use.length > 0 }"></i>
@@ -284,6 +287,7 @@
             }
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
+                    console.log(data.results)
                     self.datasets = data.results
                     self.pagination = {
                         "count": data.count,
@@ -441,6 +445,35 @@
             else {
                 self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
             }
+        }
+
+        // Function to format file size 
+        self.format_file_size = function(file_size) {
+            
+            // parse file size from string to float
+            try {
+                n = parseFloat(file_size)
+            }
+            catch(err) {
+                // return empty string if parsing fails
+                return ""
+            }   
+
+            // constant units to show with files size
+            // file size is in KB, converting it to MB and GB 
+            const units = ['KB', 'MB', 'GB']
+
+            // loop incrementer for selecting desired unit
+            let i = 0
+
+            // loop over n until it is greater than 1000
+            while(n >= 1000 && ++i){
+                n = n/1000;
+            }
+
+            // restrict file size to 1 decimal number concatinated with unit
+            return(n.toFixed(1) + ' ' + units[i]);
+            
         }
 
     </script>
