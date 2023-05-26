@@ -287,7 +287,6 @@
             }
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
-                    console.log(data.results)
                     self.datasets = data.results
                     self.pagination = {
                         "count": data.count,
