@@ -102,7 +102,7 @@
 
     <div ref="info_modal" class="ui modal">
         <div class="header">
-            {selected_row.name}
+            {selected_row.file_name || selected_row.name}
         </div>
         <div class="content">
             <h3>Details</h3>
