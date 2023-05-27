@@ -2,7 +2,7 @@
     <!--Todo: ultimately decide whether this belongs on tasks:management or dataset:management
             Is currently at both locations-->
     <div class="ui top attached tabular menu">
-        <div class="active item" data-tab="datasets">Datasets</div>
+        <div class="active item" data-tab="datasets">Datasets and programs</div>
         <div class="item" data-tab="tasks">Tasks</div>
         <div class="right menu">
             <div class="item">
