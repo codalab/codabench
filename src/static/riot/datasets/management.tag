@@ -124,7 +124,10 @@
                 <tbody>
                 <tr>
                     <td>{selected_row.key}</td>
-                    <td>{selected_row.competition.title}</td>
+                    <!--  show compeition name as link if competition is available -->
+                    <td if="{selected_row.competition}"><a class="link-no-deco" target="_blank" href="../competitions/{ selected_row.competition.id }">{ selected_row.competition.title }</a></td>
+                    <!--  show empty td if competition is not available  -->
+                    <td if="{!selected_row.competition}"></td>
                     <td>{selected_row.created_by}</td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
