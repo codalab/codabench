@@ -10,6 +10,7 @@ from django.utils.timezone import now
 from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
+from competitions.models import Competition
 
 
 class Data(ChaHubSaveMixin, models.Model):
@@ -56,6 +57,9 @@ class Data(ChaHubSaveMixin, models.Model):
     # This is true if the Data model was created as part of unpacking a competition. Competition bundles themselves
     # are NOT marked True, since they are not created by unpacking!
     was_created_by_competition = models.BooleanField(default=False)
+
+    competition = models.ForeignKey(Competition, on_delete=models.PROTECT, null=True, related_name='submission')
+    file_name = models.CharField(max_length=64, default="")
 
     def get_download_url(self):
         return reverse('datasets:download', kwargs={'key': self.key})

@@ -21,6 +21,7 @@ class DatasetAPITests(APITestCase):
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
             'request_sassy_file_name': faker.file_name(),
+            'file_name': faker.file_name(),
         })
 
         assert resp.status_code == 400

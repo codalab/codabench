@@ -153,6 +153,7 @@ CODALAB.api = {
     create_dataset: function (metadata, data_file, progress_update_callback) {
         // Pass the requested file name for the SAS url
         metadata.request_sassy_file_name = data_file.name
+        metadata.file_name = data_file.name
 
         // This will be set on successful dataset creation, then used to complete the dataset upload
         var dataset = {}

@@ -24,6 +24,8 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'created_by',
             'data_file',
             'was_created_by_competition',
+            'competition',
+            'file_name',
         )
         read_only_fields = (
             'key',
@@ -71,6 +73,7 @@ class DataSimpleSerializer(serializers.ModelSerializer):
 
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
+    competition = serializers.SerializerMethodField()
 
     class Meta:
         model = Data
@@ -86,7 +89,19 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'was_created_by_competition',
             'in_use',
             'file_size',
+            'competition',
+            'file_name',
         )
+
+    def get_competition(self, obj):
+
+        # return competition dict with id and title if available
+        if obj.competition:
+            return {
+                "id": obj.competition.id,
+                "title": obj.competition.title,
+            }
+        return None
 
 
 class DataGroupSerializer(serializers.ModelSerializer):
