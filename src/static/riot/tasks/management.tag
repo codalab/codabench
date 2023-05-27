@@ -156,7 +156,7 @@
         <div class="content">
             <div class="ui pointing menu">
                 <div class="active item modal-item" data-tab="details">Details</div>
-                <div class="item modal-item" data-tab="data">Datasets</div>
+                <div class="item modal-item" data-tab="data">Datasets and programs</div>
             </div>
             <form class="ui form" ref="form">
                 <div class="ui active tab" data-tab="details">
