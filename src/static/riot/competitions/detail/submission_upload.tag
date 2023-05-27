@@ -413,7 +413,8 @@
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
             var data_file_metadata = {
-                type: 'submission'
+                type: 'submission',
+                competition: self.opts.competition.id
             }
             var data_file = self.refs.data_file.refs.file_input.files[0]
             self.children = []

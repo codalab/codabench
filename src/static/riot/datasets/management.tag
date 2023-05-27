@@ -31,7 +31,8 @@
     <table class="ui {selectable: datasets.length > 0} celled compact table">
         <thead>
         <tr>
-            <th>Name</th>
+            <th>File Name</th>
+            <th>Competition in</th>
             <th width="175px">Type</th>
             <th width="175px">Size</th>
             <th width="125px">Uploaded</th>
@@ -45,7 +46,9 @@
         <tr each="{ dataset, index in datasets }"
             class="dataset-row"
             onclick="{show_info_modal.bind(this, dataset)}">
-            <td>{ dataset.name }</td>
+            <!--  show file name if exists otherwise show name(for old submissions)  -->
+            <td>{ dataset.file_name || dataset.name }</td>
+            <td>{ dataset.competition.title }</td>
             <td>{ dataset.type }</td>
             <td>{ format_file_size(dataset.file_size) }</td>
             <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
@@ -80,7 +83,7 @@
                       Pagination
         -------------------------------------->
         <tr>
-            <th colspan="8" if="{datasets.length > 0}">
+            <th colspan="9" if="{datasets.length > 0}">
                 <div class="ui right floated pagination menu" if="{datasets.length > 0}">
                     <a show="{!!_.get(pagination, 'previous')}" class="icon item" onclick="{previous_page}">
                         <i class="left chevron icon"></i>
@@ -108,6 +111,7 @@
                 <thead>
                 <tr>
                     <th>Key</th>
+                    <th>Competition in</th>
                     <th>Created By</th>
                     <th>Created</th>
                     <th>Type</th>
@@ -117,6 +121,7 @@
                 <tbody>
                 <tr>
                     <td>{selected_row.key}</td>
+                    <td>{selected_row.competition.title}</td>
                     <td>{selected_row.created_by}</td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
