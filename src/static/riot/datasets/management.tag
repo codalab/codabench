@@ -48,7 +48,10 @@
             onclick="{show_info_modal.bind(this, dataset)}">
             <!--  show file name if exists otherwise show name(for old submissions)  -->
             <td>{ dataset.file_name || dataset.name }</td>
-            <td>{ dataset.competition.title }</td>
+            <!--  show compeition name as link if competition is available -->
+            <td if="{dataset.competition}"><a class="link-no-deco" target="_blank" href="../competitions/{ dataset.competition.id }">{ dataset.competition.title }</a></td>
+            <!--  show empty td if competition is not available  -->
+            <td if="{!dataset.competition}"></td>
             <td>{ dataset.type }</td>
             <td>{ format_file_size(dataset.file_size) }</td>
             <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
