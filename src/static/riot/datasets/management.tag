@@ -91,6 +91,7 @@
         </tfoot>
     </table>
 
+    <!--  Dataset Detail Model  -->
     <div ref="info_modal" class="ui modal">
         <div class="header">
             {selected_row.name}
@@ -144,9 +145,9 @@
         </div>
     </div>
 
-
+    <!--  Add Dataset Model  -->
     <div ref="dataset_creation_modal" class="ui modal">
-        <div class="header">Form</div>
+        <div class="header">Add Dataset/Program Form</div>
 
         <div class="content">
             <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
@@ -192,6 +193,7 @@
             <button class="ui basic red cancel button">Cancel</button>
         </div>
     </div>
+
     <script>
         var self = this
         self.mixin(ProgressBarMixin)

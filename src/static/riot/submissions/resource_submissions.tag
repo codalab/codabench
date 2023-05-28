@@ -5,6 +5,10 @@
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
     </div>
+    <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
+        <i class="plus icon"></i>
+        Add Submission
+    </button>
     <button class="ui red right floated labeled icon button {disabled: marked_submissions.length === 0}" onclick="{delete_submissions}">
         <i class="icon delete"></i>
         Delete Selected Submissions
@@ -78,6 +82,7 @@
         </tfoot>
     </table>
 
+    <!--  Submission Detail Model  -->
     <div ref="info_modal" class="ui modal">
         <div class="header">
             {selected_row.file_name || selected_row.name}
@@ -129,6 +134,49 @@
         </div>
     </div>
 
+    <!--  Add Submission Model  -->
+    <div ref="submission_creation_modal" class="ui modal">
+        <div class="header">Add Submission Form</div>
+
+        <div class="content">
+            <div class="ui message error" show="{ Object.keys(errors).length > 0 }">
+                <div class="header">
+                    Error(s) creating submission
+                </div>
+                <ul class="list">
+                    <li each="{ error, field in errors }">
+                        <strong>{field}:</strong> {error}
+                    </li>
+                </ul>
+            </div>
+
+            <form class="ui form coda-animated {error: errors}" ref="form">
+                <input-text name="name" ref="name" error="{errors.name}" placeholder="Name"></input-text>
+                <input-text name="description" ref="description" error="{errors.description}"
+                            placeholder="Description"></input-text>
+
+                <input type=hidden name="type" ref="type" value="submission">
+                
+                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                            accept=".zip"></input-file>
+            </form>
+
+            <div class="ui indicating progress" ref="progress">
+                <div class="bar">
+                    <div class="progress">{ upload_progress }%</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="actions">
+            <button class="ui blue icon button" onclick="{check_form}">
+                <i class="upload icon"></i>
+                Upload
+            </button>
+            <button class="ui basic red cancel button">Cancel</button>
+        </div>
+    </div>
+
     <script>
         var self = this
         self.mixin(ProgressBarMixin)
@@ -141,6 +189,7 @@
         self.selected_row = {}
         self.marked_submissions = []
 
+        self.upload_progress = undefined
 
         self.page = 1
 
@@ -158,6 +207,10 @@
             self.selected_row = row
             self.update()
             $(self.refs.info_modal).modal('show')
+        }
+
+        self.show_creation_modal = function () {
+            $(self.refs.submission_creation_modal).modal('show')
         }
 
 
@@ -253,8 +306,7 @@
                 .removeAttr('checked')
                 .removeAttr('selected');
 
-            $('.dropdown', self.refs.form).dropdown('restore defaults')
-
+            
             self.errors = {}
             self.update()
         }
@@ -264,7 +316,9 @@
                 event.preventDefault()
             }
 
-       
+            // Reset upload progress, in case we're trying to re-upload or had errors -- this is the
+            // best place to do it -- also resets animations
+            self.file_upload_progress_handler(undefined)
 
             // Let's do some quick validation
             self.errors = {}
@@ -283,7 +337,54 @@
                 return
             }
 
-            
+            // Call the progress bar wrapper and do the upload -- we want to check and display errors
+            // first before doing the actual upload
+            self.prepare_upload(self.upload)()
+
+        }
+
+        self.upload = function () {
+            // Have to get the "FormData" to get the file in a special way
+            // jquery likes to work with
+            var metadata = get_form_data(self.refs.form)
+            delete metadata.data_file  // dont send this with metadata
+
+            if (metadata.is_public === 'on') {
+                var public_confirm = confirm("Creating a public submission means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
+                if (!public_confirm) {
+                    return
+                }
+            }
+
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+
+            CODALAB.api.create_dataset(metadata, data_file, self.file_upload_progress_handler)
+                .done(function (data) {
+                    toastr.success("Submission successfully uploaded!")
+                    self.update_submissions()
+                    self.clear_form()
+                    $(self.refs.submission_creation_modal).modal('hide')
+                })
+                .fail(function (response) {
+                    if (response) {
+                        try {
+                            var errors = JSON.parse(response.responseText)
+
+                            // Clean up errors to not be arrays but plain text
+                            Object.keys(errors).map(function (key, index) {
+                                errors[key] = errors[key].join('; ')
+                            })
+
+                            self.update({errors: errors})
+                        } catch (e) {
+
+                        }
+                    }
+                    toastr.error("Creation failed, error occurred")
+                })
+                .always(function () {
+                    self.hide_progress_bar()
+                })
         }
 
         self.toggle_is_public = () => {
