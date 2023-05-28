@@ -16,7 +16,7 @@
     </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
         <i selenium="add-dataset" class="plus icon"></i>
-        Add Dataset
+        Add Dataset/Program
     </button>
     <button class="ui red right floated labeled icon button {disabled: marked_datasets.length === 0}" onclick="{delete_datasets}">
         <i class="icon delete"></i>
