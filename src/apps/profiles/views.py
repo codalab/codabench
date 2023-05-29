@@ -149,7 +149,7 @@ def log_in(request):
             if user:
                 login(request, user)
 
-                # if next is none redirect to home 
+                # if next is none redirect to home
                 # otherwise redirect to requested page
                 if next is None:
                     return redirect('pages:home')
