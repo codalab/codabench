@@ -231,7 +231,6 @@
                 return
             }
             self.selected_row = row
-            console.log(row)
             self.update()
             $(self.refs.info_modal).modal('show')
         }
