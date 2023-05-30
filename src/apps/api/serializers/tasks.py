@@ -7,6 +7,7 @@ from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
 from datasets.models import Data
 from tasks.models import Task, Solution
+from competitions.models import Competition
 
 
 class SolutionSerializer(WritableNestedModelSerializer):
@@ -138,7 +139,12 @@ class TaskListSerializer(serializers.ModelSerializer):
         )
 
     def get_competitions(self, instance):
-        return self.context['task_titles'][instance.pk]
+
+        # Fech competitions which hase phases with this task
+        # competitions = Phase.objects.filter(tasks__in=[instance.pk]).values('competition')
+        competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).values("id", "title").distinct()
+
+        return competitions
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]

@@ -30,7 +30,15 @@
         <tbody>
         <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
             <td>{ task.name }</td>
-            <td class="benchmark-row">{ task.competitions.join(', ') }</td>
+            <td class="benchmark-row">
+                <div show="{task.competitions.length > 0}" class="ui list">
+                    <div class="item" each="{comp in task.competitions}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
+                    </div>
+                </div>
+            
+            
+            </td>
             <td>{ task.shared_with.join(', ') }</td>
             <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
