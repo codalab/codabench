@@ -127,8 +127,8 @@
             </virtual>
             <div show="{!!_.get(selected_row.in_use, 'length')}"><strong>Used by:</strong>
                 <div class="ui bulleted list">
-                    <div class="item" each="{id in selected_row.in_use}">
-                        <a href="{URLS.COMPETITION_DETAIL(id)}" target="_blank">Benchmark id: {id}</a>
+                    <div class="item" each="{comp in selected_row.in_use}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.pk)}" target="_blank">{comp.title}</a>
                     </div>
                 </div>
             </div>
@@ -231,6 +231,7 @@
                 return
             }
             self.selected_row = row
+            console.log(row)
             self.update()
             $(self.refs.info_modal).modal('show')
         }
