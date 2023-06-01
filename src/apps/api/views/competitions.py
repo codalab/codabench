@@ -156,6 +156,22 @@ class CompetitionViewSet(ModelViewSet):
             for index in range(len(phase['tasks'])):
                 phase['tasks'][index] = phase['tasks'][index]['task']
 
+        # save leaderboard individually, then pass pk to each phase
+        print(f"{request.data['leaderboards']}")
+        data = request.data
+        if 'leaderboards' in data:
+            leaderboard_data = data['leaderboards'][0]
+            if(leaderboard_data['id']):
+                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+            else:
+                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+            leaderboard.is_valid()
+            leaderboard.save()
+            leaderboard_id = leaderboard["id"].value
+            for phase in data['phases']:
+                phase['leaderboard'] = leaderboard_id
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
