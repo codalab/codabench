@@ -5,6 +5,10 @@
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
     </div>
+    <div class="ui checkbox inline-div" onclick="{ filter.bind(this, undefined) }">
+        <label>Show Public</label>
+        <input type="checkbox" ref="show_public">
+    </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
         <i class="plus icon"></i>
         Add Submission
@@ -220,10 +224,8 @@
         self.pretty_date = date => luxon.DateTime.fromISO(date).toLocaleString(luxon.DateTime.DATE_FULL)
 
         self.filter = function (filters) {
-            let type = $(self.refs.type_filter).val()
             filters = filters || {}
             _.defaults(filters, {
-                type: type === '-' ? '' : type,
                 search: $(self.refs.search).val(),
                 page: 1,
             })
@@ -250,6 +252,7 @@
 
         self.update_submissions = function (filters) {
             filters = filters || {}
+            filters.is_public = $(self.refs.show_public).prop('checked')
             filters.type = "submission"
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {

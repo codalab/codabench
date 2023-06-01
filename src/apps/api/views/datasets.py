@@ -20,19 +20,40 @@ from utils.data import make_url_sassy
 class DataViewSet(ModelViewSet):
     queryset = Data.objects.all()
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type', 'name', 'key', 'was_created_by_competition')
+    filter_fields = ('type', 'name', 'key', 'was_created_by_competition', 'is_public')
     search_fields = ('name', 'description', 'key',)
     pagination_class = BasicPagination
 
     def get_queryset(self):
-        filters = Q(is_public=True) | Q(created_by=self.request.user)
 
-        qs = Data.objects.filter(filters)
+        qs = self.queryset
+
+        if self.request.method == 'GET':
+
+            is_public = self.request.query_params.get('is_public', 'false') == 'true'
+            is_submission = self.request.query_params.get('type', '') == 'submission'
+
+            if is_submission:
+                # filter submissions
+                qs = qs.filter(Q(type=Data.SUBMISSION))
+            else:
+                # filter datasets and programs
+                qs = qs.filter(~Q(type=Data.SUBMISSION))
+
+            # public filter check
+            if is_public:
+                qs = qs.filter(Q(created_by=self.request.user) | Q(is_public=True))
+            else:
+                qs = qs.filter(Q(created_by=self.request.user))
+
+        else:
+            qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
         qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
 
         qs = qs.select_related('created_by').order_by('-created_when')
-
+        print(f"\n\n{len(qs)}\n\n")
+        print(qs)
         return qs
 
     def get_serializer_class(self):
