@@ -252,8 +252,8 @@
 
         self.update_submissions = function (filters) {
             filters = filters || {}
-            filters.is_public = $(self.refs.show_public).prop('checked')
-            filters.type = "submission"
+            filters._public = $(self.refs.show_public).prop('checked')
+            filters._type = "submission"
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
                     self.submissions = data.results

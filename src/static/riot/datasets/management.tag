@@ -281,7 +281,8 @@
         self.update_datasets = function (filters) {
             filters = filters || {}
             filters.was_created_by_competition = $(self.refs.auto_created).prop('checked')
-            filters.is_public = $(self.refs.show_public).prop('checked')
+            filters._public = $(self.refs.show_public).prop('checked')
+            filters._type = "dataset"
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
                     self.datasets = data.results

@@ -30,14 +30,24 @@ class DataViewSet(ModelViewSet):
 
         if self.request.method == 'GET':
 
-            is_public = self.request.query_params.get('is_public', 'false') == 'true'
-            is_submission = self.request.query_params.get('type', '') == 'submission'
+            # new filters
+            # -----------
 
+            # _public = true if want to show public datasets/submissions
+            is_public = self.request.query_params.get('_public', 'false') == 'true'
+
+            # _type = submission if called from submissions tab to filter only submissions
+            is_submission = self.request.query_params.get('_type', '') == 'submission'
+
+            # _type = dataset if called from datasets and programs tab to filter datasets and programs
+            is_dataset = self.request.query_params.get('_type', '') == 'dataset'
+
+            # filter submissions
             if is_submission:
-                # filter submissions
                 qs = qs.filter(Q(type=Data.SUBMISSION))
-            else:
-                # filter datasets and programs
+
+            # filter datasets and programs
+            if is_dataset:
                 qs = qs.filter(~Q(type=Data.SUBMISSION))
 
             # public filter check
@@ -52,8 +62,7 @@ class DataViewSet(ModelViewSet):
         qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
 
         qs = qs.select_related('created_by').order_by('-created_when')
-        print(f"\n\n{len(qs)}\n\n")
-        print(qs)
+
         return qs
 
     def get_serializer_class(self):
