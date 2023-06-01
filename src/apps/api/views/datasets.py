@@ -20,14 +20,51 @@ from utils.data import make_url_sassy
 class DataViewSet(ModelViewSet):
     queryset = Data.objects.all()
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('type', 'name', 'key', 'was_created_by_competition')
+    filter_fields = ('type', 'name', 'key', 'was_created_by_competition', 'is_public')
     search_fields = ('name', 'description', 'key',)
     pagination_class = BasicPagination
 
     def get_queryset(self):
-        filters = Q(is_public=True) | Q(created_by=self.request.user)
 
-        qs = Data.objects.filter(filters)
+        if self.request.method == 'GET':
+
+            # new filters
+            # -----------
+
+            # _public = true if want to show public datasets/submissions
+            is_public = self.request.query_params.get('_public', 'false') == 'true'
+
+            # _type = submission if called from submissions tab to filter only submissions
+            is_submission = self.request.query_params.get('_type', '') == 'submission'
+
+            # _type = dataset if called from datasets and programs tab to filter datasets and programs
+            is_dataset = self.request.query_params.get('_type', '') == 'dataset'
+
+            # get queryset
+            qs = self.queryset
+
+            # filter submissions
+            if is_submission:
+                qs = qs.filter(Q(type=Data.SUBMISSION))
+
+            # filter datasets and programs
+            if is_dataset:
+                qs = qs.filter(~Q(type=Data.SUBMISSION))
+
+            # public filter check
+            if is_public:
+                qs = qs.filter(Q(created_by=self.request.user) | Q(is_public=True))
+            else:
+                qs = qs.filter(Q(created_by=self.request.user))
+
+            # if GET is called but provided no filters, fall back to default behaviour
+            if (not is_submission) and (not is_dataset) and (not is_public):
+                qs = self.queryset
+                qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
+
+        else:
+            qs = self.queryset
+            qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
         qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
 
@@ -42,6 +79,7 @@ class DataViewSet(ModelViewSet):
             return serializers.DataSerializer
 
     def create(self, request, *args, **kwargs):
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_dataset = serializer.save()  # request_sassy_file_name is temporarily set via this serializer

@@ -130,6 +130,10 @@ def sign_up(request):
 
 def log_in(request):
 
+    # Fectch next redirect page after login
+    # default : None
+    next = request.GET.get('next', None)
+
     context = {}
     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
         settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
@@ -144,7 +148,13 @@ def log_in(request):
             user = authenticate(username=username, password=password)
             if user:
                 login(request, user)
-                return redirect('pages:home')
+
+                # if next is none redirect to home
+                # otherwise redirect to requested page
+                if next is None:
+                    return redirect('pages:home')
+                else:
+                    return redirect(next)
             else:
                 messages.error(request, "Wrong Credentials!")
         else:

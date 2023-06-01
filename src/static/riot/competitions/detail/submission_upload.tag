@@ -11,8 +11,8 @@
                     <h2>Metadata or Fact Sheet</h2>
                     <div class="submission-form-question" each="{ question in opts.fact_sheet }">
                         <span if="{ question.type === 'text' }">
-                            <label if="{question.is_required}" class="required-answer" for="{ question.key }">{ question.title }:</label>
-                            <label if="{!question.is_required}" for="{ question.key }">{ question.title }:</label>
+                            <label if="{question.is_required == 'true'}" class="required-answer" for="{ question.key }">{ question.title }:</label>
+                            <label if="{question.is_required == 'false'}" for="{ question.key }">{ question.title }:</label>
                             <input type="text" name="{ question.key }">
                         </span>
                         <span if="{ question.type === 'checkbox' }">
@@ -413,7 +413,8 @@
                 task_ids_to_run = [self.selected_tasks[0].id]
             }
             var data_file_metadata = {
-                type: 'submission'
+                type: 'submission',
+                competition: self.opts.competition.id
             }
             var data_file = self.refs.data_file.refs.file_input.files[0]
             self.children = []

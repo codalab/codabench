@@ -62,7 +62,8 @@ class CompetitionViewSet(ModelViewSet):
                 qs = Competition.objects.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user]))
-                )
+                ).distinct()
+
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
@@ -154,6 +155,23 @@ class CompetitionViewSet(ModelViewSet):
         for phase in request.data['phases']:
             for index in range(len(phase['tasks'])):
                 phase['tasks'][index] = phase['tasks'][index]['task']
+
+        # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
+        # save leaderboard individually, then pass pk to each phase
+        print(f"{request.data['leaderboards']}")
+        data = request.data
+        if 'leaderboards' in data:
+            leaderboard_data = data['leaderboards'][0]
+            if(leaderboard_data['id']):
+                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+            else:
+                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+            leaderboard.is_valid()
+            leaderboard.save()
+            leaderboard_id = leaderboard["id"].value
+            for phase in data['phases']:
+                phase['leaderboard'] = leaderboard_id
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

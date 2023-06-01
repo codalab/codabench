@@ -30,7 +30,15 @@
         <tbody>
         <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
             <td>{ task.name }</td>
-            <td class="benchmark-row">{ task.competitions.join(', ') }</td>
+            <td class="benchmark-row">
+                <div show="{task.competitions.length > 0}" class="ui list">
+                    <div class="item" each="{comp in task.competitions}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
+                    </div>
+                </div>
+            
+            
+            </td>
             <td>{ task.shared_with.join(', ') }</td>
             <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
@@ -58,7 +66,7 @@
         <tfoot>
         <!-------------------------------------
                   Pagination
-        ------------------------------------->
+        -------------------------------------->
         <tr if="{tasks.length > 0}">
             <th colspan="7">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
@@ -156,7 +164,7 @@
         <div class="content">
             <div class="ui pointing menu">
                 <div class="active item modal-item" data-tab="details">Details</div>
-                <div class="item modal-item" data-tab="data">Datasets</div>
+                <div class="item modal-item" data-tab="data">Datasets and programs</div>
             </div>
             <form class="ui form" ref="form">
                 <div class="ui active tab" data-tab="details">
