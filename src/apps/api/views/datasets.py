@@ -26,8 +26,6 @@ class DataViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        qs = self.queryset
-
         if self.request.method == 'GET':
 
             # new filters
@@ -41,6 +39,9 @@ class DataViewSet(ModelViewSet):
 
             # _type = dataset if called from datasets and programs tab to filter datasets and programs
             is_dataset = self.request.query_params.get('_type', '') == 'dataset'
+
+            # get queryset
+            qs = self.queryset
 
             # filter submissions
             if is_submission:
@@ -56,7 +57,13 @@ class DataViewSet(ModelViewSet):
             else:
                 qs = qs.filter(Q(created_by=self.request.user))
 
+            # if GET is called but provided no filters, fall back to default behaviour
+            if (not is_submission) and (not is_dataset) and (not is_public):
+                qs = self.queryset
+                qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
+
         else:
+            qs = self.queryset
             qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
         qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
