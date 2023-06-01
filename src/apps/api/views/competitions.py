@@ -156,6 +156,7 @@ class CompetitionViewSet(ModelViewSet):
             for index in range(len(phase['tasks'])):
                 phase['tasks'][index] = phase['tasks'][index]['task']
 
+        # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
         # save leaderboard individually, then pass pk to each phase
         print(f"{request.data['leaderboards']}")
         data = request.data
