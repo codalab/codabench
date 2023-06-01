@@ -47,12 +47,12 @@
                 <i class="checkmark box icon green" show="{ submission.is_public }"></i>
             </td>
             <td class="center aligned">
-                <button class="ui mini button red icon" onclick="{ delete_submission.bind(this, submission) }">
+                <button show="{submission.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_submission.bind(this, submission) }">
                     <i class="icon delete"></i>
                 </button>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox">
+                <div show="{submission.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_submission_for_deletion.bind(this, submission) }">
                     <label></label>
                 </div>

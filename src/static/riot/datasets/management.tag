@@ -56,12 +56,12 @@
                 <i class="checkmark box icon green" show="{ dataset.is_public }"></i>
             </td>
             <td class="center aligned">
-                <button class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                <button show="{dataset.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
                     <i class="icon delete"></i>
                 </button>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox">
+                <div show="{dataset.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_dataset_for_deletion.bind(this, dataset) }">
                     <label></label>
                 </div>
