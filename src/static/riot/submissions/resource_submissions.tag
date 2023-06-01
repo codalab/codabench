@@ -5,6 +5,10 @@
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
     </div>
+    <div class="ui checkbox inline-div" onclick="{ filter.bind(this, undefined) }">
+        <label>Show Public</label>
+        <input type="checkbox" ref="show_public">
+    </div>
     <button class="ui green right floated labeled icon button" onclick="{show_creation_modal}">
         <i class="plus icon"></i>
         Add Submission
@@ -43,12 +47,12 @@
                 <i class="checkmark box icon green" show="{ submission.is_public }"></i>
             </td>
             <td class="center aligned">
-                <button class="ui mini button red icon" onclick="{ delete_submission.bind(this, submission) }">
+                <button show="{submission.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_submission.bind(this, submission) }">
                     <i class="icon delete"></i>
                 </button>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox">
+                <div show="{submission.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_submission_for_deletion.bind(this, submission) }">
                     <label></label>
                 </div>
@@ -220,10 +224,8 @@
         self.pretty_date = date => luxon.DateTime.fromISO(date).toLocaleString(luxon.DateTime.DATE_FULL)
 
         self.filter = function (filters) {
-            let type = $(self.refs.type_filter).val()
             filters = filters || {}
             _.defaults(filters, {
-                type: type === '-' ? '' : type,
                 search: $(self.refs.search).val(),
                 page: 1,
             })
@@ -250,7 +252,8 @@
 
         self.update_submissions = function (filters) {
             filters = filters || {}
-            filters.type = "submission"
+            filters._public = $(self.refs.show_public).prop('checked')
+            filters._type = "submission"
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
                     self.submissions = data.results
