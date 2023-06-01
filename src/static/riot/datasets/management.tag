@@ -286,7 +286,6 @@
             CODALAB.api.get_datasets(filters)
                 .done(function (data) {
                     self.datasets = data.results
-                    //self.datasets = self.filter_out_submissions(self.datasets)
                     self.pagination = {
                         "count": data.count,
                         "next": data.next,
@@ -445,16 +444,6 @@
             }
         }
 
-        // Function to remove submissions from datasets
-        self.filter_out_submissions = function(datasets) {
-            datasets_to_return = []
-            datasets.forEach(dataset => {
-                if (dataset.type != "submission"){
-                    datasets_to_return.push(dataset)
-                }
-            })
-            return datasets_to_return
-        }
 
         // Function to format file size 
         self.format_file_size = function(file_size) {
