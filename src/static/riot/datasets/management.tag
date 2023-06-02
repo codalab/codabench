@@ -116,7 +116,7 @@
                 <tbody>
                 <tr>
                     <td>{selected_row.key}</td>
-                    <td>{selected_row.created_by}</td>
+                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.created_by}</a></td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>
