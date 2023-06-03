@@ -1,3 +1,5 @@
+import pdb
+
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -13,6 +15,7 @@ from competitions.models import Competition
 class SolutionSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    size = serializers.SerializerMethodField()
 
     class Meta:
         model = Solution
@@ -23,7 +26,12 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'tasks',
             'data',
             'md5',
+            'size',
         ]
+        
+    def get_size(self, instance):
+        print("line 31"); pdb.set_trace() # BB
+        return instance.data.file_size
 
 
 class SolutionListSerializer(serializers.ModelSerializer):
@@ -159,6 +167,8 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
     name = serializers.CharField(source='task.name', required=False)
+    solutions = serializers.SerializerMethodField()
+    # print("line 159"); pdb.set_trace() # BB
 
     class Meta:
         model = PhaseTaskInstance
@@ -172,4 +182,22 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'key',
             'created_when',
             'name',
+            'solutions'
+            # BB Add public data
+            # BB Add starting kit
         )
+    
+    def get_solutions(self, instance):
+        print("line 177"); pdb.set_trace() # BB
+        qs = instance.task.solutions.all()
+        return SolutionSerializer(qs, many=True).data
+
+    # def get_public_datasets(self, instance):
+    #     print("line 177"); pdb.set_trace() # BB
+    #     qs = instance.task.solutions.all()
+    #     return SolutionSerializer(qs, many=True).data
+    
+    # def get_starting_kits(self, instance):
+    #     print("line 177"); pdb.set_trace() # BB
+    #     qs = instance.task.solutions.all()
+    #     return SolutionSerializer(qs, many=True).data

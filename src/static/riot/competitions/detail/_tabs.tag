@@ -29,9 +29,11 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
-                            <!--<div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <!--  BB Files - was commented out -->
+                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
-                            </div>-->
+                            </div>
+                            <!--  BB Files - was commented out -->
                         </div>
                     </div>
                     <div class="twelve wide column">
@@ -40,7 +42,8 @@
                             <div class="ui" id="page_{i}">
                             </div>
                         </div>
-                        <!--<div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
+                        <!--  BB data-tab="files" - was commented out -->
+                        <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
                                 <table class="ui celled table">
                                     <thead>
@@ -66,7 +69,8 @@
                                 </table>
 
                             </div>
-                        </div>-->
+                        </div>
+                        <!--  BB data-tab="files" - was commented out -->
                     </div>
                 </div>
             </div>
@@ -192,18 +196,56 @@
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
             self.competition.files = []
+            debugger
             _.forEach(competition.phases, phase => {
+                debugger
                 _.forEach(phase.tasks, task => {
+                    debugger
                     _.forEach(task.solutions, solution => {
+                        debugger
                         self.competition.files.push({
-                            key: solution.data.key,
+                            key: solution.data,
                             name: solution.name,
-                            file_size: solution.data.file_size,
+                            file_size: solution.size,
                             phase: phase.name,
                             task: task.name,
                         })
                     })
                 })
+            })
+
+            // loop over competition phases to mark if phase has started or ended
+            self.competition.phases.forEach(function (phase, index) {
+                
+                phase_ended = false 
+                phase_started = false
+
+                // check if phase has started
+                if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
+                    // start date is in the future, phase started = NO
+                    phase_started = false
+                }else{
+                    // start date is not in the future, phase started = YES
+                    phase_started = true
+                }
+
+                if(phase_started){
+                    // check if end data exists for this phase
+                    if(phase["end"]){
+                        if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
+                            // Phase cannote accept submissions if end date is in the past
+                            phase_ended = true
+                        }else{
+                            // Phase can accept submissions if end date is in the future
+                            phase_ended = false
+                        }
+                    }else{
+                        // Phase can accept submissions if end date is not given
+                        phase_ended = false
+                    }
+                }
+                self.competition.phases[index]["phase_ended"] = phase_ended
+                self.competition.phases[index]["phase_started"] = phase_started
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
