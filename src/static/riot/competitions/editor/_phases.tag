@@ -267,8 +267,11 @@
 
                 self.has_initialized_calendars = true
             }
-            $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
-            $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
+            debugger
+            if(!(self.selected_phase_index === undefined)){
+                $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
+                $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
+            }
         }
 
         self.close_modal = function () {
