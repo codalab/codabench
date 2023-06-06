@@ -23,9 +23,9 @@ from rest_framework_extensions.key_constructor.constructors import DefaultListKe
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
+from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer
+    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
@@ -146,7 +146,8 @@ class CompetitionViewSet(ModelViewSet):
         elif self.request.method == 'PATCH':
             return CompetitionUpdateSerializer
         else:
-            return CompetitionSerializer
+            # Really just CompetitionSerializer with queue = None
+            return CompetitionCreateSerializer
 
     def create(self, request, *args, **kwargs):
         """Mostly a copy of the underlying base create, however we return some additional data
@@ -158,7 +159,6 @@ class CompetitionViewSet(ModelViewSet):
 
         # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
         # save leaderboard individually, then pass pk to each phase
-        print(f"{request.data['leaderboards']}")
         data = request.data
         if 'leaderboards' in data:
             leaderboard_data = data['leaderboards'][0]
