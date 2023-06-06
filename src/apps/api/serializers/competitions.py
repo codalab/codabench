@@ -170,6 +170,7 @@ class CompetitionUpdateSerializer(CompetitionSerializer):
     phases = PhaseUpdateSerializer(many=True)
     queue = None
 
+
 class CompetitionCreateSerializer(CompetitionSerializer):
     queue = None
 

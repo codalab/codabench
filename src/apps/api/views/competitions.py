@@ -23,7 +23,7 @@ from rest_framework_extensions.key_constructor.constructors import DefaultListKe
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializer, CompetitionSerializerSimple, PhaseSerializer, \
+from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
@@ -146,6 +146,7 @@ class CompetitionViewSet(ModelViewSet):
         elif self.request.method == 'PATCH':
             return CompetitionUpdateSerializer
         else:
+            # Really just CompetitionSerializer with queue = None
             return CompetitionCreateSerializer
 
     def create(self, request, *args, **kwargs):
@@ -172,7 +173,7 @@ class CompetitionViewSet(ModelViewSet):
             for phase in data['phases']:
                 phase['leaderboard'] = leaderboard_id
 
-        serializer = self.get_serializer(data=request.data) # CompetitionSerializer but this is for update...hmmm curious
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
