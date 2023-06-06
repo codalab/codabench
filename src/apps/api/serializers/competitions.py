@@ -170,6 +170,9 @@ class CompetitionUpdateSerializer(CompetitionSerializer):
     phases = PhaseUpdateSerializer(many=True)
     queue = None
 
+class CompetitionCreateSerializer(CompetitionSerializer):
+    queue = None
+
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
