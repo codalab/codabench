@@ -300,4 +300,17 @@ CODALAB.api = {
     get_user_quota_cleanup: () => {
         return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
     },
+    delete_unused_tasks: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)
+    },
+    delete_unused_datasets: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_datasets/`)
+    },
+    delete_unused_submissions: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_submissions/`)
+    },
+    delete_failed_submissions: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
+    },
+    
 }

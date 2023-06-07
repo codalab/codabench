@@ -364,6 +364,7 @@
                     toastr.success('Task Created')
                     self.close_modal()
                     self.update_tasks()
+                    CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {
                     toastr.error('Error Creating Task')
@@ -470,6 +471,7 @@
                     .done(function () {
                         self.update_tasks()
                         toastr.success("Task deleted successfully!")
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         toastr.error(response.responseJSON['error'])
@@ -485,6 +487,7 @@
                         self.update_tasks()
                         toastr.success("Tasks deleted successfully!")
                         self.marked_tasks = []
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         for (e in response.responseJSON) {
@@ -508,6 +511,9 @@
             $(self.refs.share_modal)
                 .modal('show')
         }
+
+        // Update tasks on unused tasks delete
+        CODALAB.events.on('reload_tasks', self.update_tasks)
 
     </script>
     <style type="text/stylus">

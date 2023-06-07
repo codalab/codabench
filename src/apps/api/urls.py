@@ -51,11 +51,16 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
-    # User quota and cleanup
-    path('user_quota_cleanup/', quota.user_quota_cleanup),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
+
+    # User quota and cleanup
+    path('user_quota_cleanup/', quota.user_quota_cleanup),
+    path('delete_unused_tasks/', quota.delete_unused_tasks),
+    path('delete_unused_datasets/', quota.delete_unused_datasets),
+    path('delete_unused_submissions/', quota.delete_unused_submissions),
+    path('delete_failed_submissions/', quota.delete_failed_submissions),
 
     # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
