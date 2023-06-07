@@ -61,6 +61,7 @@ def user_quota_cleanup(request):
         "failed_submissions": failed_submissions
     })
 
+
 @api_view(['DELETE'])
 def delete_unused_tasks(request):
     try:
