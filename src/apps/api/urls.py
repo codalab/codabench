@@ -7,7 +7,17 @@ from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
+from .views import (
+    analytics, 
+    competitions, 
+    datasets, 
+    profiles, 
+    leaderboards, 
+    submissions, 
+    tasks, 
+    queues,
+    quota
+)
 
 
 router = SimpleRouter()
@@ -41,6 +51,8 @@ urlpatterns = [
     path('can_make_submission/<phase_id>/', submissions.can_make_submission, name="can_make_submission"),
     path('user_lookup/', profiles.user_lookup),
     path('analytics/', analytics.AnalyticsView.as_view(), name='analytics_api'),
+    # User quota and cleanup
+    path('user_quota_cleanup/', quota.user_quota_cleanup),
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),

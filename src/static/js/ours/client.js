@@ -294,4 +294,10 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
+    /*---------------------------------------------------------------------
+         User Quota and Cleanup
+    ---------------------------------------------------------------------*/
+    get_user_quota_cleanup: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
+    },
 }
