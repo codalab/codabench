@@ -304,6 +304,7 @@
                     .done(function () {
                         self.update_datasets()
                         toastr.success("Dataset deleted successfully!")
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         toastr.error(response.responseJSON['error'])
@@ -319,6 +320,7 @@
                         self.update_datasets()
                         toastr.success("Dataset deleted successfully!")
                         self.marked_datasets = []
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         for (e in response.responseJSON) {
@@ -395,6 +397,7 @@
                     self.update_datasets()
                     self.clear_form()
                     $(self.refs.dataset_creation_modal).modal('hide')
+                    CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail(function (response) {
                     if (response) {
@@ -467,6 +470,9 @@
             // restrict file size to 1 decimal number concatinated with unit
             return(n.toFixed(1) + ' ' + units[i]);
         }
+
+        // Update datasets on unused datasets delete
+        CODALAB.events.on('reload_datasets', self.update_datasets)
 
     </script>
 

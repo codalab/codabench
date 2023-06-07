@@ -97,21 +97,90 @@
 
         // Delete unused tasks
         self.delete_unused_tasks = function(){
-            console.log("Delete Tasks")
+            if (confirm(`Are you sure you want to permanently delete all unused tasks?`)) {
+
+                CODALAB.api.delete_unused_tasks()
+                    .done(function (data) {
+                        if(data.success){
+                            self.unused_tasks = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_tasks')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Unsed tasks deletion failed!")
+                    })
+            }
         }
 
         // Delete unused tasks
         self.delete_unused_datasets = function(){
-            console.log("Delete Datasets")
+            if (confirm(`Are you sure you want to permanently delete all unused datasets and programs?`)) {
+
+                CODALAB.api.delete_unused_datasets()
+                    .done(function (data) {
+                        if(data.success){
+                            self.unused_datasets_programs = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_datasets')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Unused datasets and programs deletion failed!")
+                    })
+            }
         }
+
         // Delete unused tasks
         self.delete_unused_submissions = function(){
-            console.log("Delete Submissions")
+            if (confirm(`Are you sure you want to permanently delete all unused submissions?`)) {
+
+                CODALAB.api.delete_unused_submissions()
+                    .done(function (data) {
+                        if(data.success){
+                            self.unused_submissions = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_submissions')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Unused submissions deletion failed!")
+                    })
+            }
         }
+
         // Delete unused tasks
         self.delete_failed_submissions = function(){
-            console.log("Delete Failed Submissions")
+            if (confirm(`Are you sure you want to permanently delete all failed submissions?`)) {
+
+                CODALAB.api.delete_failed_submissions()
+                    .done(function (data) {
+                        if(data.success){
+                            self.failed_submissions = 0
+                            toastr.success(data.message)
+                            self.update()
+                            CODALAB.events.trigger('reload_submissions')
+                        }else{
+                            toastr.error(data.message)
+                        }
+                    })
+                    .fail(function (response) {
+                        toastr.error("Failed submissions deletion failed!")
+                    })
+            }
         }
+
+        CODALAB.events.on('reload_quota_cleanup', self.get_cleanup)
+
     </script>
 
 </quota-management>
