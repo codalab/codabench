@@ -8,13 +8,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from .views import (
-    analytics, 
-    competitions, 
-    datasets, 
-    profiles, 
-    leaderboards, 
-    submissions, 
-    tasks, 
+    analytics,
+    competitions,
+    datasets,
+    profiles,
+    leaderboards,
+    submissions,
+    tasks,
     queues,
     quota
 )
