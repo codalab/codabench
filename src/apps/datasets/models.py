@@ -58,7 +58,7 @@ class Data(ChaHubSaveMixin, models.Model):
     # are NOT marked True, since they are not created by unpacking!
     was_created_by_competition = models.BooleanField(default=False)
 
-    competition = models.ForeignKey(Competition, on_delete=models.PROTECT, null=True, related_name='submission')
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, related_name='submission')
     file_name = models.CharField(max_length=64, default="")
 
     def get_download_url(self):
