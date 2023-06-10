@@ -75,6 +75,14 @@ class CompetitionTests(APITestCase):
             status=CompetitionParticipant.APPROVED
         ).count() == 1
 
+    def test_delete_own_competition(self):
+
+        self.client.login(username='creator', password='creator')
+        url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
+
+        resp = self.client.delete(url)
+        assert resp.status_code == 200
+
 
 class PhaseMigrationTests(APITestCase):
     def setUp(self):
