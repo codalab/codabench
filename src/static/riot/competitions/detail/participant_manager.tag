@@ -134,6 +134,7 @@
             if (status && status !== '-') {
                 filters.status = status
             }
+            filters.participants_with_email = true
 
             CODALAB.api.get_participants(filters)
                 .done(participants => {
