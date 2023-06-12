@@ -76,12 +76,9 @@ class CompetitionTests(APITestCase):
         ).count() == 1
 
     def test_delete_own_competition(self):
-
         self.client.login(username='creator', password='creator')
         url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
-
         resp = self.client.delete(url)
-
         assert resp.status_code == 204
         assert not Competition.objects.filter(pk=self.comp.pk).exists()
 
