@@ -1,11 +1,10 @@
 <submission-upload>
-    <div class="ui sixteen wide column submission-container"
-         show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
+    <div class="ui sixteen wide column submission-container">
 
         <div class="submission-form">
             <h1>Submission upload</h1>
-            <div if="{_.get(selected_phase, 'phase_ended')}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
-            <div if="{!_.get(selected_phase, 'phase_started')}" class="ui yellow message">This phase hasn't started yet!</div>
+            <div if="{_.get(selected_phase, 'status') === 'Previous'}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
+            <div if="{_.get(selected_phase, 'status') === 'Next'}" class="ui yellow message">This phase hasn't started yet!</div>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
@@ -353,7 +352,7 @@
         self.check_can_upload = function () {
             
             // Check if selected phase accepts submissions (within the deadline of the phase)
-            if(self.selected_phase.phase_started && !self.selected_phase.phase_ended){
+            if(self.selected_phase.status === "Current"){
 
                 CODALAB.api.can_make_submissions(self.selected_phase.id)
                     .done(function (data) {
@@ -368,13 +367,12 @@
                     })
             }else{
                 // Error when phase is not accepting submissions
-                if(!self.selected_phase.phase_started){
+                if(self.selected_phase.status === "Next"){
                     toastr.error('This phase has not started yet. Please check the phase start date!')
                    
-                }else {
-                    if(self.selected_phase.phase_ended){
-                        toastr.error('This phase has ended and no longer accepts submissions!')
-                    }
+                }
+                if(self.selected_phase.status === "Previous"){
+                    toastr.error('This phase has ended and no longer accepts submissions!')
                 }
                 self.clear_form()
             }
