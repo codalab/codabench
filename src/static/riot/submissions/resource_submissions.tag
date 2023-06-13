@@ -112,7 +112,7 @@
                     <td if="{selected_row.competition}"><a class="link-no-deco" target="_blank" href="../competitions/{ selected_row.competition.id }">{ selected_row.competition.title }</a></td>
                     <!--  show empty td if competition is not available  -->
                     <td if="{!selected_row.competition}"></td>
-                    <td>{selected_row.created_by}</td>
+                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.created_by}</a></td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>

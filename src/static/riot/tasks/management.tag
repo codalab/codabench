@@ -96,7 +96,7 @@
         <div class="content">
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
-            <div><strong>Created By:</strong> {selected_task.created_by}</div>
+            <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.created_by}</a></div>
             <div><strong>Key:</strong> {selected_task.key}</div>
             <div><strong>Has Been Validated
                 <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
