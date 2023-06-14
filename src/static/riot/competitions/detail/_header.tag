@@ -47,7 +47,14 @@
                             <div class="competition-secret-key" if="{ competition.admin }">
                                 <span class="secret-label">Secret url:</span>
                                 <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
-                                <span onclick="{copy_secret_url}" class="ui send-pop" data-content="Copied!">
+                                <span onclick="{copy_secret_url}" class="ui send-pop-secret" data-content="Copied!">
+                                    <i class="ui copy icon"></i>
+                                </span>
+                            </div>
+                            <div class="competition-secret-key">
+                                <span class="docker-label">Docker image:</span>
+                                <span id="docker-image">{ competition.docker_image }</span>
+                                <span onclick="{copy_docker_url}" class="ui send-pop-docker" data-content="Copied!">
                                     <i class="ui copy icon"></i>
                                 </span>
                             </div>
@@ -207,7 +214,17 @@
             window.getSelection().addRange(range); // to select text
             document.execCommand("copy");
             window.getSelection().removeAllRanges();// to deselect
-            $('.send-pop').popup('toggle')
+            $('.send-pop-secret').popup('toggle')
+        }
+
+        self.copy_docker_url = function () {
+            let range = document.createRange();
+            range.selectNode(document.getElementById("docker-image"));
+            window.getSelection().removeAllRanges(); // clear current selection
+            window.getSelection().addRange(range); // to select text
+            document.execCommand("copy");
+            window.getSelection().removeAllRanges();// to deselect
+            $('.send-pop-docker').popup('toggle')
         }
 
         self.get_end_date = function (competition) {
@@ -250,6 +267,9 @@
 
         .secret-label
             color #DB2828
+
+        .docker-label
+            color #2290E2
 
         .secret-url
             color $blue
