@@ -32,7 +32,7 @@
     <div class="home-wrap">
         <front-page-competitions></front-page-competitions>
 
-
+        <!-- Action Section -->
         <div id="action-container" class="segment-container ui segment full-width">
             <div class="ui header">
                 About CodaBench
@@ -68,6 +68,7 @@
             </div>
         </div>
 
+        <!-- Stats section -->
         <div class="ui five column grid" id="general-stats">
             {% for stat in general_stats %}
                 <div class="column">
@@ -83,6 +84,7 @@
             {% endfor %}
         </div>
 
+        <!-- About Section -->
         <div id="about-container" class="segment-container ui segment full-width">
             <div class="ui header">
                 About CodaBench
@@ -330,6 +332,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Action Section -->
+        <div id="cite-container" class="ui segment full-width">
+            <h3>Cite Codabench in your research</h3>
+            <div class="row">
+                <pre>
+@article{codabench,
+    title = {Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform},
+    author = {Zhen Xu and Sergio Escalera and Adrien Pavão and Magali Richard and 
+                Wei-Wei Tu and Quanming Yao and Huan Zhao and Isabelle Guyon},
+    journal = {Patterns},
+    volume = {3},
+    number = {7},
+    pages = {100543},
+    year = {2022},
+    issn = {2666-3899},
+    doi = {https://doi.org/10.1016/j.patter.2022.100543},
+    url = {https://www.sciencedirect.com/science/article/pii/S2666389922001465}
+} </pre>
+            </div>
+        </div>
+
     </div>
 {% endblock %}
 
