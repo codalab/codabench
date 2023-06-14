@@ -21,9 +21,9 @@ def user_quota_cleanup(request):
         ~Q(type=Data.SUBMISSION) &
         ~Q(type=Data.COMPETITION_BUNDLE)
     ).exclude(
-        Q(task_ingestion_programs__isnull=False) | 
+        Q(task_ingestion_programs__isnull=False) |
         Q(task_input_datas__isnull=False) |
-        Q(task_reference_datas__isnull=False) | 
+        Q(task_reference_datas__isnull=False) |
         Q(task_scoring_programs__isnull=False)
     ).count()
 
@@ -76,9 +76,9 @@ def delete_unused_datasets(request):
             ~Q(type=Data.SUBMISSION) &
             ~Q(type=Data.COMPETITION_BUNDLE)
         ).exclude(
-            Q(task_ingestion_programs__isnull=False) | 
+            Q(task_ingestion_programs__isnull=False) |
             Q(task_input_datas__isnull=False) |
-            Q(task_reference_datas__isnull=False) | 
+            Q(task_reference_datas__isnull=False) |
             Q(task_scoring_programs__isnull=False)
         ).delete()
 
