@@ -1,9 +1,7 @@
 from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.db.models import OuterRef, Subquery
 from datasets.models import Data
-from competitions.models import Competition
 from tasks.models import Task
 from competitions.models import Submission
 
@@ -23,8 +21,10 @@ def user_quota_cleanup(request):
         ~Q(type=Data.SUBMISSION) &
         ~Q(type=Data.COMPETITION_BUNDLE)
     ).exclude(
-        Q(task_ingestion_programs__isnull=False) | Q(task_input_datas__isnull=False) |
-        Q(task_reference_datas__isnull=False) | Q(task_scoring_programs__isnull=False)
+        Q(task_ingestion_programs__isnull=False) | 
+        Q(task_input_datas__isnull=False) |
+        Q(task_reference_datas__isnull=False) | 
+        Q(task_scoring_programs__isnull=False)
     ).count()
 
     # Get Unused submissions count
@@ -51,6 +51,7 @@ def user_quota_cleanup(request):
 @api_view(['DELETE'])
 def delete_unused_tasks(request):
     try:
+
         Task.objects.filter(
             created_by=request.user,
             phases__isnull=True
@@ -75,8 +76,10 @@ def delete_unused_datasets(request):
             ~Q(type=Data.SUBMISSION) &
             ~Q(type=Data.COMPETITION_BUNDLE)
         ).exclude(
-            Q(task_ingestion_programs__isnull=False) | Q(task_input_datas__isnull=False) |
-            Q(task_reference_datas__isnull=False) | Q(task_scoring_programs__isnull=False)
+            Q(task_ingestion_programs__isnull=False) | 
+            Q(task_input_datas__isnull=False) |
+            Q(task_reference_datas__isnull=False) | 
+            Q(task_scoring_programs__isnull=False)
         ).delete()
 
         return Response({

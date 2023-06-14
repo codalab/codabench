@@ -143,7 +143,8 @@ class V15Unpacker(BaseUnpacker):
         except KeyError:
             raise CompetitionUnpackingException('Could not find leaderboards declared on the competition leaderboard')
         try:
-            columns = sorted([{'title': k, **v} for k, v in leaderboard['columns'].items()], key=lambda c: c['rank'])
+            # use rank = 1 if rank is not defined in .yaml file
+            columns = sorted([{'title': k, **v} for k, v in leaderboard['columns'].items()], key=lambda c: c.get('rank', 1))
         except KeyError:
             raise CompetitionUnpackingException('Could not find columns declared on the competition leaderboard')
 
