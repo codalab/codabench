@@ -1,6 +1,6 @@
 FROM python:3.8
 
-RUN apt-get update && apt-get install -yy gcc build-essential python-setuptools
+RUN apt-get update && apt-get install -yy gcc build-essential python3-setuptools
 
 ENV PYTHONUNBUFFERED 1
 
