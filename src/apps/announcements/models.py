@@ -7,7 +7,7 @@ class Announcement(models.Model):
 
 
 class NewsPost(models.Model):
-    title = models.CharField(max_length=40, unique=True)
+    title = models.CharField(max_length=40)
     link = models.URLField(max_length=200)
     created_when = models.DateTimeField(default=now)
     text = models.TextField(null=True, blank=True)
