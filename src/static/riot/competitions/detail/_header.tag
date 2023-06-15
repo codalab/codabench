@@ -32,6 +32,7 @@
                     </div>
                     <div class="row">
                         <div class="column">
+                            <!-- Main information -->
                             <div>
                                 <span class="detail-label">Organized by:</span>
                                 <span class="detail-item">{competition.created_by}</span>
@@ -44,17 +45,19 @@
                                 <span class="detail-label">Current server time:</span>
                                 <span class="detail-item" id="server_time">{pretty_date(CURRENT_DATE_TIME)}</span>
                             </div>
-                            <div class="competition-secret-key" if="{ competition.admin }">
-                                <span class="secret-label">Secret url:</span>
-                                <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
-                                <span onclick="{copy_secret_url}" class="ui send-pop-secret" data-content="Copied!">
-                                    <i class="ui copy icon"></i>
-                                </span>
-                            </div>
+                            <!-- Docker image -->
                             <div class="competition-secret-key">
                                 <span class="docker-label">Docker image:</span>
                                 <span id="docker-image">{ competition.docker_image }</span>
                                 <span onclick="{copy_docker_url}" class="ui send-pop-docker" data-content="Copied!">
+                                    <i class="ui copy icon"></i>
+                                </span>
+                            </div>
+                            <!-- Secret URL -->
+                            <div class="competition-secret-key" if="{ competition.admin }">
+                                <span class="secret-label">Secret url:</span>
+                                <span id="secret-url">https://{ URLS.SECRET_KEY_URL(competition.id, competition.secret_key) }</span>
+                                <span onclick="{copy_secret_url}" class="ui send-pop-secret" data-content="Copied!">
                                     <i class="ui copy icon"></i>
                                 </span>
                             </div>
@@ -249,6 +252,7 @@
         $blue = #2c3f4c
         $teal = #00bbbb
         $lightblue = #f2faff
+        $red = #DB2828
 
         .detail-label
             font-size 1.25em
@@ -266,10 +270,10 @@
             font-size 13px
 
         .secret-label
-            color #DB2828
+            color $red
 
         .docker-label
-            color #2290E2
+            color $teal
 
         .secret-url
             color $blue
