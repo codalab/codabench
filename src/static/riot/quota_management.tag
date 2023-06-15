@@ -116,7 +116,7 @@
             }
         }
 
-        // Delete unused tasks
+        // Delete unused datasets
         self.delete_unused_datasets = function(){
             if (confirm(`Are you sure you want to permanently delete all unused datasets and programs?`)) {
 
@@ -137,7 +137,7 @@
             }
         }
 
-        // Delete unused tasks
+        // Delete unused submissions
         self.delete_unused_submissions = function(){
             if (confirm(`Are you sure you want to permanently delete all unused submissions?`)) {
 
@@ -158,7 +158,7 @@
             }
         }
 
-        // Delete unused tasks
+        // Delete failed submissions
         self.delete_failed_submissions = function(){
             if (confirm(`Are you sure you want to permanently delete all failed submissions?`)) {
 
