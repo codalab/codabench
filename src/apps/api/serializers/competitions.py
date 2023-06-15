@@ -266,10 +266,8 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompetitionParticipant
         fields = (
-            'id',
             'username',
             'is_bot',
-            'status',
         )
 
 
