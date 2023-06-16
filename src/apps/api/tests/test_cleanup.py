@@ -42,7 +42,8 @@ class CleanUpTests(APITestCase):
             phase=phase,
             owner=user,
             status=Submission.FAILED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            competition=comp,
         )]
 
         # Create unused submission
