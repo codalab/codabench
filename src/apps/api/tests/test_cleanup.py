@@ -26,9 +26,13 @@ class CleanUpTests(APITestCase):
         # Create phase with used tasks
         self.phase = PhaseFactory(competition=self.comp, tasks=self.used_tasks)
 
-        # Create used-finished submission
-        self.used_failed_submission = [SubmissionFactory(md5="12345", phase=self.phase, status=Submission.FAILED)]
-
+        # Create used-failed submission
+        self.failed_submissions = [SubmissionFactory(
+            phase=self.phase,
+            owner=self.user,
+            status=Submission.FAILED,
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+        )]
         # Create unused submission
         self.unused_submissions = [
             DataFactory(created_by=self.user, type=Data.SUBMISSION),
@@ -57,4 +61,4 @@ class CleanUpTests(APITestCase):
         assert content["unused_tasks"] == len(self.unused_tasks)
         assert content["unused_datasets_programs"] == len(self.unused_datasets_programs)
         assert content["unused_submissions"] == len(self.unused_submissions)
-        assert content["failed_submissions"] == len(self.used_failed_submission)
+        assert content["failed_submissions"] == len(self.failed_submissions)
