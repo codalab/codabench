@@ -56,7 +56,7 @@ urlpatterns = [
     path('api-token-auth/', obtain_auth_token),
 
     # User quota and cleanup
-    path('user_quota_cleanup/', quota.user_quota_cleanup),
+    path('user_quota_cleanup/', quota.user_quota_cleanup, name="user_quota_cleanup"),
     path('delete_unused_tasks/', quota.delete_unused_tasks),
     path('delete_unused_datasets/', quota.delete_unused_datasets),
     path('delete_unused_submissions/', quota.delete_unused_submissions),
