@@ -24,7 +24,7 @@ class CleanUpTests(APITestCase):
         # Create unused task
         self.unused_tasks = [TaskFactory(created_by=self.user), TaskFactory(created_by=self.user)]
         # Create phase with used tasks
-        self.phase = PhaseFactory(competition=self.comp, tasks=[self.used_tasks])
+        self.phase = PhaseFactory(competition=self.comp, tasks=self.used_tasks)
 
         # Create used-finished submission
         self.used_failed_submission = [SubmissionFactory(md5="12345", phase=self.phase, status=Submission.FAILED)]
