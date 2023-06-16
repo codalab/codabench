@@ -31,7 +31,7 @@ class CleanUpTests(APITestCase):
         # Create unused task
         self.unused_tasks = [
             TaskFactory(created_by=user),
-            TaskFactory(created_by=self.user)
+            TaskFactory(created_by=user)
         ]
 
         # Create phase with used tasks
