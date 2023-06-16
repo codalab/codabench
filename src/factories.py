@@ -169,7 +169,6 @@ class SubmissionFactory(DjangoModelFactory):
         data_file=factory.LazyAttribute(lambda _: ContentFile('', 'submission.zip')),
         created_by=factory.SelfAttribute('..owner'),
         created_when=factory.SelfAttribute('..created_when'),
-        competition=factory.SubFactory(CompetitionFactory)
     )
     task = factory.LazyAttribute(lambda submission: random.choice(submission.phase.tasks.all()))
 

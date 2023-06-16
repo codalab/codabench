@@ -42,8 +42,7 @@ class CleanUpTests(APITestCase):
             phase=phase,
             owner=user,
             status=Submission.FAILED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
-            competition=comp,
+            data=DataFactory(created_by=user, type=Data.SUBMISSION, competition=comp)
         )]
 
         # Create unused submission
@@ -67,11 +66,8 @@ class CleanUpTests(APITestCase):
 
         url = reverse('user_quota_cleanup')
         resp = self.client.get(url)
-
         assert resp.status_code == 200
-
         content = json.loads(resp.content)
-        print(content)
         assert content["unused_tasks"] == len(self.unused_tasks)
         assert content["unused_datasets_programs"] == len(self.unused_datasets_programs)
         assert content["unused_submissions"] == len(self.unused_submissions)
