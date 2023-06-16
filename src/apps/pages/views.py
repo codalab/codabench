@@ -41,7 +41,7 @@ class HomeView(TemplateView):
         announcement = Announcement.objects.all().first()
         context['announcement'] = announcement.text if announcement else None
 
-        news_posts = NewsPost.objects.all()
+        news_posts = NewsPost.objects.all().order_by('-id')
         context['news_posts'] = news_posts
 
         return context
