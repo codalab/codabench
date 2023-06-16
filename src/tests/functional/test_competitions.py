@@ -85,7 +85,7 @@ class TestCompetitions(SeleniumTestCase):
         self.get(reverse('competitions:create'))
         self.find('input[ref="title"]').send_keys(competition_title)
         self.find('input[ref="logo"]').send_keys(os.path.join(self.test_files_dir, 'test_logo.png'))
-        self.find('input[ref="docker_image"]').send_keys('docker_image')
+        self.find('input[ref="docker_image"]').send_keys('codalab/codalab-legacy:py37')
 
         # Participation Tab
         self.find('a[data-tab="participation"]').click()

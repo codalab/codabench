@@ -28,17 +28,17 @@
     </button>
 
     <!-- Data Table -->
-    <table class="ui {selectable: datasets.length > 0} celled compact table">
+    <table id="datasetsTable" class="ui {selectable: datasets.length > 0} celled compact sortable table">
         <thead>
         <tr>
             <th>File Name</th>
             <th width="175px">Type</th>
             <th width="175px">Size</th>
             <th width="125px">Uploaded</th>
-            <th width="60px">In Use</th>
-            <th width="60px">Public</th>
-            <th width="50px">Delete?</th>
-            <th width="25px"></th>
+            <th width="60px" class="no-sort">In Use</th>
+            <th width="60px" class="no-sort">Public</th>
+            <th width="50px" class="no-sort">Delete?</th>
+            <th width="25px" class="no-sort"></th>
         </tr>
         </thead>
         <tbody>
@@ -226,6 +226,7 @@
         self.one("mount", function () {
             $(".ui.dropdown", self.root).dropdown()
             $(".ui.checkbox", self.root).checkbox()
+            $('#datasetsTable').tablesort()
             self.update_datasets()
         })
 

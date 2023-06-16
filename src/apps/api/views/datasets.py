@@ -21,14 +21,14 @@ class DataViewSet(ModelViewSet):
     queryset = Data.objects.all()
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('type', 'name', 'key', 'was_created_by_competition', 'is_public')
-    search_fields = ('name', 'description', 'key',)
+    search_fields = ('file_name', 'name', 'description', 'key', 'competition__title',)
     pagination_class = BasicPagination
 
     def get_queryset(self):
 
         if self.request.method == 'GET':
 
-            # new filters
+            # filters
             # -----------
 
             # _public = true if want to show public datasets/submissions

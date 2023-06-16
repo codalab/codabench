@@ -497,9 +497,16 @@ class Run:
 
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
-            metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
-            logger.info(f"Metadata contains:\n {metadata}")
-            command = metadata.get("command") if metadata is not None else None # in case the file exists but is empty
+            try: # try to find a command in the metadata, in other cases set metadata to None
+                metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
+                logger.info(f"Metadata contains:\n {metadata}")
+                if isinstance(metadata, dict): # command found
+                    command = metadata.get("command")
+                else:
+                    command = None
+            except yaml.YAMLError as e:
+                print("Error parsing YAML file: ", e)
+                command = None
             if not command and kind == "ingestion":
                 raise SubmissionException("Program directory missing 'command' in metadata")
             elif not command:

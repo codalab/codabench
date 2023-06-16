@@ -19,16 +19,16 @@
     </button>
 
     <!-- Data Table -->
-    <table class="ui {selectable: submissions.length > 0} celled compact table">
+    <table id="submissionsTable" class="ui {selectable: submissions.length > 0} celled compact sortable table">
         <thead>
         <tr>
             <th>File Name</th>
             <th>Competition in</th>
             <th width="175px">Size</th>
             <th width="125px">Uploaded</th>
-            <th width="60px">Public</th>
-            <th width="50px">Delete?</th>
-            <th width="25px"></th>
+            <th width="60px" class="no-sort">Public</th>
+            <th width="50px" class="no-sort">Delete?</th>
+            <th width="25px" class="no-sort"></th>
         </tr>
         </thead>
         <tbody>
@@ -200,6 +200,7 @@
         self.one("mount", function () {
             $(".ui.dropdown", self.root).dropdown()
             $(".ui.checkbox", self.root).checkbox()
+            $('#submissionsTable').tablesort()
             self.update_submissions()
         })
 

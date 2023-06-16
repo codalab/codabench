@@ -15,16 +15,16 @@
         Delete Selected Tasks
     </button>
 
-    <table class="ui {selectable: tasks.length > 0} celled compact table">
+    <table id="tasksTable" class="ui {selectable: tasks.length > 0} celled compact sortable table">
         <thead>
         <tr>
             <th>Name</th>
             <th class="benchmark-row">Benchmarks</th>
             <th width="125px">Shared With</th>
             <th width="125px">Uploaded...</th>
-            <th width="50px">Public</th>
-            <th width="50px">Delete?</th>
-            <th width="25px"></th>
+            <th width="50px" class="no-sort">Public</th>
+            <th width="50px" class="no-sort">Delete?</th>
+            <th width="25px" class="no-sort"></th>
         </tr>
         </thead>
         <tbody>
@@ -257,6 +257,7 @@
         self.one("mount", function () {
             self.update_tasks()
             $(".ui.checkbox", self.root).checkbox()
+            $('#tasksTable').tablesort()
             $('.ui.search.dataset', self.root).each(function (i, item) {
                 $(item)
                     .search({

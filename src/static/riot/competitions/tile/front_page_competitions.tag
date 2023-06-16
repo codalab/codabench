@@ -2,7 +2,7 @@
     <div class="ui two column grid">
         <div class="eight wide column">
             <div class="ui large header">
-                Popular Benchmarks
+                <a href="/competitions/public/">Popular Benchmarks</a>
             </div>
             <div class="loader-container popular">
                 <div class="lds-ring">
@@ -17,7 +17,7 @@
 
         <div class="eight wide column">
             <div class="ui large header">
-                Featured Benchmarks
+                <a href="/competitions/public/">Featured Benchmarks</a>
             </div>
             <div class="loader-container popular">
                 <div class="lds-ring">
