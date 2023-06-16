@@ -7,7 +7,17 @@ from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import analytics, competitions, datasets, profiles, leaderboards, submissions, tasks, queues
+from .views import (
+    analytics,
+    competitions,
+    datasets,
+    profiles,
+    leaderboards,
+    submissions,
+    tasks,
+    queues,
+    quota
+)
 
 
 router = SimpleRouter()
@@ -44,6 +54,13 @@ urlpatterns = [
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token),
+
+    # User quota and cleanup
+    path('user_quota_cleanup/', quota.user_quota_cleanup),
+    path('delete_unused_tasks/', quota.delete_unused_tasks),
+    path('delete_unused_datasets/', quota.delete_unused_datasets),
+    path('delete_unused_submissions/', quota.delete_unused_submissions),
+    path('delete_failed_submissions/', quota.delete_failed_submissions),
 
     # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
