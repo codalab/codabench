@@ -76,7 +76,7 @@ class CleanUpTests(APITestCase):
     def test_delete_unused_tasks(self):
 
         url = reverse('delete_unused_tasks')
-        resp = self.client.get(url)
+        resp = self.client.delete(url)
         assert resp.status_code == 200
         content = json.loads(resp.content)
         assert content["success"]
@@ -91,7 +91,7 @@ class CleanUpTests(APITestCase):
     def test_delete_unused_datasets(self):
 
         url = reverse('delete_unused_datasets')
-        resp = self.client.get(url)
+        resp = self.client.delete(url)
         assert resp.status_code == 200
         content = json.loads(resp.content)
         assert content["success"]
@@ -106,7 +106,7 @@ class CleanUpTests(APITestCase):
     def test_delete_unused_submissions(self):
 
         url = reverse('delete_unused_submissions')
-        resp = self.client.get(url)
+        resp = self.client.delete(url)
         assert resp.status_code == 200
         content = json.loads(resp.content)
         assert content["success"]
@@ -121,7 +121,7 @@ class CleanUpTests(APITestCase):
     def test_delete_failed_submissions(self):
 
         url = reverse('delete_failed_submissions')
-        resp = self.client.get(url)
+        resp = self.client.delete(url)
         assert resp.status_code == 200
         content = json.loads(resp.content)
         assert content["success"]
