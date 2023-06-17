@@ -1,5 +1,3 @@
-import pdb
-
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -30,7 +28,6 @@ class SolutionSerializer(WritableNestedModelSerializer):
         ]
         
     def get_size(self, instance):
-        print("line 31"); pdb.set_trace() # BB
         return instance.data.file_size
 
 
@@ -168,7 +165,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
-    # print("line 159"); pdb.set_trace() # BB
+    public_datasets = serializers.SerializerMethodField()
 
     class Meta:
         model = PhaseTaskInstance
@@ -182,22 +179,21 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'key',
             'created_when',
             'name',
-            'solutions'
+            'solutions',
             # BB Add public data
+            'public_datasets'
             # BB Add starting kit
         )
     
     def get_solutions(self, instance):
-        print("line 177"); pdb.set_trace() # BB
         qs = instance.task.solutions.all()
         return SolutionSerializer(qs, many=True).data
 
-    # def get_public_datasets(self, instance):
-    #     print("line 177"); pdb.set_trace() # BB
-    #     qs = instance.task.solutions.all()
-    #     return SolutionSerializer(qs, many=True).data
-    
-    # def get_starting_kits(self, instance):
-    #     print("line 177"); pdb.set_trace() # BB
-    #     qs = instance.task.solutions.all()
-    #     return SolutionSerializer(qs, many=True).data
+    def get_public_datasets(self, instance):
+        input_data = instance.task.input_data
+        reference_data = instance.task.reference_data
+        ingestion_program = instance.task.ingestion_program
+        scoring_program = instance.task.scoring_program
+        dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
+        qs = Data.objects.filter(id__in=dataset_list_ids)   
+        return DataDetailSerializer(qs, many=True).data

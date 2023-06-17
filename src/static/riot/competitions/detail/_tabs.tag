@@ -51,6 +51,8 @@
                                         <th class="index-column">Download</th>
                                         <th>Phase</th>
                                         <th>Task</th>
+                                        <th>Type</th>
+                                        <th>Public</th>
                                         <th>Size</th>
                                     </tr>
                                     </thead>
@@ -63,6 +65,8 @@
                                         </td>
                                         <td>{file.phase}</td>
                                         <td>{file.task}</td>
+                                        <td>{file.type}</td>
+                                        <td>no</td>
                                         <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
                                     </tbody>
@@ -196,21 +200,69 @@
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
             self.competition.files = []
-            debugger
             _.forEach(competition.phases, phase => {
-                debugger
                 _.forEach(phase.tasks, task => {
-                    debugger
+                    let input_data = {}
+                    let reference_data = {}
+                    let ingestion_program = {}
+                    let scoring_program = {}
+                    _.forEach(task.public_datasets, dataset => {
+                        let type = 'input_data'
+                        if(dataset.type === "input_data"){
+                            type = 'Input Data'
+                            input_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "reference_data"){
+                            type = 'Reference Data (private?)'
+                            reference_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "ingestion_program"){
+                            type = 'Ingestion Program'
+                            ingestion_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "scoring_program"){
+                            type = 'Scoring Program'
+                            scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }
+                        //self.competition.files.push({
+                        //    key: dataset.key,
+                        //    name: dataset.name,
+                        //    file_size: dataset.file_size,
+                        //    phase: phase.name,
+                        //    task: task.name,
+                        //    type: type
+                        //})
+                    })
+                    self.competition.files.push(input_data)
+                    self.competition.files.push(reference_data)
+                    self.competition.files.push(ingestion_program)
+                    self.competition.files.push(scoring_program)
+                })
+                _.forEach(phase.tasks, task => {
                     _.forEach(task.solutions, solution => {
-                        debugger
                         self.competition.files.push({
                             key: solution.data,
                             name: solution.name,
                             file_size: solution.size,
                             phase: phase.name,
                             task: task.name,
+                            type: 'Solution'
                         })
                     })
+                })
+                // Need code for public_data and starting_kit at phase level
+                self.competition.files.push({
+                    key: 'starting_kit_key_placeholder',
+                    name: 'starting_kit_name_placeholder',
+                    file_size: 0,
+                    phase: phase.name,
+                    task: '--',
+                    type: 'Starting Kit'
+                })
+                self.competition.files.push({
+                    key: 'public_data_key_placeholder',
+                    name: 'public_data_name_placeholder',
+                    file_size: 0,
+                    phase: phase.name,
+                    task: '--',
+                    type: 'Public Data'
                 })
             })
 
