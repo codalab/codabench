@@ -64,7 +64,7 @@ def delete_unused_tasks(request):
     except Exception as e:
         return Response({
             "success": False,
-            "message": e
+            "message": f"{e}"
         })
 
 
@@ -89,7 +89,7 @@ def delete_unused_datasets(request):
     except Exception as e:
         return Response({
             "success": False,
-            "message": e
+            "message": f"{e}"
         })
 
 
@@ -110,7 +110,7 @@ def delete_unused_submissions(request):
     except Exception as e:
         return Response({
             "success": False,
-            "message": e
+            "message": f"{e}"
         })
 
 
@@ -129,5 +129,5 @@ def delete_failed_submissions(request):
     except Exception as e:
         return Response({
             "success": False,
-            "message": e
+            "message": f"{e}"
         })
