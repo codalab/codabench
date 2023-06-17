@@ -229,3 +229,18 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
         mem_ser = MembershipSerializer(membership)
         return Response(mem_ser.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'])
+    def delete_organization(self, request, pk=None):
+        try:
+            org = Organization.objects.get(id=pk)
+            org.delete()
+            return Response({
+                "success": True,
+                "message": "Organization deleted!"
+            })
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": f"{e}"
+            })
