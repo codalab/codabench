@@ -52,7 +52,7 @@
                                         <th>Phase</th>
                                         <th>Task</th>
                                         <th>Type</th>
-                                        <th>Public</th>
+                                        <th>Available</th>
                                         <th>Size</th>
                                     </tr>
                                     </thead>
@@ -66,7 +66,7 @@
                                         <td>{file.phase}</td>
                                         <td>{file.task}</td>
                                         <td>{file.type}</td>
-                                        <td>no</td>
+                                        <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>
                                         <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
                                     </tbody>
@@ -202,6 +202,7 @@
             self.competition.files = []
             _.forEach(competition.phases, phase => {
                 _.forEach(phase.tasks, task => {
+                    // Over complicated data org but it is so we can order exactly how we want...
                     let input_data = {}
                     let reference_data = {}
                     let ingestion_program = {}
@@ -221,15 +222,8 @@
                             type = 'Scoring Program'
                             scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
                         }
-                        //self.competition.files.push({
-                        //    key: dataset.key,
-                        //    name: dataset.name,
-                        //    file_size: dataset.file_size,
-                        //    phase: phase.name,
-                        //    task: task.name,
-                        //    type: type
-                        //})
                     })
+                    // ...that ordering happens here
                     self.competition.files.push(input_data)
                     self.competition.files.push(reference_data)
                     self.competition.files.push(ingestion_program)
@@ -248,24 +242,28 @@
                     })
                 })
                 // Need code for public_data and starting_kit at phase level
-                self.competition.files.push({
-                    key: 'starting_kit_key_placeholder',
-                    name: 'starting_kit_name_placeholder',
-                    file_size: 0,
-                    phase: phase.name,
-                    task: '--',
-                    type: 'Starting Kit'
-                })
-                self.competition.files.push({
-                    key: 'public_data_key_placeholder',
-                    name: 'public_data_name_placeholder',
-                    file_size: 0,
-                    phase: phase.name,
-                    task: '--',
-                    type: 'Public Data'
-                })
+                
+                if (phase.starting_kit != null){
+                    self.competition.files.push({
+                        key: phase.starting_kit.key,
+                        name: phase.starting_kit.name,
+                        file_size: phase.starting_kit.file_size,
+                        phase: phase.name,
+                        task: '-Phase Level Data-',
+                        type: 'Starting Kit'
+                    })
+                }
+                if (phase.public_data != null){
+                    self.competition.files.push({
+                        key: phase.public_data.key,
+                        name: phase.public_data.name,
+                        file_size: phase.public_data.file_size,
+                        phase: phase.name,
+                        task: '-Phase Level Data-',
+                        type: 'Public Data'
+                    })
+                }
             })
-
             // loop over competition phases to mark if phase has started or ended
             self.competition.phases.forEach(function (phase, index) {
                 

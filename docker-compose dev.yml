@@ -1,0 +1,237 @@
+version: '3'
+services:
+  #-----------------------------------------------
+  #   Web Services
+  #-----------------------------------------------
+  caddy:
+    image: abiosoft/caddy:1.0.3
+    env_file: .env
+    environment:
+      - ACME_AGREE=true
+    volumes:
+      - ./Caddyfile:/etc/Caddyfile
+      - ./src/staticfiles:/var/www/django/static
+      - ./certs/caddy:/etc/caddycerts
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - django
+
+  django:
+    build: .
+    # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
+    command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
+    stdin_open: true
+    tty: true
+    environment:
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    env_file: .env
+    volumes:
+      - .:/app:delegated
+      - /tmp/codalab-v2/django:/codalab_tmp
+      - ./backups:/app/backups
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - rabbit
+      - minio
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+
+
+  #-----------------------------------------------
+  # Minio local storage helper
+  #-----------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+    command: server /export
+    volumes:
+      - ./var/minio:/export
+    restart: unless-stopped
+    ports:
+      - $MINIO_PORT:9000
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "nc", "-z", "minio", "9000"]
+      interval: 5s
+      retries: 5
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+#    volumes:
+      # This volume is shared with `minio`, so `z` to share it
+#      - ./var/minio:/export
+    entrypoint: >
+      /bin/sh -c "
+      set -x;
+      if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
+        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do echo '...waiting...' && sleep 5; done;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+        /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
+      else
+        echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';
+      fi;
+      exit 0;
+      "
+
+  #-----------------------------------------------
+  #   Local development helper, rebuilds RiotJS/Stylus on change
+  #-----------------------------------------------
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.builder
+    volumes:
+      - .:/app:delegated
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+
+
+  #-----------------------------------------------
+  #   Database Service
+  #-----------------------------------------------
+  db:
+    image: postgres:12-alpine
+    env_file: .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes:
+      - ./var/postgres:/var/lib/postgresql/data:delegated
+      - ./backups:/app/backups
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+
+  #-----------------------------------------------
+  #   Rabbitmq & Flower monitoring tool
+  #-----------------------------------------------
+  rabbit:
+    image: rabbitmq:3.6-management
+    # setting hostname here makes data persist properly between
+    # containers being destroyed..!
+    hostname: rabbit
+    env_file: .env
+    ports:
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+      - ${RABBITMQ_PORT}:5672
+    volumes:
+      - ./var/rabbit:/var/lib/rabbitmq
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+
+  flower:
+    # image: mher/flower
+    build:
+      context: .
+      dockerfile: Dockerfile.flower
+    env_file: .env
+    environment:
+      - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+    restart: unless-stopped
+    ports:
+      - ${FLOWER_PUBLIC_PORT:-5555}:5555
+    depends_on:
+      - rabbit
+    logging:
+        options:
+            max-size: "20k"
+            max-file: "10"
+
+  #-----------------------------------------------
+  #   Redis
+  #-----------------------------------------------
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+
+  #-----------------------------------------------
+  #   Celery Service
+  #-----------------------------------------------
+  site_worker:
+    # This auto-reloads
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"
+    working_dir: /app/src
+    build:
+      context: .
+    depends_on:
+      - rabbit
+      - db
+    # stdin_open: true
+    # tty: true
+    # ports:
+    #   - "6900:6900"
+    env_file: .env
+    # environment:
+    #   - COLUMNS=80 # Set the number of columns
+    #   - CELERY_RDB_HOST=0.0.0.0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          # Limit memory substantially here so we see any problems that may
+          # appear on Heroku ahead of time
+          memory: 256M
+
+  compute_worker:
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+    working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile.compute_worker
+    depends_on:
+      - django
+      - rabbit
+    # stdin_open: true
+    # tty: true
+    ports:
+      - "6900-6901:6900-6901"
+    volumes:
+      - ./compute_worker:/app
+      - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
+      # Actual connection back to docker parent to run things
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
+    environment:
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+      # Make the worker leave behind the submission so we can examine it
+      - CODALAB_IGNORE_CLEANUP_STEP=1
+      # - COLUMNS=80 # Set the number of columns
+      # - CELERY_RDB_HOST=0.0.0.0
+    logging:
+      options:
+        max-size: "20k"
+        max-file: "10"

@@ -96,6 +96,27 @@
                             multiple="multiple">
                     </select>
                 </div>
+                <!--  BB Adding public_data and starting_kit dropdowns  -->
+                <div class="fluid field required" ref="public_data_select_container" id="public_data_select_container">
+                    <label for="public_data">
+                        Public Data
+                        <span data-tooltip="Use public_data manager to create new public_data" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                    </label>
+                    <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
+                            multiple="single">
+                    </select>
+                </div>
+                <div class="fluid field required" ref="starting_kit_select_container" id="starting_kit_select_container">
+                    <label for="starting_kit">
+                        Starting Kit
+                        <span data-tooltip="Use starting_kit manager to create new starting_kit" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                    </label>
+                    <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"
+                            multiple="single">
+                    </select>
+                </div>
 
                 <div class="field smaller-mde">
                     <label>Description</label>
@@ -176,6 +197,8 @@
         self.form_is_valid = false
         self.phases = []
         self.phase_tasks = []
+        self.phase_public_data = []
+        self.phase_starting_kit = []
         self.selected_phase_index = undefined
         self.warnings = []
 
@@ -190,12 +213,43 @@
                 apiSettings: {
                     url: `${URLS.API}tasks/?search={query}`,
                     onResponse: (data) => {
+                        console.log(_.values(data.results))
+                        debugger
                         return {success: true, results: _.values(data.results)}
                     },
                 },
                 onAdd: self.task_added,
                 onRemove: self.task_removed,
             })
+
+            $(self.refs.public_data_multiselect).dropdown({
+                apiSettings: {
+                    url: `${URLS.API}datasets/?search={query}`,
+                    onResponse: (data) => {
+                        console.log(_.values(data.results))
+                        data.results.forEach((v,i,a) => {
+                            v['value'] = v['key']
+                        })
+                        debugger
+                        return {success: true, results: _.values(data.results)}
+                    },
+                },
+                onAdd: self.public_data_added,
+                onRemove: self.public_data_removed,
+            })
+
+            $(self.refs.starting_kit_multiselect).dropdown({
+                apiSettings: {
+                    url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
+                    onResponse: (data) => {
+                        console.log(_.values(data.results))
+                        return {success: true, results: _.values(data.results)}
+                    },
+                },
+                // onAdd: self.task_added,
+                // onRemove: self.task_removed,
+            })
+            // When adding \ removing phase we need to code it like above
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
@@ -220,6 +274,7 @@
          Methods
         ---------------------------------------------------------------------*/
         self.task_added = (key, text, item) => {
+            debugger
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
             })
@@ -234,9 +289,33 @@
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
             })
+            debugger
             self.phase_tasks.splice(index, 1)
             self.form_updated()
         }
+
+        self.public_data_added = (key, text, item) => {
+            debugger
+            let index = _.findIndex(self.phase_public_data, (public_data) => {
+                debugger
+                return public_data.value === key
+            })
+            if (index === -1) {
+                let public_data = {name: text, value: key, selected: true}
+                self.phase_public_data.push(public_data)
+            }
+            self.form_updated()
+        }
+
+        self.public_data_removed = (key, text, item) => {
+            debugger
+            let index = _.findIndex(self.phase_public_data, (public_data) => {
+                return public_data.value === key
+            })
+            self.phase_public_data.splice(index, 1)
+            self.form_updated()
+        }
+
 
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
@@ -286,6 +365,7 @@
                 is_valid = false
             } else {
                 // Make sure each phase has the proper details
+                // BB - check for public_data and starting_kit - NOT DONE
                 self.phases.forEach(function (phase) {
                     if (!phase.name || !phase.start || phase.tasks.length === 0) {
                         is_valid = false
@@ -338,6 +418,9 @@
             self.selected_phase_index = undefined
             self.phase_tasks = []
             $(self.refs.multiselect).dropdown('clear')
+            // BB - I feel like if we need the above for tasks we need it for pulic_data and starting_kit - 06/17/2023
+            // $(self.refs.public_data_multiselect).dropdown('clear')
+            // $(self.refs.starting_kit_multiselect).dropdown('clear')
 
             $(':input', self.refs.form)
                 .not('[type="file"]')
@@ -369,6 +452,11 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
+            phase.public_data['value'] = phase.public_data['key']
+            debugger
+            self.phase_public_data = [phase.public_data]
+            self.phase_public_data
+
 
             self.update()
             set_form_data(phase, self.refs.form)
@@ -382,6 +470,7 @@
             $(self.refs.multiselect)
                 .dropdown('change values', _.map(self.phase_tasks, task => {
                     // renaming things to work w/ semantic UI multiselect
+                    debugger
                     return {
                         value: task.value,
                         text: task.name,
@@ -389,11 +478,28 @@
                         selected: true,
                     }
                 }))
+            // BB - I feel like if we need the above for tasks we need it for phases - 06/17/2023
+            $(self.refs.public_data_multiselect)
+                .dropdown('change values', _.map(self.phase_public_data, public_data => {
+                    // renaming things to work w/ semantic UI multiselect
+                    debugger
+                    return {
+                        //value: public_data.value, // Maybe need to grab from serializer?
+                        value: public_data.key,
+                        text: public_data.name,
+                        name: public_data.name,
+                        selected: true,
+                    }
+                }))
 
             self.show_modal()
 
             // make semantic multiselect sortable -- Sortable library imported in competitions/form.html
+            debugger
             Sortable.create($('.search.dropdown.multiple', self.refs.tasks_select_container)[0])
+            // BB - I feel like if we need the above for tasks we need it for public_data and starting_kit - 06/17/2023
+            Sortable.create($('.search.dropdown.multiple', self.refs.public_data_select_container)[0])
+            //Sortable.create($('.search.dropdown.single', self.refs.starting_kit_select_container)[0])
 
             self.form_check_is_valid()
             self.update()
@@ -416,6 +522,7 @@
             // Get tasks order from DOM and order the task array by that.
             let tasks_from_dom = []
             $("#tasks_select_container a").each(function () {
+                debugger
                 tasks_from_dom.push($(this).data("value"))
             })
             let sorted_phase_tasks = []
@@ -432,9 +539,31 @@
             })
             self.phase_tasks = sorted_phase_tasks.slice()
 
+            // NOT DONE - BB - 06/17/2023 -> We need to grab selected phase and save it.
+            let public_data_from_dom = []
+            $("#public_data_select_container a").each(function () {
+                debugger
+                public_data_from_dom.push($(this).data("value"))
+            })
+            let sorted_phase_public_data = []
+            public_data_from_dom.forEach( function(key) {
+                let found = false;
+                self.phase_public_data = self.phase_public_data.filter(function (item) {
+                    if(!found && item['value'] == key){
+                        sorted_phase_public_data.push(item)
+                        found = true
+                        return false
+                    } else
+                        return true
+                })
+            })
+            self.phase_public_data = sorted_phase_public_data.slice()
+
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
+            data.public_data = self.phase_public_data[0]
             data.task_instances = []
+            debugger
             for(task of self.phase_tasks){
                 data.task_instances.push({
                     order_index: data.task_instances.length,
@@ -457,6 +586,7 @@
                 // We have a selected phase, do an update instead of a create
                 data.id = self.phases[self.selected_phase_index].id
                 self.phases[self.selected_phase_index] = data
+                debugger
             }
             self.close_modal()
         }
