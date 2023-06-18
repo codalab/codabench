@@ -234,11 +234,18 @@ class OrganizationViewSet(mixins.CreateModelMixin,
     def delete_organization(self, request, pk=None):
         try:
             org = Organization.objects.get(id=pk)
-            org.delete()
-            return Response({
-                "success": True,
-                "message": "Organization deleted!"
-            })
+            member = org.membership_set.get(user=request.user)
+            if member.group == Membership.OWNER:
+                org.delete()
+                return Response({
+                    "success": True,
+                    "message": "Organization deleted!"
+                })
+            else:
+                return Response({
+                    "success": False,
+                    "message": "You do not have delete rights!"
+                })
         except Exception as e:
             return Response({
                 "success": False,
