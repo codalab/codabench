@@ -165,7 +165,8 @@ class V15Unpacker(BaseUnpacker):
                 'index': index,
                 'sorting': column.get('sort') or 'desc',
                 # get precision as numeric_format, if not found, use default value = 2
-                'precision': column.get('numeric_format', 2)
+                'precision': column.get('numeric_format', 2),
+                'hidden': column.get('hidden', False)
             }
 
             for leaderboard_data in self.competition['leaderboards']:
