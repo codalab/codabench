@@ -106,6 +106,8 @@
                             toastr.success(data.message)
                             self.update()
                             CODALAB.events.trigger('reload_tasks')
+                            CODALAB.events.trigger('reload_datasets')
+                            self.get_cleanup()
                         }else{
                             toastr.error(data.message)
                         }
