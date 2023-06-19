@@ -23,7 +23,7 @@ from rest_framework_extensions.key_constructor.constructors import DefaultListKe
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
+from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, PhaseDetailSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
@@ -35,6 +35,7 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
+from datetime import datetime
 import logging
 logger = logging.getLogger()
 
@@ -201,7 +202,32 @@ class CompetitionViewSet(ModelViewSet):
             leaderboard.is_valid()
             leaderboard.save()
             leaderboard_id = leaderboard["id"].value
+
             for phase in data['phases']:
+                # Newly added phase from front-end has no id
+                # Add a phase first to get id
+                # add this phase id in each task
+                if 'id' not in phase:
+
+                    # Create Phase object
+                    # TODO: wrap this whole phase addition inside competition updation in a Transaction in case something fails after the phase id is created and not yet linked to tasks
+                    new_phase_obj = Phase.objects.create(
+                        status=phase["status"],
+                        index=phase["index"],
+                        start=datetime.strptime(phase['start'], "%B %d, %Y"),
+                        end=datetime.strptime(phase['end'], "%B %d, %Y"),
+                        name=phase["name"],
+                        description=phase["description"],
+                        auto_migrate_to_this_phase=phase["auto_migrate_to_this_phase"],
+                        hide_output=phase["hide_output"],
+                        competition=Competition.objects.get(id=data['id'])
+                    )
+                    # Get phase id
+                    new_phase_id = new_phase_obj.id
+                    # loop over phase tasks to add phase id in each task
+                    for task in phase["tasks"]:
+                        task['phase'] = new_phase_id
+
                 phase['leaderboard'] = leaderboard_id
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
