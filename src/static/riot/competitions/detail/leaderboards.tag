@@ -106,7 +106,7 @@
                 for (const column of self.columns){
                     let key = column.key.toLowerCase()
                     let title = column.title.toLowerCase()
-                    if((key.includes(search_key) || title.includes(search_key)) && !column.hidden) {
+                    if((key.includes(search_key) || title.includes(search_key))) {
                         self.filtered_columns.push(column)
                     }
                     else {
