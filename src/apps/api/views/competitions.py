@@ -23,7 +23,7 @@ from rest_framework_extensions.key_constructor.constructors import DefaultListKe
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, PhaseDetailSerializer, \
+from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
