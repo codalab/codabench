@@ -208,7 +208,6 @@ class CompetitionViewSet(ModelViewSet):
                 # Add a phase first to get id
                 # add this phase id in each task
                 if 'id' not in phase:
-
                     # Create Phase object
                     # TODO: wrap this whole phase addition inside competition updation in a Transaction in case something fails after the phase id is created and not yet linked to tasks
                     new_phase_obj = Phase.objects.create(
@@ -218,7 +217,6 @@ class CompetitionViewSet(ModelViewSet):
                         end=datetime.strptime(phase['end'], "%B %d, %Y"),
                         name=phase["name"],
                         description=phase["description"],
-                        auto_migrate_to_this_phase=phase["auto_migrate_to_this_phase"],
                         hide_output=phase["hide_output"],
                         competition=Competition.objects.get(id=data['id'])
                     )
