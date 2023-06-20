@@ -533,8 +533,10 @@ class PhaseViewSet(ModelViewSet):
 
             # gather detailed result from submissions for each task
             # detailed_results are gathered based on submission key
+            # `id` is used to fetch the right detailed result in detailed results page
+            # `detailed_result` url is not needed
             submission_detailed_results.setdefault(submission_key, []).append({
-                'detailed_result': submission['detailed_result'],
+                # 'detailed_result': submission['detailed_result'],
                 'task': submission['task'],
                 'id': submission['id']
             })
