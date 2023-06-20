@@ -518,7 +518,6 @@ class PhaseViewSet(ModelViewSet):
         columns = [col for col in query['columns']]
         submissions_keys = {}
         for submission in query['submissions']:
-
             # count number of entries/number of submissions for the owner of this submission for this phase
             # count all submissions with no parent and count all parents without counting the children
             num_entries = Submission.objects.filter(
@@ -527,8 +526,6 @@ class PhaseViewSet(ModelViewSet):
             ).exclude(
                 parent__isnull=False
             ).count()
-
-            print(num_entries)
 
             # get date of last submission by the owner of this submission for this phase
             last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
