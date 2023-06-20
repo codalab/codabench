@@ -29,8 +29,7 @@
         <tr class="task-row">
             <th>Task:</th>
             <th colspan=3></th>
-            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
-            <th if="{enable_detailed_results}"></th>
+            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ enable_detailed_results ? task.colWidth+1 : task.colWidth}">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
@@ -38,7 +37,7 @@
             <th>Entries</th>
             <th>Date of last entry</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            <th if="{enable_detailed_results}">Detailed Results</th>
+            
         </tr>
         </thead>
         <tbody>
@@ -60,8 +59,12 @@
             <td>{submission.num_entries}</td>
             <td>{submission.last_entry_date}</td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
-            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
+            <td each="{ column in filtered_columns }">
+                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank">Show detailed results</a> 
+                <span if="{column.title != 'Detailed Results'}">{get_score(column, submission)}</span>
+            </td>
+           
+           
         </tr>
         </tbody>
     </table>
@@ -147,12 +150,27 @@
                             column.task_id = task.id
                             self.columns.push(column)
                         }
+                        if(self.enable_detailed_results){
+                            self.columns.push({
+                              task_id: task.id,
+                              title: "Detailed Results"
+                            })
+                        }
                     }
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
                     self.update()
                 })
         }
+
+        self.get_detailed_result_submisison_id = function(column, submisison){
+            for (index in submisison.detailed_results) {
+                if(column.task_id == submisison.detailed_results[index].task){
+                    return submisison.detailed_results[index].id
+                }
+            }
+        }
+
 
         CODALAB.events.on('phase_selected', data => {
             self.phase_id = data.id
