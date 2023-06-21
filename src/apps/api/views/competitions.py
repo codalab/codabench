@@ -91,10 +91,18 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(published=True) & ~Q(created_by=self.request.user)) |
                     (Q(participants__user=self.request.user) & Q(participants__status="approved"))
                 ).distinct()
+
+            # default condition
+            if (not mine) and (not participating_in) and (not search_query):
+                qs = qs.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user])) |
+                    (Q(published=True) & ~Q(created_by=self.request.user)) |
+                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                ).distinct()
         else:
             # if user is not authenticated only show public competitions in the search
-            if (search_query):
-                qs = qs.filter(Q(published=True))
+            qs = qs.filter(Q(published=True))
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
