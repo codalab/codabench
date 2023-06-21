@@ -482,6 +482,19 @@ class PhaseViewSet(ModelViewSet):
     serializer_class = PhaseSerializer
 
     # TODO! Security, who can access/delete/etc this?
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        # Filter phases
+        # show all phases which belongs to competitions created by this user
+        # or
+        # show phases belonging to published competitions
+        qs = qs.filter(
+            Q(competition__created_by=self.request.user) |
+            Q(competition__published=True)
+        )
+
+        return qs
 
     @action(detail=True, methods=('POST',), url_name='manually_migrate')
     def manually_migrate(self, request, pk):
