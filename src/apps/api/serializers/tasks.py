@@ -43,6 +43,7 @@ class SolutionListSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
+
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
@@ -166,7 +167,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
     public_datasets = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = PhaseTaskInstance
         fields = (
@@ -180,9 +181,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'created_when',
             'name',
             'solutions',
-            # BB Add public data
             'public_datasets'
-            # BB Add starting kit
         )
     
     def get_solutions(self, instance):

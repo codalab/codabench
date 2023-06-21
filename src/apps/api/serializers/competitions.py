@@ -42,6 +42,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'auto_migrate_to_this_phase',
             'hide_output',
             'leaderboard',
+            'public_data',
+            'starting_kit',
             'is_final_phase',            
         )
 
@@ -104,16 +106,17 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'status',
+            'execution_time_limit',
             'tasks',
-            'auto_migrate_to_this_phase',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
-            'execution_time_limit',
+            'auto_migrate_to_this_phase',
             'hide_output',
-            'is_final_phase',
+            # no leaderboard
             'public_data',
-            'starting_kit'
+            'starting_kit',
+            'is_final_phase',
         )
 
     def get_status(self, obj):
