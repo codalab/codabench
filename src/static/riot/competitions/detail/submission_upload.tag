@@ -55,7 +55,7 @@
                         <option value="None">Yourself</option>
                         <option each="{org in organizations}" value="{org.id}">{org.name}</option>
                     </select>
-                    <span id="submit-as">You can either submit as yourself of as an organization.</span>
+                    <span id="submit-as">You can either submit as yourself or as an organization.</span>
                     <br>
                     <span if="{_.size(organizations) === 0}"><a href="/profiles/organization/create/" target="_blank">Click to create an Organization</a></span>
                 </div>
