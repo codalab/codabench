@@ -21,7 +21,6 @@ from datetime import datetime
 class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
                                          many=True)
-    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Phase
@@ -44,42 +43,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'is_final_phase',
         )
 
-    def get_status(self, obj):
-
-        now = datetime.now().replace(tzinfo=None)
-        start = obj.start.replace(tzinfo=None)
-        end = obj.end.replace(tzinfo=None) if obj.end else obj.end
-        phase_ended = False
-        phase_started = False
-
-        # check if phase has started
-        if start > now:
-            # start date is in the future, phase started = NO
-            phase_started = False
-        else:
-            # start date is not in the future, phase started = YES
-            phase_started = True
-
-        if phase_started:
-            # check if end date exists for this phase
-            if end:
-                if end < now:
-                    # Phase cannote accept submissions if end date is in the past
-                    phase_ended = True
-                else:
-                    # Phase can accept submissions if end date is in the future
-                    phase_ended = False
-            else:
-                # Phase can accept submissions if end date is not given
-                phase_ended = False
-
-        if phase_started and phase_ended:
-            return Phase.PREVIOUS
-        elif phase_started and (not phase_ended):
-            return Phase.CURRENT
-        elif not phase_started:
-            return Phase.NEXT
-
     def validate_leaderboard(self, value):
         if not value:
             raise ValidationError("Phases require a leaderboard")
@@ -88,7 +51,6 @@ class PhaseSerializer(WritableNestedModelSerializer):
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
-    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Phase
@@ -109,42 +71,6 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'hide_output',
             'is_final_phase',
         )
-
-    def get_status(self, obj):
-
-        now = datetime.now().replace(tzinfo=None)
-        start = obj.start.replace(tzinfo=None)
-        end = obj.end.replace(tzinfo=None) if obj.end else obj.end
-        phase_ended = False
-        phase_started = False
-
-        # check if phase has started
-        if start > now:
-            # start date is in the future, phase started = NO
-            phase_started = False
-        else:
-            # start date is not in the future, phase started = YES
-            phase_started = True
-
-        if phase_started:
-            # check if end date exists for this phase
-            if end:
-                if end < now:
-                    # Phase cannote accept submissions if end date is in the past
-                    phase_ended = True
-                else:
-                    # Phase can accept submissions if end date is in the future
-                    phase_ended = False
-            else:
-                # Phase can accept submissions if end date is not given
-                phase_ended = False
-
-        if phase_started and phase_ended:
-            return Phase.PREVIOUS
-        elif phase_started and (not phase_ended):
-            return Phase.CURRENT
-        elif not phase_started:
-            return Phase.NEXT
 
 
 class PhaseUpdateSerializer(PhaseSerializer):

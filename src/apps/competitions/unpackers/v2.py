@@ -205,7 +205,6 @@ class V2Unpacker(BaseUnpacker):
 
             self.competition['phases'].append(new_phase)
         self._validate_phase_ordering()
-        self._set_phase_statuses()
 
     def _unpack_leaderboards(self):
         # ---------------------------------------------------------------------

@@ -203,8 +203,7 @@ PHASES = [
         'auto_migrate_to_this_phase': False,
         'has_max_submissions': True,
         'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
-        'tasks': [0],
-        'status': 'Previous',
+        'tasks': [0]
     },
     {
         'index': 1,
@@ -217,9 +216,7 @@ PHASES = [
         'auto_migrate_to_this_phase': True,
         'has_max_submissions': True,
         'tasks': [1],
-        'status': 'Current',
-        'end': None,
-        'is_final_phase': True,
+        'end': None
     }
 ]
 

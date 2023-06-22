@@ -205,25 +205,10 @@
             }
 
             // convert serializer task data to just keys if we didn't edit phases
-            // also add phase statuses based on above calculated indexes
             self.competition.phases = _.map(self.competition.phases, phase => {
                 if (phase.task_instances && _.some(phase.task_instances, Object)) {
                     phase.task_instances.task = _.map(phase.task_instances.task, task => task.key || task.value)
                 }
-                switch (phase.index) {
-                    case current_index:
-                        phase.status = 'Current'
-                        break
-                    case previous_index:
-                        phase.status = 'Previous'
-                        break
-                    case next_index:
-                        phase.status = 'Next'
-                        break
-                    default:
-                        phase.status = null
-                }
-                return phase
             })
 
             self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)

@@ -120,7 +120,6 @@ class V15Unpacker(BaseUnpacker):
             self.competition['tasks'][task_index] = new_task
 
         self._validate_phase_ordering()
-        self._set_phase_statuses()
 
     def _preprocess_phases(self, phases):
         """If it's version 1.8, then we remove the first phase, which is the parent phase."""

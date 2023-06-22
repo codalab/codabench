@@ -28,8 +28,7 @@ class PhaseToPhaseMigrationTests(TestCase):
             start=twenty_five_minutes_ago,
             end=twenty_minutes_ago,
             index=0,
-            name='Phase1',
-            status=Phase.CURRENT
+            name='Phase1'
         )
 
         self.phase2 = PhaseFactory(
@@ -38,8 +37,7 @@ class PhaseToPhaseMigrationTests(TestCase):
             start=five_minutes_ago,
             end=twenty_minutes_from_now,
             index=1,
-            name='Phase2',
-            status=Phase.NEXT
+            name='Phase2'
         )
 
         self.phase3 = PhaseFactory(
@@ -47,8 +45,7 @@ class PhaseToPhaseMigrationTests(TestCase):
             auto_migrate_to_this_phase=False,
             start=twenty_minutes_from_now,
             index=2,
-            name='Phase3',
-            status=Phase.FINAL
+            name='Phase3'
         )
 
         for _ in range(4):

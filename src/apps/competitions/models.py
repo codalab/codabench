@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -135,36 +136,6 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating_delayed = False
         self.save()
 
-    def update_phase_statuses(self):
-        current_phase = None
-        for phase in self.phases.all():
-            if phase.end is not None and phase.start < now() < phase.end:
-                current_phase = phase
-            elif phase.end is None:
-                current_phase = phase
-
-        if current_phase:
-            current_index = current_phase.index
-            previous_index = current_index - 1 if current_index >= 1 else None
-            next_index = current_index + 1 if current_index < len(self.phases.all()) - 1 else None
-        else:
-            current_index = None
-
-            next_phase = self.phases.filter(end__gt=now()).order_by('index').first()
-            if next_phase:
-                next_index = next_phase.index
-                previous_index = next_index - 1 if next_index >= 1 else None
-            else:
-                next_index = None
-                previous_index = None
-
-        if current_index is not None:
-            self.phases.filter(index=current_index).update(status=Phase.CURRENT)
-        if next_index is not None:
-            self.phases.filter(index=next_index).update(status=Phase.NEXT)
-        if previous_index is not None:
-            self.phases.filter(index=previous_index).update(status=Phase.PREVIOUS)
-
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.pk})
 
@@ -255,14 +226,6 @@ class Phase(ChaHubSaveMixin, models.Model):
     NEXT = "Next"
     FINAL = "Final"
 
-    STATUS_CHOICES = (
-        (PREVIOUS, "Previous"),
-        (CURRENT, "Current"),
-        (NEXT, "Next"),
-    )
-
-    status = models.TextField(choices=STATUS_CHOICES, null=True, blank=True)
-    is_final_phase = models.BooleanField(default=False)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, blank=True, related_name='phases')
     index = models.PositiveIntegerField()
     start = models.DateTimeField()
@@ -292,6 +255,52 @@ class Phase(ChaHubSaveMixin, models.Model):
     @property
     def published(self):
         return self.competition.published
+
+    @property
+    def status(self):
+        now = datetime.now().replace(tzinfo=None)
+        start = self.start.replace(tzinfo=None)
+        end = self.end.replace(tzinfo=None) if self.end else self.end
+        phase_ended = False
+        phase_started = False
+
+        # check if phase has started
+        if start > now:
+            # start date is in the future, phase started = NO
+            phase_started = False
+        else:
+            # start date is not in the future, phase started = YES
+            phase_started = True
+
+        if phase_started:
+            # check if end date exists for this phase
+            if end:
+                if end < now:
+                    # Phase cannote accept submissions if end date is in the past
+                    phase_ended = True
+                else:
+                    # Phase can accept submissions if end date is in the future
+                    phase_ended = False
+            else:
+                # Phase can accept submissions if end date is not given
+                phase_ended = False
+
+        if phase_started and phase_ended:
+            return self.PREVIOUS
+        elif phase_started and (not phase_ended):
+            return self.CURRENT
+        elif not phase_started:
+            return self.NEXT
+
+    @property
+    def is_final_phase(self):
+        final_phase = Phase.objects.filter(
+            competition=self.competition
+        ).order_by('-start').first()
+
+        if final_phase.id == self.id:
+            return True
+        return False
 
     def can_user_make_submissions(self, user):
         """Takes a user and checks how many submissions they've made vs the max.

@@ -231,7 +231,13 @@
         }
 
         self.get_end_date = function (competition) {
-            let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
+            let current_phase = _.find(competition.phases, {status: 'Current'})
+            // if there is not current phase i.e. all phases have ended or next phase has not started yet
+            if(current_phase === undefined){
+                return 'Ended'
+            }
+            // if current phase is found then check end date to display the date or `Never` if it is a never ending phases
+            let end_date = _.get(current_phase, 'end')
             return end_date ? pretty_date(end_date) : 'Never'
         }
 

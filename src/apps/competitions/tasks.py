@@ -741,13 +741,6 @@ def batch_send_email(comp_id, content):
     )
 
 
-@app.task(queue='site-worker', soft_time_limit=60 * 5)
-def update_phase_statuses():
-    competitions = Competition.objects.exclude(phases__in=Phase.objects.filter(is_final_phase=True, end__lt=now()))
-    for comp in competitions:
-        comp.update_phase_statuses()
-
-
 @app.task(queue='site-worker')
 def submission_status_cleanup():
     submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')

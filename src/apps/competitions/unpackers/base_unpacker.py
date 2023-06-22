@@ -70,48 +70,6 @@ class BaseUnpacker:
         except FileNotFoundError:
             raise CompetitionUnpackingException(f"Unable to find image: {self.competition_yaml.get('image')}")
 
-    def _get_current_phase(self, phases):
-        for phase in phases:
-            if phase['start'] < timezone.now():
-                try:
-                    if phase['end'] is not None and phase['end'] > timezone.now():
-                        return phase
-                    elif phase['end'] is None:
-                        # phase is endless, so it is indefinitely current
-                        return phase
-                except KeyError:
-                    # no phase['end'] so it is endless
-                    return phase
-
-    def _get_next_phase(self, phases):
-        future_phases = filter(lambda p: p['start'] > timezone.now(), phases)
-        return min(future_phases, key=lambda p: p['index'], default=None)
-
-    def _set_phase_statuses(self):
-        self.competition['phases'][-1]['is_final_phase'] = True
-
-        current_phase = self._get_current_phase(self.competition['phases'])
-        if current_phase:
-            current_index = current_phase['index']
-            previous_index = current_index - 1 if current_index >= 1 else None
-            next_index = current_index + 1 if current_index < len(self.competition['phases']) - 1 else None
-        else:
-            current_index = None
-            next_phase = self._get_next_phase(self.competition['phases'])
-            if next_phase:
-                next_index = next_phase['index']
-                previous_index = next_index - 1 if next_index >= 1 else None
-            else:
-                next_index = None
-                previous_index = None
-
-        if current_index is not None:
-            self.competition['phases'][current_index]['status'] = Phase.CURRENT
-        if next_index is not None:
-            self.competition['phases'][next_index]['status'] = Phase.NEXT
-        if previous_index is not None:
-            self.competition['phases'][previous_index]['status'] = Phase.PREVIOUS
-
     def _validate_phase_ordering(self):
         for i in range(len(self.competition['phases'])):
             if i == 0:
@@ -234,7 +192,7 @@ class BaseUnpacker:
             # ... See serializer for complete fields list
             "tasks": [list of indices that should match self.competition['tasks']]
         }
-        Should call self._validate_phase_ordering() and self._set_phase_statuses()
+        Should call self._validate_phase_ordering()
         """
         raise NotImplementedError
 
