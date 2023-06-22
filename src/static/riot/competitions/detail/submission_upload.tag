@@ -50,11 +50,20 @@
                 </div>
 
                 <div class="ui six wide field">
-                    <label>Submit as:</label>
+                    <label>Submit as:
+                    <span class="ui mini circular icon button"
+                        data-tooltip="You can either submit as yourself or as an organization"
+                        data-position="top center">
+                        <i class="question icon"></i>
+                    </span>
+                    </label>
+                    
                     <select name="organizations" id="organization_dropdown" class="ui dropdown">
                         <option value="None">Yourself</option>
                         <option each="{org in organizations}" value="{org.id}">{org.name}</option>
-                    </select>
+                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organization</option>
+                    </select> 
+                    
                 </div>
 
                 <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
@@ -179,7 +188,18 @@
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
+        }) 
+        
+        // Function to capture change of `submit as` dropdown
+        // Redirect to Add organization if selected option is Add Organizaiton
+        $(document).on('change','#organization_dropdown',function(){
+            let selected_option_value = $('#organization_dropdown option:selected').val();
+            if(selected_option_value == 'add_organization'){
+                // Open Add organization in new tab
+                window.open('/profiles/organization/create/', '_blank')
+            }
         })
+
 
         self.setup_autoscroll = function () {
             if (!self.refs.autoscroll_checkbox) {
@@ -422,7 +442,9 @@
                     self.lines = {}
                     let dropdown = $('#organization_dropdown')
                     let organization = dropdown.dropdown('get value')
-                    organization = organization === 'None' ? null : organization
+                    if(organization === 'add_organization' | organization === 'None'){
+                        organization = null
+                    }
                     dropdown.attr('disabled', 'disabled')
 
 
@@ -571,5 +593,6 @@
         .graph-container
             display block
             height 250px
+
     </style>
 </submission-upload>
