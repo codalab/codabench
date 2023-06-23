@@ -277,6 +277,7 @@
                     .done(function () {
                         self.update_submissions()
                         toastr.success("Submission deleted successfully!")
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         toastr.error(response.responseJSON['error'])
@@ -292,6 +293,7 @@
                         self.update_submissions()
                         toastr.success("Submission deleted successfully!")
                         self.marked_submissions = []
+                        CODALAB.events.trigger('reload_quota_cleanup')
                     })
                     .fail(function (response) {
                         for (e in response.responseJSON) {
@@ -368,6 +370,7 @@
                     self.update_submissions()
                     self.clear_form()
                     $(self.refs.submission_creation_modal).modal('hide')
+                    CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail(function (response) {
                     if (response) {
@@ -439,6 +442,9 @@
             // restrict file size to 1 decimal number concatinated with unit
             return(n.toFixed(1) + ' ' + units[i]);
         }
+
+        // Update submissions on unused/failed submissions delete
+        CODALAB.events.on('reload_submissions', self.update_submissions)
 
     </script>
 

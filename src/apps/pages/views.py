@@ -7,6 +7,7 @@ from django.db.models import Count, Q
 
 from competitions.models import Competition, Submission, CompetitionParticipant
 from profiles.models import User
+from announcements.models import Announcement, NewsPost
 
 from django.shortcuts import render
 
@@ -36,6 +37,13 @@ class HomeView(TemplateView):
             {'label': "Competition Participants", 'count': competition_participants},
             {'label': "Submissions", 'count': submissions},
         ]
+
+        announcement = Announcement.objects.all().first()
+        context['announcement'] = announcement.text if announcement else None
+
+        news_posts = NewsPost.objects.all().order_by('-id')
+        context['news_posts'] = news_posts
+
         return context
 
 

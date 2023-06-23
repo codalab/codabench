@@ -6,6 +6,18 @@
     {% if is_editor %}
         <div class="ui container" style="margin-bottom: 1em">
             <a href="{{ organization.url }}edit/"><button type="button" class="ui left floated button">Edit Organization</button></a>
+            
+            {% if organization.users|length > 1 %}
+                <button class="ui red right floated button disabled">
+                    Delete Organization
+                </button>
+            {% else %}
+                <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
+                    Delete Organization
+                </button>
+            {% endif %}
+            
+            
         </div>
     {% endif %}
     <div class="ui container">
@@ -29,7 +41,7 @@
                                 <p>{{ organization.description | linebreaks }}</p>
                             </div>
                             <div class="extra">
-                                Participating in Codalab since {{ organization.date_created }}
+                                Participating in Codabench since {{ organization.date_created }}
                             </div>
                         </div>
                     </div>
@@ -76,4 +88,26 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+    
+        self.delete_organization = (organization_id) => {
+            if (confirm(`Are you sure you want to permanently delete this organization?`)) {
+                CODALAB.api.delete_organization(organization_id)
+                    .done((resp) => {
+                        if(resp.success){
+                            toastr.success(resp.message)
+                            setTimeout(function (){window.location.href = '/';}, 1000)
+                        }else{
+                            toastr.error(resp.message)
+                        }
+                    })
+                    .fail((errors) => {
+                        toastr.error('An Error has occurred')
+                    })
+            }
+        }
+    </script>
 {% endblock %}

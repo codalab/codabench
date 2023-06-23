@@ -25,6 +25,7 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
+    CompetitionParticipantWithEmailSerializer,\
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
@@ -35,8 +36,8 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-import logging
-logger = logging.getLogger()
+from datetime import datetime
+from django.db import transaction
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -184,34 +185,58 @@ class CompetitionViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
-        """Mostly a copy of the underlying base update, however we return some additional data
-        in the response to remove a GET from the frontend"""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        data = request.data
-        # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
-        # save leaderboard individually, then pass pk to each phase
-        if 'leaderboards' in data:
-            leaderboard_data = data['leaderboards'][0]
-            if(leaderboard_data['id']):
-                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
-                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
-            else:
-                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
-            leaderboard.is_valid()
-            leaderboard.save()
-            leaderboard_id = leaderboard["id"].value
-            for phase in data['phases']:
-                phase['leaderboard'] = leaderboard_id
+        # Execute everything inside atomic transaction
+        with transaction.atomic():
+            """Mostly a copy of the underlying base update, however we return some additional data
+            in the response to remove a GET from the frontend"""
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            data = request.data
+            # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
+            # save leaderboard individually, then pass pk to each phase
+            if 'leaderboards' in data:
+                leaderboard_data = data['leaderboards'][0]
+                if(leaderboard_data['id']):
+                    leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                    leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+                else:
+                    leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+                leaderboard.is_valid()
+                leaderboard.save()
+                leaderboard_id = leaderboard["id"].value
 
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                for phase in data['phases']:
+                    # Newly added phase from front-end has no id
+                    # Add a phase first to get id
+                    # add this phase id in each task
+                    if 'id' not in phase:
+                        # Create Phase object
+                        new_phase_obj = Phase.objects.create(
+                            status=phase["status"],
+                            index=phase["index"],
+                            start=datetime.strptime(phase['start'], "%B %d, %Y"),
+                            end=datetime.strptime(phase['end'], "%B %d, %Y") if phase['end'] else None,
+                            name=phase["name"],
+                            description=phase["description"],
+                            hide_output=phase["hide_output"],
+                            competition=Competition.objects.get(id=data['id'])
+                        )
+                        # Get phase id
+                        new_phase_id = new_phase_obj.id
+                        # loop over phase tasks to add phase id in each task
+                        for task in phase["tasks"]:
+                            task['phase'] = new_phase_id
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+                    phase['leaderboard'] = leaderboard_id
+
+            serializer = self.get_serializer(instance, data=data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                instance._prefetched_objects_cache = {}
 
         # Re-do serializer in detail version (i.e. for Collaborator data)
         context = self.get_serializer_context()
@@ -518,9 +543,14 @@ class PhaseViewSet(ModelViewSet):
         columns = [col for col in query['columns']]
         submissions_keys = {}
         for submission in query['submissions']:
-
             # count number of entries/number of submissions for the owner of this submission for this phase
-            num_entries = Submission.objects.filter(owner__username=submission['owner'], phase=phase).count()
+            # count all submissions with no parent and count all parents without counting the children
+            num_entries = Submission.objects.filter(
+                Q(owner__username=submission['owner']) | Q(parent__owner__username=submission['owner']),
+                phase=phase,
+            ).exclude(
+                parent__isnull=False
+            ).count()
 
             # get date of last submission by the owner of this submission for this phase
             last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
@@ -575,7 +605,6 @@ class PhaseViewSet(ModelViewSet):
 
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
-    serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('user__username', 'user__email', 'status', 'competition')
     search_fields = ('user__username', 'user__email',)
@@ -587,6 +616,14 @@ class CompetitionParticipantViewSet(ModelViewSet):
             qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
         qs = qs.select_related('user').order_by('user__username')
         return qs
+
+    def get_serializer_class(self):
+
+        participants_with_email = self.request.query_params.get('participants_with_email', None)
+        if participants_with_email:
+            return CompetitionParticipantWithEmailSerializer
+        else:
+            return CompetitionParticipantSerializer
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PATCH':

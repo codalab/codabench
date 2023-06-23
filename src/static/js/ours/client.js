@@ -276,6 +276,9 @@ CODALAB.api = {
     delete_organization_member: (id, data) => {
         return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_member/`, data)
     },
+    delete_organization: (id) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_organization/`)
+    },
     /*---------------------------------------------------------------------
          Participants
     ---------------------------------------------------------------------*/
@@ -294,4 +297,23 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
+    /*---------------------------------------------------------------------
+         User Quota and Cleanup
+    ---------------------------------------------------------------------*/
+    get_user_quota_cleanup: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
+    },
+    delete_unused_tasks: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)
+    },
+    delete_unused_datasets: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_datasets/`)
+    },
+    delete_unused_submissions: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_submissions/`)
+    },
+    delete_failed_submissions: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
+    },
+    
 }

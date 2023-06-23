@@ -2,7 +2,6 @@
     <div class="ui grid comp-tabs">
         <!-- Tab menu -->
         <div class="ui tiny fluid four secondary pointing tabular menu details-menu">
-            <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
             <!-- <div class="item" data-tab="home-tab">Home</div> -->
             <div class="item" data-tab="pages-tab">Get Started</div>
             <div class="item" data-tab="phases-tab">Phases</div>
@@ -16,88 +15,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- TODO DECIDE WHETHER WE WANT TO USE THIS HOME-TAB OR LEAVE IT. -->
-        <!-- <div class="ui home-tab tab" data-tab="home-tab">
-            <div class="ui two column grid">
-                <div class="row">
-                    <div class="seven wide column">
-                        <div class="short-description">
-                            FULLY AUTOMATED IMAGE CLASSIFICATION WITHOUT ANY HUMAN INTERVENTION
-                        </div>
-                    </div>
-                    <div class="nine wide column">
-                        <div class="long-description">
-                            Despite recent successes of deep learning and other machine learning
-                            techniques, practical experience and expertise is still required to select
-                            models and/or choose hyper-parameters when applying techniques to new
-                            datasets. This problem is drawing increasing interest, yielding progress
-                            towards fully automated solutions. In this challenge your machine learning
-                            code is trained and tested on this platform, without human intervention
-                            whatsoever, on image classification tasks you have never seen before, with
-                            time and memory limitations. All problems are multi-label classification
-                            problems, coming from various domains including medical imaging, satellite
-                            imaging, object recognition, character recognition, face recognition, etc.
-                        </div>
-                    </div>
-                </div>
-                <div class="sixteen wide row">
-                    <div class="leaderboard">
-                        <h1>Top 10 Results</h1>
-                        <a class="float-right" href="#/results-tab">View Full Results<i class="angle right icon"></i>
-                        </a>
-                        <table class="ui center aligned striped table">
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Username</th>
-                                <th>Average Rank</th>
-                                <th>Last Submission</th>
-                                <th>Total Compute Time</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td><img class="medal" src="{ URLS.STATIC('img/gold_medal.svg') }"></td>
-                                <td>A person</td>
-                                <td>2.25</td>
-                                <td>May 15, 2019, 3:33 p.m.</td>
-                                <td>4:54:42</td>
-                            </tr>
-                            <tr>
-                                <td><img class="medal" src="{ URLS.STATIC('img/silver_medal.svg') }"></td>
-                                <td>A person</td>
-                                <td>2.25</td>
-                                <td>May 15, 2019, 3:33 p.m.</td>
-                                <td>4:54:42</td>
-                            </tr>
-                            <tr>
-                                <td><img class="medal" src="{ URLS.STATIC('img/bronze_medal.svg') }"></td>
-                                <td>A person</td>
-                                <td>2.25</td>
-                                <td>May 15, 2019, 3:33 p.m.</td>
-                                <td>4:54:42</td>
-                            </tr>
-                            <tr>
-                                <td><img class="medal" src="{ URLS.STATIC('img/4th_medal.svg') }"></td>
-                                <td>A person</td>
-                                <td>2.25</td>
-                                <td>May 15, 2019, 3:33 p.m.</td>
-                                <td>4:54:42</td>
-                            </tr>
-                            <tr>
-                                <td><img class="medal" src="{ URLS.STATIC('img/5th_medal.svg') }"></td>
-                                <td>A person</td>
-                                <td>2.25</td>
-                                <td>May 15, 2019, 3:33 p.m.</td>
-                                <td>4:54:42</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div> -->
 
         <!--Get Started tab-->
         <div class="pages-tab ui tab" data-tab="pages-tab">
@@ -287,40 +204,6 @@
                         })
                     })
                 })
-            })
-
-            // loop over competition phases to mark if phase has started or ended
-            self.competition.phases.forEach(function (phase, index) {
-                
-                phase_ended = false 
-                phase_started = false
-
-                // check if phase has started
-                if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
-                    // start date is in the future, phase started = NO
-                    phase_started = false
-                }else{
-                    // start date is not in the future, phase started = YES
-                    phase_started = true
-                }
-
-                if(phase_started){
-                    // check if end data exists for this phase
-                    if(phase["end"]){
-                        if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
-                            // Phase cannote accept submissions if end date is in the past
-                            phase_ended = true
-                        }else{
-                            // Phase can accept submissions if end date is in the future
-                            phase_ended = false
-                        }
-                    }else{
-                        // Phase can accept submissions if end date is not given
-                        phase_ended = false
-                    }
-                }
-                self.competition.phases[index]["phase_ended"] = phase_ended
-                self.competition.phases[index]["phase_started"] = phase_started
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)

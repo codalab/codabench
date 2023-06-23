@@ -1,11 +1,10 @@
 <submission-upload>
-    <div class="ui sixteen wide column submission-container"
-         show="{_.get(selected_phase, 'status') === 'Current' || opts.is_admin}">
+    <div class="ui sixteen wide column submission-container">
 
         <div class="submission-form">
             <h1>Submission upload</h1>
-            <div if="{_.get(selected_phase, 'phase_ended')}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
-            <div if="{!_.get(selected_phase, 'phase_started')}" class="ui yellow message">This phase hasn't started yet!</div>
+            <div if="{_.get(selected_phase, 'status') === 'Previous'}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
+            <div if="{_.get(selected_phase, 'status') === 'Next'}" class="ui yellow message">This phase hasn't started yet!</div>
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
@@ -51,11 +50,20 @@
                 </div>
 
                 <div class="ui six wide field">
-                    <label>Submit as:</label>
+                    <label>Submit as:
+                    <span class="ui mini circular icon button"
+                        data-tooltip="You can either submit as yourself or as an organization"
+                        data-position="top center">
+                        <i class="question icon"></i>
+                    </span>
+                    </label>
+                    
                     <select name="organizations" id="organization_dropdown" class="ui dropdown">
                         <option value="None">Yourself</option>
                         <option each="{org in organizations}" value="{org.id}">{org.name}</option>
-                    </select>
+                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organization</option>
+                    </select> 
+                    
                 </div>
 
                 <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip"></input-file>
@@ -180,7 +188,18 @@
             $(self.refs.data_file.refs.file_input).on('change', self.check_can_upload)
             self.setup_autoscroll()
             self.setup_websocket()
+        }) 
+        
+        // Function to capture change of `submit as` dropdown
+        // Redirect to Add organization if selected option is Add Organizaiton
+        $(document).on('change','#organization_dropdown',function(){
+            let selected_option_value = $('#organization_dropdown option:selected').val();
+            if(selected_option_value == 'add_organization'){
+                // Open Add organization in new tab
+                window.open('/profiles/organization/create/', '_blank')
+            }
         })
+
 
         self.setup_autoscroll = function () {
             if (!self.refs.autoscroll_checkbox) {
@@ -353,7 +372,7 @@
         self.check_can_upload = function () {
             
             // Check if selected phase accepts submissions (within the deadline of the phase)
-            if(self.selected_phase.phase_started && !self.selected_phase.phase_ended){
+            if(self.selected_phase.status === "Current"){
 
                 CODALAB.api.can_make_submissions(self.selected_phase.id)
                     .done(function (data) {
@@ -368,13 +387,12 @@
                     })
             }else{
                 // Error when phase is not accepting submissions
-                if(!self.selected_phase.phase_started){
+                if(self.selected_phase.status === "Next"){
                     toastr.error('This phase has not started yet. Please check the phase start date!')
                    
-                }else {
-                    if(self.selected_phase.phase_ended){
-                        toastr.error('This phase has ended and no longer accepts submissions!')
-                    }
+                }
+                if(self.selected_phase.status === "Previous"){
+                    toastr.error('This phase has ended and no longer accepts submissions!')
                 }
                 self.clear_form()
             }
@@ -424,7 +442,9 @@
                     self.lines = {}
                     let dropdown = $('#organization_dropdown')
                     let organization = dropdown.dropdown('get value')
-                    organization = organization === 'None' ? null : organization
+                    if(organization === 'add_organization' | organization === 'None'){
+                        organization = null
+                    }
                     dropdown.attr('disabled', 'disabled')
 
 
@@ -573,5 +593,6 @@
         .graph-container
             display block
             height 250px
+
     </style>
 </submission-upload>
