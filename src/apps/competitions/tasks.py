@@ -649,33 +649,6 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def do_phase_migrations():
-    # Update phase statuses
-    previous_subquery = Phase.objects.filter(
-        competition=OuterRef('competition'),
-        end__lte=now()
-    ).order_by('-index').values('index')[:1]
-
-    current_subquery = Phase.objects.filter(
-        competition=OuterRef('competition'),
-        start__lte=now(),
-        end__gt=now(),
-    ).values('index')[:1]
-
-    next_subquery = Phase.objects.filter(
-        competition=OuterRef('competition'),
-        start__gt=now()
-    ).order_by('index').values('index')[:1]
-
-    Phase.objects.annotate(
-        previous_index=Subquery(previous_subquery),
-        current_index=Subquery(current_subquery),
-        next_index=Subquery(next_subquery),
-    ).update(status=Case(
-        When(index=F('previous_index'), then=Value(Phase.PREVIOUS)),
-        When(index=F('current_index'), then=Value(Phase.CURRENT)),
-        When(index=F('next_index'), then=Value(Phase.NEXT)),
-        default=None
-    ))
 
     # Updating Competitions whose phases have finished migrating to `is_migrating=False`
     completed_statuses = [Submission.FINISHED, Submission.FAILED, Submission.CANCELLED, Submission.NONE]
@@ -692,7 +665,7 @@ def do_phase_migrations():
         ).filter(
             running_subs=0,
             competition__is_migrating=True,
-            status=Phase.PREVIOUS
+            end__lte=now()
         ).values_list('competition__pk', flat=True)
     ).update(is_migrating=False)
 
