@@ -15,7 +15,7 @@ from celery._state import app_or_default
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
+from django.db.models import Subquery, OuterRef, Count
 from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError

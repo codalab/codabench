@@ -15,7 +15,6 @@ from profiles.models import User
 from tasks.models import Task
 
 from api.serializers.queues import QueueSerializer
-from datetime import datetime
 
 
 class PhaseSerializer(WritableNestedModelSerializer):

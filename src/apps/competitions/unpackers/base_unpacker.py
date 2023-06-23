@@ -10,7 +10,6 @@ from django.utils import timezone
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
 from api.serializers.tasks import TaskSerializer, SolutionSerializer
-from competitions.models import Phase
 from datasets.models import Data
 from queues.models import Queue
 from tasks.models import Task, Solution
