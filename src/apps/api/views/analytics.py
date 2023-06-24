@@ -113,22 +113,22 @@ class AnalyticsView(APIView):
         time_unit = request.query_params.get('time_unit')
         csv = request.query_params.get('format') == 'csv'
 
-        start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
-        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').replace(hour=11, minute=59, second=59, tzinfo=pytz.UTC)
+        _start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=pytz.UTC)
+        _end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').replace(hour=11, minute=59, second=59, tzinfo=pytz.UTC)
 
-        users = build_request_object(User, 'date_joined', time_unit, start_date, end_date, csv, 'users_data_date', 'users_data_count')
-        competitions = build_request_object(Competition, 'created_when', time_unit, start_date, end_date, csv, 'competitions_data_date', 'competitions_data_count')
-        submissions = build_request_object(Submission, 'created_when', time_unit, start_date, end_date, csv, 'submissions_data_date', 'submissions_data_count')
+        users = build_request_object(User, 'date_joined', time_unit, _start_date, _end_date, csv, 'users_data_date', 'users_data_count')
+        competitions = build_request_object(Competition, 'created_when', time_unit, _start_date, _end_date, csv, 'competitions_data_date', 'competitions_data_count')
+        submissions = build_request_object(Submission, 'created_when', time_unit, _start_date, _end_date, csv, 'submissions_data_date', 'submissions_data_count')
 
         if csv:
             ob = [{
                 'start_date': start_date,
                 'end_date': end_date,
                 'time_unit': time_unit,
-                'registered_user_count': User.objects.filter(date_joined__range=[start_date, end_date]).count(),
-                'competition_count': Competition.objects.filter(created_when__range=[start_date, end_date]).count(),
-                'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[start_date, end_date]).count(),
-                'submissions_made_count': Submission.objects.filter(created_when__range=[start_date, end_date]).count(),
+                'registered_user_count': User.objects.filter(date_joined__range=[_start_date, _end_date]).count(),
+                'competition_count': Competition.objects.filter(created_when__range=[_start_date, _end_date]).count(),
+                'competitions_published_count': Competition.objects.filter(published=True, created_when__range=[_start_date, _end_date]).count(),
+                'submissions_made_count': Submission.objects.filter(created_when__range=[_start_date, _end_date]).count(),
             }]
 
             max_len = max(len(users), len(competitions), len(submissions))
