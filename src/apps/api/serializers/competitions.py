@@ -323,6 +323,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'logo',
             'description',
             'competition_type',
+            'reward',
         )
 
 

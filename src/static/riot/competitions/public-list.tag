@@ -26,7 +26,8 @@
                 </div>
                 <div class="comp-stats">
                     {pretty_date(competition.created_when)}
-                    <div class="ui divider"></div>
+                    <div if="{!competition.reward}" class="ui divider"></div>
+                    <div if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></div>
                     <strong>{competition.participant_count}</strong> Participants
                 </div>
             </div>
