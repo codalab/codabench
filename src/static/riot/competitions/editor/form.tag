@@ -272,7 +272,12 @@
 
                         self.update({errors: errors})
                     }
-                    toastr.error("Creation failed, error occurred")
+                    if(self.opts.competition_id){
+                        toastr.error("Creation failed, error occurred")
+                    }else{
+                        toastr.error("Updation failed, error occurred")
+                    }
+                    
                 })
 
         }

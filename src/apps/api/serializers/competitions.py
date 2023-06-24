@@ -200,6 +200,9 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'allow_robot_submissions',
             'competition_type',
             'fact_sheet',
+            'reward',
+            'contact_email',
+            'report',
         )
 
     def validate_phases(self, phases):
