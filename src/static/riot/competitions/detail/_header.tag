@@ -15,6 +15,12 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="reward-container" if="{competition.reward}">
+                            <img class="reward-icon" src="/static/img/trophy.png">
+                            <div class="reward-text">{competition.reward}</div>
+                        </div>
+                    </div>
                     <div if="{competition.admin}">
                         <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui button">Edit</a>
                         <button class="ui small button" onclick="{show_modal.bind(this, '.manage-participants.modal')}">
@@ -36,6 +42,7 @@
                             <div>
                                 <span class="detail-label">Organized by:</span>
                                 <span class="detail-item">{competition.created_by}</span>
+                                <span if="{competition.contact_email}" class="contact-email">({competition.contact_email})</span>
                             </div>
                             <div>
                                 <span class="detail-label">Current phase ends:</span>
@@ -60,6 +67,12 @@
                                 <span onclick="{copy_secret_url}" class="ui send-pop-secret" data-content="Copied!">
                                     <i class="ui copy icon"></i>
                                 </span>
+                            </div>
+                            <!-- Competition Report -->
+                            <div class="competition-secret-key" if="{competition.report}">
+                                <span class="report-label">Competition Report:</span>
+                                <span><a href="{competition.report}" target="_blank">{competition.report}</a></span>
+                                
                             </div>
                         </div>
                     </div>
@@ -253,6 +266,7 @@
         $teal = #00bbbb
         $lightblue = #f2faff
         $red = #DB2828
+        $rewardcolor = #F1BF2C
 
         .detail-label
             font-size 1.25em
@@ -266,6 +280,11 @@
             text-transform capitalize
             font-family 'Overpass Mono', monospace
 
+        .contact-email
+            font-size 1em
+            color blue
+            font-family 'Overpass Mono', monospace
+
         .competition-secret-key
             font-size 13px
 
@@ -274,6 +293,9 @@
 
         .docker-label
             color $teal
+        
+        .report-label
+            color $blue
 
         .secret-url
             color $blue
@@ -313,5 +335,26 @@
             thead > tr > th
                 color $blue !important
                 background-color $lightblue !important
+
+        .reward-container
+            background linear-gradient(to right, #ff9966, #ff5e62)
+            color #fff
+            border 1px solid #E6E9EB
+            border-radius 5px
+            padding 10px
+            display flex
+            align-items center
+            margin-left 1rem
+
+        .reward-icon
+            width 40px
+            height 40px
+            margin-right 10px
+
+        .reward-text
+            font-size 24px
+            font-weight 900
+            display inline-block
+
     </style>
 </comp-detail-header>

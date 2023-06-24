@@ -288,6 +288,9 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'competition_type',
             'fact_sheet',
             'forum',
+            'reward',
+            'contact_email',
+            'report',
         )
 
     def get_leaderboards(self, instance):
