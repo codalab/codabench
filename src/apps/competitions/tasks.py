@@ -6,8 +6,6 @@ import traceback
 import zipfile
 from datetime import timedelta, datetime
 
-from celery.contrib import rdb # BB
-
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 

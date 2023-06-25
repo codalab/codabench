@@ -3,8 +3,6 @@ import json
 import os
 import uuid
 
-from celery.contrib import rdb
-
 from django.core.files import File
 from django.test import RequestFactory
 from django.utils import timezone
@@ -318,7 +316,6 @@ class BaseUnpacker:
         for phase in self.competition['phases']:
             phase['tasks'] = [self.competition['tasks'][index].key for index in phase['tasks']]
             phase['leaderboard'] = self.competition['leaderboards'][0].id
-            # rdb.set_trace() # BB
             phase_public_data_file_data = phase['public_data']
             public_data_key, public_data_temp_data_path = self._get_data_key(**phase_public_data_file_data)
             phase['public_data'] = Data.objects.filter(key = public_data_key)[0].id

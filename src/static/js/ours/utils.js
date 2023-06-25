@@ -96,13 +96,10 @@ function get_form_fields(base_element) {
     //return $(':input', self.root).not('button').not('[readonly]').each(function (i, field) {
     //    console.log(field)
     //})
-    // debugger
     form_fields = $(':input', base_element).not('button').not('[readonly]')
     // Calendars come through as read-only and jQuery leaves them out
     calendars = $('.two.fields .ui.calendar.field input[type="text"]')
-    console.log(calendars)
     readonly_calendars = $('.two.fields .ui.calendar.field [readonly]')
-    console.log(readonly_calendars)
     // If calendars is readonly_calendars, then append them to form_fields
     if (calendars.length === readonly_calendars.length) {
         var isIdentical = true;
@@ -114,7 +111,6 @@ function get_form_fields(base_element) {
         });
         
         if (isIdentical) {
-        //   console.log("The two sets are identical.");
             form_fields = form_fields.add(calendars)
         } else {
         //   console.log("The two sets are not identical.");
@@ -130,8 +126,6 @@ function get_form_data(base_element) {
     var fields = get_form_fields(base_element)
     var data = {}
     fields.each(function (i, field) {
-        console.log(field)
-        console.log(data)
         if (!!field.name) {
             data[field.name] = $(field).val()
         }

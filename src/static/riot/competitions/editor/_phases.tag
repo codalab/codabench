@@ -104,7 +104,7 @@
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
-                            multiple="single">
+                            multiple="multiple">
                     </select>
                 </div>
                 <div class="fluid field required" ref="starting_kit_select_container" id="starting_kit_select_container">
@@ -114,7 +114,7 @@
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"
-                            multiple="single">
+                            multiple="multiple">
                     </select>
                 </div>
 
@@ -213,7 +213,6 @@
                 apiSettings: {
                     url: `${URLS.API}tasks/?search={query}`,
                     onResponse: (data) => {
-                        console.log(_.values(data.results))
                         return {success: true, results: _.values(data.results)}
                     },
                 },
@@ -225,7 +224,6 @@
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=public_data`,
                     onResponse: (data) => {
-                                    console.log(_.values(data.results))
                         return {success: true, results: _.values(data.results)}
                     },
                 },
@@ -237,7 +235,6 @@
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
                     onResponse: (data) => {
-                        console.log(_.values(data.results))
                         return {success: true, results: _.values(data.results)}
                     },
                 },
@@ -294,6 +291,12 @@
                 if (public_data === null){
                     return false
                 }else{
+                    if (public_data.value != key){
+                        // Remove if not first selected. We can have only one.
+                        $('a[data-value="'+ key +'"]').remove();
+                        alert("Only one Public Data set allowed per phase.")
+                        return true
+                    }
                     return public_data.value === key
                 }
             })
@@ -318,6 +321,12 @@
                 if (starting_kit === null){
                     return false
                 }else{
+                    if (starting_kit.value != key){
+                        // Remove if not first selected. We can have only one.
+                        $('a[data-value="'+ key +'"]').remove();
+                        alert("Only one Starting Kit set allowed per phase.")
+                        return true
+                    }
                     return starting_kit.value === key
                 }
             })

@@ -203,6 +203,27 @@ class V2Unpacker(BaseUnpacker):
             if new_phase['max_submissions_per_day'] or new_phase['max_submissions_per_person']:
                 new_phase['has_max_submissions'] = True
 
+            # Public Data and Starting Kit
+            try:
+                new_phase['public_data'] = {
+                            'file_name': phase_data['public_data'],
+                            'file_path': os.path.join(self.temp_directory, phase_data['public_data']),
+                            'file_type': 'public_data',
+                            'creator': self.creator.id,
+                        }
+            except:
+                new_phase['public_data'] = None
+            
+            try:
+                new_phase['starting_kit'] = {
+                            'file_name': phase_data['starting_kit'],
+                            'file_path': os.path.join(self.temp_directory, phase_data['starting_kit']),
+                            'file_type': 'starting_kit',
+                            'creator': self.creator.id,
+                        }
+            except:
+                new_phase['starting_kit'] = None
+            
             self.competition['phases'].append(new_phase)
         self._validate_phase_ordering()
         self._set_phase_statuses()

@@ -6,7 +6,6 @@ from datasets.models import Data, DataGroup
 
 
 class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
-    value = serializers.CharField(source='key', required=False) # BB double check
     request_sassy_file_name = serializers.CharField(required=True, max_length=255, write_only=True)
 
     class Meta:
@@ -22,8 +21,6 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'in_use',
             'id',
             'key',
-            # Value is used for Semantic Multiselect dropdown api calls
-            'value',  # BB double check
             'created_by',
             'data_file',
             'was_created_by_competition',
@@ -65,7 +62,6 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
 
 
 class DataSimpleSerializer(serializers.ModelSerializer):
-    value = serializers.CharField(source='key', required=False) # BB double check
     
     class Meta:
         model = Data
@@ -74,13 +70,12 @@ class DataSimpleSerializer(serializers.ModelSerializer):
             'type',
             'name',
             'key',
-            'value' # BB double check
         )
 
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
     competition = serializers.SerializerMethodField()
-    value = serializers.CharField(source='key', required=False) # BB double check
+    value = serializers.CharField(source='key', required=False)
 
     class Meta:
         model = Data
@@ -94,7 +89,7 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'is_public',
             'key',
             # Value is used for Semantic Multiselect dropdown api calls
-            'value', # BB double check
+            'value',
             'was_created_by_competition',
             'in_use',
             'file_size',

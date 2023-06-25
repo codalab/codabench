@@ -28,7 +28,12 @@ class SolutionSerializer(WritableNestedModelSerializer):
         ]
         
     def get_size(self, instance):
-        return instance.data.file_size
+        try:
+            return instance.data.file_size
+        except AttributeError:
+            print("This solution has no data associated with it...might be a test")
+            return None
+            
 
 
 class SolutionListSerializer(serializers.ModelSerializer):
@@ -193,6 +198,11 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         reference_data = instance.task.reference_data
         ingestion_program = instance.task.ingestion_program
         scoring_program = instance.task.scoring_program
-        dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
-        qs = Data.objects.filter(id__in=dataset_list_ids)   
-        return DataDetailSerializer(qs, many=True).data
+        try:
+            dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
+            qs = Data.objects.filter(id__in=dataset_list_ids)   
+            return DataDetailSerializer(qs, many=True).data
+        except AttributeError:
+            print("This phase task has no datasets")
+            return None
+        
