@@ -6,6 +6,8 @@ import traceback
 import zipfile
 from datetime import timedelta, datetime
 
+from celery.contrib import rdb # BB
+
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
@@ -381,7 +383,6 @@ def unpack_competition(status_pk):
             )
 
             unpacker.unpack()
-
             try:
                 competition = unpacker.save()
             except ValidationError as e:

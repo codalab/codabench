@@ -1,4 +1,5 @@
 import os
+from celery.contrib import rdb
 
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
@@ -97,7 +98,21 @@ class V15Unpacker(BaseUnpacker):
                     new_phase['end'] = get_datetime(end)
                 else:
                     new_phase['end'] = None
-
+            
+            # Public Data and Starting Kit
+            new_phase['public_data'] = {
+                        'file_name': phase['public_data'],
+                        'file_path': os.path.join(self.temp_directory, phase['public_data']),
+                        'file_type': 'public_data',
+                        'creator': self.creator.id,
+                    }
+            new_phase['starting_kit'] = {
+                        'file_name': phase['starting_kit'],
+                        'file_path': os.path.join(self.temp_directory, phase['starting_kit']),
+                        'file_type': 'starting_kit',
+                        'creator': self.creator.id,
+                    }
+            
             task_index = len(self.competition['tasks'])
             new_phase['tasks'] = [task_index]
             self.competition['phases'].append(new_phase)
@@ -118,6 +133,7 @@ class V15Unpacker(BaseUnpacker):
                         'creator': self.creator.id,
                     }
             self.competition['tasks'][task_index] = new_task
+            # rdb.set_trace() # BB
 
         self._validate_phase_ordering()
         self._set_phase_statuses()
