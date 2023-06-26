@@ -236,11 +236,11 @@ class CompetitionViewSet(ModelViewSet):
                     # We don't need to serialize the whole object
                     try:
                         phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
-                    except AttributeError:
+                    except TypeError:
                         phase['public_data'] = None
                     try:
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
-                    except AttributeError:
+                    except TypeError:
                         phase['starting_kit'] = None
 
             serializer = self.get_serializer(instance, data=data, partial=partial)

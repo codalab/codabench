@@ -211,7 +211,7 @@ class V2Unpacker(BaseUnpacker):
                     'file_type': 'public_data',
                     'creator': self.creator.id,
                 }
-            except AttributeError:
+            except KeyError:
                 new_phase['public_data'] = None
 
             try:
@@ -221,7 +221,7 @@ class V2Unpacker(BaseUnpacker):
                     'file_type': 'starting_kit',
                     'creator': self.creator.id,
                 }
-            except AttributeError:
+            except KeyError:
                 new_phase['starting_kit'] = None
 
             self.competition['phases'].append(new_phase)
