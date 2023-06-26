@@ -320,11 +320,10 @@ class BaseUnpacker:
             phase_starting_kit_file_data = phase['starting_kit']
             if phase_public_data_file_data is not None:
                 public_data_key, public_data_temp_data_path = self._get_data_key(**phase_public_data_file_data)
-                phase['public_data'] = Data.objects.filter(key = public_data_key)[0].id
+                phase['public_data'] = Data.objects.filter(key=public_data_key)[0].id
             if phase_starting_kit_file_data is not None:
                 starting_kit_key, starting_kit_temp_data_path = self._get_data_key(**phase_starting_kit_file_data)
-                phase['starting_kit'] = Data.objects.filter(key = starting_kit_key)[0].id
-            
+                phase['starting_kit'] = Data.objects.filter(key=starting_kit_key)[0].id
 
         self.competition.pop('leaderboards')
 

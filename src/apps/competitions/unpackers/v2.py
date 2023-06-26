@@ -206,24 +206,24 @@ class V2Unpacker(BaseUnpacker):
             # Public Data and Starting Kit
             try:
                 new_phase['public_data'] = {
-                            'file_name': phase_data['public_data'],
-                            'file_path': os.path.join(self.temp_directory, phase_data['public_data']),
-                            'file_type': 'public_data',
-                            'creator': self.creator.id,
-                        }
-            except:
+                    'file_name': phase_data['public_data'],
+                    'file_path': os.path.join(self.temp_directory, phase_data['public_data']),
+                    'file_type': 'public_data',
+                    'creator': self.creator.id,
+                }
+            except AttributeError:
                 new_phase['public_data'] = None
-            
+
             try:
                 new_phase['starting_kit'] = {
-                            'file_name': phase_data['starting_kit'],
-                            'file_path': os.path.join(self.temp_directory, phase_data['starting_kit']),
-                            'file_type': 'starting_kit',
-                            'creator': self.creator.id,
-                        }
-            except:
+                    'file_name': phase_data['starting_kit'],
+                    'file_path': os.path.join(self.temp_directory, phase_data['starting_kit']),
+                    'file_type': 'starting_kit',
+                    'creator': self.creator.id,
+                }
+            except AttributeError:
                 new_phase['starting_kit'] = None
-            
+
             self.competition['phases'].append(new_phase)
         self._validate_phase_ordering()
         self._set_phase_statuses()

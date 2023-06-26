@@ -26,14 +26,13 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'md5',
             'size',
         ]
-        
+
     def get_size(self, instance):
         try:
             return instance.data.file_size
         except AttributeError:
             print("This solution has no data associated with it...might be a test")
             return None
-            
 
 
 class SolutionListSerializer(serializers.ModelSerializer):
@@ -172,7 +171,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     name = serializers.CharField(source='task.name', required=False)
     solutions = serializers.SerializerMethodField()
     public_datasets = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = PhaseTaskInstance
         fields = (
@@ -188,7 +187,7 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'solutions',
             'public_datasets'
         )
-    
+
     def get_solutions(self, instance):
         qs = instance.task.solutions.all()
         return SolutionSerializer(qs, many=True).data
@@ -200,9 +199,8 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         scoring_program = instance.task.scoring_program
         try:
             dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
-            qs = Data.objects.filter(id__in=dataset_list_ids)   
+            qs = Data.objects.filter(id__in=dataset_list_ids)
             return DataDetailSerializer(qs, many=True).data
         except AttributeError:
             print("This phase task has no datasets")
             return None
-        

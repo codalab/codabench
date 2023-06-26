@@ -26,7 +26,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
             'competition',
             'file_name',
-            
+
         )
         read_only_fields = (
             'key',
@@ -62,7 +62,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
 
 
 class DataSimpleSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Data
         fields = (
@@ -71,6 +71,7 @@ class DataSimpleSerializer(serializers.ModelSerializer):
             'name',
             'key',
         )
+
 
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')

@@ -230,24 +230,23 @@ class CompetitionViewSet(ModelViewSet):
 
                     phase['leaderboard'] = leaderboard_id
 
-        
-        # Get public_data and starting_kit
-        for phase in data['phases']:
-            # We just need to know what public_data and starting_kit go with this phase
-            # We don't need to serialize the whole object
-            try:
-                phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
-            except:
-                phase['public_data'] = None
-            try:
-                phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
-            except:
-                phase['starting_kit'] = None
-            
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        type(serializer)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                # Get public_data and starting_kit
+                for phase in data['phases']:
+                    # We just need to know what public_data and starting_kit go with this phase
+                    # We don't need to serialize the whole object
+                    try:
+                        phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                    except AttributeError:
+                        phase['public_data'] = None
+                    try:
+                        phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                    except AttributeError:
+                        phase['starting_kit'] = None
+
+            serializer = self.get_serializer(instance, data=data, partial=partial)
+            type(serializer)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
 
             if getattr(instance, '_prefetched_objects_cache', None):
                 # If 'prefetch_related' has been applied to a queryset, we need to

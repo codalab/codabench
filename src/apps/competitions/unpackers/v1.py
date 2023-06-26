@@ -97,29 +97,28 @@ class V15Unpacker(BaseUnpacker):
                     new_phase['end'] = get_datetime(end)
                 else:
                     new_phase['end'] = None
-            
+
             # Public Data and Starting Kit
             try:
                 new_phase['public_data'] = {
-                            'file_name': phase['public_data'],
-                            'file_path': os.path.join(self.temp_directory, phase['public_data']),
-                            'file_type': 'public_data',
-                            'creator': self.creator.id,
-                        }
+                    'file_name': phase['public_data'],
+                    'file_path': os.path.join(self.temp_directory, phase['public_data']),
+                    'file_type': 'public_data',
+                    'creator': self.creator.id,
+                }
             except KeyError:
                 new_phase['public_data'] = None
-            
+
             try:
                 new_phase['starting_kit'] = {
-                            'file_name': phase['starting_kit'],
-                            'file_path': os.path.join(self.temp_directory, phase['starting_kit']),
-                            'file_type': 'starting_kit',
-                            'creator': self.creator.id,
-                        }
+                    'file_name': phase['starting_kit'],
+                    'file_path': os.path.join(self.temp_directory, phase['starting_kit']),
+                    'file_type': 'starting_kit',
+                    'creator': self.creator.id,
+                }
             except KeyError:
                 new_phase['starting_kit'] = None
-                
-            
+
             task_index = len(self.competition['tasks'])
             new_phase['tasks'] = [task_index]
             self.competition['phases'].append(new_phase)
