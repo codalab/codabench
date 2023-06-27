@@ -42,7 +42,7 @@
                             <div>
                                 <span class="detail-label">Organized by:</span>
                                 <span class="detail-item">{competition.created_by}</span>
-                                <span if="{competition.contact_email}" class="contact-email">({competition.contact_email})</span>
+                                <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>
                                 <span class="detail-label">Current phase ends:</span>
@@ -282,7 +282,7 @@
 
         .contact-email
             font-size 1em
-            color blue
+            color $teal
             font-family 'Overpass Mono', monospace
 
         .competition-secret-key
