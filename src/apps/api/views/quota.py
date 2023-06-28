@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from datasets.models import Data
 from tasks.models import Task
 from competitions.models import Submission
+import logging
+logger = logging.getLogger()
 
 
 @api_view(['GET'])
@@ -62,6 +64,7 @@ def delete_unused_tasks(request):
             "message": "Unused tasks deleted successfully"
         })
     except Exception as e:
+        logger.error(f"UNUSED TASKS DELETION --- {e}")
         return Response({
             "success": False,
             "message": f"{e}"
@@ -87,6 +90,7 @@ def delete_unused_datasets(request):
             "message": "Unused datasets and programs deleted successfully"
         })
     except Exception as e:
+        logger.error(f"UNUSED DATASETS DELETION --- {e}")
         return Response({
             "success": False,
             "message": f"{e}"
@@ -108,6 +112,7 @@ def delete_unused_submissions(request):
             "message": "Unused submissions deleted successfully"
         })
     except Exception as e:
+        logger.error(f"UNUSED SUBMISSIONS DELETION --- {e}")
         return Response({
             "success": False,
             "message": f"{e}"
@@ -127,6 +132,7 @@ def delete_failed_submissions(request):
             "message": "Failed submissions deleted successfully"
         })
     except Exception as e:
+        logger.error(f"FAILED SUBMISSIONS DELETION --- {e}")
         return Response({
             "success": False,
             "message": f"{e}"
