@@ -440,7 +440,7 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
-    task = models.ForeignKey(Task, on_delete=models.PROTECT, null=True, blank=True, related_name="submissions")
+    task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True, related_name="submissions")
     leaderboard = models.ForeignKey("leaderboards.Leaderboard", on_delete=models.SET_NULL, related_name="submissions",
                                     null=True, blank=True)
 
