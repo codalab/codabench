@@ -25,7 +25,6 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    CompetitionParticipantWithEmailSerializer,\
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
@@ -602,6 +601,7 @@ class PhaseViewSet(ModelViewSet):
 
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
+    serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('user__username', 'user__email', 'status', 'competition')
     search_fields = ('user__username', 'user__email',)
@@ -613,14 +613,6 @@ class CompetitionParticipantViewSet(ModelViewSet):
             qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
         qs = qs.select_related('user').order_by('user__username')
         return qs
-
-    def get_serializer_class(self):
-
-        participants_with_email = self.request.query_params.get('participants_with_email', None)
-        if participants_with_email:
-            return CompetitionParticipantWithEmailSerializer
-        else:
-            return CompetitionParticipantSerializer
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PATCH':
