@@ -154,6 +154,7 @@ V1_LEADERBOARDS = [{
             "index": 0,
             "sorting": "desc",
             "precision": 4,
+            "hidden": False,
         },
         {
             "title": "Duration",
@@ -161,6 +162,7 @@ V1_LEADERBOARDS = [{
             "index": 1,
             "sorting": "desc",
             "precision": 2,
+            "hidden": False,
         }
     ]
 }]

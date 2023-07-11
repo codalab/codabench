@@ -125,7 +125,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
 
     def get_columns(self, instance):
-        columns = Column.objects.filter(leaderboard=instance.leaderboard)
+        columns = Column.objects.filter(leaderboard=instance.leaderboard, hidden=False)
         if len(columns) == 0:
             raise serializers.ValidationError("No columns exist on the leaderboard")
         else:
@@ -156,7 +156,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             .select_related('owner').prefetch_related('scores') \
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
-        for column in instance.leaderboard.columns.exclude(id=primary_col.id).order_by('index'):
+        for column in instance.leaderboard.columns.exclude(id=primary_col.id, hidden=False).order_by('index'):
             col_name = f'col{column.index}'
             ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
             kwargs = {
