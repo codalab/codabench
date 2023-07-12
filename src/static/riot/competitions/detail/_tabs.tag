@@ -66,7 +66,8 @@
                                         <td>{file.phase}</td>
                                         <td>{file.task}</td>
                                         <td>{file.type}</td>
-                                        <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>
+                                        <!--  <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>  -->
+                                        <td>yes</td>
                                         <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
                                     </tbody>
@@ -225,7 +226,10 @@
                     })
                     // ...that ordering happens here
                     self.competition.files.push(input_data)
-                    self.competition.files.push(reference_data)
+                    // debugger
+                    if(self.competition.admin){
+                        self.competition.files.push(reference_data)
+                    }
                     self.competition.files.push(ingestion_program)
                     self.competition.files.push(scoring_program)
                 })

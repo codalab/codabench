@@ -97,7 +97,7 @@
                     </select>
                 </div>
                 <!--  BB Adding public_data and starting_kit dropdowns  -->
-                <div class="fluid field required" ref="public_data_select_container" id="public_data_select_container">
+                <div class="fluid field" ref="public_data_select_container" id="public_data_select_container">
                     <label for="public_data">
                         Public Data (Only 1 per phase)
                         <span data-tooltip="Use task manager to create new public data sets" data-inverted=""
@@ -107,7 +107,7 @@
                             multiple="multiple">
                     </select>
                 </div>
-                <div class="fluid field required" ref="starting_kit_select_container" id="starting_kit_select_container">
+                <div class="fluid field" ref="starting_kit_select_container" id="starting_kit_select_container">
                     <label for="starting_kit">
                         Starting Kit (Only 1 per phase)
                         <span data-tooltip="Use task manager to create new starting kits" data-inverted=""
@@ -293,14 +293,13 @@
                 }else{
                     if (public_data.value != key){
                         // Remove if not first selected. We can have only one.
-                        $('a[data-value="'+ key +'"]').remove();
                         alert("Only one Public Data set allowed per phase.")
-                        return true
+                        setTimeout(()=>{$('a[data-value="'+ key +'"] .delete.icon').click()},100)
                     }
                     return public_data.value === key
                 }
             })
-            if (index === -1) {
+            if (index === -1 && self.phase_public_data.length === 0) {
                 let public_data = {name: text, value: key, selected: true}
                 self.phase_public_data[0] = public_data
             }
@@ -311,7 +310,9 @@
             let index = _.findIndex(self.phase_public_data, (public_data) => {
                 return public_data.value === key
             })
-            self.phase_public_data.splice(index, 1)
+            if (index != -1){
+                self.phase_public_data.splice(index, 1)
+            }
             self.form_updated()
         }
 
@@ -323,14 +324,13 @@
                 }else{
                     if (starting_kit.value != key){
                         // Remove if not first selected. We can have only one.
-                        $('a[data-value="'+ key +'"]').remove();
                         alert("Only one Starting Kit set allowed per phase.")
-                        return true
+                        setTimeout(()=>{$('a[data-value="'+ key +'"] .delete.icon').click()},100)
                     }
                     return starting_kit.value === key
                 }
             })
-            if (index === -1) {
+            if (index === -1 && self.phase_stating_kit.length === 0) {
                 let starting_kit = {name: text, value: key, selected: true}
                 self.phase_starting_kit[0] = starting_kit
             }
