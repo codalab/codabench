@@ -17,12 +17,14 @@ from fabric.state import connections
 #   $ fab -R role_name <command>
 env.roledefs = yaml.load(open('server_config.yaml').read())
 
+
 # ----------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------
 def _reconnect_current_host():
     network.disconnect_all()
     connections.connect(env.host + ':%s' % env.port)
+
 
 # ----------------------------------------------------------------------------
 # Tasks

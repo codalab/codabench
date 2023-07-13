@@ -299,7 +299,7 @@
                     return public_data.value === key
                 }
             })
-            if (index === -1 && self.phase_public_data.length === 0) {
+            if (index === -1 && (self.phase_public_data.length === 0 || self.phase_public_data[0] === null)) {
                 let public_data = {name: text, value: key, selected: true}
                 self.phase_public_data[0] = public_data
             }
@@ -330,7 +330,7 @@
                     return starting_kit.value === key
                 }
             })
-            if (index === -1 && self.phase_stating_kit.length === 0) {
+            if (index === -1 && (self.phase_starting_kit.length === 0 || self.phase_starting_kit[0] === null)) {
                 let starting_kit = {name: text, value: key, selected: true}
                 self.phase_starting_kit[0] = starting_kit
             }
@@ -616,8 +616,8 @@
 
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
-            data.public_data = self.phase_public_data[0]
-            data.starting_kit = self.phase_starting_kit[0]
+            data.public_data = self.phase_public_data.length === 0 ? null : self.phase_public_data[0]
+            data.starting_kit = self.phase_starting_kit.length === 0 ? null : self.phase_starting_kit[0]
             data.task_instances = []
             for(task of self.phase_tasks){
                 data.task_instances.push({
