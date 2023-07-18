@@ -70,6 +70,12 @@
                                         <td>yes</td>
                                         <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
+                                    <!-- Conditional row if no files to show -->
+                                    <tr class="center aligned">
+                                        <td if = {competition.files.length === 0} colspan="100%">
+                                            <em>No Files Available Yet</em>
+                                        </td>
+                                    </tr>
                                     </tbody>
                                 </table>
 
@@ -224,14 +230,12 @@
                             scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
                         }
                     })
-                    // ...that ordering happens here
-                    self.competition.files.push(input_data)
-                    // debugger
                     if(self.competition.admin){
+                        self.competition.files.push(input_data)
                         self.competition.files.push(reference_data)
+                        self.competition.files.push(ingestion_program)
+                        self.competition.files.push(scoring_program)
                     }
-                    self.competition.files.push(ingestion_program)
-                    self.competition.files.push(scoring_program)
                 })
                 _.forEach(phase.tasks, task => {
                     _.forEach(task.solutions, solution => {
