@@ -98,7 +98,8 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
             'scores',
             'display_name',
             'slug_url',
-            'organization'
+            'organization',
+            'detailed_result'
         )
         extra_kwargs = {
             "scores": {"read_only": True},

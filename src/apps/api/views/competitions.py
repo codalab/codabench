@@ -541,6 +541,7 @@ class PhaseViewSet(ModelViewSet):
         }
         columns = [col for col in query['columns']]
         submissions_keys = {}
+        submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
             # count all submissions with no parent and count all parents without counting the children
@@ -558,12 +559,24 @@ class PhaseViewSet(ModelViewSet):
                 .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+
+            # gather detailed result from submissions for each task
+            # detailed_results are gathered based on submission key
+            # `id` is used to fetch the right detailed result in detailed results page
+            # `detailed_result` url is not needed
+            submission_detailed_results.setdefault(submission_key, []).append({
+                # 'detailed_result': submission['detailed_result'],
+                'task': submission['task'],
+                'id': submission['id']
+            })
+
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
                     'id': submission['id'],
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
+                    'detailed_results': [],
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
@@ -587,6 +600,11 @@ class PhaseViewSet(ModelViewSet):
                 # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
                 response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
+
+        # put detailed results in its submission
+        for k, v in submissions_keys.items():
+            response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
+        print(f"\n{response['submissions']}\n")
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
