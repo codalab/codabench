@@ -29,7 +29,7 @@
         <tr class="task-row">
             <th>Task:</th>
             <th colspan=3></th>
-            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ enable_detailed_results ? task.colWidth+1 : task.colWidth}">{ task.name }</th>
+            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
@@ -104,6 +104,7 @@
         self.filter_columns = () => {
             let search_key = self.refs.leaderboardFilter.value.toLowerCase()
             self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
+            console.log(self.filtered_tasks)
             if(search_key){
                 self.filtered_columns = []
                 for (const column of self.columns){
@@ -146,16 +147,20 @@
                         self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
+
                         for(column of task.columns){
                             column.task_id = task.id
                             self.columns.push(column)
                         }
-                        if(self.enable_detailed_results){
+                        // -1 id is used for fact sheet answers
+                        if(self.enable_detailed_results & task.id != -1){
                             self.columns.push({
                               task_id: task.id,
                               title: "Detailed Results"
                             })
+                            task.colWidth += 1
                         }
+                        console.log(task)
                     }
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
