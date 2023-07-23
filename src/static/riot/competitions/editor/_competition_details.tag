@@ -115,7 +115,12 @@
                 </a>
             </sup>
         </div>
+        <div class="field">
+            <label>Competition Reward</label>
+            <input type="text" ref="reward" placeholder="Example: $1000 for the top participant" onchange="{form_updated}">
+        </div>
     </div>
+    
 
     <script>
         var self = this
@@ -182,6 +187,7 @@
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
+            self.data['reward'] = $(self.refs.reward).val()
             if (self.data.fact_sheet === false){
                 is_valid = false
             }
@@ -308,6 +314,7 @@
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
+            $(self.refs.reward).val(competition.reward)
             if(competition.fact_sheet !== null){
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]

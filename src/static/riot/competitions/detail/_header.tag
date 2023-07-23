@@ -15,6 +15,12 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="reward-container" if="{competition.reward}">
+                            <img class="reward-icon" src="/static/img/trophy.png">
+                            <div class="reward-text">{competition.reward}</div>
+                        </div>
+                    </div>
                     <div if="{competition.admin}">
                         <a href="{URLS.COMPETITION_EDIT(competition.id)}" class="ui button">Edit</a>
                         <button class="ui small button" onclick="{show_modal.bind(this, '.manage-participants.modal')}">
@@ -313,5 +319,25 @@
             thead > tr > th
                 color $blue !important
                 background-color $lightblue !important
+
+        .reward-container
+            background linear-gradient(to right, #ff9966, #ff5e62)
+            color #fff
+            border 1px solid #E6E9EB
+            border-radius 5px
+            padding 10px
+            display flex
+            align-items center
+            margin-left 1rem
+
+        .reward-icon
+            width 40px
+            height 40px
+            margin-right 10px
+
+        .reward-text
+            font-size 24px
+            font-weight 900
+            display inline-block
     </style>
 </comp-detail-header>
