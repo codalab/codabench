@@ -29,11 +29,9 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
-                            <!--  BB Files - was commented out -->
                             <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
                             </div>
-                            <!--  BB Files - was commented out -->
                         </div>
                     </div>
                     <div class="twelve wide column">
@@ -42,7 +40,6 @@
                             <div class="ui" id="page_{i}">
                             </div>
                         </div>
-                        <!--  BB data-tab="files" - was commented out -->
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
                                 <table class="ui celled table">
@@ -72,7 +69,7 @@
                                     </tr>
                                     <!-- Conditional row if no files to show -->
                                     <tr class="center aligned">
-                                        <td if = {competition.files.length === 0} colspan="100%">
+                                        <td if = {competition.files}} colspan="100%">
                                             <em>No Files Available Yet</em>
                                         </td>
                                     </tr>
@@ -81,7 +78,6 @@
 
                             </div>
                         </div>
-                        <!--  BB data-tab="files" - was commented out -->
                     </div>
                 </div>
             </div>
@@ -250,26 +246,27 @@
                     })
                 })
                 // Need code for public_data and starting_kit at phase level
-                
-                if (phase.starting_kit != null){
-                    self.competition.files.push({
-                        key: phase.starting_kit.key,
-                        name: phase.starting_kit.name,
-                        file_size: phase.starting_kit.file_size,
-                        phase: phase.name,
-                        task: '-Phase Level Data-',
-                        type: 'Starting Kit'
-                    })
-                }
-                if (phase.public_data != null){
-                    self.competition.files.push({
-                        key: phase.public_data.key,
-                        name: phase.public_data.name,
-                        file_size: phase.public_data.file_size,
-                        phase: phase.name,
-                        task: '-Phase Level Data-',
-                        type: 'Public Data'
-                    })
+                if(self.competition.participant_status === 'approved'){    
+                    if (phase.starting_kit != null){
+                        self.competition.files.push({
+                            key: phase.starting_kit.key,
+                            name: phase.starting_kit.name,
+                            file_size: phase.starting_kit.file_size,
+                            phase: phase.name,
+                            task: '-Phase Level Data-',
+                            type: 'Starting Kit'
+                        })
+                    }
+                    if (phase.public_data != null){
+                        self.competition.files.push({
+                            key: phase.public_data.key,
+                            name: phase.public_data.name,
+                            file_size: phase.public_data.file_size,
+                            phase: phase.name,
+                            task: '-Phase Level Data-',
+                            type: 'Public Data'
+                        })
+                    }
                 }
             })
             // loop over competition phases to mark if phase has started or ended
