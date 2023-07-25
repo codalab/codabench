@@ -216,7 +216,7 @@
                             type = 'Input Data'
                             input_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
                         }else if(dataset.type === "reference_data"){
-                            type = 'Reference Data (private?)'
+                            type = 'Reference Data'
                             reference_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
                         }else if(dataset.type === "ingestion_program"){
                             type = 'Ingestion Program'
@@ -253,7 +253,7 @@
                             name: phase.starting_kit.name,
                             file_size: phase.starting_kit.file_size,
                             phase: phase.name,
-                            task: '-Phase Level Data-',
+                            task: '-',
                             type: 'Starting Kit'
                         })
                     }
@@ -263,7 +263,7 @@
                             name: phase.public_data.name,
                             file_size: phase.public_data.file_size,
                             phase: phase.name,
-                            task: '-Phase Level Data-',
+                            task: '-',
                             type: 'Public Data'
                         })
                     }
