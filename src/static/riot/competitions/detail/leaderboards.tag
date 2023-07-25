@@ -60,7 +60,9 @@
             <td>{submission.last_entry_date}</td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">
-                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank">Show detailed results</a> 
+                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
+                    <i class="icon grey eye eye-icon"></i>
+                </a>
                 <span if="{column.title != 'Detailed Results'}">{get_score(column, submission)}</span>
             </td>
            
@@ -197,7 +199,6 @@
             display: block
             width: 100%
             height: 100%
-
         .celled.table.selectable
             margin 1em 0
 
@@ -211,5 +212,13 @@
             transform translate(-50%, 50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
+        .eye-icon-link
+            position: relative
+            display: block
+        .eye-icon
+            position: absolute
+            top: 50%
+            left: 50%
+            transform: translate(-50%, -50%)
     </style>
 </leaderboards>
