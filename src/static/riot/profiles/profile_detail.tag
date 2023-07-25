@@ -1,9 +1,9 @@
 <profile-detail>
-    <!------------------------------------------ HTML ------------------------------------------->
+    <!-- ---------------------------------------- HTML ---------------------------------------- -->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
             <div class="column">
-                <div if="{!selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="http://via.placeholder.com/150x150"></div>
+                <div if="{!selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="/static/img/user-avatar.png"></div>
                 <div if="{selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="{selected_user.photo}"></div>
 
 <!--                &lt;!&ndash; Competition Divider &ndash;&gt;-->

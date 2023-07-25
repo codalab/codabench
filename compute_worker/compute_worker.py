@@ -41,7 +41,7 @@ app.conf.task_queues = [
 # Setup base directories used by all submissions
 # note: we need to pass this directory to docker-compose so it knows where to store things!
 HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
-BASE_DIR = "/codabench/" # base directory inside the container
+BASE_DIR = "/codabench/"  # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
@@ -73,6 +73,7 @@ elif os.environ.get("NVIDIA_DOCKER"):
     CONTAINER_ENGINE_EXECUTABLE = "nvidia-docker"
 else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
+
 
 class SubmissionException(Exception):
     pass
@@ -182,7 +183,7 @@ class Run:
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
-        self.data_dir = os.path.join(HOST_DIRECTORY, "data") # absolute path to data in the host
+        self.data_dir = os.path.join(HOST_DIRECTORY, "data")  # absolute path to data in the host
         self.logs = {}
 
         # Details for submission
@@ -497,10 +498,10 @@ class Run:
 
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
-            try: # try to find a command in the metadata, in other cases set metadata to None
+            try:  # try to find a command in the metadata, in other cases set metadata to None
                 metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
                 logger.info(f"Metadata contains:\n {metadata}")
-                if isinstance(metadata, dict): # command found
+                if isinstance(metadata, dict):  # command found
                     command = metadata.get("command")
                 else:
                     command = None

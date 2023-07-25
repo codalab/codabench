@@ -30,7 +30,6 @@
             <th>Task:</th>
             <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
-            <th if="{enable_detailed_results}"></th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
@@ -38,7 +37,7 @@
             <th>Entries</th>
             <th>Date of last entry</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            <th if="{enable_detailed_results}">Detailed Results</th>
+            
         </tr>
         </thead>
         <tbody>
@@ -60,8 +59,12 @@
             <td>{submission.num_entries}</td>
             <td>{submission.last_entry_date}</td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
-            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
+            <td each="{ column in filtered_columns }">
+                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank">Show detailed results</a> 
+                <span if="{column.title != 'Detailed Results'}">{get_score(column, submission)}</span>
+            </td>
+           
+           
         </tr>
         </tbody>
     </table>
@@ -101,12 +104,13 @@
         self.filter_columns = () => {
             let search_key = self.refs.leaderboardFilter.value.toLowerCase()
             self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
+            console.log(self.filtered_tasks)
             if(search_key){
                 self.filtered_columns = []
                 for (const column of self.columns){
                     let key = column.key.toLowerCase()
                     let title = column.title.toLowerCase()
-                    if((key.includes(search_key) || title.includes(search_key)) && !column.hidden) {
+                    if((key.includes(search_key) || title.includes(search_key))) {
                         self.filtered_columns.push(column)
                     }
                     else {
@@ -143,16 +147,35 @@
                         self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
+
                         for(column of task.columns){
                             column.task_id = task.id
                             self.columns.push(column)
                         }
+                        // -1 id is used for fact sheet answers
+                        if(self.enable_detailed_results & task.id != -1){
+                            self.columns.push({
+                              task_id: task.id,
+                              title: "Detailed Results"
+                            })
+                            task.colWidth += 1
+                        }
+                        console.log(task)
                     }
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
                     self.update()
                 })
         }
+
+        self.get_detailed_result_submisison_id = function(column, submisison){
+            for (index in submisison.detailed_results) {
+                if(column.task_id == submisison.detailed_results[index].task){
+                    return submisison.detailed_results[index].id
+                }
+            }
+        }
+
 
         CODALAB.events.on('phase_selected', data => {
             self.phase_id = data.id

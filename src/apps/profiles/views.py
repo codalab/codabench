@@ -68,7 +68,6 @@ class UserDetailView(LoginRequiredMixin, DetailView):
 
 def activate(request, uidb64, token):
     try:
-        # import pdb; pdb.set_trace();
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:

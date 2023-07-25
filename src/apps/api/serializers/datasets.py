@@ -26,6 +26,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
             'competition',
             'file_name',
+
         )
         read_only_fields = (
             'key',
@@ -61,6 +62,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
 
 
 class DataSimpleSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Data
         fields = (
@@ -74,6 +76,7 @@ class DataSimpleSerializer(serializers.ModelSerializer):
 class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username')
     competition = serializers.SerializerMethodField()
+    value = serializers.CharField(source='key', required=False)
 
     class Meta:
         model = Data
@@ -86,6 +89,8 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'description',
             'is_public',
             'key',
+            # Value is used for Semantic Multiselect dropdown api calls
+            'value',
             'was_created_by_competition',
             'in_use',
             'file_size',

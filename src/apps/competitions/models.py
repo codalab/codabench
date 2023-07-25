@@ -283,6 +283,9 @@ class Phase(ChaHubSaveMixin, models.Model):
     leaderboard = models.ForeignKey('leaderboards.Leaderboard', on_delete=models.DO_NOTHING, null=True, blank=True,
                                     related_name="phases")
 
+    public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_data")
+    starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kit")
+
     class Meta:
         ordering = ('index',)
 

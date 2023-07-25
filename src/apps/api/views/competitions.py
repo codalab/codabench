@@ -30,6 +30,7 @@ from api.serializers.leaderboards import LeaderboardPhaseSerializer, Leaderboard
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
@@ -228,7 +229,21 @@ class CompetitionViewSet(ModelViewSet):
 
                     phase['leaderboard'] = leaderboard_id
 
+                # Get public_data and starting_kit
+                for phase in data['phases']:
+                    # We just need to know what public_data and starting_kit go with this phase
+                    # We don't need to serialize the whole object
+                    try:
+                        phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                    except TypeError:
+                        phase['public_data'] = None
+                    try:
+                        phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                    except TypeError:
+                        phase['starting_kit'] = None
+
             serializer = self.get_serializer(instance, data=data, partial=partial)
+            type(serializer)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
@@ -541,6 +556,7 @@ class PhaseViewSet(ModelViewSet):
         }
         columns = [col for col in query['columns']]
         submissions_keys = {}
+        submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
             # count all submissions with no parent and count all parents without counting the children
@@ -558,12 +574,24 @@ class PhaseViewSet(ModelViewSet):
                 .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+
+            # gather detailed result from submissions for each task
+            # detailed_results are gathered based on submission key
+            # `id` is used to fetch the right detailed result in detailed results page
+            # `detailed_result` url is not needed
+            submission_detailed_results.setdefault(submission_key, []).append({
+                # 'detailed_result': submission['detailed_result'],
+                'task': submission['task'],
+                'id': submission['id']
+            })
+
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
                     'id': submission['id'],
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
+                    'detailed_results': [],
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
@@ -587,6 +615,11 @@ class PhaseViewSet(ModelViewSet):
                 # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
                 response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
+
+        # put detailed results in its submission
+        for k, v in submissions_keys.items():
+            response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
+        print(f"\n{response['submissions']}\n")
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task

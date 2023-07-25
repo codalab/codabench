@@ -13,6 +13,7 @@ from competitions.models import Competition
 class SolutionSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=False, allow_null=True, slug_field='key', many=True)
     data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
+    size = serializers.SerializerMethodField()
 
     class Meta:
         model = Solution
@@ -23,7 +24,15 @@ class SolutionSerializer(WritableNestedModelSerializer):
             'tasks',
             'data',
             'md5',
+            'size',
         ]
+
+    def get_size(self, instance):
+        try:
+            return instance.data.file_size
+        except AttributeError:
+            print("This solution has no data associated with it...might be a test")
+            return None
 
 
 class SolutionListSerializer(serializers.ModelSerializer):
@@ -38,6 +47,7 @@ class SolutionListSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
+
     input_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     ingestion_program = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
     reference_data = serializers.SlugRelatedField(queryset=Data.objects.all(), required=False, allow_null=True, slug_field='key')
@@ -159,6 +169,8 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
     key = serializers.CharField(source='task.key', required=False)
     created_when = serializers.DateTimeField(source='task.created_when', required=False)
     name = serializers.CharField(source='task.name', required=False)
+    solutions = serializers.SerializerMethodField()
+    public_datasets = serializers.SerializerMethodField()
 
     class Meta:
         model = PhaseTaskInstance
@@ -172,4 +184,23 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
             'key',
             'created_when',
             'name',
+            'solutions',
+            'public_datasets'
         )
+
+    def get_solutions(self, instance):
+        qs = instance.task.solutions.all()
+        return SolutionSerializer(qs, many=True).data
+
+    def get_public_datasets(self, instance):
+        input_data = instance.task.input_data
+        reference_data = instance.task.reference_data
+        ingestion_program = instance.task.ingestion_program
+        scoring_program = instance.task.scoring_program
+        try:
+            dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
+            qs = Data.objects.filter(id__in=dataset_list_ids)
+            return DataDetailSerializer(qs, many=True).data
+        except AttributeError:
+            print("This phase task has no datasets")
+            return None

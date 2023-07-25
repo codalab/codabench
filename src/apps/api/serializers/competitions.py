@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.fields import NamedBase64ImageField
 from api.mixins import DefaultUserCreateMixin
+from api.serializers.datasets import DataDetailSerializer
 from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
@@ -41,6 +42,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'auto_migrate_to_this_phase',
             'hide_output',
             'leaderboard',
+            'public_data',
+            'starting_kit',
             'is_final_phase',
         )
 
@@ -90,6 +93,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
     status = serializers.SerializerMethodField()
 
+    public_data = DataDetailSerializer(read_only=True)
+    starting_kit = DataDetailSerializer(read_only=True)
+
     class Meta:
         model = Phase
         fields = (
@@ -100,13 +106,16 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'status',
+            'execution_time_limit',
             'tasks',
-            'auto_migrate_to_this_phase',
             'has_max_submissions',
             'max_submissions_per_day',
             'max_submissions_per_person',
-            'execution_time_limit',
+            'auto_migrate_to_this_phase',
             'hide_output',
+            # no leaderboard
+            'public_data',
+            'starting_kit',
             'is_final_phase',
         )
 

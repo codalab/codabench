@@ -29,9 +29,9 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
-                            <!--<div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
-                            </div>-->
+                            </div>
                         </div>
                     </div>
                     <div class="twelve wide column">
@@ -40,7 +40,7 @@
                             <div class="ui" id="page_{i}">
                             </div>
                         </div>
-                        <!--<div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
+                        <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
                                 <table class="ui celled table">
                                     <thead>
@@ -48,6 +48,8 @@
                                         <th class="index-column">Download</th>
                                         <th>Phase</th>
                                         <th>Task</th>
+                                        <th>Type</th>
+                                        <th>Available</th>
                                         <th>Size</th>
                                     </tr>
                                     </thead>
@@ -60,13 +62,22 @@
                                         </td>
                                         <td>{file.phase}</td>
                                         <td>{file.task}</td>
+                                        <td>{file.type}</td>
+                                        <!--  <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>  -->
+                                        <td>yes</td>
                                         <td>{filesize(file.file_size * 1024)}</td>
+                                    </tr>
+                                    <!-- Conditional row if no files to show -->
+                                    <tr class="center aligned">
+                                        <td if = {competition.files}} colspan="100%">
+                                            <em>No Files Available Yet</em>
+                                        </td>
                                     </tr>
                                     </tbody>
                                 </table>
 
                             </div>
-                        </div>-->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -194,16 +205,102 @@
             self.competition.files = []
             _.forEach(competition.phases, phase => {
                 _.forEach(phase.tasks, task => {
+                    // Over complicated data org but it is so we can order exactly how we want...
+                    let input_data = {}
+                    let reference_data = {}
+                    let ingestion_program = {}
+                    let scoring_program = {}
+                    _.forEach(task.public_datasets, dataset => {
+                        let type = 'input_data'
+                        if(dataset.type === "input_data"){
+                            type = 'Input Data'
+                            input_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "reference_data"){
+                            type = 'Reference Data'
+                            reference_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "ingestion_program"){
+                            type = 'Ingestion Program'
+                            ingestion_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }else if(dataset.type === "scoring_program"){
+                            type = 'Scoring Program'
+                            scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                        }
+                    })
+                    if(self.competition.admin){
+                        self.competition.files.push(input_data)
+                        self.competition.files.push(reference_data)
+                        self.competition.files.push(ingestion_program)
+                        self.competition.files.push(scoring_program)
+                    }
+                })
+                _.forEach(phase.tasks, task => {
                     _.forEach(task.solutions, solution => {
                         self.competition.files.push({
-                            key: solution.data.key,
+                            key: solution.data,
                             name: solution.name,
-                            file_size: solution.data.file_size,
+                            file_size: solution.size,
                             phase: phase.name,
                             task: task.name,
+                            type: 'Solution'
                         })
                     })
                 })
+                // Need code for public_data and starting_kit at phase level
+                if(self.competition.participant_status === 'approved'){    
+                    if (phase.starting_kit != null){
+                        self.competition.files.push({
+                            key: phase.starting_kit.key,
+                            name: phase.starting_kit.name,
+                            file_size: phase.starting_kit.file_size,
+                            phase: phase.name,
+                            task: '-',
+                            type: 'Starting Kit'
+                        })
+                    }
+                    if (phase.public_data != null){
+                        self.competition.files.push({
+                            key: phase.public_data.key,
+                            name: phase.public_data.name,
+                            file_size: phase.public_data.file_size,
+                            phase: phase.name,
+                            task: '-',
+                            type: 'Public Data'
+                        })
+                    }
+                }
+            })
+            // loop over competition phases to mark if phase has started or ended
+            self.competition.phases.forEach(function (phase, index) {
+                
+                phase_ended = false 
+                phase_started = false
+
+                // check if phase has started
+                if((Date.parse(phase["start"]) - Date.parse(new Date())) > 0){
+                    // start date is in the future, phase started = NO
+                    phase_started = false
+                }else{
+                    // start date is not in the future, phase started = YES
+                    phase_started = true
+                }
+
+                if(phase_started){
+                    // check if end data exists for this phase
+                    if(phase["end"]){
+                        if((Date.parse(phase["end"]) - Date.parse(new Date())) < 0){
+                            // Phase cannote accept submissions if end date is in the past
+                            phase_ended = true
+                        }else{
+                            // Phase can accept submissions if end date is in the future
+                            phase_ended = false
+                        }
+                    }else{
+                        // Phase can accept submissions if end date is not given
+                        phase_ended = false
+                    }
+                }
+                self.competition.phases[index]["phase_ended"] = phase_ended
+                self.competition.phases[index]["phase_started"] = phase_started
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
