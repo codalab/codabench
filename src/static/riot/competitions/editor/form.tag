@@ -241,7 +241,6 @@
 
             // Send competition_id for either create or update, won't hurt anything but is
             // useless for creation
-
             api_endpoint(self.competition_return, self.opts.competition_id)
                 .done(function (response) {
                     self.errors = {}

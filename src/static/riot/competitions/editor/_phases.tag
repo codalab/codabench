@@ -96,6 +96,27 @@
                             multiple="multiple">
                     </select>
                 </div>
+                <!--  BB Adding public_data and starting_kit dropdowns  -->
+                <div class="fluid field" ref="public_data_select_container" id="public_data_select_container">
+                    <label for="public_data">
+                        Public Data (Only 1 per phase)
+                        <span data-tooltip="Use task manager to create new public data sets" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                    </label>
+                    <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
+                            multiple="multiple">
+                    </select>
+                </div>
+                <div class="fluid field" ref="starting_kit_select_container" id="starting_kit_select_container">
+                    <label for="starting_kit">
+                        Starting Kit (Only 1 per phase)
+                        <span data-tooltip="Use task manager to create new starting kits" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                    </label>
+                    <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"
+                            multiple="multiple">
+                    </select>
+                </div>
 
                 <div class="field smaller-mde">
                     <label>Description</label>
@@ -176,6 +197,8 @@
         self.form_is_valid = false
         self.phases = []
         self.phase_tasks = []
+        self.phase_public_data = []
+        self.phase_starting_kit = []
         self.selected_phase_index = undefined
         self.warnings = []
 
@@ -196,6 +219,29 @@
                 onAdd: self.task_added,
                 onRemove: self.task_removed,
             })
+
+            $(self.refs.public_data_multiselect).dropdown({
+                apiSettings: {
+                    url: `${URLS.API}datasets/?search={query}&type=public_data`,
+                    onResponse: (data) => {
+                        return {success: true, results: _.values(data.results)}
+                    },
+                },
+                onAdd: self.public_data_added,
+                onRemove: self.public_data_removed,
+            })
+            
+            $(self.refs.starting_kit_multiselect).dropdown({
+                apiSettings: {
+                    url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
+                    onResponse: (data) => {
+                        return {success: true, results: _.values(data.results)}
+                    },
+                },
+                onAdd: self.starting_kit_added,
+                onRemove: self.starting_kit_removed,
+            })
+            // When adding \ removing phase we need to code it like above
 
             // Form change events
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
@@ -219,13 +265,14 @@
         /*---------------------------------------------------------------------
          Methods
         ---------------------------------------------------------------------*/
+        // Tasks
         self.task_added = (key, text, item) => {
             let index = _.findIndex(self.phase_tasks, (task) => {
                 return task.value === key
             })
             if (index === -1) {
                 let task = {name: text, value: key, selected: true}
-                self.phase_tasks.push(task)
+                    self.phase_tasks.push(task)
             }
             self.form_updated()
         }
@@ -237,6 +284,68 @@
             self.phase_tasks.splice(index, 1)
             self.form_updated()
         }
+
+        // Public Data
+        self.public_data_added = (key, text, item) => {
+            let index = _.findIndex(self.phase_public_data, (public_data) => {
+                if (public_data === null){
+                    return false
+                }else{
+                    if (public_data.value != key){
+                        // Remove if not first selected. We can have only one.
+                        alert("Only one Public Data set allowed per phase.")
+                        setTimeout(()=>{$('a[data-value="'+ key +'"] .delete.icon').click()},100)
+                    }
+                    return public_data.value === key
+                }
+            })
+            if (index === -1 && (self.phase_public_data.length === 0 || self.phase_public_data[0] === null)) {
+                let public_data = {name: text, value: key, selected: true}
+                self.phase_public_data[0] = public_data
+            }
+            self.form_updated()
+        }
+
+        self.public_data_removed = (key, text, item) => {
+            let index = _.findIndex(self.phase_public_data, (public_data) => {
+                return public_data.value === key
+            })
+            if (index != -1){
+                self.phase_public_data.splice(index, 1)
+            }
+            self.form_updated()
+        }
+
+        // Starting Kit
+        self.starting_kit_added = (key, text, item) => {
+            let index = _.findIndex(self.phase_starting_kit, (starting_kit) => {
+                if (starting_kit === null){
+                    return false
+                }else{
+                    if (starting_kit.value != key){
+                        // Remove if not first selected. We can have only one.
+                        alert("Only one Starting Kit set allowed per phase.")
+                        setTimeout(()=>{$('a[data-value="'+ key +'"] .delete.icon').click()},100)
+                    }
+                    return starting_kit.value === key
+                }
+            })
+            if (index === -1 && (self.phase_starting_kit.length === 0 || self.phase_starting_kit[0] === null)) {
+                let starting_kit = {name: text, value: key, selected: true}
+                self.phase_starting_kit[0] = starting_kit
+            }
+            self.form_updated()
+        }
+
+        self.starting_kit_removed = (key, text, item) => {
+            let index = _.findIndex(self.phase_starting_kit, (starting_kit) => {
+                return starting_kit.value === key
+            })
+            self.phase_starting_kit.splice(index, 1)
+            self.form_updated()
+        }
+
+
 
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
@@ -286,6 +395,7 @@
                 is_valid = false
             } else {
                 // Make sure each phase has the proper details
+                // BB - check for public_data and starting_kit - NOT DONE
                 self.phases.forEach(function (phase) {
                     if (!phase.name || !phase.start || phase.tasks.length === 0) {
                         is_valid = false
@@ -338,6 +448,8 @@
             self.selected_phase_index = undefined
             self.phase_tasks = []
             $(self.refs.multiselect).dropdown('clear')
+            $(self.refs.public_data_multiselect).dropdown('clear')
+            $(self.refs.starting_kit_multiselect).dropdown('clear')
 
             $(':input', self.refs.form)
                 .not('[type="file"]')
@@ -369,6 +481,9 @@
             self.selected_phase_index = index
             var phase = self.phases[index]
             self.phase_tasks = phase.tasks
+            self.phase_public_data = [phase.public_data]
+            self.phase_starting_kit = [phase.starting_kit]
+
 
             self.update()
             set_form_data(phase, self.refs.form)
@@ -389,11 +504,40 @@
                         selected: true,
                     }
                 }))
+            // Setting Public Data
+            if(self.phase_public_data[0] != null){
+                $(self.refs.public_data_multiselect)
+                    .dropdown('change values', _.map(self.phase_public_data, public_data => {
+                        // renaming things to work w/ semantic UI multiselect
+                        return {
+                            value: public_data.value,
+                            text: public_data.name,
+                            name: public_data.name,
+                            selected: true,
+                        }
+                    }))
+            }
+            // Setting Starting Kit
+            if(self.phase_starting_kit[0] != null){
+                $(self.refs.starting_kit_multiselect)
+                    .dropdown('change values', _.map(self.phase_starting_kit, starting_kit => {
+                        // renaming things to work w/ semantic UI multiselect
+                        return {
+                            //value: starting_kit.value, // Maybe need to grab from serializer?
+                            value: starting_kit.value,
+                            text: starting_kit.name,
+                            name: starting_kit.name,
+                            selected: true,
+                        }
+                    }))
+            }
 
             self.show_modal()
 
             // make semantic multiselect sortable -- Sortable library imported in competitions/form.html
             Sortable.create($('.search.dropdown.multiple', self.refs.tasks_select_container)[0])
+            Sortable.create($('.search.dropdown.multiple', self.refs.public_data_select_container)[0])
+            Sortable.create($('.search.dropdown.multiple', self.refs.starting_kit_select_container)[0])
 
             self.form_check_is_valid()
             self.update()
@@ -432,8 +576,48 @@
             })
             self.phase_tasks = sorted_phase_tasks.slice()
 
+            // Get public data from DOM
+            let public_data_from_dom = []
+            $("#public_data_select_container a").each(function () {
+                public_data_from_dom.push($(this).data("value"))
+            })
+            let sorted_phase_public_data = []
+            public_data_from_dom.forEach( function(key) {
+                let found = false;
+                self.phase_public_data = self.phase_public_data.filter(function (item) {
+                    if(!found && item['value'] == key){
+                        sorted_phase_public_data.push(item)
+                        found = true
+                        return false
+                    } else
+                        return true
+                })
+            })
+            self.phase_public_data = sorted_phase_public_data.slice()
+
+            // Get starting kit from DOM
+            let starting_kit_from_dom = []
+            $("#starting_kit_select_container a").each(function () {
+                starting_kit_from_dom.push($(this).data("value"))
+            })
+            let sorted_phase_starting_kit = []
+            starting_kit_from_dom.forEach( function(key) {
+                let found = false;
+                self.phase_starting_kit = self.phase_starting_kit.filter(function (item) {
+                    if(!found && item['value'] == key){
+                        sorted_phase_starting_kit.push(item)
+                        found = true
+                        return false
+                    } else
+                        return true
+                })
+            })
+            self.phase_starting_kit = sorted_phase_starting_kit.slice()
+
             var data = get_form_data(self.refs.form)
             data.tasks = self.phase_tasks
+            data.public_data = self.phase_public_data.length === 0 ? null : self.phase_public_data[0]
+            data.starting_kit = self.phase_starting_kit.length === 0 ? null : self.phase_starting_kit[0]
             data.task_instances = []
             for(task of self.phase_tasks){
                 data.task_instances.push({

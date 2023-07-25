@@ -79,7 +79,6 @@ class DataViewSet(ModelViewSet):
             return serializers.DataSerializer
 
     def create(self, request, *args, **kwargs):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_dataset = serializer.save()  # request_sassy_file_name is temporarily set via this serializer

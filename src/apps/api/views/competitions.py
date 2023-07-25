@@ -30,6 +30,7 @@ from api.serializers.leaderboards import LeaderboardPhaseSerializer, Leaderboard
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
@@ -228,7 +229,21 @@ class CompetitionViewSet(ModelViewSet):
 
                     phase['leaderboard'] = leaderboard_id
 
+                # Get public_data and starting_kit
+                for phase in data['phases']:
+                    # We just need to know what public_data and starting_kit go with this phase
+                    # We don't need to serialize the whole object
+                    try:
+                        phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                    except TypeError:
+                        phase['public_data'] = None
+                    try:
+                        phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                    except TypeError:
+                        phase['starting_kit'] = None
+
             serializer = self.get_serializer(instance, data=data, partial=partial)
+            type(serializer)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
