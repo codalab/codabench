@@ -69,7 +69,7 @@
                                     </tr>
                                     <!-- Conditional row if no files to show -->
                                     <tr class="center aligned">
-                                        <td if = {competition.files}} colspan="100%">
+                                        <td if = {competition.files === undefined ||competition.files.length === 0} colspan="100%">
                                             <em>No Files Available Yet</em>
                                         </td>
                                     </tr>
@@ -233,20 +233,20 @@
                         self.competition.files.push(scoring_program)
                     }
                 })
-                _.forEach(phase.tasks, task => {
-                    _.forEach(task.solutions, solution => {
-                        self.competition.files.push({
-                            key: solution.data,
-                            name: solution.name,
-                            file_size: solution.size,
-                            phase: phase.name,
-                            task: task.name,
-                            type: 'Solution'
-                        })
-                    })
-                })
                 // Need code for public_data and starting_kit at phase level
                 if(self.competition.participant_status === 'approved'){    
+                    _.forEach(phase.tasks, task => {
+                        _.forEach(task.solutions, solution => {
+                            self.competition.files.push({
+                                key: solution.data,
+                                name: solution.name,
+                                file_size: solution.size,
+                                phase: phase.name,
+                                task: task.name,
+                                type: 'Solution'
+                            })
+                        })
+                    })
                     if (phase.starting_kit != null){
                         self.competition.files.push({
                             key: phase.starting_kit.key,
