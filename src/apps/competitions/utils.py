@@ -8,7 +8,7 @@ from django.db.models import Count
 from competitions.models import Competition
 
 
-def get_popular_competitions(limit=3):
+def get_popular_competitions(limit=4):
     '''
     Function to return most popular competitions based on the amount of participants.
 
@@ -26,7 +26,7 @@ def get_popular_competitions(limit=3):
     return competitions[:limit]
 
 
-def get_featured_competitions(limit=3, excluded_competitions=None):
+def get_featured_competitions(limit=4, excluded_competitions=None):
     '''
     Function to return featured competitions if they are still open.
 

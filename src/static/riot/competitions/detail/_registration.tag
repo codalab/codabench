@@ -43,7 +43,10 @@
     </div>
 
     <div if="{status}">
-        Your current status is: {_.startCase(status)}
+        <div class="ui yellow message">
+            <h3>Registration Status: {_.startCase(status)}</h3>
+            Your request to participate in this competition is waiting for an approval from the competition organizer
+        </div>
     </div>
 
     <div ref="terms_modal" class="ui modal">
