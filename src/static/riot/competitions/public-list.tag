@@ -1,6 +1,6 @@
 <public-list>
     <h1>Public Competitions</h1>
-    <div class="pagination-nav" hide="{(get_array_length(competitions.results) === competitions.count) || (get_array_length(competitions.results) < 10)}"> 
+    <div class="pagination-nav" hide="{(competitions.count < 10)}"> 
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
@@ -32,7 +32,7 @@
             </div>
         </a>
     </div>
-    <div class="pagination-nav" hide="{(get_array_length(competitions.results) === competitions.count) || (get_array_length(competitions.results) < 10)}}">
+    <div class="pagination-nav" hide="{(competitions.count < 10)}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
