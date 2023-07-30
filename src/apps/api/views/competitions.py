@@ -643,12 +643,41 @@ class CompetitionParticipantViewSet(ModelViewSet):
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        if not user.is_superuser:
-            qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
-        qs = qs.select_related('user').order_by('user__username')
-        return qs
+
+        # a boolean set to true if the request is considered valid
+        # i.e. it is either GET request with `competition``
+        # or patch request with `status`
+        # or post request with `message`
+        is_valid_request = False
+
+        if self.request.method == "PATCH":
+            # PATCH request is considered valid if it has `status`
+            if 'status' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "POST":
+            # POST request is considered valid if it has `message`
+            if 'message' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "GET":
+            # GET request is considered valid if it has `competition``
+            # if there is no competition then it si called from /api/participants/
+            # URL which is not considered valid
+            if 'competition' in self.request.GET:
+                is_valid_request = True
+
+        if is_valid_request:
+            # API to act normally i.e return participants
+            qs = super().get_queryset()
+            user = self.request.user
+            if not user.is_superuser:
+                qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
+            qs = qs.select_related('user').order_by('user__username')
+            return qs
+        else:
+            # API will work but will return empty participants list
+            return CompetitionParticipant.objects.none()
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PATCH':
