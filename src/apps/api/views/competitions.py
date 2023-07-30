@@ -508,8 +508,25 @@ class CompetitionViewSet(ModelViewSet):
 
 
 class PhaseViewSet(ModelViewSet):
-    queryset = Phase.objects.none()
     serializer_class = PhaseSerializer
+
+    def get_queryset(self):
+        # You can add your logic here to return the full queryset when needed
+        qs = Phase.objects.all()
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        # Check if it's a direct request to /api/phases/
+        direct_request = 'pk' not in kwargs or kwargs['pk'] == 'list'
+
+        if direct_request:
+            # If it's a direct request, return an empty response without any actual phase objects
+            return Response([], status=status.HTTP_200_OK)
+
+        # Otherwise, allow other functions to use the list functionality as usual
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     # TODO! Security, who can access/delete/etc this?
 
