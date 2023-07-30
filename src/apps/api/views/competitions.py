@@ -508,7 +508,7 @@ class CompetitionViewSet(ModelViewSet):
 
 
 class PhaseViewSet(ModelViewSet):
-    queryset = Phase.objects.all()
+    queryset = Phase.objects.none()
     serializer_class = PhaseSerializer
 
     # TODO! Security, who can access/delete/etc this?
