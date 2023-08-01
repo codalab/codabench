@@ -22,8 +22,14 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Competitions
     ---------------------------------------------------------------------*/
-    get_competition: function (pk) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+    get_competition: function (pk, secret_key) {
+
+        if(secret_key == undefined || secret_key == 'None'){
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+        }else{
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/?secret_key="+secret_key)
+        }
+        
     },
     get_competitions: function (query) {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
