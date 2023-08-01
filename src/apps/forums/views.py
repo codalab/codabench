@@ -85,7 +85,6 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
 
         if self.object.thread.forum.competition.created_by == request.user or \
-                request.user in self.object.thread.forum.competition.admins.all() or \
                 self.object.posted_by == request.user:
 
             # If there are more posts in the thread, leave it around, otherwise delete it
@@ -129,7 +128,6 @@ class DeleteThreadView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
 
         if self.object.forum.competition.created_by == request.user or \
-                request.user in self.object.forum.competition.admins.all() or \
                 self.object.started_by == request.user:
 
             success_url = self.object.forum.get_absolute_url()
@@ -161,7 +159,7 @@ def pin_thread(request, thread_pk):
     except Thread.DoesNotExist:
         raise Http404()
 
-    if thread.forum.competition.created_by == request.user or request.user in thread.forum.competition.admins.all():
+    if thread.forum.competition.created_by == request.user or thread.started_by == request.user:
         # Toggle pinned date on/off
         thread.pinned_date = now() if thread.pinned_date is None else None
         thread.save()
