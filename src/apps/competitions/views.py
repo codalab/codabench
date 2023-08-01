@@ -20,7 +20,7 @@ class CompetitionForm(LoginRequiredMixin, DetailView):
     def get_object(self, *args, **kwargs):
         competition = super().get_object(*args, **kwargs)
 
-        is_admin, is_creator, is_collaborator, is_participant = False, False, False, False
+        is_admin, is_creator, is_collaborator = False, False, False
 
         # check if user is loggedin
         if self.request.user.is_authenticated:
@@ -34,15 +34,10 @@ class CompetitionForm(LoginRequiredMixin, DetailView):
             # check if user is collaborator of this competition
             is_collaborator = self.request.user in competition.collaborators.all()
 
-            # check if user is a participant of this competition
-            # get participants from CompetitionParticipant where user=user and competition=competition
-            is_participant = CompetitionParticipant.objects.filter(user=self.request.user, competition=competition).count() > 0
-
         if (
             is_admin or
             is_creator or
-            is_collaborator or
-            is_participant
+            is_collaborator
         ):
             return competition
         raise Http404()
