@@ -13,7 +13,11 @@ class CompetitionPublic(TemplateView):
     template_name = 'competitions/public.html'
 
 
-class CompetitionForm(LoginRequiredMixin, DetailView):
+class CompetitionCreateForm(LoginRequiredMixin, TemplateView):
+    template_name = 'competitions/form.html'
+
+
+class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
     template_name = 'competitions/form.html'
     queryset = Competition.objects.all()
 
