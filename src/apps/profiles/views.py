@@ -266,7 +266,6 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             context['is_editor'] = False
             context['is_member'] = False
 
-        print(context)
         return context
 
 
