@@ -106,7 +106,7 @@ v2_yaml_data = {
             "execution_time_limit": 500,
             "max_submissions_per_day": 5,
             "start": "2019-01-01",
-            "end": "2019-09-30",
+            "end": "2019-09-29",
             "tasks": [0]
         },
         {
