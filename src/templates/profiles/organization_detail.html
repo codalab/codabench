@@ -7,15 +7,10 @@
         <div class="ui container" style="margin-bottom: 1em">
             <a href="{{ organization.url }}edit/"><button type="button" class="ui left floated button">Edit Organization</button></a>
             
-            {% if organization.users|length > 1 %}
-                <button class="ui red right floated button disabled">
-                    Delete Organization
-                </button>
-            {% else %}
-                <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
-                    Delete Organization
-                </button>
-            {% endif %}
+            <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
+                Delete Organization
+            </button>
+            
             
             
         </div>
