@@ -1,10 +1,10 @@
 import os
+import datetime
 
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
 import logging
 logger = logging.getLogger()
-import datetime
 
 
 class V15Unpacker(BaseUnpacker):
