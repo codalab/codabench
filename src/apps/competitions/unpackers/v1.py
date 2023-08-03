@@ -4,6 +4,7 @@ from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
 import logging
 logger = logging.getLogger()
+import datetime
 
 
 class V15Unpacker(BaseUnpacker):
@@ -90,7 +91,11 @@ class V15Unpacker(BaseUnpacker):
                 new_phase['has_max_submissions'] = True
             try:
                 next_phase = phases[index + 1]
-                new_phase['end'] = get_datetime(next_phase['start_date'])
+                # V1 phases have no end dates.
+                # to set an end date of a phase, get the next phase starting date
+                next_phase_start_date = get_datetime(next_phase['start_date'])
+                # subtract one day from it and use it as this phase end date
+                new_phase['end'] = next_phase_start_date - datetime.timedelta(days=1)
             except IndexError:
                 end = self.competition.get('end_date')
                 if end and end != 'null':
