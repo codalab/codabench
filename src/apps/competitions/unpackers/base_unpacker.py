@@ -127,6 +127,12 @@ class BaseUnpacker:
                     f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                     f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
                 )
+            elif phase1['end'] == phase2['start']:
+                # Current phase start date and previous phase end dates are same, raise error
+                raise CompetitionUnpackingException(
+                    f'Phases dates conflict. Phase: {phase2.get("name", phase2["index"])} '
+                    f'should start after Phase: {phase1.get("name", phase1["index"])} has ended'
+                )
 
     def _unpack_pages(self):
         """
