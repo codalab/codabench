@@ -204,7 +204,7 @@ PHASES = [
         'max_submissions_per_person': None,
         'auto_migrate_to_this_phase': False,
         'has_max_submissions': True,
-        'end': datetime.datetime(2019, 9, 30, 0, 0, tzinfo=timezone.now().tzinfo),
+        'end': datetime.datetime(2019, 9, 29, 0, 0, tzinfo=timezone.now().tzinfo),
         'public_data': None,
         'starting_kit': None,
         'tasks': [0],
