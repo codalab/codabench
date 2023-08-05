@@ -619,7 +619,6 @@ class PhaseViewSet(ModelViewSet):
         # put detailed results in its submission
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
-        print(f"\n{response['submissions']}\n")
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task

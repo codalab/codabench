@@ -63,7 +63,7 @@
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
                 </a>
-                <span if="{column.title != 'Detailed Results'}">{get_score(column, submission)}</span>
+                <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
             </td>
            
            
@@ -81,6 +81,22 @@
         self.competition_id = null
         self.enable_detailed_results = false
 
+       
+        self.bold_class = function(column, submission){
+            // Return `text-bold` if submission has 
+            // more than one scores and score index  == 0
+            // otherwise return empty string
+            return_class = '' // default class value
+            if(column.task_id != -1){ // factsheet check
+                if(submission.scores.length > 1){ // score length check
+                    let column_index = _.get(column, 'index')
+                    if(column_index === 0){ // column index check
+                        return_class = 'text-bold'
+                    }
+                }
+            }
+            return return_class
+        }
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
                 return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
@@ -106,7 +122,6 @@
         self.filter_columns = () => {
             let search_key = self.refs.leaderboardFilter.value.toLowerCase()
             self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
-            console.log(self.filtered_tasks)
             if(search_key){
                 self.filtered_columns = []
                 for (const column of self.columns){
@@ -162,7 +177,6 @@
                             })
                             task.colWidth += 1
                         }
-                        console.log(task)
                     }
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
@@ -220,5 +234,7 @@
             top: 50%
             left: 50%
             transform: translate(-50%, -50%)
+        .text-bold
+            font-weight: bold
     </style>
 </leaderboards>
