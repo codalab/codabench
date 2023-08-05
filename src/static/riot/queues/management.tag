@@ -69,9 +69,8 @@
         </tr>
         </tbody>
         <tfoot>
-        <!-------------------------------------
-                  Pagination
-        ------------------------------------->
+
+        <!-- Pagination -->
         <tr if="{queues.length > 0 && ( _.get(pagination, 'next') || _.get(pagination, 'previous') ) }">
             <th colspan="5">
                 <div class="ui right floated pagination menu" if="{queues.length > 0}">
