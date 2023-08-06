@@ -119,6 +119,14 @@
             <label>Competition Reward</label>
             <input type="text" ref="reward" placeholder="Example: $1000 for the top participant" onchange="{form_updated}">
         </div>
+        <div class="field">
+            <label>Organizer Contact Email</label>
+            <input type="email" ref="contact_email" placeholder="Example: email@example.com" onchange="{form_updated}">
+        </div>
+        <div class="field">
+            <label>Competition Report</label>
+            <input type="text" ref="report" placeholder="Example: https://example.com/report.pdf" onchange="{form_updated}">
+        </div>
     </div>
 
     <script>
@@ -187,6 +195,8 @@
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
             self.data['reward'] = $(self.refs.reward).val()
+            self.data['contact_email'] = $(self.refs.contact_email).val()
+            self.data['report'] = $(self.refs.report).val()
             if (self.data.fact_sheet === false){
                 is_valid = false
             }
@@ -314,6 +324,8 @@
             self.refs.detailed_results.checked = competition.enable_detailed_results
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.reward).val(competition.reward)
+            $(self.refs.contact_email).val(competition.contact_email)
+            $(self.refs.report).val(competition.report)
             if(competition.fact_sheet !== null){
                 for(question in competition.fact_sheet){
                     var q_json = competition.fact_sheet[question]

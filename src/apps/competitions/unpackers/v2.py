@@ -19,6 +19,7 @@ class V2Unpacker(BaseUnpacker):
             "competition_type": self.competition_yaml.get("competition_type", "competition"),
             "fact_sheet": self.competition_yaml.get("fact_sheet", None),
             "reward": self.competition_yaml.get("reward", None),
+            "contact_email": self.competition_yaml.get("contact_email", None),
             "pages": [],
             "phases": [],
             "leaderboards": [],

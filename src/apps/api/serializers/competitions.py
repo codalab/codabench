@@ -210,6 +210,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'competition_type',
             'fact_sheet',
             'reward',
+            'contact_email',
+            'report',
         )
 
     def validate_phases(self, phases):
@@ -299,6 +301,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'fact_sheet',
             'forum',
             'reward',
+            'contact_email',
+            'report',
         )
 
     def get_leaderboards(self, instance):
@@ -329,6 +333,8 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'description',
             'competition_type',
             'reward',
+            'contact_email',
+            'report',
         )
 
 

@@ -42,6 +42,7 @@
                             <div>
                                 <span class="detail-label">Organized by:</span>
                                 <span class="detail-item">{competition.created_by}</span>
+                                <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>
                                 <span class="detail-label">Current phase ends:</span>
@@ -66,6 +67,12 @@
                                 <span onclick="{copy_secret_url}" class="ui send-pop-secret" data-content="Copied!">
                                     <i class="ui copy icon"></i>
                                 </span>
+                            </div>
+                            <!-- Competition Report -->
+                            <div class="competition-secret-key" if="{competition.report}">
+                                <span class="report-label">Competition Report:</span>
+                                <span><a href="{competition.report}" target="_blank">{competition.report}</a></span>
+
                             </div>
                         </div>
                     </div>
@@ -275,11 +282,19 @@
         .competition-secret-key
             font-size 13px
 
+        .contact-email
+            font-size 1em
+            color $teal
+            font-family 'Overpass Mono', monospace
+
         .secret-label
             color $red
 
         .docker-label
             color $teal
+
+        .report-label
+            color $blue
 
         .secret-url
             color $blue
