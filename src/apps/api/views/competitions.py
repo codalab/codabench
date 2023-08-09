@@ -48,6 +48,11 @@ class CompetitionViewSet(ModelViewSet):
 
         qs = super().get_queryset()
 
+        # filter by competition_type first, 'competition' by default
+        competition_type = self.request.query_params.get('type', Competition.COMPETITION)
+        if competition_type != 'any' and self.detail is False:
+            qs = qs.filter(competition_type=competition_type)
+
         # Filter for search bar
         search_query = self.request.query_params.get('search')
 
@@ -56,10 +61,6 @@ class CompetitionViewSet(ModelViewSet):
 
         # If user is logged in
         if self.request.user.is_authenticated:
-            # filter by competition_type first, 'competition' by default
-            competition_type = self.request.query_params.get('type', Competition.COMPETITION)
-            if competition_type != 'any' and self.detail is False:
-                qs = qs.filter(competition_type=competition_type)
 
             # `mine` is true when this is called from "Benchmarks I'm Running"
             # Filter to only see competitions you own
@@ -77,6 +78,7 @@ class CompetitionViewSet(ModelViewSet):
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+
             participant_status_query = CompetitionParticipant.objects.filter(
                 competition=OuterRef('pk'),
                 user=self.request.user
@@ -101,7 +103,27 @@ class CompetitionViewSet(ModelViewSet):
 
             # if `secret_key` is true, this is called for a secret competition
             if secret_key:
+                print(secret_key)
                 qs = qs.filter(Q(secret_key=secret_key))
+
+            # Default condition
+            # not called from my competitions tab
+            # not called from i'm participating in tab
+            # not called from search bar
+            # not called with a valid secret key
+            # Return the following ---
+            # All competitions which belongs to you (private or public)
+            # And competitions where you are admin
+            # And public competitions
+            # And competitions where you are approved participant
+            # this filters out all private compettions from other users
+            if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+                qs = qs.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user])) |
+                    (Q(published=True) & ~Q(created_by=self.request.user)) |
+                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                ).distinct()
 
         else:
             # if user is not authenticated only show
