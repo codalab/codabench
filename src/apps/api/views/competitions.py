@@ -508,8 +508,25 @@ class CompetitionViewSet(ModelViewSet):
 
 
 class PhaseViewSet(ModelViewSet):
-    queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
+
+    def get_queryset(self):
+        qs = Phase.objects.all()
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        # Check if it's a direct request to /api/phases/
+        # i.e without a pk
+        direct_request = 'pk' not in kwargs or kwargs['pk'] == 'list'
+
+        if direct_request:
+            # return empty response in direct request
+            return Response([], status=status.HTTP_200_OK)
+
+        # Otherwise, allow other functions to use the list functionality as usual
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     # TODO! Security, who can access/delete/etc this?
 
@@ -619,7 +636,6 @@ class PhaseViewSet(ModelViewSet):
         # put detailed results in its submission
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
-        print(f"\n{response['submissions']}\n")
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
