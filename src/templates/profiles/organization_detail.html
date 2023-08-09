@@ -7,15 +7,10 @@
         <div class="ui container" style="margin-bottom: 1em">
             <a href="{{ organization.url }}edit/"><button type="button" class="ui left floated button">Edit Organization</button></a>
             
-            {% if organization.users|length > 1 %}
-                <button class="ui red right floated button disabled">
-                    Delete Organization
-                </button>
-            {% else %}
-                <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
-                    Delete Organization
-                </button>
-            {% endif %}
+            <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
+                Delete Organization
+            </button>
+            
             
             
         </div>
@@ -50,19 +45,34 @@
             <div class="ui container" style="margin-top: 2em">
                 <h1 class="ui dividing header">Socials</h1>
                 {% if organization.email %}
-                    <div class="header">Organization Email > <a href="mailto:{{ organization.email }}">{{ organization.email }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="envelope icon"></i>Email:</span>
+                        <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.website_url %}
-                    <div class="header">Organization Website > <a href="{{ organization.website_url }}">{{ organization.website_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="world icon"></i>Website:</span>
+                        <a href="{{ organization.website_url }}">{{ organization.website_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.linkedin_url %}
-                    <div class="header">Organization LinkedIn > <a href="{{ organization.linkedin_url }}">{{ organization.linkedin_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
+                        <a href="{{ organization.linkedin_url }}">{{ organization.linkedin_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.twitter_url %}
-                    <div class="header">Organization Twitter > <a href="{{ organization.twitter_url }}">{{ organization.twitter_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
+                        <a href="{{ organization.twitter_url }}">{{ organization.twitter_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.github_url %}
-                    <div class="header">Organization Github > <a href="{{ organization.github_url }}">{{ organization.github_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="github icon"></i>GitHub:</span>
+                        <a href="{{ organization.github_url }}">{{ organization.github_url }}</a>
+                    </div>
                 {% endif %}
             </div>
             <div class="ui container" style="margin-top: 2em">

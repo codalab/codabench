@@ -89,7 +89,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return self.name
 
     def __str__(self):
-        return f'{self.username} | {self.email}'
+        return self.username
 
     @property
     def slug_url(self):

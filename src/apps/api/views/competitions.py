@@ -508,8 +508,25 @@ class CompetitionViewSet(ModelViewSet):
 
 
 class PhaseViewSet(ModelViewSet):
-    queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
+
+    def get_queryset(self):
+        qs = Phase.objects.all()
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        # Check if it's a direct request to /api/phases/
+        # i.e without a pk
+        direct_request = 'pk' not in kwargs or kwargs['pk'] == 'list'
+
+        if direct_request:
+            # return empty response in direct request
+            return Response([], status=status.HTTP_200_OK)
+
+        # Otherwise, allow other functions to use the list functionality as usual
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     # TODO! Security, who can access/delete/etc this?
 
@@ -619,7 +636,6 @@ class PhaseViewSet(ModelViewSet):
         # put detailed results in its submission
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
-        print(f"\n{response['submissions']}\n")
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
@@ -643,12 +659,41 @@ class CompetitionParticipantViewSet(ModelViewSet):
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        if not user.is_superuser:
-            qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
-        qs = qs.select_related('user').order_by('user__username')
-        return qs
+
+        # a boolean set to true if the request is considered valid
+        # i.e. it is either GET request with `competition``
+        # or patch request with `status`
+        # or post request with `message`
+        is_valid_request = False
+
+        if self.request.method == "PATCH":
+            # PATCH request is considered valid if it has `status`
+            if 'status' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "POST":
+            # POST request is considered valid if it has `message`
+            if 'message' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "GET":
+            # GET request is considered valid if it has `competition``
+            # if there is no competition then it si called from /api/participants/
+            # URL which is not considered valid
+            if 'competition' in self.request.GET:
+                is_valid_request = True
+
+        if is_valid_request:
+            # API to act normally i.e return participants
+            qs = super().get_queryset()
+            user = self.request.user
+            if not user.is_superuser:
+                qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
+            qs = qs.select_related('user').order_by('user__username')
+            return qs
+        else:
+            # API will work but will return empty participants list
+            return CompetitionParticipant.objects.none()
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PATCH':
