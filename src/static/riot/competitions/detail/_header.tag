@@ -71,7 +71,10 @@
                             <!-- Competition Report -->
                             <div class="competition-secret-key" if="{competition.report}">
                                 <span class="report-label">Competition Report:</span>
-                                <span><a href="{competition.report}" target="_blank">{competition.report}</a></span>
+                                <span id="report-url">{ competition.report }</span>
+                                <span onclick="{copy_report_url}" class="ui send-pop-report" data-content="Copied!">
+                                    <i class="ui copy icon"></i>
+                                </span>
 
                             </div>
                         </div>
@@ -243,6 +246,16 @@
             $('.send-pop-docker').popup('toggle')
         }
 
+        self.copy_report_url = function () {
+            let range = document.createRange();
+            range.selectNode(document.getElementById("report-url"));
+            window.getSelection().removeAllRanges(); // clear current selection
+            window.getSelection().addRange(range); // to select text
+            document.execCommand("copy");
+            window.getSelection().removeAllRanges();// to deselect
+            $('.send-pop-report').popup('toggle')
+        }
+
         self.get_end_date = function (competition) {
             let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
             return end_date ? pretty_date(end_date) : 'Never'
@@ -294,7 +307,7 @@
             color $teal
 
         .report-label
-            color $blue
+            color $teal
 
         .secret-url
             color $blue
