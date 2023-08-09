@@ -155,6 +155,7 @@
                 // Note: Passing `public=true` so default behavior is users can search for public queues
                 apiSettings: {
                     url: `${URLS.API}queues/?search={query}&public=true`,
+                    cache: false
                 },
                 clearable: true,
                 minCharacters: 2,
