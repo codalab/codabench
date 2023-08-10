@@ -199,6 +199,7 @@ class Membership(models.Model):
     EDITORS_GROUP = [OWNER, MANAGER]
     PARTICIPANT_GROUP = EDITORS_GROUP + [PARTICIPANT]
     SETTABLE_PERMISSIONS = [MANAGER, PARTICIPANT, MEMBER]
+    ALL_GROUP = EDITORS_GROUP + [PARTICIPANT, MEMBER]
 
     group = models.TextField(choices=PERMISSIONS, default=INVITED, null=False, blank=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)

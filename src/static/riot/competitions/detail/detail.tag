@@ -17,7 +17,7 @@
         })
 
         self.update_competition_data = function () {
-            CODALAB.api.get_competition(self.opts.competition_pk)
+            CODALAB.api.get_competition(self.opts.competition_pk, self.opts.secret_key)
                 .done(function (data) {
                     self.competition = data
                     CODALAB.events.trigger('competition_loaded', self.competition)
