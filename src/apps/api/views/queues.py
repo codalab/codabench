@@ -46,7 +46,27 @@ class QueueViewSet(ModelViewSet):
         queue = self.get_object()
         if request.user != queue.owner and not request.user.is_superuser:
             raise PermissionDenied("Cannot update a queue that is not yours")
-        return super().update(request, *args, **kwargs)
+
+        # Get the original value of is_public before updating
+        before_update_queue_is_public = queue.is_public
+
+        # Get the competitions that are using this queue
+        competitions = queue.competitions.all()
+
+        # Update the queue
+        updated_queue_response = super().update(request, *args, **kwargs)
+
+        # If the queue `is_public`` field is updated to False, then update competitions
+        if 'is_public' in request.data and not request.data['is_public'] and before_update_queue_is_public:
+
+            # Set the queue field in all competitions to NULL
+            # which do not belong to the user
+            for competition in competitions:
+                if competition.created_by != request.user:
+                    competition.queue = None
+                    competition.save()
+
+        return updated_queue_response
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

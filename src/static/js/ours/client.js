@@ -22,8 +22,14 @@ CODALAB.api = {
     /*---------------------------------------------------------------------
          Competitions
     ---------------------------------------------------------------------*/
-    get_competition: function (pk) {
-        return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+    get_competition: function (pk, secret_key) {
+
+        if(secret_key == undefined || secret_key == 'None'){
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+        }else{
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/?secret_key="+secret_key)
+        }
+        
     },
     get_competitions: function (query) {
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
@@ -275,6 +281,9 @@ CODALAB.api = {
     },
     delete_organization_member: (id, data) => {
         return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_member/`, data)
+    },
+    delete_organization: (id) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}organizations/${id}/delete_organization/`)
     },
     /*---------------------------------------------------------------------
          Participants

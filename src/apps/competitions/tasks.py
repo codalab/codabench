@@ -381,7 +381,6 @@ def unpack_competition(status_pk):
             )
 
             unpacker.unpack()
-
             try:
                 competition = unpacker.save()
             except ValidationError as e:

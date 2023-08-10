@@ -127,6 +127,12 @@ class BaseUnpacker:
                     f'Phases must be sequential. Phase: {phase2.get("name", phase2["index"])}'
                     f'starts before Phase: {phase1.get("name", phase1["index"])} has ended'
                 )
+            elif phase1['end'] == phase2['start']:
+                # Current phase start date and previous phase end dates are same, raise error
+                raise CompetitionUnpackingException(
+                    f'Phases dates conflict. Phase: {phase2.get("name", phase2["index"])} '
+                    f'should start after Phase: {phase1.get("name", phase1["index"])} has ended'
+                )
 
     def _unpack_pages(self):
         """
@@ -231,6 +237,7 @@ class BaseUnpacker:
             "description": phase_description,
             "start": phase_start (datetime.datetime),
             "end": phase_end (datetime.datetime),
+            # BB public_data and starting_kit
             # ... See serializer for complete fields list
             "tasks": [list of indices that should match self.competition['tasks']]
         }
@@ -315,6 +322,14 @@ class BaseUnpacker:
         for phase in self.competition['phases']:
             phase['tasks'] = [self.competition['tasks'][index].key for index in phase['tasks']]
             phase['leaderboard'] = self.competition['leaderboards'][0].id
+            phase_public_data_file_data = phase['public_data']
+            phase_starting_kit_file_data = phase['starting_kit']
+            if phase_public_data_file_data is not None:
+                public_data_key, public_data_temp_data_path = self._get_data_key(**phase_public_data_file_data)
+                phase['public_data'] = Data.objects.filter(key=public_data_key)[0].id
+            if phase_starting_kit_file_data is not None:
+                starting_kit_key, starting_kit_temp_data_path = self._get_data_key(**phase_starting_kit_file_data)
+                phase['starting_kit'] = Data.objects.filter(key=starting_kit_key)[0].id
 
         self.competition.pop('leaderboards')
 

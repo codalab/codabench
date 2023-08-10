@@ -45,7 +45,7 @@ class UserViewSet(mixins.UpdateModelMixin,
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def participant_organizations(self, request):
-        memberships = request.user.membership_set.filter(group__in=Membership.PARTICIPANT_GROUP).prefetch_related('organization')
+        memberships = request.user.membership_set.filter(group__in=Membership.ALL_GROUP).prefetch_related('organization')
         data = SimpleOrganizationSerializer([member.organization for member in memberships], many=True).data
         return Response(data)
 
@@ -229,3 +229,25 @@ class OrganizationViewSet(mixins.CreateModelMixin,
 
         mem_ser = MembershipSerializer(membership)
         return Response(mem_ser.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'])
+    def delete_organization(self, request, pk=None):
+        try:
+            org = Organization.objects.get(id=pk)
+            member = org.membership_set.get(user=request.user)
+            if member.group == Membership.OWNER:
+                org.delete()
+                return Response({
+                    "success": True,
+                    "message": "Organization deleted!"
+                })
+            else:
+                return Response({
+                    "success": False,
+                    "message": "You do not have delete rights!"
+                })
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": f"{e}"
+            })

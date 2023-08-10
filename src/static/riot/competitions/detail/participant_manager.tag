@@ -134,7 +134,6 @@
             if (status && status !== '-') {
                 filters.status = status
             }
-            filters.participants_with_email = true
 
             CODALAB.api.get_participants(filters)
                 .done(participants => {
@@ -149,7 +148,11 @@
         self._update_status = (id, status) => {
             CODALAB.api.update_participant_status(id, {status: status})
                 .done(() => {
-                    toastr.success('success')
+                    if(status === 'denied'){
+                        toastr.success('Revoked successfully')
+                    }else{
+                        toastr.success('Approved successfully')
+                    }
                     self.update_participants()
                 })
         }

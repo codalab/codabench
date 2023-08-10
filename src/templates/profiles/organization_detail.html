@@ -6,6 +6,13 @@
     {% if is_editor %}
         <div class="ui container" style="margin-bottom: 1em">
             <a href="{{ organization.url }}edit/"><button type="button" class="ui left floated button">Edit Organization</button></a>
+            
+            <button class="ui red right floated button" onclick="{self.delete_organization({{ organization.id }})}" >
+                Delete Organization
+            </button>
+            
+            
+            
         </div>
     {% endif %}
     <div class="ui container">
@@ -29,7 +36,7 @@
                                 <p>{{ organization.description | linebreaks }}</p>
                             </div>
                             <div class="extra">
-                                Participating in Codalab since {{ organization.date_created }}
+                                Participating in Codabench since {{ organization.date_created }}
                             </div>
                         </div>
                     </div>
@@ -38,19 +45,34 @@
             <div class="ui container" style="margin-top: 2em">
                 <h1 class="ui dividing header">Socials</h1>
                 {% if organization.email %}
-                    <div class="header">Organization Email > <a href="mailto:{{ organization.email }}">{{ organization.email }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="envelope icon"></i>Email:</span>
+                        <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.website_url %}
-                    <div class="header">Organization Website > <a href="{{ organization.website_url }}">{{ organization.website_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="world icon"></i>Website:</span>
+                        <a href="{{ organization.website_url }}">{{ organization.website_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.linkedin_url %}
-                    <div class="header">Organization LinkedIn > <a href="{{ organization.linkedin_url }}">{{ organization.linkedin_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
+                        <a href="{{ organization.linkedin_url }}">{{ organization.linkedin_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.twitter_url %}
-                    <div class="header">Organization Twitter > <a href="{{ organization.twitter_url }}">{{ organization.twitter_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
+                        <a href="{{ organization.twitter_url }}">{{ organization.twitter_url }}</a>
+                    </div>
                 {% endif %}
                 {% if organization.github_url %}
-                    <div class="header">Organization Github > <a href="{{ organization.github_url }}">{{ organization.github_url }}</a></div>
+                    <div class="header">
+                        <span class="three wide column"><i class="github icon"></i>GitHub:</span>
+                        <a href="{{ organization.github_url }}">{{ organization.github_url }}</a>
+                    </div>
                 {% endif %}
             </div>
             <div class="ui container" style="margin-top: 2em">
@@ -59,7 +81,10 @@
                     <thead>
                     <tr>
                         <th>Name</th>
-                        <th>E-mail</th>
+                        {% if is_editor or is_member %}
+                            <th>E-mail</th>
+                        {% endif %}
+                        
                     </tr>
                     </thead>
                     <tbody>
@@ -67,7 +92,10 @@
                         {% if user.id in organization.user_record %}
                         <tr>
                             <td><a href="/profiles/user/{{ user.slug }}/">{{ user.name }}</a></td>
-                            <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                            {% if is_editor or is_member %}
+                                <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                            {% endif %}
+                            
                         </tr>
                         {% endif %}
                     {% endfor %}
@@ -76,4 +104,26 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+    
+        self.delete_organization = (organization_id) => {
+            if (confirm(`Are you sure you want to permanently delete this organization?`)) {
+                CODALAB.api.delete_organization(organization_id)
+                    .done((resp) => {
+                        if(resp.success){
+                            toastr.success(resp.message)
+                            setTimeout(function (){window.location.href = '/';}, 1000)
+                        }else{
+                            toastr.error(resp.message)
+                        }
+                    })
+                    .fail((errors) => {
+                        toastr.error('An Error has occurred')
+                    })
+            }
+        }
+    </script>
 {% endblock %}

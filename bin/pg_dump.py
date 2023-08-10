@@ -27,5 +27,3 @@ call([
 call([
     'docker', 'exec', 'codabench-django-1', 'python', 'manage.py', 'upload_backup', f'{dump_name}'
 ])
-
-

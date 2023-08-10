@@ -3,10 +3,36 @@
 {% block forum_content %}
 
     <div class="ui horizontal divider">{{ thread.title }}</div>
-    <div class="ui divided items form-content">
+    <div class="ui items form-content">
         {% for post in ordered_posts %}
             <div class="item">
-                <div class="content">
+                <div class="forum-post">
+                    <!-- Header -->
+                    <div class="post-header">
+                        <div class="post-user">
+                            {% if post.posted_by.photo %}
+                            <img class="post-user-img" src="/static/img/user-avatar.png">
+                            <!-- <img class="post-user-img" src="{{ post.posted_by.photo }}"> -->
+                            {% else %}
+                            <img class="post-user-img" src="/static/img/user-avatar.png">
+                            {% endif %}
+                        </div>
+                        <div class="post-user-name-date">
+                            <div class="poster-name">{{ post.posted_by }}</div>
+                            <div class="posted-date">{{ post.date_created }}</div>
+                        </div>
+                        <div class="post-actions">
+                            {% if thread.forum.competition.creator == request.user or post.posted_by == request.user %}
+                            <i class="icon trash red remove-button" data-submission-pk="{{ post.pk }}"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Content -->
+                    <div class="post-content">
+                        <div class="markdown-content" data-content="{{ post.content }}"></div>
+                    </div>
+                </div>
+                <!-- <div class="content">
                     {% if thread.forum.competition.creator == request.user or request.user in thread.forum.competition.admins.all or post.posted_by == request.user %}
                         <i class="remove-button glyphicon glyphicon-remove pull-right" data-submission-pk="{{ post.pk }}"></i>
                     {% endif %}
@@ -16,7 +42,7 @@
                     <div class="extra">
                         Posted by: <a href="{% url "profiles:user_profile" username=post.posted_by.slug %}">{{ post.posted_by }}</a> @ {{ post.date_created }}
                     </div>
-                </div>
+                </div> -->
             </div>
         {% endfor %}
     </div>

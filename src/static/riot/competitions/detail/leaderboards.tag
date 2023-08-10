@@ -30,7 +30,6 @@
             <th>Task:</th>
             <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
-            <th if="{enable_detailed_results}"></th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
@@ -38,7 +37,7 @@
             <th>Entries</th>
             <th>Date of last entry</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            <th if="{enable_detailed_results}">Detailed Results</th>
+            
         </tr>
         </thead>
         <tbody>
@@ -60,8 +59,13 @@
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td>{submission.num_entries}</td>
             <td>{submission.last_entry_date}</td>
-            <td each="{ column in filtered_columns }">{ get_score(column, submission) } </td>
-            <td if="{enable_detailed_results}"><a href="detailed_results/{submission.id}" target="_blank">Show detailed results</a></td>
+            <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
+            <td each="{ column in filtered_columns }">
+                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
+                    <i class="icon grey eye eye-icon"></i>
+                </a>
+                <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
+            </td>
         </tr>
         </tbody>
     </table>
@@ -76,6 +80,22 @@
         self.competition_id = null
         self.enable_detailed_results = false
 
+       
+        self.bold_class = function(column, submission){
+            // Return `text-bold` if submission has 
+            // more than one scores and score index  == leaderbaord.primary_index
+            // otherwise return empty string
+            return_class = '' // default class value
+            if(column.task_id != -1){ // factsheet check
+                if(submission.scores.length > 1){ // score length check
+                    let column_index = _.get(column, 'index')
+                    if(column_index === self.selected_leaderboard.primary_index){ // column index check
+                        return_class = 'text-bold'
+                    }
+                }
+            }
+            return return_class
+        }
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
                 return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
@@ -106,7 +126,7 @@
                 for (const column of self.columns){
                     let key = column.key.toLowerCase()
                     let title = column.title.toLowerCase()
-                    if((key.includes(search_key) || title.includes(search_key)) && !column.hidden) {
+                    if((key.includes(search_key) || title.includes(search_key))) {
                         self.filtered_columns.push(column)
                     }
                     else {
@@ -143,9 +163,18 @@
                         self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
+
                         for(column of task.columns){
                             column.task_id = task.id
                             self.columns.push(column)
+                        }
+                        // -1 id is used for fact sheet answers
+                        if(self.enable_detailed_results & task.id != -1){
+                            self.columns.push({
+                              task_id: task.id,
+                              title: "Detailed Results"
+                            })
+                            task.colWidth += 1
                         }
                     }
                     self.filter_columns()
@@ -153,6 +182,15 @@
                     self.update()
                 })
         }
+
+        self.get_detailed_result_submisison_id = function(column, submisison){
+            for (index in submisison.detailed_results) {
+                if(column.task_id == submisison.detailed_results[index].task){
+                    return submisison.detailed_results[index].id
+                }
+            }
+        }
+
 
         CODALAB.events.on('phase_selected', data => {
             self.phase_id = data.id
@@ -174,7 +212,6 @@
             display: block
             width: 100%
             height: 100%
-
         .celled.table.selectable
             margin 1em 0
 
@@ -188,5 +225,15 @@
             transform translate(-50%, 50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
+        .eye-icon-link
+            position: relative
+            display: block
+        .eye-icon
+            position: absolute
+            top: 50%
+            left: 50%
+            transform: translate(-50%, -50%)
+        .text-bold
+            font-weight: bold
     </style>
 </leaderboards>

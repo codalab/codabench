@@ -462,7 +462,6 @@
 
         self.search_tasks = function () {
             var filter = self.refs.search.value
-
             delay(() => self.update_tasks({search: filter}), 100)
         }
 

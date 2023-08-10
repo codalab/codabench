@@ -68,7 +68,6 @@ class UserDetailView(LoginRequiredMixin, DetailView):
 
 def activate(request, uidb64, token):
     try:
-        # import pdb; pdb.set_trace();
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
@@ -262,8 +261,11 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
         membership = self.object.membership_set.filter(user=self.request.user)
         if len(membership) == 1:
             context['is_editor'] = membership.first().group in Membership.EDITORS_GROUP
+            context['is_member'] = membership.first().group in Membership.SETTABLE_PERMISSIONS
         else:
             context['is_editor'] = False
+            context['is_member'] = False
+
         return context
 
 

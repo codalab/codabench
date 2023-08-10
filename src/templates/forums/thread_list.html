@@ -3,7 +3,6 @@
 
 {% block forum_content %}
     <div class="ui horizontal divider">Threads</div>
-
     {% if forum.threads.all %}
         <table class="ui single line table threads_list">
             <thead>
@@ -23,32 +22,33 @@
                 <th>
                     Posts
                 </th>
-                {% if forum.competition.creator == request.user %}
-                    <th>
-
-                    </th>
-                {% endif %}
+                <th>
+                    Actions
+                </th>
             </tr>
             </thead>
             <tbody>
             {% for thread in thread_list_sorted %}
-                <tr data-href="{% url 'forums:forum_thread_detail' forum_pk=forum.pk thread_pk=thread.pk %}" class="clickable-row">
+                <tr>
                     <td>
                         {% if thread.pinned_date %}
-                            <i class="pinned-thread-icon glyphicon glyphicon-pushpin" data-thread-pk="{{ thread.pk }}"></i>
+                            <a href="{% url 'forums:forum_thread_pin' thread_pk=thread.pk %}"><i class="forum-pin-icon bi bi-pin-angle-fill" data-thread-pk="{{ thread.pk }}"></i></a>
                         {% endif %}
 
-                        {{ thread.title }}
+                        <!-- Title -->
+                        <a href="{% url 'forums:forum_thread_detail' forum_pk=forum.pk thread_pk=thread.pk %}">{{ thread.title }}</a>
                     </td>
                     <td>{{ thread.started_by }}</td>
                     <td>{{ thread.date_created|date:"M d, Y" }}</td>
                     <td>{{ thread.last_post_date|timesince }}</td>
                     {# date:"g:iA M d" #}
                     <td>{{ thread.posts.count }}</td>
-                    {% if forum.competition.creator == request.user or request.user in forum.competition.admins.all %}
+                    {% if thread.started_by == request.user %}
                         <td>
-                            <a href="{% url "forum_thread_pin" thread_pk=thread.pk %}"><i class="pin-button glyphicon glyphicon-pushpin" data-thread-pk="{{ thread.pk }}"></i></a>
-                            <i class="remove-button glyphicon glyphicon-remove" data-thread-pk="{{ thread.pk }}"></i>
+                            <i class="remove-button red icon trash" data-thread-pk="{{ thread.pk }}"></i>
+                            {% if not thread.pinned_date %}
+                                <a href="{% url 'forums:forum_thread_pin' thread_pk=thread.pk %}"><i class="forum-pin-icon bi bi-pin-angle" data-thread-pk="{{ thread.pk }}"></i></a>
+                            {% endif %}
                         </td>
                     {% endif %}
                 </tr>

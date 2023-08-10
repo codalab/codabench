@@ -25,19 +25,19 @@ from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
     CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    CompetitionParticipantWithEmailSerializer,\
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
     send_participation_denied_emails, send_direct_participant_email
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
 from competitions.utils import get_popular_competitions, get_featured_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-import logging
-logger = logging.getLogger()
+from datetime import datetime
+from django.db import transaction
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -45,15 +45,24 @@ class CompetitionViewSet(ModelViewSet):
     permission_classes = (AllowAny,)
 
     def get_queryset(self):
+
         qs = super().get_queryset()
+
+        # filter by competition_type first, 'competition' by default
+        competition_type = self.request.query_params.get('type', Competition.COMPETITION)
+        if competition_type != 'any' and self.detail is False:
+            qs = qs.filter(competition_type=competition_type)
+
         # Filter for search bar
         search_query = self.request.query_params.get('search')
+
+        # Competition Secret key check
+        secret_key = self.request.query_params.get('secret_key')
+
         # If user is logged in
         if self.request.user.is_authenticated:
-            # filter by competition_type first, 'competition' by default
-            competition_type = self.request.query_params.get('type', Competition.COMPETITION)
-            if competition_type != 'any' and self.detail is False:
-                qs = qs.filter(competition_type=competition_type)
+
+            # `mine` is true when this is called from "Benchmarks I'm Running"
             # Filter to only see competitions you own
             mine = self.request.query_params.get('mine', None)
             if mine:
@@ -65,19 +74,19 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(collaborators__in=[self.request.user]))
                 ).distinct()
 
+            # `participating_in` is true when this is called from "Benchmarks I'm in"
             participating_in = self.request.query_params.get('participating_in', None)
             if participating_in:
                 qs = qs.filter(participants__user=self.request.user, participants__status="approved")
+
             participant_status_query = CompetitionParticipant.objects.filter(
                 competition=OuterRef('pk'),
                 user=self.request.user
             ).values_list('status')[:1]
             qs = qs.annotate(participant_status=Subquery(participant_status_query))
-            # `mine` is true when this is called from "Benchmarks I'm Running"
-            # `participating_in` is true when this is called from "Benchmarks I'm in"
-            # `search_query` is true when this is called from the search bar
+
+            # if `search_query` is true, this is called form search bar
             if search_query:
-                # User is logged in then filter
                 # competitions which this user owns
                 # or
                 # competitions in which this user is collaborator
@@ -91,10 +100,40 @@ class CompetitionViewSet(ModelViewSet):
                     (Q(published=True) & ~Q(created_by=self.request.user)) |
                     (Q(participants__user=self.request.user) & Q(participants__status="approved"))
                 ).distinct()
+
+            # if `secret_key` is true, this is called for a secret competition
+            if secret_key:
+                print(secret_key)
+                qs = qs.filter(Q(secret_key=secret_key))
+
+            # Default condition
+            # not called from my competitions tab
+            # not called from i'm participating in tab
+            # not called from search bar
+            # not called with a valid secret key
+            # Return the following ---
+            # All competitions which belongs to you (private or public)
+            # And competitions where you are admin
+            # And public competitions
+            # And competitions where you are approved participant
+            # this filters out all private compettions from other users
+            if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+                qs = qs.filter(
+                    (Q(created_by=self.request.user)) |
+                    (Q(collaborators__in=[self.request.user])) |
+                    (Q(published=True) & ~Q(created_by=self.request.user)) |
+                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                ).distinct()
+
         else:
-            # if user is not authenticated only show public competitions in the search
-            if (search_query):
-                qs = qs.filter(Q(published=True))
+            # if user is not authenticated only show
+            # public competitions
+            # or
+            # competition with valid secret key
+            qs = qs.filter(
+                (Q(published=True)) |
+                (Q(secret_key=secret_key))
+            )
 
         # On GETs lets optimize the query to reduce DB calls
         if self.request.method == 'GET':
@@ -185,34 +224,72 @@ class CompetitionViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
-        """Mostly a copy of the underlying base update, however we return some additional data
-        in the response to remove a GET from the frontend"""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        data = request.data
-        # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
-        # save leaderboard individually, then pass pk to each phase
-        if 'leaderboards' in data:
-            leaderboard_data = data['leaderboards'][0]
-            if(leaderboard_data['id']):
-                leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
-                leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
-            else:
-                leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
-            leaderboard.is_valid()
-            leaderboard.save()
-            leaderboard_id = leaderboard["id"].value
-            for phase in data['phases']:
-                phase['leaderboard'] = leaderboard_id
+        # Execute everything inside atomic transaction
+        with transaction.atomic():
+            """Mostly a copy of the underlying base update, however we return some additional data
+            in the response to remove a GET from the frontend"""
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            data = request.data
+            # TODO - This is Temporary. Need to change Leaderboard to Phase connect to M2M and handle this correctly.
+            # save leaderboard individually, then pass pk to each phase
+            if 'leaderboards' in data:
+                leaderboard_data = data['leaderboards'][0]
+                if(leaderboard_data['id']):
+                    leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
+                    leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
+                else:
+                    leaderboard = LeaderboardSerializer(data=data['leaderboards'][0])
+                leaderboard.is_valid()
+                leaderboard.save()
+                leaderboard_id = leaderboard["id"].value
 
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                for phase in data['phases']:
+                    # Newly added phase from front-end has no id
+                    # Add a phase first to get id
+                    # add this phase id in each task
+                    if 'id' not in phase:
+                        # Create Phase object
+                        new_phase_obj = Phase.objects.create(
+                            status=phase["status"],
+                            index=phase["index"],
+                            start=datetime.strptime(phase['start'], "%B %d, %Y"),
+                            end=datetime.strptime(phase['end'], "%B %d, %Y") if phase['end'] else None,
+                            name=phase["name"],
+                            description=phase["description"],
+                            hide_output=phase["hide_output"],
+                            competition=Competition.objects.get(id=data['id'])
+                        )
+                        # Get phase id
+                        new_phase_id = new_phase_obj.id
+                        # loop over phase tasks to add phase id in each task
+                        for task in phase["tasks"]:
+                            task['phase'] = new_phase_id
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+                    phase['leaderboard'] = leaderboard_id
+
+                # Get public_data and starting_kit
+                for phase in data['phases']:
+                    # We just need to know what public_data and starting_kit go with this phase
+                    # We don't need to serialize the whole object
+                    try:
+                        phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                    except TypeError:
+                        phase['public_data'] = None
+                    try:
+                        phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                    except TypeError:
+                        phase['starting_kit'] = None
+
+            serializer = self.get_serializer(instance, data=data, partial=partial)
+            type(serializer)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                instance._prefetched_objects_cache = {}
 
         # Re-do serializer in detail version (i.e. for Collaborator data)
         context = self.get_serializer_context()
@@ -470,8 +547,25 @@ class CompetitionViewSet(ModelViewSet):
 
 
 class PhaseViewSet(ModelViewSet):
-    queryset = Phase.objects.all()
     serializer_class = PhaseSerializer
+
+    def get_queryset(self):
+        qs = Phase.objects.all()
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        # Check if it's a direct request to /api/phases/
+        # i.e without a pk
+        direct_request = 'pk' not in kwargs or kwargs['pk'] == 'list'
+
+        if direct_request:
+            # return empty response in direct request
+            return Response([], status=status.HTTP_200_OK)
+
+        # Otherwise, allow other functions to use the list functionality as usual
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     # TODO! Security, who can access/delete/etc this?
 
@@ -515,9 +609,11 @@ class PhaseViewSet(ModelViewSet):
             'submissions': [],
             'tasks': [],
             'fact_sheet_keys': fact_sheet_keys or None,
+            'primary_index': query['leaderboard']['primary_index']
         }
         columns = [col for col in query['columns']]
         submissions_keys = {}
+        submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
             # count all submissions with no parent and count all parents without counting the children
@@ -535,12 +631,24 @@ class PhaseViewSet(ModelViewSet):
                 .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+
+            # gather detailed result from submissions for each task
+            # detailed_results are gathered based on submission key
+            # `id` is used to fetch the right detailed result in detailed results page
+            # `detailed_result` url is not needed
+            submission_detailed_results.setdefault(submission_key, []).append({
+                # 'detailed_result': submission['detailed_result'],
+                'task': submission['task'],
+                'id': submission['id']
+            })
+
             if submission_key not in submissions_keys:
                 submissions_keys[submission_key] = len(response['submissions'])
                 response['submissions'].append({
                     'id': submission['id'],
                     'owner': submission['display_name'] or submission['owner'],
                     'scores': [],
+                    'detailed_results': [],
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
@@ -549,21 +657,40 @@ class PhaseViewSet(ModelViewSet):
                 })
             for score in submission['scores']:
 
+                # to check if a column is found
+                # this is useful because of `hidden` field
+                # if a column is hidden it will not be shown here so
+                # we will not return that score to the front-end
+                column_found = False
                 # default precision is set to 2
                 precision = 2
+                # default hidden is set to false
+                hidden = False
 
                 # loop over columns to find a column with the same index
                 # replace default precision with column precision
                 for col in columns:
                     if col["index"] == score["index"]:
                         precision = col["precision"]
+                        hidden = col["hidden"]
+                        column_found = True
                         break
 
                 tempScore = score
                 tempScore['task_id'] = submission['task']
                 # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
-                response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
+
+                # only add scores to the scores list
+                # if this column is found
+                # and
+                # column is not hidden
+                if column_found and not hidden:
+                    response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
+
+        # put detailed results in its submission
+        for k, v in submissions_keys.items():
+            response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
 
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
@@ -581,25 +708,47 @@ class PhaseViewSet(ModelViewSet):
 
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
+    serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ('user__username', 'user__email', 'status', 'competition')
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        if not user.is_superuser:
-            qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
-        qs = qs.select_related('user').order_by('user__username')
-        return qs
 
-    def get_serializer_class(self):
+        # a boolean set to true if the request is considered valid
+        # i.e. it is either GET request with `competition``
+        # or patch request with `status`
+        # or post request with `message`
+        is_valid_request = False
 
-        participants_with_email = self.request.query_params.get('participants_with_email', None)
-        if participants_with_email:
-            return CompetitionParticipantWithEmailSerializer
+        if self.request.method == "PATCH":
+            # PATCH request is considered valid if it has `status`
+            if 'status' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "POST":
+            # POST request is considered valid if it has `message`
+            if 'message' in self.request.data:
+                is_valid_request = True
+
+        if self.request.method == "GET":
+            # GET request is considered valid if it has `competition``
+            # if there is no competition then it si called from /api/participants/
+            # URL which is not considered valid
+            if 'competition' in self.request.GET:
+                is_valid_request = True
+
+        if is_valid_request:
+            # API to act normally i.e return participants
+            qs = super().get_queryset()
+            user = self.request.user
+            if not user.is_superuser:
+                qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
+            qs = qs.select_related('user').order_by('user__username')
+            return qs
         else:
-            return CompetitionParticipantSerializer
+            # API will work but will return empty participants list
+            return CompetitionParticipant.objects.none()
 
     def update(self, request, *args, **kwargs):
         if request.method == 'PATCH':
