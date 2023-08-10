@@ -59,7 +59,6 @@
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td>{submission.num_entries}</td>
             <td>{submission.last_entry_date}</td>
-            <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
