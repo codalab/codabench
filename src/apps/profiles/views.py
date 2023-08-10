@@ -4,6 +4,7 @@ import django
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.db.models import Q
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.http import Http404
@@ -142,20 +143,32 @@ def log_in(request):
         form = LoginForm(request.POST)
 
         if form.is_valid():
+            # Get username and password
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user:
-                login(request, user)
 
-                # if next is none redirect to home
-                # otherwise redirect to requested page
-                if next is None:
-                    return redirect('pages:home')
-                else:
-                    return redirect(next)
+            # Check if the user exists
+            try:
+                user = User.objects.get(Q(username=username) | Q(email=username))
+            except User.DoesNotExist:
+                messages.error(request, "User does not exist!")
             else:
-                messages.error(request, "Wrong Credentials!")
+                # Authenticate user with credentials
+                user = authenticate(username=username, password=password)
+                if user is not None:
+                    if user.is_active:
+                        login(request, user)
+
+                        # if next is none redirect to home
+                        # otherwise redirect to requested page
+                        if next is None:
+                            return redirect('pages:home')
+                        else:
+                            return redirect(next)
+                    else:
+                        messages.error(request, "Account is not active. Activate your account using the link sent to you by email.")
+                else:
+                    messages.error(request, "Wrong Credentials!")
         else:
             context['form'] = form
 
