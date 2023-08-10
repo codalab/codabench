@@ -553,6 +553,7 @@ class PhaseViewSet(ModelViewSet):
             'submissions': [],
             'tasks': [],
             'fact_sheet_keys': fact_sheet_keys or None,
+            'primary_index': query['leaderboard']['primary_index']
         }
         columns = [col for col in query['columns']]
         submissions_keys = {}
@@ -600,21 +601,36 @@ class PhaseViewSet(ModelViewSet):
                 })
             for score in submission['scores']:
 
+                # to check if a column is found
+                # this is useful because of `hidden` field
+                # if a column is hidden it will not be shown here so
+                # we will not return that score to the front-end
+                column_found = False
                 # default precision is set to 2
                 precision = 2
+                # default hidden is set to false
+                hidden = False
 
                 # loop over columns to find a column with the same index
                 # replace default precision with column precision
                 for col in columns:
                     if col["index"] == score["index"]:
                         precision = col["precision"]
+                        hidden = col["hidden"]
+                        column_found = True
                         break
 
                 tempScore = score
                 tempScore['task_id'] = submission['task']
                 # round the score to 'precision' decimal points
                 tempScore['score'] = str(round(float(tempScore["score"]), precision))
-                response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
+
+                # only add scores to the scores list
+                # if this column is found
+                # and
+                # column is not hidden
+                if column_found and not hidden:
+                    response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
 
         # put detailed results in its submission
         for k, v in submissions_keys.items():

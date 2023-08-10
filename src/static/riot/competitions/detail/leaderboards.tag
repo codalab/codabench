@@ -84,13 +84,13 @@
        
         self.bold_class = function(column, submission){
             // Return `text-bold` if submission has 
-            // more than one scores and score index  == 0
+            // more than one scores and score index  == leaderbaord.primary_index
             // otherwise return empty string
             return_class = '' // default class value
             if(column.task_id != -1){ // factsheet check
                 if(submission.scores.length > 1){ // score length check
                     let column_index = _.get(column, 'index')
-                    if(column_index === 0){ // column index check
+                    if(column_index === self.selected_leaderboard.primary_index){ // column index check
                         return_class = 'text-bold'
                     }
                 }
