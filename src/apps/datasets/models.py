@@ -65,13 +65,15 @@ class Data(ChaHubSaveMixin, models.Model):
         return reverse('datasets:download', kwargs={'key': self.key})
 
     def save(self, *args, **kwargs):
-        if not self.file_size and self.data_file:
+        if self.data_file and (not self.file_size or self.file_size == -1):
             try:
-                # save file size as kbs
+                # save file size as KiB
+                # self.data_file.size returns bytes
                 self.file_size = self.data_file.size / 1024
             except TypeError:
                 # file returns a None size, can't divide None / 1024
-                self.file_size = 0
+                # -1 indicates an error
+                self.file_size = -1
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
