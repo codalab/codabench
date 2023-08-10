@@ -1,4 +1,4 @@
 {% extends "base.html" %}
 {% block content %}
-    <competition-detail competition_pk="{{ object.pk }}"></competition-detail>
+    <competition-detail competition_pk="{{ object.pk }}" secret_key="{{ secret_key }}"></competition-detail>
 {% endblock %}
