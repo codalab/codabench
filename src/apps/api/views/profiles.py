@@ -45,7 +45,7 @@ class UserViewSet(mixins.UpdateModelMixin,
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def participant_organizations(self, request):
-        memberships = request.user.membership_set.filter(group__in=Membership.PARTICIPANT_GROUP).prefetch_related('organization')
+        memberships = request.user.membership_set.filter(group__in=Membership.ALL_GROUP).prefetch_related('organization')
         data = SimpleOrganizationSerializer([member.organization for member in memberships], many=True).data
         return Response(data)
 
