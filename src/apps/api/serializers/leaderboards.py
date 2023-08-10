@@ -123,6 +123,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
     submissions = serializers.SerializerMethodField(read_only=True)
     columns = serializers.SerializerMethodField()
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
+    primary_index = serializers.SerializerMethodField()
 
     def get_columns(self, instance):
         columns = Column.objects.filter(leaderboard=instance.leaderboard, hidden=False)
@@ -130,6 +131,9 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("No columns exist on the leaderboard")
         else:
             return ColumnSerializer(columns, many=len(columns) >= 1).data
+
+    def get_primary_index(self, instance):
+        return instance.leaderboard.primary_index
 
     class Meta:
         model = Phase
@@ -140,6 +144,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             'tasks',
             'leaderboard',
             'columns',
+            'primary_index',
         )
         depth = 1
 
