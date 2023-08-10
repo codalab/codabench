@@ -81,7 +81,10 @@
                     <thead>
                     <tr>
                         <th>Name</th>
-                        <th>E-mail</th>
+                        {% if is_editor or is_member %}
+                            <th>E-mail</th>
+                        {% endif %}
+                        
                     </tr>
                     </thead>
                     <tbody>
@@ -89,7 +92,10 @@
                         {% if user.id in organization.user_record %}
                         <tr>
                             <td><a href="/profiles/user/{{ user.slug }}/">{{ user.name }}</a></td>
-                            <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                            {% if is_editor or is_member %}
+                                <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                            {% endif %}
+                            
                         </tr>
                         {% endif %}
                     {% endfor %}
