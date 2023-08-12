@@ -255,12 +255,12 @@
                     <!--  Task Name  -->
                     <div class="required field">
                         <label>Name</label>
-                        <input selenium="name2" name="edit_name" placeholder="Name" ref="edit_name" value="{selected_task.name}" onkeyup="{ edit_form_updated }">
+                        <input name="edit_name" placeholder="Name" ref="edit_name" value="{selected_task.name}" onkeyup="{ edit_form_updated }">
                     </div>
                     <!--  Task Description  -->
                     <div class="required field">
                         <label>Description</label>
-                        <textarea selenium="task-desc" rows="4" name="edit_description" placeholder="Description" ref="edit_description"
+                        <textarea rows="4" name="edit_description" placeholder="Description" ref="edit_description"
                                   value="{selected_task.description}" onkeyup="{ edit_form_updated }"></textarea>
                     </div>
                 </div>
