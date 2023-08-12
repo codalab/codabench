@@ -311,7 +311,12 @@
                 </div>
             </form>
         </div>
-
+        <!--  Warning message  -->
+        <div class="content">
+            <div class="ui yellow message">
+                Note: It is the organizer's responsibility to rerun submissions on the updated task if needed.
+            </div>
+        </div>
         <div class="actions">
             <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Update</div>
             <div class="ui basic red cancel button">Cancel</div>
