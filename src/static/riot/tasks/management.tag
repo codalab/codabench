@@ -245,13 +245,13 @@
         <div class="content">
             <!--  Modal Tabs  -->
             <div class="ui pointing menu">
-                <div class="active item modal-item" data-tab="details">Details</div>
-                <div class="item modal-item" data-tab="data">Datasets and programs</div>
+                <div class="active item modal-item" data-tab="edit_details">Details</div>
+                <div class="item modal-item" data-tab="edit_data">Datasets and programs</div>
             </div>
             <!--  Modal Form  -->
             <form class="ui form" ref="edit_form">
                 <!--  Task Detail Tab  -->
-                <div class="ui active tab" data-tab="details">
+                <div class="ui active tab" data-tab="edit_details">
                     <!--  Task Name  -->
                     <div class="required field">
                         <label>Name</label>
@@ -265,7 +265,7 @@
                     </div>
                 </div>
                 <!--  Task Datasets Tab  -->
-                <div class="ui tab" data-tab="data">
+                <div class="ui tab" data-tab="edit_data">
                     <div>
                         <div class="two fields" data-no-js>
                             <!--  Scoring Program  -->
@@ -273,7 +273,7 @@
                                 <label>Scoring Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="scoring_program">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt" id="scoring_program" value="{selected_task.scoring_program?.name  || ''}">
+                                    <input type="text" class="prompt" id="editscoring_program" value="{selected_task.scoring_program?.name  || ''}">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -282,7 +282,7 @@
                                 <label>Ingestion Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="ingestion_program">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="ingestion_program" value="{selected_task.ingestion_program?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -293,7 +293,7 @@
                                 <label>Reference Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="reference_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="reference_data" value="{selected_task.reference_data?.name || ''}">
+                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -302,7 +302,7 @@
                                 <label>Input Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="input_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="input_data" value="{selected_task.input_data?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}">
                                     <div class="results"></div>
                                 </div>
                             </div>
