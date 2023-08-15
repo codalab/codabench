@@ -232,10 +232,9 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
-        submission = super().get_object()
-
+        submission = Submission.objects.get(pk=pk)
         if submission.phase.hide_output:
-            if not self.has_admin_permission(self.request.user, submission):
+            if not self.has_admin_permission(request.user, submission):
                 raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
 
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
