@@ -54,9 +54,9 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     fact_sheet = JSONField(blank=True, null=True, max_length=4096, default=None)
 
-    report = models.CharField(max_length=256, null=True, blank=True)
-    contact_email = models.EmailField(max_length=256, null=True, blank=True)
-    reward = models.CharField(max_length=256, null=True, blank=True)
+    report = models.CharField(max_length=256, null=True, blank=True, default=None)
+    contact_email = models.EmailField(max_length=256, null=True, blank=True, default=None)
+    reward = models.CharField(max_length=256, null=True, blank=True, default=None)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
