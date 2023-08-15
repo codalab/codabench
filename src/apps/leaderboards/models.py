@@ -63,6 +63,7 @@ class Column(models.Model):
     leaderboard = models.ForeignKey(Leaderboard, on_delete=models.CASCADE, related_name="columns")
     hidden = models.BooleanField(default=False)
     precision = models.IntegerField(default=2)
+    test_column = models.IntegerField(default=0)
 
     class Meta:
         unique_together = ('leaderboard', 'key')
