@@ -51,6 +51,7 @@ class Competition(ChaHubSaveMixin, models.Model):
     allow_robot_submissions = models.BooleanField(default=False)
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
+    test_column = models.IntegerField(default=0)
 
     fact_sheet = JSONField(blank=True, null=True, max_length=4096, default=None)
 
