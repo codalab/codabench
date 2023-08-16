@@ -630,8 +630,8 @@ class PhaseViewSet(ModelViewSet):
         # error when user is not super user or admin of the competition
         if can_re_run_submissions:
             # rerun all submissions
-            # for submission in submissions:
-            #     submission.re_run()
+            for submission in submissions:
+                submission.re_run()
             rerun_count = len(submissions)
             return Response({"count": rerun_count})
         else:
