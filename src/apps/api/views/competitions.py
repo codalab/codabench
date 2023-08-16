@@ -585,28 +585,69 @@ class PhaseViewSet(ModelViewSet):
     def rerun_submissions(self, request, pk):
 
         # Limit for rerunning submissions
-        RERUN_SUBMISSION_LIMIT = 200
+        RERUN_SUBMISSION_LIMIT = 30
 
         phase = self.get_object()
         comp = phase.competition
 
-        # error when user is not super user or admin of the competition
-        if request.user not in comp.all_organizers and not request.user.is_superuser:
-            raise PermissionDenied('You do not have permission to re-run submissions')
-
         # Get submissions
         submissions = phase.submissions.all()
+
+        can_re_run_submissions = False
+        error_message = ""
+
+        # Super admin can rerun without any restrictions
+        if request.user.is_superuser:
+            can_re_run_submissions = True
+
+        # competition admin can run only if
+        elif request.user in comp.all_organizers:
+
+            # submissions are in limit
+            if len(submissions) <= RERUN_SUBMISSION_LIMIT:
+                can_re_run_submissions = True
+
+            # submissions are not in limit
+            else:
+                # Codabemch public queue
+                if comp.queue is None:
+                    can_re_run_submissions = False
+                    error_message = f"You cannot rerun more than {RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
+
+                # Other queue where user is not owner and not organizer
+                elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
+                    can_re_run_submissions = False
+                    error_message = f"You cannot rerun more than {RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
+
+                # User can rerun submissions where he is owner or organizer
+                else:
+                    can_re_run_submissions = True
+
+        else:
+            can_re_run_submissions = False
+            error_message = 'You do not have permission to re-run submissions'
+
+        # error when user is not super user or admin of the competition
+        if can_re_run_submissions:
+            # rerun all submissions
+            # for submission in submissions:
+            #     submission.re_run()
+            rerun_count = len(submissions)
+            return Response({"count": rerun_count})
+        else:
+            raise PermissionDenied(error_message)
+
+       
+
+        
+
+       
 
         # error when user is not super user and submissions crosses the limit
         if not request.user.is_superuser and len(submissions) >= RERUN_SUBMISSION_LIMIT:
             raise PermissionDenied('You have too many submissions, Contact us on `info@codalab.org` to request a rerun.')
 
-        # rerun all submissions
-        for submission in submissions:
-            submission.re_run()
-
-        rerun_count = len(submissions)
-        return Response({"count": rerun_count})
+       
 
     @swagger_auto_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'])
