@@ -207,6 +207,11 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 404
 
+        # Regular user cannot see submission detail result
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
     def test_who_can_see_detailed_result_when_visualization_is_true(self):
         self.comp.enable_detailed_results = True
         self.comp.save()
@@ -231,6 +236,11 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.participant)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+        # Regular user cannot see submission detail result
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
 
 
 class OrganizationSubmissionTests(APITestCase):
