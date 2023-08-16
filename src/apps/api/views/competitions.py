@@ -637,18 +637,6 @@ class PhaseViewSet(ModelViewSet):
         else:
             raise PermissionDenied(error_message)
 
-       
-
-        
-
-       
-
-        # error when user is not super user and submissions crosses the limit
-        if not request.user.is_superuser and len(submissions) >= RERUN_SUBMISSION_LIMIT:
-            raise PermissionDenied('You have too many submissions, Contact us on `info@codalab.org` to request a rerun.')
-
-       
-
     @swagger_auto_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'])
     def get_leaderboard(self, request, pk):
