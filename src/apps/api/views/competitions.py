@@ -583,13 +583,28 @@ class PhaseViewSet(ModelViewSet):
 
     @action(detail=True, url_name='rerun_submissions')
     def rerun_submissions(self, request, pk):
+
+        # Limit for rerunning submissions
+        RERUN_SUBMISSION_LIMIT = 200
+
         phase = self.get_object()
         comp = phase.competition
+
+        # error when user is not super user or admin of the competition
         if request.user not in comp.all_organizers and not request.user.is_superuser:
             raise PermissionDenied('You do not have permission to re-run submissions')
+
+        # Get submissions
         submissions = phase.submissions.all()
+
+        # error when user is not super user and submissions crosses the limit
+        if not request.user.is_superuser and len(submissions) >= RERUN_SUBMISSION_LIMIT:
+            raise PermissionDenied('You have too many submissions, Contact us on `info@codalab.org` to request a rerun.')
+
+        # rerun all submissions
         for submission in submissions:
             submission.re_run()
+
         rerun_count = len(submissions)
         return Response({"count": rerun_count})
 
