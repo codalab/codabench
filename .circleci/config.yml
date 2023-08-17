@@ -35,6 +35,7 @@ jobs:
           name: Build containers and collect static
           command: |
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
+            docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py reset_db
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
