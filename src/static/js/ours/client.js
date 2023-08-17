@@ -116,6 +116,9 @@ CODALAB.api = {
     get_submission_details: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_details/`)
     },
+    get_submission_detail_result: function (id) {
+        return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
+    },
 
     /*---------------------------------------------------------------------
          Leaderboards

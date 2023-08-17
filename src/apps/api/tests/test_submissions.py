@@ -182,6 +182,66 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
+    def test_no_one_can_see_detailed_result_when_visualization_is_false(self):
+        self.comp.enable_detailed_results = False
+        self.comp.save()
+        url = reverse('submission-get-detail-result', args=(self.existing_submission.pk,))
+
+        # Competition creator cannot see detail result
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Collaborator cannot see detail result
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Superuser cannot see detail result
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Actual user cannot see their submission detail result
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+        # Regular user cannot see submission detail result
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 404
+
+    def test_who_can_see_detailed_result_when_visualization_is_true(self):
+        self.comp.enable_detailed_results = True
+        self.comp.save()
+        url = reverse('submission-get-detail-result', args=(self.existing_submission.pk,))
+
+        # Competition creator can see detail result
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Collaborator can see detail result
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Superuser can see detail result
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Actual user can see their submission detail result
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        # Regular user cannot see submission detail result
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+
 
 class OrganizationSubmissionTests(APITestCase):
     def setUp(self):

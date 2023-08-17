@@ -212,6 +212,7 @@
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
                     url: `${URLS.API}tasks/?search={query}`,
+                    cache: false,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data.results)}
                     },
@@ -223,6 +224,7 @@
             $(self.refs.public_data_multiselect).dropdown({
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=public_data`,
+                    cache: false,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data.results)}
                     },
@@ -234,6 +236,7 @@
             $(self.refs.starting_kit_multiselect).dropdown({
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
+                    cache: false,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data.results)}
                     },
