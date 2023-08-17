@@ -5,11 +5,14 @@
     <script>
 
         let self = this
-        CODALAB.api.get_submission_details(opts.submission_id)
-            .done(function (data) {
-                self.detailed_result = data.detailed_result
+        CODALAB.api.get_submission_detail_result(opts.submission_id)
+            .done((data) => {
+                self.detailed_result = data
                 self.update()
-            })  
+            })
+            .fail((response) => {
+                toastr.error(response.responseJSON.error_msg)
+            })
 
 
     </script>

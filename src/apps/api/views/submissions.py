@@ -233,13 +233,48 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
-
         if submission.phase.hide_output:
-            if not self.has_admin_permission(self.request.user, submission):
+            if not self.has_admin_permission(request.user, submission):
                 raise PermissionDenied("Cannot access submission details while phase marked to hide output.")
 
         data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
         return Response(data)
+
+    @action(detail=True, methods=('GET',))
+    def get_detail_result(self, request, pk):
+        submission = Submission.objects.get(pk=pk)
+        # Check if competition show visualization is true
+        if submission.phase.competition.enable_detailed_results:
+            # get submission's competition participants
+            participants = submission.phase.competition.participants.all()
+            participant_usernames = [participant.user.username for participant in participants]
+
+            # check if in this competition
+            # user is collaborator
+            # or
+            # user is participant
+            # or
+            # user is creator
+            # or
+            # user is super user
+            if request.user in submission.phase.competition.collaborators.all() or\
+                    request.user.username in participant_usernames or\
+                    request.user == submission.phase.competition.created_by or\
+                    request.user.is_superuser:
+
+                data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
+                return Response(data["detailed_result"], status=status.HTTP_200_OK)
+
+            else:
+                return Response({
+                    "error_msg": "You do not have permission to see the detailed result. Participate in this competition to view result."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        else:
+            return Response({
+                "error_msg": "Visualizations are disabled"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
