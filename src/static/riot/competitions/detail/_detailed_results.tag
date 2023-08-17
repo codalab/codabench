@@ -7,7 +7,6 @@
         let self = this
         CODALAB.api.get_submission_detail_result(opts.submission_id)
             .done((data) => {
-                console.log(data)
                 self.detailed_result = data
                 self.update()
             })
