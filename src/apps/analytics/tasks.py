@@ -24,6 +24,7 @@ logger = logging.getLogger()
 
 @app.task(queue="site-worker", soft_time_limit=60 * 60 * 12)  # 12 hours
 def create_storage_analytics_snapshot():
+    # Timing started !
     logger.info("Task create_storage_analytics_snapshot started")
     starting_time = time.process_time()
 
@@ -261,6 +262,107 @@ def create_storage_analytics_snapshot():
         }
         StorageUsageHistory.objects.create(**storage_usage_history_point)
 
+    # Check for database <-> storage inconsistency
+    inconsistencies = {"database": [], "storage": []}
+
+    # Database
+    for dataset in Data.objects.all().order_by("id"):
+        if (
+            not dataset.data_file
+            or not dataset.data_file.name
+            or not BundleStorage.exists(dataset.data_file.name)
+        ):
+            inconsistencies["database"].append(
+                {"model": "dataset", "field": "data_file", "id": dataset.id}
+            )
+    for submission in Submission.objects.all().order_by("id"):
+        if (
+            not submission.prediction_result
+            or not submission.prediction_result.name
+            or not BundleStorage.exists(submission.prediction_result.name)
+        ):
+            inconsistencies["database"].append(
+                {
+                    "model": "submission",
+                    "field": "prediction_result",
+                    "id": submission.id,
+                }
+            )
+        if (
+            not submission.scoring_result
+            or not submission.scoring_result.name
+            or not BundleStorage.exists(submission.scoring_result.name)
+        ):
+            inconsistencies["database"].append(
+                {"model": "submission", "field": "scoring_result", "id": submission.id}
+            )
+        if (
+            not submission.detailed_result
+            or not submission.detailed_result.name
+            or not BundleStorage.exists(submission.detailed_result.name)
+        ):
+            inconsistencies["database"].append(
+                {"model": "submission", "field": "detailed_result", "id": submission.id}
+            )
+    for submissiondetails in SubmissionDetails.objects.all().order_by("id"):
+        if (
+            not submissiondetails.data_file
+            or not submissiondetails.data_file.name
+            or not BundleStorage.exists(submissiondetails.data_file.name)
+        ):
+            inconsistencies["database"].append(
+                {
+                    "model": "submissiondetails",
+                    "field": "data_file",
+                    "id": submissiondetails.id,
+                }
+            )
+    
+    # Storage
+    # Dataset
+    db_dataset_paths = Data.objects.values_list('data_file', flat=True)
+    storage_dataset_paths = [obj.key for obj in bucket.objects.filter(Prefix='dataset')]
+    orphaned_dataset_files = set(storage_dataset_paths) - set(db_dataset_paths)
+    inconsistencies["storage"] += list(orphaned_dataset_files)
+
+    # Detailed result
+    db_detailed_result_paths = Submission.objects.values_list('detailed_result', flat=True)
+    storage_detailed_result_paths = [obj.key for obj in bucket.objects.filter(Prefix='detailed_result')]
+    orphaned_detailed_result_files = set(storage_detailed_result_paths) - set(db_detailed_result_paths)
+    inconsistencies["storage"] += list(orphaned_detailed_result_files)
+
+    # Prediction result
+    db_prediction_result_paths = Submission.objects.values_list('prediction_result', flat=True)
+    storage_prediction_result_paths = [obj.key for obj in bucket.objects.filter(Prefix='prediction_result')]
+    orphaned_prediction_result_files = set(storage_prediction_result_paths) - set(db_prediction_result_paths)
+    inconsistencies["storage"] += list(orphaned_prediction_result_files)
+
+    # Scoring result
+    db_scoring_result_paths = Submission.objects.values_list('scoring_result', flat=True)
+    storage_scoring_result_paths = [obj.key for obj in bucket.objects.filter(Prefix='scoring_result')]
+    orphaned_scoring_result_files = set(storage_scoring_result_paths) - set(db_scoring_result_paths)
+    inconsistencies["storage"] += list(orphaned_scoring_result_files)
+
+    # Submission details
+    db_submission_details_paths = SubmissionDetails.objects.values_list('data_file', flat=True)
+    storage_submission_details_paths = [obj.key for obj in bucket.objects.filter(Prefix='submission_details')]
+    orphaned_submission_details_files = set(storage_submission_details_paths) - set(db_submission_details_paths)
+    inconsistencies["storage"] += list(orphaned_submission_details_files)
+
+    # Log the results
+    log_file = "/app/logs/" + "db_storage_inconsistency_" + current_datetime.strftime("%Y%m%d-%H%M%S") + ".log"
+    with open(log_file, 'w') as file:
+        file.write('Database <---> Storage Inconsistency\n\n')
+        file.write(f'Bucket:   {bucket.name}\n')
+        file.write(f'Datetime: {current_datetime.isoformat()}\n\n')
+        file.write(f'Missing files:\n')
+        for missing_file in inconsistencies["database"]:
+            file.write(f'{missing_file["model"]} of id={missing_file["id"]} is missing its {missing_file["field"]}\n')
+        file.write(f'\nOrphaned files:\n')
+        for orphaned_file in inconsistencies["storage"]:
+            file.write(f'{orphaned_file}\n')
+
+    # Stop the count!
     elapsed_time = time.process_time() - starting_time
     logger.info(
         "Task create_storage_analytics_snapshot stoped. Duration = {:.3f} seconds".format(

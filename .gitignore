@@ -13,6 +13,7 @@ var/
 var_*/
 certs/
 backups/
+logs/
 
 src/static/output.css
 src/static/output.js
