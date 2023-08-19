@@ -159,7 +159,11 @@
         self.view_page = function (page_index) {
             self.selected_page_index = page_index
             $(self.refs.view_modal).modal('show')
-            self.refs.page_content.innerHTML = render_markdown(self.pages[page_index].content)
+            const rendered_content = renderMarkdownWithLatex(self.pages[page_index].content)
+            self.refs.page_content.innerHTML = ""
+            rendered_content.forEach(node => {
+                self.refs.page_content.appendChild(node.cloneNode(true)); // Append each node
+            });
         }
 
         self.form_updated = function () {
