@@ -180,7 +180,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
         # Get all submissions which are not failed and belongs to this user for this phase
         qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
 
-        # Count all submissions 
+        # Count all submissions
         total_submission_count = qs.count()
         return total_submission_count
 
