@@ -23,7 +23,7 @@
 
         self.badgeColor = function(remaining, max) {
 
-            // Calculate the percentage of remaining submissions
+            // Calculate the percentage of used submissions
             var percentage = (remaining / max) * 100;
 
             // Determine the badge color based on the percentage
@@ -70,32 +70,25 @@
             text-align center
             display inline-block
             width max-content
-            margin 0 auto /* Center badge horizontally */
+            margin 0 auto
             margin-top 0.5em
+            border-radius 5px
 
-       .badge-green {
-            background-color: #a5d6a7; /* Light green */
-            border-radius: 5px;
-        }
+        .badge-green
+            background-color #a5d6a7
+        
+        .badge-yellow
+            background-color #fff59d 
 
-        .badge-yellow {
-            background-color: #fff59d; /* Light yellow */
-            border-radius: 5px;
-        }
+        .badge-orange
+            background-color #ffcc80
 
-        .badge-orange {
-            background-color: #ffcc80; /* Light orange */
-            border-radius: 5px;
-        }
+        .badge-pink
+            background-color #ff80ab
 
-        .badge-red {
-            background-color: #e57373; /* Light red */
-            border-radius: 5px;
-        }
+        .badge-red
+            background-color #e57373
 
-        .badge-pink {
-            background-color: #ff80ab; /* Light pink */
-            border-radius: 5px;
-        }
+        
     </style>
 </submission-limit>
