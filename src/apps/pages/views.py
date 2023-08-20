@@ -69,6 +69,11 @@ class ServerStatusView(TemplateView):
 
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
+
+        # Get queue from each submission's competition
+        for submission in context['submissions']:
+            queue_name = "Default" if submission.phase.competition.queue is None else submission.phase.competition.queue.name
+            submission.competition_queue = queue_name
         return context
 
 
