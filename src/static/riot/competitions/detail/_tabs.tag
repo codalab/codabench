@@ -128,6 +128,7 @@
                         </div>
                     </div>
                     <div>
+                        <submission-limit></submission-limit>
                         <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>

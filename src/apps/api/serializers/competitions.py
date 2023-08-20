@@ -17,6 +17,7 @@ from tasks.models import Task
 
 from api.serializers.queues import QueueSerializer
 from datetime import datetime
+from django.utils.timezone import now
 
 
 class PhaseSerializer(WritableNestedModelSerializer):
@@ -92,9 +93,10 @@ class PhaseSerializer(WritableNestedModelSerializer):
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
     status = serializers.SerializerMethodField()
-
     public_data = DataDetailSerializer(read_only=True)
     starting_kit = DataDetailSerializer(read_only=True)
+    remaining_submissions_per_day = serializers.SerializerMethodField()
+    remaining_submissions_per_person = serializers.SerializerMethodField()
 
     class Meta:
         model = Phase
@@ -117,6 +119,9 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'public_data',
             'starting_kit',
             'is_final_phase',
+            'remaining_submissions_per_day',
+            'remaining_submissions_per_person'
+
         )
 
     def get_status(self, obj):
@@ -154,6 +159,30 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             return Phase.CURRENT
         elif not phase_started:
             return Phase.NEXT
+
+    def get_remaining_submissions_per_day(self, obj):
+
+        # Get loggedin user
+        user = self.context['request'].user
+
+        # Get all submissions which are not failed and belongs to this user for this phase
+        qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+
+        # Count submissions made today
+        daily_submission_count = qs.filter(created_when__day=now().day).count()
+
+        return daily_submission_count
+
+    def get_remaining_submissions_per_person(self, obj):
+
+        # Get loggedin user
+        user = self.context['request'].user
+        # Get all submissions which are not failed and belongs to this user for this phase
+        qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+
+        # Count all submissions 
+        total_submission_count = qs.count()
+        return total_submission_count
 
 
 class PhaseUpdateSerializer(PhaseSerializer):
