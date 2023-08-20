@@ -11,6 +11,7 @@
             <thead>
             <th>Competition</th>
             <th>Submission PK</th>
+            <th>Size</th>
             <th>Submitter</th>
             <th>Hostname</th>
             <th>Submitted at</th>
@@ -26,6 +27,7 @@
                 <tr>
                     <td><a class="link-no-deco" target="_blank" href="./competitions/{{ submission.phase.competition.id }}">{{ submission.phase.competition.title }}</a></td>
                     <td>{{ submission.pk }}</td>
+                    <td>{{ submission.file_size }}</td>
                     <td>{{ submission.owner.username }}</td>
                     <td>{{ submission.worker_hostname }}</td>
                     <td>{{ submission.created_when|timesince }} ago</td>
