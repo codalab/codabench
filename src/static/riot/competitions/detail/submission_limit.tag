@@ -2,7 +2,7 @@
     <div class="ui sixteen wide column submission-container">
         <div class="col">
             <div class="col-content">
-                Number of submissions left for the day
+                Number of submissions used for the day
             </div>
             <span if="{selected_phase.max_submissions_per_day}" class="badge {badgeColor(selected_phase.remaining_submissions_per_day, selected_phase.max_submissions_per_day)}">
                 {selected_phase.remaining_submissions_per_day} out of {selected_phase.max_submissions_per_day}
@@ -10,7 +10,7 @@
         </div>
         <div class="col">
             <div class="col-content">
-                Number of total submissions left
+                Number of total submissions used
             </div>
             <span if="{selected_phase.max_submissions_per_person}" class="badge {badgeColor(selected_phase.remaining_submissions_per_person, selected_phase.max_submissions_per_person)}">
                 {selected_phase.remaining_submissions_per_person} out of {selected_phase.max_submissions_per_person}
