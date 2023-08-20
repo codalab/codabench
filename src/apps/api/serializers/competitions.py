@@ -162,27 +162,31 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
 
     def get_remaining_submissions_per_day(self, obj):
 
-        # Get loggedin user
-        user = self.context['request'].user
-
-        # Get all submissions which are not failed and belongs to this user for this phase
-        qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
-
-        # Count submissions made today
-        daily_submission_count = qs.filter(created_when__day=now().day).count()
-
-        return daily_submission_count
+        # Check if 'request' key exists in the context
+        if 'request' in self.context:
+            # Get user from the request
+            user = self.context['request'].user
+            if user.is_authenticated:
+                # Get all submissions which are not failed and belongs to this user for this phase
+                qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+                # Count submissions made today
+                daily_submission_count = qs.filter(created_when__day=now().day).count()
+                return daily_submission_count
+        return 0
 
     def get_remaining_submissions_per_person(self, obj):
 
-        # Get loggedin user
-        user = self.context['request'].user
-        # Get all submissions which are not failed and belongs to this user for this phase
-        qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
-
-        # Count all submissions
-        total_submission_count = qs.count()
-        return total_submission_count
+        # Check if 'request' key exists in the context
+        if 'request' in self.context:
+            # Get user from the request
+            user = self.context['request'].user
+            if user.is_authenticated:
+                # Get all submissions which are not failed and belongs to this user for this phase
+                qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
+                # Count all submissions
+                total_submission_count = qs.count()
+                return total_submission_count
+        return 0
 
 
 class PhaseUpdateSerializer(PhaseSerializer):
