@@ -1,6 +1,4 @@
 from datetime import timedelta
-
-from django.http import HttpResponse
 from django.utils.timezone import now
 from django.views.generic import TemplateView
 from django.db.models import Count, Q
@@ -59,15 +57,29 @@ class ServerStatusView(TemplateView):
     template_name = 'pages/server_status.html'
 
     def get_context_data(self, *args, **kwargs):
-        if not self.request.user.is_staff:
-            raise HttpResponse(status=404)
 
         show_child_submissions = self.request.GET.get('show_child_submissions', False)
 
+        # Get all submissions
         qs = Submission.objects.all()
+
+        # If user is not super user then:
+        # filter this user's own submissions
+        # and
+        # submissions running on queue which belongs to this user
+        if not self.request.user.is_superuser:
+            qs = qs.filter(
+                Q(owner=self.request.user) |
+                Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+            )
+
+        # filter for fetching last 2 days submissions
         qs = qs.filter(created_when__gte=now() - timedelta(days=2))
+
+        # filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
             qs = qs.filter(parent__isnull=True)
+
         qs = qs.order_by('-created_when')
         qs = qs.select_related('phase__competition', 'owner')
 

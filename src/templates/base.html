@@ -123,10 +123,11 @@
                             </div>
                             <i class="dropdown icon"></i>
                             <div class="menu">
-                                {% if request.user.is_staff %}
+                                
                                     <div class="header">Admin management</div>
 {#                                    <a class="item" href="#">Customize Codalab</a>#}
                                     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
+                                {% if request.user.is_staff %}
                                     <a class="item" href="{% url "admin:index" %}">Django Admin</a>
                                     <a class="item" href="{% url "su_login" %}">Change User</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>

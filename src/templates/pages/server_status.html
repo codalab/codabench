@@ -31,8 +31,8 @@
             </thead>
             <tbody>
                 {% if not submissions %}
-                <tr>
-                    <td colspan="5"><i>No submissions, yet!</i></td>
+                <tr class="center aligned">
+                    <td colspan="100%"><em>No submissions, yet!</em></td>
                 </tr>
                 {% endif %}
                 {% for submission in submissions %}
@@ -53,6 +53,8 @@
             </tbody>
         </table>
 
+
+        {% if user.is_superuser %}
         <h1>Monitor queues</h1>
         <div id="external_monitors" class="ui two column grid">
             <div class="column">
@@ -90,6 +92,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <script>
