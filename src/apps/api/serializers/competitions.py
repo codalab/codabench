@@ -95,8 +95,8 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     public_data = DataDetailSerializer(read_only=True)
     starting_kit = DataDetailSerializer(read_only=True)
-    remaining_submissions_per_day = serializers.SerializerMethodField()
-    remaining_submissions_per_person = serializers.SerializerMethodField()
+    used_submissions_per_day = serializers.SerializerMethodField()
+    used_submissions_per_person = serializers.SerializerMethodField()
 
     class Meta:
         model = Phase
@@ -119,8 +119,8 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'public_data',
             'starting_kit',
             'is_final_phase',
-            'remaining_submissions_per_day',
-            'remaining_submissions_per_person'
+            'used_submissions_per_day',
+            'used_submissions_per_person'
 
         )
 
@@ -160,7 +160,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
         elif not phase_started:
             return Phase.NEXT
 
-    def get_remaining_submissions_per_day(self, obj):
+    def get_used_submissions_per_day(self, obj):
 
         # Check if 'request' key exists in the context
         if 'request' in self.context:
@@ -174,7 +174,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
                 return daily_submission_count
         return 0
 
-    def get_remaining_submissions_per_person(self, obj):
+    def get_used_submissions_per_person(self, obj):
 
         # Check if 'request' key exists in the context
         if 'request' in self.context:

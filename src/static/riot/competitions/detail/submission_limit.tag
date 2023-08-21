@@ -4,16 +4,16 @@
             <div class="col-content">
                 Number of submissions used for the day
             </div>
-            <span if="{selected_phase.max_submissions_per_day}" class="badge {badgeColor(selected_phase.remaining_submissions_per_day, selected_phase.max_submissions_per_day)}">
-                {selected_phase.remaining_submissions_per_day} out of {selected_phase.max_submissions_per_day}
+            <span if="{selected_phase.max_submissions_per_day}" class="badge {badgeColor(selected_phase.used_submissions_per_day, selected_phase.max_submissions_per_day)}">
+                {selected_phase.used_submissions_per_day} out of {selected_phase.max_submissions_per_day}
             </span>
         </div>
         <div class="col">
             <div class="col-content">
                 Number of total submissions used
             </div>
-            <span if="{selected_phase.max_submissions_per_person}" class="badge {badgeColor(selected_phase.remaining_submissions_per_person, selected_phase.max_submissions_per_person)}">
-                {selected_phase.remaining_submissions_per_person} out of {selected_phase.max_submissions_per_person}
+            <span if="{selected_phase.max_submissions_per_person}" class="badge {badgeColor(selected_phase.used_submissions_per_person, selected_phase.max_submissions_per_person)}">
+                {selected_phase.used_submissions_per_person} out of {selected_phase.max_submissions_per_person}
             </span>
         </div>
     </div>
@@ -21,10 +21,10 @@
         var self = this;
         self.selected_phase = {}
 
-        self.badgeColor = function(remaining, max) {
+        self.badgeColor = function(used, max) {
 
             // Calculate the percentage of used submissions
-            var percentage = (remaining / max) * 100;
+            var percentage = (used / max) * 100;
 
             // Determine the badge color based on the percentage
             if (percentage < 5) {
