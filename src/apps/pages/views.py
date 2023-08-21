@@ -62,14 +62,44 @@ class ServerStatusView(TemplateView):
         if not self.request.user.is_staff:
             raise HttpResponse(status=404)
 
+        show_child_submissions = self.request.GET.get('show_child_submissions', False)
+
         qs = Submission.objects.all()
         qs = qs.filter(created_when__gte=now() - timedelta(days=2))
+        if not show_child_submissions:
+            qs = qs.filter(parent__isnull=True)
         qs = qs.order_by('-created_when')
         qs = qs.select_related('phase__competition', 'owner')
 
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
+        context['show_child_submissions'] = show_child_submissions
+
+        for submission in context['submissions']:
+            # Get filesize from each submissions's data
+            submission.file_size = self.format_file_size(submission.data.file_size)
+            # Get queue from each submission's competition
+            queue_name = "*" if submission.phase.competition.queue is None else submission.phase.competition.queue.name
+            submission.competition_queue = queue_name
+
         return context
+
+    def format_file_size(self, file_size):
+        """
+        A custom function to convert file size to KB, MB, GB and return with the unit
+        """
+        try:
+            n = float(file_size)
+        except ValueError:
+            return ""
+
+        units = ['KB', 'MB', 'GB']
+        i = 0
+        while n >= 1000 and i < len(units) - 1:
+            n /= 1000
+            i += 1
+
+        return f"{n:.1f} {units[i]}"
 
 
 def page_not_found_view(request, exception):
