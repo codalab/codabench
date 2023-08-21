@@ -62,13 +62,18 @@ class ServerStatusView(TemplateView):
         if not self.request.user.is_staff:
             raise HttpResponse(status=404)
 
+        show_child_submissions = self.request.GET.get('show_child_submissions', False)
+
         qs = Submission.objects.all()
         qs = qs.filter(created_when__gte=now() - timedelta(days=2))
+        if not show_child_submissions:
+            qs = qs.filter(parent__isnull=True)
         qs = qs.order_by('-created_when')
         qs = qs.select_related('phase__competition', 'owner')
 
         context = super().get_context_data(*args, **kwargs)
         context['submissions'] = qs[:250]
+        context['show_child_submissions'] = show_child_submissions
         return context
 
 

@@ -7,6 +7,9 @@
 {% block content %}
     <div class="ui container">
         <h1>Recent submissions (up to 250 or 2 days old)</h1>
+        <label>
+            <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show chilld submissions
+        </label>
         <table class="ui table">
             <thead>
             <th>Competition</th>
@@ -73,4 +76,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkbox = document.getElementById("show_child_checkbox");
+        
+            checkbox.addEventListener("change", function() {
+                const isChecked = checkbox.checked;
+                const url = new URL(window.location);
+                if (isChecked) {
+                    url.searchParams.set('show_child_submissions', true);
+                } else {
+                    url.searchParams.delete('show_child_submissions');
+                }
+                console.log(url)
+                window.location.href = url.toString();
+            });
+        });
+    </script>
 {% endblock %}
