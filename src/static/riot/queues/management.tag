@@ -89,6 +89,11 @@
         </tfoot>
     </table>
 
+    <!--  Server status page button  -->
+    <a href="/server_status" target="_blank">
+        <div class="ui blue right floated button">Open Server status page</div>
+    </a>
+
     <div class="ui modal" ref="modal">
         <div class="header">
             Queue Form
