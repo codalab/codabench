@@ -72,7 +72,11 @@
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
             if (self.refs.terms_content) {
-                self.refs.terms_content.innerHTML = render_markdown(competition.terms)
+                const rendered_content = renderMarkdownWithLatex(competition.terms)
+                self.refs.terms_content.innerHTML = ""
+                rendered_content.forEach(node => {
+                    self.refs.terms_content.appendChild(node.cloneNode(true)); // Append each node
+                });
             }
             self.registration_auto_approve = competition.registration_auto_approve
             self.status = competition.participant_status
