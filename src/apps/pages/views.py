@@ -1,6 +1,4 @@
 from datetime import timedelta
-
-from django.http import HttpResponse
 from django.utils.timezone import now
 from django.views.generic import TemplateView
 from django.db.models import Count, Q
