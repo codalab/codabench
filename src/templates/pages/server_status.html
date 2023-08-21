@@ -7,10 +7,21 @@
 {% block content %}
     <div class="ui container">
         <h1>Recent submissions (up to 250 or 2 days old)</h1>
+        <label>
+            <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show child submissions
+        </label>
+        <span class="ui mini circular icon button"
+            data-tooltip="Child submissions are created when a competition has multiple tasks (one child for each task)."
+            data-position="top center">
+            <i class="question icon"></i>
+        </span>
         <table class="ui table">
             <thead>
             <th>Competition</th>
             <th>Submission PK</th>
+            {% if show_child_submissions %}
+                <th>Parent PK</th>
+            {% endif %}
             <th>Size</th>
             <th>Submitter</th>
             <th>Queue</th>
@@ -28,6 +39,9 @@
                 <tr>
                     <td><a class="link-no-deco" target="_blank" href="./competitions/{{ submission.phase.competition.id }}">{{ submission.phase.competition.title }}</a></td>
                     <td>{{ submission.pk }}</td>
+                    {% if show_child_submissions %}
+                        <td>{{ submission.parent.pk }}</td>
+                    {% endif %}
                     <td>{{ submission.file_size }}</td>
                     <td><a target="_blank" href="/profiles/user/{{ submission.owner.username }}">{{ submission.owner.username }}</a></td>
                     <td>{{ submission.competition_queue }}</td>
@@ -77,4 +91,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkbox = document.getElementById("show_child_checkbox");
+        
+            checkbox.addEventListener("change", function() {
+                const isChecked = checkbox.checked;
+                const url = new URL(window.location);
+                if (isChecked) {
+                    url.searchParams.set('show_child_submissions', true);
+                } else {
+                    url.searchParams.delete('show_child_submissions');
+                }
+                console.log(url)
+                window.location.href = url.toString();
+            });
+        });
+    </script>
 {% endblock %}
