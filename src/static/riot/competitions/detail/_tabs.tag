@@ -128,6 +128,7 @@
                         </div>
                     </div>
                     <div>
+                        <submission-limit></submission-limit>
                         <submission-upload is_admin="{competition.is_admin}" competition="{ competition }" phases="{ competition.phases }" fact_sheet="{ competition.fact_sheet }"></submission-upload>
                     </div>
                     <div>
@@ -318,16 +319,21 @@
             self.update()
             _.forEach(self.competition.pages, (page, index) => {
 
-                if (self.isHTML(page.content)){
-                    $(`#page_${index}`)[0].innerHTML = sanitize_HTML(page.content)
-                }else{
-                    $(`#page_${index}`)[0].innerHTML = render_markdown(page.content)
-                }
-                
+                // Render html pages
+                const rendered_content = renderMarkdownWithLatex(page.content)
+                $(`#page_${index}`)[0].innerHTML = ""
+                rendered_content.forEach(node => {
+                    $(`#page_${index}`)[0].appendChild(node.cloneNode(true)); // Append each node
+                });
                 
             })
             _.forEach(self.competition.phases, (phase, index) => {
-                $(`#phase_${index}`)[0].innerHTML = render_markdown(phase.description)
+                // Render phase description
+                const rendered_content = renderMarkdownWithLatex(phase.description)
+                $(`#phase_${index}`)[0].innerHTML = ""
+                rendered_content.forEach(node => {
+                    $(`#phase_${index}`)[0].appendChild(node.cloneNode(true)); // Append each node
+                });
             })
             _.delay(() => {
                 self.loading = false
@@ -354,12 +360,6 @@
                 self.update()
                 CODALAB.events.trigger('phase_selected', data)
             }
-        }
-        // To check if page content has HTML
-        // Return true if content is html
-        // Return false if content is not html i.e. MarkDown
-        self.isHTML = function (page_content) {
-            return /<(?=.*? .*?\/ ?>|br|hr|input|!--|wbr)[a-z]+.*?>|<([a-z]+).*?<\/\1>/i.test(page_content);
         }
 
         self.update()
