@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
@@ -22,6 +23,10 @@ class LeaderboardViewSet(ModelViewSet):
             self.permission_classes = [LeaderboardNotHidden]
 
         return [permission() for permission in self.permission_classes]
+
+    def list(self, request, *args, **kwargs):
+        # Return an empty list for the leaderboard-list endpoint
+        return Response([])
 
 
 class SubmissionScoreViewSet(ModelViewSet):

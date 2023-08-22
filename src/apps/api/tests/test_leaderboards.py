@@ -23,7 +23,18 @@ class CompetitionLeaderboardStressTests(APITestCase):
             assert resp.status_code == 200
 
 
-# TODO: Test listing all leaderboards isn't a thing?
+class LeaderboardTest(APITestCase):
+    def setUp(self):
+        leaderboard1 = factories.LeaderboardFactory()
+        leaderboard2 = factories.LeaderboardFactory()
+        _ = factories.ColumnFactory(leaderboard=leaderboard1, index=0)
+        _ = factories.ColumnFactory(leaderboard=leaderboard2, index=0)
+
+    def test_get_all_leaderboards(self):
+        url = reverse('leaderboard-list')
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        assert resp.data == []
 
 
 class HiddenLeaderboardTests(APITestCase):
