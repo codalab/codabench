@@ -53,6 +53,8 @@ class SubmissionViewSet(ModelViewSet):
                 try:
                     if request.data.get('secret') is None or uuid.UUID(request.data.get('secret')) != obj.secret:
                         raise PermissionDenied("Submission secrets do not match")
+                    if request.data.get('task'):
+                        raise PermissionDenied("Submission task cannot be updated")
                 except TypeError:
                     raise ValidationError(f"Secret: ({request.data.get('secret')}) not a valid UUID")
 

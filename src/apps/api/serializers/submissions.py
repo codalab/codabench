@@ -181,10 +181,16 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         return data
 
     def update(self, submission, validated_data):
-        # TODO: Test, could you change the phase of a submission?
+
+        # Cannot change submission if secret key is not valid
         if submission.secret != validated_data.get('secret'):
             raise PermissionDenied("Submission secret invalid")
 
+        # Task of a submission cannot be updated
+        if "task" in validated_data:
+            raise PermissionDenied("Task of a submission cannot be update")
+
+        # Update status if it is there in validated data
         if "status" in validated_data:
             # Received a status update, let the frontend know
             from channels.layers import get_channel_layer
