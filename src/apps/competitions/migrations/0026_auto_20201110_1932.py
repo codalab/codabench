@@ -4,16 +4,14 @@
 import django.contrib.postgres.fields.jsonb
 from django.db import migrations
 
+def set_blank_fact_sheet_to_null(apps, schema_editor):
+    Competition = apps.get_model('competitions', 'Competition')
+    for comp in Competition.objects.all():
+        if comp.fact_sheet == "":
+            comp.fact_sheet = None
+            comp.save()
 
 class Migration(migrations.Migration):
-
-    def set_blank_fact_sheet_to_null(self, schema_editor):
-        # Use the historical version of the Competition model
-        Competition = apps.get_model('competitions', 'Competition')
-        for comp in Competition.objects.all():
-            if comp.fact_sheet == "":
-                comp.fact_sheet = None
-                comp.save()
 
     dependencies = [
         ('competitions', '0025_submission_is_specific_task_re_run'),
@@ -25,5 +23,5 @@ class Migration(migrations.Migration):
             name='fact_sheet',
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=None, max_length=4096, null=True),
         ),
-        migrations.RunPython(set_blank_fact_sheet_to_null),
+        migrations.RunPython(set_blank_fact_sheet_to_null, migrations.RunPython.noop),
     ]
