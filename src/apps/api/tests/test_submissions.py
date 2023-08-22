@@ -268,7 +268,7 @@ class SubmissionUpdateTest(APITestCase):
         })
         assert resp.status_code == 403
         assert resp.data["detail"] == "Submission task cannot be updated"
-        assert self.submission.task.id == self.task1.id # task not updated
+        assert self.submission.task.id == self.task1.id  # task not updated
 
 
 class OrganizationSubmissionTests(APITestCase):
