@@ -4,12 +4,14 @@
 import django.contrib.postgres.fields.jsonb
 from django.db import migrations
 
+
 def set_blank_fact_sheet_to_null(apps, schema_editor):
     Competition = apps.get_model('competitions', 'Competition')
     for comp in Competition.objects.all():
         if comp.fact_sheet == "":
             comp.fact_sheet = None
             comp.save()
+
 
 class Migration(migrations.Migration):
 
