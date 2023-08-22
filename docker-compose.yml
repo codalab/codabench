@@ -125,7 +125,7 @@ services:
   #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
-    image: rabbitmq:management
+    image: rabbitmq:3.6-management
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
