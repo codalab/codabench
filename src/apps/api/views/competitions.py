@@ -409,11 +409,15 @@ class CompetitionViewSet(ModelViewSet):
             raise PermissionDenied("You are not a competition admin or superuser")
         selected_phase = request.GET.get('phase')
         data = self.collect_leaderboard_data(competition, selected_phase)
-
         if format == 'zip':
             with SpooledTemporaryFile() as tmp:
                 with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as archive:
                     for leaderboard in data:
+
+                        # Check if the leaderboard is empty
+                        if not data[leaderboard]:
+                            continue
+
                         stringIO = StringIO()
                         columns = list(data[leaderboard][list(data[leaderboard].keys())[0]])
                         dict_writer = csv.DictWriter(stringIO, fieldnames=(["Username", "fact_sheet_answers"] + columns))
@@ -437,6 +441,14 @@ class CompetitionViewSet(ModelViewSet):
             elif len(data) == 0:
                 raise ValidationError("No Matching Leaderboard")
             leaderboard_title = list(data.keys())[0]
+
+            # Check if the leaderboard data is empty
+            if not data[leaderboard_title]:
+                # Return an empty CSV
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
+                return response
+
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = f'attachment; filename="{leaderboard_title}.csv"'
             columns = list(data[leaderboard_title][list(data[leaderboard_title].keys())[0]].keys())
