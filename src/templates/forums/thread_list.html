@@ -38,7 +38,7 @@
                         <!-- Title -->
                         <a href="{% url 'forums:forum_thread_detail' forum_pk=forum.pk thread_pk=thread.pk %}">{{ thread.title }}</a>
                     </td>
-                    <td>{{ thread.started_by }}</td>
+                    <td><a href="/profiles/user/{{ thread.started_by }}" target="_blank">{{ thread.started_by }}</a></td>
                     <td>{{ thread.date_created|date:"M d, Y" }}</td>
                     <td>{{ thread.last_post_date|timesince }}</td>
                     {# date:"g:iA M d" #}

@@ -18,7 +18,7 @@
                             {% endif %}
                         </div>
                         <div class="post-user-name-date">
-                            <div class="poster-name">{{ post.posted_by }}</div>
+                            <div class="poster-name"><a href="/profiles/user/{{ post.posted_by }}" target="_blank">{{ post.posted_by }}</a></div>
                             <div class="posted-date">{{ post.date_created }}</div>
                         </div>
                         <div class="post-actions">
