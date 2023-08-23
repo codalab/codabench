@@ -99,9 +99,27 @@
     <!-- Manage Competition Modal -->
     <div class="ui manage-competition modal" ref="files_modal">
         <div class="content">
-            <button class="ui icon button" onclick="{create_dump}">
+            <div class="ui dropdown button">
+                <i class="download icon"></i>
+                <div class="text">Create Competition Dump</div>
+                <div class="menu">
+                    <div class="parent-modal item"
+                        onclick="{create_dump.bind(this, true)}"> 
+                        <!--  true for keys  -->
+                        Dump with keys
+                    </div>
+                    <div class="parent-modal item"
+                    
+                        onclick="{create_dump.bind(this, false)}">
+                        <!--  false for files  -->
+                        Dump with files
+                    </div>
+                </div>
+            </div>
+
+            <!--  <button class="ui icon button" onclick="{create_dump}">
                 <i class="download icon"></i> Create Competition Dump
-            </button>
+            </button>  -->
             <button class="ui icon button" onclick="{update_files}">
                 <i class="sync alternate icon"></i> Refresh Table
             </button>
@@ -201,8 +219,8 @@
         self.close_modal = selector => $(selector).modal('hide')
         self.show_modal = selector => $(selector).modal('show')
 
-        self.create_dump = () => {
-            CODALAB.api.create_competition_dump(self.competition.id)
+        self.create_dump = (keys_instead_of_files) => {
+            CODALAB.api.create_competition_dump(self.competition.id, keys_instead_of_files)
                 .done(data => {
                     self.tr_show = true
                     toastr.success("Success! Your competition dump is being created.")
