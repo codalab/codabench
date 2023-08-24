@@ -1,61 +1,10 @@
 <profile-detail>
-    <!-- ---------------------------------------- HTML ---------------------------------------- -->
+    <!--  HTML  -->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
             <div class="column">
                 <div if="{!selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="/static/img/user-avatar.png"></div>
                 <div if="{selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="{selected_user.photo}"></div>
-
-<!--                &lt;!&ndash; Competition Divider &ndash;&gt;-->
-<!--                <div class="ui horizontal divider">Competitions</div>-->
-
-<!--                &lt;!&ndash; Competition Cards &ndash;&gt;-->
-<!--                <div class="ui fluid card">-->
-<!--                    <div class="comp_card center aligned image">-->
-<!--                        <div  class="comp_header center aligned header content">-->
-<!--                            <div class="comp_name">Competition Name</div>-->
-<!--                            <img class="ui centered circular image"-->
-<!--                                 src="http://via.placeholder.com/50x50">-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="content">-->
-<!--                        <div class="description">-->
-<!--                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque-->
-<!--                                distinct...</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="right aligned extra content">-->
-<!--                        <a class="status">-->
-<!--                            <i class="exchange icon"></i>-->
-<!--                            In Progress-->
-<!--                        </a>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <div class="ui fluid card">-->
-<!--                    <div class="comp_card center aligned image">-->
-<!--                        <div  class="comp_header center aligned header content">-->
-<!--                            <div class="comp_name">Competition Name</div>-->
-<!--                            <img class="ui centered circular image"-->
-<!--                                 src="http://via.placeholder.com/50x50">-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="content">-->
-<!--                        <div class="description">-->
-<!--                            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci asperiores atque-->
-<!--                                distinct...</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="right aligned extra content">-->
-<!--                        <a class="status">-->
-<!--                            <i class="exchange icon"></i>-->
-<!--                            In Progress-->
-<!--                        </a>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <button class="ui basic fluid button">-->
-<!--                    See More Competitions...-->
-<!--                </button>-->
-<!--            </div>-->
 
                 <!-- Competition Divider -->
                 <div class="ui horizontal divider">Organizations</div>
@@ -131,9 +80,9 @@
     </div>
     <script>
         self.selected_user = selected_user
-        console.log('orgs', self.selected_user.organizations)
     </script>
-    <!------------------------------------------ CSS Styling ------------------------------------>
+  
+    <!--  CSS Styling   -->
     <style type="text/stylus">
         :scope
             margin-top 20px

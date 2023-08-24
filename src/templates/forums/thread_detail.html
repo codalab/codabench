@@ -11,8 +11,7 @@
                     <div class="post-header">
                         <div class="post-user">
                             {% if post.posted_by.photo %}
-                            <img class="post-user-img" src="/static/img/user-avatar.png">
-                            <!-- <img class="post-user-img" src="{{ post.posted_by.photo }}"> -->
+                            <img class="post-user-img" src="{{ post.posted_by.photo.url }}">
                             {% else %}
                             <img class="post-user-img" src="/static/img/user-avatar.png">
                             {% endif %}
