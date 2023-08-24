@@ -29,17 +29,28 @@
                                  data-tab="_tab_page{page.index}">
                                 { page.title }
                             </div>
+                            <div if="{competition_has_no_terms_page()}" class="item"
+                                 data-tab="_tab_page_term">
+                                Terms
+                            </div>
                             <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
                             </div>
                         </div>
                     </div>
                     <div class="twelve wide column">
+                        <!-- Competition Pages  -->
                         <div each="{ page, i in competition.pages }" class="ui {active: i === 0} tab"
                              data-tab="_tab_page{page.index}">
                             <div class="ui" id="page_{i}">
                             </div>
                         </div>
+                        <!--  Terms page  -->
+                        <div if="{competition_has_no_terms_page()}" class="ui tab" data-tab="_tab_page_term">
+                            <div class="ui" id="page_term">
+                            </div>
+                        </div>
+                        <!--  Files  -->
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
                                 <table class="ui celled table">
@@ -327,6 +338,13 @@
                 });
                 
             })
+            if(self.competition_has_no_terms_page()){
+                const rendered_content = renderMarkdownWithLatex(self.competition.terms)
+                $(`#page_term`)[0].innerHTML = ""
+                rendered_content.forEach(node => {
+                    $(`#page_term`)[0].appendChild(node.cloneNode(true)); // Append each node
+                });
+            }
             _.forEach(self.competition.phases, (phase, index) => {
                 // Render phase description
                 const rendered_content = renderMarkdownWithLatex(phase.description)
@@ -340,6 +358,18 @@
                 self.update()
             }, 500)
         })
+
+        self.competition_has_no_terms_page = function () {
+            var no_term_page = true
+            if(self.competition.pages){
+                self.competition.pages.forEach(function (page) {
+                    if (page.title === "Terms") {
+                        no_term_page = false
+                    }
+                })
+            }
+            return no_term_page
+        }
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
             self.selected_phase = selected_phase
