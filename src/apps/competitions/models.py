@@ -54,6 +54,10 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     fact_sheet = JSONField(blank=True, null=True, max_length=4096, default=None)
 
+    contact_email = models.EmailField(max_length=256, null=True, blank=True)
+    reward = models.CharField(max_length=256, null=True, blank=True)
+    report = models.CharField(max_length=256, null=True, blank=True)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
@@ -456,6 +460,8 @@ class Submission(ChaHubSaveMixin, models.Model):
     is_public = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
     worker_hostname = models.CharField(max_length=255, blank=True, null=True)
+    queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='submissions')
     is_migrated = models.BooleanField(default=False)
     created_by_migration = models.ForeignKey(Phase, related_name='migrated_submissions', on_delete=models.CASCADE,
                                              null=True,

@@ -16,6 +16,7 @@ from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
 
 from tasks.models import Task
+from queues.models import Queue
 
 
 class SubmissionScoreSerializer(serializers.ModelSerializer):
@@ -113,6 +114,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     filename = serializers.SerializerMethodField(read_only=True)
     tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True, many=True)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
+    queue = serializers.PrimaryKeyRelatedField(queryset=Queue.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Submission
@@ -130,6 +132,7 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'tasks',
             'fact_sheet_answers',
             'organization',
+            'queue'
         )
         extra_kwargs = {
             'secret': {"write_only": True},
@@ -181,10 +184,16 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         return data
 
     def update(self, submission, validated_data):
-        # TODO: Test, could you change the phase of a submission?
+
+        # Cannot change submission if secret key is not valid
         if submission.secret != validated_data.get('secret'):
             raise PermissionDenied("Submission secret invalid")
 
+        # Task of a submission cannot be updated
+        if "task" in validated_data:
+            raise PermissionDenied("Task of a submission cannot be update")
+
+        # Update status if it is there in validated data
         if "status" in validated_data:
             # Received a status update, let the frontend know
             from channels.layers import get_channel_layer

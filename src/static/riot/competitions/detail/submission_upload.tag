@@ -456,6 +456,7 @@
                         "fact_sheet_answers": self.get_fact_sheet_answers(),
                         "tasks": task_ids_to_run,
                         "organization": organization,
+                        "queue": self.opts.competition.queue ? self.opts.competition.queue.id : null
                     })
                         .done(function (data) {
                             CODALAB.events.trigger('new_submission_created', data)

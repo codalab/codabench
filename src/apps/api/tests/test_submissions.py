@@ -243,6 +243,34 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
 
 
+class SubmissionUpdateTest(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username='test')
+        self.task1 = TaskFactory(created_by=self.user)
+        self.task2 = TaskFactory(created_by=self.user)
+        self.competition = CompetitionFactory(created_by=self.user)
+        self.phase = PhaseFactory(competition=self.competition, tasks=[self.task1])
+        self.secret = '7df3600c-1234-5678-bbc8-bbe91f42d875'
+        self.submission = SubmissionFactory(
+            task=self.task1,
+            phase=self.phase,
+            status=Submission.FINISHED,
+            secret=self.secret
+        )
+
+    def test_submission_task_update(self):
+        url = reverse('submission-detail', args=(self.submission.pk,))
+
+        # Update task
+        resp = self.client.patch(url, {
+            "task": self.task2.id,
+            "secret": self.secret
+        })
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "Submission task cannot be updated"
+        assert self.submission.task.id == self.task1.id  # task not updated
+
+
 class OrganizationSubmissionTests(APITestCase):
     def setUp(self):
         # Competition and creator
