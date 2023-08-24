@@ -31,12 +31,6 @@
                             Start a new topic
                         </button>
                     </a>
-                {% elif 'new_post' not in request.path %}
-                    <a href="{% url 'forums:forum_new_post' forum_pk=forum.pk thread_pk=thread.pk %}">
-                        <button class="ui button green right floated">
-                            <i class="icon plus"></i> Add new post
-                        </button>
-                    </a>
                 {% endif %}
             </div>
         </div>
