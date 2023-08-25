@@ -362,7 +362,47 @@ class Run:
 
         # Extract the contents to destination directory
         with ZipFile(bundle_file, 'r') as z:
-            z.extractall(os.path.join(self.root_dir, destination))
+
+            # Run for scoring program only
+            if destination == "program" and self.is_scoring:
+
+                # Check if scoring program has a parent directory
+                # or the files are zipped without parent directory
+                # If parent directory is found i.e. parent_dir is not None
+                # then extract the scoring program and move its content to
+                # destination dir and then delete the parent dir
+
+                # Get list of files and directories from the zip of scoring program
+                extracted_files = z.namelist()
+
+                # Intiialize parent dir to none
+                parent_dir = None
+
+                # loop over all the extracted files
+                # to identify parent directory
+                # the first directory found is considered parent dir
+                for extracted_file in extracted_files:
+                    # check if a metadata file is located in the subdirectory
+                    # that directory is considered the parent dir
+                    if '/' in extracted_file and os.path.basename(extracted_file) == 'metadata':
+                        parent_dir = extracted_file.split('/')[0]
+                        break
+
+                z.extractall(os.path.join(self.root_dir, destination))
+                if parent_dir:
+
+                    # Move the content of parent dir to the destination
+                    parent_dir_path = os.path.join(self.root_dir, destination, parent_dir)
+                    parent_files = os.listdir(parent_dir_path)
+                    for file in parent_files:
+                        file_path = os.path.join(parent_dir_path, file)
+                        dest_path = os.path.join(self.root_dir, destination, file)
+                        os.rename(file_path, dest_path)
+
+                    # Remove the parent dir
+                    os.rmdir(parent_dir_path)
+            else:
+                z.extractall(os.path.join(self.root_dir, destination))
 
         # Give back zip file path for other uses, i.e. md5'ing the zip to ID it
         return bundle_file
