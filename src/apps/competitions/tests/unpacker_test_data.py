@@ -107,7 +107,7 @@ v2_yaml_data = {
             "description": "Development phase",
             "execution_time_limit": 500,
             "max_submissions_per_day": 5,
-            "max_submissions_per_person" : 100,
+            "max_submissions_per_person": 100,
             "start": "2019-01-01",
             "end": "2019-09-29",
             "tasks": [0]
@@ -117,7 +117,7 @@ v2_yaml_data = {
             "description": "Final phase",
             "execution_time_limit": 300,
             "max_submissions_per_day": 5,
-            "max_submissions_per_person" : 100,
+            "max_submissions_per_person": 100,
             "auto_migrate_to_this_phase": True,
             "start": "2019-09-30",
             "tasks": [1]
