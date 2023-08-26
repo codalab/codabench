@@ -115,6 +115,8 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
     tasks = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), required=False, write_only=True, many=True)
     phase = serializers.PrimaryKeyRelatedField(queryset=Phase.objects.all(), required=True)
     queue = serializers.PrimaryKeyRelatedField(queryset=Queue.objects.all(), required=False, allow_null=True)
+    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M", required=False)
+    scores = SubmissionScoreSerializer(many=True, required=False)
 
     class Meta:
         model = Submission
@@ -132,7 +134,9 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
             'tasks',
             'fact_sheet_answers',
             'organization',
-            'queue'
+            'queue',
+            'created_when',
+            'scores'
         )
         extra_kwargs = {
             'secret': {"write_only": True},
