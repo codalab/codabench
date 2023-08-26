@@ -80,8 +80,8 @@ class V15Unpacker(BaseUnpacker):
                 'start': get_datetime(phase['start_date']),
                 'name': phase['label'],
                 'description': phase.get('description'),
-                'max_submissions_per_day': phase.get('max_submissions_per_day'),
-                'max_submissions_per_person': phase.get('max_submissions'),
+                'max_submissions_per_day': phase.get('max_submissions_per_day', 5),
+                'max_submissions_per_person': phase.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase.get('auto_migration', False),
             }
             execution_time_limit = phase.get('execution_time_limit')
