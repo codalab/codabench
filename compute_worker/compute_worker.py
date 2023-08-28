@@ -388,7 +388,6 @@ class Run:
                     # that directory is considered the parent dir
                     # Note:
                     # `/` shows that there is a directory structure e.g. scoring_program/metadata
-                    
                     if '/' in extracted_file and os.path.basename(extracted_file) in META_DATA_FILES:
                         # split the path by `/`, the first item is the directory name
                         # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
