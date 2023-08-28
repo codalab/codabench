@@ -65,6 +65,9 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
+# Meta data files
+META_DATA_FILES = ['metadata', 'metadata.yaml']
+
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
@@ -385,7 +388,8 @@ class Run:
                     # that directory is considered the parent dir
                     # Note:
                     # `/` shows that there is a directory structure e.g. scoring_program/metadata
-                    if '/' in extracted_file and os.path.basename(extracted_file) == 'metadata':
+                    
+                    if '/' in extracted_file and os.path.basename(extracted_file) in META_DATA_FILES:
                         # split the path by `/`, the first item is the directory name
                         # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
                         parent_dir = extracted_file.split('/')[0]
