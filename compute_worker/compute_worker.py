@@ -366,40 +366,44 @@ class Run:
             # Run for scoring program only
             if destination == "program" and self.is_scoring:
 
-                # Check if scoring program has a parent directory
-                # or the files are zipped without parent directory
+                # Check if scoring program is zipped with or without a parent directory
                 # If parent directory is found i.e. parent_dir is not None
-                # then extract the scoring program and move its content to
-                # destination dir and then delete the parent dir
+                # then do the following:
+                #   - extract the scoring program
+                #   - move its content to destination dir
+                #   - delete the parent dir
 
                 # Get list of files and directories from the zip of scoring program
                 extracted_files = z.namelist()
 
-                # Intiialize parent dir to none
+                # Intiialize parent dir with a None value
                 parent_dir = None
 
-                # loop over all the extracted files
-                # to identify parent directory
-                # the first directory found is considered parent dir
+                # loop over all the extracted files to identify parent directory
                 for extracted_file in extracted_files:
-                    # check if a metadata file is located in the subdirectory
+                    # if a metadata file is located in the subdirectory
                     # that directory is considered the parent dir
+                    # Note:
+                    # `/` shows that there is a directory structure e.g. scoring_program/metadata
                     if '/' in extracted_file and os.path.basename(extracted_file) == 'metadata':
+                        # split the path by `/`, the first item is the directory name
+                        # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
                         parent_dir = extracted_file.split('/')[0]
                         break
 
+                # Extract scoring program in the destination directory (with or without parent dir)
                 z.extractall(os.path.join(self.root_dir, destination))
-                if parent_dir:
 
-                    # Move the content of parent dir to the destination
+                if parent_dir:
+                    # parent directory is found. Now the the following
+                    # - Move the content of parent dir to the destination
+                    # - Delete parent dir
                     parent_dir_path = os.path.join(self.root_dir, destination, parent_dir)
                     parent_files = os.listdir(parent_dir_path)
                     for file in parent_files:
                         file_path = os.path.join(parent_dir_path, file)
                         dest_path = os.path.join(self.root_dir, destination, file)
                         os.rename(file_path, dest_path)
-
-                    # Remove the parent dir
                     os.rmdir(parent_dir_path)
             else:
                 z.extractall(os.path.join(self.root_dir, destination))
