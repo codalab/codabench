@@ -215,6 +215,7 @@
         CODALAB.events.on('competition_loaded', function (competition) {
             self.competition = competition
             self.competition.files = []
+            debugger
             _.forEach(competition.phases, phase => {
                 _.forEach(phase.tasks, task => {
                     // Over complicated data org but it is so we can order exactly how we want...

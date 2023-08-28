@@ -82,6 +82,18 @@
             </div>
             </form>
         </div>
+        <div class="field smaller-mde">
+            <label>Files Available</label>
+            <div class="ui checkbox">
+                <label>Make Programs Available</label>
+                <input type="checkbox" ref="make_programs_available" onchange="{form_updated}">
+            </div>
+            <br>
+            <div class="ui checkbox">
+                <label>Make Input Data Available</label>
+                <input type="checkbox" ref="make_input_data_available" onchange="{form_updated}">
+            </div>
+        </div>
         <div class="field">
             <label>Queue</label>
             <select class="ui fluid search selection dropdown" ref="queue"></select>
@@ -192,6 +204,8 @@
             self.data["description"] = self.markdown_editor.value()
             self.data["queue"] = self.refs.queue.value
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
+            self.data["make_programs_available"] = self.refs.make_programs_available.checked
+            self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
             self.data["competition_type"] = $(self.refs.competition_type).dropdown('get value')
             self.data['fact_sheet'] = self.serialize_fact_sheet_questions()
@@ -201,6 +215,7 @@
             if (self.data.fact_sheet === false){
                 is_valid = false
             }
+            debugger
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided
@@ -323,6 +338,8 @@
                     .dropdown('set value', competition.queue.id)
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
+            self.refs.make_programs_available.checked = competition.make_programs_available
+            self.refs.make_input_data_available.checked = competition.make_input_data_available
             $(self.refs.docker_image).val(competition.docker_image)
             $(self.refs.reward).val(competition.reward)
             $(self.refs.contact_email).val(competition.contact_email)

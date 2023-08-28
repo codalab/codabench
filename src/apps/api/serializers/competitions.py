@@ -328,6 +328,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'submission_count',
             'queue',
             'enable_detailed_results',
+            'make_programs_available',
+            'make_input_data_available',
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
