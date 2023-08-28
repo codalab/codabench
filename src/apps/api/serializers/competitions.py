@@ -238,6 +238,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'registration_auto_approve',
             'queue',
             'enable_detailed_results',
+            'make_programs_available',
+            'make_input_data_available',
             'docker_image',
             'allow_robot_submissions',
             'competition_type',
