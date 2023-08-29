@@ -223,6 +223,7 @@
                     let reference_data = {}
                     let ingestion_program = {}
                     let scoring_program = {}
+                    debugger
                     _.forEach(task.public_datasets, dataset => {
                         let type = 'input_data'
                         if(dataset.type === "input_data"){
@@ -239,11 +240,21 @@
                             scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
                         }
                     })
-                    if(self.competition.admin){
-                        self.competition.files.push(input_data)
-                        self.competition.files.push(reference_data)
+                    if(self.competition.participant_status === 'approved' && self.competition.make_programs_available){
                         self.competition.files.push(ingestion_program)
                         self.competition.files.push(scoring_program)
+                    }if(self.competition.participant_status === 'approved' && self.competition.make_input_data_available){
+                        self.competition.files.push(input_data)
+                    }
+                    if(self.competition.admin && !self.competition.make_programs_available){
+                        self.competition.files.push(ingestion_program)
+                        self.competition.files.push(scoring_program)
+                    }
+                    if(self.competition.admin && !self.competition.make_input_data_available){
+                        self.competition.files.push(input_data)
+                    }
+                    if(self.competition.admin){
+                        self.competition.files.push(reference_data)
                     }
                 })
                 // Need code for public_data and starting_kit at phase level
