@@ -459,7 +459,10 @@ class Submission(ChaHubSaveMixin, models.Model):
     started_when = models.DateTimeField(null=True)
     is_public = models.BooleanField(default=False)
     is_specific_task_re_run = models.BooleanField(default=False)
-    worker_hostname = models.CharField(max_length=255, blank=True, null=True)
+    # Ingestion hostname
+    ingestion_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
+    # Scoring hostname
+    scoring_worker_hostname = models.CharField(max_length=255, blank=True, null=True)
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='submissions')
     is_migrated = models.BooleanField(default=False)

@@ -674,9 +674,10 @@ class Run:
 
     def start(self):
         hostname = utils.nodenames.gethostname()
-        if not self.is_scoring:
-            self._update_status(STATUS_RUNNING, extra_information=f"hostname-{hostname}")
-
+        if self.is_scoring:
+            self._update_status(STATUS_RUNNING, extra_information=f"scoring_hostname-{hostname}")
+        else:
+            self._update_status(STATUS_RUNNING, extra_information=f"ingestion_hostname-{hostname}")
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
