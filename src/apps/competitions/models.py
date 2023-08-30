@@ -279,8 +279,8 @@ class Phase(ChaHubSaveMixin, models.Model):
     hide_output = models.BooleanField(default=False)
 
     has_max_submissions = models.BooleanField(default=False)
-    max_submissions_per_day = models.PositiveIntegerField(null=True, blank=True)
-    max_submissions_per_person = models.PositiveIntegerField(null=True, blank=True)
+    max_submissions_per_day = models.PositiveIntegerField(default=5, null=True, blank=True)
+    max_submissions_per_person = models.PositiveIntegerField(default=100, null=True, blank=True)
 
     tasks = models.ManyToManyField('tasks.Task', blank=True, related_name='phases', through='PhaseTaskInstance')
 

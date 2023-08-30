@@ -70,8 +70,8 @@ CODALAB.api = {
     get_competition_files: pk => {
         return CODALAB.api.request('GET', `${URLS.API}competitions/${pk}/get_files/`)
     },
-    create_competition_dump: function (pk) {
-        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/create_dump/`)
+    create_competition_dump: function (pk, keys_instead_of_files) {
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/create_dump/`, {keys_instead_of_files: keys_instead_of_files})
     },
     /*---------------------------------------------------------------------
          Submissions

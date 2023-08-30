@@ -188,8 +188,8 @@ class V2Unpacker(BaseUnpacker):
                 "description": phase_data.get('description'),
                 "start": get_datetime(phase_data.get('start')),
                 "end": get_datetime(phase_data.get('end')),
-                'max_submissions_per_day': phase_data.get('max_submissions_per_day'),
-                'max_submissions_per_person': phase_data.get('max_submissions'),
+                'max_submissions_per_day': phase_data.get('max_submissions_per_day', 5),
+                'max_submissions_per_person': phase_data.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
                 'hide_output': phase_data.get('hide_output', False),
             }

@@ -31,19 +31,14 @@
                         <div class="markdown-content" data-content="{{ post.content }}"></div>
                     </div>
                 </div>
-                <!-- <div class="content">
-                    {% if thread.forum.competition.creator == request.user or request.user in thread.forum.competition.admins.all or post.posted_by == request.user %}
-                        <i class="remove-button glyphicon glyphicon-remove pull-right" data-submission-pk="{{ post.pk }}"></i>
-                    {% endif %}
-
-                    <div class="markdown-content" data-content="{{ post.content }}"></div>
-
-                    <div class="extra">
-                        Posted by: <a href="{% url "profiles:user_profile" username=post.posted_by.slug %}">{{ post.posted_by }}</a> @ {{ post.date_created }}
-                    </div>
-                </div> -->
             </div>
         {% endfor %}
+        <!-- Add new post button -->
+        <a href="{% url 'forums:forum_new_post' forum_pk=forum.pk thread_pk=thread.pk %}">
+            <button class="ui button green left floated">
+                <i class="icon plus"></i> Add new post
+            </button>
+        </a>
     </div>
 
     <style>

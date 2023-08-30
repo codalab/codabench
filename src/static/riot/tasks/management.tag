@@ -23,13 +23,13 @@
             <th width="125px">Shared With</th>
             <th width="125px">Uploaded...</th>
             <th width="50px" class="no-sort">Public</th>
-            <th width="50px" class="no-sort">Delete?</th>
+            <th width="100px" class="no-sort">Actions</th>
             <th width="25px" class="no-sort"></th>
         </tr>
         </thead>
         <tbody>
-        <tr each="{ task in tasks }" onclick="{show_detail_modal.bind(this, task)}" class="task-row">
-            <td>{ task.name }</td>
+        <tr each="{ task in tasks }" class="task-row">
+            <td onclick="{show_detail_modal.bind(this, task)}">{ task.name }</td>
             <td class="benchmark-row">
                 <div show="{task.competitions.length > 0}" class="ui list">
                     <div class="item" each="{comp in task.competitions}">
@@ -44,9 +44,12 @@
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
-            <td class="center aligned">
+            <td>
+                <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
+                    <i class="icon pencil"></i>
+                </button>
                 <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
-                    <i class="icon delete"></i>
+                    <i class="icon trash"></i>
                 </button>
             </td>
             <td class="center aligned">
@@ -84,7 +87,7 @@
         </tr>
         </tfoot>
     </table>
-
+    <!--  Task Detail Modal  -->
     <div class="ui modal" ref="detail_modal">
         <div class="header">
             {selected_task.name}
@@ -156,7 +159,7 @@
         </div>
     </div>
 
-
+    <!-- Create Task Modal  -->
     <div class="ui modal" ref="modal">
         <div class="header">
             Create Task
@@ -229,6 +232,93 @@
         </div>
         <div class="actions">
             <div selenium="save-task" class="ui primary button {disabled: !modal_is_valid}" onclick="{ create_task }">Create</div>
+            <div class="ui basic red cancel button">Cancel</div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal  -->
+    <div class="ui modal" ref="edit_modal">
+        <!--  Modal title  -->
+        <div class="header">
+            Update Task
+        </div>
+        <div class="content">
+            <!--  Modal Tabs  -->
+            <div class="ui pointing menu">
+                <div class="active item modal-item" data-tab="edit_details">Details</div>
+                <div class="item modal-item" data-tab="edit_data">Datasets and programs</div>
+            </div>
+            <!--  Modal Form  -->
+            <form class="ui form" ref="edit_form">
+                <!--  Task Detail Tab  -->
+                <div class="ui active tab" data-tab="edit_details">
+                    <!--  Task Name  -->
+                    <div class="required field">
+                        <label>Name</label>
+                        <input name="edit_name" placeholder="Name" ref="edit_name" value="{selected_task.name}" onkeyup="{ edit_form_updated }">
+                    </div>
+                    <!--  Task Description  -->
+                    <div class="required field">
+                        <label>Description</label>
+                        <textarea rows="4" name="edit_description" placeholder="Description" ref="edit_description"
+                                  value="{selected_task.description}" onkeyup="{ edit_form_updated }"></textarea>
+                    </div>
+                </div>
+                <!--  Task Datasets Tab  -->
+                <div class="ui tab" data-tab="edit_data">
+                    <div>
+                        <div class="two fields" data-no-js>
+                            <!--  Scoring Program  -->
+                            <div class="field required">
+                                <label>Scoring Program</label>
+                                <div class="ui fluid left icon labeled input search dataset" data-name="scoring_program">
+                                    <i class="search icon"></i>
+                                    <input type="text" class="prompt" id="editscoring_program" value="{selected_task.scoring_program?.name  || ''}">
+                                    <div class="results"></div>
+                                </div>
+                            </div>
+                            <!--  Ingestion Program  -->
+                            <div class="field">
+                                <label>Ingestion Program</label>
+                                <div class="ui fluid left icon labeled input search dataset" data-name="ingestion_program">
+                                    <i class="search icon"></i>
+                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}">
+                                    <div class="results"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="two fields" data-no-js>
+                            <!-- Reference Data   -->
+                            <div class="field">
+                                <label>Reference Data</label>
+                                <div class="ui fluid left icon labeled input search dataset" data-name="reference_data">
+                                    <i class="search icon"></i>
+                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}">
+                                    <div class="results"></div>
+                                </div>
+                            </div>
+                            <!--  Input Data  -->
+                            <div class="field">
+                                <label>Input Data</label>
+                                <div class="ui fluid left icon labeled input search dataset" data-name="input_data">
+                                    <i class="search icon"></i>
+                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}">
+                                    <div class="results"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!--  Warning message  -->
+        <div class="content">
+            <div class="ui yellow message">
+                Note: It is the organizer's responsibility to rerun submissions on the updated task if needed.
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui primary button {disabled: !edit_modal_is_valid}" onclick="{ update_task }">Update</div>
             <div class="ui basic red cancel button">Cancel</div>
         </div>
     </div>
@@ -311,7 +401,6 @@
                             $('#share_search').dropdown('clear')
                             CODALAB.api.get_task(self.selected_task.id)
                                 .done((data) => {
-                                    console.log(data)
                                     _.forEach(self.tasks, (task) => {
                                         if (task.id === self.selected_task.id) {
                                             task.shared_with = data.shared_with
@@ -336,6 +425,7 @@
         ---------------------------------------------------------------------*/
         self.show_modal = () => {
             $('.menu .item', self.root).tab('change tab', 'details')
+            self.form_datasets = {}
             $(self.refs.modal).modal('show')
 
         }
@@ -405,6 +495,87 @@
                     self.update()
                 })
             $(self.refs.detail_modal).modal('show')
+        }
+
+        /*---------------------------------------------------------------------
+         Update Task Methods
+        ---------------------------------------------------------------------*/
+
+        self.show_edit_modal = (task, e) => {
+            // Get Task from API
+            CODALAB.api.get_task(task.id)
+                .done((data) => {
+                    self.selected_task = data
+                    self.update()
+
+                    // empty form datasets
+                    // and insert avaiable datasets (keys) from the task
+                    self.form_datasets = {}
+                    if(self.selected_task.ingestion_program !== null){
+                        self.form_datasets['ingestion_program'] = self.selected_task.ingestion_program.key
+                    }
+                    if(self.selected_task.scoring_program !== null){
+                        self.form_datasets['scoring_program'] = self.selected_task.scoring_program.key
+                    }
+                    if(self.selected_task.reference_data !== null){
+                        self.form_datasets['reference_data'] = self.selected_task.reference_data.key
+                    }
+                    if(self.selected_task.input_data !== null){
+                        self.form_datasets['input_data'] = self.selected_task.input_data.key
+                    }
+
+                    // call edit form updated to enable/disable task update button
+                    self.edit_form_updated()
+
+                    // show edit task modal
+                    $(self.refs.edit_modal).modal('show')
+
+                })
+        }
+
+        self.close_edit_modal = () => {
+            $(self.refs.edit_modal).modal('hide')
+            self.clear_edit_form()
+        }
+
+        self.edit_form_updated = () => {
+            self.edit_modal_is_valid = $(self.refs.edit_name).val() && $(self.refs.edit_description).val() && self.form_datasets.scoring_program
+            self.update()
+        }
+
+        self.clear_edit_form = () => {
+            $(':input', self.refs.edit_form)
+                .not('[type="file"]')
+                .not('button')
+                .not('[readonly]').each(function (i, field) {
+                $(field).val('')
+            })
+            self.form_datasets = {}
+            self.edit_modal_is_valid = false
+        }
+        self.update_task = () => {
+            let data = get_form_data($(self.refs.edit_form))
+            
+            // replace property names in the data object
+            data.name = data.edit_name;
+            data.description = data.edit_description;
+
+            // delete the old property names
+            delete data.edit_name
+            delete data.edit_description
+            
+            _.assign(data, self.form_datasets)
+            task_id = self.selected_task.id
+            CODALAB.api.update_task(task_id, data)
+                .done((response) => {
+                    toastr.success('Task Updated')
+                    self.close_edit_modal()
+                    self.update_tasks()
+                    CODALAB.events.trigger('reload_quota_cleanup')
+                })
+                .fail((response) => {
+                    toastr.error('Error Updating Task')
+                })
         }
 
         /*---------------------------------------------------------------------

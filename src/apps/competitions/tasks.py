@@ -494,11 +494,16 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
             temp_task_data = {
                 'index': index
             }
+
             for field in TASK_FIELDS:
                 data = getattr(task, field, "")
+                # If keys_instead of files is not true and field is key, then skip this filed
+                if not keys_instead_of_files and field == 'key':
+                    continue
                 if field == 'key':
                     data = str(data)
                 temp_task_data[field] = data
+
             for file_type in PHASE_FILES:
                 if hasattr(task, file_type):
                     temp_dataset = getattr(task, file_type)
