@@ -383,7 +383,7 @@ class Run:
                 if retries >= max_retries:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
-                    logger.info("Failed. Retrying in 30 seconds...")
+                    logger.info("Failed. Retrying in 60 seconds...")
                     time.sleep(60) # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
