@@ -151,6 +151,15 @@ def delete_files_in_folder(folder):
             shutil.rmtree(file_path)
 
 
+def is_valid_zip(zip_path):
+    # Check zip integrity
+    try:
+        with ZipFile(zip_path, 'r') as zf:
+            return zf.testzip() is None
+    except BadZipFile:
+        return False
+
+
 class ExecutionTimeLimitExceeded(Exception):
     pass
 
@@ -356,7 +365,7 @@ class Run:
             bundle_file = tempfile.NamedTemporaryFile(dir=self.bundle_dir, delete=False).name
 
         # Fetch and extract
-        retries, max_retries = (0, 3)
+        retries, max_retries = (0, 10)
         while retries < max_retries:
             if download_needed:
                 try:
@@ -375,7 +384,7 @@ class Run:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
                     logger.info("Failed. Retrying in 30 seconds...")
-                    time.sleep(30) # Wait 30 seconds before retrying
+                    time.sleep(60) # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
@@ -591,14 +600,6 @@ class Run:
         # This runs the container engine command and asynchronously passes data back via websocket
         return await self._run_container_engine_cmd(engine_cmd, kind=kind)
 
-    def is_valid_zip(zip_path):
-        # Check zip integrity
-        try:
-            with ZipFile(zip_path, 'r') as zf:
-                return zf.testzip() is None
-        except BadZipFile:
-            return False
-
     def _put_dir(self, url, directory):
         """ Zip the directory and send it to the given URL using _put_file.
         """
@@ -606,7 +607,10 @@ class Run:
         retries, max_retries = (0, 3)
         while retries < max_retries:
             # Zip the directory
+            start_time = time.time()
             zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
+            duration = time.time() - start_time
+            logger.info("Time needed to zip archive: {duration} seconds.")
             if is_valid_zip(zip_path): # Check zip integrity
                 self._put_file(url, file=zip_path) # Send the file
                 break # Leave the loop in case of success
