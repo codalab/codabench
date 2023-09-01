@@ -374,6 +374,7 @@ class Run:
                 if retries >= max_retries:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
+                    logger.info("Failed. Retrying in 30 seconds...")
                     time.sleep(30) # Wait 30 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
@@ -614,6 +615,7 @@ class Run:
                 if retries >= max_retries:
                     raise Exception("ZIP file is corrupted or incomplete.")
                 else:
+                    logger.info("Failed. Retrying in 30 seconds...")
                     time.sleep(30) # Wait 30 seconds before retrying
 
     def _put_file(self, url, file=None, raw_data=None, content_type='application/zip'):
