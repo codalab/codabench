@@ -77,7 +77,6 @@ services:
       /bin/sh -c "
       set -x;
       if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
-        MAX_RETRIES=25;
         until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY || [ $MAX_RETRIES -eq 0 ]; do 
           echo '...waiting...' && sleep 5; 
           let MAX_RETRIES-=1;
