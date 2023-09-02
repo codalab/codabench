@@ -49,7 +49,7 @@
         </div>
         <div if="{status === 'denied'}" class="ui red message">
             <h3>Registration Status: {_.startCase(status)}</h3>
-            Your request to participate in this competition is denier. Please contact the competition organizer for more details.
+            Your request to participate in this competition is denied. Please contact the competition organizer for more details.
         </div>
     </div>
 
