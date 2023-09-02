@@ -109,15 +109,6 @@
                              }
                          ]
                      },
-                     display_name: {
-                         identifier: 'display_name',
-                         rules: [
-                             {
-                                type: 'empty',
-                                prompt: 'Please enter a display name'
-                             }
-                         ]
-                     },
                      personal_url: {
                          identifier: 'personal_url',
                          optional: true,
