@@ -68,6 +68,8 @@ services:
       minio:
         condition: service_healthy
     env_file: .env
+    environment:
+      - MAX_RETRIES=25
     # volumes:
     #   This volume is shared with `minio`, so `z` to share it
     #   - ./var/minio:/export
