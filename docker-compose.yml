@@ -61,15 +61,12 @@ services:
       test: ["CMD", "nc", "-z", "minio", "9000"]
       interval: 5s
       retries: 5
-
   createbuckets:
     image: minio/mc
     depends_on:
       minio:
         condition: service_healthy
     env_file: .env
-    environment:
-      - MAX_RETRIES=25
     # volumes:
     #   This volume is shared with `minio`, so `z` to share it
     #   - ./var/minio:/export
@@ -77,9 +74,8 @@ services:
       /bin/sh -c "
       set -x;
       if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
-        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY || [ $MAX_RETRIES -eq 0 ]; do 
+        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do 
           echo '...waiting...' && sleep 5; 
-          let MAX_RETRIES-=1;
         done;
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_PRIVATE_BUCKET_NAME already exists.';
@@ -89,7 +85,6 @@ services:
       fi;
       exit 0;
       "
-
 
   #-----------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
