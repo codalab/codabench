@@ -33,6 +33,12 @@
                 })
         }
 
+        // This is triggered when a new submission is uploaded
+        // This gets the updated submissions to refresh the used submissions count
+        CODALAB.events.on('new_submission_created', function (new_submission_data) {
+            self.update_competition_data()
+        })
+
     </script>
     <style type="text/stylus">
         .comp-detail-paragraph-text
