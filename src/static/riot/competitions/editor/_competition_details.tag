@@ -215,7 +215,6 @@
             if (self.data.fact_sheet === false){
                 is_valid = false
             }
-            debugger
 
             // Require title, logo is optional IF we are editing -- will just keep the old one if
             // a new one is not provided

@@ -229,7 +229,6 @@
             self.competition.collaborators = _.map(self.competition.collaborators, collab => collab.id ? collab.id : collab)
 
             var api_endpoint = self.opts.competition_id ? CODALAB.api.update_competition : CODALAB.api.create_competition
-            debugger
             self.competition_return = JSON.parse(JSON.stringify(self.competition))
             for(phase of self.competition_return.phases){
                 for(taskord of phase.task_instances){
