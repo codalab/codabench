@@ -26,9 +26,12 @@ from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
-
 logger = logging.getLogger()
 
+
+# -----------------------------------------------
+# Celery + Rabbit MQ
+# -----------------------------------------------
 # Init celery + rabbit queue definitions
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -38,6 +41,9 @@ app.conf.task_queues = [
 ]
 
 
+# -----------------------------------------------
+# Directories
+# -----------------------------------------------
 # Setup base directories used by all submissions
 # note: we need to pass this directory to docker-compose so it knows where to store things!
 HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
@@ -45,6 +51,10 @@ BASE_DIR = "/codabench/"  # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
+
+# -----------------------------------------------
+# Submission status
+# -----------------------------------------------
 # Status options for submissions
 STATUS_NONE = "None"
 STATUS_SUBMITTING = "Submitting"
@@ -65,6 +75,10 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
+
+# -----------------------------------------------
+# Container Engine
+# -----------------------------------------------
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
@@ -75,7 +89,18 @@ else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
 
 
+# -----------------------------------------------
+# Exceptions
+# -----------------------------------------------
 class SubmissionException(Exception):
+    pass
+
+
+class DockerImagePullException(Exception):
+    pass
+
+
+class ExecutionTimeLimitExceeded(Exception):
     pass
 
 
@@ -94,6 +119,8 @@ def run_wrapper(run_args):
         if run.is_scoring:
             run.push_scores()
         run.push_output()
+    except DockerImagePullException as e:
+        run._update_status(STATUS_FAILED, str(e))
     except SubmissionException as e:
         run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -160,14 +187,14 @@ def is_valid_zip(zip_path):
         return False
 
 
-class ExecutionTimeLimitExceeded(Exception):
-    pass
-
-
 def alarm_handler(signum, frame):
     raise ExecutionTimeLimitExceeded
 
 
+# -----------------------------------------------
+# Class Run
+# Respnosible for running a submission inside a docker container
+# -----------------------------------------------
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -340,8 +367,11 @@ class Run:
             container_engine_pull = check_output(cmd)
             logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
         except CalledProcessError:
-            logger.info("Pull for image: {} returned a non-zero exit code!")
-            raise SubmissionException(f"Pull for {image_name} failed!")
+            error_message = "Pull for image: {} returned a non-zero exit code!".format(image_name)
+            logger.info(error_message)
+            # write error to ingestion logs
+            asyncio.run(self._write_error_to_stderr(error_message, self.ingestion_stderr))
+            raise DockerImagePullException(f"Pull for {image_name} failed!")
 
     def _get_bundle(self, url, destination, cache=True):
         """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
@@ -384,9 +414,13 @@ class Run:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
                     logger.info("Failed. Retrying in 60 seconds...")
-                    time.sleep(60) # Wait 60 seconds before retrying
+                    time.sleep(1)  # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
+
+    def _write_error_to_stderr(self, error_message, error_file):
+        with open(error_file, 'a+') as f:
+            f.write(error_message + '\n')
 
     async def _run_container_engine_cmd(self, engine_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
