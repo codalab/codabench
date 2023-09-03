@@ -295,9 +295,6 @@ class CompetitionViewSet(ModelViewSet):
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
                     except TypeError:
                         phase['starting_kit'] = None
-            # data.keys()
-            # print(data['make_programs_available'])
-            # print(data['make_input_data_available'])
             serializer = self.get_serializer(instance, data=data, partial=partial)
             type(serializer)
             serializer.is_valid(raise_exception=True)
