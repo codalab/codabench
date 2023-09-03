@@ -300,7 +300,6 @@ class CompetitionViewSet(ModelViewSet):
             # print(data['make_input_data_available'])
             serializer = self.get_serializer(instance, data=data, partial=partial)
             type(serializer)
-            import pdb; pdb.set_trace()
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
@@ -571,7 +570,6 @@ class CompetitionViewSet(ModelViewSet):
         instance.make_programs_available
         instance.make_input_data_available
         initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
-        import pdb; pdb.set_trace()
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
 
