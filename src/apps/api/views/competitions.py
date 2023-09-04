@@ -137,7 +137,7 @@ class CompetitionViewSet(ModelViewSet):
                         qs = base_qs
                 else:
                     qs = base_qs
-                # select distinct competitions 
+                # select distinct competitions
                 qs = qs.distinct()
 
         else:
