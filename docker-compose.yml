@@ -61,23 +61,24 @@ services:
       test: ["CMD", "nc", "-z", "minio", "9000"]
       interval: 5s
       retries: 5
-
   createbuckets:
     image: minio/mc
     depends_on:
       minio:
         condition: service_healthy
     env_file: .env
-#    volumes:
-      # This volume is shared with `minio`, so `z` to share it
-#      - ./var/minio:/export
+    # volumes:
+    #   This volume is shared with `minio`, so `z` to share it
+    #   - ./var/minio:/export
     entrypoint: >
       /bin/sh -c "
       set -x;
       if [ -n \"$MINIO_ACCESS_KEY\" ] && [ -n \"$MINIO_SECRET_KEY\" ] && [ -n \"$MINIO_PORT\" ]; then
-        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do echo '...waiting...' && sleep 5; done;
-        /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME;
-        /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME;
+        until /usr/bin/mc config host add minio_docker http://minio:$MINIO_PORT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY && break; do 
+          echo '...waiting...' && sleep 5; 
+        done;
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
+        /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_PRIVATE_BUCKET_NAME already exists.';
         /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
       else
         echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';

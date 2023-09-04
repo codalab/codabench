@@ -43,9 +43,13 @@
     </div>
 
     <div if="{status}">
-        <div class="ui yellow message">
+        <div if="{status === 'pending'}" class="ui yellow message">
             <h3>Registration Status: {_.startCase(status)}</h3>
-            Your request to participate in this competition is waiting for an approval from the competition organizer
+            Your request to participate in this competition is waiting for an approval from the competition organizer.
+        </div>
+        <div if="{status === 'denied'}" class="ui red message">
+            <h3>Registration Status: {_.startCase(status)}</h3>
+            Your request to participate in this competition is denied. Please contact the competition organizer for more details.
         </div>
     </div>
 
@@ -95,7 +99,13 @@
         }
 
         self.submit_registration = () => {
-            CODALAB.api.submit_competition_registration(self.competition_id)
+
+            // Get the value of the 'secret_key' parameter from the URL
+            const url = new URL(window.location.href)
+            const searchParams = new URLSearchParams(url.search)
+            const secretKey = searchParams.get('secret_key')
+
+            CODALAB.api.submit_competition_registration(self.competition_id, secretKey)
                 .done(response => {
                     self.status = response.participant_status
                     if (self.status === 'approved') {

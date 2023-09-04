@@ -40,9 +40,15 @@ class SubmissionViewSet(ModelViewSet):
             dir(self.request)
             # Set hostname of submission
             if "status_details" in self.request.data.keys():
-                if request.data['status_details'].find('hostname') != -1:
-                    hostname = request.data['status_details'].replace('hostname-', '')
-                    obj.worker_hostname = hostname
+                # Check ingestion hostname
+                if request.data['status_details'].find('ingestion_hostname') != -1:
+                    hostname = request.data['status_details'].replace('ingestion_hostname-', '')
+                    obj.ingestion_worker_hostname = hostname
+                    obj.save()
+                # Check socring hostname
+                if request.data['status_details'].find('scoring_hostname') != -1:
+                    hostname = request.data['status_details'].replace('scoring_hostname-', '')
+                    obj.scoring_worker_hostname = hostname
                     obj.save()
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
