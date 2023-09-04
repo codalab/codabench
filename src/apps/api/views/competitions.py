@@ -508,6 +508,7 @@ class CompetitionViewSet(ModelViewSet):
     def public(self, request):
         qs = self.get_queryset()
         qs = qs.filter(published=True)
+        qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
         page = self.paginate_queryset(queryset)
@@ -516,7 +517,7 @@ class CompetitionViewSet(ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return None # Response(serializer.data)
 
     def run_new_task_submissions(self, phase, tasks):
         tasks_ids = set([task.id for task in tasks])
