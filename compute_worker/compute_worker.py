@@ -360,7 +360,7 @@ class Run:
         #     })
         self._update_submission(data)
 
-    def _get_container_image(self, image_name):
+    async def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
         try:
             cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
@@ -370,7 +370,7 @@ class Run:
             error_message = "Pull for image: {} returned a non-zero exit code!".format(image_name)
             logger.info(error_message)
             # write error to ingestion logs
-            asyncio.run(self._write_error_to_stderr(error_message, self.ingestion_stderr))
+            await self._write_error_to_stderr(error_message, self.ingestion_stderr)
             raise DockerImagePullException(f"Pull for {image_name} failed!")
 
     def _get_bundle(self, url, destination, cache=True):
@@ -414,13 +414,19 @@ class Run:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
                     logger.info("Failed. Retrying in 60 seconds...")
-                    time.sleep(1)  # Wait 60 seconds before retrying
+                    time.sleep(60)  # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
-    def _write_error_to_stderr(self, error_message, error_file):
-        with open(error_file, 'a+') as f:
-            f.write(error_message + '\n')
+    async def _write_error_to_stderr(self, error_message, error_file):
+        try:
+            loop = asyncio.get_event_loop()
+            with open(error_file, 'a+') as f:
+                await loop.run_in_executor(None, f.write, error_message + '\n')
+        except Exception as e:
+            # Handle exceptions that may occur during file writing
+            # You can log an error message or raise an exception here
+            print(f"Error writing to {error_file}: {str(e)}")
 
     async def _run_container_engine_cmd(self, engine_cmd, kind):
         """This runs a command and asynchronously writes the data to both a storage file
@@ -661,7 +667,7 @@ class Run:
         """
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
-        
+
         headers = {
             # For Azure only, other systems ignore these headers
             'x-ms-blob-type': 'BlockBlob',
