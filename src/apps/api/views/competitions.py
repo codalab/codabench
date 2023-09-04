@@ -523,6 +523,7 @@ class CompetitionViewSet(ModelViewSet):
     def public(self, request):
         qs = self.get_queryset()
         qs = qs.filter(published=True)
+        qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
         page = self.paginate_queryset(queryset)
