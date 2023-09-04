@@ -99,7 +99,13 @@
         }
 
         self.submit_registration = () => {
-            CODALAB.api.submit_competition_registration(self.competition_id)
+
+            // Get the value of the 'secret_key' parameter from the URL
+            const url = new URL(window.location.href)
+            const searchParams = new URLSearchParams(url.search)
+            const secretKey = searchParams.get('secret_key')
+
+            CODALAB.api.submit_competition_registration(self.competition_id, secretKey)
                 .done(response => {
                     self.status = response.participant_status
                     if (self.status === 'approved') {

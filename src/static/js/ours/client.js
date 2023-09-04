@@ -58,8 +58,10 @@ CODALAB.api = {
     manual_migration: function (phase_pk) {
         return CODALAB.api.request('POST', `${URLS.API}phases/${phase_pk}/manually_migrate/`)
     },
-    submit_competition_registration: function (pk) {
-        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/register/`)
+    submit_competition_registration: function (pk, secret_key) {
+        // Create an object to hold the data to be sent in the POST request
+        const requestData = {secret_key: secret_key}
+        return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/register/`, requestData)
     },
     email_all_participants: (pk, message) => {
         return CODALAB.api.request('POST', `${URLS.API}competitions/${pk}/email_all_participants/`, {message: message})

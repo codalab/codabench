@@ -103,7 +103,6 @@ class CompetitionViewSet(ModelViewSet):
 
             # if `secret_key` is true, this is called for a secret competition
             if secret_key:
-                print(secret_key)
                 qs = qs.filter(Q(secret_key=secret_key))
 
             # Default condition
@@ -111,19 +110,35 @@ class CompetitionViewSet(ModelViewSet):
             # not called from i'm participating in tab
             # not called from search bar
             # not called with a valid secret key
-            # Return the following ---
-            # All competitions which belongs to you (private or public)
-            # And competitions where you are admin
-            # And public competitions
-            # And competitions where you are approved participant
-            # this filters out all private compettions from other users
             if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
-                qs = qs.filter(
+
+                # Return the following ---
+                # All competitions which belongs to you (private or public)
+                # And competitions where you are admin
+                # And public competitions
+                # And competitions where you are approved participant
+                # this filters out all private compettions from other users
+                base_qs = qs.filter(
                     (Q(created_by=self.request.user)) |
                     (Q(collaborators__in=[self.request.user])) |
                     (Q(published=True) & ~Q(created_by=self.request.user)) |
                     (Q(participants__user=self.request.user) & Q(participants__status="approved"))
-                ).distinct()
+                )
+
+                # Additional condition of action
+                # allow private competition when action is register and has valid secret key
+                if self.request.method == 'POST' and self.action == 'register':
+                    # get secret_key from request data
+                    register_secret_key = self.request.data.get('secret_key', None)
+                    # use secret key if available
+                    if register_secret_key:
+                        qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                    else:
+                        qs = base_qs
+                else:
+                    qs = base_qs
+                # select distinct competitions
+                qs = qs.distinct()
 
         else:
             # if user is not authenticated only show
