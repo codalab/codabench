@@ -44,6 +44,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py37")
     enable_detailed_results = models.BooleanField(default=False)
+    make_programs_available = models.BooleanField(default=False)
+    make_input_data_available = models.BooleanField(default=False)
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')

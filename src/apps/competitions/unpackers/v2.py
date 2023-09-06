@@ -1,5 +1,4 @@
 import os
-
 from django.utils import timezone
 
 from competitions.unpackers.base_unpacker import BaseUnpacker
@@ -15,6 +14,8 @@ class V2Unpacker(BaseUnpacker):
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
+            "make_programs_available": self.competition_yaml.get('make_programs_available', False),
+            "make_input_data_available": self.competition_yaml.get('make_input_data_available', False),
             "description": self.competition_yaml.get("description", ""),
             "competition_type": self.competition_yaml.get("competition_type", "competition"),
             "fact_sheet": self.competition_yaml.get("fact_sheet", None),

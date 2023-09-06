@@ -75,7 +75,9 @@
                                         <td>{file.task}</td>
                                         <td>{file.type}</td>
                                         <!--  <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>  -->
-                                        <td>yes</td>
+                                        <td class="center aligned">
+                                            <i if="{file.available}" class="checkmark box icon green"></i>
+                                        </td>
                                         <td>{filesize(file.file_size * 1024)}</td>
                                     </tr>
                                     <!-- Conditional row if no files to show -->
@@ -226,23 +228,33 @@
                         let type = 'input_data'
                         if(dataset.type === "input_data"){
                             type = 'Input Data'
-                            input_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                            input_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type, available: self.competition.make_input_data_available}
                         }else if(dataset.type === "reference_data"){
                             type = 'Reference Data'
-                            reference_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                            reference_data = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type, available: false}
                         }else if(dataset.type === "ingestion_program"){
                             type = 'Ingestion Program'
-                            ingestion_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                            ingestion_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type, available: self.competition.make_programs_available}
                         }else if(dataset.type === "scoring_program"){
                             type = 'Scoring Program'
-                            scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type}
+                            scoring_program = {key: dataset.key, name: dataset.name, file_size: dataset.file_size, phase: phase.name, task: task.name, type: type, available: self.competition.make_programs_available}
                         }
                     })
-                    if(self.competition.admin){
-                        self.competition.files.push(input_data)
-                        self.competition.files.push(reference_data)
+                    if(self.competition.participant_status === 'approved' && self.competition.make_programs_available){
                         self.competition.files.push(ingestion_program)
                         self.competition.files.push(scoring_program)
+                    }if(self.competition.participant_status === 'approved' && self.competition.make_input_data_available){
+                        self.competition.files.push(input_data)
+                    }
+                    if(self.competition.admin && !self.competition.make_programs_available){
+                        self.competition.files.push(ingestion_program)
+                        self.competition.files.push(scoring_program)
+                    }
+                    if(self.competition.admin && !self.competition.make_input_data_available){
+                        self.competition.files.push(input_data)
+                    }
+                    if(self.competition.admin){
+                        self.competition.files.push(reference_data)
                     }
                 })
                 // Need code for public_data and starting_kit at phase level
@@ -255,7 +267,8 @@
                                 file_size: solution.size,
                                 phase: phase.name,
                                 task: task.name,
-                                type: 'Solution'
+                                type: 'Solution',
+                                available: true
                             })
                         })
                     })
@@ -266,7 +279,8 @@
                             file_size: phase.starting_kit.file_size,
                             phase: phase.name,
                             task: '-',
-                            type: 'Starting Kit'
+                            type: 'Starting Kit',
+                            available: true
                         })
                     }
                     if (phase.public_data != null){
@@ -276,7 +290,8 @@
                             file_size: phase.public_data.file_size,
                             phase: phase.name,
                             task: '-',
-                            type: 'Public Data'
+                            type: 'Public Data',
+                            available: true
                         })
                     }
                 }
