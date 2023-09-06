@@ -83,7 +83,16 @@
             </form>
         </div>
         <div class="field smaller-mde">
-            <label>Files Available</label>
+            <label>
+                Files Available
+                <sup>
+                    <a href="https://github.com/codalab/codabench/wiki/Yaml-Structure"
+                       target="_blank"
+                       data-tooltip="What's this?">
+                        <i class="grey question circle icon"></i>
+                    </a>
+                </sup>
+            </label>
             <div class="ui checkbox">
                 <label>Make Programs Available</label>
                 <input type="checkbox" ref="make_programs_available" onchange="{form_updated}">
