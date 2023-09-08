@@ -381,20 +381,32 @@ class Run:
                     # Get list of files and directories from the zip of scoring program
                     extracted_files = z.namelist()
 
+                    # check ingestion
+                    is_ingestion = destination == "ingestion_program"
+                    is_scoring = destination == "program" and self.is_scoring
+
+
                     # Intiialize parent dir with a None value
                     parent_dir = None
 
                     # loop over all the extracted files to identify parent directory
                     for extracted_file in extracted_files:
-                        # if a metadata file is located in the subdirectory
-                        # that directory is considered the parent dir
-                        # Note:
-                        # `/` shows that there is a directory structure e.g. scoring_program/metadata
-                        if '/' in extracted_file and os.path.basename(extracted_file) in META_DATA_FILES:
-                            # split the path by `/`, the first item is the directory name
-                            # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
-                            parent_dir = extracted_file.split('/')[0]
-                            break
+                        # `/` shows that there is a directory structure e.g. scoring_program/score.py
+                        if '/' in extracted_file:
+                            # for ingestion and scoring program
+                            #   - if a metadata file is located in the subdirectory
+                            #   - that directory is considered the parent dir
+                            if is_scoring or is_ingestion:
+                                if os.path.basename(extracted_file) in META_DATA_FILES:
+                                    # split the path by `/`, the first item is the directory name
+                                    # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
+                                    parent_dir = extracted_file.split('/')[0]
+                                    break
+                            else:
+                                # split the path by `/`, the first item is the directory name
+                                # e.g. splitting `input_data/input_file.csv` on `/` gives you `input_data` as the parent dir
+                                parent_dir = extracted_file.split('/')[0]
+                                break
 
                     # Extract scoring program in the destination directory (with or without parent dir)
                     z.extractall(os.path.join(self.root_dir, destination))
