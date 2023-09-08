@@ -65,6 +65,9 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
+# Meta data files
+META_DATA_FILES = ['metadata', 'metadata.yaml']
+
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
@@ -374,9 +377,40 @@ class Run:
                 except HTTPError:
                     raise SubmissionException(f"Problem fetching {url} to put in {destination}")
             try:
-                # Extract the contents to destination directory
                 with ZipFile(bundle_file, 'r') as z:
+                    # Get list of files and directories from the zip of scoring program
+                    extracted_files = z.namelist()
+
+                    # Intiialize parent dir with a None value
+                    parent_dir = None
+
+                    # loop over all the extracted files to identify parent directory
+                    for extracted_file in extracted_files:
+                        # if a metadata file is located in the subdirectory
+                        # that directory is considered the parent dir
+                        # Note:
+                        # `/` shows that there is a directory structure e.g. scoring_program/metadata
+                        if '/' in extracted_file and os.path.basename(extracted_file) in META_DATA_FILES:
+                            # split the path by `/`, the first item is the directory name
+                            # e.g. splitting `scoring_program/metadata` on `/` gives you `scoring_program` as the parent dir
+                            parent_dir = extracted_file.split('/')[0]
+                            break
+
+                    # Extract scoring program in the destination directory (with or without parent dir)
                     z.extractall(os.path.join(self.root_dir, destination))
+
+                    if parent_dir:
+                        # parent directory is found. Now the the following
+                        # - Move the content of parent dir to the destination
+                        # - Delete parent dir
+                        parent_dir_path = os.path.join(self.root_dir, destination, parent_dir)
+                        parent_files = os.listdir(parent_dir_path)
+                        for file in parent_files:
+                            file_path = os.path.join(parent_dir_path, file)
+                            dest_path = os.path.join(self.root_dir, destination, file)
+                            os.rename(file_path, dest_path)
+                        os.rmdir(parent_dir_path)
+
                 break  # Break if the loop is successful
             except BadZipFile:
                 retries += 1
@@ -384,7 +418,7 @@ class Run:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
                     logger.info("Failed. Retrying in 60 seconds...")
-                    time.sleep(60) # Wait 60 seconds before retrying
+                    time.sleep(60)  # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
