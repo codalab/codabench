@@ -186,15 +186,18 @@
                             </div>
                         </div>
                     </div>
-                <leaderboards class="leaderboard-table"
+                <!-- If there's no leaderboard, show this message -->
+                <div show="{_.isEmpty(competition.leaderboards)}">
+                    <div class="center aligned"><h2>No visible leaderboard for this benchmark</h2></div>
+                </div>
+                <!-- Else, show the leaderboard -->
+                <div show="{!_.isEmpty(competition.leaderboards)}">
+                    <leaderboards class="leaderboard-table"
                               phase_id="{ self.selected_phase_index }"
                               is_admin="{competition.admin}">
-                </leaderboards>
-            </div>
-            <div show="{!loading && _.isEmpty(competition.leaderboards)}">
-                <div class="center aligned"><h2>No Visible Leaderboards for this competition</h2></div>
-            </div>
-            
+                    </leaderboards>
+                </div>
+            </div>           
         </div>
     </div>
 
