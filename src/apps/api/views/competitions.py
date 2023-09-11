@@ -295,7 +295,6 @@ class CompetitionViewSet(ModelViewSet):
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
                     except TypeError:
                         phase['starting_kit'] = None
-
             serializer = self.get_serializer(instance, data=data, partial=partial)
             type(serializer)
             serializer.is_valid(raise_exception=True)
@@ -523,6 +522,7 @@ class CompetitionViewSet(ModelViewSet):
     def public(self, request):
         qs = self.get_queryset()
         qs = qs.filter(published=True)
+        qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
         page = self.paginate_queryset(queryset)
@@ -564,8 +564,9 @@ class CompetitionViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
+        instance.make_programs_available
+        instance.make_input_data_available
         initial_tasks = {phase.id: set(phase.tasks.all()) for phase in instance.phases.all().prefetch_related('tasks')}
-
         instance = serializer.save()
         self._ensure_organizer_participants_accepted(instance)
 
