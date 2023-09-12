@@ -133,7 +133,7 @@
                         <div class="three fields">
                             <div class="field">
                                 <label>
-                                    Execution Time Limit <span data-tooltip="In seconds, 600s default if unset"
+                                    Execution Time Limit (seconds)<span data-tooltip="600s if unset, 600s max with default queue."
                                                                data-inverted=""
                                                                data-position="bottom center">
                                     <i class="help icon circle"></i></span>
