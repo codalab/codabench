@@ -101,6 +101,7 @@ COLUMN_FIELDS = [
 ]
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))
 
+
 def _send_to_compute_worker(submission, is_scoring):
     run_args = {
         "user_pk": submission.owner.pk,
