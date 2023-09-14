@@ -138,6 +138,7 @@ class TaskListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'created_when',
+            'created_by',
             'key',
             'name',
             'solutions',
