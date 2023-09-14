@@ -45,15 +45,17 @@
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
             <td>
-                <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
-                    <i class="icon pencil"></i>
-                </button>
-                <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
-                    <i class="icon trash"></i>
-                </button>
+                <div if="{ task.created_by == CODALAB.state.user.id }">
+                    <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
+                        <i class="icon pencil"></i>
+                    </button>
+                    <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
+                        <i class="icon trash"></i>
+                    </button>
+                </div>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox">
+                <div class="ui fitted checkbox" if="{ task.created_by == CODALAB.state.user.id }">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_task_for_deletion.bind(this, task) }">
                     <label></label>
                 </div>
