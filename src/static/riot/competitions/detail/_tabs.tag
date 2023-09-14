@@ -60,7 +60,12 @@
                                         <th>Phase</th>
                                         <th>Task</th>
                                         <th>Type</th>
-                                        <th>Available</th>
+                                        <th>Available <span class="ui mini circular icon button"
+                                                          data-tooltip="Available for download to participants."
+                                                          data-position="top center">
+                                                          <i class="question icon"></i>
+                                                      </span>
+                                        </th>
                                         <th>Size</th>
                                     </tr>
                                     </thead>
