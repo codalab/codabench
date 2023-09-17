@@ -1,5 +1,6 @@
 import json
 import uuid
+import logging
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,13 +15,16 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
+from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
-from competitions.models import Submission, Phase, CompetitionParticipant
+from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
+
+logger = logging.getLogger()
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -50,6 +54,44 @@ class SubmissionViewSet(ModelViewSet):
                     hostname = request.data['status_details'].replace('scoring_hostname-', '')
                     obj.scoring_worker_hostname = hostname
                     obj.save()
+
+            # check if type is in request data. type can have the following values
+            # - Docker_Image_Pull_Fail
+            # - Execution_Time_Limit_Exceeded
+            if "type" in self.request.data.keys():
+
+                if request.data["type"] in ["Docker_Image_Pull_Fail", "Execution_Time_Limit_Exceeded"]:
+
+                    # Get the error message
+                    error_message = request.data['error_message']
+
+                    # Set file name to ingestion std error as default
+                    error_file_name = "prediction_ingestion_stderr"
+
+                    # Change error file name when error comes from execution time limit
+                    # and error occured during scoring
+                    if request.data["type"] == "Execution_Time_Limit_Exceeded" and request.data['is_scoring'] == "True":
+                        error_file_name = "scoring_stderr"
+
+                    try:
+                        # Get submission detail for this submission
+                        submission_detail = SubmissionDetails.objects.get(
+                            name=error_file_name,
+                            submission=obj,
+                        )
+
+                        # Read the existing content from the file
+                        existing_content = submission_detail.data_file.read().decode("utf-8")
+
+                        # Append the new error message to the existing content
+                        modified_content = existing_content + "\n" + error_message
+
+                        # write error message to the file
+                        submission_detail.data_file.save(submission_detail.data_file.name, ContentFile(modified_content.encode("utf-8")))
+
+                    except SubmissionDetails.DoesNotExist:
+                        logger.warning("SubmissionDetails object not found.")
+
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
             if self.action in ['update_fact_sheet', 're_run_submission']:
