@@ -244,27 +244,28 @@
                         }
                     })
                     if(self.competition.participant_status === 'approved' && self.competition.make_programs_available){
-                        self.competition.files.push(ingestion_program)
-                        self.competition.files.push(scoring_program)
+                        Object.keys(ingestion_program).length != 0 ? self.competition.files.push(ingestion_program) : null
+                        Object.keys(scoring_program).length != 0 ? self.competition.files.push(scoring_program) : null
                     }if(self.competition.participant_status === 'approved' && self.competition.make_input_data_available){
-                        self.competition.files.push(input_data)
+                        Object.keys(input_data).length != 0 ? self.competition.files.push(input_data) : null
                     }
                     if(self.competition.admin && !self.competition.make_programs_available){
-                        self.competition.files.push(ingestion_program)
-                        self.competition.files.push(scoring_program)
+                        Object.keys(ingestion_program).length != 0 ? self.competition.files.push(ingestion_program) : null
+                        Object.keys(scoring_program).length != 0 ? self.competition.files.push(scoring_program) : null
                     }
                     if(self.competition.admin && !self.competition.make_input_data_available){
-                        self.competition.files.push(input_data)
+                        Object.keys(input_data).length != 0 ? self.competition.files.push(input_data) : null
                     }
                     if(self.competition.admin){
-                        self.competition.files.push(reference_data)
+                        Object.keys(reference_data).length != 0 ? self.competition.files.push(reference_data) : null
                     }
+
                 })
                 // Need code for public_data and starting_kit at phase level
                 if(self.competition.participant_status === 'approved'){    
                     _.forEach(phase.tasks, task => {
                         _.forEach(task.solutions, solution => {
-                            self.competition.files.push({
+                            soln = {
                                 key: solution.data,
                                 name: solution.name,
                                 file_size: solution.size,
@@ -272,11 +273,12 @@
                                 task: task.name,
                                 type: 'Solution',
                                 available: true
-                            })
+                            }
+                            Object.keys(solution).length != 0 ? self.competition.files.push(soln) : null
                         })
                     })
                     if (phase.starting_kit != null){
-                        self.competition.files.push({
+                        s_kit = {
                             key: phase.starting_kit.key,
                             name: phase.starting_kit.name,
                             file_size: phase.starting_kit.file_size,
@@ -284,10 +286,11 @@
                             task: '-',
                             type: 'Starting Kit',
                             available: true
-                        })
+                        }
+                        Object.keys(phase.starting_kit).length != 0 ? self.competition.files.push(s_kit) : null
                     }
                     if (phase.public_data != null){
-                        self.competition.files.push({
+                        p_data = {
                             key: phase.public_data.key,
                             name: phase.public_data.name,
                             file_size: phase.public_data.file_size,
@@ -295,7 +298,8 @@
                             task: '-',
                             type: 'Public Data',
                             available: true
-                        })
+                        }
+                        Object.keys(phase.public_data).length != 0 ? self.competition.files.push(p_data) : null
                     }
                 }
             })
