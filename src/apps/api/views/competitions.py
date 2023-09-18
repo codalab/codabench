@@ -38,6 +38,7 @@ from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from datetime import datetime
 from django.db import transaction
+from django.conf import settings
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -584,9 +585,6 @@ class PhaseViewSet(ModelViewSet):
     @action(detail=True, url_name='rerun_submissions')
     def rerun_submissions(self, request, pk):
 
-        # Limit for rerunning submissions
-        RERUN_SUBMISSION_LIMIT = 30
-
         phase = self.get_object()
         comp = phase.competition
 
@@ -604,7 +602,7 @@ class PhaseViewSet(ModelViewSet):
         elif request.user in comp.all_organizers:
 
             # submissions are in limit
-            if len(submissions) <= RERUN_SUBMISSION_LIMIT:
+            if len(submissions) <= settings.RERUN_SUBMISSION_LIMIT:
                 can_re_run_submissions = True
 
             # submissions are not in limit
@@ -612,12 +610,12 @@ class PhaseViewSet(ModelViewSet):
                 # Codabemch public queue
                 if comp.queue is None:
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
 
                 # Other queue where user is not owner and not organizer
                 elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
 
                 # User can rerun submissions where he is owner or organizer
                 else:
