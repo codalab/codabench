@@ -602,7 +602,7 @@ class PhaseViewSet(ModelViewSet):
         elif request.user in comp.all_organizers:
 
             # submissions are in limit
-            if len(submissions) <= settings.RERUN_SUBMISSION_LIMIT:
+            if len(submissions) <= int(settings.RERUN_SUBMISSION_LIMIT):
                 can_re_run_submissions = True
 
             # submissions are not in limit
