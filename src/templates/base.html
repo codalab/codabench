@@ -254,10 +254,14 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        MAX_EXECUTION_TIME_LIMIT = "{{ MAX_EXECUTION_TIME_LIMIT }}"
         CURRENT_DATE_TIME = "{% now "c" %}"
         CODALAB = {
             state: {
-                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}"),
+                public_env_variables: {
+                    MAX_EXECUTION_TIME_LIMIT:MAX_EXECUTION_TIME_LIMIT
+                }
             }
         }
 
