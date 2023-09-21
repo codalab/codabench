@@ -450,3 +450,10 @@ CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 # Django-Su (User impersonation)
 SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
 AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='username')}
+
+# =============================================================================
+# Limit for re-running submission
+# This is used to limit users to rerun submissions
+# on default queue when number of submissions are < RERUN_SUBMISSION_LIMIT
+# =============================================================================
+RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
