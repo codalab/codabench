@@ -89,6 +89,17 @@ function pretty_date(date_string) {
     }
 }
 
+function pretty_bytes(bytes, decimal_places=1, suffix="B") {
+    const units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'];
+    for (const unit of units) {
+        if (Math.abs(bytes) < 1024.0 || unit == 'PiB') {
+            return bytes.toFixed(decimal_places) + unit + suffix;
+        }
+        bytes /= 1024.0;
+    }
+    return bytes.toFixed(decimal_places) + "Pi" + suffix;
+}
+
 /* ----------------------------------------------------------------------------
  Form data helpers
  ----------------------------------------------------------------------------*/

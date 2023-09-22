@@ -224,9 +224,13 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'competitions.tasks.submission_status_cleanup',
         'schedule': timedelta(seconds=3600)
     },
+    # 'create_storage_analytics_snapshot': {
+    #     'task': 'analytics.tasks.create_storage_analytics_snapshot',
+    #     'schedule': crontab(hour='2', minute='0', day_of_week='sun') # Every Sunday at 02:00 UTC time
+    # },
     'create_storage_analytics_snapshot': {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
-        'schedule': crontab(hour='2', minute='0', day_of_week='sun') # Every Sunday at 02:00 UTC time
+        'schedule': crontab(hour='16', minute='24')
     },
     'reset_computed_storage_analytics': {
         'task': 'analytics.tasks.reset_computed_storage_analytics',
