@@ -8,30 +8,33 @@
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
     <div each="{competition in competitions.results}">
-        <a class="link-no-deco" href="../{competition.id}">
             <div class="tile-wrapper">
                 <div class="ui square tiny bordered image img-wrapper">
                     <img src="{competition.logo}">
                 </div>
-                <div class="comp-info">
-                    <h4 class="heading">
-                        {competition.title}
-                    </h4>
-                    <p class="comp-description">
-                        { pretty_description(competition.description)}
-                    </p>
-                    <p class="organizer">
-                        <em>Organized by: <strong>{competition.created_by}</strong></em>
-                    </p>
-                </div>
+                <a class="link-no-deco" href="../{competition.id}">
+                    <div class="comp-info">
+                        <h4 class="heading">
+                            {competition.title}
+                        </h4>
+                        <p class="comp-description">
+                            { pretty_description(competition.description)}
+                        </p>
+                        <p class="organizer">
+                            <em>Organized by: <strong>{competition.created_by}</strong></em>
+                        </p>
+                    </div>
+                </a>
                 <div class="comp-stats">
                     {pretty_date(competition.created_when)}
-                    <div if="{!competition.reward}" class="ui divider"></div>
-                    <div if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></div>
+                    <div if="{!competition.reward && ! competition.report}" class="ui divider"></div>
+                    <div>
+                        <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
+                        <span if="{competition.report}"><a href="{competition.report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></span></a>
+                    </div>
                     <strong>{competition.participant_count}</strong> Participants
                 </div>
             </div>
-        </a>
     </div>
     <div class="pagination-nav" hide="{(competitions.count < 10)}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
@@ -142,7 +145,10 @@
         margin auto
 
     .link-no-deco
+        all unset
         text-decoration none
+        cursor pointer
+        width 100%
 
     .tile-wrapper
         border solid 1px gainsboro
