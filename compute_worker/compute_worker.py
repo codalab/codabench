@@ -26,9 +26,12 @@ from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
-
 logger = logging.getLogger()
 
+
+# -----------------------------------------------
+# Celery + Rabbit MQ
+# -----------------------------------------------
 # Init celery + rabbit queue definitions
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -38,6 +41,9 @@ app.conf.task_queues = [
 ]
 
 
+# -----------------------------------------------
+# Directories
+# -----------------------------------------------
 # Setup base directories used by all submissions
 # note: we need to pass this directory to docker-compose so it knows where to store things!
 HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
@@ -45,6 +51,10 @@ BASE_DIR = "/codabench/"  # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
+
+# -----------------------------------------------
+# Submission status
+# -----------------------------------------------
 # Status options for submissions
 STATUS_NONE = "None"
 STATUS_SUBMITTING = "Submitting"
@@ -65,9 +75,15 @@ AVAILABLE_STATUSES = (
     STATUS_FAILED,
 )
 
-# Meta data files
+# -----------------------------------------------
+# Meta Data Files
+# -----------------------------------------------
 META_DATA_FILES = ['metadata', 'metadata.yaml']
 
+
+# -----------------------------------------------
+# Container Engine
+# -----------------------------------------------
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
@@ -78,7 +94,16 @@ else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
 
 
+# -----------------------------------------------
+# Exceptions
+# -----------------------------------------------
 class SubmissionException(Exception):
+    pass
+
+class DockerImagePullException(Exception):
+    pass
+
+class ExecutionTimeLimitExceeded(Exception):
     pass
 
 
@@ -97,6 +122,8 @@ def run_wrapper(run_args):
         if run.is_scoring:
             run.push_scores()
         run.push_output()
+    except DockerImagePullException as e:
+        run._update_status(STATUS_FAILED, str(e))
     except SubmissionException as e:
         run._update_status(STATUS_FAILED, str(e))
     except SoftTimeLimitExceeded:
@@ -163,14 +190,14 @@ def is_valid_zip(zip_path):
         return False
 
 
-class ExecutionTimeLimitExceeded(Exception):
-    pass
-
-
 def alarm_handler(signum, frame):
     raise ExecutionTimeLimitExceeded
 
 
+# -----------------------------------------------
+# Class Run
+# Respnosible for running a submission inside a docker container
+# -----------------------------------------------
 class Run:
     """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
@@ -343,8 +370,55 @@ class Run:
             container_engine_pull = check_output(cmd)
             logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
         except CalledProcessError:
-            logger.info("Pull for image: {} returned a non-zero exit code!")
-            raise SubmissionException(f"Pull for {image_name} failed!")
+            error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub."
+            logger.info(error_message)
+            # Prepare data to be sent to submissions api
+            docker_pull_fail_data = {
+                "type": "Docker_Image_Pull_Fail",
+                "error_message": error_message,
+            }
+            # Send data to be written to ingestion logs
+            self._update_submission(docker_pull_fail_data)
+            # Send error through web socket to the frontend
+            asyncio.run(self._send_data_through_socket(error_message))
+            raise DockerImagePullException(f"Pull for {image_name} failed!")
+
+    async def _send_data_through_socket(self, error_message):
+        """
+        This function gets an error messages and sends it through a web socket. This function is used for sending
+        - Docker image pull failure logs
+        - Execution time limit exceeded logs
+        """
+        logger.info(f"Connecting to {self.websocket_url} to send docker image pull error")
+
+        # connect to web socket
+        websocket = await websockets.connect(self.websocket_url)
+
+        # define websocket errors
+        websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
+
+        try:
+            # send message
+            await websocket.send(json.dumps({
+                "kind": "stderr",
+                "message": error_message
+            }))
+
+        except websocket_errors:
+            # handle websocket errors
+            logger.info(f"Error sending failed through websocket")
+            try:
+                await websocket.close()
+            except Exception as e:
+                logger.error(e)
+        else:
+            # no error in websocket message sending
+            logger.info(f"Error sent successfully through websocket")
+
+        logger.info(f"Disconnecting from websocket {self.websocket_url}")
+
+        # close websocket
+        await websocket.close()
 
     def _get_bundle(self, url, destination, cache=True):
         """Downloads zip from url and unzips into destination. If cache=True then url is hashed and checked
@@ -673,7 +747,7 @@ class Run:
         """
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
-        
+
         headers = {
             # For Azure only, other systems ignore these headers
             'x-ms-blob-type': 'BlockBlob',
@@ -777,7 +851,19 @@ class Run:
         try:
             loop.run_until_complete(gathered_tasks)
         except ExecutionTimeLimitExceeded:
-            raise SubmissionException(f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds")
+            error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
+            logger.info(error_message)
+            # Prepare data to be sent to submissions api
+            execution_time_limit_exceeded_data = {
+                "type": "Execution_Time_Limit_Exceeded",
+                "error_message": error_message,
+                "is_scoring": self.is_scoring
+            }
+            # Send data to be written to ingestion/scoring std_err
+            self._update_submission(execution_time_limit_exceeded_data)
+            # Send error through web socket to the frontend
+            asyncio.run(self._send_data_through_socket(error_message))
+            raise SubmissionException(error_message)
         finally:
             self.watch = False
             for kind, logs in self.logs.items():

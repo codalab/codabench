@@ -284,6 +284,9 @@
                         toastr.success(`Rerunning ${response.count} submissions`)
                         self.update_submissions()
                     })
+                    .fail(function (response) {
+                        toastr.error(response.responseJSON.detail)
+                    })
             }
         }
         self.filter = function () {

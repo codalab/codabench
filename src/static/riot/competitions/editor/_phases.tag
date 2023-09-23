@@ -389,6 +389,25 @@
             $(self.refs.modal).modal('hide')
         }
 
+        self.formatDateToYYYYMMDD = function(input) {
+            // This function formats date in the format YYYY-MM-DD
+
+            // convert input to date
+            var dateObject = new Date(input)
+
+            // check if date has a time
+            if (!isNaN(dateObject.getTime())) {
+                // Extract year
+                var year = dateObject.getFullYear()
+                // Extract Month
+                var month = (dateObject.getMonth() + 1).toString().padStart(2, '0')
+                // Extract day
+                var day = dateObject.getDate().toString().padStart(2, '0')
+                return `${year}-${month}-${day}`
+            }
+            return input
+        }
+
         self.form_updated = function () {
             // This checks phases overall to make sure they are ready to go
             var is_valid = true
@@ -406,9 +425,8 @@
                 })
                 _.forEach(_.range(self.phases.length), i => {
                     if (i !== 0) {
-                        let end = Date.parse(self.phases[i - 1].end)
-                        let start = Date.parse(self.phases[i].start)
-
+                        let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i - 1].end))
+                        let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
                         if (end > start || !end) {
                             let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
                             if (!self.warnings.includes(message)) {
