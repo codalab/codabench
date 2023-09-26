@@ -146,14 +146,21 @@
                 <i class="dropdown icon"></i>
                 <div class="default text">Select Competitions</div>
                 <div class="menu">
-                    <option each="{ competition in competitionsDropdownOptions }" value="{ competition.id }">{ competition.title }</div>
+                    <option each="{ competition in competitionsDropdownOptions }" value="{ competition.id }">{ competition.title }</div> 
                 </div>
             </select>
-            <div class='chart-container'>
-                <canvas ref="storage_competitions_usage_history_chart"></canvas>
-            </div>
+            <button class="ui button" onclick={selectTopFiveBiggestCompetitions}>Select top 5 biggest competitions</button>
             <div class='chart-container'>
                 <canvas ref="storage_competitions_usage_chart"></canvas>
+            </div>
+            <div class="ui calendar" ref="table_date_calendar">
+                <div class="ui input left icon">
+                    <i class="calendar icon"></i>
+                    <input type="text">
+                </div>
+            </div>
+            <div class='chart-container'>
+                <canvas ref="storage_competitions_usage_pie"></canvas>
             </div>
             <table id="storageCompetitionsTable" class="ui selectable sortable celled table">
                 <thead>
@@ -166,7 +173,7 @@
                 </thead>
                 <tbody>
                     <tr each="{ competitionUsage in competitionsUsageTableData }">
-                        <td>{ competitionUsage.title }</td>
+                        <td><a href="{ URLS.COMPETITION_DETAIL(competitionUsage.id) }">{ competitionUsage.title }</a></td>
                         <td>{ competitionUsage.organizer }</td>
                         <td>{ competitionUsage.created_when }</td>
                         <td>{ competitionUsage.datasets }</td>
@@ -213,6 +220,8 @@
         self.start_date = datetime.local(datetime.local().year);
         self.end_date = datetime.local();
 
+        self.colors = ["#36a2eb", "#ff6384", "#4bc0c0", "#ff9f40", "#9966ff", "#ffcd56", "#c9cbcf"];
+
         /****** Overview *****/
         self.competitionsChart;
         self.submissionsChart;
@@ -232,19 +241,11 @@
         self.storageUsageChart;
 
         // Competitions usage
-        self.competitionsDropdownOptions = [
-            { id: 1, title: "Toto" },
-            { id: 2, title: "Titi" },
-            { id: 3, title: "Tata" },
-            { id: 4, title: "Tutu" }
-        ];
-        self.update({
-            competitionsUsageTableData: [
-                { id: 1, title: "Toto competition", organizer: 'Toto', created_when: '2023-09-14T16:22:08.732648Z', datasets: 1000 },
-                { id: 2, title: "Titi competition", organizer: 'Titi', created_when: '2023-09-14T16:22:08.732648Z', datasets: 10000 },
-                { id: 3, title: "Tata competition", organizer: 'Tata', created_when: '2023-09-14T16:22:08.732648Z', datasets: 100 }
-            ]
-        });
+        self.competitionsDropdownOptions = [];
+        self.storageCompetitionsUsageChart;
+        self.storageCompetitionsUsagePieChart;
+        self.competitionsUsageTableData = [];
+        self.competitionsColor = {};
 
         // Users usage
 
@@ -357,14 +358,6 @@
             self.submissionsChart = new Chart($(self.refs.submission_chart), create_chart_config('# of Submissions'));
             self.usersChart = new Chart($(self.refs.user_chart), create_chart_config('# of Users Joined'));
 
-            self.update_analytics(self.start_date, null, self.time_unit)
-
-            /*---------------------------------------------------------------------
-             Date range default selection
-            ---------------------------------------------------------------------*/
-
-            self.time_range_shortcut("month");
-
             /*---------------------------------------------------------------------
              Tabs
             ---------------------------------------------------------------------*/
@@ -377,7 +370,7 @@
             $('.storage .top.menu .item').tab('change tab', 'usage-history');
 
             /*---------------------------------------------------------------------
-             Storage Charts Setup
+             Storage Usage History Chart Setup
             ---------------------------------------------------------------------*/
             let storageUsageConfig = {
                 type: 'line',
@@ -463,6 +456,7 @@
             ---------------------------------------------------------------------*/
 
             // Sementic UI components setups
+            self.selectedCompetitions = [];
             $(self.refs.competitions_dropdown).dropdown({
                 onAdd: self.addCompetitionToSelection,
                 onRemove: self.removeCompetitionFromSelection,
@@ -471,6 +465,116 @@
                 
             });
             $('#storageCompetitionsTable').tablesort();
+            self.tableSelectedDate = null;
+            let table_date_specific_options = {
+                onChange: function(date, text) {
+                    self.tableSelectedDate = date;
+                    self.updateCompetitionsTable();
+                    self.updateCompetitionsChart();
+                    self.updateCompetitionsPieChart();
+                }
+            };
+            let table_date_calendar_options = _.assign({}, general_calendar_options, table_date_specific_options);
+            $(self.refs.table_date_calendar).calendar(table_date_calendar_options);
+
+            /*---------------------------------------------------------------------
+             Competitions Usage Chart Setup
+            ---------------------------------------------------------------------*/
+
+            let storageCompetitionsUsageConfig = {
+                type: 'line',
+                data: {
+                    datasets: [],
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            ticks: {
+                                source: 'auto'
+                            }
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                stepSize: 'auto',
+                                callback: function(value, index, values) {
+                                    return pretty_bytes(value);
+                                }
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                        position: 'nearest',
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                return pretty_bytes(tooltipItem.yLabel);
+                            }
+                        }
+                    }
+                }
+            };
+
+            self.storageCompetitionsUsageChart = new Chart($(self.refs.storage_competitions_usage_chart), storageCompetitionsUsageConfig);
+
+            /*---------------------------------------------------------------------
+             Competitions Usage Pie Chart Setup
+            ---------------------------------------------------------------------*/
+
+            let storageCompetitionsUsagePieConfig = {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    competitionsId: [],
+                    datasets: [
+                        {
+                            label: 'Competitions distribution',
+                            backgroundColor: [],
+                            hoverOffset: 4,
+                            data: []
+                        }
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'left',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Competitions distribution'
+                        }
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const label = data.labels[tooltipItem.index];
+                                const value = pretty_bytes(data.datasets[0].data[tooltipItem.index]);
+                                return " " + label + ": " + value;
+                            }
+                        }
+                    }
+                }
+            };
+
+            self.storageCompetitionsUsagePieChart = new Chart($(self.refs.storage_competitions_usage_pie), storageCompetitionsUsagePieConfig);
+
+            /*---------------------------------------------------------------------
+             Initialization
+            ---------------------------------------------------------------------*/
+
+            self.update_analytics(self.start_date, null, self.time_unit);
+            self.time_range_shortcut("month");
+            self.update_chart_resolution("day");
         })
 
         /*---------------------------------------------------------------------
@@ -627,7 +731,7 @@
             };
             CODALAB.api.get_storage_usage_history(parameters)
                 .done(function(data) {
-                    self.storageUsageHistoryData = data;
+                    self.update({storageUsageHistoryData: data});
                     self.update_storage_usage_history_chart(data);
                     self.isDataReloadNeeded["storage"]["usageHistory"] = false;
                 })
@@ -645,10 +749,13 @@
             CODALAB.api.get_competitions_usage(parameters)
                 .done(function(data) {
                     self.competitionsUsageData = data;
-                    console.log('self.competitionsUsageData', self.competitionsUsageData);
+                    self.update({competitionsUsageData: data});
+                    self.updateCompetitionsSelectionDropdown();
+                    self.updateCompetitionTableCalendar(data);
+                    self.updateCompetitionsChart();
+                    self.updateCompetitionsPieChart();
+                    self.updateCompetitionsTable();
                     self.isDataReloadNeeded["storage"]["competitionsUsage"] = false;
-                    // self.update_competitions_usage_chart(data);
-                    // self.update_competitions_usage_table(data);
                 })
                 .fail(function(error) {
                     toastr.error("Could not load storage analytics data");
@@ -666,6 +773,7 @@
             }
 
             self.start_date = self.end_date.minus(diffs[unit_selection]);
+            self.shortcut_dropdown.dropdown('set selected', unit_selection);
             self.time_unit = 'day';
 
             if (unit_selection !== 'year') {
@@ -696,6 +804,7 @@
         // Chart Units (Months, Weeks, Days)
         self.update_chart_resolution = function(unit_selection) {
             self.time_unit = unit_selection;
+            self.resolution_dropdown.dropdown('set selected', unit_selection);
 
             self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection;
             self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection;
@@ -720,14 +829,241 @@
                     console.log("TODO");
                 }
             }
+            self.update();
         }
 
         self.addCompetitionToSelection = function(value, text, $addedItem) {
-            console.log("addCompetitionSelection", value);
+            if(Object.keys(self.competitionsUsageData).length > 0) {
+                self.selectedCompetitions.push(value);
+                let competitionUsage = [];
+                for (let [dateString, competitions] of Object.entries(self.competitionsUsageData)) {
+                    for (let [competitionId, competition] of Object.entries(competitions)) {
+                        if (competitionId == value) {
+                            competitionUsage.push({x: new Date(dateString), y: competition.datasets * 1024});
+                        }
+                    }
+                }
+                const competitions = Object.values(self.competitionsUsageData)[0];
+                const competitionTitle = competitions[value].title;
+                if(!self.competitionsColor.hasOwnProperty(value)) {
+                    self.competitionsColor[value] = self.colors[Object.keys(self.competitionsColor).length % self.colors.length];
+                }
+                const color = self.competitionsColor[value];
+
+                // Update chart
+                self.storageCompetitionsUsageChart.data.datasets.push({
+                    competitionId: value,
+                    label: competitionTitle,
+                    data: competitionUsage,
+                    backgroundColor: color,
+                    borderWidth: 1,
+                    lineTension: 0,
+                    fill: false
+                });
+                self.storageCompetitionsUsageChart.update();
+
+                // Update pie chart
+                let selectedDate = self.tableSelectedDate;
+                if (!selectedDate) {
+                    selectedDate = new Date(Object.keys(self.competitionsUsageData).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur , '0000-00-00'));
+                }
+                const selectedDateString = selectedDate.getUTCFullYear() + "-" + (selectedDate.getUTCMonth()+1) + "-" + selectedDate.getUTCDate();
+                const closestOlderDateString = Object.keys(self.competitionsUsageData).reduce((acc, cur) => (Math.abs(new Date(selectedDateString) - new Date(cur)) < Math.abs(new Date(selectedDateString) - new Date(acc)) && (new Date(selectedDateString) - new Date(cur) >= 0)) ? cur : acc, '9999-12-31');
+                const competitionsAtSelectedDate = self.competitionsUsageData[closestOlderDateString];
+                const selectedCompetitions = Object.keys(competitionsAtSelectedDate).filter(date => self.selectedCompetitions.includes(date)).reduce((competition, date) => ({ ...competition, [date]: competitionsAtSelectedDate[date] }), {});
+                
+                const {labels, competitionsId, data} = self.formatDataForCompetitionsPieChart(selectedCompetitions);
+                self.storageCompetitionsUsagePieChart.data.labels = labels;
+                self.storageCompetitionsUsagePieChart.data.competitionsId = competitionsId;
+                self.storageCompetitionsUsagePieChart.data.datasets[0].data = data;
+                self.storageCompetitionsUsagePieChart.data.datasets[0].labels = labels;
+                self.storageCompetitionsUsagePieChart.data.datasets[0].backgroundColor = self.listOfColors(data.length);
+                self.storageCompetitionsUsagePieChart.update();
+            }
+        }
+
+        self.listOfColors = function(arrayLength) {
+            return Array.apply(null, Array(arrayLength)).map(function (x, i) { return self.colors[i%self.colors.length]; })
+        }
+
+        self.formatDataForCompetitionsPieChart = function (data) {
+            var labels = [];
+            var competitionsId = [];
+            var formattedData = [];
+
+            const competitionArray = Object.entries(data).map(([key, value]) => ({ ...value, id: key }));
+            competitionArray.sort((a, b) => b.datasets - a.datasets);
+            for (const competition of competitionArray) {
+                labels.push(competition.title);
+                competitionsId.push(competition.id);
+                formattedData.push(competition.datasets * 1024);
+            }
+
+            return {labels: labels, competitionsId: competitionsId, data: formattedData};
         }
 
         self.removeCompetitionFromSelection = function(value, text, $removedItem) {
-            console.log("removeCompetitionFromSelection", value);
+            // Remove from selection
+            const indexToRemoveInSelected = self.selectedCompetitions.findIndex(competitionId => competitionId == value);
+            if (indexToRemoveInSelected !== -1) {
+                self.selectedCompetitions.splice(indexToRemoveInSelected, 1);
+            }
+
+            // Reassign competitions color
+            self.competitionsColor = {};
+            for(const competitionId of self.selectedCompetitions) {
+                self.competitionsColor[competitionId] = self.colors[Object.keys(self.competitionsColor).length % self.colors.length];
+            }
+
+            // Remove from competition usage chart
+            let indexToRemove = self.storageCompetitionsUsageChart.data.datasets.findIndex(dataset => dataset.competitionId == value);
+            if (indexToRemove !== -1) {
+                self.storageCompetitionsUsageChart.data.datasets.splice(indexToRemove, 1);
+                for(let dataset of self.storageCompetitionsUsageChart.data.datasets) {
+                    dataset.backgroundColor = self.competitionsColor[dataset.competitionId]
+                }
+                self.storageCompetitionsUsageChart.update();
+            }
+
+            // Remove from competition pie chart
+            indexToRemove = self.storageCompetitionsUsagePieChart.data.competitionsId.findIndex(id => id == value);
+            if (indexToRemove !== -1) {
+                self.storageCompetitionsUsagePieChart.data.labels.splice(indexToRemove, 1);
+                self.storageCompetitionsUsagePieChart.data.competitionsId.splice(indexToRemove, 1);
+                self.storageCompetitionsUsagePieChart.data.datasets[0].data.splice(indexToRemove, 1);
+                self.storageCompetitionsUsagePieChart.data.datasets[0].backgroundColor.splice(indexToRemove, 1);
+                self.storageCompetitionsUsagePieChart.data.datasets[0].backgroundColor = self.storageCompetitionsUsagePieChart.data.competitionsId.map(competitionId => self.competitionsColor[competitionId]);
+                self.storageCompetitionsUsagePieChart.update();
+            }
+        }
+
+        self.updateCompetitionsSelectionDropdown = function () {
+            // Remove current selection
+            $(self.refs.competitions_dropdown).dropdown('clear');
+            
+            // Update the options
+            let competitionsOptions = [];
+            if(Object.keys(self.competitionsUsageData).length > 0) {
+                const competitions = Object.values(self.competitionsUsageData)[0];
+                competitionsOptions = Object.entries(competitions).map(([id, { title }]) => ({ id, title }));
+            }
+            self.competitionsDropdownOptions = competitionsOptions;
+            $(self.refs.competitions_dropdown).dropdown('change values', competitionsOptions);
+            self.update({competitionsDropdownOptions: competitionsOptions});
+        }
+
+        self.selectTopFiveBiggestCompetitions = function () {
+            let selectCompetitions = [];
+            if (Object.keys(self.competitionsUsageData).length > 0) {
+                const mostRecentDateString = Object.keys(self.competitionsUsageData).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur );
+                let competitions = Object.entries(self.competitionsUsageData[mostRecentDateString]);
+                competitions.sort((a, b) => b[1].datasets - a[1].datasets);
+                selectCompetitions = competitions.slice(0, 5).map(([id]) => id);
+            }
+            self.selectedCompetitions = selectCompetitions;
+            $(self.refs.competitions_dropdown).dropdown('clear');
+            for(const competitionId of selectCompetitions) {
+                $(self.refs.competitions_dropdown).dropdown('set selected', competitionId);
+            }
+        }
+
+        self.updateCompetitionTableCalendar = function(data) {
+            // Set the min and max date of the calendar
+            const minDate = new Date(Object.keys(data).reduce((acc, cur) => new Date(acc) < new Date(cur) ? acc : cur, '9999-12-31'));
+            const maxDate = new Date(Object.keys(data).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur, '0000-00-00'));
+            $(self.refs.table_date_calendar).calendar('setting', 'minDate', minDate);
+            $(self.refs.table_date_calendar).calendar('setting', 'maxDate', maxDate);
+
+            // Select the most current date available
+            self.tableSelectedDate = maxDate;
+            $(self.refs.table_date_calendar).calendar('set date', maxDate);
+            $(self.refs.table_date_calendar).calendar('refresh');
+        }
+
+        self.updateCompetitionsChart = function() {
+            if(Object.keys(self.competitionsUsageData).length > 0) {
+                const selectedCompetitions = Object.fromEntries(
+                    Object.entries(self.competitionsUsageData).map(([dateString, competitions]) => [
+                        dateString,
+                        Object.fromEntries(
+                            Object.entries(competitions).filter(([competitionId]) => self.selectedCompetitions.includes(competitionId))
+                        )
+                    ])
+                );
+                
+                const competitionsUsage = {};
+                for (let [dateString, competitions] of Object.entries(selectedCompetitions)) {
+                    for (let [competitionId, competition] of Object.entries(competitions)) {
+                        if (!competitionsUsage.hasOwnProperty(competitionId)) {
+                            competitionsUsage[competitionId] = [];
+                        }
+                        competitionsUsage[competitionId].push({x: new Date(dateString), y: competition.datasets * 1024});
+                    }
+                }
+
+                self.storageCompetitionsUsageChart.data.datasets = [];
+                let index = 0;
+                for(let [competitionId, dataset] of Object.entries(competitionsUsage)) {
+                    const color = self.colors[index % self.colors.length];
+                    const title = Object.values(self.competitionsUsageData)[0][competitionId].title;
+                    self.storageCompetitionsUsageChart.data.datasets.push({
+                        competitionId: competitionId,
+                        label: title,
+                        data: dataset,
+                        backgroundColor: color,
+                        borderWidth: 1,
+                        lineTension: 0,
+                        fill: false
+                    });
+                    index++;
+                }
+
+                self.storageCompetitionsUsageChart.update();
+            }
+        }
+
+        self.updateCompetitionsPieChart = function() {
+            let selectedDate = self.tableSelectedDate;
+            if (!selectedDate) {
+                selectedDate = new Date(Object.keys(self.competitionsUsageData).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur , '0000-00-00'));
+            }
+            const selectedDateString = selectedDate.getUTCFullYear() + "-" + (selectedDate.getUTCMonth()+1) + "-" + selectedDate.getUTCDate();
+            const closestOlderDateString = Object.keys(self.competitionsUsageData).reduce((acc, cur) => (Math.abs(new Date(selectedDateString) - new Date(cur)) < Math.abs(new Date(selectedDateString) - new Date(acc)) && (new Date(selectedDateString) - new Date(cur) >= 0)) ? cur : acc, '9999-12-31');
+            const competitionsAtSelectedDate = self.competitionsUsageData[closestOlderDateString];
+            const selectedCompetitions = Object.keys(competitionsAtSelectedDate).filter(date => self.selectedCompetitions.includes(date)).reduce((competition, date) => ({ ...competition, [date]: competitionsAtSelectedDate[date] }), {});
+
+            const {labels, competitionsId, data} = self.formatDataForCompetitionsPieChart(selectedCompetitions);
+            self.storageCompetitionsUsagePieChart.data.labels = labels;
+            self.storageCompetitionsUsagePieChart.data.competitionsId = competitionsId;
+            self.storageCompetitionsUsagePieChart.data.datasets[0].data = data;
+            self.storageCompetitionsUsagePieChart.data.datasets[0].labels = labels;
+            self.storageCompetitionsUsagePieChart.data.datasets[0].backgroundColor = self.listOfColors(data.length);
+            self.storageCompetitionsUsagePieChart.update();
+        }
+
+        self.updateCompetitionsTable = function() {
+            const data = self.competitionsUsageData;
+            let competitionsUsageTableData = [];
+            if (Object.keys(data).length > 0) {
+                let selectedDate = self.tableSelectedDate;
+                if (!selectedDate) {
+                    selectedDate = new Date(Object.keys(data).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur , '0000-00-00'));
+                }
+                const selectedDateString = selectedDate.getUTCFullYear() + "-" + (selectedDate.getUTCMonth()+1) + "-" + selectedDate.getUTCDate();
+                const closestOlderDateString = Object.keys(data).reduce((acc, cur) => (Math.abs(new Date(selectedDateString) - new Date(cur)) < Math.abs(new Date(selectedDateString) - new Date(acc)) && (new Date(selectedDateString) - new Date(cur) >= 0)) ? cur : acc, '9999-12-31');
+                const competitions = data[closestOlderDateString];
+                Object.entries(competitions).forEach(keyValue => {
+                    const [competitionId, competition] = keyValue;
+                    competitionsUsageTableData.push({
+                        'id': competitionId,
+                        'title': competition.title,
+                        'organizer': competition.organizer,
+                        'created_when': new Date(competition.created_when).toDateString(),
+                        'datasets': pretty_bytes(competition.datasets * 1024)
+                    });
+                });
+                self.update({competitionsUsageTableData: competitionsUsageTableData});
+            }
         }
 
     </script>
