@@ -314,6 +314,9 @@ CODALAB.api = {
     get_competitions_usage: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/competitions_usage/`, filters);
     },
+    get_users_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/

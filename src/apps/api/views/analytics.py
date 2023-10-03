@@ -10,7 +10,7 @@ from rest_framework.filters import BaseFilterBackend
 from rest_framework.decorators import api_view
 from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
-from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint
+from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
 
 import datetime
@@ -231,3 +231,43 @@ def competitions_usage(request):
             }
     
     return Response(competitions_usage, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def users_usage(request):
+    """
+    Gets the users usage between the 2 provided dates at the given resolution
+    """
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+    
+    users_usage = {}
+    last_user_storage_snapshot = UserStorageDataPoint.objects.order_by("at_date").last()
+    if last_user_storage_snapshot:
+        start_date = request.query_params.get("start_date", (datetime.datetime.today() - datetime.timedelta(weeks=4)).strftime("%Y-%m-%d"))
+        end_date = request.query_params.get("end_date", datetime.datetime.today().strftime("%Y-%m-%d"))
+        resolution = request.query_params.get("resolution", "day")
+
+        query = UserStorageDataPoint.objects.filter(
+            at_date__range=(start_date, end_date),
+        ).dates("at_date", resolution).values(
+            'id',
+            'user__id',
+            'user__username',
+            'user__email',
+            'user__date_joined',
+            'datasets_total',
+            'submissions_total',
+            'datefield'
+        )
+        for su in query.order_by("-datefield", "user__id"):
+            print("su", su, flush=True)
+            users_usage.setdefault(su['datefield'].isoformat(), {})[su['user__id']] = {
+                'snapshot_id': su['id'],
+                'name': su['user__username'] + " (" + su['user__email'] + ")",
+                'date_joined': su['user__date_joined'],
+                'datasets': su['datasets_total'],
+                'submissions': su['submissions_total'],
+            }
+    
+    return Response(users_usage, status=status.HTTP_200_OK)

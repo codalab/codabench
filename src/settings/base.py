@@ -230,7 +230,7 @@ CELERY_BEAT_SCHEDULE = {
     # },
     'create_storage_analytics_snapshot': {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
-        'schedule': crontab(hour='16', minute='24')
+        'schedule': crontab(hour='19', minute='21')
     },
     'reset_computed_storage_analytics': {
         'task': 'analytics.tasks.reset_computed_storage_analytics',
