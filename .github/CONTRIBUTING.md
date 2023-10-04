@@ -1,15 +1,15 @@
 # HOW YOU CAN CONTRIBUTE TO THE CODABENCH PROJECT
 
-## preliminary step: being a codabench user.
+## First step: being a codabench user.
 
 - create a user account on https://codalab.lisn.fr and on https://codabench.org.
 - register on https://codabench.org to this existing competition (IRIS-tuto) https://www.codabench.org/competitions/1115/  and make a submission (from https://github.com/codalab/competition-examples/tree/master/codabench/iris): sample_result_submission and sample_code_submission. See https://github.com/codalab/codabench/wiki/User_Participating-in-a-Competition
 - create your own private competition (from https://github.com/codalab/competition-examples/tree/master/codabench/ ). See https://github.com/codalab/codabench/wiki/Getting-started-with-Codabench
 
- ## First step: setting a local instance of Codabench.
+ ## Second step: setting a local instance of Codabench.
 
 - Follow the tutorial in codabench wiki: https://github.com/codalab/codabench/wiki/Codabench-Installation. According to your hosting OS, you might have to tune your environment file a bit. Try without enabling the SSL protocol (doing so, you don't need a domain name for the server). Try using the embedded Minio storage solution instead of a private cloud storage.
-- if needed, you can also looked into https://github.com/codalab/codabench/wiki/How-to-deploy-Codabench-on-your-server
+- if needed, you can also look into https://github.com/codalab/codabench/wiki/How-to-deploy-Codabench-on-your-server
 
 ## Third step: using one's local instance
 
