@@ -8,7 +8,7 @@
     </select>
     <button class="ui button" onclick={selectTopFiveBiggestUsers}>Select top 5 biggest users</button>
     <div class='chart-container'>
-        <canvas ref="storage_users_usage_chart"></canvas>
+        <canvas class="big" ref="storage_users_usage_chart"></canvas>
     </div>
     <div class="ui calendar" ref="users_table_date_calendar">
         <div class="ui input left icon">
@@ -16,24 +16,31 @@
             <input type="text">
         </div>
     </div>
-    <div class='chart-container'>
-        <canvas ref="storage_users_usage_pie"></canvas>
+    <div style="display: flex; flex-direction: row">
+        <div class='chart-container' style="width: 60%">
+            <canvas ref="storage_users_usage_pie"></canvas>
+        </div>
+        <div class='chart-container' style="width: 40%; padding-left: 30px">
+            <canvas ref="storage_users_usage_pie_details"></canvas>
+        </div>
     </div>
     <table id="storageUsersTable" class="ui selectable sortable celled table">
         <thead>
             <tr>
-                <th is="su-th" field="name">User</th>
-                <th is="su-th" field="date_joined">Joined at</th>
-                <th is="su-th" field="datasets">Datasets</th>
-                <th is="su-th" field="submissions">Submissions</th>
+                <th is="su-th" data-sort-method="alphanumeric">User</th>
+                <th is="su-th" class="date" data-sort-method="date">Joined at</th>
+                <th is="su-th" class="bytes" data-sort-method="numeric">Datasets</th>
+                <th is="su-th" class="bytes" data-sort-method="numeric">Submissions</th>
+                <th is="su-th" class="bytes default-sort"data-sort-method="numeric">Total</th>
             </tr>
         </thead>
         <tbody>
             <tr each="{ userUsage in usersUsageTableData }">
                 <td>{ userUsage.name }</td>
-                <td>{ userUsage.date_joined }</td>
-                <td>{ userUsage.datasets }</td>
-                <td>{ userUsage.submissions }</td>
+                <td>{ formatDate(userUsage.date_joined) }</td>
+                <td>{ formatSize(userUsage.datasets) }</td>
+                <td>{ formatSize(userUsage.submissions) }</td>
+                <td>{ formatSize(userUsage.datasets + userUsage.submissions) }</td>
             </tr>
         </tbody>
     </table>
@@ -57,7 +64,9 @@
         self.colors = ["#36a2eb", "#ff6384", "#4bc0c0", "#ff9f40", "#9966ff", "#ffcd56", "#c9cbcf"];
         self.storageUsersUsageChart;
         self.storageUsersUsagePieChart;
+        self.storageUsersUsageDetailedPieChart;
         self.usersUsageTableData = [];
+        self.selectedUserId = null;
 
         self.one("mount", function () {
             self.state.startDate = opts.start_date;
@@ -71,7 +80,28 @@
                 clearable: true,
                 preserveHTML: false,
             });
+
             $('#storageUsersTable').tablesort();
+            $('#storageUsersTable thead th.date').data('sortBy', function(th, td, tablesort) {
+                return new Date(td.text());
+            });
+            $('#storageUsersTable thead th.bytes').data('sortBy', function(th, td, tablesort) {
+                const re = /(\d+.?\d*)(\D+)/;
+                const found = td.text().match(re);
+                const unitToPower = {
+                    'B': 0,
+                    'KiB': 1,
+                    'MiB': 2,
+                    'GiB': 3,
+                    'TiB': 4,
+                    'PiB': 5,
+                    'EiB': 6,
+                    'ZiB': 7
+                };
+                const bytes = found[1] * Math.pow(1024, unitToPower[found[2]]);
+                return bytes;
+            });
+
             const general_calendar_options = {
                 type: 'date',
                 // Sets the format of the placeholder date string to YYYY-MM-DD
@@ -156,11 +186,51 @@
                     plugins: {
                         legend: {
                             position: 'left',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Users distribution'
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Users distribution'
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const label = data.labels[tooltipItem.index];
+                                const value = pretty_bytes(data.datasets[0].data[tooltipItem.index]);
+                                return " " + label + ": " + value;
+                            }
+                        }
+                    },
+                    onClick: self.onStorageUsersUsagePieChartClick
+                }
+            };
+
+            self.storageUsersUsagePieChart = new Chart($(self.refs.storage_users_usage_pie), storageUsersUsagePieConfig);
+
+            // Detail pie chart
+            const storageUsersDetailedUsagePieConfig = {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'User details',
+                            backgroundColor: [],
+                            hoverOffset: 4,
+                            data: []
+                        }
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'User details'
                     },
                     tooltips: {
                         callbacks: {
@@ -173,8 +243,7 @@
                     }
                 }
             };
-
-            self.storageUsersUsagePieChart = new Chart($(self.refs.storage_users_usage_pie), storageUsersUsagePieConfig);
+            self.storageUsersUsageDetailedPieChart = new Chart($(self.refs.storage_users_usage_pie_details), storageUsersDetailedUsagePieConfig);
         });
 
         self.on("update", function () {
@@ -289,11 +358,11 @@
             var formattedData = [];
 
             const userArray = Object.entries(data).map(([key, value]) => ({ ...value, id: key }));
-            userArray.sort((a, b) => b.datasets - a.datasets);
+            userArray.sort((a, b) => (b.datasets + b.submissions) - (a.datasets + a.submissions));
             for (const user of userArray) {
                 labels.push(user.name);
                 usersId.push(user.id);
-                formattedData.push(user.datasets * 1024);
+                formattedData.push((user.datasets + user.submissions) * 1024);
             }
 
             return {labels: labels, usersId: usersId, data: formattedData};
@@ -343,7 +412,7 @@
             if (Object.keys(self.usersUsageData).length > 0) {
                 const mostRecentDateString = Object.keys(self.usersUsageData).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur );
                 let users = Object.entries(self.usersUsageData[mostRecentDateString]);
-                users.sort((a, b) => b[1].datasets - a[1].datasets);
+                users.sort((a, b) => (b[1].datasets + b[1].submissions) - (a[1].datasets + a[1].submissions));
                 selectUsers = users.slice(0, 5).map(([id]) => id);
             }
             for(const userId of selectUsers) {
@@ -428,13 +497,53 @@
                     usersUsageTableData.push({
                         'id': userId,
                         'name': user.name,
-                        'date_joined': user.date_joined,
-                        'datasets': pretty_bytes(user.datasets * 1024),
-                        'submissions': pretty_bytes(user.submissions * 1024)
+                        'date_joined': new Date(user.date_joined),
+                        'datasets': user.datasets * 1024,
+                        'submissions': user.submissions * 1024
                     });
                 });
                 self.update({usersUsageTableData: usersUsageTableData});
             }
+        }
+
+        self.onStorageUsersUsagePieChartClick = function(event, activeElements) {
+            if (activeElements.length > 0) {
+                const userId = self.storageUsersUsagePieChart.data.usersId[activeElements[0]._index];
+                if (self.selectedUserId != userId) {
+                    const data = self.usersUsageData;
+                    let selectedDate = self.usersTableSelectedDate;
+                    if (!selectedDate) {
+                        selectedDate = new Date(Object.keys(data).reduce((acc, cur) => new Date(acc) > new Date(cur) ? acc : cur , '0000-00-00'));
+                    }
+                    const selectedDateString = selectedDate.getUTCFullYear() + "-" + (selectedDate.getUTCMonth()+1) + "-" + selectedDate.getUTCDate();
+                    const closestOlderDateString = Object.keys(data).reduce((acc, cur) => (Math.abs(new Date(selectedDateString) - new Date(cur)) < Math.abs(new Date(selectedDateString) - new Date(acc)) && (new Date(selectedDateString) - new Date(cur) >= 0)) ? cur : acc, '9999-12-31');
+                    const users = data[closestOlderDateString];
+                    const userData = users[userId];
+                    const datasets_data = [
+                        userData.datasets,
+                        userData.submissions,
+                    ];
+                    const labels = [
+                        "datasets",
+                        "submissions"
+                    ];
+                    self.storageUsersUsageDetailedPieChart.data.labels = labels;
+                    self.storageUsersUsageDetailedPieChart.data.datasets[0].data = datasets_data;
+                    self.storageUsersUsageDetailedPieChart.data.datasets[0].labels = labels;
+                    self.storageUsersUsageDetailedPieChart.data.datasets[0].backgroundColor = ["#36a2eb", "#ff6384"];
+                    self.storageUsersUsageDetailedPieChart.options.title = {display: true, text: userData.name};
+                    self.selectedUserId = userId;
+                    self.storageUsersUsageDetailedPieChart.update();
+                }
+            }
+        }
+
+        self.formatDate = function(date) {
+            return datetime.fromJSDate(date).toISODate();
+        }
+
+        self.formatSize = function(size) {
+            return pretty_bytes(size);
         }
     </script>
 
@@ -448,7 +557,7 @@
             width: 1000px;
         }
 
-        canvas {
+        canvas.big {
             height: 500px !important;
             width: 1000px !important;
         }

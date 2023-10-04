@@ -1,6 +1,6 @@
 <analytics-storage-usage-history>
     <div class='chart-container'>
-        <canvas ref="storage_usage_history_chart"></canvas>
+        <canvas class="big" ref="storage_usage_history_chart"></canvas>
     </div>
 
     <script>

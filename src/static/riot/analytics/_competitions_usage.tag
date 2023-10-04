@@ -8,7 +8,7 @@
     </select>
     <button class="ui button" onclick={selectTopFiveBiggestCompetitions}>Select top 5 biggest competitions</button>
     <div class='chart-container'>
-        <canvas ref="storage_competitions_usage_chart"></canvas>
+        <canvas class="big" ref="storage_competitions_usage_chart"></canvas>
     </div>
     <div class="ui calendar" ref="table_date_calendar">
         <div class="ui input left icon">
@@ -17,23 +17,23 @@
         </div>
     </div>
     <div class='chart-container'>
-        <canvas ref="storage_competitions_usage_pie"></canvas>
+        <canvas class="big" ref="storage_competitions_usage_pie"></canvas>
     </div>
     <table id="storageCompetitionsTable" class="ui selectable sortable celled table">
         <thead>
             <tr>
-                <th is="su-th" field="title">Competition</th>
-                <th is="su-th" field="organizer">Organizer</th>
-                <th is="su-th" field="created_when">Creation date</th>
-                <th is="su-th" field="datasets">Datasets</th>
+                <th is="su-th" data-sort-method="alphanumeric">Competition</th>
+                <th is="su-th" data-sort-method="alphanumeric">Organizer</th>
+                <th is="su-th" class="date" data-sort-method="date">Creation date</th>
+                <th is="su-th" class="bytes" data-sort-method="numeric">Datasets</th>
             </tr>
         </thead>
         <tbody>
             <tr each="{ competitionUsage in competitionsUsageTableData }">
                 <td><a href="{ URLS.COMPETITION_DETAIL(competitionUsage.id) }">{ competitionUsage.title }</a></td>
                 <td>{ competitionUsage.organizer }</td>
-                <td>{ competitionUsage.created_when }</td>
-                <td>{ competitionUsage.datasets }</td>
+                <td>{ formatDate(competitionUsage.created_when) }</td>
+                <td>{ formatSize(competitionUsage.datasets) }</td>
             </tr>
         </tbody>
     </table>
@@ -71,7 +71,28 @@
                 clearable: true,
                 preserveHTML: false,
             });
+
             $('#storageCompetitionsTable').tablesort();
+            $('#storageCompetitionsTable thead th.date').data('sortBy', function(th, td, tablesort) {
+                return new Date(td.text());
+            });
+            $('#storageCompetitionsTable thead th.bytes').data('sortBy', function(th, td, tablesort) {
+                const re = /(\d+.?\d*)(\D+)/;
+                const found = td.text().match(re);
+                const unitToPower = {
+                    'B': 0,
+                    'KiB': 1,
+                    'MiB': 2,
+                    'GiB': 3,
+                    'TiB': 4,
+                    'PiB': 5,
+                    'EiB': 6,
+                    'ZiB': 7
+                };
+                const bytes = found[1] * Math.pow(1024, unitToPower[found[2]]);
+                return bytes;
+            });
+
             const general_calendar_options = {
                 type: 'date',
                 // Sets the format of the placeholder date string to YYYY-MM-DD
@@ -429,12 +450,20 @@
                         'id': competitionId,
                         'title': competition.title,
                         'organizer': competition.organizer,
-                        'created_when': new Date(competition.created_when).toDateString(),
-                        'datasets': pretty_bytes(competition.datasets * 1024)
+                        'created_when': new Date(competition.created_when),
+                        'datasets': competition.datasets * 1024
                     });
                 });
                 self.update({competitionsUsageTableData: competitionsUsageTableData});
             }
+        }
+
+        self.formatDate = function(date) {
+            return datetime.fromJSDate(date).toISODate();
+        }
+
+        self.formatSize = function(size) {
+            return pretty_bytes(size);
         }
     </script>
 
@@ -448,7 +477,7 @@
             width: 1000px;
         }
 
-        canvas {
+        canvas.big {
             height: 500px !important;
             width: 1000px !important;
         }

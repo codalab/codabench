@@ -88,7 +88,7 @@
             </div>
 
             <div class='chart-container'>
-                <canvas ref="competition_chart"></canvas>
+                <canvas class="big" ref="competition_chart"></canvas>
             </div>
         </div>
 
@@ -103,7 +103,7 @@
             </div>
 
             <div class='chart-container'>
-                <canvas ref="submission_chart"></canvas>
+                <canvas class="big" ref="submission_chart"></canvas>
             </div>
         </div>
 
@@ -118,7 +118,7 @@
             </div>
 
             <div class='chart-container'>
-                <canvas ref="user_chart"></canvas>
+                <canvas class="big" ref="user_chart"></canvas>
             </div>
         </div>
 
@@ -507,7 +507,7 @@
             margin-bottom: 8px;
         }
 
-        canvas {
+        canvas.big {
             height: 500px !important;
             width: 1000px !important;
         }

@@ -261,7 +261,6 @@ def users_usage(request):
             'datefield'
         )
         for su in query.order_by("-datefield", "user__id"):
-            print("su", su, flush=True)
             users_usage.setdefault(su['datefield'].isoformat(), {})[su['user__id']] = {
                 'snapshot_id': su['id'],
                 'name': su['user__username'] + " (" + su['user__email'] + ")",
