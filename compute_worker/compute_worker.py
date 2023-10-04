@@ -682,7 +682,7 @@ class Run:
             start_time = time.time()
             zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
             duration = time.time() - start_time
-            logger.info("Time needed to zip archive: {duration} seconds.")
+            logger.info(f"Time needed to zip archive: {duration} seconds.")
             if is_valid_zip(zip_path): # Check zip integrity
                 self._put_file(url, file=zip_path) # Send the file
                 break # Leave the loop in case of success
