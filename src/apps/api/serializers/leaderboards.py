@@ -100,22 +100,20 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         # desc == -colname
         # asc == colname
         primary_col = instance.columns.get(index=instance.primary_index)
-        # Order first by primary column. Then order by other columns after for tie breakers.
-        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        # Order first by primary column. Then order by date of creation for tie breakers.
+        ordering = f'{"-" if primary_col.sorting == "desc" else ""}primary_col'
         submissions = Submission.objects.filter(leaderboard=instance, is_specific_task_re_run=False)\
             .select_related('owner').prefetch_related('scores')\
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
-        # TODO: Look at why we have primary_col in the above annotation
 
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
-            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
             kwargs = {
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
             }
             submissions = submissions.annotate(**kwargs)
 
-        submissions = submissions.order_by(*ordering, 'created_when')
+        submissions = submissions.order_by(ordering, 'created_when')
         return SubmissionLeaderBoardSerializer(submissions, many=True).data
 
 
