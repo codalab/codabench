@@ -389,7 +389,7 @@
 
         self.get_score = function (submission) {
             try{
-                return parseFloat(submission.scores[0].score).toFixed(2)
+                return parseFloat(submission.scores[0].score) // not rounded to avoid problems
                 
             } catch {
                 return ""
