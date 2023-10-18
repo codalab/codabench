@@ -1,4 +1,8 @@
 <analytics-storage-usage-history>
+    <button class="ui green button" onclick={downloadUsageHistory}>
+        <i class="icon download"></i>Download as CSV
+    </button>
+
     <div class='chart-container'>
         <canvas class="big" ref="storage_usage_history_chart"></canvas>
     </div>
@@ -140,6 +144,32 @@
                 self.storageUsageChart.data.datasets[index].data = list_usages[usage_label];
             }
             self.storageUsageChart.update();
+        }
+
+        self.downloadUsageHistory = function() {
+            var csv = [];
+
+            // Categories
+            let categories = ['Competitions', 'Users', 'Administration', 'Orphaned files', 'Total'];
+            csv.push("," + categories.join(","));
+
+            // Data points
+            sorted_dates = Object.keys(self.storageUsageHistoryData).sort(function(a, b) {return new Date(a) - new Date(b)});
+            for (const date of sorted_dates) {
+                let points = [
+                    date,
+                    self.storageUsageHistoryData[date]['competitions_usage'] * 1024,
+                    self.storageUsageHistoryData[date]['users_usage'] * 1024,
+                    self.storageUsageHistoryData[date]['admin_usage'] * 1024,
+                    self.storageUsageHistoryData[date]['orphaned_file_usage'] * 1024,
+                    self.storageUsageHistoryData[date]['total_usage'] * 1024
+                ];
+                csv.push(points.join(","));
+            }
+
+            // Save
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "storage_usage_history.csv");
         }
     </script>
 

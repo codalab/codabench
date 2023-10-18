@@ -7,6 +7,9 @@
         </div>
     </select>
     <button class="ui button" onclick={selectTopFiveBiggestCompetitions}>Select top 5 biggest competitions</button>
+    <button class="ui green button" onclick={downloadCompetitionsHistory}>
+        <i class="icon download"></i>Download as CSV
+    </button>
     <div class='chart-container'>
         <canvas class="big" ref="storage_competitions_usage_chart"></canvas>
     </div>
@@ -19,6 +22,9 @@
     <div class='chart-container'>
         <canvas class="big" ref="storage_competitions_usage_pie"></canvas>
     </div>
+    <button class="ui green button" onclick={downloadCompetitionsTable}>
+        <i class="icon download"></i>Download as CSV
+    </button>
     <table id="storageCompetitionsTable" class="ui selectable sortable celled table">
         <thead>
             <tr>
@@ -464,6 +470,54 @@
 
         self.formatSize = function(size) {
             return pretty_bytes(size);
+        }
+
+        self.downloadCompetitionsHistory = function() {
+            var csv = [];
+
+            // Categories
+            const competitions = Object.values(self.competitionsUsageData)[0];
+            const competitions_id = Object.entries(competitions).map(([id, { title }]) => (id));
+            const competitions_name = Object.entries(competitions).map(([id, { title }]) => (title));
+            csv.push("," + competitions_id.join(","));
+            csv.push("," + competitions_name.join(","));
+
+            // Data points
+            sorted_dates = Object.keys(self.competitionsUsageData).sort(function(a, b) {return new Date(a) - new Date(b)});
+            for (const date of sorted_dates) {
+                let points = [date];
+                for (const id of competitions_id) {
+                    points.push(self.competitionsUsageData[date][id]['datasets'] * 1024);
+                }
+                csv.push(points.join(","));
+            }
+
+            // Save
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "competitions_usage_history.csv");
+        }
+
+        self.downloadCompetitionsTable = function() {
+            var csv = [];
+
+            // Categories
+            let categories = ['Competition', 'Organizer', 'Creation date', 'Datasets'];
+            csv.push(categories.join(","));
+
+            // Data points
+            for (const competition of self.competitionsUsageTableData) {
+                const points = [
+                    competition.title,
+                    competition.organizer,
+                    competition.created_when.toLocaleString(),
+                    competition.datasets * 1024
+                ];
+                csv.push(points.join(","));
+            }
+
+            // Save
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "competitions_table.csv");
         }
     </script>
 

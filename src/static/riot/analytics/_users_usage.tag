@@ -7,6 +7,9 @@
         </div>
     </select>
     <button class="ui button" onclick={selectTopFiveBiggestUsers}>Select top 5 biggest users</button>
+    <button class="ui green button" onclick={downloadUsersHistory}>
+        <i class="icon download"></i>Download as CSV
+    </button>
     <div class='chart-container'>
         <canvas class="big" ref="storage_users_usage_chart"></canvas>
     </div>
@@ -24,6 +27,9 @@
             <canvas ref="storage_users_usage_pie_details"></canvas>
         </div>
     </div>
+    <button class="ui green button" onclick={downloadUsersTable}>
+        <i class="icon download"></i>Download as CSV
+    </button>
     <table id="storageUsersTable" class="ui selectable sortable celled table">
         <thead>
             <tr>
@@ -520,8 +526,8 @@
                     const users = data[closestOlderDateString];
                     const userData = users[userId];
                     const datasets_data = [
-                        userData.datasets,
-                        userData.submissions,
+                        userData.datasets * 1024,
+                        userData.submissions * 1024,
                     ];
                     const labels = [
                         "datasets",
@@ -544,6 +550,55 @@
 
         self.formatSize = function(size) {
             return pretty_bytes(size);
+        }
+
+        self.downloadUsersHistory = function() {
+            var csv = [];
+
+            // Categories
+            const users = Object.values(self.usersUsageData)[0];
+            const users_id = Object.entries(users).map(([id, { name }]) => (id));
+            const users_name = Object.entries(users).map(([id, { name }]) => (name));
+            csv.push("," + users_id.join(","));
+            csv.push("," + users_name.join(","));
+
+            // Data points
+            sorted_dates = Object.keys(self.usersUsageData).sort(function(a, b) {return new Date(a) - new Date(b)});
+            for (const date of sorted_dates) {
+                let points = [date];
+                for (const id of users_id) {
+                    points.push((self.usersUsageData[date][id]['datasets'] + self.usersUsageData[date][id]['submissions']) * 1024);
+                }
+                csv.push(points.join(","));
+            }
+
+            // Save
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "users_usage_history.csv");
+        }
+
+        self.downloadUsersTable = function() {
+            var csv = [];
+
+            // Categories
+            let categories = ['User', 'Joined at', 'Datasets', 'Submissions', 'Total'];
+            csv.push(categories.join(","));
+
+            // Data points
+            for (const user of self.usersUsageTableData) {
+                const points = [
+                    user.name,
+                    user.date_joined.toLocaleString(),
+                    user.datasets * 1024,
+                    user.submissions * 1024,
+                    (user.datasets + user.submissions) * 1024
+                ];
+                csv.push(points.join(","));
+            }
+
+            // Save
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, "users_table.csv");
         }
     </script>
 

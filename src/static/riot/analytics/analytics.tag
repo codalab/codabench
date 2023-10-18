@@ -132,7 +132,6 @@
             <a class="item" data-tab="usage-history">Usage history</a>
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
-            <a class="item" data-tab="admin-usage">Administration usage</a>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="usage-history">
@@ -145,10 +144,6 @@
 
         <div class="ui bottom attached tab segment" data-tab="users-usage">
             <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
-        </div>
-
-        <div class="ui bottom attached tab segment" data-tab="admin-usage">
-            <analytics-storage-admin-usage></analytics-storage-admin-usage>
         </div>
     </div>
 
@@ -167,7 +162,6 @@
                 "usageHistory": true,
                 "competitionsUsage": true,
                 "usersUsage": true,
-                "adminUsage": true
             }
         };
 
@@ -190,14 +184,6 @@
         self.users_data;
 
         /****** Storage *****/
-
-        // Usage history
-        self.usersUsageData = null;
-        self.adminUsageData = null;
-
-        // Users usage
-
-        // Admin usage
 
         self.one("mount", function () {
             // Semantic UI
