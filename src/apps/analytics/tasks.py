@@ -280,7 +280,7 @@ def create_storage_analytics_snapshot():
                 admin_storage_at_date[date] += size
 
     for date in admin_storage_day_range:
-        defaults = {"backups_total": admin_storage_at_date[date]}
+        defaults = {"backups_total": admin_storage_at_date[date] / 1024.0}
         lookup_params = {"at_date": date}
         AdminStorageDataPoint.objects.update_or_create(
             defaults=defaults, **lookup_params
@@ -375,7 +375,7 @@ def create_storage_analytics_snapshot():
             nb_missing_files += 1
 
     # Storage
-    nb_orphaned_files = 0  # In Bytes
+    nb_orphaned_files = 0
     orphaned_files_total_size = 0  # In bytes
     orphaned_files_size_per_date = {
         last_storage_usage_history_date + timedelta(day): 0
