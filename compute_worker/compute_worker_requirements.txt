@@ -1,5 +1,7 @@
 celery==4.4.0
 requests==2.20.0
-watchdog==0.8.3
+watchdog==2.1.1
+argh==0.26.2
 websockets==8.1
 aiofiles==0.4.0
+pyyaml==5.3.1
