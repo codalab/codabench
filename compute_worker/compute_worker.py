@@ -334,7 +334,7 @@ class Run:
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
-        resp = self.requests_session.patch(url, data, timeout=15)
+        resp = self.requests_session.patch(url, data, timeout=150)
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
@@ -360,23 +360,31 @@ class Run:
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
-        try:
-            cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
-            container_engine_pull = check_output(cmd)
-            logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
-        except CalledProcessError:
-            error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub."
-            logger.info(error_message)
-            # Prepare data to be sent to submissions api
-            docker_pull_fail_data = {
-                "type": "Docker_Image_Pull_Fail",
-                "error_message": error_message,
-            }
-            # Send data to be written to ingestion logs
-            self._update_submission(docker_pull_fail_data)
-            # Send error through web socket to the frontend
-            asyncio.run(self._send_data_through_socket(error_message))
-            raise DockerImagePullException(f"Pull for {image_name} failed!")
+        retries, max_retries = (0, 3)
+        while retries < max_retries:
+            try:
+                cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
+                container_engine_pull = check_output(cmd)
+                logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
+                break  # Break if the loop is successful
+            except CalledProcessError:
+                retries += 1
+                if retries >= max_retries:
+                    error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub."
+                    logger.info(error_message)
+                    # Prepare data to be sent to submissions api
+                    docker_pull_fail_data = {
+                        "type": "Docker_Image_Pull_Fail",
+                        "error_message": error_message,
+                    }
+                    # Send data to be written to ingestion logs
+                    self._update_submission(docker_pull_fail_data)
+                    # Send error through web socket to the frontend
+                    asyncio.run(self._send_data_through_socket(error_message))
+                    raise DockerImagePullException(f"Pull for {image_name} failed!")
+                else:
+                    logger.info("Failed. Retrying in 5 seconds...")
+                    time.sleep(5)  # Wait 5 seconds before retrying
 
     async def _send_data_through_socket(self, error_message):
         """
