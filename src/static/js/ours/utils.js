@@ -300,7 +300,12 @@ function getBase64(file) {
         debug: $.tablesort.DEBUG,
         asc: 'sorted ascending',
         desc: 'sorted descending',
-        compare: function(a, b) {
+        compare: function(a, b, settings) {
+            // Convert the values to numbers for proper sorting
+            if (!isNaN(parseFloat(a)) && !isNaN(parseFloat(b))) {
+                var a = parseFloat(a);
+                var b = parseFloat(b);
+            }
             if (a > b) {
                 return 1;
             } else if (a < b) {
