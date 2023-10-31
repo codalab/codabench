@@ -68,6 +68,7 @@ def user_lookup(request):
     if search:
         filters |= Q(username__icontains=search)
         filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
+        filters |= Q(id=search)
 
     users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
 
