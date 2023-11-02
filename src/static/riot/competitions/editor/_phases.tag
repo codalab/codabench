@@ -89,7 +89,7 @@
                 <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
                         Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
-                        <span data-tooltip="Use task manager to create new tasks" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
@@ -100,7 +100,7 @@
                 <div class="fluid field" ref="public_data_select_container" id="public_data_select_container">
                     <label for="public_data">
                         Public Data (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new public data sets" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new public datasets" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
@@ -110,7 +110,7 @@
                 <div class="fluid field" ref="starting_kit_select_container" id="starting_kit_select_container">
                     <label for="starting_kit">
                         Starting Kit (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new starting kits" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new starting kits" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"

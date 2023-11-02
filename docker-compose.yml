@@ -126,7 +126,11 @@ services:
   #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
-    image: rabbitmq:management
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbitmq
+      args:
+        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
