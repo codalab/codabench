@@ -68,9 +68,8 @@ class SubmissionViewSet(ModelViewSet):
                     # Set file name to ingestion std error as default
                     error_file_name = "prediction_ingestion_stderr"
 
-                    # Change error file name when error comes from execution time limit
-                    # and error occured during scoring
-                    if request.data["type"] == "Execution_Time_Limit_Exceeded" and request.data['is_scoring'] == "True":
+                    # Change error file name to scoring_stderr when error occurs during scoring
+                    if request.data['is_scoring'] == "True":
                         error_file_name = "scoring_stderr"
 
                     try:
