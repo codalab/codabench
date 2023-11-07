@@ -62,13 +62,24 @@ class GetMyProfile(RetrieveAPIView, GenericAPIView):
 @login_required
 def user_lookup(request):
     search = request.GET.get('q', '')
+    id = request.GET.get('id')
     filters = Q()
     is_admin = request.user.is_superuser or request.user.is_staff
 
     if search:
         filters |= Q(username__icontains=search)
         filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
-        filters |= Q(id=search)
+    elif id:
+        if not is_admin:
+            raise PermissionDenied('Cannot look up by id')
+
+        if not id.isdigit():
+            return HttpResponse(
+                'Invalid id',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        filters = Q(id=id)
 
     users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
 
