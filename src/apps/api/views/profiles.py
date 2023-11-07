@@ -69,8 +69,17 @@ def user_lookup(request):
     if search:
         filters |= Q(username__icontains=search)
         filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
-    elif id and id.isdigit():
-        filters = Q(id=search)
+    elif id:
+        if not is_admin:
+            raise PermissionDenied('Cannot look up by id')
+
+        if not id.isdigit():
+            return HttpResponse(
+                'Invalid id',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        filters = Q(id=id)
 
     users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
 
