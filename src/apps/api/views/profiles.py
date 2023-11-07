@@ -62,14 +62,15 @@ class GetMyProfile(RetrieveAPIView, GenericAPIView):
 @login_required
 def user_lookup(request):
     search = request.GET.get('q', '')
+    id = request.GET.get('id')
     filters = Q()
     is_admin = request.user.is_superuser or request.user.is_staff
 
     if search:
         filters |= Q(username__icontains=search)
         filters |= Q(email__icontains=search) if is_admin else Q(email__iexact=search)
-        if search.isdigit():
-            filters |= Q(id=search)
+    elif id and id.isdigit():
+        filters = Q(id=search)
 
     users = User.objects.exclude(id=request.user.id).filter(filters)[:5]
 
