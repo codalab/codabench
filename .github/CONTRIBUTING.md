@@ -1,6 +1,6 @@
 # HOW YOU CAN CONTRIBUTE TO THE CODABENCH PROJECT
 
-## 1. Being a codabench user.
+## 1. Being a Codabench user.
 
 - Create a user account on https://codalab.lisn.fr and on https://codabench.org.
 - Register on https://codabench.org to this existing competition (IRIS-tuto) https://www.codabench.org/competitions/1115/  and make a submission (from https://github.com/codalab/competition-examples/tree/master/codabench/iris): sample_result_submission and sample_code_submission. See https://github.com/codalab/codabench/wiki/User_Participating-in-a-Competition
