@@ -41,7 +41,7 @@
             <input type="text" name="location" placeholder="Location"></div>
         <div class="field" id="email">
             <label>Email</label>
-            <input type="text" name="email" placeholder="Email">
+            <input disabled type="text" name="email" placeholder="Email">
         </div>
         <div class="two fields">
             <div class="field" id="personal_url">
@@ -99,16 +99,10 @@
              $('#user-form').form({
                  keyboardShortcuts: false,
                  fields: {
-                     email: {
-                         identifier: 'email',
-                         optional: true,
-                         rules: [
-                             {
-                                 type: 'email',
-                                 prompt: 'Please enter a valid {name}'
-                             }
-                         ]
-                     },
+                    email: {
+                        identifier: 'email',
+                        optional: true // Make the email field optional
+                    },
                      personal_url: {
                          identifier: 'personal_url',
                          optional: true,
@@ -167,7 +161,13 @@
                      },
                  },
                  onSuccess: function () {
-                     _.extend(self.selected_user, $('#user-form').form('get values'))
+                     // get form values from user-form
+                     const formValues = $('#user-form').form('get values')
+                     
+                     // delete email from form values
+                     delete formValues.email;
+
+                     _.extend(self.selected_user, formValues)
                      CODALAB.api.update_user_details(self.selected_user.id, self.selected_user)
                          .done(data => {
                              toastr.success("Details Saved")
