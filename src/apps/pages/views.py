@@ -90,8 +90,14 @@ class ServerStatusView(TemplateView):
         for submission in context['submissions']:
             # Get filesize from each submissions's data
             submission.file_size = self.format_file_size(submission.data.file_size)
+
             # Get queue from each submission
-            queue_name = "*" if submission.queue is None else submission.queue.name
+            queue_name = ""
+            # if submission has parent get queue from parent otherwise from the submission iteset
+            if submission.parent:
+                queue_name = "*" if submission.parent.queue is None else submission.parent.queue.name
+            else:
+                queue_name = "*" if submission.queue is None else submission.queue.name
             submission.competition_queue = queue_name
 
         return context
