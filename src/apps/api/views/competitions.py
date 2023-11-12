@@ -251,7 +251,7 @@ class CompetitionViewSet(ModelViewSet):
             # save leaderboard individually, then pass pk to each phase
             if 'leaderboards' in data:
                 leaderboard_data = data['leaderboards'][0]
-                if(leaderboard_data['id']):
+                if leaderboard_data['id']:
                     leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                     leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
                 else:
@@ -296,8 +296,16 @@ class CompetitionViewSet(ModelViewSet):
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
                     except TypeError:
                         phase['starting_kit'] = None
+
+            # Get whitelist emails from data
+            whitelist_emails = data['whitelist_emails']
+            # Delete white_list emails from data because it is not in a list of dict format, it is just list of emails
+            data.pop('whitelist_emails', None)
+            # Loop over whitelist emails and add them back to whitelist emails in dict format
+            for email in whitelist_emails:
+                data.setdefault('whitelist_emails', []).append({'email': email})
+
             serializer = self.get_serializer(instance, data=data, partial=partial)
-            type(serializer)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
@@ -340,8 +348,13 @@ class CompetitionViewSet(ModelViewSet):
             participant.status = 'approved'
             send_participation_accepted_emails(participant)
         else:
-            participant.status = 'pending'
-            send_participation_requested_emails(participant)
+            # check if user is in whitelist emails then approve directly
+            if user.email in list(competition.whitelist_emails.values_list('email', flat=True)):
+                participant.status = 'approved'
+                send_participation_accepted_emails(participant)
+            else:
+                participant.status = 'pending'
+                send_participation_requested_emails(participant)
 
         participant.save()
         return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
