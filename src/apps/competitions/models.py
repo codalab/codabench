@@ -280,7 +280,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     has_been_migrated = models.BooleanField(default=False)
     hide_output = models.BooleanField(default=False)
 
-    has_max_submissions = models.BooleanField(default=False)
+    has_max_submissions = models.BooleanField(default=True)
     max_submissions_per_day = models.PositiveIntegerField(default=5, null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(default=100, null=True, blank=True)
 
