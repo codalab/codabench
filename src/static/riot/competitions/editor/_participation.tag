@@ -4,29 +4,7 @@
             <label>Terms</label>
             <textarea class="markdown-editor" ref="terms" name="terms"></textarea>
         </div>
-
-        <!--  Whitelist emails list  -->
-        <!--  Emails of users who do not require admin approval to enter the competition  -->
-        <div class="field">
-            <label>White list</label>
-            <p>A list of emails (one per line) of users who do not require competition organizer's approval to enter this competition.</p>
-            <div class="ui yellow message">
-                <span><b>Note:</b></span><br>
-                Empty lines are not allowed<br>
-                Valid emails are considered with the following:
-                <ul>
-                    <li>starts with one or more alphanumeric characters, dots, underscores, or hyphens</li>
-                    <li>followed by the "@" symbol.</li>
-                    <li>followed by one or more alphanumeric characters or dots</li>
-                    <li>followed by a dot</li>
-                    <li>ends with two to four alphabetical characters</li>
-                </ul>
-            </div>
-            <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
-            <div class="error-message" style="color: red;"></div>
-        </div>
-        
-        <div class="field">
+         <div class="field">
             <div class="ui checkbox">
                 <input selenium="auto-approve" type="checkbox" name="registration_auto_approve" ref="registration_auto_approve" onchange="{form_updated}">
                 <label>Auto approve registration requests
@@ -48,6 +26,27 @@
                 </label>
             </div>
         </div>
+
+        <!--  Whitelist emails list  -->
+        <!--  Emails of users who do not require admin approval to enter the competition  -->
+        <div class="field">
+            <label>Whitelist Emails</label>
+            <p>A list of emails (one per line) of users who do not require competition organizer's approval to enter this competition.</p>
+            <div class="ui yellow message">
+                <span><b>Note:</b></span><br>
+                Empty lines are not allowed<br>
+                Valid emails are considered with the following:
+                <ul>
+                    <li>starts with one or more alphanumeric characters, dots, underscores, or hyphens</li>
+                    <li>followed by the "@" symbol.</li>
+                    <li>followed by one or more alphanumeric characters or dots</li>
+                    <li>followed by a dot</li>
+                    <li>ends with two to four alphabetical characters</li>
+                </ul>
+            </div>
+            <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
+            <div class="error-message" style="color: red;"></div>
+        </div>
     </form>
 
     <script>
@@ -57,7 +56,7 @@
 
         self.on('mount', () => {
             self.markdown_editor = create_easyMDE(self.refs.terms)
-            self.markdown_editor_whitelist = create_easyMDE(self.refs.whitelist_emails)
+            self.markdown_editor_whitelist = create_easyMDE(self.refs.whitelist_emails, false, false, '200px')
 
             $(':input', self.root).not('[type="file"]').not('button').not('[readonly]').each(function (i, field) {
                 this.addEventListener('keyup', self.form_updated)
