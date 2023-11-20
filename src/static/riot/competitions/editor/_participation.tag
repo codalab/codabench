@@ -34,15 +34,8 @@
             <p>A list of emails (one per line) of users who do not require competition organizer's approval to enter this competition.</p>
             <div class="ui yellow message">
                 <span><b>Note:</b></span><br>
-                Empty lines are not allowed<br>
-                Valid emails are considered with the following:
-                <ul>
-                    <li>starts with one or more alphanumeric characters, dots, underscores, or hyphens</li>
-                    <li>followed by the "@" symbol.</li>
-                    <li>followed by one or more alphanumeric characters or dots</li>
-                    <li>followed by a dot</li>
-                    <li>ends with two to four alphabetical characters</li>
-                </ul>
+                Only valid emails are allowed<br>
+                Empty lines are not allowed
             </div>
             <textarea class="markdown-editor" ref="whitelist_emails" name="whitelist_emails"></textarea>
             <div class="error-message" style="color: red;"></div>
