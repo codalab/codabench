@@ -112,32 +112,34 @@ class CompetitionViewSet(ModelViewSet):
             # not called from search bar
             # not called with a valid secret key
             if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+                # If authenticated user is not super user
+                if not self.request.user.is_superuser:
+                    # Return the following ---
+                    # All competitions which belongs to you (private or public)
+                    # And competitions where you are admin
+                    # And public competitions
+                    # And competitions where you are approved participant
+                    # this filters out all private compettions from other users
+                    base_qs = qs.filter(
+                        (Q(created_by=self.request.user)) |
+                        (Q(collaborators__in=[self.request.user])) |
+                        (Q(published=True) & ~Q(created_by=self.request.user)) |
+                        (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                    )
 
-                # Return the following ---
-                # All competitions which belongs to you (private or public)
-                # And competitions where you are admin
-                # And public competitions
-                # And competitions where you are approved participant
-                # this filters out all private compettions from other users
-                base_qs = qs.filter(
-                    (Q(created_by=self.request.user)) |
-                    (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user)) |
-                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
-                )
-
-                # Additional condition of action
-                # allow private competition when action is register and has valid secret key
-                if self.request.method == 'POST' and self.action == 'register':
-                    # get secret_key from request data
-                    register_secret_key = self.request.data.get('secret_key', None)
-                    # use secret key if available
-                    if register_secret_key:
-                        qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                    # Additional condition of action
+                    # allow private competition when action is register and has valid secret key
+                    if self.request.method == 'POST' and self.action == 'register':
+                        # get secret_key from request data
+                        register_secret_key = self.request.data.get('secret_key', None)
+                        # use secret key if available
+                        if register_secret_key:
+                            qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                        else:
+                            qs = base_qs
                     else:
                         qs = base_qs
-                else:
-                    qs = base_qs
+
                 # select distinct competitions
                 qs = qs.distinct()
 
@@ -251,7 +253,7 @@ class CompetitionViewSet(ModelViewSet):
             # save leaderboard individually, then pass pk to each phase
             if 'leaderboards' in data:
                 leaderboard_data = data['leaderboards'][0]
-                if(leaderboard_data['id']):
+                if leaderboard_data['id']:
                     leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                     leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
                 else:
@@ -296,8 +298,16 @@ class CompetitionViewSet(ModelViewSet):
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
                     except TypeError:
                         phase['starting_kit'] = None
+
+            # Get whitelist emails from data
+            whitelist_emails = data['whitelist_emails']
+            # Delete white_list emails from data because it is not in a list of dict format, it is just list of emails
+            data.pop('whitelist_emails', None)
+            # Loop over whitelist emails and add them back to whitelist emails in dict format
+            for email in whitelist_emails:
+                data.setdefault('whitelist_emails', []).append({'email': email})
+
             serializer = self.get_serializer(instance, data=data, partial=partial)
-            type(serializer)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
@@ -340,8 +350,13 @@ class CompetitionViewSet(ModelViewSet):
             participant.status = 'approved'
             send_participation_accepted_emails(participant)
         else:
-            participant.status = 'pending'
-            send_participation_requested_emails(participant)
+            # check if user is in whitelist emails then approve directly
+            if user.email in list(competition.whitelist_emails.values_list('email', flat=True)):
+                participant.status = 'approved'
+                send_participation_accepted_emails(participant)
+            else:
+                participant.status = 'pending'
+                send_participation_requested_emails(participant)
 
         participant.save()
         return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
