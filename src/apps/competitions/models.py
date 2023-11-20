@@ -678,3 +678,15 @@ class CompetitionDump(models.Model):
 
     def __str__(self):
         return f"Comp dump created by {self.dataset.created_by} - {self.status}"
+
+
+# Competition White List Email Model class
+# related to Competition Model
+# Each Competition can have multiple white list emails
+# These are used to auto approve if competition white list has this email
+class CompetitionWhiteListEmail(models.Model):
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='whitelist_emails')
+    email = models.EmailField()
+
+    def __str__(self):
+        return f"{self.email} - Competition: {self.competition.title}"

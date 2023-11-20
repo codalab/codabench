@@ -9,7 +9,7 @@ from api.serializers.leaderboards import LeaderboardSerializer, ColumnSerializer
 from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
-from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant
+from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
 from forums.models import Forum
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -208,6 +208,12 @@ class PageSerializer(WritableNestedModelSerializer):
         )
 
 
+class CompetitionWhitelistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompetitionWhiteListEmail
+        fields = ['email']
+
+
 class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     pages = PageSerializer(many=True)
@@ -217,6 +223,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
     # We're using a Base64 image field here so we can send JSON for create/update of this object, if we wanted
     # include the logo as a _file_ then we would need to use FormData _not_ JSON.
     logo = NamedBase64ImageField(required=True, allow_null=True)
+    whitelist_emails = CompetitionWhitelistSerializer(many=True, required=False)
 
     class Meta:
         model = Competition
@@ -247,6 +254,7 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'reward',
             'contact_email',
             'report',
+            'whitelist_emails'
         )
 
     def validate_phases(self, phases):
@@ -287,6 +295,26 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
 
         return instance
 
+    def update(self, instance, validated_data):
+
+        # Get the updated whitelist emails from the validated data
+        updated_whitelist_emails = validated_data.get('whitelist_emails', [])
+
+        # Delete all existing emails
+        instance.whitelist_emails.all().delete()
+
+        # Save the updated whitelist emails to the instance
+        for whitelist_email in updated_whitelist_emails:
+            CompetitionWhiteListEmail.objects.create(competition=instance, email=whitelist_email["email"])
+
+        # Remove the 'whitelist_emails' key from validated_data to prevent it from being processed again
+        validated_data.pop('whitelist_emails', None)
+
+        # Continue with the regular update process
+        super(CompetitionSerializer, self).update(instance, validated_data)
+
+        return instance
+
 
 class CompetitionUpdateSerializer(CompetitionSerializer):
     phases = PhaseUpdateSerializer(many=True)
@@ -307,6 +335,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     submission_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
+    whitelist_emails = serializers.SerializerMethodField()
 
     class Meta:
         model = Competition
@@ -340,6 +369,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
+            'whitelist_emails'
         )
 
     def get_leaderboards(self, instance):
@@ -351,6 +381,11 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         except KeyError:
             raise Exception(f'KeyError on context. Context: {self.context}')
         return LeaderboardSerializer(qs, many=True).data
+
+    def get_whitelist_emails(self, instance):
+        whitelist_emails_query = instance.whitelist_emails.all()
+        whitelist_emails_list = [entry.email for entry in whitelist_emails_query]
+        return whitelist_emails_list
 
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
