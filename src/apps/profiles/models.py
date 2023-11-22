@@ -7,6 +7,7 @@ from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
 from utils.data import PathWrapper
 from django.urls import reverse
+from django.conf import settings
 
 PROFILE_DATA_BLACKLIST = [
     'password',
@@ -61,6 +62,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=now)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    quota = models.BigIntegerField(default=settings.DEFAULT_USER_QUOTA, null=False)
 
     # Notifications
     organizer_direct_message_updates = models.BooleanField(default=True)
