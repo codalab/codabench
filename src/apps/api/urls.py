@@ -57,6 +57,7 @@ urlpatterns = [
 
     # User quota and cleanup
     path('user_quota_cleanup/', quota.user_quota_cleanup, name="user_quota_cleanup"),
+    path('user_quota/', quota.user_quota, name="user_quota"),
     path('delete_unused_tasks/', quota.delete_unused_tasks, name="delete_unused_tasks"),
     path('delete_unused_datasets/', quota.delete_unused_datasets, name="delete_unused_datasets"),
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),

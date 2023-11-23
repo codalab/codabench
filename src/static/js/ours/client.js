@@ -323,6 +323,9 @@ CODALAB.api = {
     get_user_quota_cleanup: () => {
         return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
     },
+    get_user_quota: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota/`)
+    },
     delete_unused_tasks: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)
     },

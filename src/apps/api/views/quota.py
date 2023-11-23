@@ -50,6 +50,14 @@ def user_quota_cleanup(request):
     })
 
 
+@api_view(['GET'])
+def user_quota(request):
+    return Response({
+        "quota": 15 * 1024 * 1024,
+        "storage_used": 3 * 1024 * 1024
+    })
+
+
 @api_view(['DELETE'])
 def delete_unused_tasks(request):
     try:
