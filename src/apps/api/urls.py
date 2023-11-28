@@ -62,6 +62,11 @@ urlpatterns = [
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
 
+    # Analytics
+    path('analytics/storage_usage_history/', analytics.storage_usage_history, name='storage_usage_history'),
+    path('analytics/competitions_usage/', analytics.competitions_usage, name='competitions_usage'),
+    path('analytics/users_usage/', analytics.users_usage, name='users_usage'),
+
     # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

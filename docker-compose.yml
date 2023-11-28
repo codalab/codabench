@@ -30,6 +30,7 @@ services:
       - .:/app:delegated
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
+      - ./var/logs:/app/logs
     restart: unless-stopped
     ports:
       - 8000:8000

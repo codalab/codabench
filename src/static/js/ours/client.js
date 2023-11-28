@@ -308,6 +308,15 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
+    get_storage_usage_history: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/storage_usage_history/`, filters);
+    },
+    get_competitions_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/competitions_usage/`, filters);
+    },
+    get_users_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/

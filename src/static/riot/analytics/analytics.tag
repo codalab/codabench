@@ -1,14 +1,19 @@
 <analytics>
     <h1>Analytics</h1>
 
+    <div class="ui top no-segment bluewood inverted two column item menu analytics">
+        <a class="active item" data-tab="overview">Overview</a>
+        <a class="item" data-tab="storage">Storage</a>
+    </div>
+
     <div class="ui grid">
         <div class="four wide column">
             <h3>Date Range</h3>
 
             <div class="ui selection dropdown" ref="date_shortcut_dropdown">
-                <input type="hidden" name="range_shortcut">
+                <input type="hidden" name="range_shortcut" value="month">
                 <i class="dropdown icon"></i>
-                <div class="default text">This Year</div>
+                <div class="text">This Month</div>
                 <div class="menu">
                     <div class="item" data-value="year">This Year</div>
                     <div class="item" data-value="month">This Month</div>
@@ -32,11 +37,10 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class='hidden date-selection' ref="date_selection_container">
-        <div class="start-date-input date-input">
+        <div class=" hidden four wide column" ref="start_date_selection_container">
             <h3>Start Date</h3>
+
             <div class="ui calendar" ref="start_calendar">
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
@@ -44,8 +48,10 @@
                 </div>
             </div>
         </div>
-        <div class="date-input">
+
+        <div class="hidden four wide column" ref="end_date_selection_container">
             <h3>End Date</h3>
+
             <div class="ui calendar" ref="end_calendar">
                 <div class="ui input left icon">
                     <i class="calendar icon"></i>
@@ -55,70 +61,91 @@
         </div>
     </div>
 
+    <div class="ui active tab segment" data-tab="overview">
+        <div class="ui top attached tabular menu">
+            <a class="active item" data-tab="competitions">Benchmarks</a>
+            <a class="item" data-tab="submissions">Submissions</a>
+            <a class="item" data-tab="users">Users</a>
+        </div>
 
-    <div class="ui top attached tabular menu">
-        <a class="active item" data-tab="competitions">Benchmarks</a>
-        <a class="item" data-tab="submissions">Submissions</a>
-        <a class="item" data-tab="users">Users</a>
+        <div class="ui bottom attached active tab segment" data-tab="competitions">
+            <div class="ui small statistic">
+                <div class="value">
+                    {competitions}
+                </div>
+                <div class="label">
+                    Benchmarks Created
+                </div>
+            </div>
+
+            <div class="ui small statistic">
+                <div class="value">
+                    {competitions_published}
+                </div>
+                <div class="label">
+                    Benchmarks Published
+                </div>
+            </div>
+
+            <div class='chart-container'>
+                <canvas class="big" ref="competition_chart"></canvas>
+            </div>
+        </div>
+
+        <div class="ui bottom attached tab segment" data-tab="submissions">
+            <div class="ui small statistic">
+                <div class="value">
+                    {submissions_made}
+                </div>
+                <div class="label">
+                    Submissions Made
+                </div>
+            </div>
+
+            <div class='chart-container'>
+                <canvas class="big" ref="submission_chart"></canvas>
+            </div>
+        </div>
+
+        <div class="ui bottom attached tab segment" data-tab="users">
+            <div class="ui small statistic">
+                <div class="value">
+                    {users_total}
+                </div>
+                <div class="label">
+                    Users Joined
+                </div>
+            </div>
+
+            <div class='chart-container'>
+                <canvas class="big" ref="user_chart"></canvas>
+            </div>
+        </div>
+
+        <a class="ui green button" href="{ URLS.ANALYTICS_API({start_date: start_date_string, end_date: end_date_string, time_unit: time_unit, format: 'csv'}) }" download="codalab_analytics.csv">
+            <i class="icon download"></i>Download as CSV
+        </a>
     </div>
 
-    <div class="ui bottom attached active tab segment" data-tab="competitions">
-        <div class="ui small statistic">
-            <div class="value">
-                {competitions}
-            </div>
-            <div class="label">
-                Benchmarks Created
-            </div>
+    <div class="ui tab segment storage" data-tab="storage">
+        <div class="ui top attached tabular menu">
+            <a class="item" data-tab="usage-history">Usage history</a>
+            <a class="item" data-tab="competitions-usage">Competitions usage</a>
+            <a class="item" data-tab="users-usage">Users usage</a>
         </div>
 
-        <div class="ui small statistic">
-            <div class="value">
-                {competitions_published}
-            </div>
-            <div class="label">
-                Benchmarks Published
-            </div>
+        <div class="ui bottom attached tab segment" data-tab="usage-history">
+            <analytics-storage-usage-history start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="usage-history"}></analytics-storage-usage-history>
         </div>
 
-        <div class='chart-container'>
-            <canvas ref="competition_chart"></canvas>
+        <div class="ui bottom attached tab segment" data-tab="competitions-usage">
+            <analytics-storage-competitions-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="competitions-usage"}></analytics-storage-competitions-usage>
+        </div>
+
+        <div class="ui bottom attached tab segment" data-tab="users-usage">
+            <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
         </div>
     </div>
-
-    <div class="ui bottom attached tab segment" data-tab="submissions">
-        <div class="ui small statistic">
-            <div class="value">
-                {submissions_made}
-            </div>
-            <div class="label">
-                Submissions Made
-            </div>
-        </div>
-
-        <div class='chart-container'>
-            <canvas ref="submission_chart"></canvas>
-        </div>
-    </div>
-
-    <div class="ui bottom attached tab segment" data-tab="users">
-        <div class="ui small statistic">
-            <div class="value">
-                {users_total}
-            </div>
-            <div class="label">
-                Users Joined
-            </div>
-        </div>
-
-        <div class='chart-container'>
-            <canvas ref="user_chart"></canvas>
-        </div>
-    </div>
-
-    <a class="ui green button" href="{ URLS.ANALYTICS_API({start_date: start_date_string, end_date: end_date_string, time_unit: time_unit, format: 'csv'}) }" download="codalab_analytics.csv">
-        <i class="icon download"></i>Download as CSV
-    </a>
 
     <script>
         var self = this
@@ -126,44 +153,62 @@
         /*---------------------------------------------------------------------
          Init
         ---------------------------------------------------------------------*/
-        self.errors = []
+        self.current_view = "overview";
+        self.currentAnalyticsTab = "overview";
+        self.currentStorageTab = "usageHistory";
+        self.isDataReloadNeeded = {
+            "overview": true,
+            "storage": {
+                "usageHistory": true,
+                "competitionsUsage": true,
+                "usersUsage": true,
+            }
+        };
 
+        self.time_unit = 'month';
+        let datetime = luxon.DateTime;
+        self.start_date = datetime.local(datetime.local().year);
+        self.end_date = datetime.local();
+        self.start_date_string = self.start_date.toISODate();
+        self.end_date_string = self.end_date.toISODate();
+
+        self.colors = ["#36a2eb", "#ff6384", "#4bc0c0", "#ff9f40", "#9966ff", "#ffcd56", "#c9cbcf"];
+
+        /****** Overview *****/
         self.competitionsChart;
         self.submissionsChart;
         self.usersChart;
-        self.time_unit = 'month';
 
         self.competitions_data;
         self.submissions_data;
         self.users_data;
 
-        let datetime = luxon.DateTime
-        self.start_date = datetime.local(datetime.local().year)
-        self.end_date = datetime.local()
+        /****** Storage *****/
 
         self.one("mount", function () {
             // Semantic UI
             $('.tabular.menu .item', self.root).tab();
+            $('.no-segment.menu .item', self.root).tab();
 
-            self.shortcut_dropdown = $(self.refs.date_shortcut_dropdown)
-            self.resolution_dropdown = $(self.refs.chart_resolution_dropdown)
+            self.shortcut_dropdown = $(self.refs.date_shortcut_dropdown);
+            self.resolution_dropdown = $(self.refs.chart_resolution_dropdown);
             self.shortcut_dropdown.dropdown({
                 onChange: function(value, text, item) {
                     if (value === 'custom') {
-                        $(self.refs.date_selection_container).removeClass('hidden')
-                        self.resolution_dropdown.dropdown('set selected', 'day')
+                        $(self.refs.start_date_selection_container).removeClass('hidden')
+                        $(self.refs.end_date_selection_container).removeClass('hidden')
                     } else {
-                        $(self.refs.date_selection_container).addClass('hidden')
+                        $(self.refs.start_date_selection_container).addClass('hidden')
+                        $(self.refs.end_date_selection_container).addClass('hidden')
                         self.time_range_shortcut(value)
                     }
                 }
-            })
-
+            });
             self.resolution_dropdown.dropdown({
                 onChange: function(value, text, item) {
                     self.update_chart_resolution(value)
                 }
-            })
+            });
 
             /*---------------------------------------------------------------------
              Calendar Setup
@@ -174,38 +219,46 @@
                 // Sets the format of the placeholder date string to YYYY-MM-DD
                 formatter: {
                    date: function (date, settings) {
-                       return datetime.fromJSDate(date).toISODate()
+                       return datetime.fromJSDate(date).toISODate();
                    }
                 },
-            }
+            };
 
             let start_specific_options = {
                 endCalendar: $(self.refs.end_calendar),
                 onChange: function(date, text) {
                     self.start_date = datetime.fromJSDate(date)
-
+                    self.start_date_string = self.start_date.toISODate();
+                    self.update({start_date_string: self.start_date_string});
                     let end_date = $(self.refs.end_calendar).calendar('get date')
-                    if (!!end_date) {
-                        if (date <= end_date) {
-                            self.update_analytics(self.start_date, self.end_date, self.time_unit)
-                        } else {
-                            $(self.refs.end_calendar).calendar('set date', date, true, true);
-                            toastr.error("Start date must be before end date.")
-                        }
+
+                    if (!!end_date && date > end_date) {
+                        $(self.refs.end_calendar).calendar('set date', date, true, true);
+                        toastr.error("Start date must be before end date.");
                     } else {
-                        self.update_analytics(self.start_date, self.end_date, self.time_unit)
+                        self.isDataReloadNeeded["overview"] = true;
+                        Object.keys(self.isDataReloadNeeded["storage"]).forEach(v => self.isDataReloadNeeded["storage"][v] = true);
+                        if (self.currentAnalyticsTab == "overview") {
+                            self.update_analytics(self.start_date, self.end_date, self.time_unit);
+                        }
                     }
-                },
-            }
+                }
+            };
 
             let end_specific_options = {
                 startCalendar: $(self.refs.start_calendar),
                 onChange: function(date, text) {
                     if (date) {
                         self.end_date = datetime.fromJSDate(date)
+                        self.end_date_string = self.end_date.toISODate();
+                        self.update({end_date_string: self.end_date_string});
                     }
 
-                    self.update_analytics(self.start_date, self.end_date, self.time_unit)
+                    self.isDataReloadNeeded["overview"] = true;
+                    Object.keys(self.isDataReloadNeeded["storage"]).forEach(v => self.isDataReloadNeeded["storage"][v] = true);
+                    if (self.currentAnalyticsTab == "overview") {
+                        self.update_analytics(self.start_date, self.end_date, self.time_unit);
+                    }
                 },
             }
 
@@ -223,8 +276,24 @@
             self.submissionsChart = new Chart($(self.refs.submission_chart), create_chart_config('# of Submissions'));
             self.usersChart = new Chart($(self.refs.user_chart), create_chart_config('# of Users Joined'));
 
-            self.update_analytics(self.start_date, null, self.time_unit)
+            /*---------------------------------------------------------------------
+             Tabs
+            ---------------------------------------------------------------------*/
 
+            $('.top.menu.analytics .item').tab({'onVisible': this.onAnalyticsTabChange});
+            $('.storage .top.menu .item').tab({'onVisible': this.onStorageTabChange});
+
+            // Default selected tabs
+            $('.top.menu.analytics .item').tab('change tab', 'overview');
+            $('.storage .top.menu .item').tab('change tab', 'usage-history');
+
+            /*---------------------------------------------------------------------
+             Initialization
+            ---------------------------------------------------------------------*/
+
+            self.update_analytics(self.start_date, null, self.time_unit);
+            self.time_range_shortcut("month");
+            self.update_chart_resolution("day");
         })
 
         /*---------------------------------------------------------------------
@@ -317,17 +386,41 @@
                         start_date_string: data.start_date,
                         end_date_string: data.end_date,
                         submissions_made: data.submissions_made_count,
-                    })
+                    });
+
+                    self.isDataReloadNeeded["overview"] = false;
                 })
                 .fail(function (a, b, c) {
                     toastr.error("Could not load analytics data...")
                 })
         }
 
+        self.onAnalyticsTabChange = function (tabName) {
+            self.currentAnalyticsTab = tabName;
+            if (tabName == "overview") {
+                self.current_view = self.currentAnalyticsTab;
+                self.update({current_view: self.currentAnalyticsTab});
+            } else if (tabName == "storage") {
+                self.current_view = self.currentStorageTab;
+                self.update({current_view: self.currentStorageTab});
+            }
+
+            if (tabName == "overview" && self.isDataReloadNeeded["overview"]) {
+                self.update_analytics(self.start_date, self.end_date, self.time_unit);
+            }
+        };
+
+        self.onStorageTabChange = function(tabName) {
+            self.currentStorageTab = tabName;
+            if (self.current_view != "overview") {
+                self.current_view = self.currentStorageTab;
+                self.update({current_view: self.currentStorageTab});
+            }
+        }
 
         // Shortcut buttons
         self.time_range_shortcut = function(unit_selection) {
-            self.end_date = datetime.local()
+            self.end_date = datetime.local();
 
             let diffs = {
                 month: {months: 1},
@@ -335,44 +428,63 @@
                 year: {years: 1},
             }
 
-            self.start_date = self.end_date.minus(diffs[unit_selection])
+            self.start_date = self.end_date.minus(diffs[unit_selection]);
+            self.shortcut_dropdown.dropdown('set selected', unit_selection);
+            self.time_unit = 'day';
 
-            self.update_analytics(self.start_date, self.end_date, 'day')
+            self.start_date_string = self.start_date.toISODate();
+            self.end_date_string = self.end_date.toISODate();
 
             if (unit_selection !== 'year') {
-                self.resolution_dropdown.dropdown('set selected', 'day')
-                self.update_analytics(self.start_date, self.end_date, 'day')
+                self.resolution_dropdown.dropdown('set selected', 'day');
             } else {
-                self.resolution_dropdown.dropdown('set selected', 'month')
-                self.update_analytics(self.start_date, self.end_date, 'month')
+                self.time_unit = 'month';
+                self.resolution_dropdown.dropdown('set selected', 'month');
+            }
+
+            self.update({start_date_string: self.start_date_string, end_date_string: self.end_date_string, time_unit: self.time_unit});
+
+            self.isDataReloadNeeded["overview"] = true;
+            Object.keys(self.isDataReloadNeeded["storage"]).forEach(v => self.isDataReloadNeeded["storage"][v] = true);
+
+            if (self.currentAnalyticsTab == "overview") {
+                self.update_analytics(self.start_date, self.end_date, self.time_unit);
             }
         }
 
         // Chart Units (Months, Weeks, Days)
         self.update_chart_resolution = function(unit_selection) {
-            self.time_unit = unit_selection
+            self.time_unit = unit_selection;
+            self.update({time_unit: self.time_unit});
+            self.resolution_dropdown.dropdown('set selected', unit_selection);
 
-            self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection
-            self.usersChart.options.scales.xAxes[0].time.unit = unit_selection
-            self.competitionsChart.update()
-            self.submissionsChart.update()
-            self.usersChart.update()
+            self.competitionsChart.options.scales.xAxes[0].time.unit = unit_selection;
+            self.submissionsChart.options.scales.xAxes[0].time.unit = unit_selection;
+            self.usersChart.options.scales.xAxes[0].time.unit = unit_selection;
+            self.competitionsChart.update();
+            self.submissionsChart.update();
+            self.usersChart.update();
 
-            self.update_analytics(self.start_date, self.end_date, self.time_unit)
+            self.isDataReloadNeeded["overview"] = true;
+            Object.keys(self.isDataReloadNeeded["storage"]).forEach(v => self.isDataReloadNeeded["storage"][v] = true);
+
+            if (self.currentAnalyticsTab == "overview") {
+                self.update_analytics(self.start_date, self.end_date, self.time_unit);
+            }
+            self.update();
         }
+
     </script>
     <style>
-        th {
-            border-bottom: 2px solid grey;
+        analytics {
+            width: 100%;
         }
 
-        table {
-            margin-bottom: 50px;
-            width: 1000px;
+        .ui.inverted.bluewood.menu {
+            background-color: #2C3F4C
         }
 
-        h1, h2 {
+        h1 {
             margin-bottom: 20px;
             margin-top: 30px;
         }
@@ -381,13 +493,13 @@
             margin-bottom: 8px;
         }
 
-        canvas {
+        canvas.big {
             height: 500px !important;
             width: 1000px !important;
         }
 
         .hidden {
-             display: none !important;
+            display: none !important;
         }
 
         .date-input {
