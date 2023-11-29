@@ -50,12 +50,11 @@ def user_quota_cleanup(request):
     })
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def user_quota(request):
-    return Response({
-        "quota": 15 * 1024 * 1024,
-        "storage_used": 3 * 1024 * 1024
-    })
+    quota = request.user.quota
+    storage_used = request.user.get_used_storage_space()
+    return Response({"quota": quota, "storage_used": storage_used})
 
 
 @api_view(['DELETE'])
