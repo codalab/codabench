@@ -24,9 +24,7 @@ from analytics.models import (
     AdminStorageDataPoint,
 )
 from competitions.models import Competition
-from datasets.models import Data
 from profiles.models import User
-from competitions.models import Submission, SubmissionDetails
 
 from utils.data import pretty_bytes
 
@@ -45,7 +43,7 @@ def create_storage_analytics_snapshot():
             dataset.file_size = Decimal(
                 dataset.data_file.size / 1024
             )  # file_size is in KiB
-        except:
+        except Exception:
             dataset.file_size = Decimal(-1)
         finally:
             dataset.save()
@@ -58,7 +56,7 @@ def create_storage_analytics_snapshot():
             submission.prediction_result_file_size = Decimal(
                 submission.prediction_result.size / 1024
             )  # prediction_result_file_size is in KiB
-        except:
+        except Exception:
             submission.prediction_result_file_size = Decimal(-1)
         finally:
             submission.save()
@@ -70,7 +68,7 @@ def create_storage_analytics_snapshot():
             submission.scoring_result_file_size = Decimal(
                 submission.scoring_result.size / 1024
             )  # scoring_result_file_size is in KiB
-        except:
+        except Exception:
             submission.scoring_result_file_size = Decimal(-1)
         finally:
             submission.save()
@@ -82,7 +80,7 @@ def create_storage_analytics_snapshot():
             submission.detailed_result_file_size = Decimal(
                 submission.detailed_result.size / 1024
             )  # detailed_result_file_size is in KiB
-        except:
+        except Exception:
             submission.detailed_result_file_size = Decimal(-1)
         finally:
             submission.save()
@@ -94,7 +92,7 @@ def create_storage_analytics_snapshot():
             submissiondetails.file_size = Decimal(
                 submissiondetails.data_file.size / 1024
             )  # file_size is in KiB
-        except:
+        except Exception:
             submissiondetails.file_size = Decimal(-1)
         finally:
             submissiondetails.save()
@@ -177,16 +175,14 @@ def create_storage_analytics_snapshot():
                     ),
                     default=Value(0),
                     output_field=DecimalField(),
-                )
-                + Case(
+                ) + Case(
                     When(
                         scoring_result_file_size__gt=0,
                         then=F("scoring_result_file_size"),
                     ),
                     default=Value(0),
                     output_field=DecimalField(),
-                )
-                + Case(
+                ) + Case(
                     When(
                         detailed_result_file_size__gt=0,
                         then=F("detailed_result_file_size"),
@@ -242,8 +238,7 @@ def create_storage_analytics_snapshot():
             ).aggregate(total=Sum("size"))["total"]
             defaults = {
                 "datasets_total": datasets_usage or 0,
-                "submissions_total": (submissions_usage or 0)
-                + (submissiondetails_usage or 0),
+                "submissions_total": (submissions_usage or 0) + (submissiondetails_usage or 0),
             }
             lookup_params = {"user_id": user.id, "at_date": date}
             UserStorageDataPoint.objects.update_or_create(
@@ -315,9 +310,7 @@ def create_storage_analytics_snapshot():
     # Datasets
     for dataset in Data.objects.all().order_by("id"):
         if (
-            not dataset.data_file
-            or not dataset.data_file.name
-            or not BundleStorage.exists(dataset.data_file.name)
+            not dataset.data_file or not dataset.data_file.name or not BundleStorage.exists(dataset.data_file.name)
         ):
             inconsistencies["database"].append(
                 {"model": "dataset", "field": "data_file", "id": dataset.id}
@@ -327,9 +320,7 @@ def create_storage_analytics_snapshot():
     # Submissions
     for submission in Submission.objects.all().order_by("id"):
         if (
-            not submission.prediction_result
-            or not submission.prediction_result.name
-            or not BundleStorage.exists(submission.prediction_result.name)
+            not submission.prediction_result or not submission.prediction_result.name or not BundleStorage.exists(submission.prediction_result.name)
         ):
             inconsistencies["database"].append(
                 {
@@ -340,18 +331,14 @@ def create_storage_analytics_snapshot():
             )
             nb_missing_files += 1
         if (
-            not submission.scoring_result
-            or not submission.scoring_result.name
-            or not BundleStorage.exists(submission.scoring_result.name)
+            not submission.scoring_result or not submission.scoring_result.name or not BundleStorage.exists(submission.scoring_result.name)
         ):
             inconsistencies["database"].append(
                 {"model": "submission", "field": "scoring_result", "id": submission.id}
             )
             nb_missing_files += 1
         if (
-            submission.detailed_result
-            and submission.detailed_result.name
-            and not BundleStorage.exists(submission.detailed_result.name)
+            submission.detailed_result and submission.detailed_result.name and not BundleStorage.exists(submission.detailed_result.name)
         ):
             inconsistencies["database"].append(
                 {"model": "submission", "field": "detailed_result", "id": submission.id}
@@ -361,9 +348,7 @@ def create_storage_analytics_snapshot():
     # Submission details
     for submissiondetails in SubmissionDetails.objects.all().order_by("id"):
         if (
-            not submissiondetails.data_file
-            or not submissiondetails.data_file.name
-            or not BundleStorage.exists(submissiondetails.data_file.name)
+            not submissiondetails.data_file or not submissiondetails.data_file.name or not BundleStorage.exists(submissiondetails.data_file.name)
         ):
             inconsistencies["database"].append(
                 {
@@ -490,10 +475,10 @@ def create_storage_analytics_snapshot():
 
     # Log the results
     log_file = (
-        "/app/logs/"
-        + "db_storage_inconsistency_"
-        + current_datetime.strftime("%Y%m%d-%H%M%S")
-        + ".log"
+        "/app/logs/" +
+        "db_storage_inconsistency_" +
+        current_datetime.strftime("%Y%m%d-%H%M%S") +
+        ".log"
     )
     with open(log_file, "w") as file:
         file.write("Database <---> Storage Inconsistency\n\n")
@@ -520,27 +505,23 @@ def create_storage_analytics_snapshot():
         competitions_usage = (
             competitions_datasets.filter(day__lt=date).aggregate(total=Sum("size"))[
                 "total"
-            ]
-            or 0
+            ] or 0
         )
         users_usage = (
             (
                 users_datasets.filter(day__lt=date).aggregate(total=Sum("size"))[
                     "total"
-                ]
-                or 0
-            )
-            + (
+                ] or 0
+            ) +
+            (
                 users_submissions.filter(day__lt=date).aggregate(total=Sum("size"))[
                     "total"
-                ]
-                or 0
-            )
-            + (
+                ] or 0
+            ) +
+            (
                 users_submissions_details.filter(day__lt=date).aggregate(
                     total=Sum("size")
-                )["total"]
-                or 0
+                )["total"] or 0
             )
         )
         admin_data_point = AdminStorageDataPoint.objects.filter(at_date=date).first()

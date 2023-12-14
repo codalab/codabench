@@ -163,6 +163,7 @@ class AnalyticsView(APIView):
             'time_unit': time_unit,
         })
 
+
 @api_view(["GET"])
 def storage_usage_history(request):
     """
@@ -201,7 +202,7 @@ def competitions_usage(request):
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
-    
+
     competitions_usage = {}
     last_competition_storage_snapshot = CompetitionStorageDataPoint.objects.order_by("at_date").last()
     if last_competition_storage_snapshot:
@@ -229,7 +230,7 @@ def competitions_usage(request):
                 'created_when': su['competition__created_when'],
                 'datasets': su['datasets_total'],
             }
-    
+
     return Response(competitions_usage, status=status.HTTP_200_OK)
 
 
@@ -240,7 +241,7 @@ def users_usage(request):
     """
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
-    
+
     users_usage = {}
     last_user_storage_snapshot = UserStorageDataPoint.objects.order_by("at_date").last()
     if last_user_storage_snapshot:
@@ -268,5 +269,5 @@ def users_usage(request):
                 'datasets': su['datasets_total'],
                 'submissions': su['submissions_total'],
             }
-    
+
     return Response(users_usage, status=status.HTTP_200_OK)
