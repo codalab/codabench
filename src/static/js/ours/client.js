@@ -165,6 +165,7 @@ CODALAB.api = {
         // Pass the requested file name for the SAS url
         metadata.request_sassy_file_name = data_file.name
         metadata.file_name = data_file.name
+        metadata.file_size = data_file.size
 
         // This will be set on successful dataset creation, then used to complete the dataset upload
         var dataset = {}
@@ -322,6 +323,9 @@ CODALAB.api = {
     ---------------------------------------------------------------------*/
     get_user_quota_cleanup: () => {
         return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
+    },
+    get_user_quota: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota/`)
     },
     delete_unused_tasks: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)

@@ -98,6 +98,8 @@
                 return
             }
 
+            self.clear_form()
+
             // Call the progress bar wrapper and do the upload -- we want to check and display errors
             // first before doing the actual upload
             self.prepare_upload(self.upload)()
@@ -135,7 +137,6 @@
                 })
                 .always(function () {
                     setTimeout(self.hide_progress_bar, 500)
-                    self.clear_form()
                 })
         }
 
