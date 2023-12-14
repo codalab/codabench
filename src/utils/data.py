@@ -111,3 +111,11 @@ def put_blob(url, file_path):
             'x-ms-blob-type': 'BlockBlob',
         }
     )
+
+
+def pretty_bytes(bytes, decimal_places=1, suffix="B"):
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(bytes) < 1024.0 or unit == 'PiB':
+            return f"{bytes:3.{decimal_places}f}{unit}{suffix}"
+        bytes /= 1024.0
+    return f"{bytes:.{decimal_places}f}Pi{suffix}"

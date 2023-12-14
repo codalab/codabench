@@ -459,6 +459,10 @@
                 // return empty string if parsing fails
                 return ""
             }
+            // a file_size of -1 indicated an error
+            if(n < 0) {
+                return ""
+            }
             // constant units to show with files size
             // file size is in KB, converting it to MB and GB 
             const units = ['KB', 'MB', 'GB']

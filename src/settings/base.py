@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import timedelta
+from celery.schedules import crontab
 
 import dj_database_url
 
@@ -222,6 +223,14 @@ CELERY_BEAT_SCHEDULE = {
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
         'schedule': timedelta(seconds=3600)
+    },
+    'create_storage_analytics_snapshot': {
+        'task': 'analytics.tasks.create_storage_analytics_snapshot',
+        'schedule': crontab(hour='2', minute='0', day_of_week='sun') # Every Sunday at 02:00 UTC time
+    },
+    'reset_computed_storage_analytics': {
+        'task': 'analytics.tasks.reset_computed_storage_analytics',
+        'schedule': crontab(hour='2', minute='0', day_of_month='1', month_of_year="*/3") # Every 3 month at 02:00 UTC on the 1st
     },
 }
 CELERY_TIMEZONE = 'UTC'
