@@ -133,7 +133,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def get_chahub_is_valid(self):
         # By default, always push
         return True
-    
+
     def get_used_storage_space(self):
         from datasets.models import Data
         from competitions.models import Submission, SubmissionDetails
@@ -157,16 +157,16 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
                     ),
                     default=Value(0),
                     output_field=DecimalField(),
-                )
-                + Case(
+                ) +
+                Case(
                     When(
                         scoring_result_file_size__gt=0,
                         then=F("scoring_result_file_size"),
                     ),
                     default=Value(0),
                     output_field=DecimalField(),
-                )
-                + Case(
+                ) +
+                Case(
                     When(
                         detailed_result_file_size__gt=0,
                         then=F("detailed_result_file_size"),

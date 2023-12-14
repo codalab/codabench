@@ -407,7 +407,7 @@ GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
 # Quota
-DEFAULT_USER_QUOTA = 15 * 1024 * 1024 * 1024 # 15GB
+DEFAULT_USER_QUOTA = 15 * 1024 * 1024 * 1024  # 15GB
 
 # =============================================================================
 # Debug

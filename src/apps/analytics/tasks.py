@@ -49,8 +49,8 @@ def create_storage_analytics_snapshot():
             dataset.save()
 
     for submission in Submission.objects.filter(
-        Q(prediction_result_file_size__isnull=True)
-        | Q(prediction_result_file_size__lt=0)
+        Q(prediction_result_file_size__isnull=True) |
+        Q(prediction_result_file_size__lt=0)
     ):
         try:
             submission.prediction_result_file_size = Decimal(
