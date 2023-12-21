@@ -46,7 +46,7 @@ class DatasetAPITests(APITestCase):
             'request_sassy_file_name': faker.file_name(extension='.zip'),
         })
         assert resp.status_code == 403
-    
+
     def test_dataset_api_check_quota(self):
         self.client.login(username='creator', password='creator')
 
@@ -55,7 +55,7 @@ class DatasetAPITests(APITestCase):
         available_space = quota - storage_used
         file_size = 1024 * 1024 * 1024 * 1024
 
-        # Fake upload a very big dataset 
+        # Fake upload a very big dataset
         resp = self.client.post(reverse("data-list"), {
             'name': 'new-file-test',
             'type': Data.COMPETITION_BUNDLE,
