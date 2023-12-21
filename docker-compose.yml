@@ -136,6 +136,10 @@ services:
     # containers being destroyed..!
     hostname: rabbit
     env_file: .env
+    environment:
+      - http_proxy=${RABBITMQ_HTTP_PROXY}
+      - https_proxy=${RABBITMQ_HTTPS_PROXY}
+      - no_proxy=${RABBITMQ_NO_PROXY}
     ports:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
