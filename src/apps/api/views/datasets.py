@@ -14,7 +14,7 @@ from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 from competitions.models import CompetitionCreationTaskStatus
-from utils.data import make_url_sassy
+from utils.data import make_url_sassy, pretty_bytes
 
 
 class DataViewSet(ModelViewSet):
@@ -79,6 +79,17 @@ class DataViewSet(ModelViewSet):
             return serializers.DataSerializer
 
     def create(self, request, *args, **kwargs):
+        # Check User quota
+        storage_used = float(request.user.get_used_storage_space())
+        quota = float(request.user.quota)
+        file_size = float(request.data['file_size'])
+        if storage_used + file_size > quota:
+            available_space = pretty_bytes(quota - storage_used)
+            file_size = pretty_bytes(file_size)
+            message = f"Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again."
+            return Response({'data_file': [message]}, status=status.HTTP_400_BAD_REQUEST)
+
+        # All good, let's proceed
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_dataset = serializer.save()  # request_sassy_file_name is temporarily set via this serializer
