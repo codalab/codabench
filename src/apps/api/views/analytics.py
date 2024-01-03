@@ -191,7 +191,7 @@ def storage_usage_history(request):
                 'admin_usage': su['admin_usage'],
                 'orphaned_file_usage': su['orphaned_file_usage']
             }
-    
+
     response = {
         "last_storage_calculation_date": last_storage_usage_history_snapshot.at_date.isoformat() if last_storage_usage_history_snapshot else None,
         "storage_usage_history": storage_usage_history
@@ -235,7 +235,7 @@ def competitions_usage(request):
                 'created_when': su['competition__created_when'],
                 'datasets': su['datasets_total'],
             }
-    
+
     response = {
         "last_storage_calculation_date": last_competition_storage_snapshot.at_date.isoformat() if last_competition_storage_snapshot else None,
         "competitions_usage": competitions_usage
