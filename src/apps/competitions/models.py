@@ -403,7 +403,7 @@ class SubmissionDetails(models.Model):
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
-    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # in KiB
+    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
     is_scoring = models.BooleanField(default=False)
 
@@ -459,10 +459,10 @@ class Submission(ChaHubSaveMixin, models.Model):
                                       storage=BundleStorage)
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True,
                                        storage=BundleStorage)
-    
-    prediction_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # in KiB
-    scoring_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # in KiB
-    detailed_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) # in KiB
+
+    prediction_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    scoring_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    detailed_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
 
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
