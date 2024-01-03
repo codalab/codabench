@@ -1,15 +1,18 @@
 <analytics-storage-users-usage>
-    <select class="ui search multiple selection dropdown" multiple ref="users_dropdown">
-        <i class="dropdown icon"></i>
-        <div class="default text">Select Users</div>
-        <div class="menu">
-            <option each="{ user in usersDropdownOptions }" value="{ user.id }">{ user.name }</div> 
-        </div>
-    </select>
-    <button class="ui button" onclick={selectTopFiveBiggestUsers}>Select top 5 biggest users</button>
-    <button class="ui green button" onclick={downloadUsersHistory}>
-        <i class="icon download"></i>Download as CSV
-    </button>
+    <div class="flex-row">
+        <select class="ui search multiple selection dropdown" multiple ref="users_dropdown">
+            <i class="dropdown icon"></i>
+            <div class="default text">Select Users</div>
+            <div class="menu">
+                <option each="{ user in usersDropdownOptions }" value="{ user.id }">{ user.name }</div> 
+            </div>
+        </select>
+        <button class="ui button" onclick={selectTopFiveBiggestUsers}>Select top 5 biggest users</button>
+        <button class="ui green button" onclick={downloadUsersHistory}>
+            <i class="icon download"></i>Download as CSV
+        </button>
+        <h4 style="margin: 0 0 0 auto">{lastSnapshotDate ? "Last snaphost date: " + pretty_date(lastSnapshotDate) : "No snapshot has been taken yet"}</h4>
+    </div>
     <div class='chart-container'>
         <canvas class="big" ref="storage_users_usage_chart"></canvas>
     </div>
@@ -62,6 +65,7 @@
 
         let datetime = luxon.DateTime;
 
+        self.lastSnapshotDate = null;
         self.usersUsageData = null;
         self.usersDropdownOptions = [];
         self.usersTableSelectedDate = null;
@@ -269,9 +273,11 @@
             };
             CODALAB.api.get_users_usage(parameters)
                 .done(function(data) {
-                    self.usersUsageData = data;
+                    self.usersUsageData = data["users_usage"];
+                    self.lastSnapshotDate = data["last_storage_calculation_date"];
+                    self.update({lastSnapshotDate: data["last_storage_calculation_date"]});
                     self.updateUsersSelectionDropdown();
-                    self.updateUsersTableCalendar(data);
+                    self.updateUsersTableCalendar(data["users_usage"]);
                     self.updateUsersChart();
                     self.updateUsersPieChart();
                     self.updateUsersTable();
@@ -639,6 +645,11 @@
 
         .chart-container {
             min-height: 450px;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
         }
     </style>
 </analytics-storage-users-usage>

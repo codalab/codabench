@@ -191,8 +191,13 @@ def storage_usage_history(request):
                 'admin_usage': su['admin_usage'],
                 'orphaned_file_usage': su['orphaned_file_usage']
             }
+    
+    response = {
+        "last_storage_calculation_date": last_storage_usage_history_snapshot.at_date.isoformat() if last_storage_usage_history_snapshot else None,
+        "storage_usage_history": storage_usage_history
+    }
 
-    return Response(storage_usage_history, status=status.HTTP_200_OK)
+    return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -230,8 +235,13 @@ def competitions_usage(request):
                 'created_when': su['competition__created_when'],
                 'datasets': su['datasets_total'],
             }
+    
+    response = {
+        "last_storage_calculation_date": last_competition_storage_snapshot.at_date.isoformat() if last_competition_storage_snapshot else None,
+        "competitions_usage": competitions_usage
+    }
 
-    return Response(competitions_usage, status=status.HTTP_200_OK)
+    return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -270,4 +280,9 @@ def users_usage(request):
                 'submissions': su['submissions_total'],
             }
 
-    return Response(users_usage, status=status.HTTP_200_OK)
+    response = {
+        "last_storage_calculation_date": last_user_storage_snapshot.at_date.isoformat() if last_user_storage_snapshot else None,
+        "users_usage": users_usage
+    }
+
+    return Response(response, status=status.HTTP_200_OK)
