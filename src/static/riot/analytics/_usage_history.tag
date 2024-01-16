@@ -1,7 +1,11 @@
 <analytics-storage-usage-history>
-    <button class="ui green button" onclick={downloadUsageHistory}>
-        <i class="icon download"></i>Download as CSV
-    </button>
+    <div class="flex-row">
+        <button class="ui green button" onclick={downloadUsageHistory}>
+            <i class="icon download"></i>Download as CSV
+        </button>
+
+        <h4 style="margin: 0 0 0 auto">{lastSnapshotDate ? "Last snaphost date: " + pretty_date(lastSnapshotDate) : "No snapshot has been taken yet"}</h4>
+    </div>
 
     <div class='chart-container'>
         <canvas class="big" ref="storage_usage_history_chart"></canvas>
@@ -17,6 +21,7 @@
         };
         self.storageUsageHistoryData = null;
         self.storageUsageChart = null;
+        self.lastSnapshotDate = null;
 
         self.one("mount", function () {
             self.state.startDate = opts.start_date;
@@ -121,8 +126,10 @@
             };
             CODALAB.api.get_storage_usage_history(parameters)
                 .done(function(data) {
-                    self.storageUsageHistoryData = data;
-                    self.update_storage_usage_history_chart(data);
+                    self.storageUsageHistoryData = data["storage_usage_history"];
+                    self.lastSnapshotDate = data["last_storage_calculation_date"];
+                    self.update({lastSnapshotDate: data["last_storage_calculation_date"]});
+                    self.update_storage_usage_history_chart(data["storage_usage_history"]);
                 })
                 .fail(function(error) {
                     toastr.error("Could not load storage analytics data");
@@ -176,6 +183,11 @@
     <style>
         .chart-container {
             min-height: 450px;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
         }
     </style>
 </analytics-storage-usage-history>

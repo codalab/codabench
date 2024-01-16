@@ -1,15 +1,18 @@
 <analytics-storage-competitions-usage>
-    <select class="ui search multiple selection dropdown" multiple ref="competitions_dropdown">
-        <i class="dropdown icon"></i>
-        <div class="default text">Select Competitions</div>
-        <div class="menu">
-            <option each="{ competition in competitionsDropdownOptions }" value="{ competition.id }">{ competition.title }</div> 
-        </div>
-    </select>
-    <button class="ui button" onclick={selectTopFiveBiggestCompetitions}>Select top 5 biggest competitions</button>
-    <button class="ui green button" onclick={downloadCompetitionsHistory}>
-        <i class="icon download"></i>Download as CSV
-    </button>
+    <div class="flex-row">
+        <select class="ui search multiple selection dropdown" multiple ref="competitions_dropdown">
+            <i class="dropdown icon"></i>
+            <div class="default text">Select Competitions</div>
+            <div class="menu">
+                <option each="{ competition in competitionsDropdownOptions }" value="{ competition.id }">{ competition.title }</div> 
+            </div>
+        </select>
+        <button class="ui button" onclick={selectTopFiveBiggestCompetitions}>Select top 5 biggest competitions</button>
+        <button class="ui green button" onclick={downloadCompetitionsHistory}>
+            <i class="icon download"></i>Download as CSV
+        </button>
+        <h4 style="margin: 0 0 0 auto">{lastSnapshotDate ? "Last snaphost date: " + pretty_date(lastSnapshotDate) : "No snapshot has been taken yet"}</h4>
+    </div>
     <div class='chart-container'>
         <canvas class="big" ref="storage_competitions_usage_chart"></canvas>
     </div>
@@ -55,6 +58,7 @@
 
         let datetime = luxon.DateTime;
 
+        self.lastSnapshotDate = null;
         self.competitionsUsageData = null;
         self.competitionsDropdownOptions = [];
         self.tableSelectedDate = null;
@@ -221,9 +225,11 @@
             };
             CODALAB.api.get_competitions_usage(parameters)
                 .done(function(data) {
-                    self.competitionsUsageData = data;
+                    self.competitionsUsageData = data["competitions_usage"];
+                    self.lastSnapshotDate = data["last_storage_calculation_date"];
+                    self.update({lastSnapshotDate: data["last_storage_calculation_date"]});
                     self.updateCompetitionsSelectionDropdown();
-                    self.updateCompetitionTableCalendar(data);
+                    self.updateCompetitionTableCalendar(data["competitions_usage"]);
                     self.updateCompetitionsChart();
                     self.updateCompetitionsPieChart();
                     self.updateCompetitionsTable();
@@ -558,6 +564,11 @@
 
         .chart-container {
             min-height: 450px;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
         }
     </style>
 </analytics-storage-competitions-usage>
