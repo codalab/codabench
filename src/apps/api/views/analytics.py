@@ -193,7 +193,7 @@ def storage_usage_history(request):
             }
 
     response = {
-        "last_storage_calculation_date": last_storage_usage_history_snapshot.at_date.isoformat() if last_storage_usage_history_snapshot else None,
+        "last_storage_calculation_date": last_storage_usage_history_snapshot.created_at.isoformat() if last_storage_usage_history_snapshot else None,
         "storage_usage_history": storage_usage_history
     }
 
