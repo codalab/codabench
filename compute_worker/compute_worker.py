@@ -367,10 +367,10 @@ class Run:
                 container_engine_pull = check_output(cmd)
                 logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
                 break  # Break if the loop is successful
-            except CalledProcessError:
+            except CalledProcessError as pull_error:
                 retries += 1
                 if retries >= max_retries:
-                    error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub."
+                    error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub. {pull_error}"
                     logger.info(error_message)
                     # Prepare data to be sent to submissions api
                     docker_pull_fail_data = {
