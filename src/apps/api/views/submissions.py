@@ -69,7 +69,7 @@ class SubmissionViewSet(ModelViewSet):
                     error_file_name = "prediction_ingestion_stderr"
 
                     # Change error file name to scoring_stderr when error occurs during scoring
-                    if request.data['is_scoring'] == "True":
+                    if request.data.get("is_scoring", "False") == "True":
                         error_file_name = "scoring_stderr"
 
                     try:
