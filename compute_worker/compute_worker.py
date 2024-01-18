@@ -376,6 +376,7 @@ class Run:
                     docker_pull_fail_data = {
                         "type": "Docker_Image_Pull_Fail",
                         "error_message": error_message,
+                        "is_scoring": self.is_scoring
                     }
                     # Send data to be written to ingestion logs
                     self._update_submission(docker_pull_fail_data)
