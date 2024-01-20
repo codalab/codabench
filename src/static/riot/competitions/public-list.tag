@@ -1,5 +1,5 @@
 <public-list>
-    <h1>Public Competitions</h1>
+    <h1>Public Benchmarks and Competitions</h1>
     <div class="pagination-nav" hide="{(competitions.count < 10)}"> 
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
@@ -7,10 +7,13 @@
         <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
+    <div id="loading" class="loading-indicator" show="{!competitions}">
+        <div class="spinner"></div>
+    </div>
     <div each="{competition in competitions.results}">
             <div class="tile-wrapper">
                 <div class="ui square tiny bordered image img-wrapper">
-                    <img src="{competition.logo}">
+                    <img src="{competition.logo}" loading="lazy">
                 </div>
                 <a class="link-no-deco" href="../{competition.id}">
                     <div class="comp-info">
@@ -59,6 +62,8 @@
 
     self.update_competitions_list = function (num) {
         self.current_page = num
+        $('#loading').show()
+        $('.pagination-nav').hide()
         if (self.competitions_cache[self.current_page]){
             self.competitions = self.competitions_cache[self.current_page]
             history.pushState("", document.title, "?page="+self.current_page)
@@ -67,11 +72,15 @@
         } else {
             return CODALAB.api.get_public_competitions({"page":self.current_page})
                 .fail(function (response) {
+                    $('#loading').hide()
+                    $('.pagination-nav').show()
                     toastr.error("Could not load competition list")
                 })
                 .done(function (response){
                     self.competitions = response
                     self.competitions_cache[self.current_page.toString()] = response
+                    $('#loading').hide()
+                    $('.pagination-nav').show()
                     history.pushState("", document.title, "?page="+self.current_page)
                     $('.pagination-nav > button').prop('disabled', false)
                     self.update()
@@ -208,6 +217,27 @@
         font-size 13px
         text-align left
         margin 0.35em
+
+    .loading-indicator
+        display flex
+        align-items center
+        padding 20px
+        width 100%
+        margin: 0 auto;
+
+    .spinner
+        border 4px solid rgba(0,0,0,.1)
+        width 36px
+        height 36px
+        border-radius 50%
+        border-top-color #3498db
+        animation spin 1s ease-in-out infinite
+
+    @keyframes spin
+        0%
+            transform rotate(0deg)
+        100%
+            transform rotate(360deg)
 </style>
 
 </public-list>
