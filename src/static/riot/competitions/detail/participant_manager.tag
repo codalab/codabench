@@ -25,7 +25,7 @@
             </thead>
             <tbody>
             <tr each="{participants}">
-                <td>{username}</td>
+                <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
                 <td>{is_bot}</td>
                 <td>{_.startCase(status)}</td>
