@@ -1,6 +1,6 @@
 <public-list>
     <h1>Public Benchmarks and Competitions</h1>
-    <div class="pagination-nav" hide="{(competitions.count < 10)}"> 
+    <div class="pagination-nav"> 
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
@@ -61,32 +61,35 @@
     }
 
     self.update_competitions_list = function (num) {
-        self.current_page = num
-        $('#loading').show()
-        $('.pagination-nav').hide()
-        if (self.competitions_cache[self.current_page]){
-            self.competitions = self.competitions_cache[self.current_page]
-            history.pushState("", document.title, "?page="+self.current_page)
-            $('.pagination-nav > button').prop('disabled', false)
-            self.update()
-        } else {
-            return CODALAB.api.get_public_competitions({"page":self.current_page})
-                .fail(function (response) {
-                    $('#loading').hide()
-                    $('.pagination-nav').show()
-                    toastr.error("Could not load competition list")
-                })
-                .done(function (response){
-                    self.competitions = response
-                    self.competitions_cache[self.current_page.toString()] = response
-                    $('#loading').hide()
-                    $('.pagination-nav').show()
-                    history.pushState("", document.title, "?page="+self.current_page)
-                    $('.pagination-nav > button').prop('disabled', false)
-                    self.update()
-                })
+        self.current_page = num;
+        $('#loading').show(); // Show the loading indicator
+        $('.pagination-nav').hide(); // Hide pagination navigation
+
+        // Function to handle successful data retrieval
+        function handleSuccess(response) {
+            self.competitions = response;
+            self.competitions_cache[self.current_page.toString()] = response;
+            $('#loading').hide(); // Hide the loading indicator
+            $('.pagination-nav').show(); // Show pagination navigation
+            history.pushState("", document.title, "?page=" + self.current_page);
+            $('.pagination-nav > button').prop('disabled', false);
+            self.update();
         }
-    }
+        // Check if data is in cache
+        if (self.competitions_cache[self.current_page]) {
+            handleSuccess(self.competitions_cache[self.current_page]);
+        } else {
+            // Fetch data using AJAX call
+            return CODALAB.api.get_public_competitions({"page": self.current_page})
+                .fail(function (response) {
+                    $('#loading').hide(); // Hide the loading indicator
+                    $('.pagination-nav').show(); // Show pagination navigation
+                    toastr.error("Could not load competition list");
+                })
+                .done(handleSuccess);
+        }
+    };
+
 
     self.get_array_length = function (arr) {
         if(arr === undefined){
