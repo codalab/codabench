@@ -86,6 +86,7 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(source='owner.display_name')
     slug_url = serializers.CharField(source='owner.slug_url')
     organization = SimpleOrganizationSerializer(allow_null=True)
+    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
 
     class Meta:
         model = Submission
@@ -100,7 +101,8 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
             'display_name',
             'slug_url',
             'organization',
-            'detailed_result'
+            'detailed_result',
+            'created_when'
         )
         extra_kwargs = {
             "scores": {"read_only": True},
