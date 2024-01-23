@@ -60,6 +60,10 @@ class Competition(ChaHubSaveMixin, models.Model):
     reward = models.CharField(max_length=256, null=True, blank=True)
     report = models.CharField(max_length=256, null=True, blank=True)
 
+    # if true, submissions are auto-run when submitted
+    # if false, submissions run will be intiiated by organizer
+    auto_run_submissions = models.BooleanField(default=True)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
@@ -537,6 +541,13 @@ class Submission(ChaHubSaveMixin, models.Model):
     def start(self, tasks=None):
         from .tasks import run_submission
         run_submission(self.pk, tasks=tasks)
+
+    def run(self):
+        # get tasks from the phase
+        tasks = self.phase.tasks.all()
+        # start submission providing the tasks
+        self.start(tasks=tasks)
+        return self
 
     def re_run(self, task=None):
         submission_arg_dict = {
