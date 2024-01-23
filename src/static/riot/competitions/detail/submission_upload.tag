@@ -489,7 +489,7 @@
                         }
                     }
                     toastr.error(`Creation failed, error occurred: ${response.responseJSON.data_file[0]}`)
-                    setTimeout(()=>{toastr.warning(`<a href="/tasks">Click HERE</a> to go to the Resources tab to see your user quote.`)}, 5000)
+                    setTimeout(()=>{toastr.warning(`<a href="/tasks">Click HERE</a> to go to the Resources tab to see your storage quota and manage your files.`)}, 5000)
                     
                 })
                 .always(function () {
