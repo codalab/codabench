@@ -488,7 +488,7 @@
 
                         }
                     }
-                    toastr.error("Creation failed, error occurred")
+                    toastr.error(`Creation failed, error occurred: ${response.responseJSON.data_file[0]}`)
                 })
                 .always(function () {
                     setTimeout(self.hide_progress_bar, 500)
