@@ -539,24 +539,51 @@ class Submission(ChaHubSaveMixin, models.Model):
         run_submission(self.pk, tasks=tasks)
 
     def re_run(self, task=None):
+
+        # task to use in the new submission
+        new_submission_task = task or self.task
+
+        # set is_specific_task_re_run
+        is_specific_task_re_run = bool(task)
+
+        flag_rerun_specific_task_or_has_no_children = False
+        # Check if this submission needs to rerun on specific children or has no children
+        if not self.has_children or is_specific_task_re_run:
+            flag_rerun_specific_task_or_has_no_children = True
+
+        # Check if task exists in case of specific task rerun or no children
+        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
+            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
+            return None
+        else:
+            children_tasks = self.children.values_list('task', flat=True)
+            if None in children_tasks:
+                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
+                return None
+
+        # Create a new submission
         submission_arg_dict = {
             'owner': self.owner,
-            'task': task or self.task,
+            'task': new_submission_task,
             'phase': self.phase,
             'data': self.data,
             'has_children': self.has_children,
-            'is_specific_task_re_run': bool(task),
+            'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
 
-        # No need to rerun on children if this is running on a specific task
-        if not self.has_children or sub.is_specific_task_re_run:
-            self.refresh_from_db()
+        # set tasks for rerunning
+        if flag_rerun_specific_task_or_has_no_children:
+            # in case of a submission with no children or specific task rerun
+            # submission with no children is same as submission with one task
             tasks = [sub.task]
         else:
+            # in case submission has multiple children or multiple task rerun
+            # tasks are gathered from the children submissions
             tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+
         sub.start(tasks=tasks)
         return sub
 
