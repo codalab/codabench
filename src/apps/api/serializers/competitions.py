@@ -327,6 +327,7 @@ class CompetitionCreateSerializer(CompetitionSerializer):
 
 class CompetitionDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
+    logo_icon = NamedBase64ImageField(allow_null=True)
     pages = PageSerializer(many=True)
     phases = PhaseDetailSerializer(many=True)
     leaderboards = serializers.SerializerMethodField()
@@ -347,6 +348,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'created_by',
             'created_when',
             'logo',
+            'logo_icon',
             'terms',
             'pages',
             'phases',

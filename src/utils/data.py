@@ -19,20 +19,28 @@ logger = logging.getLogger(__name__)
 class PathWrapper(object):
     """Helper to generate UUID's in file names while maintaining their extension"""
 
-    def __init__(self, base_directory):
+    def __init__(self, base_directory, manual_override=False):
         self.path = base_directory
+        self.manual_override = manual_override
 
     def __call__(self, instance, filename):
-        name, extension = os.path.splitext(filename)
-        truncated_uuid = uuid.uuid4().hex[0:12]
-        truncated_name = name[0:35]
+        if not self.manual_override:
+            name, extension = os.path.splitext(filename)
+            truncated_uuid = uuid.uuid4().hex[0:12]
+            truncated_name = name[0:35]
+            
+            path = os.path.join(
+                self.path,
+                now().strftime('%Y-%m-%d-%s'),
+                truncated_uuid,
+                "{0}{1}".format(truncated_name, extension)
+            )
+        else:
+            path = os.path.join(
+                filename
+            )
 
-        return os.path.join(
-            self.path,
-            now().strftime('%Y-%m-%d-%s'),
-            truncated_uuid,
-            "{0}{1}".format(truncated_name, extension)
-        )
+        return path
 
 
 def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):

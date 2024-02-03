@@ -1,20 +1,24 @@
 import logging
 import uuid
+import os, io
 
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.postgres.fields import JSONField
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 
 from celery_config import app
+from celery.contrib import rdb
 from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
 from profiles.models import User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
+from PIL import Image
 
 from tasks.models import Task
 
@@ -32,6 +36,7 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
+    logo_icon = models.ImageField(upload_to=PathWrapper('logos', manual_override=True), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="competitions")
     created_when = models.DateTimeField(default=now)
@@ -214,8 +219,38 @@ class Competition(ChaHubSaveMixin, models.Model):
 
         return self.clean_private_data(data)
 
+    def make_logo_icon(self):
+        if self.logo:
+           # Get the file path of the logo
+           # import pdb; pdb.set_trace()
+        #    rdb.set_trace()
+           # Read the content of the logo file
+           self.logo.name
+           self.logo_icon
+           icon_dirname_only = os.path.dirname(self.logo.name)  # Get just the path
+           icon_basename_only = os.path.basename(self.logo.name)  # Get just the filename
+           file_name = os.path.splitext(icon_basename_only)[0]
+           ext = os.path.splitext(icon_basename_only)[1]
+           new_path = os.path.join(icon_dirname_only, f"{file_name}_icon{ext}")
+           logo_content = self.logo.read()
+           original_logo = Image.open(io.BytesIO(logo_content))
+           # Resize the image to a smaller size for logo_icon
+           width, height = original_logo.size
+           new_width = 100  # Specify the desired width for the logo_icon
+           new_height = int((new_width / width) * height)
+           resized_logo = original_logo.resize((new_width, new_height))
+           # Create a BytesIO object to save the resized image
+           icon_content = io.BytesIO()
+           resized_logo.save(icon_content, format='PNG')
+           # Save the resized logo as logo_icon
+
+           self.logo_icon.save(new_path, ContentFile(icon_content.getvalue()),save=False)
+
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+        if self.logo_icon == None:
+            self.make_logo_icon()
         to_create = User.objects.filter(
             Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))
         ).exclude(id__in=self.participants.values_list('user_id', flat=True)).distinct()
