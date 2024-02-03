@@ -249,7 +249,7 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if self.logo_icon == None:
+        if self.logo_icon == None or os.path.dirname(self.logo.name) != os.path.dirname(self.logo_icon.name):
             self.make_logo_icon()
         to_create = User.objects.filter(
             Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))

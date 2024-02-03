@@ -7,11 +7,11 @@ import utils.data
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('competitions', '0045_competition_logo_icon'),
+        ('competitions', '0044_merge_20231221_1416'),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.AddField(
             model_name='competition',
             name='logo_icon',
             field=models.ImageField(blank=True, null=True, upload_to=utils.data.PathWrapper('logos', manual_override=True)),
