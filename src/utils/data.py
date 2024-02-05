@@ -28,7 +28,7 @@ class PathWrapper(object):
             name, extension = os.path.splitext(filename)
             truncated_uuid = uuid.uuid4().hex[0:12]
             truncated_name = name[0:35]
-            
+
             path = os.path.join(
                 self.path,
                 now().strftime('%Y-%m-%d-%s'),
