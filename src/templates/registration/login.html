@@ -58,5 +58,27 @@
             <div class="ui error message"></div>
         </form>
     </div>
+
+    <!-- Auth Organization Buttons -->
+    {% if auth_organizations %}
+    <div class="sixteen wide mobile six wide computer centered column">
+        <h3 class="ui centered header">Organization Login</h3>
+        {% for organization in auth_organizations %}
+            <form method="POST" action="{% url 'oidc_configurations:organization_oidc_login' %}">
+            {% csrf_token %}
+            <button class="ui fluid primary submit button"
+                    type="submit"
+                    name="organization_oidc_login"
+                    value="{{ organization.id }}"
+                    style="background-color: {{ organization.button_bg_color }};
+                           color: {{ organization.button_text_color }};
+                           margin-bottom:5px;">
+                Login with {{ organization.name }}
+            </button>
+            </form>
+        {% endfor %}
+        
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
