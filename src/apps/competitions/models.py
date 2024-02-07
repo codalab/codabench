@@ -500,10 +500,17 @@ class Submission(ChaHubSaveMixin, models.Model):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
     def delete(self, **kwargs):
+
+        # Check if any other submissions are using the same data
+        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+
+        if not other_submissions_using_data:
+            # If no other submissions are using the same data, delete it
+            self.data.delete()
+
         # Also clean up details on delete
         self.details.all().delete()
-        # Call this here so that the data_file for the submission also gets deleted from storage
-        self.data.delete()
+
         super().delete(**kwargs)
 
     def save(self, ignore_submission_limit=False, **kwargs):
