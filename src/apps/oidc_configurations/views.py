@@ -1,6 +1,8 @@
 # oidc_configurations/views.py
 import base64
+import http.client
 import requests
+from urllib.parse import urlparse
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Auth_Organization
 
@@ -19,17 +21,15 @@ def organization_oidc_login(request):
             # - authorization_url
             # - client_id
             # - response_type
-            # - scope
             # - redirect_uri
             oidc_auth_url = (
                 f"{organization.authorization_url}?"
                 f"client_id={organization.client_id}&"
                 f"response_type=code&"
-                "scope=openid profile email&"
                 f"redirect_uri={organization.redirect_url}"
             )
 
-            # Redirect the user to the OAuth2 provider's authorization URL
+            # Redirect the user to the OIDC provider's authorization URL
             return redirect(oidc_auth_url)
 
     # Handle other cases or render a different template if needed
@@ -104,6 +104,9 @@ def get_access_token(organization, authorization_code):
         "code": authorization_code,
         "redirect_uri": redirect_url,
     }
+    print("token url: ", token_url)
+    print("data: ", data)
+    print("header: ", headers)
 
     # response = requests.post(token_url, data=data, headers=headers)
 
@@ -113,17 +116,34 @@ def get_access_token(organization, authorization_code):
     # except Exception as e:
     #     return None, e
 
+    
+    # try:
+    #     response = requests.request("POST", token_url, data=data, headers=headers)
+    #     response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+    #     token_data = response.json()
+    #     access_token = token_data.get('access_token')
+    #     return access_token, None
+    # except requests.exceptions.RequestException as e:
+    #     print(f"Error during token request: {e}")
+    #     return None, e
+    # except Exception as e:
+    #     print(f"Error parsing token response: {e}")
+    #     return None, e
+
     try:
-        response = requests.post(token_url, data=data, headers=headers)
-        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
-        token_data = response.json()
+        parsed_url = urlparse(token_url)
+        conn = http.client.HTTPConnection(parsed_url.hostname, parsed_url.port)
+        conn.request("POST", parsed_url.path, data, headers)
+        response = conn.getresponse()
+        token_data = response.read().decode("utf-8")
         access_token = token_data.get('access_token')
+        conn.close()
+        print("Response:", token_data)
+        # Parse token_data if needed
+        # access_token = ...
         return access_token, None
-    except requests.exceptions.RequestException as e:
-        print(f"Error during token request: {e}")
-        return None, e
     except Exception as e:
-        print(f"Error parsing token response: {e}")
+        print(f"Error during token request: {e}")
         return None, e
 
 
