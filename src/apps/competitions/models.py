@@ -244,7 +244,6 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        print(f"\n\n\nself.logo_icon: {self.logo_icon}\n\n\n")
         if not self.logo:
             pass
         elif not self.logo_icon:
