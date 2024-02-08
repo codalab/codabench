@@ -109,7 +109,7 @@
         </div>
         <div class="field required">
             <label>Competition Docker Image</label>
-            <input type="text" ref="docker_image" onchange="{form_updated}">
+            <input type="text" ref="docker_image" placeholder="Example: codalab/codalab-legacy:py37" onchange="{form_updated}">
         </div>
         <div class="field">
             <label>Competition Type</label>
