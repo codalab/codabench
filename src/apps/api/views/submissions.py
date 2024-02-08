@@ -270,7 +270,14 @@ class SubmissionViewSet(ModelViewSet):
             rerun_kwargs = {}
 
         new_sub = submission.re_run(**rerun_kwargs)
-        return Response({'id': new_sub.id})
+        if new_sub is None:
+            # return error
+            return Response({
+                "error_msg": "You cannot rerun this submission because one or more tasks this submission was running are deleted, resubmit the submission or contact the competition organizer!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        else:
+            return Response({'id': new_sub.id})
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
