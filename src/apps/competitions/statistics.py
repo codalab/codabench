@@ -93,7 +93,7 @@ def create_codabench_statistics():
 
 def clean_string(text):
     """
-    This function cleans an input text 
+    This function cleans an input text
     """
     if ";" in text:
         text = text.replace(";", ",")
