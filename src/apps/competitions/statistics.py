@@ -69,6 +69,8 @@ def create_codabench_statistics():
         # set reward to empty string if none
         if reward is None:
             reward = ""
+        else:
+            reward = clean_string(reward)
 
         # prepare competition url
         url = f"{BASE_URL}{comp.id}"
