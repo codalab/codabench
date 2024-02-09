@@ -1,3 +1,6 @@
+# --------------------------------------------------
+# Imports
+# --------------------------------------------------
 import os
 from competitions.models import Competition
 
@@ -6,15 +9,20 @@ from competitions.models import Competition
 # --------------------------------------------------
 BASE_URL = "https://www.codabench.org/competitions/"
 STATISTICS_DIR = "/app/statistics/"
-CSV_FILE_NAME = "codabench_metadata.csv"
+CSV_FILE_NAME = "codabench_competition_statistics.csv"
 CSV_PATH = STATISTICS_DIR + CSV_FILE_NAME
 
 
 def create_codabench_statistics():
+    """
+    This function prepares a CSV file with all published competitions
+    """
 
+    # Create statistics directory if not already createad
     if not os.path.exists(STATISTICS_DIR):
         os.makedirs(STATISTICS_DIR)
 
+    # Write header of the CSV file
     with open(CSV_PATH, 'w', newline='') as output_file:
         # Header for the csv
         header = 'title; description; participants; submissions; year; phases; reward; duration (days); url;\n'
@@ -28,7 +36,6 @@ def create_codabench_statistics():
         title = clean_string(title)
 
         # get description
-        title = title.replace(';', ',')
         desc = comp.description
         desc = clean_string(desc)
 
@@ -44,24 +51,29 @@ def create_codabench_statistics():
         for phase in phases:
             num_submissions += phase.submissions.count()
 
-        # get start phase year
+        # get competition first phase year
         year = phases[0].start.year
 
-        # get start and end date
+        # get competition start and end date
         start_date = phases[0].start
         end_date = phases[num_phases - 1].end
+        # if last phase has no end date, set end date to last phase start date
         if end_date is None:
             end_date = phases[num_phases - 1].start
 
-        # get duration
+        # compute duration of the competition
         duration = (end_date - start_date).days
 
         # get reward
         reward = comp.reward
+        # set reward to empty string if none
+        if reward is None:
+            reward = ""
 
-        # get url
+        # prepare competition url
         url = f"{BASE_URL}{comp.id}"
 
+        # prepare a row with all the computed information for one competition
         row = '{}; {}; {}; {}; {}; {}; {}; {}; {}; \n'.format(
             title,
             desc,
@@ -74,12 +86,15 @@ def create_codabench_statistics():
             url
         )
 
-        # write row
+        # write row in the CSV file
         with open(CSV_PATH, 'a') as output_file:
             output_file.write(row)
 
 
 def clean_string(text):
+    """
+    This function cleans an input text 
+    """
     if ";" in text:
         text = text.replace(";", ",")
 
