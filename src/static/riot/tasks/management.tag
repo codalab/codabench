@@ -639,7 +639,7 @@
         }
 
         self.delete_task = function (task) {
-            if (confirm("Are you sure you want to delete '" + task.name + "'?\nSubmissions using this task cannot rerun!")) {
+            if (confirm("Are you sure you want to delete '" + task.name + "'?\nSubmissions using this task cannot rerun! Results displayed on leaderboard can also be affected!")) {
                 CODALAB.api.delete_task(task.id)
                     .done(function () {
                         self.update_tasks()
@@ -654,7 +654,7 @@
         }
 
         self.delete_tasks = function () {
-            if (confirm(`Are you sure you want to delete multiple tasks?\nSubmissions using these tasks cannot rerun!`)) {
+            if (confirm(`Are you sure you want to delete multiple tasks?\nSubmissions using these tasks cannot rerun! Results displayed on leaderboard can also be affected!`)) {
                 CODALAB.api.delete_tasks(self.marked_tasks)
                     .done(function () {
                         self.update_tasks()
