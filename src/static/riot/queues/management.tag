@@ -133,11 +133,20 @@
         </div>
         <div class="content">
             <h4>Broker URL:</h4>
-            <div class="ui field">
-                <textarea class="broker_url" value="{selected_queue.broker_url}" disabled></textarea>
-            </div>
-            <h4>Vhost</h4>
-            {selected_queue.vhost}
+            <span>{selected_queue.broker_url}</span>
+            
+            <h4>Vhost:</h4>
+            <span>{selected_queue.vhost}</span>
+
+            <!--  Competitions using this queue  -->
+            <h4 if="{ _.get(selected_queue, 'competitions.length', 0) }">Competitions using this queue:</h4>
+            <ul if="{ _.get(selected_queue, 'competitions.length', 0) }">
+                <li each="{ comp in selected_queue.competitions }">
+                
+                <a class="link-no-deco" target="_blank" href="../competitions/{ comp.id }">{comp.title}</a>
+                </li>
+            </ul>
+ 
         </div>
         <div class="actions">
             <div class="ui cancel button" onclick="{ close_broker_modal }">Close</div>
