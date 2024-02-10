@@ -61,6 +61,37 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)
     organizers = OrganizerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Queue
+        fields = (
+            'name',
+            'vhost',
+            'is_public',
+            'owner',
+            'organizers',
+            'broker_url',
+            'created_when',
+            'is_owner',
+            'id',
+        )
+        # This serializer is read only, basically..
+        read_only_fields = (
+            'name',
+            'vhost',
+            'is_public',
+            'owner',
+            'organizers',
+            'broker_url',
+            'created_when',
+            'is_owner',
+        )
+
+
+class QueueListSerializer(QueueOwnerMixin, serializers.ModelSerializer):
+    is_owner = serializers.SerializerMethodField()
+    owner = serializers.CharField(source='owner.username', read_only=True)
+    organizers = OrganizerSerializer(many=True, read_only=True)
     competitions = serializers.SerializerMethodField()
 
     class Meta:
