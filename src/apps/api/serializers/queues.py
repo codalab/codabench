@@ -61,7 +61,6 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     owner = serializers.CharField(source='owner.username', read_only=True)
     organizers = OrganizerSerializer(many=True, read_only=True)
-    competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Queue
@@ -75,7 +74,6 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
             'created_when',
             'is_owner',
             'id',
-            'competitions',
         )
         # This serializer is read only, basically..
         read_only_fields = (
@@ -87,8 +85,14 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
             'broker_url',
             'created_when',
             'is_owner',
-            'competitions',
         )
+
+
+class QueueListSerializer(QueueSerializer):
+    competitions = serializers.SerializerMethodField()
+
+    class Meta(QueueSerializer.Meta):
+        fields = QueueSerializer.Meta.fields + ('competitions',)
 
     def get_competitions(self, obj):
         # get user from the context request
