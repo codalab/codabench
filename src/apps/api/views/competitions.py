@@ -712,12 +712,6 @@ class PhaseViewSet(ModelViewSet):
                 parent__isnull=False
             ).count()
 
-            # get date of last submission by the owner of this submission for this phase
-            last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
-                .values('created_when')\
-                .order_by('-created_when')[0]['created_when']\
-                .strftime('%Y-%m-%d')
-
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
 
             # gather detailed result from submissions for each task
@@ -741,7 +735,7 @@ class PhaseViewSet(ModelViewSet):
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
                     'num_entries': num_entries,
-                    'last_entry_date': last_entry_date
+                    'created_when': submission['created_when']
                 })
             for score in submission['scores']:
 

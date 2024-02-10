@@ -323,7 +323,11 @@
                 .fail(function (response) {
                     if(response.responseJSON.detail){
                         toastr.error(response.responseJSON.detail)
-                    } else {
+                    } 
+                    else if(response.responseJSON.error_msg){
+                        toastr.error(response.responseJSON.error_msg)
+                    }
+                    else {
                         toastr.error(response.responseText)
                     }
                 })

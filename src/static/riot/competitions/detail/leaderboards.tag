@@ -35,7 +35,7 @@
             <th class="center aligned">#</th>
             <th>Participant</th>
             <th>Entries</th>
-            <th>Date of last entry</th>
+            <th>Date</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             
         </tr>
@@ -58,7 +58,7 @@
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td>{submission.num_entries}</td>
-            <td>{submission.last_entry_date}</td>
+            <td>{submission.created_when}</td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>

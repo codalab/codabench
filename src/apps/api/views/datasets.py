@@ -86,7 +86,7 @@ class DataViewSet(ModelViewSet):
         if storage_used + file_size > quota:
             available_space = pretty_bytes(quota - storage_used)
             file_size = pretty_bytes(file_size)
-            message = f"Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again."
+            message = f'Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again. You can manage your files in the Resources page.'
             return Response({'data_file': [message]}, status=status.HTTP_400_BAD_REQUEST)
 
         # All good, let's proceed

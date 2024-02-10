@@ -41,7 +41,7 @@
                             <!-- Main information -->
                             <div>
                                 <span class="detail-label">Organized by:</span>
-                                <span class="detail-item">{competition.created_by}</span>
+                                <span class="detail-item"><a href="/profiles/user/{competition.created_by}" target="_BLANK">{competition.created_by}</a></span>
                                 <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>

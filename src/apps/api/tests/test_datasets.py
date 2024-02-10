@@ -65,7 +65,7 @@ class DatasetAPITests(APITestCase):
         })
 
         assert resp.status_code == 400
-        assert resp.data["data_file"][0] == f"Insufficient space. Your available space is {pretty_bytes(available_space)}. The file size is {pretty_bytes(file_size)}. Please free up some space and try again."
+        assert resp.data["data_file"][0] == f'Insufficient space. Your available space is {pretty_bytes(available_space)}. The file size is {pretty_bytes(file_size)}. Please free up some space and try again. You can manage your files in the Resources page.'
 
         # Fake upload a small file
         file_size = available_space - 1024

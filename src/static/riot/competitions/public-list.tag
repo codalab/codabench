@@ -13,7 +13,7 @@
     <div each="{competition in competitions.results}">
             <div class="tile-wrapper">
                 <div class="ui square tiny bordered image img-wrapper">
-                    <img src="{competition.logo}" loading="lazy">
+                    <img src="{competition.logo_icon ? competition.logo_icon : competition.logo}" loading="lazy">
                 </div>
                 <a class="link-no-deco" href="../{competition.id}">
                     <div class="comp-info">
