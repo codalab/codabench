@@ -634,8 +634,8 @@ class PhaseViewSet(ModelViewSet):
         phase = self.get_object()
         comp = phase.competition
 
-        # Get submissions
-        submissions = phase.submissions.all()
+        # Get submissions with no parent
+        submissions = phase.submissions.filter(parent__isnull=True)
 
         can_re_run_submissions = False
         error_message = ""
