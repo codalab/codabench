@@ -209,9 +209,14 @@ class SubmissionViewSet(ModelViewSet):
         submission = self.get_object()
         phase = submission.phase
 
-        if not (request.user.is_superuser or request.user == submission.owner):
-            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
-                raise Http404
+        # only super user, owner of submission and competition organizer can proceed
+        if not (
+            request.user.is_superuser or
+            request.user == submission.owner or
+            request.user in phase.competition.all_organizers
+        ):
+            raise ValidationError("You cannot perform this action, contact the competition organizer!")
+
         if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
             raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
 
