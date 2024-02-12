@@ -205,7 +205,11 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def submission_leaderboard_connection(self, request, pk):
+
+        # get submission
         submission = self.get_object()
+
+        # get submission phase
         phase = submission.phase
 
         # only super user, owner of submission and competition organizer can proceed
@@ -214,10 +218,10 @@ class SubmissionViewSet(ModelViewSet):
             request.user == submission.owner or
             request.user in phase.competition.all_organizers
         ):
-            raise ValidationError("You cannot perform this action, contact the competition organizer!")
+            raise PermissionDenied("You cannot perform this action, contact the competition organizer!")
 
         if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
-            raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
+            raise PermissionDenied("Users are not allowed to edit the leaderboard on this Competition")
 
         if request.method == 'POST':
             # Removing any existing submissions on leaderboard unless multiples are allowed
