@@ -704,12 +704,18 @@ class PhaseViewSet(ModelViewSet):
         submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions with no parent and count all parents without counting the children
+            # count all submissions except:
+            # - child submissions (submissions who has a parent i.e. parent field is not null)
+            # - Failed submissions
+            # - Cancelled submissions
             num_entries = Submission.objects.filter(
-                Q(owner__username=submission['owner']) | Q(parent__owner__username=submission['owner']),
+                Q(owner__username=submission['owner']) |
+                Q(parent__owner__username=submission['owner']),
                 phase=phase,
             ).exclude(
-                parent__isnull=False
+                Q(status=Submission.FAILED) |
+                Q(status=Submission.CANCELLED) |
+                Q(parent__isnull=False)
             ).count()
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
