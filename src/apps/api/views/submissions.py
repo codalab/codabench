@@ -220,6 +220,7 @@ class SubmissionViewSet(ModelViewSet):
         ):
             raise PermissionDenied("You cannot perform this action, contact the competition organizer!")
 
+        # only super user and with these leaderboard rules (FORCE_LAST, FORCE_BEST, FORCE_LATEST_MULTIPLE) can proceed
         if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
             raise PermissionDenied("Users are not allowed to edit the leaderboard on this Competition")
 
