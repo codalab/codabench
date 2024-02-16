@@ -237,7 +237,7 @@ class SubmissionViewSet(ModelViewSet):
 
         if request.method == 'DELETE':
             if submission.phase.leaderboard.submission_rule not in [Leaderboard.ADD_DELETE, Leaderboard.ADD_DELETE_MULTIPLE]:
-                raise ValidationError("You are not allowed to remove a submission on this phase")
+                raise PermissionDenied("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
             Submission.objects.filter(parent=submission).update(leaderboard=None)
