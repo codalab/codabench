@@ -117,10 +117,12 @@ class Competition(ChaHubSaveMixin, models.Model):
         self.is_migrating = True
         self.save()
 
+        # Get submissions of current phase with finished status and which are on leaderboard
         submissions = Submission.objects.filter(
             phase=current_phase,
             is_migrated=False,
             parent__isnull=True,
+            leaderboard__isnull=False,
             status=Submission.FINISHED
         )
 
