@@ -404,6 +404,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'published',
             'participant_count',
             'logo',
+            'logo_icon',
             'description',
             'competition_type',
             'reward',
