@@ -262,7 +262,7 @@
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    toastr.error(response.responseJSON)
+                    toastr.error(response.responseJSON.detail)
                 })
             event.stopPropagation()
         }
@@ -273,7 +273,7 @@
                     CODALAB.events.trigger('submission_changed_on_leaderboard')
                 })
                 .fail(function (response) {
-                    toastr.error(response.responseJSON)
+                    toastr.error(response.responseJSON.detail)
                 })
             event.stopPropagation()
         }
