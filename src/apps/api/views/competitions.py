@@ -533,7 +533,6 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
-    @cache_response(key_func=DefaultListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
         qs = self.get_queryset()

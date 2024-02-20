@@ -49,7 +49,6 @@
 <script>
     var self = this
     self.competitions = {}
-    self.competitions_cache = {}
 
     self.one("mount", function () {
         self.update_competitions_list(self.get_url_page_number_or_default())
@@ -68,26 +67,21 @@
         // Function to handle successful data retrieval
         function handleSuccess(response) {
             self.competitions = response;
-            self.competitions_cache[self.current_page.toString()] = response;
             $('#loading').hide(); // Hide the loading indicator
             $('.pagination-nav').show(); // Show pagination navigation
             history.pushState("", document.title, "?page=" + self.current_page);
             $('.pagination-nav > button').prop('disabled', false);
             self.update();
         }
-        // Check if data is in cache
-        if (self.competitions_cache[self.current_page]) {
-            handleSuccess(self.competitions_cache[self.current_page]);
-        } else {
-            // Fetch data using AJAX call
-            return CODALAB.api.get_public_competitions({"page": self.current_page})
-                .fail(function (response) {
-                    $('#loading').hide(); // Hide the loading indicator
-                    $('.pagination-nav').show(); // Show pagination navigation
-                    toastr.error("Could not load competition list");
-                })
-                .done(handleSuccess);
-        }
+        // Fetch data using AJAX call
+        return CODALAB.api.get_public_competitions({"page": self.current_page})
+            .fail(function (response) {
+                $('#loading').hide(); // Hide the loading indicator
+                $('.pagination-nav').show(); // Show pagination navigation
+                toastr.error("Could not load competition list");
+            })
+            .done(handleSuccess);
+        
     };
 
 
