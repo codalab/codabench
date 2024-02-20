@@ -25,7 +25,8 @@ def organization_oidc_login(request):
             oidc_auth_url = (
                 f"{organization.authorization_url}?"
                 f"client_id={organization.client_id}&"
-                f"response_type=code&"
+                "response_type=code&"
+                "scope=openid profile email&"
                 f"redirect_uri={organization.redirect_url}"
             )
 
