@@ -5,6 +5,12 @@ import requests
 from urllib.parse import urlparse
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Auth_Organization
+from django.contrib.auth import get_user_model, authenticate, login
+import re
+User = get_user_model()
+from django.contrib.auth.backends import ModelBackend
+
+BACKEND = 'django.contrib.auth.backends.ModelBackend'
 
 
 def organization_oidc_login(request):
@@ -56,30 +62,43 @@ def oidc_complete(request, auth_organization_id):
     # Token exhange process
     if authorization_code:
 
-        print(f"\n\n\n Authentication Code: {authorization_code} \n\n\n")
-
         try:
             # STEP 1: Get auth organization using its id
             organization = get_object_or_404(Auth_Organization, pk=auth_organization_id)
+
             if organization:
 
-                # Get access token
+                # STEP 2:  Get access token
                 access_token, token_error = get_access_token(organization, authorization_code)
+
                 if token_error:
                     context["error"] = token_error
+                else:
+                    # STEP 3: Get user info
+                    user_info, user_info_error = get_user_info(organization, access_token)
+                    if user_info_error:
+                        context["error"] = user_info_error
+                    else:
 
-                print(f"\n\n\n Access Token: {access_token} \n\n\n")
+                        # get email and nickname (username) of the user
+                        user_email = user_info.get("email", None)
+                        user_nickname = user_info.get("nickname", None)
+                        if user_email:
+                            # get user with this email
+                            user = get_user_by_email(user_email)
+                            # STEP 4: Check if user exists and user is created using oidc and oidc orgnaization matches this one
+                            if user:
+                                if user.is_created_using_oidc and user.oidc_organization.id == auth_organization_id:
+                                    login(request, user, backend=BACKEND)
+                                    # Redirect the user home page
+                                    return redirect('pages:home')
+                                else:
+                                    context["error"] = "User account cannot be authenticated using this Organization."
+                            else:
+                                register_and_authenticate_user(request, user_email, user_nickname, organization)
 
-                # STEP 2: Make a POST request to the user info endpoint to get user info
-                user_info, user_info_error = get_user_info(organization, access_token)
-                if user_info_error:
-                    context["error"] = user_info_error
-
-                print(f"\n\n\n User Info: {user_info} \n\n\n")
-
-                print(user_info)
-                # STEP 3: Check in db if this user exists then login, if user is new create a new user and then login
-
+                        else:
+                            context["error"] = "Unable to extract email from user info! Please contact platform"
             else:
                 context["error"] = "Invalid Organization ID!"
         except Exception as e:
@@ -105,46 +124,18 @@ def get_access_token(organization, authorization_code):
         "code": authorization_code,
         "redirect_uri": redirect_url,
     }
-    print("token url: ", token_url)
-    print("data: ", data)
-    print("header: ", headers)
-
-    # response = requests.post(token_url, data=data, headers=headers)
-
-    # try:
-    #     token_data = response.json()
-    #     return token_data.get('access_token'), None
-    # except Exception as e:
-    #     return None, e
-
-    
-    # try:
-    #     response = requests.request("POST", token_url, data=data, headers=headers)
-    #     response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
-    #     token_data = response.json()
-    #     access_token = token_data.get('access_token')
-    #     return access_token, None
-    # except requests.exceptions.RequestException as e:
-    #     print(f"Error during token request: {e}")
-    #     return None, e
-    # except Exception as e:
-    #     print(f"Error parsing token response: {e}")
-    #     return None, e
 
     try:
-        parsed_url = urlparse(token_url)
-        conn = http.client.HTTPConnection(parsed_url.hostname, parsed_url.port)
-        conn.request("POST", parsed_url.path, data, headers)
-        response = conn.getresponse()
-        token_data = response.read().decode("utf-8")
+        response = requests.request("POST", token_url, data=data, headers=headers)
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        token_data = response.json()
         access_token = token_data.get('access_token')
-        conn.close()
-        print("Response:", token_data)
-        # Parse token_data if needed
-        # access_token = ...
         return access_token, None
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         print(f"Error during token request: {e}")
+        return None, e
+    except Exception as e:
+        print(f"Error parsing token response: {e}")
         return None, e
 
 
@@ -163,3 +154,54 @@ def get_user_info(organization, access_token):
         return user_info, None
     except Exception as e:
         return None, e
+
+
+def register_and_authenticate_user(request, user_email, user_nickname, organization):
+
+    if not user_nickname:
+        username = re.sub(r'[^a-zA-Z0-9]', '', user_email.split('@')[0])
+    else:
+        username = user_nickname
+
+    # Ensure the username is unique
+    username = create_unique_username(username)
+
+    # Create a new user
+    user = User.objects.create(
+        username=username,
+        email=user_email,
+        is_created_using_oidc=True,
+        oidc_organization=organization,
+    )
+
+    if user:
+        # login user
+        login(request, user, backend=BACKEND)
+        # Redirect to the home page
+        return redirect('pages:home')
+    else:
+        # Handle authentication failure
+        return redirect('accounts:login')
+
+
+def create_unique_username(username):
+    # Check if the username already exists
+    if User.objects.filter(username=username).exists():
+        # If the username already exists, modify it to make it unique
+        suffix = 1
+        new_username = f"{username}_{suffix}"
+        while User.objects.filter(username=new_username).exists():
+            suffix += 1
+            new_username = f"{username}_{suffix}"
+        return new_username
+    else:
+        # If the username doesn't exist, use it as is
+        return username
+
+
+def get_user_by_email(email):
+    try:
+        user = User.objects.get(email=email)
+        return user
+    except User.DoesNotExist:
+        return None

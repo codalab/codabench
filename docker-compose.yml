@@ -232,20 +232,3 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
-
-
-  #-----------------------------------------------
-  #  OIDC
-  #-----------------------------------------------
-
-  oidc:
-      image: oidc_server
-      command: bash -c "cd /app/ && python manage.py runserver 0.0.0.0:9100"
-      ports:
-        - 9100:9100
-      stdin_open: true
-      tty: true
-      logging:
-        options:
-          max-size: "20k"
-          max-file: "10"
