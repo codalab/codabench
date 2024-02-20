@@ -154,6 +154,14 @@ class PhaseTaskInstanceFactory(DjangoModelFactory):
     task = factory.SubFactory(TaskFactory)
 
 
+class LeaderboardFactory(DjangoModelFactory):
+    class Meta:
+        model = Leaderboard
+
+    title = factory.Faker('word')
+    key = factory.Faker('word')
+
+
 class SubmissionFactory(DjangoModelFactory):
     class Meta:
         model = Submission
@@ -161,6 +169,7 @@ class SubmissionFactory(DjangoModelFactory):
     owner = factory.SubFactory(UserFactory)
     phase = factory.SubFactory(PhaseFactory)
     name = factory.Sequence(lambda n: f'Submission {n}')
+    leaderboard = factory.SubFactory(LeaderboardFactory)
 
     created_when = factory.Faker('date_time_between', start_date='-5y', end_date='now', tzinfo=UTC)
     data = factory.SubFactory(
@@ -180,14 +189,6 @@ class CompetitionParticipantFactory(DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     competition = factory.SubFactory(CompetitionFactory)
     status = factory.LazyAttribute(lambda n: random.choice(['unknown', 'denied', 'approved', 'pending']))
-
-
-class LeaderboardFactory(DjangoModelFactory):
-    class Meta:
-        model = Leaderboard
-
-    title = factory.Faker('word')
-    key = factory.Faker('word')
 
 
 class ColumnFactory(DjangoModelFactory):

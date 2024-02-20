@@ -21,6 +21,7 @@ class SubmissionMixinTests(ChaHubTestCase):
             participant=self.participant,
             status='Finished',
             is_public=True,
+            leaderboard=None
         )
 
     def test_submission_save_sends_to_chahub(self):
