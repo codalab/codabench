@@ -24,6 +24,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
     tasks = serializers.SlugRelatedField(queryset=Task.objects.all(), required=True, allow_null=False, slug_field='key',
                                          many=True)
     status = serializers.SerializerMethodField()
+    is_final_phase = serializers.SerializerMethodField()
 
     class Meta:
         model = Phase
@@ -47,6 +48,14 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'starting_kit',
             'is_final_phase',
         )
+
+    def get_is_final_phase(self, obj):
+        if len(obj.competition.phases.all()) > 1:
+            return obj.is_final_phase
+        elif len(obj.competition.phases.all()) == 1:
+            obj.is_final_phase = True
+            obj.save()
+            return obj.is_final_phase
 
     def get_status(self, obj):
 
