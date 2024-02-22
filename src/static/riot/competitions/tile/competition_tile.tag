@@ -2,7 +2,7 @@
     
         <div class="tile-wrapper">
             <div class="ui square tiny bordered image img-wrapper">
-                <img src="{logo}">
+                <img src="{logo_icon ? logo_icon : logo}">
             </div>
             <a class="link-no-deco" href="./competitions/{id}">
             <div class="comp-info">

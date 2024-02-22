@@ -102,6 +102,9 @@ CODALAB.api = {
     cancel_submission: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
     },
+    run_submission: function (id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/run_submission/`)
+    },
     re_run_submission: function (id) {
         return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
     },

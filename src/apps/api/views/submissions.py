@@ -6,7 +6,6 @@ from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
-from django.http import Http404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
@@ -93,7 +92,7 @@ class SubmissionViewSet(ModelViewSet):
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
-            if self.action in ['update_fact_sheet', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             elif not self.request.user.is_authenticated or not_bot_user:
@@ -206,14 +205,24 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def submission_leaderboard_connection(self, request, pk):
+
+        # get submission
         submission = self.get_object()
+
+        # get submission phase
         phase = submission.phase
 
-        if not (request.user.is_superuser or request.user == submission.owner):
-            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
-                raise Http404
+        # only super user, owner of submission and competition organizer can proceed
+        if not (
+            request.user.is_superuser or
+            request.user == submission.owner or
+            request.user in phase.competition.all_organizers
+        ):
+            raise PermissionDenied("You cannot perform this action, contact the competition organizer!")
+
+        # only super user and with these leaderboard rules (FORCE_LAST, FORCE_BEST, FORCE_LATEST_MULTIPLE) can proceed
         if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
-            raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
+            raise PermissionDenied("Users are not allowed to edit the leaderboard on this Competition")
 
         if request.method == 'POST':
             # Removing any existing submissions on leaderboard unless multiples are allowed
@@ -228,7 +237,7 @@ class SubmissionViewSet(ModelViewSet):
 
         if request.method == 'DELETE':
             if submission.phase.leaderboard.submission_rule not in [Leaderboard.ADD_DELETE, Leaderboard.ADD_DELETE_MULTIPLE]:
-                raise ValidationError("You are not allowed to remove a submission on this phase")
+                raise PermissionDenied("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
             Submission.objects.filter(parent=submission).update(leaderboard=None)
@@ -245,6 +254,21 @@ class SubmissionViewSet(ModelViewSet):
             child.cancel()
         canceled = submission.cancel()
         return Response({'canceled': canceled})
+
+    @action(detail=True, methods=('POST',))
+    def run_submission(self, request, pk):
+        submission = self.get_object()
+
+        # Only organizer of the competition can run the submission
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied('You do not have permission to run this submission')
+
+        # Allow only to run a submission with status `Submitting`
+        if submission.status != Submission.SUBMITTING:
+            raise PermissionDenied('Cannot run a submission which is not in submitting status')
+
+        new_sub = submission.run()
+        return Response({'id': new_sub.id})
 
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
