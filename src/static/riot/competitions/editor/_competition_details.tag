@@ -137,6 +137,19 @@
             </sup>
         </div>
         <div class="field">
+            <div class="ui checkbox">
+                <label>Auto-run submissions</label>
+                <input type="checkbox" ref="auto_run_submissions" onchange="{form_updated}">
+            </div>
+            <sup>
+                <span data-tooltip="If unchecked, organizers will have to manually run each submission"
+                          data-inverted=""
+                          data-position="bottom center">
+                    <i class="help icon circle"></i>
+                </span>
+            </sup>
+        </div>
+        <div class="field">
             <label>Competition Reward</label>
             <input type="text" ref="reward" placeholder="Example: $1000 for the top participant" onchange="{form_updated}">
         </div>
@@ -213,6 +226,7 @@
             self.data["description"] = self.markdown_editor.value()
             self.data["queue"] = self.refs.queue.value
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
+            self.data["auto_run_submissions"] = self.refs.auto_run_submissions.checked
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
             self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
@@ -346,6 +360,7 @@
                     .dropdown('set value', competition.queue.id)
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
+            self.refs.auto_run_submissions.checked = competition.auto_run_submissions
             self.refs.make_programs_available.checked = competition.make_programs_available
             self.refs.make_input_data_available.checked = competition.make_input_data_available
             $(self.refs.docker_image).val(competition.docker_image)

@@ -92,7 +92,7 @@ class SubmissionViewSet(ModelViewSet):
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
-            if self.action in ['update_fact_sheet', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             elif not self.request.user.is_authenticated or not_bot_user:
@@ -254,6 +254,21 @@ class SubmissionViewSet(ModelViewSet):
             child.cancel()
         canceled = submission.cancel()
         return Response({'canceled': canceled})
+
+    @action(detail=True, methods=('POST',))
+    def run_submission(self, request, pk):
+        submission = self.get_object()
+
+        # Only organizer of the competition can run the submission
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied('You do not have permission to run this submission')
+
+        # Allow only to run a submission with status `Submitting`
+        if submission.status != Submission.SUBMITTING:
+            raise PermissionDenied('Cannot run a submission which is not in submitting status')
+
+        new_sub = submission.run()
+        return Response({'id': new_sub.id})
 
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):

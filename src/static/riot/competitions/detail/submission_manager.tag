@@ -94,49 +94,57 @@
                 <sup data-tooltip="{submission.status_details}">
                     <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
                 </sup>
+                <sup data-tooltip="An organizer will run your submission soon">
+                    <i if="{submission.status === 'Submitting' && !submission.auto_run}" class="question circle icon"></i>
+                </sup>
             </td>
             <td>{get_score(submission)}</td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
-                    <span data-tooltip="Rerun Submission"
-                          data-inverted=""
-                          onclick="{ rerun_submission.bind(this, submission) }">
-                        <i class="icon blue redo"></i>
-                        <!-- rerun submission -->
+                    <!-- run/rerun submission -->
+                    <!--  run: status = submitting auto_run = false  -->
+                    <!--  rerun: else   -->
+                    <span data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                        data-inverted=""
+                        onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
+                        <i class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
                     </span>
+                    <!-- delete submission -->
                     <span data-tooltip="Delete Submission"
                           data-inverted=""
                           onclick="{ delete_submission.bind(this, submission) }">
                         <i class="icon red trash alternate"></i>
-                        <!-- delete submission -->
                     </span>
                 </virtual>
+                <!-- cancel submission -->
                 <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
                         data-tooltip="Cancel Submission"
                         data-inverted=""
                         onclick="{ cancel_submission.bind(this, submission) }">
                     <i class="grey minus circle icon"></i>
-                    <!-- cancel submission -->
                 </span>
+                <!-- send submission to leaderboard-->
                 <span if="{!submission.on_leaderboard && submission.status === 'Finished'}"
                         data-tooltip="Add to Leaderboard"
                         data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
                     <i class="icon green columns"></i>
-                    <!-- send submission to leaderboard-->
                 </span>
+                <!--  On leaderboard  -->
                 <span if="{ submission.on_leaderboard }"
                      data-tooltip="On the Leaderboard"
                      data-inverted=""
                      onclick="{ remove_from_leaderboard.bind(this, submission) }">
                     <i class="icon green check"></i>
                 </span>
+                <!--  Make Public  -->
                 <span if="{!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Public"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
                     <i class="icon share teal alternate"></i>
                 </span>
+                <!--  Make Private  -->
                 <span if="{!!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Private"
                       data-inverted=""
@@ -312,6 +320,23 @@
                 }
                 self.update_submissions(filters)
             }, 100)
+        }
+
+        self.run_submission = function (submission) {
+            CODALAB.api.run_submission(submission.id)
+                .done(function (response) {
+                    toastr.success('Submission queued')
+                    self.update_submissions()
+                })
+                .fail(function (response) {
+                    if(response.responseJSON.detail){
+                        toastr.error(response.responseJSON.detail)
+                    } else {
+                        toastr.error(response.responseText)
+                    }
+                })
+            event.stopPropagation()
+            
         }
 
         self.rerun_submission = function (submission) {
