@@ -252,7 +252,7 @@ class SubmissionViewSet(ModelViewSet):
 
         # Only organizer of the competition can run the submission
         if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied('You do not have permission to re-run submissions')
+            raise PermissionDenied('You do not have permission to run this submission')
 
         # Allow only to run a submission with status `Submitting`
         if submission.status != Submission.SUBMITTING:
