@@ -1,29 +1,28 @@
 {$DOMAIN_NAME} {
-  # HTTPS options:
-  tls {$TLS_EMAIL}
+	tls {$TLS_EMAIL} {
+		ca https://acme.sectigo.com/v2/OV
+		eab {$EAB_KID} {$EAB_HMAC}
+	}
 
-  # Test HTTPS setup
-  # tls {$TLS_EMAIL} {
-  #   ca https://acme-staging-v02.api.letsencrypt.org/directory
-  # }
+	# Test HTTPS setup
+	#tls {$TLS_EMAIL} {
+	#	ca https://acme-staging-v02.api.letsencrypt.org/directory
+	#}
 
-  # Removing some headers for improved security:
-  header / -Server
+	# Serves static files, should be the same as `STATIC_ROOT` setting
+	root * /var/www/django
+	file_server
 
-  # Serves static files, should be the same as `STATIC_ROOT` setting:
-  root /var/www/django
+	# Serves dynamic requests
+	@notStatic {
+		not path /static/*
+		not path /media/*
+	}
+	reverse_proxy @notStatic django:8000
 
-  # Serving dynamic requests:
-  proxy / django:8000 {
-    except /static /media
-    transparent
-    websocket
-  }
+	encode gzip
 
-  # Allows to use `.gz` files when available:
-  gzip
-
-  # Logs:
-  log stdout
-  errors stdout
+	log {
+		output stdout
+	}
 }
