@@ -1,14 +1,12 @@
 # oidc_configurations/views.py
 import base64
-import http.client
 import requests
-from urllib.parse import urlparse
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Auth_Organization
-from django.contrib.auth import get_user_model, authenticate, login
+from django.contrib.auth import get_user_model, login
 import re
+
 User = get_user_model()
-from django.contrib.auth.backends import ModelBackend
 
 BACKEND = 'django.contrib.auth.backends.ModelBackend'
 
@@ -95,7 +93,7 @@ def oidc_complete(request, auth_organization_id):
                                 else:
                                     context["error"] = "User account cannot be authenticated using this Organization."
                             else:
-                                register_and_authenticate_user(request, user_email, user_nickname, organization)
+                                return register_and_authenticate_user(request, user_email, user_nickname, organization)
 
                         else:
                             context["error"] = "Unable to extract email from user info! Please contact platform"
@@ -165,6 +163,8 @@ def register_and_authenticate_user(request, user_email, user_nickname, organizat
 
     # Ensure the username is unique
     username = create_unique_username(username)
+    username = "ihsaan8"
+    user_email = "ihsaan8+test@gmail.com"
 
     # Create a new user
     user = User.objects.create(
@@ -179,8 +179,9 @@ def register_and_authenticate_user(request, user_email, user_nickname, organizat
         login(request, user, backend=BACKEND)
         # Redirect to the home page
         return redirect('pages:home')
+
     else:
-        # Handle authentication failure
+        # Handle authentication failure i.e. go back to login
         return redirect('accounts:login')
 
 
