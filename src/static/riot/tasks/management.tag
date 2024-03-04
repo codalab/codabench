@@ -45,7 +45,7 @@
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
             <td>
-                <div if="{ task.created_by == CODALAB.state.user.id }">
+                <div if="{ task.created_by == CODALAB.state.user.username }">
                     <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
                         <i class="icon pencil"></i>
                     </button>
@@ -55,7 +55,7 @@
                 </div>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox" if="{ task.created_by == CODALAB.state.user.id }">
+                <div class="ui fitted checkbox" if="{ task.created_by == CODALAB.state.user.username }">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_task_for_deletion.bind(this, task) }">
                     <label></label>
                 </div>
@@ -69,9 +69,8 @@
         </tr>
         </tbody>
         <tfoot>
-        <!-------------------------------------
-                  Pagination
-        -------------------------------------->
+
+        <!-- Pagination -->
         <tr if="{tasks.length > 0}">
             <th colspan="7">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
