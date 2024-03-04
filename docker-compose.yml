@@ -11,7 +11,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./certs/caddy:/etc/caddycerts
+      - ./certs:/data
     restart: unless-stopped
     ports:
       - 80:80
