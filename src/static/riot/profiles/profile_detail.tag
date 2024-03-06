@@ -122,7 +122,7 @@
                 <!--  GitHub   -->
                 <div if="{ selected_user.github_url }" class="about-block">
                     <div class="flex-container">
-                        <div class=""><i class="github icon"></i>Website:</div>
+                        <div class=""><i class="github icon"></i>GitHub:</div>
                         <div class="value">
                             <a href="{ selected_user.github_url }" target="_blank">{selected_user.github_url}</a>
                         </div>
