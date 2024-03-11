@@ -3,6 +3,7 @@
 
 {% block content %}
 <div class="sixteen wide mobile six wide computer centered column">
+    {% if ENABLE_SIGN_IN %}
     <h2 class="ui blue centered header">
         Login
     </h2>
@@ -52,11 +53,14 @@
             </div>
             <button class="ui fluid blue submit button" type="submit">Log In</button>
             <div class="ui divider"></div>
-            <p>New to us? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+            {% if ENABLE_SIGN_UP %}
+                <p>Don't have an account? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+            {% endif %}
             <p><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
 
             <div class="ui error message"></div>
         </form>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

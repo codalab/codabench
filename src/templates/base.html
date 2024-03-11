@@ -177,7 +177,9 @@
                         </div>
                     {% else %}
                         <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
-                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                        {% if ENABLE_SIGN_UP %}
+                            <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
