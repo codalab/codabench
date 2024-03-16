@@ -86,12 +86,9 @@ def oidc_complete(request, auth_organization_id):
                             user = get_user_by_email(user_email)
                             # STEP 4: Check if user exists and user is created using oidc and oidc orgnaization matches this one
                             if user:
-                                if user.is_created_using_oidc and user.oidc_organization.id == auth_organization_id:
-                                    login(request, user, backend=BACKEND)
-                                    # Redirect the user home page
-                                    return redirect('pages:home')
-                                else:
-                                    context["error"] = "User account cannot be authenticated using this Organization."
+                                login(request, user, backend=BACKEND)
+                                # Redirect the user home page
+                                return redirect('pages:home')
                             else:
                                 return register_and_authenticate_user(request, user_email, user_nickname, organization)
 
@@ -163,8 +160,6 @@ def register_and_authenticate_user(request, user_email, user_nickname, organizat
 
     # Ensure the username is unique
     username = create_unique_username(username)
-    username = "ihsaan8"
-    user_email = "ihsaan8+test@gmail.com"
 
     # Create a new user
     user = User.objects.create(
