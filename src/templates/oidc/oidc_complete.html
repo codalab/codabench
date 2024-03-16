@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="sixteen wide mobile six wide computer centered">
+    {% if error %}
+        <h3 class="ui centered header">OIDC Error</h3>
+        <div class="ui red message">
+            <h4>{{ error }}</h4>
+            {% if error_description %}
+            <p>{{ error_description }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
