@@ -90,7 +90,8 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
-    created_by = serializers.CharField(source='created_by.username', read_only=True, required=False)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
     input_data = DataSimpleSerializer(read_only=True)
     ingestion_program = DataSimpleSerializer(read_only=True)
     reference_data = DataSimpleSerializer(read_only=True)
@@ -107,6 +108,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'description',
             'key',
             'created_by',
+            'owner_display_name',
             'created_when',
             'is_public',
             'validated',
@@ -126,12 +128,18 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
 
+    def get_owner_display_name(self, instance):
+        # Get the user's display name if not None, otherwise return username
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
+
 
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
     competitions = serializers.SerializerMethodField()
     shared_with = serializers.SerializerMethodField()
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -139,6 +147,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'id',
             'created_when',
             'created_by',
+            'owner_display_name',
             'key',
             'name',
             'solutions',
@@ -159,6 +168,10 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
+
+    def get_owner_display_name(self, instance):
+        # Get the user's display name if not None, otherwise return username
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
 
 
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):

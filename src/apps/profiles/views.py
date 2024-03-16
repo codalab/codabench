@@ -105,6 +105,12 @@ def activateEmail(request, user, to_email):
 
 
 def sign_up(request):
+
+    # If sign up is not enabled then redirect to login
+    # this is for security as some users may access sign up page using the url
+    if not settings.ENABLE_SIGN_UP:
+        return redirect('accounts:login')
+
     context = {}
     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
         settings.SOCIAL_AUTH_CHAHUB_BASE_URL,

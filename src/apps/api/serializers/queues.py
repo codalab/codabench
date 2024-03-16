@@ -3,8 +3,8 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from queues.models import Queue
-
 from profiles.models import User
+from django.db.models import Q
 
 
 class OrganizerSerializer(serializers.ModelSerializer):
@@ -86,3 +86,30 @@ class QueueSerializer(QueueOwnerMixin, serializers.ModelSerializer):
             'created_when',
             'is_owner',
         )
+
+
+class QueueListSerializer(QueueSerializer):
+    competitions = serializers.SerializerMethodField()
+
+    class Meta(QueueSerializer.Meta):
+        fields = QueueSerializer.Meta.fields + ('competitions',)
+
+    def get_competitions(self, obj):
+        # get user from the context request
+        user = self.context['request'].user
+
+        # for super user return all competiitons using this queue
+        # for admin return competitions where this user is organizer using this queue
+        # for non-admin return public competitions using this queue
+        if user.is_superuser:
+            # Fetch all competitions
+            competitions = obj.competitions.all().values('id', 'title')
+        else:
+            # Fetch all competitions where user is organizer or competition is published
+            competitions = obj.competitions.filter(
+                Q(published=True) |
+                Q(created_by=user) |
+                Q(collaborators=user)
+            ).values('id', 'title')
+
+        return competitions

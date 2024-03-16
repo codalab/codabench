@@ -18,8 +18,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-from rest_framework_extensions.cache.decorators import cache_response
-from rest_framework_extensions.key_constructor.constructors import DefaultListKeyConstructor
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -533,7 +531,6 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
-    @cache_response(key_func=DefaultListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
         qs = self.get_queryset()
@@ -634,8 +631,8 @@ class PhaseViewSet(ModelViewSet):
         phase = self.get_object()
         comp = phase.competition
 
-        # Get submissions
-        submissions = phase.submissions.all()
+        # Get submissions with no parent
+        submissions = phase.submissions.filter(parent__isnull=True)
 
         can_re_run_submissions = False
         error_message = ""
@@ -704,12 +701,18 @@ class PhaseViewSet(ModelViewSet):
         submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions with no parent and count all parents without counting the children
+            # count all submissions except:
+            # - child submissions (submissions who has a parent i.e. parent field is not null)
+            # - Failed submissions
+            # - Cancelled submissions
             num_entries = Submission.objects.filter(
-                Q(owner__username=submission['owner']) | Q(parent__owner__username=submission['owner']),
+                Q(owner__username=submission['owner']) |
+                Q(parent__owner__username=submission['owner']),
                 phase=phase,
             ).exclude(
-                parent__isnull=False
+                Q(status=Submission.FAILED) |
+                Q(status=Submission.CANCELLED) |
+                Q(parent__isnull=False)
             ).count()
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"

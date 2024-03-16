@@ -41,9 +41,10 @@ def sanitize(content):
 
 def codalab_send_markdown_email(subject, markdown_content, recipient_list, from_email=None):
     from_email = from_email if from_email else settings.DEFAULT_FROM_EMAIL
-    message = sanitize(markdown_content)
-    html_message = sanitize(markdown.markdown(message))
+    html_message = markdown.markdown(markdown_content)
+    # message = sanitize(markdown_content)
+    # html_message = sanitize(markdown.markdown(message))
 
-    message = EmailMultiAlternatives(subject, message, from_email=from_email, bcc=recipient_list)
+    message = EmailMultiAlternatives(subject, '', from_email=from_email, bcc=recipient_list)
     message.attach_alternative(html_message, 'text/html')
     message.send()
