@@ -111,7 +111,7 @@ class PhaseMigrationTests(APITestCase):
 
         # make 5 submissions in phase 1
         for _ in range(5):
-            SubmissionFactory(owner=self.creator, phase=self.phase_1, status=Submission.FINISHED)
+            SubmissionFactory(owner=self.creator, phase=self.phase_1, status=Submission.FINISHED, leaderboard=self.leaderboard)
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 0
 
@@ -130,7 +130,7 @@ class PhaseMigrationTests(APITestCase):
         self.client.login(username='creator', password='creator')
 
         # make 1 submission with 4 children
-        parent = SubmissionFactory(owner=self.creator, phase=self.phase_1, has_children=True, status=Submission.FINISHED)
+        parent = SubmissionFactory(owner=self.creator, phase=self.phase_1, has_children=True, status=Submission.FINISHED, leaderboard=self.leaderboard)
         for _ in range(4):
             # Make a submission _and_ new Task for phase 2
             self.phase_2.tasks.add(TaskFactory())
