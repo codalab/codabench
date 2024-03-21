@@ -99,6 +99,7 @@ COLUMN_FIELDS = [
     'computation_indexes',
     'hidden',
 ]
+MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
 
 def _send_to_compute_worker(submission, is_scoring):
@@ -107,7 +108,7 @@ def _send_to_compute_worker(submission, is_scoring):
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
         "secret": submission.secret,
         "docker_image": submission.phase.competition.docker_image,
-        "execution_time_limit": submission.phase.execution_time_limit,
+        "execution_time_limit": min(MAX_EXECUTION_TIME_LIMIT, submission.phase.execution_time_limit),
         "id": submission.pk,
         "is_scoring": is_scoring,
     }
@@ -185,8 +186,9 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    if submission.phase.competition.queue:
+    if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
         submission.queue_name = submission.phase.competition.queue.name or ''
+        run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
         submission.save()
 
         # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
