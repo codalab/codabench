@@ -69,6 +69,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     # if false, submissions run will be intiiated by organizer
     auto_run_submissions = models.BooleanField(default=True)
 
+    # If true, participants see the make their submissions public
+    can_participant_make_submission_public = models.BooleanField(default=True)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
