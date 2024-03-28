@@ -28,7 +28,7 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=3></th>
+            <th colspan=4></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
@@ -36,6 +36,7 @@
             <th>Participant</th>
             <th>Entries</th>
             <th>Date</th>
+            <th>Submission ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             
         </tr>
@@ -59,6 +60,7 @@
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td>{submission.num_entries}</td>
             <td>{submission.created_when}</td>
+            <td>{submission.id}</td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
