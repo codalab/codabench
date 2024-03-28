@@ -359,8 +359,10 @@ class SubmissionViewSet(ModelViewSet):
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
         submission = super().get_object()
+        if not submission.phase.competition.can_participants_make_submissions_public:
+            raise PermissionDenied("You do not have permission to make this submissions public/private")
         if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to publish this submissions')
+            raise PermissionDenied("You do not have permission to publish this submissions")
         is_public = not submission.is_public
         submission.data.is_public = is_public
         submission.data.save(send=False)
