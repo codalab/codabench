@@ -138,14 +138,14 @@
                     <i class="icon green check"></i>
                 </span>
                 <!--  Make Public  -->
-                <span if="{!submission.is_public && submission.status === 'Finished'}"
+                <span if="{!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
                       data-tooltip="Make Public"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
                     <i class="icon share teal alternate"></i>
                 </span>
                 <!--  Make Private  -->
-                <span if="{!!submission.is_public && submission.status === 'Finished'}"
+                <span if="{!!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
                       data-tooltip="Make Private"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
@@ -437,7 +437,7 @@
                         self.update_submissions()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating submission')
+                        toastr.error(resp.responseJSON.detail)
                     })
             }
         }

@@ -15,6 +15,7 @@ class V2Unpacker(BaseUnpacker):
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
             "auto_run_submissions": self.competition_yaml.get('auto_run_submissions', True),
+            "can_participants_make_submissions_public": self.competition_yaml.get('can_participants_make_submissions_public', True),
             "make_programs_available": self.competition_yaml.get('make_programs_available', False),
             "make_input_data_available": self.competition_yaml.get('make_input_data_available', False),
             "description": self.competition_yaml.get("description", ""),
