@@ -155,7 +155,21 @@ class SubmissionManagerTests(SubmissionTestCase):
         self.client.force_login(different_user)
         url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
         resp = self.client.post(url)
-        assert resp.status_code == 404
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "You cannot perform this action, contact the competition organizer!"
+
+    def test_only_owner_can_remove_submission_from_leaderboard(self):
+        parent_sub = SubmissionFactory(has_children=True)
+        leaderboard = LeaderboardFactory()
+        parent_sub.phase.leaderboard = leaderboard
+        parent_sub.phase.save()
+
+        different_user = UserFactory()
+        self.client.force_login(different_user)
+        url = reverse('submission-submission-leaderboard-connection', kwargs={'pk': parent_sub.pk})
+        resp = self.client.delete(url)
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "You cannot perform this action, contact the competition organizer!"
 
     def test_adding_submission_removes_other_submissions_from_owner(self):
         leaderboard = LeaderboardFactory()

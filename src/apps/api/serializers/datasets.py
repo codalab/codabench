@@ -74,7 +74,8 @@ class DataSimpleSerializer(serializers.ModelSerializer):
 
 
 class DataDetailSerializer(serializers.ModelSerializer):
-    created_by = serializers.CharField(source='created_by.username')
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
     competition = serializers.SerializerMethodField()
     value = serializers.CharField(source='key', required=False)
 
@@ -83,6 +84,7 @@ class DataDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'created_by',
+            'owner_display_name',
             'created_when',
             'name',
             'type',
@@ -107,6 +109,9 @@ class DataDetailSerializer(serializers.ModelSerializer):
                 "title": obj.competition.title,
             }
         return None
+
+    def get_owner_display_name(self, instance):
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
 
 
 class DataGroupSerializer(serializers.ModelSerializer):

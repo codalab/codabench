@@ -100,6 +100,9 @@ class ServerStatusView(TemplateView):
                 queue_name = "*" if submission.queue is None else submission.queue.name
             submission.competition_queue = queue_name
 
+            # Add submission owner display name
+            submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username
+
         return context
 
     def format_file_size(self, file_size):

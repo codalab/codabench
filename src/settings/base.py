@@ -470,3 +470,10 @@ AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='u
 # on default queue when number of submissions are < RERUN_SUBMISSION_LIMIT
 # =============================================================================
 RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
+
+
+# =============================================================================
+# Enable or disbale regular email sign-in an sign-up
+# =============================================================================
+ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
+ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'
