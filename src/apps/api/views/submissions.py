@@ -361,8 +361,6 @@ class SubmissionViewSet(ModelViewSet):
         submission = super().get_object()
         if not submission.phase.competition.can_participants_make_submissions_public:
             raise PermissionDenied("You do not have permission to make this submissions public/private")
-        if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied("You do not have permission to publish this submissions")
         is_public = not submission.is_public
         submission.data.is_public = is_public
         submission.data.save(send=False)
