@@ -195,6 +195,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        if self.action == 'public':
+            return CompetitionSerializerSimple
         elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
