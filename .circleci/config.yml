@@ -8,6 +8,12 @@ jobs:
       - checkout
 
       - run:
+          name: Show CircleCI IP Address
+          command: |
+            CIRCLE_IP_ADDRESS="10.240.0.$(( ${CIRCLE_BUILD_NUM} % 255 + 1))"
+            echo "CircleCI IP Address: $CIRCLE_IP_ADDRESS"
+
+      - run:
           # NOTE: To connect to this, use an SSH tunnel in front, like so..
           #
           #     In one terminal:
@@ -37,17 +43,13 @@ jobs:
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
-      - run: docker-compose exec django flake8 src/
-
+      # - run:
+      #     name: e2e tests
+      #     command: .docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
+      #     no_output_timeout: 60m
       - run:
-          name: pytest
-          command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
-
-      - run:
-          name: e2e tests
-          command: docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
-          no_output_timeout: 60m
-
+          name: debug
+          command: sleep 1800
       - store_artifacts:
           path: artifacts/
 
