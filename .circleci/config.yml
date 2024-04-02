@@ -43,9 +43,15 @@ jobs:
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker-compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
+      - run:
+          name: Migrate
+          command: |
+            docker compose exec django ./manage.py migrate
+
+
       # - run:
       #     name: e2e tests
-      #     command: .docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
       #     no_output_timeout: 60m
       - run:
           name: debug
