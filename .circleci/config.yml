@@ -53,10 +53,10 @@ jobs:
           name: e2e tests
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
           no_output_timeout: 60m
-          
-      - run:
-          name: debug
-          command: sleep 1800
+
+      # - run:
+      #     name: debug
+      #     command: sleep 1800
       - store_artifacts:
           path: artifacts/
 
