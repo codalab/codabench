@@ -3,7 +3,7 @@ version: 2
 jobs:
   test:
     machine:
-      image: ubuntu-2004:2022.07.1
+      image: default
     steps:
       - checkout
 
