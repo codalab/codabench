@@ -3,7 +3,7 @@ version: 2
 jobs:
   test:
     machine:
-      image: default
+      image: ubuntu-2204:2024.01.2
     steps:
       - checkout
 
