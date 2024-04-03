@@ -23,4 +23,6 @@ def common_settings(request):
         'USER_JSON_DATA': json.dumps(user_json_data),
         'RABBITMQ_MANAGEMENT_URL': f"http://{settings.DOMAIN_NAME}:{settings.RABBITMQ_MANAGEMENT_PORT}",
         'FLOWER_URL': f"http://{settings.DOMAIN_NAME}:{settings.FLOWER_PUBLIC_PORT}",
+        'ENABLE_SIGN_UP': settings.ENABLE_SIGN_UP,
+        'ENABLE_SIGN_IN': settings.ENABLE_SIGN_IN,
     }
