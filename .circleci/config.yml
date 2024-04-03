@@ -40,11 +40,6 @@ jobs:
       - run: docker-compose exec django flake8 src/
 
       - run:
-          name: Migrate
-          command: |
-            docker compose exec django ./manage.py migrate
-
-      - run:
           name: pytest
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
 
