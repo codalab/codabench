@@ -51,8 +51,9 @@ jobs:
 
       - run:
           name: e2e tests
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
+          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
+          # command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py
 
       # - run:
       #     name: debug
