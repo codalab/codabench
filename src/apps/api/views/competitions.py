@@ -535,9 +535,7 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
-        # qs = self.get_queryset()
         qs = Competition.objects.filter(published=True)
-        # qs = qs.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
