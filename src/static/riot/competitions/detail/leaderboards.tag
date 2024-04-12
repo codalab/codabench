@@ -36,7 +36,7 @@
             <th>Participant</th>
             <th>Entries</th>
             <th>Date</th>
-            <th>Submission ID</th>
+            <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             
         </tr>
