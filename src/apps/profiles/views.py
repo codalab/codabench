@@ -21,7 +21,6 @@ from api.serializers.profiles import UserSerializer, OrganizationDetailSerialize
     UserNotificationSerializer
 from .forms import SignUpForm, LoginForm
 from .models import User, Organization, Membership
-from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token
 
 
@@ -178,11 +177,6 @@ def log_in(request):
                     messages.error(request, "Wrong Credentials!")
         else:
             context['form'] = form
-
-    # Fetch auth_organizations from the database
-    auth_organizations = Auth_Organization.objects.all()
-    if auth_organizations:
-        context['auth_organizations'] = auth_organizations
 
     if not context.get('form'):
         context['form'] = LoginForm()

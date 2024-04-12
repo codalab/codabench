@@ -49,10 +49,6 @@ class Competition(ChaHubSaveMixin, models.Model):
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py37")
     enable_detailed_results = models.BooleanField(default=False)
-    # If true, show detailed results in submission panel
-    show_detailed_results_in_submission_panel = models.BooleanField(default=True)
-    # If true, show detailed results in leaderboard
-    show_detailed_results_in_leaderboard = models.BooleanField(default=True)
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
 
@@ -72,9 +68,6 @@ class Competition(ChaHubSaveMixin, models.Model):
     # if true, submissions are auto-run when submitted
     # if false, submissions run will be intiiated by organizer
     auto_run_submissions = models.BooleanField(default=True)
-
-    # If true, participants see the make their submissions public
-    can_participants_make_submissions_public = models.BooleanField(default=True)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"

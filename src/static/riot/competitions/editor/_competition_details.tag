@@ -1,13 +1,10 @@
 <competition-details>
     <div class="ui form">
-
-        <!--  Title  -->
         <div class="field required">
             <label>Title</label>
             <input type="text" ref="title" onchange="{form_updated}">
         </div>
 
-        <!--  Logo  -->
         <div class="field required">
             <label>Logo</label>
             <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
@@ -25,56 +22,10 @@
                 <input value="{ logo_file_name }" readonly onclick="document.getElementById('form_file_logo').click()">
             </div>
         </div>
-
-        <!--  Description  -->
         <div class="field smaller-mde">
             <label>Description</label>
             <textarea class="markdown-editor" ref="comp_description" name="description" onchange="{form_updated}"></textarea>
         </div>
-
-        <!--  Queue  -->
-        <div class="field">
-            <label>Queue</label>
-            <select class="ui fluid search selection dropdown" ref="queue"></select>
-        </div>
-
-        <!--  Docker Image  -->
-        <div class="field required">
-            <label>Competition Docker Image</label>
-            <input type="text" ref="docker_image" placeholder="Example: codalab/codalab-legacy:py37" onchange="{form_updated}">
-        </div>
-
-        <!--  Type  -->
-        <div class="field">
-            <label>Competition Type</label>
-            <div ref="competition_type" class="ui selection dropdown">
-                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }" onchange="{form_updated}">
-                <div class="text">Competition</div>
-                <i class="dropdown icon"></i>
-                <div class="menu">
-                    <div class="item" data-value="competition">Competition</div>
-                    <div class="item" data-value="benchmark">Benchmark</div>
-                </div>
-            </div>
-        </div>
-
-        <!--  Reward  -->
-        <div class="field">
-            <label>Competition Reward</label>
-            <input type="text" ref="reward" placeholder="Example: $1000 for the top participant" onchange="{form_updated}">
-        </div>
-        <!--  Contact Email  -->
-        <div class="field">
-            <label>Organizer Contact Email</label>
-            <input type="email" ref="contact_email" placeholder="Example: email@example.com" onchange="{form_updated}">
-        </div>
-        <!--  Report  -->
-        <div class="field">
-            <label>Competition Report</label>
-            <input type="text" ref="report" placeholder="Example: https://example.com/report.pdf" onchange="{form_updated}">
-        </div>
-
-        <!--  Fact Sheet  -->
         <div class="field smaller-mde">
             <label>Fact Sheet</label>
             <div class="row">
@@ -131,8 +82,6 @@
             </div>
             </form>
         </div>
-
-        <!--  Files Available  -->
         <div class="field smaller-mde">
             <label>
                 Files Available
@@ -154,12 +103,29 @@
                 <input type="checkbox" ref="make_input_data_available" onchange="{form_updated}">
             </div>
         </div>
-
-        <!--  Detailed results  -->
         <div class="field">
-            <label>Detailed Results</label>
+            <label>Queue</label>
+            <select class="ui fluid search selection dropdown" ref="queue"></select>
+        </div>
+        <div class="field required">
+            <label>Competition Docker Image</label>
+            <input type="text" ref="docker_image" placeholder="Example: codalab/codalab-legacy:py37" onchange="{form_updated}">
+        </div>
+        <div class="field">
+            <label>Competition Type</label>
+            <div ref="competition_type" class="ui selection dropdown">
+                <input type="hidden" name="competition_type" value="{ data.competition_type || 'competition' }" onchange="{form_updated}">
+                <div class="text">Competition</div>
+                <i class="dropdown icon"></i>
+                <div class="menu">
+                    <div class="item" data-value="competition">Competition</div>
+                    <div class="item" data-value="benchmark">Benchmark</div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
             <div class="ui checkbox">
-                <label>Enable Detailed Results</label>
+                <label>Enable Visualizations</label>
                 <input type="checkbox" ref="detailed_results" onchange="{form_updated}">
             </div>
             <sup>
@@ -169,35 +135,8 @@
                     <i class="grey question circle icon"></i>
                 </a>
             </sup>
-            <br>
-            <div class="ui checkbox">
-                <label>Show Detailed Results in submission pannel</label>
-                <input type="checkbox" ref="show_detailed_results_in_submission_panel" onchange="{form_updated}">
-            </div>
-            <sup>
-                <span data-tooltip="If checked and detailed results are enabled, participants can see detailed results in submission panel"
-                          data-inverted=""
-                          data-position="bottom center">
-                    <i class="help icon circle"></i>
-                </span>
-            </sup>
-            <br>
-            <div class="ui checkbox">
-                <label>Show Detailed Results in leaderboard</label>
-                <input type="checkbox" ref="show_detailed_results_in_leaderboard" onchange="{form_updated}">
-            </div>
-            <sup>
-                <span data-tooltip="If checked and detailed results are enabled, participants can see detailed results in leaderboard"
-                          data-inverted=""
-                          data-position="bottom center">
-                    <i class="help icon circle"></i>
-                </span>
-            </sup>
         </div>
-
-        <!--  Auto Run submissions  -->
         <div class="field">
-            <label>Submission execution</label>
             <div class="ui checkbox">
                 <label>Auto-run submissions</label>
                 <input type="checkbox" ref="auto_run_submissions" onchange="{form_updated}">
@@ -210,24 +149,18 @@
                 </span>
             </sup>
         </div>
-
-        <!--  Public submissions  -->
         <div class="field">
-            <label>Public Submissions</label>
-            <div class="ui checkbox">
-                <label>Participants can make submission public</label>
-                <input type="checkbox" ref="can_participants_make_submissions_public" onchange="{form_updated}">
-            </div>
-            <sup>
-                <span data-tooltip="If unchecked, participants cannot make their submissions public from submission panel"
-                          data-inverted=""
-                          data-position="bottom center">
-                    <i class="help icon circle"></i>
-                </span>
-            </sup>
+            <label>Competition Reward</label>
+            <input type="text" ref="reward" placeholder="Example: $1000 for the top participant" onchange="{form_updated}">
         </div>
-
-        
+        <div class="field">
+            <label>Organizer Contact Email</label>
+            <input type="email" ref="contact_email" placeholder="Example: email@example.com" onchange="{form_updated}">
+        </div>
+        <div class="field">
+            <label>Competition Report</label>
+            <input type="text" ref="report" placeholder="Example: https://example.com/report.pdf" onchange="{form_updated}">
+        </div>
     </div>
 
     <script>
@@ -293,10 +226,7 @@
             self.data["description"] = self.markdown_editor.value()
             self.data["queue"] = self.refs.queue.value
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
-            self.data["show_detailed_results_in_submission_panel"] = self.refs.show_detailed_results_in_submission_panel.checked
-            self.data["show_detailed_results_in_leaderboard"] = self.refs.show_detailed_results_in_leaderboard.checked
             self.data["auto_run_submissions"] = self.refs.auto_run_submissions.checked
-            self.data["can_participants_make_submissions_public"] = self.refs.can_participants_make_submissions_public.checked
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
             self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
@@ -430,10 +360,7 @@
                     .dropdown('set value', competition.queue.id)
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
-            self.refs.show_detailed_results_in_submission_panel.checked = competition.show_detailed_results_in_submission_panel
-            self.refs.show_detailed_results_in_leaderboard.checked = competition.show_detailed_results_in_leaderboard
             self.refs.auto_run_submissions.checked = competition.auto_run_submissions
-            self.refs.can_participants_make_submissions_public.checked = competition.can_participants_make_submissions_public
             self.refs.make_programs_available.checked = competition.make_programs_available
             self.refs.make_input_data_available.checked = competition.make_input_data_available
             $(self.refs.docker_image).val(competition.docker_image)

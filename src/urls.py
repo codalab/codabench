@@ -30,8 +30,6 @@ urlpatterns = [
     path('accounts/', include('profiles.urls_accounts')),
     path('admin/', admin.site.urls),
     path('social/', include('social_django.urls', namespace='social')),
-    path('oidc/', include('oidc_configurations.urls')),
-
 ]
 
 
