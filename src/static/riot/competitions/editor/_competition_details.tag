@@ -155,11 +155,11 @@
             </div>
         </div>
 
-        <!--  Visualizations  -->
+        <!--  Detailed results  -->
         <div class="field">
-            <label>Visualizations</label>
+            <label>Detailed Results</label>
             <div class="ui checkbox">
-                <label>Enable Visualizations</label>
+                <label>Enable Detailed Results</label>
                 <input type="checkbox" ref="detailed_results" onchange="{form_updated}">
             </div>
             <sup>
@@ -168,6 +168,30 @@
                    data-tooltip="What's this?">
                     <i class="grey question circle icon"></i>
                 </a>
+            </sup>
+            <br>
+            <div class="ui checkbox">
+                <label>Show Detailed Results in submission pannel</label>
+                <input type="checkbox" ref="show_detailed_results_in_submission_panel" onchange="{form_updated}">
+            </div>
+            <sup>
+                <span data-tooltip="If checked and detailed results are enabled, participants can see detailed results in submission panel"
+                          data-inverted=""
+                          data-position="bottom center">
+                    <i class="help icon circle"></i>
+                </span>
+            </sup>
+            <br>
+            <div class="ui checkbox">
+                <label>Show Detailed Results in leaderboard</label>
+                <input type="checkbox" ref="show_detailed_results_in_leaderboard" onchange="{form_updated}">
+            </div>
+            <sup>
+                <span data-tooltip="If checked and detailed results are enabled, participants can see detailed results in leaderboard"
+                          data-inverted=""
+                          data-position="bottom center">
+                    <i class="help icon circle"></i>
+                </span>
             </sup>
         </div>
 
@@ -269,6 +293,8 @@
             self.data["description"] = self.markdown_editor.value()
             self.data["queue"] = self.refs.queue.value
             self.data["enable_detailed_results"] = self.refs.detailed_results.checked
+            self.data["show_detailed_results_in_submission_panel"] = self.refs.show_detailed_results_in_submission_panel.checked
+            self.data["show_detailed_results_in_leaderboard"] = self.refs.show_detailed_results_in_leaderboard.checked
             self.data["auto_run_submissions"] = self.refs.auto_run_submissions.checked
             self.data["can_participants_make_submissions_public"] = self.refs.can_participants_make_submissions_public.checked
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
@@ -404,6 +430,8 @@
                     .dropdown('set value', competition.queue.id)
             }
             self.refs.detailed_results.checked = competition.enable_detailed_results
+            self.refs.show_detailed_results_in_submission_panel.checked = competition.show_detailed_results_in_submission_panel
+            self.refs.show_detailed_results_in_leaderboard.checked = competition.show_detailed_results_in_leaderboard
             self.refs.auto_run_submissions.checked = competition.auto_run_submissions
             self.refs.can_participants_make_submissions_public.checked = competition.can_participants_make_submissions_public
             self.refs.make_programs_available.checked = competition.make_programs_available

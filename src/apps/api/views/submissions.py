@@ -352,7 +352,7 @@ class SubmissionViewSet(ModelViewSet):
                 )
         else:
             return Response({
-                "error_msg": "Visualizations are disabled"},
+                "error_msg": "Detailed results are disable for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
 

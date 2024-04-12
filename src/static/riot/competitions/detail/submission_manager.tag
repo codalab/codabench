@@ -64,6 +64,7 @@
             <th>Date</th>
             <th>Status</th>
             <th>Score</th>
+            <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">Detailed Results</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
@@ -99,6 +100,11 @@
                 </sup>
             </td>
             <td>{get_score(submission)}</td>
+            <td if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel }">
+                <a if="{submission.status === 'Finished'}" href="detailed_results/{submission.id}" target="_blank" class="eye-icon-link">
+                    <i class="icon grey eye eye-icon"></i>
+                </a>
+            </td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <!-- run/rerun submission -->
@@ -393,7 +399,6 @@
 
         self.delete_selected_submissions = function () {
             if (confirm(`Are you sure you want to delete the selected submissions?`)) {
-                console.log()
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')

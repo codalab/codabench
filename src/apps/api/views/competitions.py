@@ -195,6 +195,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        if self.action == 'public':
+            return CompetitionSerializerSimple
         elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
@@ -533,8 +535,7 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(published=True)
+        qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
