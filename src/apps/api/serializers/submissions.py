@@ -42,7 +42,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
     task = TaskSerializer()
     created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
     auto_run = serializers.SerializerMethodField(read_only=True)
-    can_make_submissions_public = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -68,8 +67,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'leaderboard',
             'on_leaderboard',
             'task',
-            'auto_run',
-            'can_make_submissions_public',
+            'auto_run'
         )
         read_only_fields = (
             'pk',
@@ -86,10 +84,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
         return instance.phase.competition.auto_run_submissions
-
-    def get_can_make_submissions_public(self, instance):
-        # returns this submission's competition can_participants_make_submissions_public Flag
-        return instance.phase.competition.can_participants_make_submissions_public
 
 
 class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):

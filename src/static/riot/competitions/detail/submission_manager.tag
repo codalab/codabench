@@ -64,7 +64,6 @@
             <th>Date</th>
             <th>Status</th>
             <th>Score</th>
-            <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">Detailed Results</th>
             <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
         </tr>
         </thead>
@@ -100,11 +99,6 @@
                 </sup>
             </td>
             <td>{get_score(submission)}</td>
-            <td if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel }">
-                <a if="{submission.status === 'Finished'}" href="detailed_results/{submission.id}" target="_blank" class="eye-icon-link">
-                    <i class="icon grey eye eye-icon"></i>
-                </a>
-            </td>
             <td class="center aligned">
                 <virtual if="{ opts.admin }">
                     <!-- run/rerun submission -->
@@ -144,14 +138,14 @@
                     <i class="icon green check"></i>
                 </span>
                 <!--  Make Public  -->
-                <span if="{!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
+                <span if="{!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Public"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
                     <i class="icon share teal alternate"></i>
                 </span>
                 <!--  Make Private  -->
-                <span if="{!!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
+                <span if="{!!submission.is_public && submission.status === 'Finished'}"
                       data-tooltip="Make Private"
                       data-inverted=""
                       onclick="{toggle_submission_is_public.bind(this, submission)}">
@@ -399,6 +393,7 @@
 
         self.delete_selected_submissions = function () {
             if (confirm(`Are you sure you want to delete the selected submissions?`)) {
+                console.log()
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')
@@ -442,7 +437,7 @@
                         self.update_submissions()
                     })
                     .fail(resp => {
-                        toastr.error(resp.responseJSON.detail)
+                        toastr.error('Error updating submission')
                     })
             }
         }

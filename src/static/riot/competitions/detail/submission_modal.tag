@@ -136,7 +136,7 @@
         <div class="ui button green" onclick="{update_fact_sheet.bind(this)}">Save</div>
     </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
-        <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
+        <iframe sandbox="allow-scripts" src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>

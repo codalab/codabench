@@ -18,7 +18,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=600, precision=2):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, timeout=600, precision=2):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -68,13 +68,12 @@ class TestSubmissions(SeleniumTestCase):
         submission_id = int(self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(1)').text)
 
         # Add the submission to the leaderboard and go to results tab
-        add_to_leaderboard_column = 7 if has_detailed_result else 6
-        self.find(f'submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type({add_to_leaderboard_column}) span[data-tooltip="Add to Leaderboard"]').click()
+        self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(6) span[data-tooltip="Add to Leaderboard"]').click()
         self.find('.item[data-tab="results-tab"]').click()
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
-        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(6)').text) == round(Decimal(prediction_score), precision)
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(5)').text) == round(Decimal(prediction_score), precision)
 
     def test_v15_iris_result_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_result.zip', '======= Set 1 (Iris_test)', has_solutions=False, precision=4)
@@ -83,7 +82,7 @@ class TestSubmissions(SeleniumTestCase):
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_code.zip', '======= Set 1 (Iris_test)', has_solutions=False, precision=4)
 
     def test_v18_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False, has_detailed_result=False)
+        self._run_submission_and_add_to_leaderboard('competition_18.zip', 'submission_18.zip', 'results', has_solutions=False)
 
     def test_v2_submission_end_to_end(self):
-        self._run_submission_and_add_to_leaderboard('competition.zip', 'submission.zip', 'Scores', has_detailed_result=False)
+        self._run_submission_and_add_to_leaderboard('competition.zip', 'submission.zip', 'Scores')

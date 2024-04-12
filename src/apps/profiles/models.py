@@ -16,7 +16,6 @@ from django.db.models import (
     When,
     DecimalField,
 )
-from oidc_configurations.models import Auth_Organization
 
 PROFILE_DATA_BLACKLIST = [
     'password',
@@ -72,10 +71,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     quota = models.BigIntegerField(default=settings.DEFAULT_USER_QUOTA, null=False)
-
-    # Fields for OIDC authentication
-    is_created_using_oidc = models.BooleanField(default=False)
-    oidc_organization = models.ForeignKey(Auth_Organization, null=True, blank=True, on_delete=models.SET_NULL, related_name="authorized_users")
 
     # Notifications
     organizer_direct_message_updates = models.BooleanField(default=True)
