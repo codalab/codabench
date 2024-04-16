@@ -89,6 +89,17 @@ function pretty_date(date_string) {
     }
 }
 
+function pretty_bytes(bytes, decimal_places=1, suffix="B") {
+    const units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'];
+    for (const unit of units) {
+        if (Math.abs(bytes) < 1024.0 || unit == 'PiB') {
+            return bytes.toFixed(decimal_places) + unit + suffix;
+        }
+        bytes /= 1024.0;
+    }
+    return bytes.toFixed(decimal_places) + "Pi" + suffix;
+}
+
 /* ----------------------------------------------------------------------------
  Form data helpers
  ----------------------------------------------------------------------------*/
@@ -151,13 +162,23 @@ const easyMDE_rendering_config = {
     }
 }
 
-function create_easyMDE(element) {
+function create_easyMDE(element, showToolBar = true, showStatusBar = true, editorHeight = '300px') {
+
+    var toolbarIcons = []
+    if(showToolBar){
+        toolbarIcons = ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview", "guide"]
+    }
+    let statusItems =  ["lines", "words", "cursor"]
+
+
     var markdown_editor = new EasyMDE({
         element: element,
         autoRefresh: true,
         forceSync: true,
-        hideIcons: ["side-by-side", "fullscreen"],
-        renderingConfig: easyMDE_rendering_config
+        toolbar: toolbarIcons,
+        renderingConfig: easyMDE_rendering_config,
+        status: showStatusBar ? statusItems : showStatusBar,
+        minHeight: editorHeight || '300px' // Adjust the height, default is 300
     })
     element.EASY_MDE = markdown_editor
     return markdown_editor
@@ -300,7 +321,12 @@ function getBase64(file) {
         debug: $.tablesort.DEBUG,
         asc: 'sorted ascending',
         desc: 'sorted descending',
-        compare: function(a, b) {
+        compare: function(a, b, settings) {
+            // Convert the values to numbers for proper sorting
+            if (!isNaN(parseFloat(a)) && !isNaN(parseFloat(b))) {
+                var a = parseFloat(a);
+                var b = parseFloat(b);
+            }
             if (a > b) {
                 return 1;
             } else if (a < b) {

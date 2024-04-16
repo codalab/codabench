@@ -1,37 +1,43 @@
 <public-list>
-    <h1>Public Competitions</h1>
-    <div class="pagination-nav" hide="{(competitions.count < 10)}"> 
+    <h1>Public Benchmarks and Competitions</h1>
+    <div class="pagination-nav"> 
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
         <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
     </div>
+    <div id="loading" class="loading-indicator" show="{!competitions}">
+        <div class="spinner"></div>
+    </div>
     <div each="{competition in competitions.results}">
-        <a class="link-no-deco" href="../{competition.id}">
             <div class="tile-wrapper">
                 <div class="ui square tiny bordered image img-wrapper">
-                    <img src="{competition.logo}">
+                    <img src="{competition.logo_icon ? competition.logo_icon : competition.logo}" loading="lazy">
                 </div>
-                <div class="comp-info">
-                    <h4 class="heading">
-                        {competition.title}
-                    </h4>
-                    <p class="comp-description">
-                        { pretty_description(competition.description)}
-                    </p>
-                    <p class="organizer">
-                        <em>Organized by: <strong>{competition.created_by}</strong></em>
-                    </p>
-                </div>
+                <a class="link-no-deco" href="../{competition.id}">
+                    <div class="comp-info">
+                        <h4 class="heading">
+                            {competition.title}
+                        </h4>
+                        <p class="comp-description">
+                            { pretty_description(competition.description)}
+                        </p>
+                        <p class="organizer">
+                            <em>Organized by: <strong>{competition.created_by}</strong></em>
+                        </p>
+                    </div>
+                </a>
                 <div class="comp-stats">
                     {pretty_date(competition.created_when)}
-                    <div if="{!competition.reward}" class="ui divider"></div>
-                    <div if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></div>
+                    <div if="{!competition.reward && ! competition.report}" class="ui divider"></div>
+                    <div>
+                        <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
+                        <span if="{competition.report}"><a href="{competition.report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></span></a>
+                    </div>
                     <strong>{competition.participant_count}</strong> Participants
                 </div>
             </div>
-        </a>
     </div>
     <div class="pagination-nav" hide="{(competitions.count < 10)}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
@@ -43,7 +49,6 @@
 <script>
     var self = this
     self.competitions = {}
-    self.competitions_cache = {}
 
     self.one("mount", function () {
         self.update_competitions_list(self.get_url_page_number_or_default())
@@ -55,26 +60,30 @@
     }
 
     self.update_competitions_list = function (num) {
-        self.current_page = num
-        if (self.competitions_cache[self.current_page]){
-            self.competitions = self.competitions_cache[self.current_page]
-            history.pushState("", document.title, "?page="+self.current_page)
-            $('.pagination-nav > button').prop('disabled', false)
-            self.update()
-        } else {
-            return CODALAB.api.get_public_competitions({"page":self.current_page})
-                .fail(function (response) {
-                    toastr.error("Could not load competition list")
-                })
-                .done(function (response){
-                    self.competitions = response
-                    self.competitions_cache[self.current_page.toString()] = response
-                    history.pushState("", document.title, "?page="+self.current_page)
-                    $('.pagination-nav > button').prop('disabled', false)
-                    self.update()
-                })
+        self.current_page = num;
+        $('#loading').show(); // Show the loading indicator
+        $('.pagination-nav').hide(); // Hide pagination navigation
+
+        // Function to handle successful data retrieval
+        function handleSuccess(response) {
+            self.competitions = response;
+            $('#loading').hide(); // Hide the loading indicator
+            $('.pagination-nav').show(); // Show pagination navigation
+            history.pushState("", document.title, "?page=" + self.current_page);
+            $('.pagination-nav > button').prop('disabled', false);
+            self.update();
         }
-    }
+        // Fetch data using AJAX call
+        return CODALAB.api.get_public_competitions({"page": self.current_page})
+            .fail(function (response) {
+                $('#loading').hide(); // Hide the loading indicator
+                $('.pagination-nav').show(); // Show pagination navigation
+                toastr.error("Could not load competition list");
+            })
+            .done(handleSuccess);
+        
+    };
+
 
     self.get_array_length = function (arr) {
         if(arr === undefined){
@@ -142,7 +151,10 @@
         margin auto
 
     .link-no-deco
+        all unset
         text-decoration none
+        cursor pointer
+        width 100%
 
     .tile-wrapper
         border solid 1px gainsboro
@@ -202,6 +214,27 @@
         font-size 13px
         text-align left
         margin 0.35em
+
+    .loading-indicator
+        display flex
+        align-items center
+        padding 20px
+        width 100%
+        margin: 0 auto;
+
+    .spinner
+        border 4px solid rgba(0,0,0,.1)
+        width 36px
+        height 36px
+        border-radius 50%
+        border-top-color #3498db
+        animation spin 1s ease-in-out infinite
+
+    @keyframes spin
+        0%
+            transform rotate(0deg)
+        100%
+            transform rotate(360deg)
 </style>
 
 </public-list>

@@ -15,7 +15,8 @@ urllib3<1.25,>=1.21.1
 uvicorn[standard]==0.13.3
 #daphne==2.2.2
 pyyaml==5.3.1
-watchdog==0.8.3
+watchdog==2.1.1
+argh==0.26.2
 python-dateutil==2.7.3
 bpython==0.17.1
 websockets==8.1
@@ -26,6 +27,7 @@ bleach==3.1.4
 # Heroku staging debug tools
 django-debug-toolbar==3.2
 django-querycount==0.7.0
+blessings==1.7
 
 # User impersonation
 django-su==0.9.0

@@ -30,6 +30,7 @@ services:
       - .:/app:delegated
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
+      - ./var/logs:/app/logs
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -126,11 +127,19 @@ services:
   #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
-    image: rabbitmq:3.6-management
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbitmq
+      args:
+        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
     env_file: .env
+    environment:
+      - http_proxy=${RABBITMQ_HTTP_PROXY}
+      - https_proxy=${RABBITMQ_HTTPS_PROXY}
+      - no_proxy=${RABBITMQ_NO_PROXY}
     ports:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672

@@ -13,7 +13,7 @@ from api.serializers import queues as serializers
 
 class QueueViewSet(ModelViewSet):
     queryset = Queue.objects.all()
-    serializer_class = serializers.QueueSerializer
+    serializer_class = serializers.QueueListSerializer
     filter_fields = ('owner', 'is_public', 'name')
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
@@ -29,7 +29,7 @@ class QueueViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return serializers.QueueSerializer
+            return serializers.QueueListSerializer
         else:
             return serializers.QueueCreationSerializer
 

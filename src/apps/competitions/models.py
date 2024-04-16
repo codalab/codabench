@@ -1,9 +1,12 @@
 import logging
 import uuid
+import os
+import io
 
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.postgres.fields import JSONField
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -15,6 +18,7 @@ from leaderboards.models import SubmissionScore
 from profiles.models import User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
+from PIL import Image
 
 from tasks.models import Task
 
@@ -32,6 +36,7 @@ class Competition(ChaHubSaveMixin, models.Model):
 
     title = models.CharField(max_length=256)
     logo = models.ImageField(upload_to=PathWrapper('logos'), null=True, blank=True)
+    logo_icon = models.ImageField(upload_to=PathWrapper('logos', manual_override=True), null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="competitions")
     created_when = models.DateTimeField(default=now)
@@ -44,6 +49,10 @@ class Competition(ChaHubSaveMixin, models.Model):
     description = models.TextField(null=True, blank=True)
     docker_image = models.CharField(max_length=128, default="codalab/codalab-legacy:py37")
     enable_detailed_results = models.BooleanField(default=False)
+    # If true, show detailed results in submission panel
+    show_detailed_results_in_submission_panel = models.BooleanField(default=True)
+    # If true, show detailed results in leaderboard
+    show_detailed_results_in_leaderboard = models.BooleanField(default=True)
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
 
@@ -59,6 +68,13 @@ class Competition(ChaHubSaveMixin, models.Model):
     contact_email = models.EmailField(max_length=256, null=True, blank=True)
     reward = models.CharField(max_length=256, null=True, blank=True)
     report = models.CharField(max_length=256, null=True, blank=True)
+
+    # if true, submissions are auto-run when submitted
+    # if false, submissions run will be intiiated by organizer
+    auto_run_submissions = models.BooleanField(default=True)
+
+    # If true, participants see the make their submissions public
+    can_participants_make_submissions_public = models.BooleanField(default=True)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
@@ -214,8 +230,37 @@ class Competition(ChaHubSaveMixin, models.Model):
 
         return self.clean_private_data(data)
 
+    def make_logo_icon(self):
+        if self.logo:
+            # Read the content of the logo file
+            self.logo.name
+            self.logo_icon
+            icon_dirname_only = os.path.dirname(self.logo.name)  # Get just the path
+            icon_basename_only = os.path.basename(self.logo.name)  # Get just the filename
+            file_name = os.path.splitext(icon_basename_only)[0]
+            ext = os.path.splitext(icon_basename_only)[1]
+            new_path = os.path.join(icon_dirname_only, f"{file_name}_icon{ext}")
+            logo_content = self.logo.read()
+            original_logo = Image.open(io.BytesIO(logo_content))
+            # Resize the image to a smaller size for logo_icon
+            width, height = original_logo.size
+            new_width = 100  # Specify the desired width for the logo_icon
+            new_height = int((new_width / width) * height)
+            resized_logo = original_logo.resize((new_width, new_height))
+            # Create a BytesIO object to save the resized image
+            icon_content = io.BytesIO()
+            resized_logo.save(icon_content, format='PNG')
+            # Save the resized logo as logo_icon
+            self.logo_icon.save(new_path, ContentFile(icon_content.getvalue()), save=False)
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+        if not self.logo:
+            pass
+        elif not self.logo_icon:
+            self.make_logo_icon()
+        elif os.path.dirname(self.logo.name) != os.path.dirname(self.logo_icon.name):
+            self.make_logo_icon()
         to_create = User.objects.filter(
             Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))
         ).exclude(id__in=self.participants.values_list('user_id', flat=True)).distinct()
@@ -280,7 +325,7 @@ class Phase(ChaHubSaveMixin, models.Model):
     has_been_migrated = models.BooleanField(default=False)
     hide_output = models.BooleanField(default=False)
 
-    has_max_submissions = models.BooleanField(default=False)
+    has_max_submissions = models.BooleanField(default=True)
     max_submissions_per_day = models.PositiveIntegerField(default=5, null=True, blank=True)
     max_submissions_per_person = models.PositiveIntegerField(default=100, null=True, blank=True)
 
@@ -403,8 +448,21 @@ class SubmissionDetails(models.Model):
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
+    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
     is_scoring = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.data_file and (not self.file_size or self.file_size == -1):
+            try:
+                # save file size as KiB
+                # self.data_file.size returns bytes
+                self.file_size = self.data_file.size / 1024
+            except TypeError:
+                # file returns a None size, can't divide None / 1024
+                # -1 indicates an error
+                self.file_size = -1
+        return super().save(*args, **kwargs)
 
 
 class Submission(ChaHubSaveMixin, models.Model):
@@ -447,6 +505,10 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True,
                                        storage=BundleStorage)
 
+    prediction_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    scoring_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    detailed_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
     task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True, related_name="submissions")
@@ -483,10 +545,17 @@ class Submission(ChaHubSaveMixin, models.Model):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
     def delete(self, **kwargs):
+
+        # Check if any other submissions are using the same data
+        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+
+        if not other_submissions_using_data:
+            # If no other submissions are using the same data, delete it
+            self.data.delete()
+
         # Also clean up details on delete
         self.details.all().delete()
-        # Call this here so that the data_file for the submission also gets deleted from storage
-        self.data.delete()
+
         super().delete(**kwargs)
 
     def save(self, ignore_submission_limit=False, **kwargs):
@@ -499,31 +568,81 @@ class Submission(ChaHubSaveMixin, models.Model):
         if self.status == Submission.RUNNING and not self.started_when:
             self.started_when = now()
 
+        files_and_sizes_dict = {
+            'prediction_result': 'prediction_result_file_size',
+            'scoring_result': 'scoring_result_file_size',
+            'detailed_result': 'detailed_result_file_size',
+        }
+        for file_path_attr, file_size_attr in files_and_sizes_dict.items():
+            if getattr(self, file_path_attr) and (not getattr(self, file_size_attr) or getattr(self, file_size_attr) == -1):
+                try:
+                    # save file size as KiB
+                    # self.data_file.size returns bytes
+                    setattr(self, file_size_attr, getattr(self, file_path_attr).size / 1024)
+                except TypeError:
+                    # file returns a None size, can't divide None / 1024
+                    # -1 indicates an error
+                    setattr(self, file_size_attr, -1)
+
         super().save(**kwargs)
 
     def start(self, tasks=None):
         from .tasks import run_submission
         run_submission(self.pk, tasks=tasks)
 
+    def run(self):
+        # get tasks from the phase
+        tasks = self.phase.tasks.all()
+        # start submission providing the tasks
+        self.start(tasks=tasks)
+        return self
+
     def re_run(self, task=None):
+
+        # task to use in the new submission
+        new_submission_task = task or self.task
+
+        # set is_specific_task_re_run
+        is_specific_task_re_run = bool(task)
+
+        flag_rerun_specific_task_or_has_no_children = False
+        # Check if this submission needs to rerun on specific children or has no children
+        if not self.has_children or is_specific_task_re_run:
+            flag_rerun_specific_task_or_has_no_children = True
+
+        # Check if task exists in case of specific task rerun or no children
+        if flag_rerun_specific_task_or_has_no_children and new_submission_task is None:
+            logger.error(f"Cannot rerun `{self}` because the task is None (deleted)")
+            return None
+        else:
+            children_tasks = self.children.values_list('task', flat=True)
+            if None in children_tasks:
+                logger.error(f"Cannot rerun `{self}` because one or more children submission tasks are None (deleted)")
+                return None
+
+        # Create a new submission
         submission_arg_dict = {
             'owner': self.owner,
-            'task': task or self.task,
+            'task': new_submission_task,
             'phase': self.phase,
             'data': self.data,
             'has_children': self.has_children,
-            'is_specific_task_re_run': bool(task),
+            'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)
 
-        # No need to rerun on children if this is running on a specific task
-        if not self.has_children or sub.is_specific_task_re_run:
-            self.refresh_from_db()
+        # set tasks for rerunning
+        if flag_rerun_specific_task_or_has_no_children:
+            # in case of a submission with no children or specific task rerun
+            # submission with no children is same as submission with one task
             tasks = [sub.task]
         else:
+            # in case submission has multiple children or multiple task rerun
+            # tasks are gathered from the children submissions
             tasks = Task.objects.filter(pk__in=self.children.values_list('task', flat=True))
+
         sub.start(tasks=tasks)
         return sub
 
@@ -678,3 +797,15 @@ class CompetitionDump(models.Model):
 
     def __str__(self):
         return f"Comp dump created by {self.dataset.created_by} - {self.status}"
+
+
+# Competition White List Email Model class
+# related to Competition Model
+# Each Competition can have multiple white list emails
+# These are used to auto approve if competition white list has this email
+class CompetitionWhiteListEmail(models.Model):
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='whitelist_emails')
+    email = models.EmailField()
+
+    def __str__(self):
+        return f"{self.email} - Competition: {self.competition.title}"

@@ -7,6 +7,16 @@ from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
 from utils.data import PathWrapper
 from django.urls import reverse
+from django.conf import settings
+from django.db.models import (
+    Sum,
+    F,
+    Case,
+    Value,
+    When,
+    DecimalField,
+)
+from oidc_configurations.models import Auth_Organization
 
 PROFILE_DATA_BLACKLIST = [
     'password',
@@ -61,6 +71,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=now)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    quota = models.BigIntegerField(default=settings.DEFAULT_USER_QUOTA, null=False)
+
+    # Fields for OIDC authentication
+    is_created_using_oidc = models.BooleanField(default=False)
+    oidc_organization = models.ForeignKey(Auth_Organization, null=True, blank=True, on_delete=models.SET_NULL, related_name="authorized_users")
 
     # Notifications
     organizer_direct_message_updates = models.BooleanField(default=True)
@@ -123,6 +138,60 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def get_chahub_is_valid(self):
         # By default, always push
         return True
+
+    def get_used_storage_space(self):
+        from datasets.models import Data
+        from competitions.models import Submission, SubmissionDetails
+
+        storage_used = 0
+
+        # Datasets
+        users_datasets = Data.objects.filter(
+            created_by_id=self.id, file_size__gt=0, file_size__isnull=False
+        ).aggregate(Sum("file_size"))["file_size__sum"]
+
+        storage_used += users_datasets * 1024 if users_datasets else 0
+
+        # Submissions
+        users_submissions = Submission.objects.filter(owner_id=self.id).aggregate(
+            size=Sum(
+                Case(
+                    When(
+                        prediction_result_file_size__gt=0,
+                        then=F("prediction_result_file_size"),
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(),
+                ) +
+                Case(
+                    When(
+                        scoring_result_file_size__gt=0,
+                        then=F("scoring_result_file_size"),
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(),
+                ) +
+                Case(
+                    When(
+                        detailed_result_file_size__gt=0,
+                        then=F("detailed_result_file_size"),
+                    ),
+                    default=Value(0),
+                    output_field=DecimalField(),
+                )
+            )
+        )
+
+        storage_used += users_submissions["size"] * 1024 if users_submissions["size"] else 0
+
+        # Submissions details
+        users_submissions_details = SubmissionDetails.objects.filter(
+            submission__owner_id=self.id, file_size__gt=0, file_size__isnull=False
+        ).aggregate(Sum("file_size"))["file_size__sum"]
+
+        storage_used += users_submissions_details * 1024 if users_submissions_details else 0
+
+        return storage_used
 
 
 class GithubUserInfo(models.Model):

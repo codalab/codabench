@@ -89,7 +89,7 @@
                 <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
                         Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
-                        <span data-tooltip="Use task manager to create new tasks" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
@@ -100,7 +100,7 @@
                 <div class="fluid field" ref="public_data_select_container" id="public_data_select_container">
                     <label for="public_data">
                         Public Data (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new public data sets" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new public datasets" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
@@ -110,7 +110,7 @@
                 <div class="fluid field" ref="starting_kit_select_container" id="starting_kit_select_container">
                     <label for="starting_kit">
                         Starting Kit (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new starting kits" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new starting kits" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"
@@ -389,6 +389,25 @@
             $(self.refs.modal).modal('hide')
         }
 
+        self.formatDateToYYYYMMDD = function(input) {
+            // This function formats date in the format YYYY-MM-DD
+
+            // convert input to date
+            var dateObject = new Date(input)
+
+            // check if date has a time
+            if (!isNaN(dateObject.getTime())) {
+                // Extract year
+                var year = dateObject.getFullYear()
+                // Extract Month
+                var month = (dateObject.getMonth() + 1).toString().padStart(2, '0')
+                // Extract day
+                var day = dateObject.getDate().toString().padStart(2, '0')
+                return `${year}-${month}-${day}`
+            }
+            return input
+        }
+
         self.form_updated = function () {
             // This checks phases overall to make sure they are ready to go
             var is_valid = true
@@ -406,9 +425,8 @@
                 })
                 _.forEach(_.range(self.phases.length), i => {
                     if (i !== 0) {
-                        let end = Date.parse(self.phases[i - 1].end)
-                        let start = Date.parse(self.phases[i].start)
-
+                        let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i - 1].end))
+                        let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
                         if (end > start || !end) {
                             let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start after phase "${_.get(self.phases[i - 1], 'name', i)}" ends`
                             if (!self.warnings.includes(message)) {

@@ -18,8 +18,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-from rest_framework_extensions.cache.decorators import cache_response
-from rest_framework_extensions.key_constructor.constructors import DefaultListKeyConstructor
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -38,6 +36,7 @@ from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from datetime import datetime
 from django.db import transaction
+from django.conf import settings
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -111,32 +110,34 @@ class CompetitionViewSet(ModelViewSet):
             # not called from search bar
             # not called with a valid secret key
             if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+                # If authenticated user is not super user
+                if not self.request.user.is_superuser:
+                    # Return the following ---
+                    # All competitions which belongs to you (private or public)
+                    # And competitions where you are admin
+                    # And public competitions
+                    # And competitions where you are approved participant
+                    # this filters out all private compettions from other users
+                    base_qs = qs.filter(
+                        (Q(created_by=self.request.user)) |
+                        (Q(collaborators__in=[self.request.user])) |
+                        (Q(published=True) & ~Q(created_by=self.request.user)) |
+                        (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                    )
 
-                # Return the following ---
-                # All competitions which belongs to you (private or public)
-                # And competitions where you are admin
-                # And public competitions
-                # And competitions where you are approved participant
-                # this filters out all private compettions from other users
-                base_qs = qs.filter(
-                    (Q(created_by=self.request.user)) |
-                    (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user)) |
-                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
-                )
-
-                # Additional condition of action
-                # allow private competition when action is register and has valid secret key
-                if self.request.method == 'POST' and self.action == 'register':
-                    # get secret_key from request data
-                    register_secret_key = self.request.data.get('secret_key', None)
-                    # use secret key if available
-                    if register_secret_key:
-                        qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                    # Additional condition of action
+                    # allow private competition when action is register and has valid secret key
+                    if self.request.method == 'POST' and self.action == 'register':
+                        # get secret_key from request data
+                        register_secret_key = self.request.data.get('secret_key', None)
+                        # use secret key if available
+                        if register_secret_key:
+                            qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                        else:
+                            qs = base_qs
                     else:
                         qs = base_qs
-                else:
-                    qs = base_qs
+
                 # select distinct competitions
                 qs = qs.distinct()
 
@@ -194,6 +195,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        if self.action == 'public':
+            return CompetitionSerializerSimple
         elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
@@ -250,7 +253,7 @@ class CompetitionViewSet(ModelViewSet):
             # save leaderboard individually, then pass pk to each phase
             if 'leaderboards' in data:
                 leaderboard_data = data['leaderboards'][0]
-                if(leaderboard_data['id']):
+                if leaderboard_data['id']:
                     leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                     leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
                 else:
@@ -295,8 +298,16 @@ class CompetitionViewSet(ModelViewSet):
                         phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
                     except TypeError:
                         phase['starting_kit'] = None
+
+            # Get whitelist emails from data
+            whitelist_emails = data['whitelist_emails']
+            # Delete white_list emails from data because it is not in a list of dict format, it is just list of emails
+            data.pop('whitelist_emails', None)
+            # Loop over whitelist emails and add them back to whitelist emails in dict format
+            for email in whitelist_emails:
+                data.setdefault('whitelist_emails', []).append({'email': email})
+
             serializer = self.get_serializer(instance, data=data, partial=partial)
-            type(serializer)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
@@ -339,8 +350,13 @@ class CompetitionViewSet(ModelViewSet):
             participant.status = 'approved'
             send_participation_accepted_emails(participant)
         else:
-            participant.status = 'pending'
-            send_participation_requested_emails(participant)
+            # check if user is in whitelist emails then approve directly
+            if user.email in list(competition.whitelist_emails.values_list('email', flat=True)):
+                participant.status = 'approved'
+                send_participation_accepted_emails(participant)
+            else:
+                participant.status = 'pending'
+                send_participation_requested_emails(participant)
 
         participant.save()
         return Response({'participant_status': participant.status}, status=status.HTTP_201_CREATED)
@@ -517,11 +533,9 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
-    @cache_response(key_func=DefaultListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(published=True)
+        qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
 
@@ -614,15 +628,56 @@ class PhaseViewSet(ModelViewSet):
 
     @action(detail=True, url_name='rerun_submissions')
     def rerun_submissions(self, request, pk):
+
         phase = self.get_object()
         comp = phase.competition
-        if request.user not in comp.all_organizers and not request.user.is_superuser:
-            raise PermissionDenied('You do not have permission to re-run submissions')
-        submissions = phase.submissions.all()
-        for submission in submissions:
-            submission.re_run()
-        rerun_count = len(submissions)
-        return Response({"count": rerun_count})
+
+        # Get submissions with no parent
+        submissions = phase.submissions.filter(parent__isnull=True)
+
+        can_re_run_submissions = False
+        error_message = ""
+
+        # Super admin can rerun without any restrictions
+        if request.user.is_superuser:
+            can_re_run_submissions = True
+
+        # competition admin can run only if
+        elif request.user in comp.all_organizers:
+
+            # submissions are in limit
+            if len(submissions) <= int(settings.RERUN_SUBMISSION_LIMIT):
+                can_re_run_submissions = True
+
+            # submissions are not in limit
+            else:
+                # Codabemch public queue
+                if comp.queue is None:
+                    can_re_run_submissions = False
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
+
+                # Other queue where user is not owner and not organizer
+                elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
+                    can_re_run_submissions = False
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
+
+                # User can rerun submissions where he is owner or organizer
+                else:
+                    can_re_run_submissions = True
+
+        else:
+            can_re_run_submissions = False
+            error_message = 'You do not have permission to re-run submissions'
+
+        # error when user is not super user or admin of the competition
+        if can_re_run_submissions:
+            # rerun all submissions
+            for submission in submissions:
+                submission.re_run()
+            rerun_count = len(submissions)
+            return Response({"count": rerun_count})
+        else:
+            raise PermissionDenied(error_message)
 
     @swagger_auto_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'])
@@ -647,19 +702,19 @@ class PhaseViewSet(ModelViewSet):
         submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions with no parent and count all parents without counting the children
+            # count all submissions except:
+            # - child submissions (submissions who has a parent i.e. parent field is not null)
+            # - Failed submissions
+            # - Cancelled submissions
             num_entries = Submission.objects.filter(
-                Q(owner__username=submission['owner']) | Q(parent__owner__username=submission['owner']),
+                Q(owner__username=submission['owner']) |
+                Q(parent__owner__username=submission['owner']),
                 phase=phase,
             ).exclude(
-                parent__isnull=False
+                Q(status=Submission.FAILED) |
+                Q(status=Submission.CANCELLED) |
+                Q(parent__isnull=False)
             ).count()
-
-            # get date of last submission by the owner of this submission for this phase
-            last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
-                .values('created_when')\
-                .order_by('-created_when')[0]['created_when']\
-                .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
 
@@ -684,7 +739,7 @@ class PhaseViewSet(ModelViewSet):
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
                     'num_entries': num_entries,
-                    'last_entry_date': last_entry_date
+                    'created_when': submission['created_when']
                 })
             for score in submission['scores']:
 

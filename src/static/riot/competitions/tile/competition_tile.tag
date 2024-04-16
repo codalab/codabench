@@ -1,9 +1,10 @@
 <competition-tile>
-    <a class="link-no-deco" href="./competitions/{id}">
+    
         <div class="tile-wrapper">
             <div class="ui square tiny bordered image img-wrapper">
-                <img src="{logo}">
+                <img src="{logo_icon ? logo_icon : logo}">
             </div>
+            <a class="link-no-deco" href="./competitions/{id}">
             <div class="comp-info">
                 <h4 class="heading">
                     {title}
@@ -15,14 +16,17 @@
                     <em>Organized by: <strong>{created_by}</strong></em>
                 </p>
             </div>
-            <div class="comp-stats">
+            </a>
+            <div class="comp-stats" id="compStats">
                 {pretty_date(created_when)}
-                <div if="{!reward}" class="ui divider"></div>
-                <div if="{reward}"><img width="30" height="30" src="/static/img/trophy.png"></div>
+                <div if="{!reward && !report}" class="ui divider"></div>
+                <div>
+                    <span if="{reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
+                    <span if="{report}"><a href="{report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></a></span>
+                </div>
                 <strong>{participant_count}</strong> Participants
             </div>
         </div>
-    </a>
 
     <script>
         var self = this
@@ -38,16 +42,18 @@
         self.pretty_description = function(description){
             return description.substring(0,90) + (description.length > 90 ? '...' : '') || ''
         }
+
     </script>
 
     <style type="text/stylus">
         :scope
             display block
             margin-bottom 5px
-            cursor pointer
 
         .link-no-deco
+            all unset
             text-decoration none
+            cursor pointer
 
         .tile-wrapper
             border solid 1px gainsboro

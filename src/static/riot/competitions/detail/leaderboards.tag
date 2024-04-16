@@ -28,14 +28,15 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=3></th>
+            <th colspan=4></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
             <th>Entries</th>
-            <th>Date of last entry</th>
+            <th>Date</th>
+            <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
             
         </tr>
@@ -58,7 +59,8 @@
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
             <td>{submission.num_entries}</td>
-            <td>{submission.last_entry_date}</td>
+            <td>{submission.created_when}</td>
+            <td>{submission.id}</td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
@@ -78,6 +80,7 @@
         self.phase_id = null
         self.competition_id = null
         self.enable_detailed_results = false
+        self.show_detailed_results_in_leaderboard = false
 
        
         self.bold_class = function(column, submission){
@@ -168,7 +171,7 @@
                             self.columns.push(column)
                         }
                         // -1 id is used for fact sheet answers
-                        if(self.enable_detailed_results & task.id != -1){
+                        if(self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1){
                             self.columns.push({
                               task_id: task.id,
                               title: "Detailed Results"
@@ -200,6 +203,7 @@
             self.competition_id = competition.id
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
             self.enable_detailed_results = competition.enable_detailed_results
+            self.show_detailed_results_in_leaderboard = competition.show_detailed_results_in_leaderboard
             
         })
 

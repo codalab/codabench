@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import timedelta
+from celery.schedules import crontab
 
 import dj_database_url
 
@@ -59,6 +60,7 @@ OUR_APPS = (
     'health',
     'forums',
     'announcements',
+    'oidc_configurations',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -222,6 +224,14 @@ CELERY_BEAT_SCHEDULE = {
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
         'schedule': timedelta(seconds=3600)
+    },
+    'create_storage_analytics_snapshot': {
+        'task': 'analytics.tasks.create_storage_analytics_snapshot',
+        'schedule': crontab(hour='2', minute='0', day_of_week='sun')  # Every Sunday at 02:00 UTC time
+    },
+    'reset_computed_storage_analytics': {
+        'task': 'analytics.tasks.reset_computed_storage_analytics',
+        'schedule': crontab(hour='2', minute='0', day_of_month='1', month_of_year="*/3")  # Every 3 month at 02:00 UTC on the 1st
     },
 }
 CELERY_TIMEZONE = 'UTC'
@@ -398,6 +408,9 @@ GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
+# Quota
+DEFAULT_USER_QUOTA = 15 * 1024 * 1024 * 1024  # 15GB
+
 # =============================================================================
 # Debug
 # =============================================================================
@@ -451,3 +464,17 @@ CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 # Django-Su (User impersonation)
 SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
 AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='username')}
+
+# =============================================================================
+# Limit for re-running submission
+# This is used to limit users to rerun submissions
+# on default queue when number of submissions are < RERUN_SUBMISSION_LIMIT
+# =============================================================================
+RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
+
+
+# =============================================================================
+# Enable or disbale regular email sign-in an sign-up
+# =============================================================================
+ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
+ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'

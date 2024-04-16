@@ -45,15 +45,17 @@
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
             <td>
-                <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
-                    <i class="icon pencil"></i>
-                </button>
-                <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
-                    <i class="icon trash"></i>
-                </button>
+                <div if="{ task.created_by == CODALAB.state.user.username }">
+                    <button class="mini ui button blue icon" onclick="{show_edit_modal.bind(this, task)}">
+                        <i class="icon pencil"></i>
+                    </button>
+                    <button class="mini ui button red icon" onclick="{ delete_task.bind(this, task) }">
+                        <i class="icon trash"></i>
+                    </button>
+                </div>
             </td>
             <td class="center aligned">
-                <div class="ui fitted checkbox">
+                <div class="ui fitted checkbox" if="{ task.created_by == CODALAB.state.user.username }">
                     <input type="checkbox" name="delete_checkbox" onclick="{ mark_task_for_deletion.bind(this, task) }">
                     <label></label>
                 </div>
@@ -67,9 +69,8 @@
         </tr>
         </tbody>
         <tfoot>
-        <!-------------------------------------
-                  Pagination
-        -------------------------------------->
+
+        <!-- Pagination -->
         <tr if="{tasks.length > 0}">
             <th colspan="7">
                 <div class="ui right floated pagination menu" if="{tasks.length > 0}">
@@ -99,7 +100,7 @@
         <div class="content">
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
-            <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.created_by}</a></div>
+            <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
             <div><strong>Key:</strong> {selected_task.key}</div>
             <div><strong>Has Been Validated
                 <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
@@ -637,7 +638,7 @@
         }
 
         self.delete_task = function (task) {
-            if (confirm("Are you sure you want to delete '" + task.name + "'?")) {
+            if (confirm("Are you sure you want to delete '" + task.name + "'?\nSubmissions using this task cannot rerun! Results displayed on leaderboard can also be affected!")) {
                 CODALAB.api.delete_task(task.id)
                     .done(function () {
                         self.update_tasks()
@@ -652,7 +653,7 @@
         }
 
         self.delete_tasks = function () {
-            if (confirm(`Are you sure you want to delete multiple tasks?`)) {
+            if (confirm(`Are you sure you want to delete multiple tasks?\nSubmissions using these tasks cannot rerun! Results displayed on leaderboard can also be affected!`)) {
                 CODALAB.api.delete_tasks(self.marked_tasks)
                     .done(function () {
                         self.update_tasks()

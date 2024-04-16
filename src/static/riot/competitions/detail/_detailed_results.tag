@@ -1,5 +1,4 @@
 <competition-detailed-results>
-    <h3>Detailed Results</h3>
     <iframe src="{detailed_result}" width="100%" height="100%" frameBorder="0"></iframe>
 
     <script>

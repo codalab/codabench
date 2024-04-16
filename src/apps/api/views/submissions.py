@@ -1,11 +1,11 @@
 import json
 import uuid
+import logging
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
-from django.http import Http404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
@@ -14,13 +14,16 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
+from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
-from competitions.models import Submission, Phase, CompetitionParticipant
+from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
+
+logger = logging.getLogger()
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -50,9 +53,46 @@ class SubmissionViewSet(ModelViewSet):
                     hostname = request.data['status_details'].replace('scoring_hostname-', '')
                     obj.scoring_worker_hostname = hostname
                     obj.save()
+
+            # check if type is in request data. type can have the following values
+            # - Docker_Image_Pull_Fail
+            # - Execution_Time_Limit_Exceeded
+            if "type" in self.request.data.keys():
+
+                if request.data["type"] in ["Docker_Image_Pull_Fail", "Execution_Time_Limit_Exceeded"]:
+
+                    # Get the error message
+                    error_message = request.data['error_message']
+
+                    # Set file name to ingestion std error as default
+                    error_file_name = "prediction_ingestion_stderr"
+
+                    # Change error file name to scoring_stderr when error occurs during scoring
+                    if request.data.get("is_scoring", "False") == "True":
+                        error_file_name = "scoring_stderr"
+
+                    try:
+                        # Get submission detail for this submission
+                        submission_detail = SubmissionDetails.objects.get(
+                            name=error_file_name,
+                            submission=obj,
+                        )
+
+                        # Read the existing content from the file
+                        existing_content = submission_detail.data_file.read().decode("utf-8")
+
+                        # Append the new error message to the existing content
+                        modified_content = existing_content + "\n" + error_message
+
+                        # write error message to the file
+                        submission_detail.data_file.save(submission_detail.data_file.name, ContentFile(modified_content.encode("utf-8")))
+
+                    except SubmissionDetails.DoesNotExist:
+                        logger.warning("SubmissionDetails object not found.")
+
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
-            if self.action in ['update_fact_sheet', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             elif not self.request.user.is_authenticated or not_bot_user:
@@ -165,14 +205,24 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('POST', 'DELETE'))
     def submission_leaderboard_connection(self, request, pk):
+
+        # get submission
         submission = self.get_object()
+
+        # get submission phase
         phase = submission.phase
 
-        if not (request.user.is_superuser or request.user == submission.owner):
-            if not phase.competition.collaborators.filter(pk=request.user.pk).exists():
-                raise Http404
+        # only super user, owner of submission and competition organizer can proceed
+        if not (
+            request.user.is_superuser or
+            request.user == submission.owner or
+            request.user in phase.competition.all_organizers
+        ):
+            raise PermissionDenied("You cannot perform this action, contact the competition organizer!")
+
+        # only super user and with these leaderboard rules (FORCE_LAST, FORCE_BEST, FORCE_LATEST_MULTIPLE) can proceed
         if submission.phase.leaderboard.submission_rule in Leaderboard.AUTO_SUBMISSION_RULES and not request.user.is_superuser:
-            raise ValidationError("Users are not allowed to edit the leaderboard on this Competition")
+            raise PermissionDenied("Users are not allowed to edit the leaderboard on this Competition")
 
         if request.method == 'POST':
             # Removing any existing submissions on leaderboard unless multiples are allowed
@@ -187,7 +237,7 @@ class SubmissionViewSet(ModelViewSet):
 
         if request.method == 'DELETE':
             if submission.phase.leaderboard.submission_rule not in [Leaderboard.ADD_DELETE, Leaderboard.ADD_DELETE_MULTIPLE]:
-                raise ValidationError("You are not allowed to remove a submission on this phase")
+                raise PermissionDenied("You are not allowed to remove a submission on this phase")
             submission.leaderboard = None
             submission.save()
             Submission.objects.filter(parent=submission).update(leaderboard=None)
@@ -204,6 +254,21 @@ class SubmissionViewSet(ModelViewSet):
             child.cancel()
         canceled = submission.cancel()
         return Response({'canceled': canceled})
+
+    @action(detail=True, methods=('POST',))
+    def run_submission(self, request, pk):
+        submission = self.get_object()
+
+        # Only organizer of the competition can run the submission
+        if not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied('You do not have permission to run this submission')
+
+        # Allow only to run a submission with status `Submitting`
+        if submission.status != Submission.SUBMITTING:
+            raise PermissionDenied('Cannot run a submission which is not in submitting status')
+
+        new_sub = submission.run()
+        return Response({'id': new_sub.id})
 
     @action(detail=True, methods=('POST',))
     def re_run_submission(self, request, pk):
@@ -229,7 +294,14 @@ class SubmissionViewSet(ModelViewSet):
             rerun_kwargs = {}
 
         new_sub = submission.re_run(**rerun_kwargs)
-        return Response({'id': new_sub.id})
+        if new_sub is None:
+            # return error
+            return Response({
+                "error_msg": "You cannot rerun this submission because one or more tasks this submission was running are deleted, resubmit the submission or contact the competition organizer!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        else:
+            return Response({'id': new_sub.id})
 
     @action(detail=False, methods=('POST',))
     def re_run_many_submissions(self, request):
@@ -280,15 +352,15 @@ class SubmissionViewSet(ModelViewSet):
                 )
         else:
             return Response({
-                "error_msg": "Visualizations are disabled"},
+                "error_msg": "Detailed results are disable for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
         submission = super().get_object()
-        if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to publish this submissions')
+        if not submission.phase.competition.can_participants_make_submissions_public:
+            raise PermissionDenied("You do not have permission to make this submissions public/private")
         is_public = not submission.is_public
         submission.data.is_public = is_public
         submission.data.save(send=False)
