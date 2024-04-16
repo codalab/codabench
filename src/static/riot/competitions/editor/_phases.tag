@@ -133,7 +133,7 @@
                         <div class="three fields">
                             <div class="field">
                                 <label>
-                                    Execution Time Limit <span data-tooltip="In seconds, 600s default if unset"
+                                    Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
                                                                data-inverted=""
                                                                data-position="bottom center">
                                     <i class="help icon circle"></i></span>
@@ -670,6 +670,7 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function (competition) {
+            debugger
             self.phases = competition.phases
             self.form_updated()
         })

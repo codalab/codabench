@@ -331,6 +331,7 @@ CHANNEL_LAYERS = {
 }
 
 SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
+MAX_EXECUTION_TIME_LIMIT = os.environ.get('MAX_EXECUTION_TIME_LIMIT', "600")  # time limit of the default queue
 
 # =============================================================================
 # Storage
