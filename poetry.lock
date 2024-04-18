@@ -213,43 +213,19 @@ files = [
 ]
 
 [[package]]
-name = "azure-core"
-version = "1.30.1"
-description = "Microsoft Azure Core Library for Python"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "azure-core-1.30.1.tar.gz", hash = "sha256:26273a254131f84269e8ea4464f3560c731f29c0c1f69ac99010845f239c1a8f"},
-    {file = "azure_core-1.30.1-py3-none-any.whl", hash = "sha256:7c5ee397e48f281ec4dd773d67a0a47a0962ed6fa833036057f9ea067f688e74"},
-]
-
-[package.dependencies]
-requests = ">=2.21.0"
-six = ">=1.11.0"
-typing-extensions = ">=4.6.0"
-
-[package.extras]
-aio = ["aiohttp (>=3.0)"]
-
-[[package]]
 name = "azure-storage-blob"
-version = "12.19.1"
-description = "Microsoft Azure Blob Storage Client Library for Python"
+version = "2.1.0"
+description = "Microsoft Azure Storage Blob Client Library for Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 files = [
-    {file = "azure-storage-blob-12.19.1.tar.gz", hash = "sha256:13e16ba42fc54ac2c7e8f976062173a5c82b9ec0594728e134aac372965a11b0"},
-    {file = "azure_storage_blob-12.19.1-py3-none-any.whl", hash = "sha256:c5530dc51c21c9564e4eb706cd499befca8819b10dd89716d3fc90d747556243"},
+    {file = "azure-storage-blob-2.1.0.tar.gz", hash = "sha256:b90323aad60f207f9f90a0c4cf94c10acc313c20b39403398dfba51f25f7b454"},
+    {file = "azure_storage_blob-2.1.0-py2.py3-none-any.whl", hash = "sha256:a8e91a51d4f62d11127c7fd8ba0077385c5b11022f0269f8a2a71b9fc36bef31"},
 ]
 
 [package.dependencies]
-azure-core = ">=1.28.0,<2.0.0"
-cryptography = ">=2.1.4"
-isodate = ">=0.6.1"
-typing-extensions = ">=4.3.0"
-
-[package.extras]
-aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
+azure-common = ">=1.1.5"
+azure-storage-common = ">=2.1,<3.0"
 
 [[package]]
 name = "azure-storage-common"
@@ -1143,29 +1119,28 @@ redis = "<4.0"
 
 [[package]]
 name = "django-storages"
-version = "1.14.2"
+version = "1.7.2"
 description = "Support for many storage backends in Django"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
-    {file = "django-storages-1.14.2.tar.gz", hash = "sha256:51b36af28cc5813b98d5f3dfe7459af638d84428c8df4a03990c7d74d1bea4e5"},
-    {file = "django_storages-1.14.2-py3-none-any.whl", hash = "sha256:1db759346b52ada6c2efd9f23d8241ecf518813eb31db9e2589207174f58f6ad"},
+    {file = "django-storages-1.7.2.tar.gz", hash = "sha256:f3b3def96493d3ccde37b864cea376472baf6e8a596504b209278801c510b807"},
+    {file = "django_storages-1.7.2-py2.py3-none-any.whl", hash = "sha256:87287b7ad2e789cd603373439994e1ac6f94d9dc2e5f8173d2a87aa3ed458bd9"},
 ]
 
 [package.dependencies]
-azure-core = {version = ">=1.13", optional = true, markers = "extra == \"azure\""}
-azure-storage-blob = {version = ">=12", optional = true, markers = "extra == \"azure\""}
-Django = ">=3.2"
-google-cloud-storage = {version = ">=1.27", optional = true, markers = "extra == \"google\""}
+azure-storage-blob = {version = ">=1.3.1", optional = true, markers = "extra == \"azure\""}
+Django = ">=1.11"
+google-cloud-storage = {version = ">=0.22.0", optional = true, markers = "extra == \"google\""}
 
 [package.extras]
-azure = ["azure-core (>=1.13)", "azure-storage-blob (>=12)"]
+azure = ["azure-storage-blob (>=1.3.1)"]
+boto = ["boto (>=2.32.0)"]
 boto3 = ["boto3 (>=1.4.4)"]
 dropbox = ["dropbox (>=7.2.1)"]
-google = ["google-cloud-storage (>=1.27)"]
+google = ["google-cloud-storage (>=0.22.0)"]
 libcloud = ["apache-libcloud"]
-s3 = ["boto3 (>=1.4.4)"]
-sftp = ["paramiko (>=1.15)"]
+sftp = ["paramiko"]
 
 [[package]]
 name = "django-su"
@@ -1937,20 +1912,6 @@ parallel = ["ipyparallel"]
 qtconsole = ["qtconsole"]
 test = ["pickleshare", "pytest (<8)", "pytest-asyncio (<0.22)", "testpath"]
 test-extra = ["curio", "ipython[test]", "matplotlib (!=3.2.0)", "nbformat", "numpy (>=1.23)", "pandas", "trio"]
-
-[[package]]
-name = "isodate"
-version = "0.6.1"
-description = "An ISO 8601 date/time/duration parser and formatter"
-optional = false
-python-versions = "*"
-files = [
-    {file = "isodate-0.6.1-py2.py3-none-any.whl", hash = "sha256:0751eece944162659049d35f4f549ed815792b38793f07cf73381c1c87cbed96"},
-    {file = "isodate-0.6.1.tar.gz", hash = "sha256:48c5881de7e8b0a0d648cb024c8062dc84e7b840ed81e864c7614fd3c127bde9"},
-]
-
-[package.dependencies]
-six = "*"
 
 [[package]]
 name = "itypes"
@@ -3962,4 +3923,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "65ab90ea068f6f7929b8a7e39dfb0256c5123a0dcc616d006d91a122fa6fa2fb"
+content-hash = "4f2da70879eccffd7a1ca5d9dd016dba9ad12eb226e3e738bf913b5a70adbcb4"
