@@ -17,6 +17,7 @@ app.conf.task_queues = [
 
 _vhost_apps = {}
 
+
 def app_for_vhost(vhost):
     # Function to get the app for a vhost
     if vhost not in _vhost_apps:
