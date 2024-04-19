@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 
-from celery_config import app
+from celery_config import app, app_for_vhost
 from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
 from profiles.models import User, Organization
@@ -653,7 +653,12 @@ class Submission(ChaHubSaveMixin, models.Model):
             if self.has_children:
                 for sub in self.children.all():
                     sub.cancel(status=status)
-            app.control.revoke(self.celery_task_id, terminate=True)
+            celery_app = app
+            # If a custom queue is set, we need to fetch the appropriate celery app
+            if self.phase.competition.queue:
+                celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
+
+            celery_app.control.revoke(self.celery_task_id, terminate=True)
             self.status = status
             self.save()
             return True
