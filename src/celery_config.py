@@ -16,8 +16,10 @@ app.conf.task_queues = [
 ]
 
 _vhost_apps = {}
-# Function to get the app for a vhost
+
+
 def app_for_vhost(vhost):
+    # Function to get the app for a vhost
     if vhost not in _vhost_apps:
         # Take the CELERY_BROKER_URL and replace the vhost with the vhhost for this queue
         broker_url = settings.CELERY_BROKER_URL
@@ -26,7 +28,6 @@ def app_for_vhost(vhost):
         urllib.parse.uses_relative.append(scheme)
         urllib.parse.uses_netloc.append(scheme)
         broker_url = urllib.parse.urljoin(broker_url, vhost)
-
         vhost_app = Celery()
         # Copy the settings so we can modify the broker url to include the vhost
         django_settings = copy.copy(settings)
@@ -34,5 +35,4 @@ def app_for_vhost(vhost):
         vhost_app.config_from_object(django_settings, namespace='CELERY')
         vhost_app.task_queues = app.conf.task_queues
         _vhost_apps[vhost] = vhost_app
-
     return _vhost_apps[vhost]
