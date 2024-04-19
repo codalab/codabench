@@ -15,10 +15,10 @@ app.conf.task_queues = [
     Queue('compute-worker', Exchange('compute-worker'), routing_key='compute-worker', queue_arguments={'x-max-priority': 10}),
 ]
 
+_vhost_apps = {}
 
 def app_for_vhost(vhost):
     # Function to get the app for a vhost
-    _vhost_apps = {}
     if vhost not in _vhost_apps:
         # Take the CELERY_BROKER_URL and replace the vhost with the vhhost for this queue
         broker_url = settings.CELERY_BROKER_URL
