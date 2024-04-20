@@ -29,6 +29,6 @@ ENV PYTHONUNBUFFERED=1 PYTHONHASHSEED=random PYTHONDONTWRITEBYTECODE=1
 EXPOSE 5555
 
 # Run as a non-root user by default, run as user with least privileges.
-# USER nobody
+USER nobody
 
-# ENTRYPOINT ["flower"]
+ENTRYPOINT ["flower"]
