@@ -1,4 +1,5 @@
 FROM --platform=linux/amd64 python:3.8.1-buster
+# FROM --platform=linux/amd64 python:3.9
 
 # We need curl to get docker/nvidia-docker
 RUN apt-get update &&  apt-get install curl wget -y
@@ -18,9 +19,17 @@ RUN apt-get update && apt-get install -y nvidia-docker2
 # make it explicit that we're using GPUs
 ENV NVIDIA_DOCKER 1
 
-# Python reqs and actual worker stuff
-ADD compute_worker/compute_worker_requirements.txt .
-RUN pip3 install -r compute_worker_requirements.txt
+
+RUN curl -sSL https://install.python-poetry.org | python3 -
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+COPY ./compute_worker/pyproject.toml ./
+COPY ./compute_worker/poetry.lock ./
+RUN poetry install
+
 ADD compute_worker .
 
 CMD celery -A compute_worker worker \

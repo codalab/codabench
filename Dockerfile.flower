@@ -1,20 +1,34 @@
 FROM python:3.9-alpine
 
 # Get latest root certificates
-RUN apk add --no-cache ca-certificates && update-ca-certificates
+RUN apk add --no-cache ca-certificates && update-ca-certificates curl
+RUN apk add curl
 
-# Install the required packages
-RUN pip install --no-cache-dir redis==3.0.1 flower==0.9.3 "celery<5.0.0"
+# # Install the required packages
+RUN curl -sSL https://install.python-poetry.org | python3 -
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+
+RUN poetry init --no-interaction
+
+RUN poetry add redis=3.0.1
+RUN poetry add flower=0.9.3
+RUN poetry add celery="<5.0.0"
 
 # PYTHONUNBUFFERED: Force stdin, stdout and stderr to be totally unbuffered. (equivalent to `python -u`)
 # PYTHONHASHSEED: Enable hash randomization (equivalent to `python -R`)
 # PYTHONDONTWRITEBYTECODE: Do not write byte files to disk, since we maintain it as readonly. (equivalent to `python -B`)
+
+
 ENV PYTHONUNBUFFERED=1 PYTHONHASHSEED=random PYTHONDONTWRITEBYTECODE=1
 
 # Default port
 EXPOSE 5555
 
 # Run as a non-root user by default, run as user with least privileges.
-USER nobody
+# USER nobody
 
-ENTRYPOINT ["flower"]
+# ENTRYPOINT ["flower"]
