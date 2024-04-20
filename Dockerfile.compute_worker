@@ -6,8 +6,16 @@ ENV PYTHONUNBUFFERED 1
 # Install Docker
 RUN apt-get update && curl -fsSL https://get.docker.com | sh
 
-ADD compute_worker/compute_worker_requirements.txt .
-RUN pip install -r compute_worker_requirements.txt
+
+RUN curl -sSL https://install.python-poetry.org | python3 -
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+COPY ./compute_worker/pyproject.toml ./
+COPY ./compute_worker/poetry.lock ./
+RUN poetry install
 
 ADD compute_worker .
 
