@@ -1,5 +1,4 @@
 FROM --platform=linux/amd64 python:3.8.1-buster
-# FROM --platform=linux/amd64 python:3.9
 
 # We need curl to get docker/nvidia-docker
 RUN apt-get update &&  apt-get install curl wget -y
