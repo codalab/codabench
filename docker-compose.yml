@@ -38,7 +38,7 @@ services:
     depends_on:
       - db
       - rabbit
-    #  - minio
+      - minio
     stdin_open: true
     tty: true
     logging:
