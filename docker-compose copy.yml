@@ -4,20 +4,18 @@ services:
   #   Web Services
   #-----------------------------------------------
   caddy:
-    # image: abiosoft/caddy:1.0.3
     image: caddy:latest
     env_file: .env
     environment:
       - ACME_AGREE=true
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/Caddyfile
       - ./src/staticfiles:/var/www/django/static
       - ./certs/caddy:/etc/caddycerts
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "700:700"
+      - 80:80
+      - 443:443
     depends_on:
       - django
 
@@ -52,29 +50,16 @@ services:
   # Minio local storage helper
   #-----------------------------------------------
   minio:
-    # image: minio/minio:RELEASE.2020-10-03T02-19-42Z
-    image: minio/minio:RELEASE.2024-04-18T19-09-19Z
-    # image: minio/minio:latest
+    image: minio/minio:RELEASE.2020-10-03T02-19-42Z
     command: server /export
     volumes:
-      - ./var/minio:/export 
-      # - type: volume
-      #   source: ./var/minio
-      #   target: /export
-      #   volume:
-      #     drive: local
+      - ./var/minio:/export
     restart: unless-stopped
     ports:
       - $MINIO_PORT:9000
-      # - 9001:9001
     env_file: .env
-    # environment:
-    #   MINIO_STORAGE_CLASS: xl
     healthcheck:
-      # test : curl -I minio:700/minio/health/live
-      # test: ["CMD", "nc", "-z", "minio", "9000"]
-      test: ["CMD", "curl", "-I", "minio:9000/minio/health/live"]
-      # test: ["CMD", "curl", "-I", "\"AWS_S3_ENDPOINT_URL\"/minio/health/live"]
+      test: ["CMD", "nc", "-z", "minio", "9000"]
       interval: 5s
       retries: 5
   createbuckets:
@@ -95,8 +80,7 @@ services:
         done;
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_BUCKET_NAME already exists.';
         /usr/bin/mc mb minio_docker/$AWS_STORAGE_PRIVATE_BUCKET_NAME || echo 'Bucket $AWS_STORAGE_PRIVATE_BUCKET_NAME already exists.';
-        /usr/bin/mc anonymous set public minio_docker/$AWS_STORAGE_BUCKET_NAME;
-        # /usr/bin/mc anonymous set download minio_docker/AWS_STORAGE_BUCKET_NAME
+        /usr/bin/mc anonymous set download minio_docker/$AWS_STORAGE_BUCKET_NAME;
       else
         echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';
       fi;
@@ -248,11 +232,3 @@ services:
       options:
         max-size: "20k"
         max-file: "10"
-
-# volumes:
-#   minio-data:
-#     driver: local
-#     driver_opts:
-#       type: 'none'
-#       o: 'bind'
-#       device: './var/minio'

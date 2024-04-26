@@ -1,29 +1,91 @@
+#Global directive
+{
+  auto_https off 
+}
+
 {$DOMAIN_NAME} {
-  # HTTPS options:
-  tls {$TLS_EMAIL}
+    # HTTPS options:
+    # tls {$TLS_EMAIL}
 
-  # Test HTTPS setup
-  # tls {$TLS_EMAIL} {
-  #   ca https://acme-staging-v02.api.letsencrypt.org/directory
-  # }
+    # Test HTTPS setup
+    # tls {$TLS_EMAIL} {
+    #   ca https://acme-staging-v02.api.letsencrypt.org/directory
+    # }
 
-  # Removing some headers for improved security:
-  header / -Server
+    # Removing some headers for improved security:
+    header {
+        -Server
+    }
 
-  # Serves static files, should be the same as `STATIC_ROOT` setting:
-  root /var/www/django
+    # Serves static files, should be the same as `STATIC_ROOT` setting:
+    root * /var/www/django/
+    file_server *
 
-  # Serving dynamic requests:
-  proxy / django:8000 {
-    except /static /media
-    transparent
-    websocket
+
+
+    # Serving dynamic requests:
+    @dynamic {
+        not path /static/* /media/* 
+    }
+    reverse_proxy @dynamic django:8000 {
+        transport http 
+    }
+
+    log {
+      # format console 
+      output stdout
+      format filter {
+        wrap console
+        fields {
+          request>remote_ip delete 
+          request>remote_port delete 
+          request>client_ip delete 
+          request>headers delete ##maybe add that in future 
+          bytes_read delete 
+          duration delete 
+          size delete 
+          status delete 
+          headers delete          
+          resp_headers delete           
+         }
+      }   
+    }
+
+    # Allows to use `.gz` files when available:
+    # encode gzip
+
+    # Logs:
+
+# handle_errors {
+#     log
+#     respond "<h1>Internal Server Error</h1>" 500
+# }
+}
+
+
+
+{$DOMAIN_NAME}:700 {
+
+  reverse_proxy minio:{$MINIO_PORT} 
+
+  log {
+    # format console 
+    output stdout
+    format filter {
+      wrap console
+      fields {
+        request>remote_ip delete 
+        request>remote_port delete 
+        request>client_ip delete 
+        request>headers delete ##maybe add that in future 
+        bytes_read delete 
+        duration delete 
+        size delete 
+        status delete 
+        headers delete          
+        resp_headers delete           
+        }
+    }   
   }
-
-  # Allows to use `.gz` files when available:
-  gzip
-
-  # Logs:
-  log stdout
-  errors stdout
+    
 }
