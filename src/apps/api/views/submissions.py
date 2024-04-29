@@ -352,15 +352,15 @@ class SubmissionViewSet(ModelViewSet):
                 )
         else:
             return Response({
-                "error_msg": "Visualizations are disabled"},
+                "error_msg": "Detailed results are disable for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
         submission = super().get_object()
-        if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to publish this submissions')
+        if not submission.phase.competition.can_participants_make_submissions_public:
+            raise PermissionDenied("You do not have permission to make this submissions public/private")
         is_public = not submission.is_public
         submission.data.is_public = is_public
         submission.data.save(send=False)
