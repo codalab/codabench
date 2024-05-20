@@ -261,8 +261,10 @@ class Competition(ChaHubSaveMixin, models.Model):
             pass
         elif not self.logo_icon:
             self.make_logo_icon()
+            self.save()
         elif os.path.dirname(self.logo.name) != os.path.dirname(self.logo_icon.name):
             self.make_logo_icon()
+            self.save()
         to_create = User.objects.filter(
             Q(id=self.created_by_id) | Q(id__in=self.collaborators.all().values_list('id', flat=True))
         ).exclude(id__in=self.participants.values_list('user_id', flat=True)).distinct()
