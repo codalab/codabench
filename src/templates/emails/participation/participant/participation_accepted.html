@@ -1,8 +1,11 @@
 {% extends 'emails/base_email.html' %}
 
 {% block content %}
-    <p>This is a message updating your access to the competition:</p>
+    <p>We're thrilled to inform you that your application for the
     <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
-
-    <p>Your status has been accepted!</p>
+    competition has been <b>accepted</b>. Get ready to showcase your skills and compete with other talented individuals.</p>
+    <p>We look forward to seeing your participation.</p>
 {% endblock %}
+
+
+
