@@ -7,15 +7,6 @@
     <title></title>
 
     <style>
-        /*
-
-        text: #666666
-        links: #739cb9
-
-        palette medium: #7A8D92
-         palette light: #A6C6D1
-          palette teal: #67B8C7
-        */
         html, body {
             font-size: 18px;
             line-height: 28px;
@@ -99,9 +90,6 @@
 </head>
 <body>
 <div class = "container">
-    <div class = "header">
-        <img class = "header_img" src = "../../static/img/codabench.png" alt = "codabench" />
-    </div>
 <div class = "content">
 <h3>Hello{% if user %} {{ user.username }}{% endif %},</h3>
 
@@ -110,16 +98,15 @@
 {% endblock %}
 
 {% block content %}
-<p>We're thrilled to inform you that your application for the
-    <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
-    competition has been <b>accepted</b>. Get ready to showcase your skills and compete with other talented individuals.</p>
-    <p>We look forward to seeing your participation.</p>
 {% endblock %}
 
 {% if not mass_email %}
 <div id="signature">
     <p>Thanks,</p>
     <p>Codabench Team</p>
+    <div class = "header">
+        <img class = "header_img" src = "../../static/img/codabench.png" alt = "codabench" />
+    </div>
 </div>
 {% endif %}
 </div>
