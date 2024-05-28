@@ -1,6 +1,6 @@
 {$DOMAIN_NAME} {
   # HTTPS Options
-  #tls {$TLS_EMAIL}
+  tls {$TLS_EMAIL}
 
 
   # Test HTTPS setup
