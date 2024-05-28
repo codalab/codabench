@@ -4,14 +4,15 @@ services:
   #   Web Services
   #-----------------------------------------------
   caddy:
-    image: abiosoft/caddy:1.0.3
+    image: caddy:2.7.6
     env_file: .env
     environment:
       - ACME_AGREE=true
     volumes:
-      - ./Caddyfile:/etc/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./certs/caddy:/etc/caddycerts
+      - ./caddy_data:/data
+      - ./caddy_config:/config
     restart: unless-stopped
     ports:
       - 80:80
@@ -42,8 +43,8 @@ services:
     tty: true
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -99,8 +100,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -120,8 +121,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Rabbitmq & Flower monitoring tool
@@ -148,8 +149,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   flower:
     # image: mher/flower
@@ -166,8 +167,8 @@ services:
       - rabbit
     logging:
         options:
-            max-size: "20k"
-            max-file: "10"
+            max-size: "20m"
+            max-file: "5"
 
   #-----------------------------------------------
   #   Redis
@@ -179,8 +180,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Celery Service
@@ -200,8 +201,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -230,5 +231,5 @@ services:
       - CODALAB_IGNORE_CLEANUP_STEP=1
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"

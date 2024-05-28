@@ -1,29 +1,35 @@
 {$DOMAIN_NAME} {
-  # HTTPS options:
+  # HTTPS Options
   tls {$TLS_EMAIL}
+
 
   # Test HTTPS setup
   # tls {$TLS_EMAIL} {
   #   ca https://acme-staging-v02.api.letsencrypt.org/directory
   # }
 
+  
   # Removing some headers for improved security:
-  header / -Server
+  header -Server
 
   # Serves static files, should be the same as `STATIC_ROOT` setting:
-  root /var/www/django
-
-  # Serving dynamic requests:
-  proxy / django:8000 {
-    except /static /media
-    transparent
-    websocket
+  root *  /var/www/django
+  file_server
+  
+  @noStatic {
+    not path /static/*
+    not path /media/*
   }
+  
+  # Serving dynamic requests:
+  reverse_proxy @noStatic django:8000
 
   # Allows to use `.gz` files when available:
-  gzip
+  encode gzip
 
   # Logs:
-  log stdout
-  errors stdout
+  log {
+    output stdout
+    format console
+  }
 }
