@@ -4,14 +4,15 @@ services:
   #   Web Services
   #-----------------------------------------------
   caddy:
-    image: abiosoft/caddy:1.0.3
+    image: caddy:2.7.6
     env_file: .env
     environment:
       - ACME_AGREE=true
     volumes:
-      - ./Caddyfile:/etc/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./certs/caddy:/etc/caddycerts
+      - ./caddy_data:/data
+      - ./caddy_config:/config
     restart: unless-stopped
     ports:
       - 80:80
