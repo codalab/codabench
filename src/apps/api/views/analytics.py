@@ -173,7 +173,7 @@ def storage_usage_history(request):
         raise PermissionDenied(detail="Admin only")
 
     storage_usage_history = {}
-    last_storage_usage_history_snapshot = StorageUsageHistory.objects.order_by("at_date").last()
+    last_storage_usage_history_snapshot = StorageUsageHistory.objects.order_by("-at_date").first()
     if last_storage_usage_history_snapshot:
         start_date = request.query_params.get("start_date", (datetime.datetime.today() - datetime.timedelta(weeks=4)).strftime("%Y-%m-%d"))
         end_date = request.query_params.get("end_date", datetime.datetime.today().strftime("%Y-%m-%d"))
@@ -209,7 +209,7 @@ def competitions_usage(request):
         raise PermissionDenied(detail="Admin only")
 
     competitions_usage = {}
-    last_competition_storage_snapshot = CompetitionStorageDataPoint.objects.order_by("at_date").last()
+    last_competition_storage_snapshot = CompetitionStorageDataPoint.objects.order_by("-at_date").first()
     if last_competition_storage_snapshot:
         start_date = request.query_params.get("start_date", (datetime.datetime.today() - datetime.timedelta(weeks=4)).strftime("%Y-%m-%d"))
         end_date = request.query_params.get("end_date", datetime.datetime.today().strftime("%Y-%m-%d"))
@@ -237,7 +237,7 @@ def competitions_usage(request):
             }
 
     response = {
-        "last_storage_calculation_date": last_competition_storage_snapshot.at_date.isoformat() if last_competition_storage_snapshot else None,
+        "last_storage_calculation_date": last_competition_storage_snapshot.created_at.isoformat() if last_competition_storage_snapshot else None,
         "competitions_usage": competitions_usage
     }
 
@@ -253,7 +253,7 @@ def users_usage(request):
         raise PermissionDenied(detail="Admin only")
 
     users_usage = {}
-    last_user_storage_snapshot = UserStorageDataPoint.objects.order_by("at_date").last()
+    last_user_storage_snapshot = UserStorageDataPoint.objects.order_by("-at_date").first()
     if last_user_storage_snapshot:
         start_date = request.query_params.get("start_date", (datetime.datetime.today() - datetime.timedelta(weeks=4)).strftime("%Y-%m-%d"))
         end_date = request.query_params.get("end_date", datetime.datetime.today().strftime("%Y-%m-%d"))
@@ -281,7 +281,7 @@ def users_usage(request):
             }
 
     response = {
-        "last_storage_calculation_date": last_user_storage_snapshot.at_date.isoformat() if last_user_storage_snapshot else None,
+        "last_storage_calculation_date": last_user_storage_snapshot.created_at.isoformat() if last_user_storage_snapshot else None,
         "users_usage": users_usage
     }
 
