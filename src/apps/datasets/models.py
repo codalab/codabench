@@ -19,6 +19,7 @@ from competitions.models import Competition
 
 logger = logging.getLogger()
 
+
 class Data(ChaHubSaveMixin, models.Model):
     """Data models are unqiue based on name + created_by. If no name is given, then there is no uniqueness to enforce"""
 
