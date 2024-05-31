@@ -1,17 +1,23 @@
 import uuid
+import botocore
+import logging
 
+import botocore.exceptions
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
+from decimal import Decimal
 
 from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from competitions.models import Competition
 
+
+logger = logging.getLogger()
 
 class Data(ChaHubSaveMixin, models.Model):
     """Data models are unqiue based on name + created_by. If no name is given, then there is no uniqueness to enforce"""
@@ -73,7 +79,13 @@ class Data(ChaHubSaveMixin, models.Model):
             except TypeError:
                 # file returns a None size, can't divide None / 1024
                 # -1 indicates an error
-                self.file_size = -1
+                self.file_size = Decimal(-1)
+            except botocore.exceptions.ClientError:
+                # file might not exist in the storage
+                logger.warning(f"The data_file of Data id={self.id} does not exist in the storage. data_file and file_size has been cleared")
+                self.file_size = Decimal(0)
+                self.data_file = None
+
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
