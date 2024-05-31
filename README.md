@@ -1,5 +1,15 @@
 ![Codabench logo](src/static/img/codabench_black.png) [![Circle CI](https://circleci.com/gh/codalab/codabench.svg?style=shield)](https://app.circleci.com/pipelines/github/codalab/codabench)
 
+## Major changes to upstream
+
+* Created a django admin command for creating users and approving them for a competition, given a list of users/emails.
+* Upgraded caddy to official caddy 2 image for external account binding.
+  * Since then there is always the same error in the logs
+  "minio-1 | 2024/05/31 12:49:18 http: TLS handshake error from [IP]: EOF" but everything seems to work.
+  * Edit: upstream has now also upgraded to caddy 2
+* Enabled TLS/HTTPS for minio by sharing the certificates from caddy.
+They need to be **copied manually** when the certificate gets renewed.
+
 ## What is Codabench?
 
 Codabench is an open-source web-based platform that enables researchers, developers, and data scientists to collaborate, with the goal of advancing research fields where machine learning and advanced computation is used. Codabench helps to solve many common problems in the arena of data-oriented research through its online community where people can share worksheets and participate in competitions and benchmarks. It can be seen as a version 2 of [CodaLab Competitions](https://github.com/codalab/codalab-competitions).
@@ -14,7 +24,7 @@ To see Codabench in action, visit [codabench.org](https://www.codabench.org/).
 
 ## Quick installation (for Linux)
 
-_To participate, or even organize your own benchmarks or competitions, **you don't need to install anything**, you just need to sign in an instance of the platform (e.g. [this one](https://www.codabench.org/)). 
+_To participate, or even organize your own benchmarks or competitions, **you don't need to install anything**, you just need to sign in an instance of the platform (e.g. [this one](https://www.codabench.org/)).
 If you wish to configure your own instance of Codabench platform, here are the instructions:_
 
 
@@ -45,7 +55,7 @@ http://www.opensource.org/licenses/apache2.0.php
 ```
 @article{codabench,
     title = {Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform},
-    author = {Zhen Xu and Sergio Escalera and Adrien Pavão and Magali Richard and 
+    author = {Zhen Xu and Sergio Escalera and Adrien Pavão and Magali Richard and
               Wei-Wei Tu and Quanming Yao and Huan Zhao and Isabelle Guyon},
     journal = {Patterns},
     volume = {3},
