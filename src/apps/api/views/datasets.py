@@ -26,6 +26,8 @@ class DataViewSet(ModelViewSet):
 
     def get_queryset(self):
 
+        exclude_bundle = True
+
         if self.request.method == 'GET':
 
             # filters
@@ -40,6 +42,9 @@ class DataViewSet(ModelViewSet):
             # _type = dataset if called from datasets and programs tab to filter datasets and programs
             is_dataset = self.request.query_params.get('_type', '') == 'dataset'
 
+            # _type = dataset if called from datasets and programs tab to filter datasets and programs
+            is_bundle = self.request.query_params.get('_type', '') == 'bundle'
+
             # get queryset
             qs = self.queryset
 
@@ -50,6 +55,11 @@ class DataViewSet(ModelViewSet):
             # filter datasets and programs
             if is_dataset:
                 qs = qs.filter(~Q(type=Data.SUBMISSION))
+            
+            # filter bundles
+            if is_bundle:
+                qs = qs.filter(Q(type=Data.COMPETITION_BUNDLE))
+                exclude_bundle = False
 
             # public filter check
             if is_public:
@@ -58,7 +68,7 @@ class DataViewSet(ModelViewSet):
                 qs = qs.filter(Q(created_by=self.request.user))
 
             # if GET is called but provided no filters, fall back to default behaviour
-            if (not is_submission) and (not is_dataset) and (not is_public):
+            if (not is_submission) and (not is_dataset) and (not is_bundle) and (not is_public):
                 qs = self.queryset
                 qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
@@ -66,7 +76,9 @@ class DataViewSet(ModelViewSet):
             qs = self.queryset
             qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
-        qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
+        if exclude_bundle:
+            qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
+        qs = qs.exclude(Q(name__isnull=True))
 
         qs = qs.select_related('created_by').order_by('-created_when')
 
