@@ -3,6 +3,7 @@ import uuid
 import os
 import io
 
+import botocore.exceptions
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.postgres.fields import JSONField
@@ -11,6 +12,7 @@ from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
+from decimal import Decimal
 
 from celery_config import app, app_for_vhost
 from chahub.models import ChaHubSaveMixin
@@ -466,6 +468,11 @@ class SubmissionDetails(models.Model):
                 # file returns a None size, can't divide None / 1024
                 # -1 indicates an error
                 self.file_size = -1
+            except botocore.exceptions.ClientError:
+                # file might not exist in the storage
+                logger.warning(f"The data_file of SubmissionDetails id={self.id} does not exist in the storage. data_file and file_size has been cleared")
+                self.file_size = Decimal(0)
+                self.data_file = None
         return super().save(*args, **kwargs)
 
 
@@ -586,7 +593,12 @@ class Submission(ChaHubSaveMixin, models.Model):
                 except TypeError:
                     # file returns a None size, can't divide None / 1024
                     # -1 indicates an error
-                    setattr(self, file_size_attr, -1)
+                    setattr(self, file_size_attr, Decimal(-1))
+                except botocore.exceptions.ClientError:
+                    # file might not exist in the storage
+                    logger.warning(f"The {file_path_attr} of Submission id={self.id} does not exist in the storage. {file_path_attr} and {file_size_attr} has been cleared")
+                    setattr(self, file_size_attr, Decimal(0))
+                    setattr(self, file_path_attr, None)
 
         super().save(**kwargs)
 
