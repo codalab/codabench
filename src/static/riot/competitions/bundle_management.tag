@@ -4,6 +4,10 @@
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter.bind(this, undefined) }">
         <i class="search icon"></i>
     </div>
+    <button class="ui red right floated labeled icon button {disabled: marked_datasets.length === 0}" onclick="{delete_datasets}">
+        <i class="icon delete"></i>
+        Delete Selected
+    </button>
 
     <!-- Data Table -->
     <table id="bundlesTable" class="ui {selectable: datasets.length > 0} celled compact sortable table">
@@ -12,6 +16,8 @@
                 <th>File Name</th>
                 <th width="175px">Size</th>
                 <th width="125px">Uploaded</th>
+                <th width="50px" class="no-sort">Delete?</th>
+                <th width="25px" class="no-sort"></th>
             </tr>
         </thead>
 
@@ -20,6 +26,17 @@
                 <td>{ dataset.name }</td>
                 <td>{ format_file_size(dataset.file_size) }</td>
                 <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
+                <td class="center aligned">
+                    <button show="{dataset.created_by === CODALAB.state.user.username && dataset.is_dump}" class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                        <i class="icon delete"></i>
+                    </button>
+                </td>
+                <td class="center aligned">
+                    <div show="{dataset.created_by === CODALAB.state.user.username && dataset.is_dump}" class="ui fitted checkbox">
+                        <input type="checkbox" name="delete_checkbox" onclick="{ mark_dataset_for_deletion.bind(this, dataset) }">
+                        <label></label>
+                    </div>
+                </td>
             </tr>
             <tr if="{datasets.length === 0}">
                 <td class="center aligned" colspan="6">
@@ -56,6 +73,7 @@
         ---------------------------------------------------------------------*/
 
         self.datasets = []
+        self.marked_datasets = []
         self.page = 1
 
         self.one("mount", function () {
@@ -115,6 +133,48 @@
                 .fail(function (response) {
                     toastr.error("Could not load datasets...")
                 })
+        }
+
+        self.delete_dataset = function (dataset, e) {
+            if (confirm(`Are you sure you want to delete '${dataset.name}'?`)) {
+                CODALAB.api.delete_dataset(dataset.id)
+                    .done(function () {
+                        self.update_datasets()
+                        toastr.success("Dataset deleted successfully!")
+                        CODALAB.events.trigger('reload_quota_cleanup')
+                    })
+                    .fail(function (response) {
+                        toastr.error(response.responseJSON['error'])
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.delete_datasets = function () {
+            if (confirm(`Are you sure you want to delete multiple datasets?`)) {
+                CODALAB.api.delete_datasets(self.marked_datasets)
+                    .done(function () {
+                        self.update_datasets()
+                        toastr.success("Dataset deleted successfully!")
+                        self.marked_datasets = []
+                        CODALAB.events.trigger('reload_quota_cleanup')
+                    })
+                    .fail(function (response) {
+                        for (e in response.responseJSON) {
+                            toastr.error(`${e}: '${response.responseJSON[e]}'`)
+                        }
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.mark_dataset_for_deletion = function(dataset, e) {
+            if (e.target.checked) {
+                self.marked_datasets.push(dataset.id)
+            }
+            else {
+                self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
+            }
         }
 
         // Function to format file size 

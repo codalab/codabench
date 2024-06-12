@@ -26,8 +26,6 @@ class DataViewSet(ModelViewSet):
 
     def get_queryset(self):
 
-        exclude_bundle = True
-
         if self.request.method == 'GET':
 
             # filters
@@ -55,11 +53,11 @@ class DataViewSet(ModelViewSet):
             # filter datasets and programs
             if is_dataset:
                 qs = qs.filter(~Q(type=Data.SUBMISSION))
+                qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
             
             # filter bundles
             if is_bundle:
                 qs = qs.filter(Q(type=Data.COMPETITION_BUNDLE))
-                exclude_bundle = False
 
             # public filter check
             if is_public:
@@ -76,8 +74,6 @@ class DataViewSet(ModelViewSet):
             qs = self.queryset
             qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
-        if exclude_bundle:
-            qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
         qs = qs.exclude(Q(name__isnull=True))
 
         qs = qs.select_related('created_by').order_by('-created_when')

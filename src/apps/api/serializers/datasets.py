@@ -26,7 +26,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
             'competition',
             'file_name',
-
+            'is_dump',
         )
         read_only_fields = (
             'key',
@@ -98,6 +98,7 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'file_size',
             'competition',
             'file_name',
+            'is_dump'
         )
 
     def get_competition(self, obj):
