@@ -364,7 +364,7 @@ class Phase(ChaHubSaveMixin, models.Model):
 
         qs = self.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
         total_submission_count = qs.count()
-        daily_submission_count = qs.filter(created_when__day=now().day).count()
+        daily_submission_count = qs.filter(created_when__date=now().date()).count()
 
         if self.max_submissions_per_day:
             if daily_submission_count >= self.max_submissions_per_day:
