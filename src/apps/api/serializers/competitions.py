@@ -179,7 +179,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
                 # Get all submissions which are not failed and belongs to this user for this phase
                 qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
                 # Count submissions made today
-                daily_submission_count = qs.filter(created_when__day=now().date()).count()
+                daily_submission_count = qs.filter(created_when__date=now().date()).count()
                 return daily_submission_count
         return 0
 
