@@ -3,7 +3,7 @@ from django.utils.timezone import now
 from django.views.generic import TemplateView
 from django.db.models import Count, Q
 
-from competitions.models import Competition, Submission, CompetitionParticipant
+from competitions.models import Competition, Submission
 from profiles.models import User
 from announcements.models import Announcement, NewsPost
 
