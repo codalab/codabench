@@ -22,17 +22,13 @@ class HomeView(TemplateView):
             unpublished_comps=Count('pk', filter=Q(published=False)),
         )
 
-        total_competitions = data['count']
         public_competitions = data['published_comps']
         users = User.objects.all().count()
-        competition_participants = CompetitionParticipant.objects.all().count()
         submissions = Submission.objects.all().count()
 
         context['general_stats'] = [
-            {'label': "Total Competitions", 'count': total_competitions},
             {'label': "Public Competitions", 'count': public_competitions},
             {'label': "Users", 'count': users},
-            {'label': "Competition Participants", 'count': competition_participants},
             {'label': "Submissions", 'count': submissions},
         ]
 
