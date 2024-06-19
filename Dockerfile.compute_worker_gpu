@@ -1,25 +1,38 @@
-FROM --platform=linux/amd64 python:3.8.1-buster
+FROM ubuntu:20.04
 
-# We need curl to get docker/nvidia-docker
-RUN apt-get update &&  apt-get install curl wget -y
-
-# This makes output not buffer and return immediately, nice for seeing results in stdout
-ENV PYTHONUNBUFFERED 1
-
+# Update
+RUN apt update -y;
+# Install tools for other installs
+RUN apt-get install -y wget curl gpg systemctl
+# Install build dependencies for python
+RUN apt-get install -y build-essential libssl-dev libffi-dev python3-dev
 # Install Docker
-RUN apt-get update && curl -fsSL https://get.docker.com | sh
+RUN curl -fsSL https://get.docker.com | sh
 
-# nvidia-docker jazz
-RUN curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
-RUN curl -s -L https://nvidia.github.io/nvidia-docker/$(. /etc/os-release;echo $ID$VERSION_ID)/nvidia-docker.list | \
-  tee /etc/apt/sources.list.d/nvidia-docker.list
-RUN apt-get update && apt-get install -y nvidia-docker2
-
-# make it explicit that we're using GPUs
+# Nvidia Container Toolkit for cuda use with docker
+# [source](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+RUN apt-get update -y;
+RUN apt-get install -y nvidia-container-toolkit
+# Make it explicit that we're using GPUs
+# BB - not convinced we need this
 ENV NVIDIA_DOCKER 1
 
+# Install python
+RUN apt install -y software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt update -y
+RUN apt install -y python3.9 python3.9-distutils
+RUN apt-get install -y python3-pip
+RUN rm /usr/bin/python3 # remove python3.8 symlink, to add a python3.9 one
+RUN ln -s /usr/bin/python3.9 /usr/bin/python3 # add python3 symlink to python3.9
+RUN ln -s /usr/bin/python3.9 /usr/bin/python # add python symlink to python3.9
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3.9 -
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
