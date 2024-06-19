@@ -1,13 +1,11 @@
-FROM ubuntu:20.04
+FROM --platform=linux/amd64 python:3.9
 
-# Update
-RUN apt update -y;
-# Install tools for other installs
-RUN apt-get install -y wget curl gpg systemctl
-# Install build dependencies for python
-RUN apt-get install -y build-essential libssl-dev libffi-dev python3-dev
+# This makes output not buffer and return immediately, nice for seeing results in stdout
+ENV PYTHONUNBUFFERED 1
+
 # Install Docker
-RUN curl -fsSL https://get.docker.com | sh
+RUN apt-get update && curl -fsSL https://get.docker.com | sh
+
 
 # Nvidia Container Toolkit for cuda use with docker
 # [source](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
@@ -21,18 +19,7 @@ RUN apt-get install -y nvidia-container-toolkit
 # BB - not convinced we need this
 ENV NVIDIA_DOCKER 1
 
-# Install python
-RUN apt install -y software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt update -y
-RUN apt install -y python3.9 python3.9-distutils
-RUN apt-get install -y python3-pip
-RUN rm /usr/bin/python3 # remove python3.8 symlink, to add a python3.9 one
-RUN ln -s /usr/bin/python3.9 /usr/bin/python3 # add python3 symlink to python3.9
-RUN ln -s /usr/bin/python3.9 /usr/bin/python # add python symlink to python3.9
-
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3.9 -
+RUN curl -sSL https://install.python-poetry.org | python3 -
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
