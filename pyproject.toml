@@ -43,7 +43,7 @@ psycopg2-binary = "2.8.6"
 django-redis-cache = "3.0.0"
 django-redis = "4.12.1"
 django-storages = {version = "1.7.2", extras = ["azure", "google"]}
-azure-storage-blob = "2.1.0"
+azure-storage-blob = "12.13.0"
 azure-storage-common = "2.1.0"
 boto3 = "1.9.68"
 whitenoise = "5.2.0"
