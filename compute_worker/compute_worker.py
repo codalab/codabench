@@ -640,7 +640,8 @@ class Run:
             '--security-opt=no-new-privileges',
 
             # GPU or not
-            '--gpus all' if os.environ.get("USE_GPU") else '--gpus 0',
+            '--gpus', 
+            'all' if os.environ.get("USE_GPU") else '0',
 
             # Set the volumes
             '-v', f'{self._get_host_path(program_dir)}:/app/program',
