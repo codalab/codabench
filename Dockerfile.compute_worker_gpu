@@ -17,7 +17,7 @@ RUN apt-get update -y;
 RUN apt-get install -y nvidia-container-toolkit
 # Make it explicit that we're using GPUs
 # BB - not convinced we need this
-ENV NVIDIA_DOCKER 1
+ENV USE_GPU 1
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 # Poetry location so future commands (below) work

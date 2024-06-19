@@ -82,9 +82,6 @@ AVAILABLE_STATUSES = (
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
-# We could probably depreciate this now that we can specify the executable
-elif os.environ.get("NVIDIA_DOCKER"):
-    CONTAINER_ENGINE_EXECUTABLE = "nvidia-docker"
 else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
 
@@ -641,6 +638,9 @@ class Run:
 
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
+
+            # GPU or not
+            '--gpus all' if os.environ.get("USE_GPU") else '--gpus 0',
 
             # Set the volumes
             '-v', f'{self._get_host_path(program_dir)}:/app/program',
