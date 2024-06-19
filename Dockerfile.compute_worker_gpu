@@ -1,11 +1,8 @@
-FROM ubuntu:20.04
+FROM --platform=linux/amd64 python:3.9
 
-# Update
-RUN apt update -y;
-# Install tools for other installs
-RUN apt-get install -y wget curl gpg systemctl
-# Install build dependencies for python
-RUN apt-get install -y build-essential libssl-dev libffi-dev python3-dev
+# This makes output not buffer and return immediately, nice for seeing results in stdout
+ENV PYTHONUNBUFFERED 1
+
 # Install Docker
 RUN apt-get update && curl -fsSL https://get.docker.com | sh
 
