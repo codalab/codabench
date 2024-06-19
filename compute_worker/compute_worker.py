@@ -639,10 +639,6 @@ class Run:
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
 
-            # GPU or not
-            '--gpus', 
-            'all' if os.environ.get("USE_GPU") else '0',
-
             # Set the volumes
             '-v', f'{self._get_host_path(program_dir)}:/app/program',
             '-v', f'{self._get_host_path(self.output_dir)}:/app/output',
@@ -654,6 +650,10 @@ class Run:
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
+
+        # GPU or not
+        if os.environ.get("USE_GPU"):
+            engine_cmd.extend(['--gpus', 'all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
