@@ -33,6 +33,6 @@ def app_for_vhost(vhost):
         django_settings = copy.copy(settings)
         django_settings.CELERY_BROKER_URL = broker_url
         vhost_app.config_from_object(django_settings, namespace='CELERY')
-        vhost_app.task_queues = app.conf.task_queues
+        vhost_app.conf.task_queues = app.conf.task_queues
         _vhost_apps[vhost] = vhost_app
     return _vhost_apps[vhost]
