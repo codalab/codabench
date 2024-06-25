@@ -14,7 +14,7 @@
             </span>
             <!-- Badge for when there is no limit -->
             <span if="{selected_phase.max_submissions_per_day == 0}" class="badge badge-green">
-                ∞
+                {selected_phase.used_submissions_per_day} out of ∞
             </span>
         </div>
         <div class="col">
@@ -27,7 +27,7 @@
             </span>
             <!-- Badge for when there is no limit -->
             <span if="{selected_phase.max_submissions_per_person == 0}" class="badge badge-green">
-                ∞
+                {selected_phase.used_submissions_per_person} out of ∞
             </span>
         </div>
     </div>
