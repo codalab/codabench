@@ -14,6 +14,7 @@
         <thead>
             <tr>
                 <th>File Name</th>
+                <th>Benchmark</th>
                 <th width="175px">Size</th>
                 <th width="125px">Uploaded</th>
                 <th width="50px" class="no-sort">Delete?</th>
@@ -22,17 +23,24 @@
         </thead>
 
         <tbody>
-            <tr each="{ dataset, index in datasets }" class="dataset-row">
+            <tr each="{ dataset, index in datasets }"
+                class="dataset-row"
+                onclick="{show_info_modal.bind(this, dataset)}">
                 <td>{ dataset.name }</td>
+                <td>
+                    <div if="{dataset.competition}" class="ui fitted">
+                        <a id="competitionLink" href="{URLS.COMPETITION_DETAIL(dataset.competition.id)}" target="_blank">{dataset.competition.title}</a>
+                    </div>
+                </td>
                 <td>{ format_file_size(dataset.file_size) }</td>
                 <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
                 <td class="center aligned">
-                    <button show="{dataset.created_by === CODALAB.state.user.username && dataset.is_dump}" class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
+                    <button show="{dataset.created_by === CODALAB.state.user.username}" class="ui mini button red icon" onclick="{ delete_dataset.bind(this, dataset) }">
                         <i class="icon delete"></i>
                     </button>
                 </td>
                 <td class="center aligned">
-                    <div show="{dataset.created_by === CODALAB.state.user.username && dataset.is_dump}" class="ui fitted checkbox">
+                    <div show="{dataset.created_by === CODALAB.state.user.username}" class="ui fitted checkbox">
                         <input type="checkbox" name="delete_checkbox" onclick="{ mark_dataset_for_deletion.bind(this, dataset) }">
                         <label></label>
                     </div>
@@ -65,6 +73,51 @@
         </tfoot>
     </table>
 
+    <!--  Dataset Detail Model  -->
+    <div ref="info_modal" class="ui modal">
+        <div class="header">
+            {selected_row.name}
+        </div>
+        <div class="content">
+            <h3>Details</h3>
+            <table class="ui basic table">
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Created By</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{selected_row.key}</td>
+                        <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
+                        <td>{pretty_date(selected_row.created_when)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <virtual if="{!!selected_row.description}">
+                <div>Description:</div>
+                <div class="ui segment">
+                    {selected_row.description}
+                </div>
+            </virtual>
+            <div show="{!!_.get(selected_row.in_use, 'length')}"><strong>Used by:</strong>
+                <div class="ui bulleted list">
+                    <div class="item" each="{comp in selected_row.in_use}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.pk)}" target="_blank">{comp.title}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <a href="{URLS.DATASET_DOWNLOAD(selected_row.key)}" class="ui green icon button">
+                <i class="download icon"></i>Download File
+            </a>
+            <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
     <script>
         var self = this
 
@@ -74,6 +127,7 @@
 
         self.datasets = []
         self.marked_datasets = []
+        self.selected_row = {}
         self.page = 1
 
         self.one("mount", function () {
@@ -175,6 +229,16 @@
             else {
                 self.marked_datasets.splice(self.marked_datasets.indexOf(dataset.id), 1)
             }
+        }
+
+        self.show_info_modal = function (row, e) {
+            // Return here so the info modal doesn't pop up when a checkbox is clicked
+            if (e.target.type === 'checkbox' || e.target.id === 'competitionLink') {
+                return
+            }
+            self.selected_row = row
+            self.update()
+            $(self.refs.info_modal).modal('show')
         }
 
         // Function to format file size 

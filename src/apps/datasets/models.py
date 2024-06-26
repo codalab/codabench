@@ -106,11 +106,6 @@ class Data(ChaHubSaveMixin, models.Model):
         ).values('pk', 'title').distinct()
         return competitions_in_use
 
-    @property
-    def is_dump(self):
-        from competitions.models import CompetitionDump
-        return CompetitionDump.objects.filter(dataset=self).exists()
-
     def __str__(self):
         return f'{self.name}({self.id})'
 
