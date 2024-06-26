@@ -114,7 +114,7 @@
                     </p>
                     <p>
                         <label for="title-{question.id}">Display Name: </label>
-                        <a class="float-right" data-tooltip="This is will be what the user sees when prompted for an answer and will be the category name on the leaderboard." data-position="right center">
+                        <a class="float-right" data-tooltip="This is what the user sees when prompted for an answer, and the category name on the leaderboard." data-position="right center">
                             <i class="grey question circle icon"></i>
                         </a>
                         <input name="title-{question.id}" id="title-{question.id}" type="text" value="{question.title}">

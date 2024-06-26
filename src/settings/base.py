@@ -37,7 +37,7 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'oauth2_provider',
-    'corsheaders',
+    # 'corsheaders',
     'social_django',
     'django_extensions',
     'django_filters',
@@ -73,7 +73,8 @@ MIDDLEWARE = (
     # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware', # BB
+    'django.middleware.common.CommonMiddleware'
 )
 
 ROOT_URLCONF = 'urls'

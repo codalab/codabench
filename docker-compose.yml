@@ -13,6 +13,7 @@ services:
       - ./src/staticfiles:/var/www/django/static
       - ./caddy_data:/data
       - ./caddy_config:/config
+      - ./var/log/caddy:/var/log/
     restart: unless-stopped
     ports:
       - 80:80
