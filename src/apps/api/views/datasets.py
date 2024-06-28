@@ -54,7 +54,7 @@ class DataViewSet(ModelViewSet):
             if is_dataset:
                 qs = qs.filter(~Q(type=Data.SUBMISSION))
                 qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
-            
+
             # filter bundles
             if is_bundle:
                 qs = qs.filter(Q(type=Data.COMPETITION_BUNDLE))
