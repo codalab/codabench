@@ -4,6 +4,7 @@
     <div class="ui top attached tabular menu">
         <div class="active item" data-tab="submissions">Submissions</div>
         <div class="item" data-tab="datasets">Datasets and programs</div>
+        <div class="item" data-tab="bundles">Bundles</div>
         <div class="item" data-tab="tasks">Tasks</div>
         <div class="right menu">
             <div class="item">
@@ -18,6 +19,9 @@
     </div>
     <div class="ui bottom attached tab segment" data-tab="datasets">
         <data-management></data-management>
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="bundles">
+        <bundle-management></bundle-management>
     </div>
     <div class="ui bottom attached tab segment" data-tab="tasks">
         <task-management></task-management>
