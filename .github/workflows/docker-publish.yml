@@ -72,10 +72,10 @@ jobs:
 
       - name: Extract image name
         id: extract_image_name
-        run:
+        run: |
           dockerfile_path="${{ matrix.docker-file }}"
           image_name="${dockerfile_path##*.}"
-          if [[ -z $image_name ]]; then
+          if [[ -z $image_name ]] then
             image_name="base"
           fi
           echo "image_name=$image_name" >> $GITHUB_OUTPUT
