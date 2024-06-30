@@ -36,7 +36,6 @@ jobs:
         docker-file:
           - Dockerfile
           - Dockerfile.builder
-          - Dockerfile.celery
           - Dockerfile.compute_worker
           - Dockerfile.compute_worker_gpu
           - Dockerfile.flower
