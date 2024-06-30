@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: {{ .Values.image.rabbitmq }}
+        env:
+          - name: RABBITMQ_DEFAULT_USER
+            value: {{ .Values.env.rabbitmq.user }}
+          - name: RABBITMQ_DEFAULT_PASS
+            value: {{ .Values.env.rabbitmq.password }}
+        volumeMounts:
+          - name: rabbitmq-storage
+            mountPath: /var/lib/rabbitmq
+      volumes:
+        - name: rabbitmq-storage
+          emptyDir: {}

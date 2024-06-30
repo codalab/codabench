@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: builder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: builder
+  template:
+    metadata:
+      labels:
+        app: builder
+    spec:
+      containers:
+      - name: builder
+        image: {{ .Values.image.builder }}
+        volumeMounts:
+          - name: app
+            mountPath: /app
+      volumes:
+        - name: app
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: builder
+spec:
+  type: {{ .Values.services.builder.type }}
+  ports:
+    - port: {{ .Values.services.builder.port }}
+      targetPort: 80
+  selector:
+    app: builder

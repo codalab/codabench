@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+      - name: django
+        image: {{ .Values.image.django }}
+        env:
+          - name: DATABASE_URL
+            value: "postgres://{{ .Values.env.database.username }}:{{ .Values.env.database.password }}@{{ .Values.env.database.host }}:{{ .Values.env.database.port }}/{{ .Values.env.database.name }}"
+        volumeMounts:
+          - name: app
+            mountPath: /app
+      volumes:
+        - name: app
+          emptyDir: {}

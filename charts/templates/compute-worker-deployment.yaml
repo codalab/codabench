@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compute-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compute-worker
+  template:
+    metadata:
+      labels:
+        app: compute-worker
+    spec:
+      containers:
+      - name: compute-worker
+        image: {{ .Values.image.computeWorker }}
+        command: ["bash", "-c", "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+        env:
+          - name: BROKER_URL
+            value: "pyamqp://{{ .Values.env.rabbitmq.user }}:{{ .Values.env.rabbitmq.password }}@{{ .Values.env.rabbitmq.host }}:{{ .Values.env.rabbitmq.port }}//"
+        volumeMounts:
+          - name: app
+            mountPath: /app
+          - name: host-directory
+            mountPath: /codabench
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+      volumes:
+        - name: app
+          emptyDir: {}
+        - name: host-directory
+          emptyDir: {}
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compute-worker
+spec:
+  type: {{ .Values.services.computeWorker.type }}
+  ports:
+    - port: {{ .Values.services.computeWorker.port }}
+      targetPort: 80
+  selector:
+    app: compute-worker

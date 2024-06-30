@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: {{ .Values.image.minio }}
+        command: ["minio", "server", "/export"]
+        env:
+          - name: MINIO_ACCESS_KEY
+            value: {{ .Values.env.minio.accessKey }}
+          - name: MINIO_SECRET_KEY
+            value: {{ .Values.env.minio.secretKey }}
+        volumeMounts:
+          - name: minio-storage
+            mountPath: /export
+      volumes:
+        - name: minio-storage
+          emptyDir: {}

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy
+  template:
+    metadata:
+      labels:
+        app: caddy
+    spec:
+      containers:
+      - name: caddy
+        image: {{ .Values.image.caddy }}
+        env:
+          - name: ACME_AGREE
+            value: "true"
+        volumeMounts:
+          - name: caddyfile
+            mountPath: /etc/caddy/Caddyfile
+            subPath: Caddyfile
+          - name: staticfiles
+            mountPath: /var/www/django/static
+          - name: caddy-data
+            mountPath: /data
+          - name: caddy-config
+            mountPath: /config
+          - name: caddy-logs
+            mountPath: /var/log
+      volumes:
+        - name: caddyfile
+          configMap:
+            name: caddy-configmap
+        - name: staticfiles
+          emptyDir: {}
+        - name: caddy-data
+          emptyDir: {}
+        - name: caddy-config
+          emptyDir: {}
+        - name: caddy-logs
+          emptyDir: {}

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flower
+  template:
+    metadata:
+      labels:
+        app: flower
+    spec:
+      containers:
+      - name: flower
+        image: {{ .Values.image.flower }}
+        env:
+          - name: CELERY_BROKER_URL
+            value: "pyamqp://{{ .Values.env.rabbitmq.user }}:{{ .Values.env.rabbitmq.password }}@{{ .Values.env.rabbitmq.host }}:{{ .Values.env.rabbitmq.port }}//"
+        ports:
+          - containerPort: {{ .Values.services.flower.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+spec:
+  type: {{ .Values.services.flower.type }}
+  ports:
+    - port: {{ .Values.services.flower.port }}
+      targetPort: {{ .Values.services.flower.port }}
+  selector:
+    app: flower

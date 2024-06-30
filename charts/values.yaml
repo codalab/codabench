@@ -1,0 +1,84 @@
+image:
+  caddy: caddy:2.7.6
+  minio: minio/minio:RELEASE.2020-10-03T02-19-42Z
+  postgres: postgres:12-alpine
+  redis: redis
+  django: ghcr.io/k402xxxcenxxx/codabench/base:develop
+  builder: ghcr.io/k402xxxcenxxx/codabench/builder:develop
+  rabbitmq: ghcr.io/k402xxxcenxxx/codabench/rabbitmq:develop
+  flower: ghcr.io/k402xxxcenxxx/codabench/flower:develop
+  siteWorker: ghcr.io/k402xxxcenxxx/codabench/base:develop
+  computeWorker: ghcr.io/k402xxxcenxxx/codabench/compute_worker:develop
+
+env:
+  secretKey: "change-this-secret"
+  database:
+    host: "db"
+    name: "postgres"
+    username: "postgres"
+    password: "postgres"
+    port: "5432"
+  djangoSettingsModule: "settings.develop"
+  allowedHosts: "localhost,example.com"
+  submissionsApiUrl: "http://django:8000/api"
+  maxExecutionTimeLimit: "600"
+  domainName: "localhost:80"
+  tlsEmail: "your@email.com"
+  rabbitmq:
+    host: "rabbit"
+    user: "rabbit-username"
+    password: "rabbit-password-you-should-change"
+    managementPort: "15672"
+    port: "5672"
+    workerConnectionTimeout: "100000000"
+  flower:
+    port: "5555"
+    basicAuth: "root:password-you-should-change"
+  seleniumHostname: "selenium"
+  minio:
+    accessKey: "testkey"
+    secretKey: "testsecret"
+    port: "9000"
+    storageBucketName: "public"
+    storagePrivateBucketName: "private"
+    s3EndpointUrl: "http://minio:9000/"
+    queryStringAuth: "False"
+  rerunSubmissionLimit: "30"
+  enableSignUp: "True"
+  enableSignIn: "True"
+
+resources:
+  limits:
+    memory: 256Mi
+
+services:
+  caddy:
+    type: ClusterIP
+    port: 80
+  django:
+    type: ClusterIP
+    port: 8000
+  minio:
+    type: ClusterIP
+    port: 9000
+  postgres:
+    type: ClusterIP
+    port: 5432
+  rabbitmq:
+    type: ClusterIP
+    port: 5672
+  redis:
+    type: ClusterIP
+    port: 6379
+  builder:
+    type: ClusterIP
+    port: 80
+  flower:
+    type: ClusterIP
+    port: 5555
+  siteWorker:
+    type: ClusterIP
+    port: 80
+  computeWorker:
+    type: ClusterIP
+    port: 80

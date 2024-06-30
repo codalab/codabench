@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy
+spec:
+  type: {{ .Values.services.caddy.type }}
+  ports:
+    - port: {{ .Values.services.caddy.port }}
+      targetPort: 80
+  selector:
+    app: caddy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django
+spec:
+  type: {{ .Values.services.django.type }}
+  ports:
+    - port: {{ .Values.services.django.port }}
+      targetPort: 8000
+  selector:
+    app: django
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  type: {{ .Values.services.minio.type }}
+  ports:
+    - port: {{ .Values.services.minio.port }}
+      targetPort: 9000
+  selector:
+    app: minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: {{ .Values.services.postgres.type }}
+  ports:
+    - port: {{ .Values.services.postgres.port }}
+      targetPort: 5432
+  selector:
+    app: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+spec:
+  type: {{ .Values.services.rabbitmq.type }}
+  ports:
+    - port: {{ .Values.services.rabbitmq.port }}
+      targetPort: 5672
+  selector:
+    app: rabbitmq
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  type: {{ .Values.services.redis.type }}
+  ports:
+    - port: {{ .Values.services.redis.port }}
+      targetPort: 6379
+  selector:
+    app: redis
