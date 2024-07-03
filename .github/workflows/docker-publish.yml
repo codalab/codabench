@@ -18,7 +18,9 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   REPO_NAME: ${{ github.repository }}
-
+  # use default
+  WORKER_CONNECTION_TIMEOUT: 100000000
+  
 
 jobs:
   build:
@@ -100,6 +102,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            WORKER_CONNECTION_TIMEOUT=${{ env.WORKER_CONNECTION_TIMEOUT }}
 
       # Sign the resulting Docker image digest except on PRs.
       # This will only write to the public Rekor transparency log when the Docker
