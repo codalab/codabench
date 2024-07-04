@@ -111,7 +111,7 @@ class ServerStatusView(TemplateView):
         """
         try:
             n = float(file_size)
-        except ValueError:
+        except Exception as e:
             return ""
 
         units = ['KB', 'MB', 'GB']
