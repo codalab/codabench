@@ -1,3 +1,4 @@
+{{- with .Values.caddy }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,32 +14,34 @@ spec:
         app: caddy
     spec:
       containers:
-      - name: caddy
-        image: {{ .Values.image.caddy }}
-        env:
-          - name: ACME_AGREE
-            value: "true"
-        volumeMounts:
-          - name: caddyfile
-            mountPath: /etc/caddy/Caddyfile
-            subPath: Caddyfile
-          - name: staticfiles
-            mountPath: /var/www/django/static
-          - name: caddy-data
-            mountPath: /data
-          - name: caddy-config
-            mountPath: /config
-          - name: caddy-logs
-            mountPath: /var/log
+        - name: caddy
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          env:
+            - name: ACME_AGREE
+              value: True
+          volumeMounts:
+            - name: caddyfile
+              mountPath: /etc/caddy/Caddyfile
+            - name: staticfiles
+              mountPath: /var/www/django/static
+            - name: caddydata
+              mountPath: /data
+            - name: caddyconfig
+              mountPath: /config
+            - name: caddylog
+              mountPath: /var/log/
+          ports:
+            - containerPort: 80
+            - containerPort: 443
       volumes:
         - name: caddyfile
-          configMap:
-            name: caddy-configmap
+          emptyDir: {}
         - name: staticfiles
           emptyDir: {}
-        - name: caddy-data
+        - name: caddydata
           emptyDir: {}
-        - name: caddy-config
+        - name: caddyconfig
           emptyDir: {}
-        - name: caddy-logs
+        - name: caddylog
           emptyDir: {}
+{{- end }}

@@ -1,48 +1,64 @@
+{{- with .Values.computeWorker }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: compute-worker
+  name: computeworker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: compute-worker
+      app: computeworker
   template:
     metadata:
       labels:
-        app: compute-worker
+        app: computeworker
     spec:
       containers:
-      - name: compute-worker
-        image: {{ .Values.image.computeWorker }}
-        command: ["bash", "-c", "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
-        env:
-          - name: BROKER_URL
-            value: "pyamqp://{{ .Values.env.rabbitmq.user }}:{{ .Values.env.rabbitmq.password }}@{{ .Values.env.rabbitmq.host }}:{{ .Values.env.rabbitmq.port }}//"
-        volumeMounts:
-          - name: app
-            mountPath: /app
-          - name: host-directory
-            mountPath: /codabench
-          - name: docker-sock
-            mountPath: /var/run/docker.sock
+        - name: computeworker
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          command: ["bash", "-c", "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+          workDir: /app
+          readinessProbe:
+            exec:
+              command: [sh, -c, "ls -S /var/run/docker.sock"]
+          env:
+            - name: BROKER_URL
+              value: "pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS}}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//"
+            - name: CODALAB_IGNORE_CLEANUP_STEP
+              value: 1
+          volumeMounts:
+            - name: compute_worker
+              mountPath: /app
+            - name: logs
+              mountPath: /app/logs/
+            - name: tmp
+              mountPath: /codabench
+            - name: docker-socket
+              mountPath: /var/run
+        - name: dind
+          image: docker:dind
+          ports:
+            - name: dind-con-port
+              containerPort: 2376
+              hostPort: 2376
+              protocol: TCP
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
+            - name: docker-socket
+              mountPath: /var/run
+          env:
+            - name: DOCKER_HOST
+              value: "tcp://localhost:2376"
+          tty: true
+          securityContext:
+            privileged: true
       volumes:
-        - name: app
+        - name: compute_worker
           emptyDir: {}
-        - name: host-directory
+        - name: tmp
           emptyDir: {}
-        - name: docker-sock
-          hostPath:
-            path: /var/run/docker.sock
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: compute-worker
-spec:
-  type: {{ .Values.services.computeWorker.type }}
-  ports:
-    - port: {{ .Values.services.computeWorker.port }}
-      targetPort: 80
-  selector:
-    app: compute-worker
+        - name: dind-storage
+          persistentVolumeClaim:
+            claimName: dind-storage
+{{- end }}

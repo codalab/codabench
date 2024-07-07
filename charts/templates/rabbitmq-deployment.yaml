@@ -1,3 +1,4 @@
+{{- with .Values.rabbitmq }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,16 +14,41 @@ spec:
         app: rabbitmq
     spec:
       containers:
-      - name: rabbitmq
-        image: {{ .Values.image.rabbitmq }}
-        env:
-          - name: RABBITMQ_DEFAULT_USER
-            value: {{ .Values.env.rabbitmq.user }}
-          - name: RABBITMQ_DEFAULT_PASS
-            value: {{ .Values.env.rabbitmq.password }}
-        volumeMounts:
-          - name: rabbitmq-storage
-            mountPath: /var/lib/rabbitmq
+        - name: rabbitmq
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          env:
+            - name: http_proxy
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_HTTP_PROXY
+            - name: https_proxy
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_HTTPS_PROXY
+            - name: no_proxy
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_NO_PROXY
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: RABBITMQ_DEFAULT_PASS
+          volumeMounts:
+            - name: rabbitmq
+              mountPath: /var/lib/rabbitmq
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
       volumes:
-        - name: rabbitmq-storage
+        - name: rabbitmq
           emptyDir: {}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- with .Values.minio }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,17 +14,31 @@ spec:
         app: minio
     spec:
       containers:
-      - name: minio
-        image: {{ .Values.image.minio }}
-        command: ["minio", "server", "/export"]
-        env:
-          - name: MINIO_ACCESS_KEY
-            value: {{ .Values.env.minio.accessKey }}
-          - name: MINIO_SECRET_KEY
-            value: {{ .Values.env.minio.secretKey }}
-        volumeMounts:
-          - name: minio-storage
-            mountPath: /export
+        - name: minio
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          command: ["server", "/export"]
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: MINIO_SECRET_KEY
+          volumeMounts:
+            - name: export
+              mountPath: /export
+          ports:
+            - containerPort: 9000
+          livenessProbe:
+            exec:
+              command: ["nc", "-z", "minio", "9000"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
       volumes:
-        - name: minio-storage
+        - name: export
           emptyDir: {}
+{{- end }}

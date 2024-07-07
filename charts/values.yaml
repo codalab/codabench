@@ -1,3 +1,48 @@
+caddy:
+  image:
+    repository: caddy
+    tag: 2.7.6
+
+django:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/base
+    tag: v1.0.0
+
+minio:
+  image: 
+    repository: minio/minio
+    tag: RELEASE.2020-10-03T02-19-42Z
+
+builder:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/builder
+    tag: v1.0.0
+
+postgres:
+  image: 
+    repository: postgres
+    tag: 12-alpine
+
+rabbit:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/rabbitmq
+    tag: v1.0.0
+
+flower:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/flower
+    tag: v1.0.0
+
+redis:
+  image: 
+    repository: redis
+    tag: latest
+
+computeWorker:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/compute_worker
+    tag: v1.0.0
+
 image:
   caddy: caddy:2.7.6
   minio: minio/minio:RELEASE.2020-10-03T02-19-42Z
@@ -11,41 +56,50 @@ image:
   computeWorker: ghcr.io/k402xxxcenxxx/codabench/compute_worker:develop
 
 env:
-  secretKey: "change-this-secret"
-  database:
-    host: "db"
-    name: "postgres"
-    username: "postgres"
-    password: "postgres"
-    port: "5432"
-  djangoSettingsModule: "settings.develop"
-  allowedHosts: "localhost,example.com"
-  submissionsApiUrl: "http://django:8000/api"
-  maxExecutionTimeLimit: "600"
-  domainName: "localhost:80"
-  tlsEmail: "your@email.com"
-  rabbitmq:
-    host: "rabbit"
-    user: "rabbit-username"
-    password: "rabbit-password-you-should-change"
-    managementPort: "15672"
-    port: "5672"
-    workerConnectionTimeout: "100000000"
-  flower:
-    port: "5555"
-    basicAuth: "root:password-you-should-change"
-  seleniumHostname: "selenium"
-  minio:
-    accessKey: "testkey"
-    secretKey: "testsecret"
-    port: "9000"
-    storageBucketName: "public"
-    storagePrivateBucketName: "private"
-    s3EndpointUrl: "http://minio:9000/"
-    queryStringAuth: "False"
-  rerunSubmissionLimit: "30"
-  enableSignUp: "True"
-  enableSignIn: "True"
+  SECRET_KEY: "change-this-secret"
+
+  DB_HOST: "db"
+  DB_NAME: "postgres"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: "postgres"
+  DB_PORT: 5432
+
+  DJANGO_SETTINGS_MODULE: "settings.develop"
+  ALLOWED_HOSTS: "localhost,example.com"
+  SUBMISSIONS_API_URL: "http://django:8000/api"
+  MAX_EXECUTION_TIME_LIMIT: 600
+
+  DOMAIN_NAME: "localhost:80"
+  TLS_EMAIL: "your@email.com"
+
+  RABBITMQ_HOST: "rabbit"
+  RABBITMQ_DEFAULT_USER: "rabbit-username"
+  RABBITMQ_DEFAULT_PASS: "rabbit-password-you-should-change"
+  RABBITMQ_MANAGEMENT_PORT: 15672
+  RABBITMQ_PORT: 5672
+  WORKER_CONNECTION_TIMEOUT: 100000000
+
+  FLOWER_PUBLIC_PORT: 5555
+  FLOWER_BASIC_AUTH: "root:password-you-should-change"
+
+  SELENIUM_HOSTNAME: "selenium"
+
+  MINIO_ACCESS_KEY: "testkey"
+  MINIO_SECRET_KEY: "testsecret"
+  MINIO_PORT: 9000
+
+  AWS_ACCESS_KEY_ID: "testkey"
+  AWS_SECRET_ACCESS_KEY: "testsecret"
+  AWS_STORAGE_BUCKET_NAME: "public"
+  AWS_STORAGE_PRIVATE_BUCKET_NAME: "private"
+  AWS_S3_ENDPOINT_URL: "http://minio:9000/"
+  AWS_QUERYSTRING_AUTH: "False"
+
+  RERUN_SUBMISSION_LIMIT: 30
+
+  ENABLE_SIGN_UP: "True"
+  ENABLE_SIGN_IN: "True"
+
 
 resources:
   limits:

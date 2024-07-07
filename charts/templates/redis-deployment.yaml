@@ -1,3 +1,4 @@
+{{- with .Values.redis }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,7 +14,8 @@ spec:
         app: redis
     spec:
       containers:
-      - name: redis
-        image: {{ .Values.image.redis }}
-        ports:
-          - containerPort: 6379
+        - name: redis
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          ports:
+            - containerPort: 6379
+{{- end }}

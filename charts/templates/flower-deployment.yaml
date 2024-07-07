@@ -1,3 +1,4 @@
+{{- .Values.flower }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,22 +14,27 @@ spec:
         app: flower
     spec:
       containers:
-      - name: flower
-        image: {{ .Values.image.flower }}
-        env:
-          - name: CELERY_BROKER_URL
-            value: "pyamqp://{{ .Values.env.rabbitmq.user }}:{{ .Values.env.rabbitmq.password }}@{{ .Values.env.rabbitmq.host }}:{{ .Values.env.rabbitmq.port }}//"
-        ports:
-          - containerPort: {{ .Values.services.flower.port }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: flower
-spec:
-  type: {{ .Values.services.flower.type }}
-  ports:
-    - port: {{ .Values.services.flower.port }}
-      targetPort: {{ .Values.services.flower.port }}
-  selector:
-    app: flower
+        - name: flower
+          image: ghcr.io/k402xxxcenxxx/codabench/base:v1.0.0
+          command: ["celery", "-A", "src.main.celery_app", "flower", "--port=5555"]
+          env:
+            - name: CELERY_BROKER_URL
+              value: "pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS}}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//"
+            - name: FLOWER_BASIC_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: FLOWER_BASIC_AUTH
+          volumeMounts:
+            - name: django-data
+              mountPath: /app/src/
+            - name: logs
+              mountPath: /app/logs/
+      volumes:
+        - name: django-data
+          hostPath:
+            path: /src/django
+        - name: logs
+          hostPath:
+            path: /src/logs
+{{- end }}

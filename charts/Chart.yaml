@@ -1,5 +1,5 @@
 apiVersion: v2
-name: my-app
-description: A Helm chart for deploying a web application
+name: my-application
+description: A Helm chart for my application
 version: 0.1.0
 appVersion: "1.0"
