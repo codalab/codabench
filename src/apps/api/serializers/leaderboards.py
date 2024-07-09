@@ -152,7 +152,7 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         # desc == -colname
         # asc == colname
         primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
-        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}{primary_col.name}']
         submissions = Submission.objects.filter(
             phase=instance,
             has_children=False,
