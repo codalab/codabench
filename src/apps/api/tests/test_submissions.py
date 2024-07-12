@@ -26,9 +26,17 @@ class SubmissionAPITests(APITestCase):
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
 
-        # Make a participant and submission into competition
-        self.participant = UserFactory(username='participant', password='other')
-        CompetitionParticipantFactory(user=self.participant, competition=self.comp)
+        # Make participants
+        self.participant = UserFactory(username='participant_approved', password='other')
+        self.pending_participant = UserFactory(username='participant_pending', password='other')
+        self.denied_participant = UserFactory(username='participant_denied', password='other')
+
+        # Add user as participants in a competition with different statuses
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipantFactory(user=self.pending_participant, competition=self.comp, status=CompetitionParticipant.PENDING)
+        CompetitionParticipantFactory(user=self.denied_participant, competition=self.comp, status=CompetitionParticipant.DENIED)
+
+        # add submission with owner = approved participant
         self.existing_submission = SubmissionFactory(
             phase=self.phase,
             owner=self.participant,
@@ -232,10 +240,20 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-        # Actual user can see their submission detail result
+        # approved user can see submission detail result
         self.client.force_login(self.participant)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+        # pending user cannot see submission detail result
+        self.client.force_login(self.pending_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+
+        # denied user cannot see submission detail result
+        self.client.force_login(self.pending_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
 
         # Regular user cannot see submission detail result
         self.client.force_login(self.other_user)
