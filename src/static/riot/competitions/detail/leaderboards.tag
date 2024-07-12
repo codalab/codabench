@@ -41,7 +41,24 @@
             
         </tr>
         </thead>
-        <tbody>
+        <!--  Show when particpant registration is pending  -->
+        <tbody if="{participant_status === 'pending'}">
+            <tr class="center aligned ui yellow message">
+                <td colspan="100%">
+                    <em>Your request to participate in this competition is waiting for an approval from the competition organizer.</em>
+                </td>
+            </tr>
+        </tbody>
+        <!--  Show when particpant registration is denied  -->
+        <tbody if="{participant_status === 'denied'}">
+            <tr class="center aligned ui red message">
+                <td colspan="100%">
+                    <em>Your request to participate in this competition is denied. Please contact the competition organizer for more details.</em>
+                </td>
+            </tr>
+        </tbody>
+        <!--  Show when particpant registration is approved  -->
+        <tbody if="{participant_status === 'approved'}">
         <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>
@@ -70,6 +87,7 @@
         </tr>
         </tbody>
     </table>
+
 
     <script>
         let self = this
@@ -201,6 +219,7 @@
 
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
+            self.participant_status = competition.participant_status
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
             self.enable_detailed_results = competition.enable_detailed_results
             self.show_detailed_results_in_leaderboard = competition.show_detailed_results_in_leaderboard
