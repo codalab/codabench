@@ -1,8 +1,7 @@
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.status import HTTP_405_METHOD_NOT_ALLOWED
-from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
+from api.permissions import LeaderboardNotHidden
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from leaderboards.models import Leaderboard, SubmissionScore
