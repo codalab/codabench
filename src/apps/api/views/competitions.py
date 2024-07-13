@@ -22,7 +22,7 @@ from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
+    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionDetailSerializerWithoutWhitelistEmails, CompetitionParticipantSerializer, \
     FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
 from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
@@ -200,7 +200,12 @@ class CompetitionViewSet(ModelViewSet):
         elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
-            return CompetitionDetailSerializer
+            from_inside = self.request.query_params.get('from_inside', False)
+            # return whitelist emails when user is authenticated and api call is not from inside
+            if self.request.user.is_authenticated and from_inside:
+                return CompetitionDetailSerializer
+            else:
+                return CompetitionDetailSerializerWithoutWhitelistEmails
         elif self.request.method == 'PATCH':
             return CompetitionUpdateSerializer
         else:

@@ -413,6 +413,13 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         return obj.created_by.display_name if obj.created_by.display_name else obj.created_by.username
 
 
+class CompetitionDetailSerializerWithoutWhitelistEmails(CompetitionDetailSerializer):
+    class Meta(CompetitionDetailSerializer.Meta):
+        fields = tuple(
+            field for field in CompetitionDetailSerializer.Meta.fields if field != 'whitelist_emails'
+        )
+
+
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
