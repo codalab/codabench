@@ -83,6 +83,7 @@ LEADERBOARD_FIELDS = [
     'title',
     'key',
     'hidden',
+    'submission_rule',
 
     # For later
     # 'force_submission_to_leaderboard',
@@ -98,6 +99,7 @@ COLUMN_FIELDS = [
     'computation',
     'computation_indexes',
     'hidden',
+    'precision',
 ]
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
