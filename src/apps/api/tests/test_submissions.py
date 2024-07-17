@@ -251,7 +251,7 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 403
 
         # denied user cannot see submission detail result
-        self.client.force_login(self.pending_participant)
+        self.client.force_login(self.denied_participant)
         resp = self.client.get(url)
         assert resp.status_code == 403
 
