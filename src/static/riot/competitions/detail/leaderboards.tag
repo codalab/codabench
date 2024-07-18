@@ -41,6 +41,14 @@
             
         </tr>
         </thead>
+        <!--  Show when particpant is not registered  -->
+        <tbody if="{participant_status === null}">
+            <tr class="center aligned ui yellow message">
+                <td colspan="100%">
+                    <em>You are not a participant of this competition. Please register in My Submissions tab to view the leaderboard.</em>
+                </td>
+            </tr>
+        </tbody>
         <!--  Show when particpant registration is pending  -->
         <tbody if="{participant_status === 'pending'}">
             <tr class="center aligned ui yellow message">
