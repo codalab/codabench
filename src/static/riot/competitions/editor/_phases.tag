@@ -675,7 +675,6 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function (competition) {
-            debugger
             self.phases = competition.phases
             self.form_updated()
         })
