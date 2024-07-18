@@ -33,7 +33,7 @@
                                  data-tab="_tab_page_term">
                                 Terms
                             </div>
-                            <div  if={competition.files && competition.files.length != 0} class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <div  if={competition.files.length != 0} class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
                             </div>
                         </div>
