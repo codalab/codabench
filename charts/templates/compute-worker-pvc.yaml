@@ -1,0 +1,12 @@
+{{- with .Values.computeWorker }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: computeworker-dind-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- end }}

@@ -56,7 +56,7 @@ redis:
 computeWorker:
   image: 
     repository: ghcr.io/k402xxxcenxxx/codabench/compute_worker
-    tag: v1.0.0
+    tag: v1.0.1
 
 env:
   SECRET_KEY: "change-this-secret"

@@ -1,0 +1,73 @@
+{{- with .Values.computeWorker }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: computeworker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: computeworker
+  template:
+    metadata:
+      labels:
+        app: computeworker
+    spec:
+      containers:
+        - name: computeworker
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          command: ["bash", "-c", "celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+          readinessProbe:
+            exec:
+              command: [sh, -c, "ls -S /var/run/docker.sock"]
+          env:
+            - name: BROKER_URL
+              value: "pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS}}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//"
+            - name: CODALAB_IGNORE_CLEANUP_STEP
+              value: "1"
+            - name: SUBMISSIONS_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: SUBMISSIONS_API_URL
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs/
+            - name: tmp
+              mountPath: /codabench
+            - name: docker-socket
+              mountPath: /var/run
+        - name: dind
+          image: docker:dind
+          lifecycle:
+            postStart:
+              exec:
+                command: [sh, -c, "sleep 5s && ln -s /codabench /tmp/codabench"]
+          ports:
+            - name: dind-con-port
+              containerPort: 2376
+              protocol: TCP
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
+            - name: tmp
+              mountPath: /codabench
+            - name: docker-socket
+              mountPath: /var/run
+          env:
+            - name: DOCKER_HOST
+              value: "tcp://localhost:2376"
+          tty: true
+          securityContext:
+            privileged: true
+      volumes:
+        - name: docker-socket
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: dind-storage
+          persistentVolumeClaim:
+            claimName: computeworker-dind-storage
+{{- end }}

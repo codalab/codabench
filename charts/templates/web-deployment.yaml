@@ -64,6 +64,26 @@ spec:
                 configMapKeyRef:
                   name: my-config
                   key: DJANGO_SETTINGS_MODULE
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_PORT
           volumeMounts:
             - name: staticfiles
               mountPath: /app/src/staticfiles
@@ -89,6 +109,36 @@ spec:
                 configMapKeyRef:
                   name: my-config
                   key: DJANGO_SETTINGS_MODULE
+            - name: AWS_S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_S3_ENDPOINT_URL
+            - name: AWS_STORAGE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_STORAGE_BUCKET_NAME
+            - name: AWS_STORAGE_PRIVATE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_STORAGE_PRIVATE_BUCKET_NAME
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_QUERYSTRING_AUTH
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_QUERYSTRING_AUTH
             - name: RABBITMQ_HOST
               valueFrom:
                 configMapKeyRef:
@@ -109,6 +159,11 @@ spec:
                 configMapKeyRef:
                   name: my-config
                   key: RABBITMQ_PORT
+            - name: SUBMISSIONS_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: SUBMISSIONS_API_URL
       volumes:
         - name: backups
           persistentVolumeClaim:
