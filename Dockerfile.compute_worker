@@ -17,6 +17,7 @@ COPY ./compute_worker/pyproject.toml ./
 COPY ./compute_worker/poetry.lock ./
 RUN poetry install
 
+WORKDIR /app
 ADD compute_worker .
 
 CMD celery -A compute_worker worker \

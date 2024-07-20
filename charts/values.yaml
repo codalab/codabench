@@ -1,0 +1,99 @@
+web:
+  caddy:
+    image:
+      repository: caddy
+      tag: 2.7.6
+
+  django:
+    image: 
+      repository: ghcr.io/k402xxxcenxxx/codabench/base
+      tag: v1.1.0
+
+minio:
+  replicaCount: 1
+  
+  image: 
+    repository: minio/minio
+    tag: RELEASE.2020-10-03T02-19-42Z
+  
+  persistence:
+    size: 10Gi
+
+postgres:
+  replicaCount: 1
+
+  image: 
+    repository: postgres
+    tag: 12-alpine
+
+  persistence:
+    size: 10Gi
+  
+  backup:
+    persistence:
+      size: 10Gi
+
+rabbitmq:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/rabbitmq
+    tag: v1.1.0
+
+flower:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/flower
+    tag: v1.1.0
+
+redis:
+  image: 
+    repository: redis
+    tag: latest
+
+computeWorker:
+  image: 
+    repository: ghcr.io/k402xxxcenxxx/codabench/compute_worker
+    tag: v1.1.0
+
+env:
+  SECRET_KEY: "change-this-secret"
+
+  DB_HOST: "postgres"
+  DB_NAME: "postgres"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: "postgres"
+  DB_PORT: 5432
+
+  DJANGO_SETTINGS_MODULE: "settings.develop"
+  ALLOWED_HOSTS: "localhost,example.com"
+  SUBMISSIONS_API_URL: "http://django:8000/api"
+  MAX_EXECUTION_TIME_LIMIT: 600
+
+  DOMAIN_NAME: "localhost:80"
+  TLS_EMAIL: "your@email.com"
+
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_DEFAULT_USER: "rabbit-username"
+  RABBITMQ_DEFAULT_PASS: "rabbit-password-you-should-change"
+  RABBITMQ_MANAGEMENT_PORT: 15672
+  RABBITMQ_PORT: 5672
+  WORKER_CONNECTION_TIMEOUT: 100000000
+
+  FLOWER_PUBLIC_PORT: 5555
+  FLOWER_BASIC_AUTH: "root:password-you-should-change"
+
+  SELENIUM_HOSTNAME: "selenium"
+
+  MINIO_ACCESS_KEY: "testkey"
+  MINIO_SECRET_KEY: "testsecret"
+  MINIO_PORT: 9000
+
+  AWS_ACCESS_KEY_ID: "testkey"
+  AWS_SECRET_ACCESS_KEY: "testsecret"
+  AWS_STORAGE_BUCKET_NAME: "public"
+  AWS_STORAGE_PRIVATE_BUCKET_NAME: "private"
+  AWS_S3_ENDPOINT_URL: "http://minio:9000/"
+  AWS_QUERYSTRING_AUTH: "False"
+
+  RERUN_SUBMISSION_LIMIT: 30
+
+  ENABLE_SIGN_UP: "True"
+  ENABLE_SIGN_IN: "True"

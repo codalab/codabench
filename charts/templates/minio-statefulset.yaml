@@ -1,0 +1,49 @@
+{{- with .Values.minio }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          args: ["server", "/export"]
+          livenessProbe:
+            exec:
+              command: ["nc", "-z", "minio", "9000"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          ports:
+            - containerPort: 9000
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: MINIO_SECRET_KEY
+          volumeMounts:
+            - name: minio-export
+              mountPath: /export
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-export
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .persistence.size }}
+{{- end }}

@@ -1,0 +1,12 @@
+{{- with .Values.flower }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+spec:
+  ports:
+    - port: 5555
+      targetPort: 5555
+  selector:
+    app: flower
+{{- end }}

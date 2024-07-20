@@ -22,7 +22,7 @@ services:
       - django
 
   django:
-    build: .
+    image: ghcr.io/k402xxxcenxxx/codabench/base:v1.0.0
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
     command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
     environment:
@@ -93,9 +93,7 @@ services:
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #-----------------------------------------------
   builder:
-    build:
-      context: .
-      dockerfile: Dockerfile.builder
+    image: ghcr.io/k402xxxcenxxx/codabench/builder:v1.0.0
     volumes:
       - .:/app:delegated
     restart: unless-stopped
@@ -129,11 +127,7 @@ services:
   #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
-    build:
-      context: .
-      dockerfile: Dockerfile.rabbitmq
-      args:
-        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
+    image: ghcr.io/k402xxxcenxxx/codabench/rabbitmq:v1.0.0
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
@@ -155,9 +149,7 @@ services:
 
   flower:
     # image: mher/flower
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
+    image: ghcr.io/k402xxxcenxxx/codabench/flower:v1.0.0
     env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
@@ -191,8 +183,7 @@ services:
     # This auto-reloads
     command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"
     working_dir: /app/src
-    build:
-      context: .
+    image: ghcr.io/k402xxxcenxxx/codabench/base:v1.0.0
     depends_on:
       - rabbit
       - db
@@ -214,9 +205,7 @@ services:
   compute_worker:
     command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
     working_dir: /app
-    build:
-      context: .
-      dockerfile: Dockerfile.compute_worker
+    image: ghcr.io/k402xxxcenxxx/codabench/compute_worker:v1.0.0
     depends_on:
       - django
       - rabbit

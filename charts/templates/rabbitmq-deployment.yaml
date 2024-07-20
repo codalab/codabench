@@ -1,0 +1,39 @@
+{{- with .Values.rabbitmq }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: RABBITMQ_DEFAULT_PASS
+          volumeMounts:
+            - name: rabbitmq
+              mountPath: /var/lib/rabbitmq
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+      volumes:
+        - name: rabbitmq
+          emptyDir: {}
+{{- end }}
