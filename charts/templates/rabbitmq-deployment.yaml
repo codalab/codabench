@@ -17,21 +17,6 @@ spec:
         - name: rabbitmq
           image: "{{ .image.repository }}:{{ .image.tag }}"
           env:
-            - name: http_proxy
-              valueFrom:
-                configMapKeyRef:
-                  name: my-config
-                  key: RABBITMQ_HTTP_PROXY
-            - name: https_proxy
-              valueFrom:
-                configMapKeyRef:
-                  name: my-config
-                  key: RABBITMQ_HTTPS_PROXY
-            - name: no_proxy
-              valueFrom:
-                configMapKeyRef:
-                  name: my-config
-                  key: RABBITMQ_NO_PROXY
             - name: RABBITMQ_DEFAULT_USER
               valueFrom:
                 configMapKeyRef:

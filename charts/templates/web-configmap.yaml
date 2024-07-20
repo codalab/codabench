@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+data:
+  Caddyfile: |
+    {$DOMAIN_NAME} {
+      # HTTPS Options
+      tls {$TLS_EMAIL}
+
+
+      # Test HTTPS setup
+      tls {$TLS_EMAIL} {
+        ca https://acme-staging-v02.api.letsencrypt.org/directory
+      }
+
+      
+      # Removing some headers for improved security:
+      header -Server
+
+      # Serves static files, should be the same as `STATIC_ROOT` setting:
+      root *  /var/www/django
+      file_server
+      
+      @noStatic {
+        not path /static/*
+        not path /media/*
+      }
+      
+      # Serving dynamic requests:
+      reverse_proxy @noStatic django:8000
+
+      # Allows to use `.gz` files when available:
+      encode gzip
+
+      # Logs:
+      log {
+        output file /var/log/caddyaccess.log {
+          roll_disabled
+        }
+      }
+    }

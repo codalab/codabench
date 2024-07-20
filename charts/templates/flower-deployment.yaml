@@ -1,4 +1,4 @@
-{{- .Values.flower }}
+{{- with .Values.flower }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,26 +15,18 @@ spec:
     spec:
       containers:
         - name: flower
-          image: ghcr.io/k402xxxcenxxx/codabench/base:v1.0.0
-          command: ["celery", "-A", "src.main.celery_app", "flower", "--port=5555"]
+          image: "{{ .image.repository }}:{{ .image.tag }}"
           env:
             - name: CELERY_BROKER_URL
               value: "pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS}}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//"
+            - name: FLOWER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: FLOWER_PUBLIC_PORT
             - name: FLOWER_BASIC_AUTH
               valueFrom:
                 secretKeyRef:
                   name: my-secret
                   key: FLOWER_BASIC_AUTH
-          volumeMounts:
-            - name: django-data
-              mountPath: /app/src/
-            - name: logs
-              mountPath: /app/logs/
-      volumes:
-        - name: django-data
-          hostPath:
-            path: /src/django
-        - name: logs
-          hostPath:
-            path: /src/logs
 {{- end }}

@@ -1,17 +1,23 @@
-caddy:
-  image:
-    repository: caddy
-    tag: 2.7.6
+web:
+  caddy:
+    image:
+      repository: caddy
+      tag: 2.7.6
 
-django:
-  image: 
-    repository: ghcr.io/k402xxxcenxxx/codabench/base
-    tag: v1.0.0
+  django:
+    image: 
+      repository: ghcr.io/k402xxxcenxxx/codabench/base
+      tag: v1.0.4
 
 minio:
+  replicaCount: 1
+  
   image: 
     repository: minio/minio
     tag: RELEASE.2020-10-03T02-19-42Z
+  
+  persistence:
+    size: 10Gi
 
 builder:
   image: 
@@ -19,11 +25,20 @@ builder:
     tag: v1.0.0
 
 postgres:
+  replicaCount: 1
+
   image: 
     repository: postgres
     tag: 12-alpine
 
-rabbit:
+  persistence:
+    size: 10Gi
+  
+  backup:
+    persistence:
+      size: 10Gi
+
+rabbitmq:
   image: 
     repository: ghcr.io/k402xxxcenxxx/codabench/rabbitmq
     tag: v1.0.0
@@ -43,22 +58,10 @@ computeWorker:
     repository: ghcr.io/k402xxxcenxxx/codabench/compute_worker
     tag: v1.0.0
 
-image:
-  caddy: caddy:2.7.6
-  minio: minio/minio:RELEASE.2020-10-03T02-19-42Z
-  postgres: postgres:12-alpine
-  redis: redis
-  django: ghcr.io/k402xxxcenxxx/codabench/base:develop
-  builder: ghcr.io/k402xxxcenxxx/codabench/builder:develop
-  rabbitmq: ghcr.io/k402xxxcenxxx/codabench/rabbitmq:develop
-  flower: ghcr.io/k402xxxcenxxx/codabench/flower:develop
-  siteWorker: ghcr.io/k402xxxcenxxx/codabench/base:develop
-  computeWorker: ghcr.io/k402xxxcenxxx/codabench/compute_worker:develop
-
 env:
   SECRET_KEY: "change-this-secret"
 
-  DB_HOST: "db"
+  DB_HOST: "postgres"
   DB_NAME: "postgres"
   DB_USERNAME: "postgres"
   DB_PASSWORD: "postgres"
@@ -72,7 +75,7 @@ env:
   DOMAIN_NAME: "localhost:80"
   TLS_EMAIL: "your@email.com"
 
-  RABBITMQ_HOST: "rabbit"
+  RABBITMQ_HOST: "rabbitmq"
   RABBITMQ_DEFAULT_USER: "rabbit-username"
   RABBITMQ_DEFAULT_PASS: "rabbit-password-you-should-change"
   RABBITMQ_MANAGEMENT_PORT: 15672
@@ -99,40 +102,3 @@ env:
 
   ENABLE_SIGN_UP: "True"
   ENABLE_SIGN_IN: "True"
-
-
-resources:
-  limits:
-    memory: 256Mi
-
-services:
-  caddy:
-    type: ClusterIP
-    port: 80
-  django:
-    type: ClusterIP
-    port: 8000
-  minio:
-    type: ClusterIP
-    port: 9000
-  postgres:
-    type: ClusterIP
-    port: 5432
-  rabbitmq:
-    type: ClusterIP
-    port: 5672
-  redis:
-    type: ClusterIP
-    port: 6379
-  builder:
-    type: ClusterIP
-    port: 80
-  flower:
-    type: ClusterIP
-    port: 5555
-  siteWorker:
-    type: ClusterIP
-    port: 80
-  computeWorker:
-    type: ClusterIP
-    port: 80

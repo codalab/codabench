@@ -1,10 +1,10 @@
 {{- with .Values.minio }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: minio
 spec:
-  replicas: 1
+  replicas: {{ .replicaCount }}
   selector:
     matchLabels:
       app: minio
@@ -16,7 +16,14 @@ spec:
       containers:
         - name: minio
           image: "{{ .image.repository }}:{{ .image.tag }}"
-          command: ["server", "/export"]
+          args: ["server", "/export"]
+          livenessProbe:
+            exec:
+              command: ["nc", "-z", "minio", "9000"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          ports:
+            - containerPort: 9000
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:
@@ -29,16 +36,14 @@ spec:
                   name: my-config
                   key: MINIO_SECRET_KEY
           volumeMounts:
-            - name: export
+            - name: minio-export
               mountPath: /export
-          ports:
-            - containerPort: 9000
-          livenessProbe:
-            exec:
-              command: ["nc", "-z", "minio", "9000"]
-            initialDelaySeconds: 5
-            periodSeconds: 5
-      volumes:
-        - name: export
-          emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: minio-export
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .persistence.size }}
 {{- end }}

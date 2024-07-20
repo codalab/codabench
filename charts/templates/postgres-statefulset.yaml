@@ -1,10 +1,10 @@
 {{- with .Values.postgres }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: postgres
 spec:
-  replicas: 1
+  replicas: {{ .replicaCount }}
   selector:
     matchLabels:
       app: postgres
@@ -14,8 +14,10 @@ spec:
         app: postgres
     spec:
       containers:
-        - name: postgres
+        - name: postgre
           image: "{{ .image.repository }}:{{ .image.tag }}"
+          ports:
+            - containerPort: 5432
           env:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
@@ -34,16 +36,24 @@ spec:
                 secretKeyRef:
                   name: my-secret
                   key: DB_PASSWORD
-          ports:
-            - containerPort: 5432
           volumeMounts:
-            - name: postgres
+            - name: postgres-storage
               mountPath: /var/lib/postgresql/data
-            - name: backups
+            - name: postgres-backup
               mountPath: /app/backups
-      volumes:
-        - name: postgres
-          emptyDir: {}
-        - name: backups
-          emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .persistence.size }}
+  - metadata:
+      name: postgres-backup
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .backup.persistence.size }}
 {{- end }}

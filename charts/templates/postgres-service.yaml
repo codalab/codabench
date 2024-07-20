@@ -1,3 +1,4 @@
+{{- with .Values.postgres }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,3 +9,4 @@ spec:
       targetPort: 5432
   selector:
     app: postgres
+{{- end }}

@@ -3,34 +3,34 @@ kind: ConfigMap
 metadata:
   name: my-config
 data:
-  SECRET_KEY: {{ .Values.env.SECRET_KEY }}
-  DB_HOST: {{ .Values.env.DB_HOST }}
-  DB_NAME: {{ .Values.env.DB_NAME }}
-  DB_USERNAME: {{ .Values.env.DB_USERNAME }}
-  DB_PORT: {{ .Values.env.DB_PORT }}
-  DJANGO_SETTINGS_MODULE: {{ .Values.env.DJANGO_SETTINGS_MODULE }}
-  ALLOWED_HOSTS: {{ .Values.env.ALLOWED_HOSTS }}
-  SUBMISSIONS_API_URL: {{ .Values.env.SUBMISSIONS_API_URL }}
-  MAX_EXECUTION_TIME_LIMIT: {{ .Values.env.MAX_EXECUTION_TIME_LIMIT }}
-  DOMAIN_NAME: {{ .Values.env.DOMAIN_NAME }}
-  TLS_EMAIL: {{ .Values.env.TLS_EMAIL }}
-  RABBITMQ_HOST: {{ .Values.env.RABBITMQ_HOST }}
-  RABBITMQ_DEFAULT_USER: {{ .Values.env.RABBITMQ_DEFAULT_USER }}
-  RABBITMQ_MANAGEMENT_PORT: {{ .Values.env.RABBITMQ_MANAGEMENT_PORT }}
-  RABBITMQ_PORT: {{ .Values.env.RABBITMQ_PORT }}
-  WORKER_CONNECTION_TIMEOUT: {{ .Values.env.WORKER_CONNECTION_TIMEOUT }}
-  FLOWER_PUBLIC_PORT: {{ .Values.env.FLOWER_PUBLIC_PORT }}
-  FLOWER_BASIC_AUTH: {{ .Values.env.FLOWER_BASIC_AUTH }}
-  SELENIUM_HOSTNAME: {{ .Values.env.SELENIUM_HOSTNAME }}
-  MINIO_ACCESS_KEY: {{ .Values.env.MINIO_ACCESS_KEY }}
-  MINIO_SECRET_KEY: {{ .Values.env.MINIO_SECRET_KEY }}
-  MINIO_PORT: {{ .Values.env.MINIO_PORT }}
-  AWS_ACCESS_KEY_ID: {{ .Values.env.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: {{ .Values.env.AWS_SECRET_ACCESS_KEY }}
-  AWS_STORAGE_BUCKET_NAME: {{ .Values.env.AWS_STORAGE_BUCKET_NAME }}
-  AWS_STORAGE_PRIVATE_BUCKET_NAME: {{ .Values.env.AWS_STORAGE_PRIVATE_BUCKET_NAME }}
-  AWS_S3_ENDPOINT_URL: {{ .Values.env.AWS_S3_ENDPOINT_URL }}
-  AWS_QUERYSTRING_AUTH: {{ .Values.env.AWS_QUERYSTRING_AUTH }}
-  RERUN_SUBMISSION_LIMIT: {{ .Values.env.RERUN_SUBMISSION_LIMIT }}
-  ENABLE_SIGN_UP: {{ .Values.env.ENABLE_SIGN_UP }}
-  ENABLE_SIGN_IN: {{ .Values.env.ENABLE_SIGN_IN }}
+  SECRET_KEY: {{ .Values.env.SECRET_KEY | quote }}
+  DB_HOST: {{ .Values.env.DB_HOST | quote  }}
+  DB_NAME: {{ .Values.env.DB_NAME | quote  }}
+  DB_USERNAME: {{ .Values.env.DB_USERNAME | quote  }}
+  DB_PORT: {{ .Values.env.DB_PORT | quote  }}
+  DJANGO_SETTINGS_MODULE: {{ .Values.env.DJANGO_SETTINGS_MODULE | quote  }}
+  ALLOWED_HOSTS: {{ .Values.env.ALLOWED_HOSTS | quote  }}
+  SUBMISSIONS_API_URL: {{ .Values.env.SUBMISSIONS_API_URL | quote  }}
+  MAX_EXECUTION_TIME_LIMIT: {{ .Values.env.MAX_EXECUTION_TIME_LIMIT | quote  }}
+  DOMAIN_NAME: {{ .Values.env.DOMAIN_NAME | quote  }}
+  TLS_EMAIL: {{ .Values.env.TLS_EMAIL | quote  }}
+  RABBITMQ_HOST: {{ .Values.env.RABBITMQ_HOST | quote  }}
+  RABBITMQ_DEFAULT_USER: {{ .Values.env.RABBITMQ_DEFAULT_USER | quote  }}
+  RABBITMQ_MANAGEMENT_PORT: {{ .Values.env.RABBITMQ_MANAGEMENT_PORT | quote  }}
+  RABBITMQ_PORT: {{ .Values.env.RABBITMQ_PORT | quote  }}
+  WORKER_CONNECTION_TIMEOUT: {{ .Values.env.WORKER_CONNECTION_TIMEOUT | quote  }}
+  FLOWER_PUBLIC_PORT: {{ .Values.env.FLOWER_PUBLIC_PORT | quote  }}
+  FLOWER_BASIC_AUTH: {{ .Values.env.FLOWER_BASIC_AUTH | quote  }}
+  SELENIUM_HOSTNAME: {{ .Values.env.SELENIUM_HOSTNAME | quote  }}
+  MINIO_ACCESS_KEY: {{ .Values.env.MINIO_ACCESS_KEY | quote  }}
+  MINIO_SECRET_KEY: {{ .Values.env.MINIO_SECRET_KEY | quote  }}
+  MINIO_PORT: {{ .Values.env.MINIO_PORT | quote  }}
+  AWS_ACCESS_KEY_ID: {{ .Values.env.AWS_ACCESS_KEY_ID | quote  }}
+  AWS_SECRET_ACCESS_KEY: {{ .Values.env.AWS_SECRET_ACCESS_KEY | quote  }}
+  AWS_STORAGE_BUCKET_NAME: {{ .Values.env.AWS_STORAGE_BUCKET_NAME | quote  }}
+  AWS_STORAGE_PRIVATE_BUCKET_NAME: {{ .Values.env.AWS_STORAGE_PRIVATE_BUCKET_NAME | quote  }}
+  AWS_S3_ENDPOINT_URL: {{ .Values.env.AWS_S3_ENDPOINT_URL | quote  }}
+  AWS_QUERYSTRING_AUTH: {{ .Values.env.AWS_QUERYSTRING_AUTH | quote  }}
+  RERUN_SUBMISSION_LIMIT: {{ .Values.env.RERUN_SUBMISSION_LIMIT | quote  }}
+  ENABLE_SIGN_UP: {{ .Values.env.ENABLE_SIGN_UP | quote  }}
+  ENABLE_SIGN_IN: {{ .Values.env.ENABLE_SIGN_IN | quote  }}

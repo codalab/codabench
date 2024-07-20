@@ -1,0 +1,182 @@
+{{- with .Values.web }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+        - name: django
+          image: "{{ .django.image.repository }}:{{ .django.image.tag }}"
+          command: ["bash", "-c", "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"]
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "./manage.py migrate && ./manage.py generate_data && ./manage.py collectstatic --noinput"]
+          env:
+            - name: ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: ALLOWED_HOSTS
+            - name: DATABASE_URL
+              value: "postgres://{{ $.Values.env.DB_USERNAME }}:{{ $.Values.env.DB_PASSWORD }}@{{ $.Values.env.DB_HOST }}:{{ $.Values.env.DB_PORT }}/{{ $.Values.env.DB_NAME }}"
+            - name: AWS_S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_S3_ENDPOINT_URL
+            - name: AWS_STORAGE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_STORAGE_BUCKET_NAME
+            - name: AWS_STORAGE_PRIVATE_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_STORAGE_PRIVATE_BUCKET_NAME
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_QUERYSTRING_AUTH
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: AWS_QUERYSTRING_AUTH
+            - name: DJANGO_SETTINGS_MODULE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: DJANGO_SETTINGS_MODULE
+          volumeMounts:
+            - name: staticfiles
+              mountPath: /app/src/staticfiles
+            - name: codalab-tmp
+              mountPath: /codalab_tmp
+            - name: backups
+              mountPath: /app/backups
+            - name: logs
+              mountPath: /app/logs
+          ports:
+            - containerPort: 8000
+          stdin: true
+          tty: true
+        - name: site-worker
+          image: "{{ .django.image.repository }}:{{ .django.image.tag }}"
+          command: ["bash", "-c", "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+          workingDir: /app/src
+          env:
+            - name: DATABASE_URL
+              value: "postgres://{{ $.Values.env.DB_USERNAME }}:{{ $.Values.env.DB_PASSWORD }}@{{ $.Values.env.DB_HOST }}:{{ $.Values.env.DB_PORT }}/{{ $.Values.env.DB_NAME }}"
+            - name: DJANGO_SETTINGS_MODULE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: DJANGO_SETTINGS_MODULE
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: RABBITMQ_PORT
+      volumes:
+        - name: backups
+          persistentVolumeClaim:
+            claimName: postgres-backup-postgres-0
+        - name: codalab-tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: staticfiles
+          persistentVolumeClaim:
+            claimName: caddy-staticfiles
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy
+  template:
+    metadata:
+      labels:
+        app: caddy
+    spec:
+      containers:
+        - name: caddy
+          image: "{{ .caddy.image.repository }}:{{ .caddy.image.tag }}"
+          env:
+            - name: ACME_AGREE
+              value: "true"
+            - name: DOMAIN_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: DOMAIN_NAME
+            - name: TLS_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-config
+                  key: TLS_EMAIL
+          volumeMounts:
+            - name: caddy-config
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+            - name: staticfiles
+              mountPath: /var/www/django/static
+            - name: caddydata
+              mountPath: /data
+            - name: caddyconfig
+              mountPath: /config
+            - name: caddylog
+              mountPath: /var/log/
+          ports:
+            - containerPort: 443
+            - containerPort: 80
+      volumes:
+        - name: caddy-config
+          configMap:
+            name: caddy-config
+        - name: staticfiles
+          persistentVolumeClaim:
+            claimName: caddy-staticfiles
+        - name: caddydata
+          emptyDir: {}
+        - name: caddyconfig
+          emptyDir: {}
+        - name: caddylog
+          emptyDir: {}
+{{- end }}
