@@ -67,7 +67,8 @@ env:
   SUBMISSIONS_API_URL: "http://django:8000/api"
   MAX_EXECUTION_TIME_LIMIT: 600
 
-  DOMAIN_NAME: "localhost:80"
+  # DOMAIN_NAME: "localhost:80"
+  DOMAIN_NAME: "marmot-first-routinely.ngrok-free.app:80"
   TLS_EMAIL: "your@email.com"
 
   RABBITMQ_HOST: "rabbitmq"
@@ -90,7 +91,7 @@ env:
   AWS_SECRET_ACCESS_KEY: "testsecret"
   AWS_STORAGE_BUCKET_NAME: "public"
   AWS_STORAGE_PRIVATE_BUCKET_NAME: "private"
-  AWS_S3_ENDPOINT_URL: "http://minio:9000/"
+  AWS_S3_ENDPOINT_URL: "https://marmot-first-routinely.ngrok-free.app/"
   AWS_QUERYSTRING_AUTH: "False"
 
   RERUN_SUBMISSION_LIMIT: 30

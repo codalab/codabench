@@ -9,10 +9,10 @@ data:
       tls {$TLS_EMAIL}
 
 
-      # Test HTTPS setup
-      tls {$TLS_EMAIL} {
-        ca https://acme-staging-v02.api.letsencrypt.org/directory
-      }
+      # # Test HTTPS setup
+      # tls {$TLS_EMAIL} {
+      #   ca https://acme-staging-v02.api.letsencrypt.org/directory
+      # }
 
       
       # Removing some headers for improved security:
@@ -25,8 +25,17 @@ data:
       @noStatic {
         not path /static/*
         not path /media/*
+        not path /public/*
+        not path /private/*
+      }
+
+      @objectStorage {
+        path /public/*
+        path /private/*
       }
       
+      reverse_proxy @objectStorage minio:9000
+
       # Serving dynamic requests:
       reverse_proxy @noStatic django:8000
 

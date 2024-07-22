@@ -17,10 +17,10 @@ spec:
         - name: django
           image: "{{ .django.image.repository }}:{{ .django.image.tag }}"
           command: ["bash", "-c", "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"]
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/sh", "-c", "./manage.py migrate && ./manage.py generate_data && ./manage.py collectstatic --noinput"]
+          # lifecycle:
+          #   postStart:
+          #     exec:
+          #       command: ["/bin/sh", "-c", "./manage.py migrate && ./manage.py generate_data && ./manage.py collectstatic --noinput"]
           env:
             - name: ALLOWED_HOSTS
               valueFrom:
