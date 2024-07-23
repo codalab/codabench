@@ -15,6 +15,7 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
+from django.http import StreamingHttpResponse
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
@@ -22,6 +23,7 @@ from api.serializers.submissions import SubmissionCreationSerializer, Submission
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
+
 
 logger = logging.getLogger()
 
@@ -309,6 +311,27 @@ class SubmissionViewSet(ModelViewSet):
         for submission in qs:
             submission.re_run()
         return Response({})
+
+
+    # # New methods impleted !! 
+    @action(detail=False, methods=['get'])
+    def download_many(self, request):
+        pks = request.query_params.get('pks')
+        if pks:
+            pks = json.loads(pks)  # Convert JSON string to list
+
+        # Doing a local import here to avoid circular imports
+        from competitions.tasks import stream_batch_download
+
+        # Call the task and get the result (stream)
+        # in_memory_zip = stream_batch_download.apply_async((pks,)).get()
+        in_memory_zip = stream_batch_download(pks)
+
+        # Stream the response
+        response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
+
+        return response
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
