@@ -267,14 +267,13 @@ def send_child_id(submission, child_id):
     })
 
 
-def retrieve_data(url,data=None):
+def retrieve_data(url, data=None):
     with closing(urlopen(url, data)) as fp:
         headers = fp.info()
 
-        bs = 1024*8
+        bs = 1024 * 8
         size = -1
         read = 0
-        blocknum = 0
         if "content-length" in headers:
             size = int(headers["Content-Length"])
 
@@ -309,7 +308,7 @@ def zip_generator(submission_pks):
     return in_memory_zip
 
 
-@app.task(queue='site-worker', soft_time_limit=60*60)
+@app.task(queue='site-worker', soft_time_limit=60 * 60)
 def stream_batch_download(submission_pks):
     # logger.info("In stream_batch_download")
     # logger.info(submission_pks)

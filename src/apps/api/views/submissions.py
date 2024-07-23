@@ -312,25 +312,20 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
-
-    # # New methods impleted !! 
+    # New methods impleted!
     @action(detail=False, methods=['get'])
     def download_many(self, request):
         pks = request.query_params.get('pks')
         if pks:
             pks = json.loads(pks)  # Convert JSON string to list
-
         # Doing a local import here to avoid circular imports
         from competitions.tasks import stream_batch_download
-
         # Call the task and get the result (stream)
         # in_memory_zip = stream_batch_download.apply_async((pks,)).get()
         in_memory_zip = stream_batch_download(pks)
-
         # Stream the response
         response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
-
         return response
 
     @action(detail=True, methods=('GET',))
