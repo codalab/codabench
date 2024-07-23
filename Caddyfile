@@ -29,7 +29,8 @@
 
   # Logs:
   log {
-    output stdout
-    format console
+    output file /var/log/caddyaccess.log {
+      roll_disabled
+    }
   }
 }

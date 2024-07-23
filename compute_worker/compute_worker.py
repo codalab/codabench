@@ -82,9 +82,6 @@ AVAILABLE_STATUSES = (
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
-# We could probably depreciate this now that we can specify the executable
-elif os.environ.get("NVIDIA_DOCKER"):
-    CONTAINER_ENGINE_EXECUTABLE = "nvidia-docker"
 else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
 
@@ -653,6 +650,10 @@ class Run:
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
+
+        # GPU or not
+        if os.environ.get("USE_GPU"):
+            engine_cmd.extend(['--gpus', 'all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring

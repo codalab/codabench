@@ -31,7 +31,7 @@ from utils.data import pretty_bytes
 logger = logging.getLogger()
 
 
-@app.task(queue="site-worker", soft_time_limit=60 * 60 * 12)  # 12 hours
+@app.task(queue="site-worker", soft_time_limit=60 * 60 * 24)  # 24 hours
 def create_storage_analytics_snapshot():
     # Timer started !
     logger.info("Task create_storage_analytics_snapshot started")
