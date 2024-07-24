@@ -325,14 +325,14 @@ class SubmissionViewSet(ModelViewSet):
         submission = Submission.objects.get(pk=pk)
         # Check if competition show visualization is true
         if submission.phase.competition.enable_detailed_results:
-            # get submission's competition participants
-            participants = submission.phase.competition.participants.all()
-            participant_usernames = [participant.user.username for participant in participants]
+            # get submission's competition approved participants
+            approved_participants = submission.phase.competition.participants.filter(status=CompetitionParticipant.APPROVED)
+            participant_usernames = [participant.user.username for participant in approved_participants]
 
             # check if in this competition
             # user is collaborator
             # or
-            # user is participant
+            # user is approved participant
             # or
             # user is creator
             # or
