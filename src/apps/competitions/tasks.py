@@ -20,6 +20,10 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
+from urllib.request import urlopen
+from contextlib import closing
+from urllib.error import ContentTooShortError
+
 from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
@@ -261,6 +265,54 @@ def send_child_id(submission, child_id):
         "kind": "child_update",
         "child_id": child_id
     })
+
+
+def retrieve_data(url, data=None):
+    with closing(urlopen(url, data)) as fp:
+        headers = fp.info()
+
+        bs = 1024 * 8
+        size = -1
+        read = 0
+        if "content-length" in headers:
+            size = int(headers["Content-Length"])
+
+        while True:
+            block = fp.read(bs)
+            if not block:
+                break
+            read += len(block)
+            yield(block)
+
+    if size >= 0 and read < size:
+        raise ContentTooShortError(
+            "retrieval incomplete: got only %i out of %i bytes"
+            % (read, size))
+
+
+def zip_generator(submission_pks):
+    in_memory_zip = BytesIO()
+    # logger.info("IN zip generator")
+    with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for submission_id in submission_pks:
+            submission = Submission.objects.get(id=submission_id)
+            # logger.info(submission.data.data_file)
+
+            short_name = submission.data.data_file.name.split('/')[-1]
+            url = make_url_sassy(path=submission.data.data_file.name)
+            for block in retrieve_data(url):
+                zip_file.writestr(short_name, block)
+
+    in_memory_zip.seek(0)
+
+    return in_memory_zip
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 60)
+def stream_batch_download(submission_pks):
+    # logger.info("In stream_batch_download")
+    # logger.info(submission_pks)
+    return zip_generator(submission_pks)
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
