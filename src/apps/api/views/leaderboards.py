@@ -1,7 +1,7 @@
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from api.permissions import LeaderboardNotHidden, LeaderboardIsOrganizerOrCollaborator
+from rest_framework.status import HTTP_405_METHOD_NOT_ALLOWED
+from api.permissions import LeaderboardNotHidden
 from api.serializers.leaderboards import LeaderboardEntriesSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from leaderboards.models import Leaderboard, SubmissionScore
@@ -10,23 +10,31 @@ from leaderboards.models import Leaderboard, SubmissionScore
 class LeaderboardViewSet(ModelViewSet):
     queryset = Leaderboard.objects.all()
     serializer_class = LeaderboardEntriesSerializer
+    http_method_names = ['get']  # Only allow GET requests
 
-    # TODO: The retrieve and list actions are the only ones used, apparently. Delete other permission checks soon!
-    def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            raise Exception('Unexpected code branch execution.')
-            self.permission_classes = [LeaderboardIsOrganizerOrCollaborator]
-        elif self.action in ['create']:
-            raise Exception('Unexpected code branch execution.')
-            self.permission_classes = [IsAuthenticated]
-        elif self.action in ['retrieve', 'list']:
-            self.permission_classes = [LeaderboardNotHidden]
+    def create(self, request, *args, **kwargs):
+        return Response({'detail': 'Method not allowed.'}, status=HTTP_405_METHOD_NOT_ALLOWED)
 
-        return [permission() for permission in self.permission_classes]
+    def update(self, request, *args, **kwargs):
+        return Response({'detail': 'Method not allowed.'}, status=HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response({'detail': 'Method not allowed.'}, status=HTTP_405_METHOD_NOT_ALLOWED)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response({'detail': 'Method not allowed.'}, status=HTTP_405_METHOD_NOT_ALLOWED)
 
     def list(self, request, *args, **kwargs):
         # Return an empty list for the leaderboard-list endpoint
         return Response([])
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return []  # No permissions, effectively disables the action
+        elif self.action in ['retrieve', 'list']:
+            self.permission_classes = [LeaderboardNotHidden]
+
+        return [permission() for permission in self.permission_classes]
 
 
 class SubmissionScoreViewSet(ModelViewSet):

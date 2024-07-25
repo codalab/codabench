@@ -171,7 +171,12 @@
                         <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
                             <div class="ui checkbox">
                                 <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
-                                <label>Auto migrate to this phase</label>
+                                <label>
+                                    Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
+                                                               data-inverted=""
+                                                               data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -670,7 +675,6 @@
          Events
         ---------------------------------------------------------------------*/
         CODALAB.events.on('competition_loaded', function (competition) {
-            debugger
             self.phases = competition.phases
             self.form_updated()
         })

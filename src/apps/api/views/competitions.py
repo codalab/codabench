@@ -220,7 +220,7 @@ class CompetitionViewSet(ModelViewSet):
         data = request.data
         if 'leaderboards' in data:
             leaderboard_data = data['leaderboards'][0]
-            if(leaderboard_data['id']):
+            if leaderboard_data['id']:
                 leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                 leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
             else:
@@ -538,7 +538,7 @@ class CompetitionViewSet(ModelViewSet):
         qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
-
+        queryset = queryset.annotate(participant_count=Count(F('participants'), distinct=True))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
