@@ -538,7 +538,7 @@ class CompetitionViewSet(ModelViewSet):
         qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
-
+        queryset = queryset.annotate(participant_count=Count(F('participants'), distinct=True))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

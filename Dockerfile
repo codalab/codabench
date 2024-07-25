@@ -13,8 +13,8 @@ RUN poetry config virtualenvs.create false
 RUN poetry config virtualenvs.in-project false
 
 COPY pyproject.toml ./
-COPY poetry.lock ./
 
+RUN poetry lock
 RUN poetry install
 
 WORKDIR /app

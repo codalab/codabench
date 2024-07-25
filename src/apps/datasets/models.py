@@ -102,7 +102,9 @@ class Data(ChaHubSaveMixin, models.Model):
             Q(phases__tasks__ingestion_program=self) |
             Q(phases__tasks__input_data=self) |
             Q(phases__tasks__reference_data=self) |
-            Q(phases__tasks__scoring_program=self)
+            Q(phases__tasks__scoring_program=self) |
+            Q(phases__starting_kit=self) |
+            Q(phases__public_data=self)
         ).values('pk', 'title').distinct()
         return competitions_in_use
 
