@@ -207,14 +207,28 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
+
         input_data = instance.task.input_data
         reference_data = instance.task.reference_data
         ingestion_program = instance.task.ingestion_program
         scoring_program = instance.task.scoring_program
+
+        # Some tasks may not have input data, reference data and ingestion program
+        # Checking all the datasets and programs and adding them to dataset_list_ids
+        dataset_list_ids = []
+        if input_data:
+            dataset_list_ids.append(input_data.id)
+        if reference_data:
+            dataset_list_ids.append(reference_data.id)
+        if ingestion_program:
+            dataset_list_ids.append(ingestion_program.id)
+        if scoring_program:
+            dataset_list_ids.append(scoring_program.id)
+
+        # Serializing the datasets
         try:
-            dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
             qs = Data.objects.filter(id__in=dataset_list_ids)
             return DataDetailSerializer(qs, many=True).data
-        except AttributeError:
-            print("This phase task has no datasets")
-            return None
+        except Exception:
+            # No datasets or programs to return
+            return []
