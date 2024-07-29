@@ -475,7 +475,7 @@ def create_storage_analytics_snapshot():
 
     # Log the results
     log_file = (
-        "/app/logs/" +
+        "/app/var/logs/" +
         "db_storage_inconsistency_" +
         current_datetime.strftime("%Y%m%d-%H%M%S") +
         ".log"

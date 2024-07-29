@@ -346,6 +346,12 @@ CODALAB.api = {
     get_users_usage: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
     },
+    delete_orphan_files: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}analytics/delete_orphan_files/`)
+    },
+    get_orphan_files: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/get_orphan_files/`)
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/

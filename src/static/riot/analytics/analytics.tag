@@ -132,6 +132,11 @@
             <a class="item" data-tab="usage-history">Usage history</a>
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
+            <div class="delete-oprhans-container">
+                <button class="ui red button" onclick="{showConfirmationModal}">
+                    <i class="icon warning"></i>Delete orphan files
+                </button>
+            </div>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="usage-history">
@@ -145,6 +150,27 @@
         <div class="ui bottom attached tab segment" data-tab="users-usage">
             <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
         </div>
+
+        <!--  Orphan Deletion Modal  -->
+        <div ref="confirmation_modal" class="ui small modal">
+        <div class="header">
+            Delete orphan files
+        </div>
+        <div class="content">
+            <h4>You are about to delete {nb_orphan_files} orphan files.</h4>
+            <h5><i>Note: The number of orphan files displayed is based on the most recent storage inconsistency analytics. Its value will be updated during the next storage analytics task.</i></h5>
+            <h3>This operation is irreversible!</h3>
+            <h3>Do you want to proceed ?</h3>
+        </div>
+        <div class="actions">
+            <button class="ui icon button {delete_button_color} { loading: delete_button_loading } { disabled: delete_button_disabled }" onclick="{deleteOrphanFiles}">
+                <i if={delete_button_color=="green"} class="check icon"></i>
+                {delete_button_text}
+            </button>
+            <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
     </div>
 
     <script>
@@ -184,6 +210,12 @@
         self.users_data;
 
         /****** Storage *****/
+
+        self.nb_orphan_files = 0
+        self.delete_button_color = "red"
+        self.delete_button_loading = false
+        self.delete_button_disabled = false
+        self.delete_button_text = "Yes, delete all orphan files"
 
         self.one("mount", function () {
             // Semantic UI
@@ -294,6 +326,7 @@
             self.update_analytics(self.start_date, null, self.time_unit);
             self.time_range_shortcut("month");
             self.update_chart_resolution("day");
+            self.getOrphanFiles();
         })
 
         /*---------------------------------------------------------------------
@@ -482,6 +515,53 @@
             }
         }
 
+        // Orhpan related
+        self.showConfirmationModal = function() {
+            $(self.refs.confirmation_modal).modal('show');
+            self.delete_button_color = "red";
+            self.delete_button_loading = false;
+            self.delete_button_disabled = false;
+            self.delete_button_text = "Yes, delete all orphan files";
+            self.update();
+        }
+
+        self.deleteOrphanFiles = function() {
+            self.delete_button_loading = true
+            self.delete_button_disabled = true
+            self.update()
+            CODALAB.api.delete_orphan_files()
+                .done(function (data) {
+                    console.log("done", data);
+                    self.delete_button_color = "green";
+                    self.delete_button_disabled = true;
+                    self.delete_button_text = "Deletion Successful";
+                })
+                .fail(function (response) {
+                    console.log("fail response=", response);
+                    toastr.error("Deletion failed, error occurred")
+                    self.delete_button_color = "red";
+                    self.delete_button_disabled = false;
+                    self.delete_button_text = "Deletion Failed";
+                })
+                .always(function () {
+                    self.delete_button_loading = false
+                    self.update()
+                });
+        }
+
+        self.getOrphanFiles = function() {
+            CODALAB.api.get_orphan_files()
+                .done(function (data) {
+                    console.log("get_orphan_files success. Response", data);
+                    self.nb_orphan_files = data.data.length
+                    self.update({nb_orphan_files: self.nb_orphan_files});
+                })
+                .fail(function (response) {
+                    console.log("get_orphan_files failed. Response=", response);
+                    toastr.error("Get oprhan files failed, error occurred")
+                });
+        }
+
     </script>
     <style>
         analytics {
@@ -532,6 +612,11 @@
 
         .chart-container {
             min-height: 450px;
+        }
+
+        .delete-oprhans-container {
+            margin-bottom: 5px;
+            margin-left: auto;
         }
     </style>
 </analytics>
