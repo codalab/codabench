@@ -23,15 +23,17 @@ CODALAB.api = {
          Competitions
     ---------------------------------------------------------------------*/
     get_competition: function (pk, secret_key) {
-
+        // adding a key from_inside to differentiate between api calls within codabench and outside api calls
         if(secret_key == undefined || secret_key == 'None'){
-            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/")
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/?from_inside=true")
         }else{
-            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/?secret_key="+secret_key)
+            return CODALAB.api.request('GET', URLS.API + "competitions/" + pk + "/?from_inside=true&?secret_key="+secret_key)
         }
         
     },
     get_competitions: function (query) {
+        // adding a key from_inside to differentiate between api calls within codabench and outside api calls
+        query["from_inside"] = true
         return CODALAB.api.request('GET', URLS.API + "competitions/", query)
     },
     get_public_competitions: function (query) {

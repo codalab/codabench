@@ -41,8 +41,12 @@ class CompetitionTests(APITestCase):
         self.client.login(username='creator', password='creator')
         url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
 
+        # Add the from_inside GET parameter
+        # This is required because with from_inside, the returned data will have whitelist emails
+        url_with_param = f"{url}?from_inside=true"
+
         # Get comp data to work with
-        data = self._prepare_competition_data(url)
+        data = self._prepare_competition_data(url_with_param)
 
         data["collaborators"] = [self.other_user.pk]
 
@@ -63,8 +67,12 @@ class CompetitionTests(APITestCase):
         self.client.login(username='creator', password='creator')
         url = reverse('competition-detail', kwargs={"pk": self.comp.pk})
 
+        # Add the from_inside GET parameter
+        # This is required because with from_inside, the returned data will have whitelist emails
+        url_with_param = f"{url}?from_inside=true"
+
         # Get comp data to work with
-        data = self._prepare_competition_data(url)
+        data = self._prepare_competition_data(url_with_param)
 
         data["collaborators"] = [self.other_user.pk]
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
