@@ -412,6 +412,20 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         # Get the user's display name if not None, otherwise return username
         return obj.created_by.display_name if obj.created_by.display_name else obj.created_by.username
 
+    def to_representation(self, instance):
+        """
+        This is a built-in function where we can choose which fields to include in the serializer's output
+        """
+        representation = super().to_representation(instance)
+        user = self.context['request'].user
+
+        # If user is not admin/creator/collaborator then do not include secret_key and whitelist_emails
+        if not instance.user_has_admin_permission(user):
+            representation.pop('secret_key', None)
+            representation.pop('whitelist_emails', None)
+
+        return representation
+
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
