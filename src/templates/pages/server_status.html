@@ -6,7 +6,7 @@
 
 {% block content %}
     <div class="ui container">
-        <h1>Recent submissions (up to 250 or 2 days old)</h1>
+        <h1>Server Status</h1>
         <label>
             <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show child submissions
         </label>
@@ -55,48 +55,31 @@
             </tbody>
         </table>
 
+        <!-- Pagination Div -->
+        {% if is_paginated %}
+        <div class="pagination-nav">
+            {% if submissions.has_previous %}
+            <span class="float-left">
+                <a class="ui button" href="?page=1{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">First</a>
+                <a class="ui button" href="?page={{ submissions.previous_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Previous</a>
+            </span>
+            {% endif %}
+            
+            <span class="center">
+                Page {{ submissions.number }} of {{ paginator.num_pages }}
+            </span>
+            
+            
+            {% if submissions.has_next %}
+            <span class="float-right">
+                <a class="ui button" href="?page={{ submissions.next_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Next</a>
+            <a class="ui button" href="?page={{ paginator.num_pages }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Last</a>
+            </span>
+            {% endif %}
 
-        {% if user.is_superuser %}
-        <h1>Monitor queues</h1>
-        <div id="external_monitors" class="ui two column grid">
-            <div class="column">
-                <div class="ui fluid card">
-                    <a class="image" href="{{ RABBITMQ_MANAGEMENT_URL}}" target="_blank">
-                        <img class="ui large image" src="/static/img/RabbitMQ.png">
-                    </a>
-                    <div class="content">
-                        <a class="header" href="{{ RABBITMQ_MANAGEMENT_URL }}" target="_blank">RabbitMQ</a>
-                        <div class="meta">
-                            This page allows admins to view connections, queued messages, message rates, channels,
-                            exchanges, and other administrative features relating to RabbitMQ e.g. Creating users,
-                            adding v-hosts, and creating policies.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="column">
-                <div class="ui fluid card">
-                    <a class="image" href="{{ FLOWER_URL }}" target="_blank">
-                        <img class="ui large image" src="/static/img/Flower.png">
-                    </a>
-                    <div class="content">
-                        <a class="header" href="{{ FLOWER_URL }}" target="_blank">Flower</a>
-                        <div class="meta">
-                            Flower is a powerful web-based Celery monitoring tool designed to keep track of our
-                            tasks.
-                            Admins may view the state of which tasks were run, with what arguments, and many more
-                            features. Here you may also view which queues your celery workers are consuming, and the
-                            state of any tasks in them. At last, there is also a great monitoring page for viewing
-                            the
-                            systemic impact of your workers.
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         {% endif %}
     </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const checkbox = document.getElementById("show_child_checkbox");
