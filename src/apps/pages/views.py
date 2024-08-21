@@ -57,8 +57,8 @@ class ServerStatusView(TemplateView):
         page = self.request.GET.get('page', 1)
         submissions_per_page = 50
 
-        # Get all submissions
-        qs = Submission.objects.all()
+        # Start with an empty queryset
+        qs = Submission.objects.none()
 
         # Only if user is authenticated
         if self.request.user.is_authenticated:
@@ -67,12 +67,12 @@ class ServerStatusView(TemplateView):
             # and
             # submissions running on queue which belongs to this user
             if not self.request.user.is_superuser:
-                qs = qs.filter(
+                qs = Submission.objects.filter(
                     Q(owner=self.request.user) |
                     Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
                 )
-        else:
-            qs = qs.none()  # This returns an empty queryset
+            else:
+                qs = Submission.objects.all()
 
         # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
