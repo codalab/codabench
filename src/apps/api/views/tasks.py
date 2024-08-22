@@ -84,9 +84,26 @@ class TaskViewSet(ModelViewSet):
         return context
 
     def update(self, request, *args, **kwargs):
+
+        # Get task
         task = self.get_object()
+
+        # Raise error if user is not the creator of the task or not a super user
         if request.user != task.created_by and not request.user.is_superuser:
             raise PermissionDenied("Cannot update a task that is not yours")
+
+        # If the key is not in the request data, set the corresponding field to None
+        # No condition for scoring program because a task must have a scoring program
+        if "ingestion_program" not in request.data:
+            task.ingestion_program = None
+        if "input_data" not in request.data:
+            task.input_data = None
+        if "reference_data" not in request.data:
+            task.reference_data = None
+
+        # Save the task to apply the changes
+        task.save()
+
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
