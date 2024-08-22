@@ -1,14 +1,11 @@
 {% extends 'emails/base_email.html' %}
 
 {% block content %}
-    <p>We're writing to inform you about your application for the
-    <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
-    competition. While your application was carefully considered, we regret to inform you that your participation privileges 
-    have been denied. We encourage you to review the competition details and rules to see if there are areas where you can 
-    improve your application for future competitions. </p>
-    <p>Thank you for your interest in the competition. We wish you the best of luck in your future endeavors.
+    <p>
+        Your application for the
+        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
+        competition has been denied. You can reach out to the organizing team for more details.
     </p>
-
 {% endblock %}
 
 
