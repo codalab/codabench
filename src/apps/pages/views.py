@@ -3,7 +3,7 @@ from django.utils.timezone import now
 from django.views.generic import TemplateView
 from django.db.models import Count, Q
 
-from competitions.models import Competition, Submission, CompetitionParticipant
+from competitions.models import Competition, Submission
 from profiles.models import User
 from announcements.models import Announcement, NewsPost
 
@@ -22,17 +22,13 @@ class HomeView(TemplateView):
             unpublished_comps=Count('pk', filter=Q(published=False)),
         )
 
-        total_competitions = data['count']
         public_competitions = data['published_comps']
         users = User.objects.all().count()
-        competition_participants = CompetitionParticipant.objects.all().count()
         submissions = Submission.objects.all().count()
 
         context['general_stats'] = [
-            {'label': "Total Competitions", 'count': total_competitions},
             {'label': "Public Competitions", 'count': public_competitions},
             {'label': "Users", 'count': users},
-            {'label': "Competition Participants", 'count': competition_participants},
             {'label': "Submissions", 'count': submissions},
         ]
 
@@ -63,20 +59,24 @@ class ServerStatusView(TemplateView):
         # Get all submissions
         qs = Submission.objects.all()
 
-        # If user is not super user then:
-        # filter this user's own submissions
-        # and
-        # submissions running on queue which belongs to this user
-        if not self.request.user.is_superuser:
-            qs = qs.filter(
-                Q(owner=self.request.user) |
-                Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
-            )
+        # Only if user is authenticated
+        if self.request.user.is_authenticated:
+            # If user is not super user then:
+            # filter this user's own submissions
+            # and
+            # submissions running on queue which belongs to this user
+            if not self.request.user.is_superuser:
+                qs = qs.filter(
+                    Q(owner=self.request.user) |
+                    Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                )
+        else:
+            qs = qs.none()  # This returns an empty queryset
 
-        # filter for fetching last 2 days submissions
+        # Filter for fetching last 2 days submissions
         qs = qs.filter(created_when__gte=now() - timedelta(days=2))
 
-        # filter out child submissions i.e. submission has no parent
+        # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
             qs = qs.filter(parent__isnull=True)
 
@@ -90,9 +90,18 @@ class ServerStatusView(TemplateView):
         for submission in context['submissions']:
             # Get filesize from each submissions's data
             submission.file_size = self.format_file_size(submission.data.file_size)
+
             # Get queue from each submission
-            queue_name = "*" if submission.queue is None else submission.queue.name
+            queue_name = ""
+            # if submission has parent get queue from parent otherwise from the submission iteset
+            if submission.parent:
+                queue_name = "*" if submission.parent.queue is None else submission.parent.queue.name
+            else:
+                queue_name = "*" if submission.queue is None else submission.queue.name
             submission.competition_queue = queue_name
+
+            # Add submission owner display name
+            submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username
 
         return context
 
@@ -102,7 +111,7 @@ class ServerStatusView(TemplateView):
         """
         try:
             n = float(file_size)
-        except ValueError:
+        except Exception:
             return ""
 
         units = ['KB', 'MB', 'GB']

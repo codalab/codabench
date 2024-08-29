@@ -33,7 +33,7 @@
                                  data-tab="_tab_page_term">
                                 Terms
                             </div>
-                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <div  if={competition.files && competition.files.length != 0} class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
                             </div>
                         </div>
@@ -50,17 +50,25 @@
                             <div class="ui" id="page_term">
                             </div>
                         </div>
-                        <!--  Files  -->
+                        
+                        <!--  Files page  -->
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
-                                <table class="ui celled table">
+                                <!--  Login message if not loggedin  -->
+                                <div if="{!CODALAB.state.user.logged_in}" class="ui yellow message">
+                                    <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                                    <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to view availbale files.
+                                </div>
+
+                                <!--  Files table if loggedin  -->
+                                <table if="{CODALAB.state.user.logged_in}" class="ui celled table">
                                     <thead>
                                     <tr>
                                         <th class="index-column">Download</th>
                                         <th>Phase</th>
                                         <th>Task</th>
                                         <th>Type</th>
-                                        <th>Available <span class="ui mini circular icon button"
+                                        <th if="{competition.is_admin}">Available <span class="ui mini circular icon button"
                                                           data-tooltip="Available for download to participants."
                                                           data-position="top center">
                                                           <i class="question icon"></i>
@@ -80,7 +88,7 @@
                                         <td>{file.task}</td>
                                         <td>{file.type}</td>
                                         <!--  <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>  -->
-                                        <td class="center aligned">
+                                        <td if="{competition.is_admin}" class="center aligned">
                                             <i if="{file.available}" class="checkmark box icon green"></i>
                                         </td>
                                         <td>{filesize(file.file_size * 1024)}</td>

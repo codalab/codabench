@@ -177,7 +177,9 @@
                         </div>
                     {% else %}
                         <a href="{% url 'accounts:login' %}" class="ui button style_button item">Login</a>
-                        <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                        {% if ENABLE_SIGN_UP %}
+                            <a href="{% url 'accounts:signup' %}" class="ui button style_button item">Sign-up</a>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -243,6 +245,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/filesize/4.2.1/filesize.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.address/1.6/jquery.address.min.js" integrity="sha256-mLCPYHfNREhSETFQGuowilY3zBAZGnDO2cxCnCEm8/I=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.0.1/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@^2.0.5"></script>
     <!-- Markdown-->
     <script src="https://cdn.jsdelivr.net/npm/marked@3.0.7/marked.min.js"></script>
     <!-- Latex -->
@@ -254,10 +257,14 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        MAX_EXECUTION_TIME_LIMIT = "{{ MAX_EXECUTION_TIME_LIMIT }}"
         CURRENT_DATE_TIME = "{% now "c" %}"
         CODALAB = {
             state: {
-                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}"),
+                public_env_variables: {
+                    MAX_EXECUTION_TIME_LIMIT:MAX_EXECUTION_TIME_LIMIT
+                }
             }
         }
 

@@ -116,7 +116,7 @@
                 <tbody>
                 <tr>
                     <td>{selected_row.key}</td>
-                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.created_by}</a></td>
+                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>
@@ -457,6 +457,10 @@
             }
             catch(err) {
                 // return empty string if parsing fails
+                return ""
+            }
+            // a file_size of -1 indicated an error
+            if(n < 0) {
                 return ""
             }
             // constant units to show with files size

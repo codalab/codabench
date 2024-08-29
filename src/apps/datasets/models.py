@@ -1,16 +1,23 @@
 import uuid
+import botocore
+import logging
 
+import botocore.exceptions
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
+from decimal import Decimal
 
 from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from competitions.models import Competition
+
+
+logger = logging.getLogger()
 
 
 class Data(ChaHubSaveMixin, models.Model):
@@ -52,7 +59,7 @@ class Data(ChaHubSaveMixin, models.Model):
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
-    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
 
     # This is true if the Data model was created as part of unpacking a competition. Competition bundles themselves
     # are NOT marked True, since they are not created by unpacking!
@@ -65,13 +72,21 @@ class Data(ChaHubSaveMixin, models.Model):
         return reverse('datasets:download', kwargs={'key': self.key})
 
     def save(self, *args, **kwargs):
-        if not self.file_size and self.data_file:
+        if self.data_file and (not self.file_size or self.file_size == -1):
             try:
-                # save file size as kbs
+                # save file size as KiB
+                # self.data_file.size returns bytes
                 self.file_size = self.data_file.size / 1024
             except TypeError:
                 # file returns a None size, can't divide None / 1024
-                self.file_size = 0
+                # -1 indicates an error
+                self.file_size = Decimal(-1)
+            except botocore.exceptions.ClientError:
+                # file might not exist in the storage
+                logger.warning(f"The data_file of Data id={self.id} does not exist in the storage. data_file and file_size has been cleared")
+                self.file_size = Decimal(0)
+                self.data_file = None
+
         if not self.name:
             self.name = f"{self.created_by.username} - {self.type}"
         return super().save(*args, **kwargs)
@@ -87,7 +102,9 @@ class Data(ChaHubSaveMixin, models.Model):
             Q(phases__tasks__ingestion_program=self) |
             Q(phases__tasks__input_data=self) |
             Q(phases__tasks__reference_data=self) |
-            Q(phases__tasks__scoring_program=self)
+            Q(phases__tasks__scoring_program=self) |
+            Q(phases__starting_kit=self) |
+            Q(phases__public_data=self)
         ).values('pk', 'title').distinct()
         return competitions_in_use
 

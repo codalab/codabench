@@ -18,8 +18,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-from rest_framework_extensions.cache.decorators import cache_response
-from rest_framework_extensions.key_constructor.constructors import DefaultListKeyConstructor
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
@@ -112,32 +110,34 @@ class CompetitionViewSet(ModelViewSet):
             # not called from search bar
             # not called with a valid secret key
             if (not mine) and (not participating_in) and (not secret_key) and (not search_query):
+                # If authenticated user is not super user
+                if not self.request.user.is_superuser:
+                    # Return the following ---
+                    # All competitions which belongs to you (private or public)
+                    # And competitions where you are admin
+                    # And public competitions
+                    # And competitions where you are approved participant
+                    # this filters out all private compettions from other users
+                    base_qs = qs.filter(
+                        (Q(created_by=self.request.user)) |
+                        (Q(collaborators__in=[self.request.user])) |
+                        (Q(published=True) & ~Q(created_by=self.request.user)) |
+                        (Q(participants__user=self.request.user) & Q(participants__status="approved"))
+                    )
 
-                # Return the following ---
-                # All competitions which belongs to you (private or public)
-                # And competitions where you are admin
-                # And public competitions
-                # And competitions where you are approved participant
-                # this filters out all private compettions from other users
-                base_qs = qs.filter(
-                    (Q(created_by=self.request.user)) |
-                    (Q(collaborators__in=[self.request.user])) |
-                    (Q(published=True) & ~Q(created_by=self.request.user)) |
-                    (Q(participants__user=self.request.user) & Q(participants__status="approved"))
-                )
-
-                # Additional condition of action
-                # allow private competition when action is register and has valid secret key
-                if self.request.method == 'POST' and self.action == 'register':
-                    # get secret_key from request data
-                    register_secret_key = self.request.data.get('secret_key', None)
-                    # use secret key if available
-                    if register_secret_key:
-                        qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                    # Additional condition of action
+                    # allow private competition when action is register and has valid secret key
+                    if self.request.method == 'POST' and self.action == 'register':
+                        # get secret_key from request data
+                        register_secret_key = self.request.data.get('secret_key', None)
+                        # use secret key if available
+                        if register_secret_key:
+                            qs = base_qs | qs.filter(Q(secret_key=register_secret_key))
+                        else:
+                            qs = base_qs
                     else:
                         qs = base_qs
-                else:
-                    qs = base_qs
+
                 # select distinct competitions
                 qs = qs.distinct()
 
@@ -195,6 +195,8 @@ class CompetitionViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return CompetitionSerializerSimple
+        if self.action == 'public':
+            return CompetitionSerializerSimple
         elif self.action in ['get_phases', 'results', 'get_leaderboard_frontend_object']:
             return LeaderboardPhaseSerializer
         elif self.request.method == 'GET':
@@ -218,7 +220,7 @@ class CompetitionViewSet(ModelViewSet):
         data = request.data
         if 'leaderboards' in data:
             leaderboard_data = data['leaderboards'][0]
-            if(leaderboard_data['id']):
+            if leaderboard_data['id']:
                 leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                 leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
             else:
@@ -531,14 +533,12 @@ class CompetitionViewSet(ModelViewSet):
         serializer = CompetitionCreationTaskStatusSerializer({"status": "Success. Competition dump is being created."})
         return Response(serializer.data, status=201)
 
-    @cache_response(key_func=DefaultListKeyConstructor())
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(published=True)
+        qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
-
+        queryset = queryset.annotate(participant_count=Count(F('participants'), distinct=True))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -632,8 +632,8 @@ class PhaseViewSet(ModelViewSet):
         phase = self.get_object()
         comp = phase.competition
 
-        # Get submissions
-        submissions = phase.submissions.all()
+        # Get submissions with no parent
+        submissions = phase.submissions.filter(parent__isnull=True)
 
         can_re_run_submissions = False
         error_message = ""
@@ -702,19 +702,19 @@ class PhaseViewSet(ModelViewSet):
         submission_detailed_results = {}
         for submission in query['submissions']:
             # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions with no parent and count all parents without counting the children
+            # count all submissions except:
+            # - child submissions (submissions who has a parent i.e. parent field is not null)
+            # - Failed submissions
+            # - Cancelled submissions
             num_entries = Submission.objects.filter(
-                Q(owner__username=submission['owner']) | Q(parent__owner__username=submission['owner']),
+                Q(owner__username=submission['owner']) |
+                Q(parent__owner__username=submission['owner']),
                 phase=phase,
             ).exclude(
-                parent__isnull=False
+                Q(status=Submission.FAILED) |
+                Q(status=Submission.CANCELLED) |
+                Q(parent__isnull=False)
             ).count()
-
-            # get date of last submission by the owner of this submission for this phase
-            last_entry_date = Submission.objects.filter(owner__username=submission['owner'], phase=phase)\
-                .values('created_when')\
-                .order_by('-created_when')[0]['created_when']\
-                .strftime('%Y-%m-%d')
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
 
@@ -739,7 +739,7 @@ class PhaseViewSet(ModelViewSet):
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
                     'num_entries': num_entries,
-                    'last_entry_date': last_entry_date
+                    'created_when': submission['created_when']
                 })
             for score in submission['scores']:
 

@@ -3,6 +3,7 @@
 
 {% block content %}
 <div class="sixteen wide mobile six wide computer centered column">
+    {% if ENABLE_SIGN_IN %}
     <h2 class="ui blue centered header">
         Login
     </h2>
@@ -52,11 +53,40 @@
             </div>
             <button class="ui fluid blue submit button" type="submit">Log In</button>
             <div class="ui divider"></div>
-            <p>New to us? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+            {% if ENABLE_SIGN_UP %}
+                <p>Don't have an account? <a href="{% url 'accounts:signup' %}">Sign Up</a></p>
+            {% endif %}
             <p><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
 
             <div class="ui error message"></div>
         </form>
     </div>
+    {% endif %}
+
+    <!-- Auth Organization Buttons -->
+    {% if auth_organizations %}
+    <div class="sixteen wide mobile six wide computer centered column">
+        <h3 class="ui centered header">Organization Login</h3>
+        <form method="POST" action="{% url 'oidc_configurations:organization_oidc_login' %}">
+            {% csrf_token %}
+            <div>
+                <input type="checkbox" name="checkbox" id="id_checkbox" required>
+                <label for="id_checkbox">I accept the <a href="https://github.com/codalab/codalab-competitions/wiki/Privacy" target="_blank">terms and conditions</a>.</label>
+            </div>
+            {% for organization in auth_organizations %}
+            <button class="ui fluid primary submit button"
+                    type="submit"
+                    name="organization_oidc_login"
+                    value="{{ organization.id }}"
+                    style="background-color: {{ organization.button_bg_color }};
+                           color: {{ organization.button_text_color }};
+                           margin-bottom:5px;">
+                Login with {{ organization.name }}
+            </button>
+            {% endfor %}
+        </form>
+        
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

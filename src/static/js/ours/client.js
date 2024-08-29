@@ -102,6 +102,9 @@ CODALAB.api = {
     cancel_submission: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
     },
+    run_submission: function (id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/run_submission/`)
+    },
     re_run_submission: function (id) {
         return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
     },
@@ -120,6 +123,31 @@ CODALAB.api = {
     },
     get_submission_detail_result: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
+    },
+    download_many_submissions: function (pks) {
+        console.log('Request bulk');
+        const params = new URLSearchParams({ pks: JSON.stringify(pks) });
+        const url = `${URLS.API}submissions/download_many/?${params}`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.blob();
+        }).then(blob => {
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'bulk_submissions.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }).catch(error => {
+            console.error('Error downloading submissions:', error);
+        });
     },
 
     /*---------------------------------------------------------------------
@@ -165,6 +193,7 @@ CODALAB.api = {
         // Pass the requested file name for the SAS url
         metadata.request_sassy_file_name = data_file.name
         metadata.file_name = data_file.name
+        metadata.file_size = data_file.size
 
         // This will be set on successful dataset creation, then used to complete the dataset upload
         var dataset = {}
@@ -308,11 +337,23 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
+    get_storage_usage_history: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/storage_usage_history/`, filters);
+    },
+    get_competitions_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/competitions_usage/`, filters);
+    },
+    get_users_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/
     get_user_quota_cleanup: () => {
         return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
+    },
+    get_user_quota: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota/`)
     },
     delete_unused_tasks: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)

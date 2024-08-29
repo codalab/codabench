@@ -61,7 +61,7 @@
                     <select name="organizations" id="organization_dropdown" class="ui dropdown">
                         <option value="None">Yourself</option>
                         <option each="{org in organizations}" value="{org.id}">{org.name}</option>
-                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organizaiton</option>
+                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organization</option>
                     </select> 
                     
                 </div>
@@ -488,7 +488,7 @@
 
                         }
                     }
-                    toastr.error("Creation failed, error occurred")
+                    toastr.error(`Creation failed, error occurred: ${response.responseJSON.data_file[0]}`)
                 })
                 .always(function () {
                     setTimeout(self.hide_progress_bar, 500)

@@ -14,7 +14,7 @@ from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 from competitions.models import CompetitionCreationTaskStatus
-from utils.data import make_url_sassy
+from utils.data import make_url_sassy, pretty_bytes
 
 
 class DataViewSet(ModelViewSet):
@@ -40,6 +40,9 @@ class DataViewSet(ModelViewSet):
             # _type = dataset if called from datasets and programs tab to filter datasets and programs
             is_dataset = self.request.query_params.get('_type', '') == 'dataset'
 
+            # _type = dataset if called from datasets and programs tab to filter datasets and programs
+            is_bundle = self.request.query_params.get('_type', '') == 'bundle'
+
             # get queryset
             qs = self.queryset
 
@@ -50,6 +53,11 @@ class DataViewSet(ModelViewSet):
             # filter datasets and programs
             if is_dataset:
                 qs = qs.filter(~Q(type=Data.SUBMISSION))
+                qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
+
+            # filter bundles
+            if is_bundle:
+                qs = qs.filter(Q(type=Data.COMPETITION_BUNDLE))
 
             # public filter check
             if is_public:
@@ -58,7 +66,7 @@ class DataViewSet(ModelViewSet):
                 qs = qs.filter(Q(created_by=self.request.user))
 
             # if GET is called but provided no filters, fall back to default behaviour
-            if (not is_submission) and (not is_dataset) and (not is_public):
+            if (not is_submission) and (not is_dataset) and (not is_bundle) and (not is_public):
                 qs = self.queryset
                 qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
@@ -66,7 +74,7 @@ class DataViewSet(ModelViewSet):
             qs = self.queryset
             qs = qs.filter(Q(is_public=True) | Q(created_by=self.request.user))
 
-        qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE) | Q(name__isnull=True))
+        qs = qs.exclude(Q(name__isnull=True))
 
         qs = qs.select_related('created_by').order_by('-created_when')
 
@@ -79,6 +87,17 @@ class DataViewSet(ModelViewSet):
             return serializers.DataSerializer
 
     def create(self, request, *args, **kwargs):
+        # Check User quota
+        storage_used = float(request.user.get_used_storage_space())
+        quota = float(request.user.quota)
+        file_size = float(request.data['file_size'])
+        if storage_used + file_size > quota:
+            available_space = pretty_bytes(quota - storage_used)
+            file_size = pretty_bytes(file_size)
+            message = f'Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again. You can manage your files in the Resources page.'
+            return Response({'data_file': [message]}, status=status.HTTP_400_BAD_REQUEST)
+
+        # All good, let's proceed
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_dataset = serializer.save()  # request_sassy_file_name is temporarily set via this serializer

@@ -90,7 +90,8 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
-    created_by = serializers.CharField(source='created_by.username', read_only=True, required=False)
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
     input_data = DataSimpleSerializer(read_only=True)
     ingestion_program = DataSimpleSerializer(read_only=True)
     reference_data = DataSimpleSerializer(read_only=True)
@@ -107,6 +108,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'description',
             'key',
             'created_by',
+            'owner_display_name',
             'created_when',
             'is_public',
             'validated',
@@ -126,12 +128,18 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
 
+    def get_owner_display_name(self, instance):
+        # Get the user's display name if not None, otherwise return username
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
+
 
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
     competitions = serializers.SerializerMethodField()
     shared_with = serializers.SerializerMethodField()
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -139,6 +147,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'id',
             'created_when',
             'created_by',
+            'owner_display_name',
             'key',
             'name',
             'solutions',
@@ -159,6 +168,10 @@ class TaskListSerializer(serializers.ModelSerializer):
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
+
+    def get_owner_display_name(self, instance):
+        # Get the user's display name if not None, otherwise return username
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
 
 
 class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
@@ -194,14 +207,28 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
+
         input_data = instance.task.input_data
         reference_data = instance.task.reference_data
         ingestion_program = instance.task.ingestion_program
         scoring_program = instance.task.scoring_program
+
+        # Some tasks may not have input data, reference data and ingestion program
+        # Checking all the datasets and programs and adding them to dataset_list_ids
+        dataset_list_ids = []
+        if input_data:
+            dataset_list_ids.append(input_data.id)
+        if reference_data:
+            dataset_list_ids.append(reference_data.id)
+        if ingestion_program:
+            dataset_list_ids.append(ingestion_program.id)
+        if scoring_program:
+            dataset_list_ids.append(scoring_program.id)
+
+        # Serializing the datasets
         try:
-            dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
             qs = Data.objects.filter(id__in=dataset_list_ids)
             return DataDetailSerializer(qs, many=True).data
-        except AttributeError:
-            print("This phase task has no datasets")
-            return None
+        except Exception:
+            # No datasets or programs to return
+            return []

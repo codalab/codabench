@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
 from datasets.models import Data, DataGroup
+from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 
 
 class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
@@ -74,7 +75,8 @@ class DataSimpleSerializer(serializers.ModelSerializer):
 
 
 class DataDetailSerializer(serializers.ModelSerializer):
-    created_by = serializers.CharField(source='created_by.username')
+    created_by = serializers.CharField(source='created_by.username', read_only=True)
+    owner_display_name = serializers.SerializerMethodField()
     competition = serializers.SerializerMethodField()
     value = serializers.CharField(source='key', required=False)
 
@@ -83,6 +85,7 @@ class DataDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'created_by',
+            'owner_display_name',
             'created_when',
             'name',
             'type',
@@ -99,14 +102,36 @@ class DataDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_competition(self, obj):
-
-        # return competition dict with id and title if available
         if obj.competition:
+            # Submission
             return {
                 "id": obj.competition.id,
                 "title": obj.competition.title,
             }
+        else:
+            competition = None
+            try:
+                # Check if it is a bundle
+                competition = CompetitionCreationTaskStatus.objects.get(dataset=obj).resulting_competition
+            except CompetitionCreationTaskStatus.DoesNotExist:
+                competition = None
+            if not competition:
+                # Check if it is a dump
+                try:
+                    competition = CompetitionDump.objects.get(dataset=obj).competition
+                except CompetitionDump.DoesNotExist:
+                    competition = None
+
+            if competition:
+                return {
+                    "id": competition.id,
+                    "title": competition.title
+                }
+
         return None
+
+    def get_owner_display_name(self, instance):
+        return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
 
 
 class DataGroupSerializer(serializers.ModelSerializer):

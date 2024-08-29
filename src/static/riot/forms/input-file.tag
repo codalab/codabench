@@ -2,7 +2,7 @@
 <input-file class="field {error: opts.error}">
     <!-- This is the SINGLE FILE with NO OTHER OPTIONS example -->
     <!-- In the future, we'll have this type AND a type that is pre-filled with nice options -->
-    <div class="ui left action file input">
+    <div class="ui left action file input" ref="submission_upload">
         <button type="button" class="ui icon button" onclick="{ open_file_selection }">
             <i class="attach icon"></i>
         </button>
@@ -38,6 +38,11 @@
         ---------------------------------------------------------------------*/
         self.open_file_selection = function () {
             self.refs.file_input.click()
+            // Re-enable the button after 5 seconds
+            self.refs.submission_upload.style['display'] = 'none'
+            setTimeout(function () {
+                self.refs.submission_upload.style['display'] = ''
+            }, 6000);
         }
     </script>
     <style>

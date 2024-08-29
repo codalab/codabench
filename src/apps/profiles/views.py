@@ -21,6 +21,7 @@ from api.serializers.profiles import UserSerializer, OrganizationDetailSerialize
     UserNotificationSerializer
 from .forms import SignUpForm, LoginForm
 from .models import User, Organization, Membership
+from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token
 
 
@@ -104,6 +105,12 @@ def activateEmail(request, user, to_email):
 
 
 def sign_up(request):
+
+    # If sign up is not enabled then redirect to login
+    # this is for security as some users may access sign up page using the url
+    if not settings.ENABLE_SIGN_UP:
+        return redirect('accounts:login')
+
     context = {}
     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
         settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
@@ -171,6 +178,11 @@ def log_in(request):
                     messages.error(request, "Wrong Credentials!")
         else:
             context['form'] = form
+
+    # Fetch auth_organizations from the database
+    auth_organizations = Auth_Organization.objects.all()
+    if auth_organizations:
+        context['auth_organizations'] = auth_organizations
 
     if not context.get('form'):
         context['form'] = LoginForm()

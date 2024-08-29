@@ -148,7 +148,6 @@
                         .done(data => {
                             toastr.success("Organization Created")
                             window.location.href = data.url
-                            console.log(data)
                         })
                         .fail(data => {
                             let errorsJSON = data.responseJSON

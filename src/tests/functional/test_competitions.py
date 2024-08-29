@@ -28,7 +28,7 @@ class TestCompetitions(SeleniumTestCase):
 
         # Check that the text is a valid datetime by loading it with strptime.
         # This will raise a ValueError if the format is incorrect.
-        assert datetime.strptime(text, '%B %d, %Y, %I:%M %p %Z')
+        assert datetime.strptime(text, '%B %d, %Y At %I:%M %p %Z')
 
     def _upload_competition(self, competition_zip_path):
         """Creates a competition and waits for success message.
