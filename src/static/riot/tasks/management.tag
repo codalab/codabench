@@ -274,7 +274,7 @@
                                 <label>Scoring Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="scoring_program">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt" id="editscoring_program" value="{selected_task.scoring_program?.name  || ''}">
+                                    <input type="text" class="prompt" id="edit_scoring_program" value="{selected_task.scoring_program?.name  || ''}" name="edit_scoring_program">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -283,7 +283,7 @@
                                 <label>Ingestion Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="ingestion_program">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}" name="edit_ingestion_program">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -294,7 +294,7 @@
                                 <label>Reference Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="reference_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}">
+                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}" name="edit_reference_data">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -303,7 +303,7 @@
                                 <label>Input Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="input_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}" name="edit_input_data">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -540,7 +540,7 @@
         }
 
         self.edit_form_updated = () => {
-            self.edit_modal_is_valid = $(self.refs.edit_name).val() && $(self.refs.edit_description).val() && self.form_datasets.scoring_program
+            self.edit_modal_is_valid = $(self.refs.edit_name).val() && $(self.refs.edit_description).val()
             self.update()
         }
 
@@ -555,17 +555,42 @@
             self.edit_modal_is_valid = false
         }
         self.update_task = () => {
+            // Get filled data from the edit fom
             let data = get_form_data($(self.refs.edit_form))
+
+            // Show error when there is no scoring program in the task
+            if(data.edit_scoring_program == ""){
+                toastr.error('Scoring program is required in a task!')
+                return
+            }
             
             // replace property names in the data object
             data.name = data.edit_name;
             data.description = data.edit_description;
 
+            // If ingestion program is not removed, add the new ingestion program from form_datasets to data
+            if(data.edit_ingestion_program != ""){
+                data.ingestion_program = self.form_datasets.ingestion_program 
+            }
+            // If input data is not removed, add the new input data from form_datasets to data
+            if(data.edit_input_data != ""){
+                data.input_data = self.form_datasets.input_data 
+            }
+            // If reference data is not removed, add the new reference data from form_datasets to data
+            if(data.edit_reference_data != ""){
+                data.reference_data = self.form_datasets.reference_data 
+            }
+            // add the new scoring from form_datasets to data
+            data.scoring_program = self.form_datasets.scoring_program 
+
             // delete the old property names
             delete data.edit_name
             delete data.edit_description
+            delete data.edit_ingestion_program
+            delete data.edit_scoring_program
+            delete data.edit_input_data
+            delete data.edit_reference_data
             
-            _.assign(data, self.form_datasets)
             task_id = self.selected_task.id
             CODALAB.api.update_task(task_id, data)
                 .done((response) => {
