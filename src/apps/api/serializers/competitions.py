@@ -390,11 +390,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
-<<<<<<< HEAD
-            'whitelist_emails'
-=======
             'whitelist_emails',
->>>>>>> 1d82f1e4fe472882410b37d3c0bce3ae63329905
         )
 
     def get_leaderboards(self, instance):
