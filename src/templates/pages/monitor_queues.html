@@ -6,7 +6,7 @@
 
 {% block content %}
     {% if user.is_authenticated %}
-        {% if user.is_super_user %}
+        {% if user.is_superuser %}
             <div class="ui container">
                 <h1>Monitor queues</h1>
                 <div id="external_monitors" class="ui two column grid">
