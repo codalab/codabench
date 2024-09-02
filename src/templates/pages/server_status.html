@@ -5,81 +5,90 @@
 {% endblock %}
 
 {% block content %}
-    <div class="ui container">
-        <h1>Recent Submissions</h1>
-        <label>
-            <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show child submissions
-        </label>
-        <span class="ui mini circular icon button"
-            data-tooltip="Child submissions are created when a competition has multiple tasks (one child for each task)."
-            data-position="top center">
-            <i class="question icon"></i>
-        </span>
-        <table class="ui table">
-            <thead>
-            <th>Competition</th>
-            <th>Submission PK</th>
-            {% if show_child_submissions %}
-                <th>Parent PK</th>
-            {% endif %}
-            <th>Size</th>
-            <th>Submitter</th>
-            <th>Queue</th>
-            <th>Ingestion Hostname</th>
-            <th>Scoring Hostname</th>
-            <th>Submitted at</th>
-            <th>Status</th>
-            </thead>
-            <tbody>
-                {% if not submissions %}
-                <tr class="center aligned">
-                    <td colspan="100%"><em>No submissions, yet!</em></td>
-                </tr>
+    {% if user.is_authenticated %}
+        <div class="ui container">
+            <h1>Recent Submissions</h1>
+            <label>
+                <input type="checkbox" id="show_child_checkbox" {% if show_child_submissions %}checked{% endif %}> Show child submissions
+            </label>
+            <span class="ui mini circular icon button"
+                data-tooltip="Child submissions are created when a competition has multiple tasks (one child for each task)."
+                data-position="top center">
+                <i class="question icon"></i>
+            </span>
+            <table class="ui table">
+                <thead>
+                <th>Competition</th>
+                <th>Submission PK</th>
+                {% if show_child_submissions %}
+                    <th>Parent PK</th>
                 {% endif %}
-                {% for submission in submissions %}
-                <tr>
-                    <td><a class="link-no-deco" target="_blank" href="./competitions/{{ submission.phase.competition.id }}">{{ submission.phase.competition.title }}</a></td>
-                    <td>{{ submission.pk }}</td>
-                    {% if show_child_submissions %}
-                        <td>{{ submission.parent.pk }}</td>
+                <th>Size</th>
+                <th>Submitter</th>
+                <th>Queue</th>
+                <th>Ingestion Hostname</th>
+                <th>Scoring Hostname</th>
+                <th>Submitted at</th>
+                <th>Status</th>
+                </thead>
+                <tbody>
+                    {% if not submissions %}
+                    <tr class="center aligned">
+                        <td colspan="100%"><em>No submissions, yet!</em></td>
+                    </tr>
                     {% endif %}
-                    <td>{{ submission.file_size }}</td>
-                    <td><a target="_blank" href="/profiles/user/{{ submission.owner.username }}">{{ submission.owner_display_name }}</a></td>
-                    <td>{{ submission.competition_queue }}</td>
-                    <td>{{ submission.ingestion_worker_hostname }}</td>
-                    <td>{{ submission.scoring_worker_hostname }}</td>
-                    <td>{{ submission.created_when|timesince }} ago</td>
-                    <td>{{ submission.status }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% for submission in submissions %}
+                    <tr>
+                        <td><a class="link-no-deco" target="_blank" href="./competitions/{{ submission.phase.competition.id }}">{{ submission.phase.competition.title }}</a></td>
+                        <td>{{ submission.pk }}</td>
+                        {% if show_child_submissions %}
+                            <td>{{ submission.parent.pk }}</td>
+                        {% endif %}
+                        <td>{{ submission.file_size }}</td>
+                        <td><a target="_blank" href="/profiles/user/{{ submission.owner.username }}">{{ submission.owner_display_name }}</a></td>
+                        <td>{{ submission.competition_queue }}</td>
+                        <td>{{ submission.ingestion_worker_hostname }}</td>
+                        <td>{{ submission.scoring_worker_hostname }}</td>
+                        <td>{{ submission.created_when|timesince }} ago</td>
+                        <td>{{ submission.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 
-        <!-- Pagination Div -->
-        {% if is_paginated %}
-        <div class="pagination-nav">
-            {% if submissions.has_previous %}
-            <span class="float-left">
-                <a class="ui button" href="?page=1{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">First</a>
-                <a class="ui button" href="?page={{ submissions.previous_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Previous</a>
-            </span>
-            {% endif %}
-            
-            <span class="center">
-                Page {{ submissions.number }} of {{ paginator.num_pages }}
-            </span>
-            
-            
-            {% if submissions.has_next %}
-            <span class="float-right">
-                <a class="ui button" href="?page={{ submissions.next_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Next</a>
-            <a class="ui button" href="?page={{ paginator.num_pages }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Last</a>
-            </span>
-            {% endif %}
+            <!-- Pagination Div -->
+            {% if is_paginated %}
+            <div class="pagination-nav">
+                {% if submissions.has_previous %}
+                <span class="float-left">
+                    <a class="ui button" href="?page=1{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">First</a>
+                    <a class="ui button" href="?page={{ submissions.previous_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Previous</a>
+                </span>
+                {% endif %}
+                
+                <span class="center">
+                    Page {{ submissions.number }} of {{ paginator.num_pages }}
+                </span>
+                
+                
+                {% if submissions.has_next %}
+                <span class="float-right">
+                    <a class="ui button" href="?page={{ submissions.next_page_number }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Next</a>
+                <a class="ui button" href="?page={{ paginator.num_pages }}{% if show_child_submissions %}&show_child_submissions={{ show_child_submissions }}{% endif %}">Last</a>
+                </span>
+                {% endif %}
 
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-    </div>
+    {% else %}
+        <div class="ui container">
+            <div class="ui yellow message">
+                <a href="{% url 'accounts:login' %}">Log In</a> or
+                <a href="{% url 'accounts:signup' %}">Sign Up</a> to view this page
+            </div>
+        </div>
+    {% endif %}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const checkbox = document.getElementById("show_child_checkbox");
