@@ -290,6 +290,7 @@ def users_usage(request):
 
     return Response(response, status=status.HTTP_200_OK)
 
+
 @api_view(["GET"])
 def get_orphan_files(request):
     """
@@ -306,12 +307,13 @@ def get_orphan_files(request):
     if not most_recent_log_file:
         logger.warning("No storage inconsistency log file found.")
         return Response({"message": "No storage inconsistency log file found."}, status=status.HTTP_404_NOT_FOUND)
-    
+
     # Get the list of orphan files from the content of the most recent log file
     log_folder = "/app/logs/"
     orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file))
 
     return Response({"data": orphan_files_path}, status=status.HTTP_200_OK)
+
 
 @api_view(["DELETE"])
 def delete_orphan_files(request):
@@ -347,6 +349,7 @@ def delete_orphan_files(request):
     logger.info("Delete oprhan files finished")
     return Response({"message": "done"}, status=status.HTTP_200_OK)
 
+
 def get_most_recent_storage_inconsistency_log_file():
     logger = logging.getLogger(__name__)
 
@@ -373,6 +376,7 @@ def get_most_recent_storage_inconsistency_log_file():
 
     return most_recent_log_file
 
+
 def get_files_path_from_orphan_log_file(log_file_path):
     logger = logging.getLogger(__name__)
 
@@ -395,5 +399,5 @@ def get_files_path_from_orphan_log_file(log_file_path):
         logger.error(f"Permission denied for reading the file '{log_file_path}'.")
     except IOError as e:
         logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
-    
-    return  files_path
+
+    return files_path
