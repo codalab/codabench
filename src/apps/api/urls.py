@@ -67,6 +67,8 @@ urlpatterns = [
     path('analytics/storage_usage_history/', analytics.storage_usage_history, name='storage_usage_history'),
     path('analytics/competitions_usage/', analytics.competitions_usage, name='competitions_usage'),
     path('analytics/users_usage/', analytics.users_usage, name='users_usage'),
+    path('analytics/delete_orphan_files/', analytics.delete_orphan_files, name="delete_orphan_files"),
+    path('analytics/get_orphan_files/', analytics.get_orphan_files, name="get_orphan_files"),
 
     # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
