@@ -7,7 +7,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "3.9.19"
 django = "2.2.17"
 django-oauth-toolkit = "1.0.0"
 django-cors-middleware = "1.5.0"
@@ -66,6 +66,7 @@ pytest = "6.2.1"
 pytest-django = "4.1.0"
 pytest-pythonpath = "0.7.3"
 selenium = "3.141.0"
+jinja2 = "3.1.4"
 
 [build-system]
 requires = ["poetry-core"]
