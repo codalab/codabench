@@ -42,7 +42,11 @@ class TaskViewSet(ModelViewSet):
             )
 
             task_filter = Q(created_by=self.request.user) | Q(shared_with=self.request.user)
-            if self.request.query_params.get('public'):
+            # when there is `public` in the query params, it means user has checked on the front end 
+            # the Show public tasks checkbox.
+            # When a user clicks that public task that may not belong to the user, we want to show
+            # the public task to the user and hence we check the `retrieve` action
+            if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
 
             qs = qs.filter(task_filter)
