@@ -36,8 +36,6 @@
                         <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
                     </div>
                 </div>
-            
-            
             </td>
             <td>{ task.shared_with.join(', ') }</td>
             <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
@@ -101,13 +99,12 @@
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
-            <div><strong>Key:</strong> {selected_task.key}</div>
             <div><strong>Has Been Validated
                 <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
                     <i class="question circle icon"></i>
                 </span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
             <div><strong>Is Public:</strong> {selected_task.is_public ? "Yes" : "No"}</div>
-            <div if="{selected_task.validated}"
+            <div
                  class="ui right floated small green icon button"
                  onclick="{toggle_task_is_public}">
                 <i class="share icon"></i> {selected_task.is_public ? 'Make Private' : 'Make Public'}

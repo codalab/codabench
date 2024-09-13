@@ -79,12 +79,6 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
             'created_by',
         )
 
-    def validate_is_public(self, is_public):
-        validated = Task.objects.get(id=self.instance.id)._validated
-        if is_public and not validated:
-            raise ValidationError('Task must be validated before it can be published')
-        return is_public
-
     def get_validated(self, instance):
         return hasattr(instance, 'validated') and instance.validated is not None
 
@@ -106,7 +100,6 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'id',
             'name',
             'description',
-            'key',
             'created_by',
             'owner_display_name',
             'created_when',
@@ -123,10 +116,12 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
         )
 
     def get_validated(self, task):
-        return task.validated is not None
+        return task._validated
 
     def get_shared_with(self, instance):
-        return self.context['shared_with'][instance.pk]
+        # Fetch the users with whom the task is shared
+        shared_users = instance.shared_with.all()
+        return [user.username for user in shared_users]
 
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
@@ -156,6 +151,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'value',
             'competitions',
             'shared_with',
+            'is_public'
         )
 
     def get_competitions(self, instance):
