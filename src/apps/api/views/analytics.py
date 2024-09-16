@@ -231,10 +231,12 @@ def competitions_usage(request):
             'datefield'
         )
         for su in query.order_by("-datefield", "competition__id"):
+            username = su['competition__created_by__username'] or ("user #" + su['competition__created_by__id']) or "unknown user"
+            email = su['competition__created_by__email'] or "no email"
             competitions_usage.setdefault(su['datefield'].isoformat(), {})[su['competition__id']] = {
                 'snapshot_id': su['id'],
                 'title': su['competition__title'],
-                'organizer': su['competition__created_by__username'] + " (" + su['competition__created_by__email'] + ")",
+                'organizer': username + " (" + email + ")",
                 'created_when': su['competition__created_when'],
                 'datasets': su['datasets_total'],
             }
@@ -275,9 +277,11 @@ def users_usage(request):
             'datefield'
         )
         for su in query.order_by("-datefield", "user__id"):
+            username = su['user__username'] or ("user #" + su['user__id']) or "unknown user"
+            email = su['user__email'] or "no email"
             users_usage.setdefault(su['datefield'].isoformat(), {})[su['user__id']] = {
                 'snapshot_id': su['id'],
-                'name': su['user__username'] + " (" + su['user__email'] + ")",
+                'name': username + " (" + email + ")",
                 'date_joined': su['user__date_joined'],
                 'datasets': su['datasets_total'],
                 'submissions': su['submissions_total'],
