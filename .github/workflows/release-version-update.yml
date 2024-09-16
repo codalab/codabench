@@ -1,8 +1,8 @@
-name: Update version.json on release
+name: Update version.json and create PR
 
 on:
   release:
-    types: [published]  # Trigger when a new release is published
+    types: [published]
 
 jobs:
   update-version:
@@ -16,7 +16,7 @@ jobs:
       id: get_release
       uses: dawidd6/action-get-latest-release@v3
       with:
-        release: true  # Get details about the latest release
+        release: true
 
     - name: Update version.json
       run: |
@@ -27,10 +27,23 @@ jobs:
           "body": "${{ steps.get_release.outputs.body }}"
         }' > version.json
 
-    - name: Commit version.json
+    - name: Create new branch
       run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git checkout -b update-version-${{ steps.get_release.outputs.tag_name }}
         git add version.json
         git commit -m "Update version.json for release ${{ steps.get_release.outputs.tag_name }}"
-        git push
+
+    - name: Push branch
+      run: |
+        git push origin update-version-${{ steps.get_release.outputs.tag_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: update-version-${{ steps.get_release.outputs.tag_name }}
+        title: "Update version.json for release ${{ steps.get_release.outputs.tag_name }}"
+        body: "This PR updates version.json with the latest release information."
+        base: develop  # Target branch for the pull request
