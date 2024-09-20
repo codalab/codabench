@@ -227,7 +227,11 @@
             </div>
         </div>
     </div>
-    <div id="version"><a href="https://github.com/codalab/codabench/releases/tag/v1.1.0" target="_blank">V 1.1.0</a></div>
+    {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
+        <div id="version">
+            <a href="{{ VERSION_INFO.release_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
+        </div>
+    {% endif %}
 </div>
     {# Admin only user switching #}
     <user_switch></user_switch>
