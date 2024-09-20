@@ -25,6 +25,7 @@ jobs:
           "release_name": "${{ steps.get_release.outputs.name }}",
           "published_at": "${{ steps.get_release.outputs.published_at }}",
           "body": "${{ steps.get_release.outputs.body }}"
+          "release_url": "${{ steps.get_release.outputs.html_url }}"
         }' > version.json
 
     - name: Create new branch
