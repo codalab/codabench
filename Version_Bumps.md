@@ -64,6 +64,14 @@ poetry install
 poetry show gunicorn
 ```
 
+### Bump requests from 2.20.0 to 2.32.2
+[Bump requests from 2.20.0 to 2.32.2](https://github.com/codalab/codabench/pull/1496)
+```bash
+poetry add requests@2.32.2
+poetry install
+poetry show requests
+```
+
 ### Poetry Lock
 ```bash
 poetry lock
