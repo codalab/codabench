@@ -56,6 +56,14 @@ poetry install
 poetry show pillow
 ```
 
+### Bump gunicorn from 20.0.4 to 22.0.0
+[Bump gunicorn from 20.0.4 to 22.0.0](https://github.com/codalab/codabench/pull/1495)
+```bash
+poetry add gunicorn@22.0.0
+poetry install
+poetry show gunicorn
+```
+
 ### Poetry Lock
 ```bash
 poetry lock
