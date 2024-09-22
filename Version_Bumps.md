@@ -63,11 +63,11 @@ poetry lock
 
 ### Req Tree
 ```bash
-req_tree_file="Bumps/req_tree_$(git rev-parse HEAD).md"
-rm $req_tree_file
+req_tree_file="req_tree_$(git rev-parse HEAD).md"
 echo '```bash' >> "$req_tree_file"
 poetry show --tree >> "$req_tree_file"
 echo '```' >> "$req_tree_file"
+rm $req_tree_file
 ```
 
 
