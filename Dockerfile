@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.9.19
 
 RUN apt-get update && apt-get install -y gcc build-essential && rm -rf /var/lib/apt/lists/*
 
@@ -14,7 +14,6 @@ RUN poetry config virtualenvs.in-project false
 
 COPY pyproject.toml ./
 
-RUN poetry lock
 RUN poetry install
 
 WORKDIR /app
