@@ -40,12 +40,15 @@ poetry show requests # example to inspect a library
 
 ## Github Bumps
 
+### Bump Jinja2
 [Bump jinja2 from 3.1.3 to 3.1.4](https://github.com/codalab/codabench/pull/1494)
 ```bash
 poetry add jinja2@3.1.4
 poetry install
 poetry show jinja2
 ```
+
+### Bump Pillow
 [Bump pillow from 8.0.1 to 10.3.0](https://github.com/codalab/codabench/pull/1493)
 ```bash
 poetry add pillow@10.3.0
@@ -53,6 +56,19 @@ poetry install
 poetry show pillow
 ```
 
+### Poetry Lock
+```bash
+poetry lock
+```
+
+### Req Tree
+```bash
+req_tree_file="Bumps/req_tree_$(git rev-parse HEAD).md"
+rm $req_tree_file
+echo '```bash' >> "$req_tree_file"
+poetry show --tree >> "$req_tree_file"
+echo '```' >> "$req_tree_file"
+```
 
 
 ### Rebuilds, Flakes and Tests:
