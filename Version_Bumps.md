@@ -40,7 +40,7 @@ poetry show requests # example to inspect a library
 
 
 ## Github Bumps
-> Part of me thinks this file should have git and other bumps checked that were used in the last wave of updates. Then when a new wave of updates happens, we can add them here and delete the old ones. Thoughts?
+> This file will have the last wave of updates. Then when a new wave of updates happens, we can add them here and delete the old ones. Thoughts?
 
 ### Bump Pillow
 [Bump pillow from 8.0.1 to 10.3.0](https://github.com/codalab/codabench/pull/1493)
