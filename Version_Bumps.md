@@ -187,7 +187,7 @@ poetry lock --no-cache
 ```
 
 ### Req Tree
-This creates a file with the commit hash of the current branch that has the dependency tree.
+This creates a file with the commit hash of the current branch that has the dependency tree. Not a need but a nice visual to guide with.
 ```bash
 req_tree_file="req_tree_$(git rev-parse HEAD).md"
 echo '```bash' >> "$req_tree_file"
