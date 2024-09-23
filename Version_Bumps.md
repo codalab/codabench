@@ -72,7 +72,6 @@ poetry add requests@2.32.2
 poetry install
 poetry show requests
 ```
-
 ### Bump django from 2.2.17 to 2.2.18 and to 3.2.25 eventually
 [Bump django from 2.2.17 to 3.2.25](https://github.com/codalab/codabench/pull/1492)
 > We are going to go by smaller steps.
@@ -83,6 +82,18 @@ poetry add django@2.2.18
 poetry install
 poetry show django
 ```
+
+### Bump django from 2.2.18 to 2.2.19 and to 3.2.25 eventually
+[Bump django from 2.2.17 to 3.2.25](https://github.com/codalab/codabench/pull/1492)
+> We are going to go by smaller steps.
+
+We are going to go slower.
+```bash
+poetry add django@2.2.19
+poetry install
+poetry show django
+```
+
 
 <!-- 
 These might need to happen eventually but for now we will go slower with Django. We can delete from this file. 

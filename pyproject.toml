@@ -8,7 +8,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "3.9.19"
-django = "2.2.18"
+django = "2.2.19"
 django-oauth-toolkit = "1.0.0"
 django-cors-middleware = "1.5.0"
 social-auth-core = "2.0.0"
