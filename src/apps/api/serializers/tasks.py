@@ -1,7 +1,5 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
