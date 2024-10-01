@@ -19,7 +19,7 @@ RUN apt-get install -y nvidia-container-toolkit
 # BB - not convinced we need this
 ENV USE_GPU 1
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
