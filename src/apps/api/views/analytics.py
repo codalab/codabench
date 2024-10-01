@@ -324,7 +324,7 @@ def delete_orphan_files(request):
 
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
-    
+
     global delete_orphan_files_task
     delete_orphan_files_task = delete_orphan_files_async_task.delay()
 

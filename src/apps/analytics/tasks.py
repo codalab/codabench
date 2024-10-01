@@ -572,6 +572,7 @@ def reset_computed_storage_analytics():
         )
     )
 
+
 @app.task(queue="site-worker")
 def delete_orphan_files():
     logger.info("Task delete_orphan_files started")
@@ -619,6 +620,7 @@ def get_most_recent_storage_inconsistency_log_file(logger):
             logger.warning(f"Filename '{file}' does not match the expected format and will be ignored.")
 
     return most_recent_log_file
+
 
 def get_files_path_from_orphan_log_file(log_file_path, logger):
     files_path = []
