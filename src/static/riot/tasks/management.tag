@@ -19,9 +19,9 @@
         <thead>
         <tr>
             <th>Name</th>
-            <th class="benchmark-row">Benchmarks</th>
-            <th width="125px">Shared With</th>
-            <th width="125px">Uploaded...</th>
+            <th>Description</th>
+            <th>Creator</th>
+            <th width="50px" class="no-sort">In Use</th>
             <th width="50px" class="no-sort">Public</th>
             <th width="100px" class="no-sort">Actions</th>
             <th width="25px" class="no-sort"></th>
@@ -30,17 +30,11 @@
         <tbody>
         <tr each="{ task in tasks }" class="task-row">
             <td onclick="{show_detail_modal.bind(this, task)}">{ task.name }</td>
-            <td class="benchmark-row">
-                <div show="{task.competitions.length > 0}" class="ui list">
-                    <div class="item" each="{comp in task.competitions}">
-                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
-                    </div>
-                </div>
-            
-            
+            <td>{ task.description }</td>
+            <td><a href="/profiles/user/{task.created_by}/" target=_blank>{task.owner_display_name}</a></td>
+            <td>
+                <i class="checkmark box icon green" show="{task.is_used_in_competitions}"></i>
             </td>
-            <td>{ task.shared_with.join(', ') }</td>
-            <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
@@ -88,6 +82,7 @@
         </tr>
         </tfoot>
     </table>
+    
     <!--  Task Detail Modal  -->
     <div class="ui modal" ref="detail_modal">
         <div class="header">
@@ -101,6 +96,17 @@
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
+            <div if="{selected_task.created_by === CODALAB.state.user.username}">
+                <strong>Shared With:</strong> { selected_task.shared_with.join(', ') }
+            </div>
+            <div if="{selected_task.created_by === CODALAB.state.user.username}">
+                <strong>Used in Competitions:</strong>
+                <ul show="{selected_task.competitions.length > 0}">
+                    <li each="{comp in selected_task.competitions}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
+                    </li>
+                </ul>
+            </div>
             <div><strong>Key:</strong> {selected_task.key}</div>
             <div><strong>Has Been Validated
                 <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
