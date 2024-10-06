@@ -271,8 +271,8 @@ class CompetitionViewSet(ModelViewSet):
                         new_phase_obj = Phase.objects.create(
                             status=phase["status"],
                             index=phase["index"],
-                            start=datetime.strptime(phase['start'], "%B %d, %Y"),
-                            end=datetime.strptime(phase['end'], "%B %d, %Y") if phase['end'] else None,
+                            start=phase['start'],
+                            end=phase['end'] if phase['end'] else None,
                             name=phase["name"],
                             description=phase["description"],
                             hide_output=phase["hide_output"],

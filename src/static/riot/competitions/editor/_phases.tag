@@ -68,20 +68,46 @@
                     <input name="name">
                 </div>
 
+                <!--  Start Date and Time  -->
                 <div class="two fields">
-                    <div class="ui calendar field required" ref="calendar_start">
-                        <label>Start</label>
+                    <div class="ui calendar field required" ref="calendar_start_date">
+                        <label>Start Date</label>
                         <div class="ui input left icon">
                             <i class="calendar icon"></i>
-                            <input type="text" name="start">
+                            <input type="text" name="start_date">
+                        </div>
+                    </div>
+                    <div class="ui calendar field required" ref="calendar_start_time">
+                        <label>Start Time
+                        <span data-tooltip="Select time in UTC+0 time zone" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label> 
+                        
+                        <div class="ui input left icon">
+                            <i class="clock icon"></i>
+                            <input type="text" name="start_time">
+                        </div>
+                    </div>
+                </div>
+
+                <!--  End Date and Time  -->
+                <div class="two fields">
+                    <div class="ui calendar field" ref="calendar_end_date">
+                        <label>End Date</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text" name="end_date">
                         </div>
                     </div>
 
-                    <div class="ui calendar field" ref="calendar_end">
-                        <label>End</label>
+                    <div class="ui calendar field" ref="calendar_end_time">
+                        <label>End Time
+                        <span data-tooltip="Select time in UTC+0 time zone" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
                         <div class="ui input left icon">
-                            <i class="calendar icon"></i>
-                            <input type="text" name="end">
+                            <i class="clock icon"></i>
+                            <input type="text" name="end_time">
                         </div>
                     </div>
                 </div>
@@ -363,7 +389,9 @@
 
             // Have to initialize calendars here (instead of on mount) because they don't exist yet
             if (!self.has_initialized_calendars) {
-                var datetime_options = {
+
+                // Initialize date calendars options
+                var date_options = {
                     type: 'date',
                     popupOptions: {
                         position: 'bottom left',
@@ -376,17 +404,60 @@
                     }
                 }
 
-                var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
-                var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
+                // Initialize time calendars options
+                var time_options = {
+                    type: 'time',
+                    popupOptions: {
+                        position: 'bottom left',
+                        lastResort: 'bottom left',
+                        hideOnScroll: false
+                    },
+                    ampm: false,
+                    onHide: function () {
+                        // Have to do this because onchange isn't fired when date is picked
+                        self.form_updated()
+                    }
+                }
 
-                $(self.refs.calendar_start).calendar(start_options)
-                $(self.refs.calendar_end).calendar(end_options)
+                // Create a new options object for the start date calendar by combining 'date_options'
+                // with an additional option to link the end date calendar. This ensures that the start date
+                // cannot be after the selected end date.
+                var start_options = Object.assign({}, date_options, {endCalendar: self.refs.calendar_end_date})
+                
+                // Similarly, create a new options object for the end date calendar, linking it to the start date.
+                // This ensures that the end date cannot be before the selected start date.
+                var end_options = Object.assign({}, date_options, {startCalendar: self.refs.calendar_start_date})
+                
+                // Initialize the start date calendar using the options defined above, including the end date limitation.
+                $(self.refs.calendar_start_date).calendar(start_options)
+
+                // Initialize the end date calendar using the options defined above, which includes the start date limitation.
+                $(self.refs.calendar_end_date).calendar(end_options)
+
+
+
+                // Initialize the start time calendar with the defined options. 
+                // This will create a time picker for the 'start time' field.
+                $(self.refs.calendar_start_time).calendar(time_options)
+
+                // Initialize the end time calendar with the same time picker options.
+                // This will create a time picker for the 'end time' field.
+                $(self.refs.calendar_end_time).calendar(time_options)
 
                 self.has_initialized_calendars = true
             }
+
+            // This condition is executed when selected_phase_index is not undefined i.e. a phase is selected
+            // This means that user is updating a phase and is not creating a new phase
             if(!(self.selected_phase_index === undefined)){
-                $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
-                $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
+                
+                // Set Dates
+                $(self.refs.calendar_start_date).calendar('set date', self.getDate(self.phases[self.selected_phase_index].start))
+                $(self.refs.calendar_end_date).calendar('set date', self.getDate(self.phases[self.selected_phase_index].end))
+
+                // Set times
+                $(self.refs.calendar_start_time).calendar('set date', self.getTime(self.phases[self.selected_phase_index].start))
+                $(self.refs.calendar_end_time).calendar('set date', self.getTime(self.phases[self.selected_phase_index].end))
             }
         }
 
@@ -412,6 +483,57 @@
             }
             return input
         }
+        self.getDate = function(dt) {
+            // function for extracting date only from the start or end date of a phase
+            // format: 'YYYY-MM-DD'
+            if (dt != null){
+                dt = new Date(dt)
+                return dt.toISOString().split('T')[0]
+            }else{
+                return ""
+            }
+        }
+        self.getTime = function(dt) {
+            // function for extracting time only from the start or end date of a phase
+            // format: 'HH:MM' 24-hour format in UTC
+            if (dt != null){
+                dt = new Date(dt)
+                return dt.toLocaleTimeString('en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'UTC' // Set time zone to UTC
+                })
+            }else{
+                return ""
+            }
+        }
+        self.formatDateTo_Y_m_d_T_H_M_S = function(input) {
+            // This function formats date in the format YYYY-MM-DDTHH:MM:SS
+
+            // Convert input to date
+            var dateObject = new Date(input)
+
+            // Check if date is valid
+            if (!isNaN(dateObject.getTime())) {
+                // Extract year
+                var year = dateObject.getFullYear()
+                // Extract month
+                var month = (dateObject.getMonth() + 1).toString().padStart(2, '0') // Months are zero-based
+                // Extract day
+                var day = dateObject.getDate().toString().padStart(2, '0')
+                // Extract hours
+                var hours = dateObject.getHours().toString().padStart(2, '0')
+                // Extract minutes
+                var minutes = dateObject.getMinutes().toString().padStart(2, '0')
+                // Extract seconds
+                var seconds = dateObject.getSeconds().toString().padStart(2, '0')
+                
+                // Return formatted date string
+                return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds
+            }
+            return input
+        }
+
 
         self.form_updated = function () {
             // This checks phases overall to make sure they are ready to go
@@ -467,7 +589,9 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            self.form_is_valid = !!data.name && !!data.start && self.phase_tasks.length > 0
+            // Phase add/update form is valid if it has 
+            // name, start_date, start_time, and at least one task
+            self.form_is_valid = !!data.name && !!data.start_date && !!data.start_time && self.phase_tasks.length > 0
         }
 
         self.clear_form = function () {
@@ -484,6 +608,12 @@
                 $(field).val('')
             })
             $(self.refs.auto_migrate).prop('checked', false)
+
+            // Clear date and time fields using refs
+            $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
+            $(self.refs.calendar_start_time).find('input[name="start_time"]').val('')
+            $(self.refs.calendar_end_date).find('input[name="end_date"]').val('')
+            $(self.refs.calendar_end_time).find('input[name="end_time"]').val('')
 
             self.simple_markdown_editor.value('')
 
@@ -641,6 +771,26 @@
             self.phase_starting_kit = sorted_phase_starting_kit.slice()
 
             var data = get_form_data(self.refs.form)
+
+            // Fill default start time if start time is empty
+            if (data.start_time == "") {
+                data.start_time = "00:00"
+            } 
+            // Change phase start format to ISO date format "Y-m-dTH:M:S"
+            data.start = self.formatDateTo_Y_m_d_T_H_M_S(data.start_date + " " + data.start_time)
+
+            
+            if (data.end_date) {
+                // Fill default end time if end time is empty
+                if (data.end_time == "") {
+                    data.end_time = "00:00"
+                }
+                data.end = self.formatDateTo_Y_m_d_T_H_M_S(data.end_date + " " + data.end_time)
+            }else{
+                // end date is set to null if it is not selected because it is optional in the form
+                data.end = null
+            }
+
             data.tasks = self.phase_tasks
             data.public_data = self.phase_public_data.length === 0 ? null : self.phase_public_data[0]
             data.starting_kit = self.phase_starting_kit.length === 0 ? null : self.phase_starting_kit[0]
