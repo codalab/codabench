@@ -610,11 +610,19 @@
             })
             $(self.refs.auto_migrate).prop('checked', false)
 
-            // Clear date and time fields using refs
+            // Clear date and time fields values
             $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
             $(self.refs.calendar_start_time).find('input[name="start_time"]').val('')
             $(self.refs.calendar_end_date).find('input[name="end_date"]').val('')
             $(self.refs.calendar_end_time).find('input[name="end_time"]').val('')
+
+            // Clear the date fields calendars
+            // This will make sure that when you click add new phase, the date and time pickers
+            // will not show other phase date/time preselected in the date and time pickers
+            $(self.refs.calendar_start_date).calendar('clear');
+            $(self.refs.calendar_end_date).calendar('clear');
+            $(self.refs.calendar_start_time).calendar('clear');
+            $(self.refs.calendar_end_time).calendar('clear');
 
             self.simple_markdown_editor.value('')
 
