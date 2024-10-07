@@ -8,29 +8,15 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from api.serializers.profiles import SimpleOrganizationSerializer
+# from api.serializers.profiles import SimpleOrganizationSerializer
 from api.serializers.tasks import TaskSerializer
+from api.serializers.submission_leaderboard import SubmissionScoreSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
-from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
 
 from tasks.models import Task
 from queues.models import Queue
-
-
-class SubmissionScoreSerializer(serializers.ModelSerializer):
-    index = serializers.IntegerField(source='column.index', read_only=True)
-    column_key = serializers.CharField(source='column.key', read_only=True)
-
-    class Meta:
-        model = SubmissionScore
-        fields = (
-            'id',
-            'index',
-            'score',
-            'column_key',
-        )
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -90,36 +76,6 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def get_can_make_submissions_public(self, instance):
         # returns this submission's competition can_participants_make_submissions_public Flag
         return instance.phase.competition.can_participants_make_submissions_public
-
-
-class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
-    scores = SubmissionScoreSerializer(many=True)
-    owner = serializers.CharField(source='owner.username')
-    display_name = serializers.CharField(source='owner.display_name')
-    slug_url = serializers.CharField(source='owner.slug_url')
-    organization = SimpleOrganizationSerializer(allow_null=True)
-    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
-
-    class Meta:
-        model = Submission
-        fields = (
-            'id',
-            'parent',
-            'owner',
-            'leaderboard_id',
-            'fact_sheet_answers',
-            'task',
-            'scores',
-            'display_name',
-            'slug_url',
-            'organization',
-            'detailed_result',
-            'created_when'
-        )
-        extra_kwargs = {
-            "scores": {"read_only": True},
-            "owner": {"read_only": True},
-        }
 
 
 class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
