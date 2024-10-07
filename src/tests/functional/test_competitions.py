@@ -112,14 +112,17 @@ class TestCompetitions(SeleniumTestCase):
         self.find('input[name="start_date"]').click()
         self.find('input[name="start_date"]').send_keys(2)
         self.find('input[name="start_date"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
         # Click start time field, press 2, press enter
         self.find('input[name="start_time"]').click()
         self.find('input[name="start_time"]').send_keys(2)
         self.find('input[name="start_time"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
         # Click end date field, press 3, press enter
         self.find('input[name="end_date"]').click()
         self.find('input[name="end_date"]').send_keys(3)
         self.find('input[name="end_date"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
         # Click end time field, press 2, press enter
         self.find('input[name="end_time"]').click()
         self.find('input[name="end_time"]').send_keys(3)
