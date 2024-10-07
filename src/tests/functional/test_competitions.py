@@ -108,11 +108,22 @@ class TestCompetitions(SeleniumTestCase):
         sleep(LONG_WAIT)
         self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
         sleep(SHORT_WAIT)
-        self.find('input[name="start"]').click()
-        self.find('input[name="start"]').send_keys(2)
-        self.find('input[name="start"]').send_keys(Keys.ENTER)
-        self.find('input[name="end"]').send_keys(3)
-        self.find('input[name="end"]').send_keys(Keys.ENTER)
+        # Click start date field, press 2, press enter
+        self.find('input[name="start_date"]').click()
+        self.find('input[name="start_date"]').send_keys(2)
+        self.find('input[name="start_date"]').send_keys(Keys.ENTER)
+        # Click start time field, press 2, press enter
+        self.find('input[name="start_time"]').click()
+        self.find('input[name="start_time"]').send_keys(2)
+        self.find('input[name="start_time"]').send_keys(Keys.ENTER)
+        # Click end date field, press 3, press enter
+        self.find('input[name="end_date"]').click()
+        self.find('input[name="end_date"]').send_keys(3)
+        self.find('input[name="end_date"]').send_keys(Keys.ENTER)
+        # Click end time field, press 2, press enter
+        self.find('input[name="end_time"]').click()
+        self.find('input[name="end_time"]').send_keys(3)
+        self.find('input[name="end_time"]').send_keys(Keys.ENTER)
         self.find('label[for="tasks"]').click()
         sleep(SHORT_WAIT)
         self.find("form[selenium='phase-form'] input.search").send_keys("Wheat")
