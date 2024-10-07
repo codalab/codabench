@@ -34,7 +34,6 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-from datetime import datetime
 from django.db import transaction
 from django.conf import settings
 

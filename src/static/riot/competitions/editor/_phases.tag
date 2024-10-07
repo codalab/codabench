@@ -59,7 +59,8 @@
     <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
-            Edit phase
+            <!--  When no phase is selected selected_phase_index is undefined  -->
+            { typeof selected_phase_index === 'undefined' ?  'Add Phase' : 'Edit Phase' }
         </div>
         <div class="content">
             <form selenium="phase-form" class="ui form" ref="form">
