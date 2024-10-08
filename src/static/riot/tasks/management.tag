@@ -96,6 +96,7 @@
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
+            <div><strong>Uploaded:</strong>  {timeSince(Date.parse(selected_task.created_when)) } ago</div>
             <div if="{selected_task.created_by === CODALAB.state.user.username}">
                 <strong>Shared With:</strong> { selected_task.shared_with.join(', ') }
             </div>
