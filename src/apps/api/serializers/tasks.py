@@ -114,7 +114,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
         )
 
     def get_validated(self, task):
-        return task._validated
+        return task.validated is not None
 
     def get_shared_with(self, instance):
         # Fetch the users with whom the task is shared
