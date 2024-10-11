@@ -220,7 +220,7 @@ class CompetitionViewSet(ModelViewSet):
         data = request.data
         if 'leaderboards' in data:
             leaderboard_data = data['leaderboards'][0]
-            if(leaderboard_data['id']):
+            if leaderboard_data['id']:
                 leaderboard_instance = Leaderboard.objects.get(id=leaderboard_data['id'])
                 leaderboard = LeaderboardSerializer(leaderboard_instance, data=data['leaderboards'][0])
             else:

@@ -124,6 +124,31 @@ CODALAB.api = {
     get_submission_detail_result: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
     },
+    download_many_submissions: function (pks) {
+        console.log('Request bulk');
+        const params = new URLSearchParams({ pks: JSON.stringify(pks) });
+        const url = `${URLS.API}submissions/download_many/?${params}`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.blob();
+        }).then(blob => {
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'bulk_submissions.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }).catch(error => {
+            console.error('Error downloading submissions:', error);
+        });
+    },
 
     /*---------------------------------------------------------------------
          Leaderboards
@@ -320,6 +345,12 @@ CODALAB.api = {
     },
     get_users_usage: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
+    },
+    delete_orphan_files: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}analytics/delete_orphan_files/`)
+    },
+    get_orphan_files: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/get_orphan_files/`)
     },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
