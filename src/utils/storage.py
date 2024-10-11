@@ -17,14 +17,26 @@ class CodalabAzureStorage(AzureStorage):
 StorageClass = get_storage_class(settings.DEFAULT_FILE_STORAGE)
 
 if settings.STORAGE_IS_S3:
-    BundleStorage = StorageClass(bucket=settings.AWS_STORAGE_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket=settings.AWS_STORAGE_BUCKET_NAME)
+    # Create separate instances for Bundle and Public storage
+    BundleStorage = StorageClass()
+    BundleStorage.bucket_name = settings.AWS_STORAGE_PRIVATE_BUCKET_NAME  # Set the private bucket
+    PublicStorage = StorageClass()
+    PublicStorage.bucket_name = settings.AWS_STORAGE_BUCKET_NAME  # Set the public bucket
+
 elif settings.STORAGE_IS_GCS:
-    BundleStorage = StorageClass(bucket_name=settings.GS_PRIVATE_BUCKET_NAME)
-    PublicStorage = StorageClass(bucket_name=settings.GS_PUBLIC_BUCKET_NAME)
+    # For GCS
+    BundleStorage = StorageClass()
+    BundleStorage.bucket_name = settings.GS_PRIVATE_BUCKET_NAME  # Set the private bucket
+    PublicStorage = StorageClass()
+    PublicStorage.bucket_name = settings.GS_PUBLIC_BUCKET_NAME  # Set the public bucket
+
 elif settings.STORAGE_IS_AZURE:
-    BundleStorage = StorageClass(azure_container=settings.BUNDLE_AZURE_CONTAINER)
-    PublicStorage = StorageClass(azure_container=settings.AZURE_CONTAINER)
+    # For Azure
+    BundleStorage = StorageClass()
+    BundleStorage.azure_container = settings.BUNDLE_AZURE_CONTAINER  # Set the private container
+    PublicStorage = StorageClass()
+    PublicStorage.azure_container = settings.AZURE_CONTAINER  # Set the public container
+
 else:
     raise NotImplementedError()
 
