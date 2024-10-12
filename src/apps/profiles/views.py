@@ -198,7 +198,7 @@ def log_in(request):
                         else:
                             return redirect(next)
                     else:
-                        context['activation_error'] = "Your account is not activated. Please check your email for the activation link."
+                        context['activation_error'] = "Your account is not activated. Please check your email for the activation link"
                 else:
                     messages.error(request, "Wrong Credentials!")
         else:
