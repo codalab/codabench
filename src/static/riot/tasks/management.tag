@@ -30,7 +30,7 @@
         <tbody>
         <tr each="{ task in tasks }" class="task-row">
             <td onclick="{show_detail_modal.bind(this, task)}">{ task.name }</td>
-            <td>{ task.description }</td>
+            <td onclick="{show_detail_modal.bind(this, task)}">{ task.description }</td>
             <td><a href="/profiles/user/{task.created_by}/" target=_blank>{task.owner_display_name}</a></td>
             <td>
                 <i class="checkmark box icon green" show="{task.is_used_in_competitions}"></i>
