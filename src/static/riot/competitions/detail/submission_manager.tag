@@ -89,7 +89,7 @@
                 <td>{ submission.filename }</td>
                 <td if="{ opts.admin }">{ submission.owner }</td>
                 <td if="{ opts.admin }">{ submission.phase.name }</td>
-                <td>{ submission.created_when}</td>
+                <td>{ pretty_date(submission.created_when) }</td>
                 <td class="right aligned collapsing">
                     { submission.status }
                     <sup data-tooltip="{submission.status_details}">
@@ -201,6 +201,8 @@
     <script>
         var self = this
 
+        
+
         self.selected_phase = undefined
         self.selected_submission = undefined
         self.hide_output = false
@@ -216,6 +218,15 @@
             $(self.refs.submission_handling_operation).dropdown()
             $(self.refs.submission_table).tablesort()
         })
+
+        self.pretty_date = function (date_string) {
+            date_string = "2024-10-13T11:00:00Z"
+            if (!!date_string) {
+                return luxon.DateTime.fromISO(date_string).toFormat('yyyy-MM-dd HH:mm')
+            } else {
+                return ''
+            }
+        }
 
         self.is_admin = () => {
             return _.get(self.selected_submission, 'admin', false)
