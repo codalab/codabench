@@ -128,6 +128,7 @@
 {#                                    <a class="item" href="#">Customize Codalab</a>#}
                                     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
                                 {% if request.user.is_staff %}
+                                    <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
                                     <a class="item" href="{% url "admin:index" %}">Django Admin</a>
                                     <a class="item" href="{% url "su_login" %}">Change User</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
@@ -226,7 +227,12 @@
             </div>
         </div>
     </div>
-
+    {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
+        <div id="version">
+            <a href="{{ VERSION_INFO.release_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
+        </div>
+    {% endif %}
+</div>
     {# Admin only user switching #}
     <user_switch></user_switch>
 

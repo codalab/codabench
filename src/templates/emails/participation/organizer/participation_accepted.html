@@ -1,6 +1,10 @@
 {% extends 'emails/base_email.html' %}
 
 {% block content %}
-    <p>We're writing to inform you that user {{ participant.user.username }} has been accepted into your competition
-    <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>.You can manage all participants from the admin panel of your competition.</p>
+    <p>
+        User <strong>{{ participant.user.username }}</strong> has been accepted into your competition
+        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>.
+        <br>
+        You can manage all participants from the admin panel of your competition.
+    </p>
 {% endblock %}

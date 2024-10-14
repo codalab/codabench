@@ -645,6 +645,7 @@ class Submission(ChaHubSaveMixin, models.Model):
             'has_children': self.has_children,
             'is_specific_task_re_run': is_specific_task_re_run,
             'fact_sheet_answers': self.fact_sheet_answers,
+            'queue': self.phase.competition.queue
         }
         sub = Submission(**submission_arg_dict)
         sub.save(ignore_submission_limit=True)

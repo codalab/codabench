@@ -292,13 +292,10 @@ def retrieve_data(url, data=None):
 
 def zip_generator(submission_pks):
     in_memory_zip = BytesIO()
-    # logger.info("IN zip generator")
     with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for submission_id in submission_pks:
             submission = Submission.objects.get(id=submission_id)
-            # logger.info(submission.data.data_file)
-
-            short_name = submission.data.data_file.name.split('/')[-1]
+            short_name = "ID_" + str(submission_id) + '_' + submission.data.data_file.name.split('/')[-1]
             url = make_url_sassy(path=submission.data.data_file.name)
             for block in retrieve_data(url):
                 zip_file.writestr(short_name, block)
@@ -310,8 +307,6 @@ def zip_generator(submission_pks):
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)
 def stream_batch_download(submission_pks):
-    # logger.info("In stream_batch_download")
-    # logger.info(submission_pks)
     return zip_generator(submission_pks)
 
 

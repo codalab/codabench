@@ -2,7 +2,8 @@ from django.db.models import Sum, Q
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
-from api.serializers.submissions import SubmissionLeaderBoardSerializer
+from api.serializers.submission_leaderboard import SubmissionLeaderBoardSerializer
+
 from competitions.models import Submission, Phase
 from leaderboards.models import Leaderboard, Column
 

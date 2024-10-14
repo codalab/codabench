@@ -1,0 +1,50 @@
+name: Update version.json and create PR
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Get release information
+      id: get_release
+      uses: dawidd6/action-get-latest-release@v3
+      with:
+        release: true
+
+    - name: Update version.json
+      run: |
+        echo '{
+          "tag_name": "${{ steps.get_release.outputs.tag_name }}",
+          "release_name": "${{ steps.get_release.outputs.name }}",
+          "published_at": "${{ steps.get_release.outputs.published_at }}",
+          "body": "${{ steps.get_release.outputs.body }}"
+          "release_url": "${{ steps.get_release.outputs.html_url }}"
+        }' > version.json
+
+    - name: Create new branch
+      run: |
+        git checkout -b update-version-${{ steps.get_release.outputs.tag_name }}
+        git add version.json
+        git commit -m "Update version.json for release ${{ steps.get_release.outputs.tag_name }}"
+
+    - name: Push branch
+      run: |
+        git push origin update-version-${{ steps.get_release.outputs.tag_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: update-version-${{ steps.get_release.outputs.tag_name }}
+        title: "Update version.json for release ${{ steps.get_release.outputs.tag_name }}"
+        body: "This PR updates version.json with the latest release information."
+        base: develop  # Target branch for the pull request

@@ -84,9 +84,9 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
 
-        if self.object.thread.forum.competition.created_by == request.user or \
-                self.object.posted_by == request.user:
-
+        if self.object.posted_by == request.user or \
+            request.user in self.object.thread.forum.competition.collaborators.all() or \
+                self.object.thread.forum.competition.created_by == request.user:
             # If there are more posts in the thread, leave it around, otherwise delete it
             if self.object.thread.posts.count() == 1:
                 success_url = self.object.thread.forum.get_absolute_url()
@@ -146,9 +146,19 @@ class ThreadDetailView(ForumBaseMixin, DetailView):
     def get_context_data(self, **kwargs):
         thread = self.object
         context = super().get_context_data(**kwargs)
-        context['ordered_posts'] = thread.posts.all().order_by('date_created')\
+        ordered_posts = thread.posts.all().order_by('date_created')\
             .select_related('thread__forum__competition__created_by', 'posted_by')\
             .prefetch_related('thread__forum__competition__collaborators')
+
+        # Check if request.user has admin permissions
+        for post in ordered_posts:
+            post.user_is_admin = (
+                self.request.user == post.posted_by or
+                self.request.user == post.thread.forum.competition.created_by or
+                self.request.user in post.thread.forum.competition.collaborators.all()
+            )
+
+        context['ordered_posts'] = ordered_posts
         return context
 
 

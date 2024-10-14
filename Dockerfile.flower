@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED=1 PYTHONHASHSEED=random PYTHONDONTWRITEBYTECODE=1
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # # Install the required packages
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
