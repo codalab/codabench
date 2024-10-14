@@ -59,7 +59,7 @@ drf-yasg = {version = "1.11.0", extras = ["validation"]}
 flex = "6.12.0"
 pyrabbit2 = "1.0.7"
 django-enforce-host = "1.0.1"
-twisted = "20.3.0"
+twisted = "24.7.0"
 ipdb = "0.13"
 flake8 = "3.8.4"
 pytest = "6.2.1"
