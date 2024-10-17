@@ -91,6 +91,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     validated = serializers.SerializerMethodField(required=False)
     shared_with = serializers.SerializerMethodField()
+    competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -103,6 +104,8 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'created_when',
             'is_public',
             'validated',
+            'shared_with',
+            'competitions',
 
             # Data pieces
             'input_data',
@@ -110,8 +113,15 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
             'solutions',
-            'shared_with',
         )
+
+    def get_competitions(self, instance):
+
+        # Fech competitions which hase phases with this task
+        # competitions = Phase.objects.filter(tasks__in=[instance.pk]).values('competition')
+        competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).values("id", "title").distinct()
+
+        return competitions
 
     def get_validated(self, task):
         return task.validated is not None
@@ -129,10 +139,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
-    competitions = serializers.SerializerMethodField()
-    shared_with = serializers.SerializerMethodField()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
+    is_used_in_competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -143,22 +152,21 @@ class TaskListSerializer(serializers.ModelSerializer):
             'owner_display_name',
             'key',
             'name',
+            'description',
             'solutions',
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
-            'competitions',
-            'shared_with',
-            'is_public'
+            'is_public',
+            'is_used_in_competitions',
         )
 
-    def get_competitions(self, instance):
+    def get_is_used_in_competitions(self, instance):
 
-        # Fech competitions which hase phases with this task
-        # competitions = Phase.objects.filter(tasks__in=[instance.pk]).values('competition')
-        competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).values("id", "title").distinct()
+        # Count competitions that are using this task
+        num_competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).distinct().count()
 
-        return competitions
+        return num_competitions > 0
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
