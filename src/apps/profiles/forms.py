@@ -33,3 +33,7 @@ class LoginForm(forms.Form):
 
     username = forms.CharField(max_length=150)
     password = forms.CharField(max_length=150, widget=forms.PasswordInput)
+
+
+class ActivationForm(forms.Form):
+    email = forms.EmailField(max_length=254, required=True)

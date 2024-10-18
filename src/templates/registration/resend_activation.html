@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="six wide centered column">
+    <h2 class="ui blue centered header">
+        Resend Activation
+    </h2>
+    <div class="ui stacked segment">
+        <h5>Activation link expired?</h5>
+        <p>Enter your email in the form below and we'll send you a new activation link for your account.</p>
+        <div class="ui divider"></div>
+        <form class="ui form" method="post">
+            {% csrf_token %}
+
+            <div class="field">
+                <div class="ui left icon input">
+                    <i class="envelope icon"></i>
+                    <input type="email"
+                           name="email"
+                           placeholder="email"
+                           id="id_email"
+                           value="{{ form.email.value|default:''}}"
+                           maxlength="{{ form.email.field.max_length }}"
+                           required>
+                </div>
+            </div>
+            <button class="ui blue fluid submit button" type="submit">Resend Activation Email</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
