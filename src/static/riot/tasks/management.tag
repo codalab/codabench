@@ -7,6 +7,9 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
+    <div class="ui blue right floated labeled icon button" onclick="{ show_upload_task_modal }"><i class="upload icon"></i>
+        Upload Task
+    </div>
     <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
@@ -164,6 +167,35 @@
         </div>
         <div class="actions">
             <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
+    <!-- Upload Task Modal  -->
+    <div ref="upload_task_modal" class="ui modal">
+        <div class="header">Upload Task</div>
+
+        <div class="content">
+
+            <form class="ui form coda-animated {error: errors}" ref="upload_form">
+                <p>Upload a zip of your task including a yaml file.</p>
+                
+                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                            accept=".zip"></input-file>
+            </form>
+
+            <div class="ui indicating progress" ref="progress">
+                <div class="bar">
+                    <div class="progress">{ upload_progress }%</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="actions">
+            <button class="ui blue icon button" onclick="{upload_task}">
+                <i class="upload icon"></i>
+                Upload
+            </button>
+            <button class="ui basic red button" onclick="{close_upload_task_modal}">Cancel</button>
         </div>
     </div>
 
@@ -431,6 +463,15 @@
         /*---------------------------------------------------------------------
          Modal Methods
         ---------------------------------------------------------------------*/
+        
+        self.show_upload_task_modal = () => {
+            $(self.refs.upload_task_modal).modal('show')
+        }
+        self.close_upload_task_modal = () => {
+            $(self.refs.upload_task_modal).modal('hide')
+            // Reset file input
+           $('input-file[ref="data_file"]').find("input").val('')
+        }
         self.show_modal = () => {
             $('.menu .item', self.root).tab('change tab', 'details')
             self.form_datasets = {}
@@ -452,6 +493,12 @@
             })
             self.form_datasets = {}
             self.modal_is_valid = false
+        }
+
+        self.upload_task = () => {
+            // get selected file from the input
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+            
         }
 
         self.create_task = () => {
