@@ -179,7 +179,7 @@
             <form class="ui form coda-animated {error: errors}" ref="upload_form">
                 <p>Upload a zip of your task including a yaml file.</p>
                 
-                <input-file name="data_file" ref="data_file" error="{errors.data_file}"
+                <input-file name="data_file" ref="data_file"
                             accept=".zip"></input-file>
             </form>
 
@@ -191,7 +191,7 @@
 
         </div>
         <div class="actions">
-            <button class="ui blue icon button" onclick="{upload_task}">
+            <button class="ui blue icon button" onclick="{check_upload_task_form}">
                 <i class="upload icon"></i>
                 Upload
             </button>
@@ -366,6 +366,7 @@
     <script>
 
         var self = this
+        self.mixin(ProgressBarMixin)
 
         /*---------------------------------------------------------------------
          Init
@@ -382,6 +383,8 @@
             'scoring_program',
             'ingestion_program'
         ]
+
+        self.upload_progress = undefined
 
 
         self.one("mount", function () {
@@ -465,12 +468,18 @@
         ---------------------------------------------------------------------*/
         
         self.show_upload_task_modal = () => {
+            self.reset_upload_task_input()
             $(self.refs.upload_task_modal).modal('show')
         }
         self.close_upload_task_modal = () => {
             $(self.refs.upload_task_modal).modal('hide')
+            self.reset_upload_task_input()
+        }
+        self.reset_upload_task_input = () => {
             // Reset file input
-           $('input-file[ref="data_file"]').find("input").val('')
+            $('input-file[ref="data_file"]').find("input").val('')
+            // Reset upload progress
+            self.hide_progress_bar()
         }
         self.show_modal = () => {
             $('.menu .item', self.root).tab('change tab', 'details')
@@ -495,10 +504,49 @@
             self.modal_is_valid = false
         }
 
+        self.check_upload_task_form = () => {
+
+            var data_file = self.refs.data_file.refs.file_input.value
+            
+            if(data_file === undefined || !data_file.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                self.reset_upload_task_input()
+                return
+            }
+
+            self.prepare_upload(self.upload_task)()
+        }
+
         self.upload_task = () => {
+
+            // Reset upload progress
+            self.file_upload_progress_handler(undefined)
+
             // get selected file from the input
             var data_file = self.refs.data_file.refs.file_input.files[0]
-            
+
+            // Check if file is valid
+            if(data_file === undefined || !data_file.name.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                return
+            }
+
+            // Call the API function with the file and progress callback
+            CODALAB.api.upload_task(data_file, self.file_upload_progress_handler)
+                .then(function () {
+                    toastr.success("Task uploaded successfully")
+                    setTimeout(function () {
+                        self.close_upload_task_modal()
+                        self.update_tasks()
+                    }, 500)
+                    
+                })
+                .catch(function (error) {
+                    toastr.error("Task upload failed: " + error.responseJSON.error)
+                    self.hide_progress_bar()
+                })
+
+
         }
 
         self.create_task = () => {

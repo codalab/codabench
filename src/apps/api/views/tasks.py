@@ -14,6 +14,7 @@ from api.serializers import tasks as serializers
 from competitions.models import Submission, Phase
 from profiles.models import User
 from tasks.models import Task
+from utils.data import pretty_bytes
 
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
@@ -139,7 +140,29 @@ class TaskViewSet(ModelViewSet):
 
     @action(detail=False, methods=('POST',))
     def upload_task(self, request):
-        pass
+
+        # Access uploaded file
+        uploaded_file = request.FILES.get('file')
+
+        # Check if a file is provided
+        if not uploaded_file:
+            return Response({"error": "No Task uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+
+        storage_used = float(request.user.get_used_storage_space())
+        quota = float(request.user.quota)
+        file_size = uploaded_file.size
+        # Check if user has enough quota
+        if storage_used + file_size > quota:
+            available_space = pretty_bytes(quota - storage_used)
+            file_size = pretty_bytes(file_size)
+            message = f'Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again. You can manage your files in the Resources page.'
+            return Response({'error': message}, status=status.HTTP_507_INSUFFICIENT_STORAGE)
+
+        # Print file details (you can print this to your console/log for now)
+        print(f"Received file: {uploaded_file.name}")
+
+        # Dummy response: just return the file name
+        return Response({"message": f"File '{uploaded_file.name}' uploaded successfully!"})
 
     # This function allows for multiple errors when deleting multiple objects
     def check_delete_permissions(self, request, task):
