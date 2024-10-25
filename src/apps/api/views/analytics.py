@@ -12,7 +12,7 @@ from rest_framework_csv import renderers as r
 from competitions.models import Competition, Submission
 from analytics.models import StorageUsageHistory, CompetitionStorageDataPoint, UserStorageDataPoint
 from api.serializers.analytics import AnalyticsSerializer
-from utils.storage import BundleStorage
+from apps.analytics.tasks import delete_orphan_files as delete_orphan_files_async_task
 
 import os
 import datetime
@@ -22,6 +22,7 @@ import logging
 
 
 User = get_user_model()
+delete_orphan_files_task = None
 
 
 class SimpleFilterBackend(BaseFilterBackend):
@@ -231,10 +232,12 @@ def competitions_usage(request):
             'datefield'
         )
         for su in query.order_by("-datefield", "competition__id"):
+            username = su['competition__created_by__username'] or ("user #" + su['competition__created_by__id']) or "unknown user"
+            email = su['competition__created_by__email'] or "no email"
             competitions_usage.setdefault(su['datefield'].isoformat(), {})[su['competition__id']] = {
                 'snapshot_id': su['id'],
                 'title': su['competition__title'],
-                'organizer': su['competition__created_by__username'] + " (" + su['competition__created_by__email'] + ")",
+                'organizer': username + " (" + email + ")",
                 'created_when': su['competition__created_when'],
                 'datasets': su['datasets_total'],
             }
@@ -275,9 +278,11 @@ def users_usage(request):
             'datefield'
         )
         for su in query.order_by("-datefield", "user__id"):
+            username = su['user__username'] or ("user #" + su['user__id']) or "unknown user"
+            email = su['user__email'] or "no email"
             users_usage.setdefault(su['datefield'].isoformat(), {})[su['user__id']] = {
                 'snapshot_id': su['id'],
-                'name': su['user__username'] + " (" + su['user__email'] + ")",
+                'name': username + " (" + email + ")",
                 'date_joined': su['user__date_joined'],
                 'datasets': su['datasets_total'],
                 'submissions': su['submissions_total'],
@@ -318,36 +323,16 @@ def get_orphan_files(request):
 @api_view(["DELETE"])
 def delete_orphan_files(request):
     """
-    Delete all orphan files from the storage based on the last storage analytics
+    Start the deletion of orphan files task
     """
 
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    logger = logging.getLogger(__name__)
-    logger.info("Delete orphan files started")
+    global delete_orphan_files_task
+    delete_orphan_files_task = delete_orphan_files_async_task.delay()
 
-    # The analytics task generates a db_storage_inconsistency_<date>-<time>.log file that lists, among other things, the orphan files. Let's use it
-
-    # Find most recent file
-    most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
-    if not most_recent_log_file:
-        logger.warning("No storage inconsistency log file found. Nothing will be removed")
-        return Response({"message": "No storage inconsistency log file found. Nothing will be removed"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/logs/"
-    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file))
-
-    # Delete those files in batch (max 1000 element at once)
-    batch_size = 1000
-    for i in range(0, len(orphan_files_path), batch_size):
-        batch = orphan_files_path[i:i + batch_size]
-        objects_formatted = [{'Key': path} for path in batch]
-        BundleStorage.bucket.delete_objects(Delete={'Objects': objects_formatted})
-
-    logger.info("Delete oprhan files finished")
-    return Response({"message": "done"}, status=status.HTTP_200_OK)
+    return Response({"success": True, "message": "orphan files deletion started"}, status=status.HTTP_200_OK)
 
 
 def get_most_recent_storage_inconsistency_log_file():
@@ -401,3 +386,21 @@ def get_files_path_from_orphan_log_file(log_file_path):
         logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
 
     return files_path
+
+
+@api_view(["GET"])
+def check_orphans_deletion_status(request):
+    """
+    Get the orphan files deletion task status.
+    Return one of ["PENDING", "STARTED", "SUCCESS", "FAILURE", "RETRY", "REVOKED"]
+    """
+
+    if not request.user.is_superuser:
+        raise PermissionDenied(detail="Admin only")
+
+    global delete_orphan_files_task
+    state = None
+    if delete_orphan_files_task:
+        state = delete_orphan_files_task.state
+
+    return Response({"status": state}, status=status.HTTP_200_OK)
