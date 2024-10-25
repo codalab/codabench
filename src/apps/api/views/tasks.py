@@ -120,7 +120,7 @@ class TaskViewSet(ModelViewSet):
         task.refresh_from_db()
 
         # Serialize the updated task using TaskDetailSerializer
-        task_detail_serializer = serializers.TaskDetailSerializer(task)
+        task_detail_serializer = serializers.TaskSerializer(task)
 
         # Return the serialized data as a response
         return Response(task_detail_serializer.data)
