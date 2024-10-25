@@ -114,7 +114,8 @@
                     <i class="question circle icon"></i>
                 </span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
             <div><strong>Is Public:</strong> {selected_task.is_public ? "Yes" : "No"}</div>
-            <div if="{selected_task.validated}"
+            <div
+                if="{selected_task.created_by === CODALAB.state.user.username}"
                  class="ui right floated small green icon button"
                  onclick="{toggle_task_is_public}">
                 <i class="share icon"></i> {selected_task.is_public ? 'Make Private' : 'Make Public'}

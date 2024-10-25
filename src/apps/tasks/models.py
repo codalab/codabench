@@ -66,10 +66,6 @@ class Task(ChaHubSaveMixin, models.Model):
             data['solutions'] = [solution.get_chahub_data(include_tasks=False) for solution in self.solutions.all()]
         return self.clean_private_data(data)
 
-    def save(self, *args, **kwargs):
-        self.is_public = self.is_public and self._validated
-        return super().save(*args, **kwargs)
-
 
 class Solution(ChaHubSaveMixin, models.Model):
     name = models.CharField(max_length=256)
