@@ -1,6 +1,10 @@
 import json
-
+import os
 from django.conf import settings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Set the absolute path for the version file
+VERSION_FILE_PATH = os.path.join(os.path.dirname(BASE_DIR), 'version.json')
 
 
 def common_settings(request):
@@ -18,6 +22,16 @@ def common_settings(request):
     else:
         user_json_data = {"logged_in": False}
 
+    # Read version information from the version.json file
+    version_info = {}
+    try:
+        with open(VERSION_FILE_PATH) as version_file:
+            version_info = json.load(version_file)
+    except FileNotFoundError:
+        version_info = {"tag_name": "unknown"}
+    except json.JSONDecodeError:
+        version_info = {"tag_name": "invalid"}
+
     return {
         'STORAGE_TYPE': settings.STORAGE_TYPE,
         'MAX_EXECUTION_TIME_LIMIT': settings.MAX_EXECUTION_TIME_LIMIT,
@@ -26,4 +40,5 @@ def common_settings(request):
         'FLOWER_URL': f"http://{settings.DOMAIN_NAME}:{settings.FLOWER_PUBLIC_PORT}",
         'ENABLE_SIGN_UP': settings.ENABLE_SIGN_UP,
         'ENABLE_SIGN_IN': settings.ENABLE_SIGN_IN,
+        'VERSION_INFO': version_info,
     }

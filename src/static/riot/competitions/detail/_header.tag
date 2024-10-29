@@ -45,7 +45,7 @@
                                 <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>
-                                <span class="detail-label">Current phase ends:</span>
+                                <span class="detail-label">{has_current_phase(competition) ? 'Current Phase Ends' : 'Current Active Phase'}:</span>
                                 <span class="detail-item">{get_end_date(competition)}</span>
                             </div>
                             <div>
@@ -274,9 +274,19 @@
             $('.send-pop-report').popup('toggle')
         }
 
+        self.has_current_phase = function (competition) {
+            let current_phase = _.find(competition.phases, {status: 'Current'})
+            return current_phase ? true : false
+        }
+
         self.get_end_date = function (competition) {
-            let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
-            return end_date ? pretty_date(end_date) : 'Never'
+            if(self.has_current_phase(competition)){
+                let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
+                return end_date ? pretty_date(end_date) : 'Never'
+            }else{
+                return 'None'
+            }
+            
         }
 
         self.migrate_phase = function (phase_id) {

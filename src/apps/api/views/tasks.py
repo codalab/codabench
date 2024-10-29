@@ -42,7 +42,11 @@ class TaskViewSet(ModelViewSet):
             )
 
             task_filter = Q(created_by=self.request.user) | Q(shared_with=self.request.user)
-            if self.request.query_params.get('public'):
+            # when there is `public` in the query params, it means user has checked on the front-end
+            # the Show public tasks checkbox.
+            # When a user clicks that public task that may not belong to the user, we want to show
+            # the public task to the user and hence we check the `retrieve` action
+            if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
 
             qs = qs.filter(task_filter)
@@ -84,10 +88,42 @@ class TaskViewSet(ModelViewSet):
         return context
 
     def update(self, request, *args, **kwargs):
+
+        # Get task
         task = self.get_object()
+
+        # Raise error if user is not the creator of the task or not a super user
         if request.user != task.created_by and not request.user.is_superuser:
             raise PermissionDenied("Cannot update a task that is not yours")
-        return super().update(request, *args, **kwargs)
+
+        # Check if 'is_public' is sent in the data
+        # This means that from the front end the update is_public api is calle
+        # with `is_public` in the data
+        if 'is_public' in request.data:
+            # Perform the update using the parent class's update method
+            super().update(request, *args, **kwargs)
+        else:
+            # If the key is not in the request data, set the corresponding field to None
+            # No condition for scoring program because a task must have a scoring program
+            if "ingestion_program" not in request.data:
+                task.ingestion_program = None
+            if "input_data" not in request.data:
+                task.input_data = None
+            if "reference_data" not in request.data:
+                task.reference_data = None
+
+            # Save the task to apply the changes
+            task.save()
+            super().update(request, *args, **kwargs)
+
+        # Fetch the updated task from the database to ensure it reflects all changes
+        task.refresh_from_db()
+
+        # Serialize the updated task using TaskDetailSerializer
+        task_detail_serializer = serializers.TaskSerializer(task)
+
+        # Return the serialized data as a response
+        return Response(task_detail_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
