@@ -229,7 +229,7 @@
     </div>
     {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
         <div id="version">
-            <a href="{{ VERSION_INFO.release_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
+            <a href="{{ VERSION_INFO.html_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
         </div>
     {% endif %}
 </div>
