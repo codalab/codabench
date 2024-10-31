@@ -321,11 +321,11 @@ class TaskViewSet(ModelViewSet):
                         return Response({"message": f"Task '{task.name}' created successfully!"}, status=status.HTTP_201_CREATED)
 
         except ValueError as e:
-            # Handle specific errors like missing datasets
+            # catch all value errors here
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
-            # Roll back if there's any unexpected error
+            # catch all other unexpected errors here
             return Response({"error": f"An error occurred while creating the task.\n {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # This function allows for multiple errors when deleting multiple objects
