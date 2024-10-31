@@ -536,6 +536,8 @@
                 .then(function () {
                     toastr.success("Task uploaded successfully")
                     setTimeout(function () {
+                        CODALAB.events.trigger('reload_quota_cleanup')
+                        CODALAB.events.trigger('reload_datasets')
                         self.close_upload_task_modal()
                         self.update_tasks()
                     }, 500)
