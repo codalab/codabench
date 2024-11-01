@@ -177,7 +177,10 @@
         <div class="content">
 
             <form class="ui form coda-animated {error: errors}" ref="upload_form">
-                <p>Upload a zip of your task including a yaml file.</p>
+                <p>
+                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="https://github.com/codalab/codabench/wiki/Resource-Management#upload-a-task" target="_blank">here</a>.
+                
+                </p>
                 
                 <input-file name="data_file" ref="data_file"
                             accept=".zip"></input-file>
