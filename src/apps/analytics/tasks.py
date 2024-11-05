@@ -584,7 +584,7 @@ def delete_orphan_files():
         raise Exception("No storage inconsistency log file found")
 
     # Get the list of orphan files from the content of the most recent log file
-    log_folder = "/app/logs/"
+    log_folder = "/app/var/logs/"
     orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file), logger)
 
     # Delete those files in batch (max 1000 element at once)
@@ -598,7 +598,7 @@ def delete_orphan_files():
 
 
 def get_most_recent_storage_inconsistency_log_file(logger):
-    log_folder = "/app/logs/"
+    log_folder = "/app/var/logs/"
     try:
         log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
     except FileNotFoundError:
