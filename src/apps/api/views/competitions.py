@@ -168,13 +168,13 @@ class CompetitionViewSet(ModelViewSet):
                     'phases__leaderboard__columns',
                     'collaborators',
                 )
-                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                qs = qs.annotate(submission_count=Count(
-                    # Filtering out children submissions so we only count distinct submissions
-                    Case(
-                        When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
-                    ), distinct=True)
-                )
+                # qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
+                # qs = qs.annotate(submission_count=Count(
+                #     # Filtering out children submissions so we only count distinct submissions
+                #     Case(
+                #         When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
+                #     ), distinct=True)
+                # )
 
         # search_query is true when called from searchbar
         if search_query:
