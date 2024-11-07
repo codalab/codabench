@@ -15,15 +15,24 @@ class HomeView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        data = Competition.objects.aggregate(
-            count=Count('*'),
-            published_comps=Count('pk', filter=Q(published=True)),
-            unpublished_comps=Count('pk', filter=Q(published=False)),
-        )
+        # TODO: Optimize fetching the statistics
+        # Possibly from a file where they are written by an automated script once a day
+        # For now showing latest numbers from live codabench
+        # The following commented code is slowing down the loading of the home page
 
-        public_competitions = data['published_comps']
-        users = User.objects.all().count()
-        submissions = Submission.objects.all().count()
+        # data = Competition.objects.aggregate(
+        #     count=Count('*'),
+        #     published_comps=Count('pk', filter=Q(published=True)),
+        #     unpublished_comps=Count('pk', filter=Q(published=False)),
+        # )
+
+        # public_competitions = data['published_comps']
+        # users = User.objects.all().count()
+        # submissions = Submission.objects.all().count()
+
+        public_competitions = 204
+        users = 12216
+        submissions = 70276
 
         context['general_stats'] = [
             {'label': "Public Competitions", 'count': public_competitions},
