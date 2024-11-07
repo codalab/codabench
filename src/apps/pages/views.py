@@ -1,9 +1,8 @@
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.generic import TemplateView
-from django.db.models import Count, Q
+from django.db.models import Q
 
-from competitions.models import Competition, Submission
-from profiles.models import User
+from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
 from django.shortcuts import render
