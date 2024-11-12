@@ -7,6 +7,7 @@ app_name = "accounts"
 
 urlpatterns = [
     url(r'^signup', views.sign_up, name="signup"),
+    path('resend_activation/', views.resend_activation, name='resend_activation'),
     path('login/', views.log_in, name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('password_reset/', views.CustomPasswordResetView.as_view(), name='password_reset'),
