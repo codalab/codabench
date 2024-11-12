@@ -133,8 +133,9 @@
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
             <div class="delete-oprhans-container">
-                <button class="ui red button" onclick="{showConfirmationModal}">
-                    <i class="icon warning"></i>Delete orphan files
+                <button class="ui red button { disabled: delete_orphans_button_modal_disabled }" onclick="{showConfirmationModal}">
+                    <i class="icon { warning: !delete_orphans_button_modal_loading}"></i>
+                    {delete_orphans_button_modal_text}
                 </button>
             </div>
         </div>
@@ -163,7 +164,7 @@
             <h3>Do you want to proceed ?</h3>
         </div>
         <div class="actions">
-            <button class="ui icon button {delete_button_color} { loading: delete_button_loading } { disabled: delete_button_disabled }" onclick="{deleteOrphanFiles}">
+            <button class="ui icon button {delete_button_color} { disabled: delete_button_disabled }" onclick="{deleteOrphanFiles}">
                 <i if={delete_button_color=="green"} class="check icon"></i>
                 {delete_button_text}
             </button>
@@ -216,6 +217,11 @@
         self.delete_button_loading = false
         self.delete_button_disabled = false
         self.delete_button_text = "Yes, delete all orphan files"
+
+        self.delete_orphans_button_modal_text = "Delete orphan files"
+        self.delete_orphans_button_modal_loading = false
+        self.delete_orphans_button_modal_disabled = false
+        self.pollingInterval;
 
         self.one("mount", function () {
             // Semantic UI
@@ -327,6 +333,7 @@
             self.time_range_shortcut("month");
             self.update_chart_resolution("day");
             self.getOrphanFiles();
+            self.startCheckOrphansDeletionStatus();
         })
 
         /*---------------------------------------------------------------------
@@ -525,23 +532,103 @@
             self.update();
         }
 
+        self.checkOrphansDeletionStatus = function() {
+            CODALAB.api.check_orphans_deletion_status()
+                .done(function(data) {
+                    if (data.status) {
+                        if (data.status == "SUCCESS") {
+                            toastr.success("Orphan files deletion successful")
+                            self.delete_button_color = "green";
+                            self.delete_button_text = "Deletion Successful";
+                        }
+                        if (data.status == "FAILURE") {
+                            toastr.error("Orphan files deletion failed")
+                            self.delete_button_color = "red";
+                            self.delete_button_text = "Deletion Failed";
+                        }
+                        if (data.status == "REVOKED") {
+                            toastr.error("Orphan files deletion has been canceled")
+                            self.delete_button_color = "red";
+                            self.delete_button_text = "Deletion canceled";
+                        }
+                        if (data.status == "SUCCESS" || data.status == "FAILURE" || data.status == "REVOKED") {
+                            // Task is over
+                            self.stopCheckOrphansDeletionStatus();
+                            self.delete_orphans_button_modal_text = "Delete orphan files";
+                            self.delete_orphans_button_modal_loading = false;
+                            self.delete_orphans_button_modal_disabled = false;
+                            self.delete_button_loading = false;
+                            self.delete_button_disabled = true;
+                        } else {
+                            // Task is running
+                            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
+                            self.delete_orphans_button_modal_disabled = true;
+                            self.delete_orphans_button_modal_loading = true;
+
+                            self.delete_button_text = "Orphan files deletion in progress...";
+                            self.delete_button_disabled = true;
+                            self.delete_button_loading = true;
+                        }
+                    } else {
+                        // No task running
+                        self.stopCheckOrphansDeletionStatus();
+
+                        self.delete_orphans_button_modal_text = "Delete orphan files";
+                        self.delete_orphans_button_modal_disabled = false;
+                        self.delete_orphans_button_modal_loading = false;
+
+                        self.delete_button_color = "red";
+                        self.delete_button_loading = false;
+                        self.delete_button_disabled = false;
+                        self.delete_button_text = "Yes, delete all orphan files";
+                    }
+                    
+                })
+                .fail(function(response) {
+                    toastr.error("Orphan files deletion's task status check failed")
+                    self.delete_orphans_button_modal_text = "Delete orphan files";
+                    self.delete_orphans_button_modal_loading = false;
+                    self.delete_orphans_button_modal_disabled = false;
+
+                    self.delete_button_text = "Yes, delete all orphan files";
+                    self.delete_button_color = "red";
+                    self.delete_button_loading = false;
+                    self.delete_button_disabled = false;
+
+                    self.stopCheckOrphansDeletionStatus();
+                })
+                .always(function() {
+                    self.update();
+                })
+        }
+
+        self.startCheckOrphansDeletionStatus = function () {
+            self.pollingInterval = setInterval(self.checkOrphansDeletionStatus, 2000);
+        }
+
+        self.stopCheckOrphansDeletionStatus = function() {
+            if (self.pollingInterval) {
+                clearInterval(self.pollingInterval);
+                self.pollingInterval = null;
+            }
+        }
+
         self.deleteOrphanFiles = function() {
             self.delete_button_loading = true
             self.delete_button_disabled = true
+            self.delete_orphans_button_modal_loading = true;
+            self.delete_orphans_button_modal_disabled = true;
+            self.delete_button_text = "Orphan files deletion in progress...";
+            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
             self.update()
             CODALAB.api.delete_orphan_files()
                 .done(function (data) {
-                    console.log("done", data);
-                    self.delete_button_color = "green";
-                    self.delete_button_disabled = true;
-                    self.delete_button_text = "Deletion Successful";
+                    if (data && data.success && !self.pollingInterval) {
+                        self.startCheckOrphansDeletionStatus();
+                    }
                 })
                 .fail(function (response) {
-                    console.log("fail response=", response);
-                    toastr.error("Deletion failed, error occurred")
-                    self.delete_button_color = "red";
-                    self.delete_button_disabled = false;
-                    self.delete_button_text = "Deletion Failed";
+                    toastr.error("Orphan files deletion failed to start")
                 })
                 .always(function () {
                     self.delete_button_loading = false
@@ -552,12 +639,10 @@
         self.getOrphanFiles = function() {
             CODALAB.api.get_orphan_files()
                 .done(function (data) {
-                    console.log("get_orphan_files success. Response", data);
                     self.nb_orphan_files = data.data.length
                     self.update({nb_orphan_files: self.nb_orphan_files});
                 })
                 .fail(function (response) {
-                    console.log("get_orphan_files failed. Response=", response);
                     toastr.error("Get oprhan files failed, error occurred")
                 });
         }

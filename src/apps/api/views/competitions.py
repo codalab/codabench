@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Count, Q, F, Case, When
+from django.db.models import Subquery, OuterRef, Count, Q, F
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
@@ -168,13 +168,13 @@ class CompetitionViewSet(ModelViewSet):
                     'phases__leaderboard__columns',
                     'collaborators',
                 )
-                qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
-                qs = qs.annotate(submission_count=Count(
-                    # Filtering out children submissions so we only count distinct submissions
-                    Case(
-                        When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
-                    ), distinct=True)
-                )
+                # qs = qs.annotate(participant_count=Count(F('participants'), distinct=True))
+                # qs = qs.annotate(submission_count=Count(
+                #     # Filtering out children submissions so we only count distinct submissions
+                #     Case(
+                #         When(phases__submissions__parent__isnull=True, then='phases__submissions__pk')
+                #     ), distinct=True)
+                # )
 
         # search_query is true when called from searchbar
         if search_query:
