@@ -43,7 +43,7 @@ class PathWrapper(object):
         return path
 
 
-def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
+def make_url_sassy(path, permission='r', duration=60 * 60 * 24 * 5, content_type='application/zip'):
     assert permission in ('r', 'w'), "SASSY urls only support read and write ('r' or 'w' permission)"
 
     client_method = None  # defined based on storage backend
