@@ -221,6 +221,7 @@ def competitions_usage(request):
 
         query = CompetitionStorageDataPoint.objects.filter(
             at_date__range=(start_date, end_date),
+            competition__isnull=False
         ).dates("at_date", resolution).values(
             'id',
             'competition__id',
@@ -267,6 +268,7 @@ def users_usage(request):
 
         query = UserStorageDataPoint.objects.filter(
             at_date__range=(start_date, end_date),
+            user__isnull=False
         ).dates("at_date", resolution).values(
             'id',
             'user__id',
