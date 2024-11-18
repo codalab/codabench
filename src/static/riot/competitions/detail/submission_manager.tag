@@ -220,7 +220,6 @@
         })
 
         self.pretty_date = function (date_string) {
-            date_string = "2024-10-13T11:00:00Z"
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toFormat('yyyy-MM-dd HH:mm')
             } else {
