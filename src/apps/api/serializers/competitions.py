@@ -347,8 +347,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     leaderboards = serializers.SerializerMethodField()
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
-    participant_count = serializers.IntegerField(read_only=True)
-    submission_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
+    # participant_count = serializers.IntegerField(read_only=True)
+    submissions_count = serializers.IntegerField(read_only=True)
+    # submission_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
@@ -372,8 +374,10 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'participant_status',
             'registration_auto_approve',
             'description',
-            'participant_count',
-            'submission_count',
+            'participants_count',
+            # 'participant_count',
+            'submissions_count',
+            # 'submission_count',
             'queue',
             'enable_detailed_results',
             'show_detailed_results_in_submission_panel',
@@ -430,7 +434,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
-    participant_count = serializers.IntegerField(read_only=True)
+    # participant_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Competition
@@ -441,7 +446,8 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'owner_display_name',
             'created_when',
             'published',
-            'participant_count',
+            # 'participant_count',
+            'participants_count',
             'logo',
             'logo_icon',
             'description',
