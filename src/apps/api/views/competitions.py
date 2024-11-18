@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Count, Q, F
+from django.db.models import Subquery, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
