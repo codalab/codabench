@@ -34,7 +34,6 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-from datetime import datetime
 from django.db import transaction
 from django.conf import settings
 
@@ -271,8 +270,8 @@ class CompetitionViewSet(ModelViewSet):
                         new_phase_obj = Phase.objects.create(
                             status=phase["status"],
                             index=phase["index"],
-                            start=datetime.strptime(phase['start'], "%B %d, %Y"),
-                            end=datetime.strptime(phase['end'], "%B %d, %Y") if phase['end'] else None,
+                            start=phase['start'],
+                            end=phase['end'] if phase['end'] else None,
                             name=phase["name"],
                             description=phase["description"],
                             hide_output=phase["hide_output"],
