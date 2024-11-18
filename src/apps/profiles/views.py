@@ -19,7 +19,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
-from .forms import SignUpForm, LoginForm
+from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token
@@ -82,8 +82,8 @@ def activate(request, uidb64, token):
         messages.success(request, f'Your account is fully setup! Please login.')
         return redirect('accounts:login')
     else:
-        messages.error(request, f"Activation link is invalid. Please double check your link.")
-        return redirect('accounts:signup')
+        messages.error(request, f"Activation link is invalid or expired. Please double check your link.")
+        return redirect('accounts:resend_activation')
     return redirect('pages:home')
 
 
@@ -135,6 +135,31 @@ def sign_up(request):
     return render(request, 'registration/signup.html', context)
 
 
+def resend_activation(request):
+    context = {}
+    if request.method == 'POST':
+        form = ActivationForm(request.POST)
+        if form.is_valid():
+
+            email = form.cleaned_data.get('email')
+            user = User.objects.filter(email=email).first()
+
+            if user and not user.is_active:
+                activateEmail(request, user, email)
+                return redirect('pages:home')
+            else:
+                if not user:
+                    messages.error(request, "No account found with this email.")
+                elif user.is_active:
+                    messages.error(request, "This account is already active.")
+        else:
+            context['form'] = form
+
+    if not context.get('form'):
+        context['form'] = ActivationForm()
+    return render(request, 'registration/resend_activation.html', context)
+
+
 def log_in(request):
 
     # Fectch next redirect page after login
@@ -173,7 +198,7 @@ def log_in(request):
                         else:
                             return redirect(next)
                     else:
-                        messages.error(request, "Account is not active. Activate your account using the link sent to you by email.")
+                        context['activation_error'] = "Your account is not activated. Please check your email for the activation link"
                 else:
                     messages.error(request, "Wrong Credentials!")
         else:

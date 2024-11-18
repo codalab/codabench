@@ -243,7 +243,7 @@
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
-                    url: `${URLS.API}tasks/?search={query}`,
+                    url: `${URLS.API}tasks/?public=true&search={query}`,
                     cache: false,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data.results)}
