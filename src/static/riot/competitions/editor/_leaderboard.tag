@@ -419,6 +419,9 @@
                     if (computation !== 'none') {
                         column.computation = computation
                         column.computation_indexes = _.get(data, `computation_indexes_${i}`)
+                    } else {
+                        column.computation = null 
+                        column.computation_indexes = null
                     }
                     return column
                 })

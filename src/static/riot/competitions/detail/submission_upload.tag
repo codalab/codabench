@@ -476,19 +476,29 @@
                 .fail(function (response) {
                     if (response) {
                         try {
-                            let errors = JSON.parse(response.responseText);
+                            let errors = JSON.parse(response.responseText)
 
                             // Clean up errors to not be arrays but plain text
                             Object.keys(errors).map(function (key, index) {
                                 errors[key] = errors[key].join('; ')
                             })
 
-                            self.update({errors: errors})
-                        } catch (e) {
+                            // Create a string to concatenate all error messages
+                            let errorMessages = "Error in submission upload:\n"
+                            Object.keys(errors).forEach(function (key) {
+                                errorMessages += key + ": " + errors[key] + "\n"
+                            })
 
+                            toastr.error(errorMessages)
+                            self.update({errors: errors})
+
+                        } catch (e) {
+                            toastr.error("Error in submission upload\n"+e)
                         }
+                    } else {
+                        toastr.error("Something went wrong, please try again later")
                     }
-                    toastr.error(`Creation failed, error occurred: ${response.responseJSON.data_file[0]}`)
+                    
                 })
                 .always(function () {
                     setTimeout(self.hide_progress_bar, 500)

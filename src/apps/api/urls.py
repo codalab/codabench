@@ -69,6 +69,7 @@ urlpatterns = [
     path('analytics/users_usage/', analytics.users_usage, name='users_usage'),
     path('analytics/delete_orphan_files/', analytics.delete_orphan_files, name="delete_orphan_files"),
     path('analytics/get_orphan_files/', analytics.get_orphan_files, name="get_orphan_files"),
+    path('analytics/check_orphans_deletion_status/', analytics.check_orphans_deletion_status, name="check_orphans_deletion_status"),
 
     # API Docs
     re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
