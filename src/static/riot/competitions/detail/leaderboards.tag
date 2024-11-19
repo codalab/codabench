@@ -34,7 +34,6 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th>Entries</th>
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
@@ -83,8 +82,7 @@
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td>{submission.num_entries}</td>
-            <td>{submission.created_when}</td>
+            <td>{ pretty_date(submission.created_when) }</td>
             <td>{submission.id}</td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
@@ -108,6 +106,13 @@
         self.enable_detailed_results = false
         self.show_detailed_results_in_leaderboard = false
 
+        self.pretty_date = function (date_string) {
+            if (!!date_string) {
+                return luxon.DateTime.fromISO(date_string).toFormat('yyyy-MM-dd HH:mm')
+            } else {
+                return ''
+            }
+        }
        
         self.bold_class = function(column, submission){
             // Return `text-bold` if submission has 

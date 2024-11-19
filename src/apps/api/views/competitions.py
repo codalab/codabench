@@ -34,7 +34,6 @@ from competitions.utils import get_popular_competitions, get_featured_competitio
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
-from datetime import datetime
 from django.db import transaction
 from django.conf import settings
 
@@ -271,8 +270,8 @@ class CompetitionViewSet(ModelViewSet):
                         new_phase_obj = Phase.objects.create(
                             status=phase["status"],
                             index=phase["index"],
-                            start=datetime.strptime(phase['start'], "%B %d, %Y"),
-                            end=datetime.strptime(phase['end'], "%B %d, %Y") if phase['end'] else None,
+                            start=phase['start'],
+                            end=phase['end'] if phase['end'] else None,
                             name=phase["name"],
                             description=phase["description"],
                             hide_output=phase["hide_output"],
@@ -706,15 +705,15 @@ class PhaseViewSet(ModelViewSet):
             # - child submissions (submissions who has a parent i.e. parent field is not null)
             # - Failed submissions
             # - Cancelled submissions
-            num_entries = Submission.objects.filter(
-                Q(owner__username=submission['owner']) |
-                Q(parent__owner__username=submission['owner']),
-                phase=phase,
-            ).exclude(
-                Q(status=Submission.FAILED) |
-                Q(status=Submission.CANCELLED) |
-                Q(parent__isnull=False)
-            ).count()
+            # num_entries = Submission.objects.filter(
+            #     Q(owner__username=submission['owner']) |
+            #     Q(parent__owner__username=submission['owner']),
+            #     phase=phase,
+            # ).exclude(
+            #     Q(status=Submission.FAILED) |
+            #     Q(status=Submission.CANCELLED) |
+            #     Q(parent__isnull=False)
+            # ).count()
 
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
 
@@ -738,7 +737,7 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
-                    'num_entries': num_entries,
+                    # 'num_entries': num_entries,
                     'created_when': submission['created_when']
                 })
             for score in submission['scores']:

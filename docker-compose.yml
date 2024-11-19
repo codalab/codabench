@@ -114,6 +114,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
     ports:
       - 5432:5432
     volumes:
