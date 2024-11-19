@@ -705,7 +705,7 @@ class PhaseViewSet(ModelViewSet):
             # - child submissions (submissions who has a parent i.e. parent field is not null)
             # - Failed submissions
             # - Cancelled submissions
-            num_entries = 0 # TMP, remove counting
+            num_entries = 1 # TMP, remove counting
             # num_entries = Submission.objects.filter(
             #     Q(owner__username=submission['owner']) |
             #     Q(parent__owner__username=submission['owner']),
