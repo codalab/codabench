@@ -74,7 +74,7 @@ class TestSubmissions(SeleniumTestCase):
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
-        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(6)').text) == round(Decimal(prediction_score), precision)
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(5)').text) == round(Decimal(prediction_score), precision)
 
     def test_v15_iris_result_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_result.zip', '======= Set 1 (Iris_test)', has_solutions=False, precision=4)
