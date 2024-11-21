@@ -507,7 +507,7 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
-        featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+        featured_comps = get_featured_competitions()
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
         featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
         return Response(data={
