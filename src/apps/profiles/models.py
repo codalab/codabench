@@ -93,6 +93,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 
+    # Soft deletion
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.username, allow_unicode=True)
         super().save(*args, **kwargs)
@@ -192,6 +196,27 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         storage_used += users_submissions_details * 1024 if users_submissions_details else 0
 
         return storage_used
+
+
+    def delete(self, *args, **kwargs):
+        """Soft delete the user and anonymize personal data."""
+        # Mark the user as deleted
+        self.is_deleted = True
+        self.deleted_at = now()
+        
+        # Anonymize personal data
+        # TODO add all personal data that needs to be anonymized
+        self.email = f"deleted_{uuid.uuid4()}@domain.com"
+        self.username = f"deleted_user_{self.id}"
+
+        # Save the changes
+        self.save()
+    
+    def restore(self, *args, **kwargs):
+        """Restore a soft-deleted user. Note that personal data remains anonymized."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 
 
 class GithubUserInfo(models.Model):
