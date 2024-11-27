@@ -181,7 +181,7 @@ def log_in(request):
 
             # Check if the user exists
             try:
-                user = User.objects.get(Q(username=username) | Q(email=username))
+                user = User.objects.get((Q(username=username) | Q(email=username)) & Q(is_deleted=False))
             except User.DoesNotExist:
                 messages.error(request, "User does not exist!")
             else:
