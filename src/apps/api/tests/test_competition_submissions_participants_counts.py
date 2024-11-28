@@ -44,7 +44,7 @@ class CompetitionSubmissionsParticipantsCountsTests(TestCase):
     def test_adding_participant_updates_participants_count(self):
         initial_count = self.competition.participants_count
 
-        self.assertEqual(initial_count, 0)
+        self.assertEqual(initial_count, 1)  # default count is 1
 
         # Add a new approved participant
         new_participant = UserFactory(username='new_participant', password='test')
