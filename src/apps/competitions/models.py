@@ -81,8 +81,8 @@ class Competition(ChaHubSaveMixin, models.Model):
     # Count of submissions for this competition
     submissions_count = models.PositiveIntegerField(default=0)
 
-    # Count of participants in this competition
-    participants_count = models.PositiveIntegerField(default=0)
+    # Count of participants in this competition (default = 1 because competition creator is also a participant)
+    participants_count = models.PositiveIntegerField(default=1)
 
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
