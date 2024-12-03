@@ -184,7 +184,8 @@ class SubmissionViewSet(ModelViewSet):
         qs = self.get_queryset()
         if not qs:
             return Response({'Submission search returned empty'}, status=status.HTTP_404_NOT_FOUND)
-        qs.delete()
+        for submission in qs:
+            submission.delete()  # This will trigger the model's `delete` method
         return Response({})
 
     def get_renderer_context(self):
