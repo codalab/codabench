@@ -85,11 +85,11 @@
                 <div class="stat-buttons">
                     <!--todo: turn cursor: pointer and hover off on these buttons since they are not clickable-->
                     <div class="ui tiny left labeled fluid button">
-                        <a class="ui tiny basic red label">{competition.participant_count}</a>
+                        <a class="ui tiny basic red label">{competition.participants_count}</a>
                         <div class="ui tiny red button">Participants</div>
                     </div>
                     <div class="ui tiny left labeled fluid button">
-                        <a class="ui tiny basic teal label">{competition.submission_count}</a>
+                        <a class="ui tiny basic teal label">{competition.submissions_count}</a>
                         <div class="ui tiny teal button">Submissions</div>
                     </div>
                 </div>

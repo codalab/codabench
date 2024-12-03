@@ -24,7 +24,7 @@
                     <span if="{reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
                     <span if="{report}"><a href="{report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></a></span>
                 </div>
-                <strong>{participant_count}</strong> Participants
+                <strong>{participants_count}</strong> Participants
             </div>
         </div>
 

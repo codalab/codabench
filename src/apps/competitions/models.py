@@ -78,6 +78,15 @@ class Competition(ChaHubSaveMixin, models.Model):
     # If true, participants see the make their submissions public
     can_participants_make_submissions_public = models.BooleanField(default=True)
 
+    # If true, competition is featured and may show up on the home page
+    is_featured = models.BooleanField(default=False)
+
+    # Count of submissions for this competition
+    submissions_count = models.PositiveIntegerField(default=0)
+
+    # Count of participants in this competition (default = 1 because competition creator is also a participant)
+    participants_count = models.PositiveIntegerField(default=1)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
@@ -567,11 +576,18 @@ class Submission(ChaHubSaveMixin, models.Model):
         # Also clean up details on delete
         self.details.all().delete()
 
+        # Decrement the submissions_count for the competition on submission deletion
+        # Fetching competition from the phase of this submission
+        competition = self.phase.competition
         super().delete(**kwargs)
+        # Ensure submissions_count stays non-negative
+        if competition.submissions_count > 0:
+            competition.submissions_count -= 1
+            competition.save()
 
     def save(self, ignore_submission_limit=False, **kwargs):
-        created = not self.pk
-        if created and not ignore_submission_limit:
+        is_new = self.pk is None
+        if is_new and not ignore_submission_limit:
             can_make_submission, reason_why_not = self.phase.can_user_make_submissions(self.owner)
             if not can_make_submission:
                 raise PermissionError(reason_why_not)
@@ -601,6 +617,12 @@ class Submission(ChaHubSaveMixin, models.Model):
                     setattr(self, file_path_attr, None)
 
         super().save(**kwargs)
+
+        # Only increment when a submission is parent (do not count child submissions)
+        if is_new and self.parent is None:
+            # Increment the submissions_count for the competition
+            self.phase.competition.submissions_count += 1
+            self.phase.competition.save()
 
     def start(self, tasks=None):
         from .tasks import run_submission
@@ -786,6 +808,23 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
             'competition_id': self.competition_id
         }
         return self.clean_private_data(data)
+
+    def save(self, *args, **kwargs):
+        # Determine if this is a new participant (no existing record in DB)
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new:
+            # Increment the participants_count for the competition
+            self.competition.participants_count += 1
+            self.competition.save()
+
+    def delete(self, *args, **kwargs):
+        # Decrement the participants_count for the competition
+        competition = self.competition
+        super().delete(*args, **kwargs)
+        competition.participants_count -= 1
+        competition.save()
 
 
 class Page(models.Model):

@@ -6,7 +6,7 @@ from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
-from django.db.models import Subquery, OuterRef, Count, Q, F
+from django.db.models import Subquery, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
@@ -507,7 +507,7 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
-        featured_comps = get_featured_competitions(excluded_competitions=popular_comps)
+        featured_comps = get_featured_competitions()
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
         featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
         return Response(data={
@@ -537,7 +537,6 @@ class CompetitionViewSet(ModelViewSet):
         qs = Competition.objects.filter(published=True)
         qs = qs.order_by('-id')
         queryset = self.filter_queryset(qs)
-        queryset = queryset.annotate(participant_count=Count(F('participants'), distinct=True))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

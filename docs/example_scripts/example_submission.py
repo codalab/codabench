@@ -41,7 +41,7 @@ SUBMISSION_ZIP_PATH = '../../src/tests/functional/test_files/submission.zip'
 # ----------------------------------------------------------------------------
 from urllib.parse import urljoin  # noqa: E402
 import requests                   # noqa: E402,E261  # Ignore E261 to line up these noqa
-
+import os
 
 # Check someone updated PHASE_ID argument!
 assert PHASE_ID, "PHASE_ID must be set at the top of this script"
@@ -68,11 +68,16 @@ if not resp.json()['can']:
     print(f"Failed to create submission: {resp.json()['reason']}")
     exit(-2)
 
+
+
+file_size = os.path.getsize(SUBMISSION_ZIP_PATH)
+
 # Create + Upload our dataset
 datasets_url = urljoin(CODALAB_URL, '/api/datasets/')
 datasets_payload = {
     "type": "submission",
     "request_sassy_file_name": "submission.zip",
+    "file_size": file_size,
 }
 resp = requests.post(datasets_url, datasets_payload, headers=headers)
 if resp.status_code != 201:
