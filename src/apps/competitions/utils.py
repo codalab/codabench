@@ -16,25 +16,13 @@ def get_popular_competitions(limit=4):
     :return:  Most popular competitions.
     '''
 
-    # TODO: Fix the fetching of the popular competitions
-    # Uncomment and update the following code when a long term fix is implemented for participants count
+    competitions = Competition.objects.filter(published=True) \
+        .order_by('-participants_count')
 
-    # competitions = Competition.objects.filter(published=True) \
-    #     .annotate(participant_count=Count('participants')) \
-    #     .order_by('-participant_count')
-
-    # if len(competitions) <= limit:
-    #     return competitions
-
-    # return competitions[:limit]
-
-    # Temporary solution to show specific popular competitions
-    try:
-        popular_competiion_ids = [1752, 1772, 2338, 3863]
-        competitions = Competition.objects.filter(id__in=popular_competiion_ids)
+    if len(competitions) <= limit:
         return competitions
-    except Exception:
-        return []
+
+    return competitions[:limit]
 
 
 def get_featured_competitions(limit=4):
