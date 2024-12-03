@@ -78,6 +78,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     # If true, participants see the make their submissions public
     can_participants_make_submissions_public = models.BooleanField(default=True)
 
+    # If true, competition is featured and may show up on the home page
+    is_featured = models.BooleanField(default=False)
+
     # Count of submissions for this competition
     submissions_count = models.PositiveIntegerField(default=0)
 
@@ -615,7 +618,8 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         super().save(**kwargs)
 
-        if is_new:
+        # Only increment when a submission is parent (do not count child submissions)
+        if is_new and self.parent is None:
             # Increment the submissions_count for the competition
             self.phase.competition.submissions_count += 1
             self.phase.competition.save()

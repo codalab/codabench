@@ -14,8 +14,7 @@ Usage:
 
     Import and call the function
     ```
-    from competitions.submission_participant_counts import compute_submissions_p
-articipants_counts
+    from competitions.submission_participant_counts import compute_submissions_participants_counts
     compute_submissions_participants_counts()
     ```
 """
@@ -36,11 +35,15 @@ def compute_submissions_participants_counts():
         phases = Phase.objects.filter(competition=competition)
 
         # Count submissions across all phases of the competition
-        submissions_count = Submission.objects.filter(phase__in=phases).count()
+        submissions_count = Submission.objects.filter(phase__in=phases, parent__isnull=True).count()
 
         # Update the competition fields
         competition.participants_count = participants_count
         competition.submissions_count = submissions_count
-        competition.save()
+        try:
+            competition.save()
+        except Exception as e:
+            print(f"Fail for competition {competition.pk}")
+            print(e)
 
     print(f"{len(competitions)} Competitions updated successfully!")
