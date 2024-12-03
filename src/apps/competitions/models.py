@@ -78,6 +78,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     # If true, participants see the make their submissions public
     can_participants_make_submissions_public = models.BooleanField(default=True)
 
+    # If true, competition is featured and may show up on the home page
+    is_featured = models.BooleanField(default=False)
+
     # Count of submissions for this competition
     submissions_count = models.PositiveIntegerField(default=0)
 
