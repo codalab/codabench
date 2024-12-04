@@ -204,10 +204,45 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         self.is_deleted = True
         self.deleted_at = now()
         
-        # Anonymize personal data
-        # TODO add all personal data that needs to be anonymized
-        self.email = f"deleted_{uuid.uuid4()}@domain.com"
+        # Anonymize or removed personal data
+
+        # Github related
+        self.github_uid = None
+        self.avatar_url = None
+        self.url = None
+        self.html_url = None
+        self.name = None
+        self.company = None
+        self.bio = None
+        if self.github_info:
+            self.github_info.login = None
+            self.github_info.avatar_url = None
+            self.github_info.gravatar_id = None
+            self.github_info.html_url = None
+            self.github_info.name = None
+            self.github_info.company = None
+            self.github_info.bio = None
+            self.github_info.location = None
+
+        # Any user attribute
         self.username = f"deleted_user_{self.id}"
+        self.slug = f"deleted_slug_{self.id}"
+        self.photo = None
+        self.email = None
+        self.display_name = None
+        self.first_name = None
+        self.last_name = None
+        self.title = None
+        self.location = None
+        self.biography = None
+        self.personal_url = None
+        self.linkedin_url = None
+        self.twitter_url = None
+        self.github_url = None
+
+        # Queues
+        self.rabbitmq_username = None
+        self.rabbitmq_password = None
 
         # Save the changes
         self.save()
