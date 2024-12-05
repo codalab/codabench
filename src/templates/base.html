@@ -148,6 +148,10 @@
                                     </i><i class="edit icon"></i>
                                     Edit profile
                                 </a>
+                                <a class="item" href="{% url 'accounts:user_account' username=user.username %}">
+                                    <i class="cog icon"></i>
+                                    Account
+                                </a>
                                 <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}">
                                     </i><i class="bell icon"></i>
                                     Notifications
