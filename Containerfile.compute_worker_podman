@@ -4,12 +4,12 @@ FROM fedora:37
 RUN dnf -y update && \
     # https://bugzilla.redhat.com/show_bug.cgi?id=1995337#c3
     rpm --setcaps shadow-utils 2>/dev/null && \
-    dnf -y install podman fuse-overlayfs python3.8 python3-pip \
+    dnf -y install podman fuse-overlayfs python3.9 \
         --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
-# Setup user 
+# Setup user
 RUN useradd worker; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
@@ -47,16 +47,23 @@ RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/container
 ENV PYTHONUNBUFFERED 1
 ENV CONTAINER_ENGINE_EXECUTABLE podman
 
-# Get pip for 3.8 
-RUN python3.8 -m ensurepip --upgrade
-
 WORKDIR /home/worker/compute_worker
 
 ADD compute_worker/ /home/worker/compute_worker
 
 RUN chown worker:worker -R /home/worker/compute_worker
 
-RUN pip3.8 install -r /home/worker/compute_worker/compute_worker_requirements.txt
+RUN curl -sSL https://install.python-poetry.org | python3.9 -
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+# So we get 3.9
+RUN poetry config virtualenvs.prefer-active-python true
+COPY ./compute_worker/pyproject.toml ./
+COPY ./compute_worker/poetry.lock ./
+RUN poetry install
 
 CMD celery -A compute_worker worker \
     -l info \
