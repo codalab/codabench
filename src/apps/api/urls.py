@@ -63,6 +63,9 @@ urlpatterns = [
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
 
+    # User account
+    path('delete_account/', profiles.delete_account, name="delete_account"),
+
     # Analytics
     path('analytics/storage_usage_history/', analytics.storage_usage_history, name='storage_usage_history'),
     path('analytics/competitions_usage/', analytics.competitions_usage, name='competitions_usage'),
