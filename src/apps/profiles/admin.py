@@ -10,7 +10,6 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ['username', 'email']
 
 
-
 admin.site.register(User, UserAdmin)
 admin.site.register(Organization)
 admin.site.register(Membership)
