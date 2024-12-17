@@ -232,6 +232,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
         'schedule': crontab(hour='2', minute='0', day_of_week='sun')  # Every Sunday at 02:00 UTC time
     },
+    'update_home_page_counters': {
+        'task': 'analytics.tasks.update_home_page_counters',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
     'reset_computed_storage_analytics': {
         'task': 'analytics.tasks.reset_computed_storage_analytics',
         'schedule': crontab(hour='2', minute='0', day_of_month='1', month_of_year="*/3")  # Every 3 month at 02:00 UTC on the 1st

@@ -5,6 +5,8 @@ from django.conf import settings
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Set the absolute path for the version file
 VERSION_FILE_PATH = os.path.join(os.path.dirname(BASE_DIR), 'version.json')
+# Set the absolute path for the home page counters file
+HOME_PAGE_COUNTERS_FILE_PATH = os.path.join(os.path.dirname(BASE_DIR), 'home_page_counters.json')
 
 
 def common_settings(request):
@@ -32,6 +34,18 @@ def common_settings(request):
     except json.JSONDecodeError:
         version_info = {"tag_name": "invalid"}
 
+    # Read home page counters information from the home_page_counters.json file
+    home_page_counters_info = {}
+    try:
+        with open(HOME_PAGE_COUNTERS_FILE_PATH) as counters_file:
+            home_page_counters_info = json.load(counters_file)
+    except Exception:
+        home_page_counters_info = {
+            "public_competitions": 0,
+            "users": 0,
+            "submissions": 0
+        }
+
     return {
         'STORAGE_TYPE': settings.STORAGE_TYPE,
         'MAX_EXECUTION_TIME_LIMIT': settings.MAX_EXECUTION_TIME_LIMIT,
@@ -41,4 +55,5 @@ def common_settings(request):
         'ENABLE_SIGN_UP': settings.ENABLE_SIGN_UP,
         'ENABLE_SIGN_IN': settings.ENABLE_SIGN_IN,
         'VERSION_INFO': version_info,
+        'HOME_PAGE_COUNTERS_INFO': home_page_counters_info
     }
