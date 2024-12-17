@@ -7,7 +7,8 @@ class UserAdmin(admin.ModelAdmin):
     # The following two lines are needed for Django-su:
     change_form_template = "admin/auth/user/change_form.html"
     change_list_template = "admin/auth/user/change_list.html"
-    search_fields = ['username','email']
+    search_fields = ['username', 'email']
+
 
 
 admin.site.register(User, UserAdmin)
