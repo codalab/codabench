@@ -9,6 +9,7 @@ class UserAdmin(admin.ModelAdmin):
     change_list_template = "admin/auth/user/change_list.html"
     search_fields = ['username','email']
 
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Organization)
 admin.site.register(Membership)
