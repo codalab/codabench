@@ -11,6 +11,7 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -23,6 +24,10 @@ from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token
+from competitions.models import Competition
+from datasets.models import Data, DataGroup
+from tasks.models import Task
+from forums.models import Post
 
 
 class LoginView(auth_views.LoginView):
@@ -104,6 +109,80 @@ def activateEmail(request, user, to_email):
         messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
 
 
+def send_delete_account_confirmation_mail(request, user):
+    mail_subject = 'Confirm Your Account Deletion Request'
+    message = render_to_string('profiles/emails/template_delete_account.html', {
+        'user': user,
+        'domain': get_current_site(request).domain,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': default_token_generator.make_token(user),
+        'protocol': 'https' if request.is_secure() else 'http'
+    })
+    email = EmailMessage(mail_subject, message, to=[user.email])
+    if email.send():
+        messages.success(request, f'Dear {user.username}, please go to your email inbox and click on \
+            the link to complete the deletion process. *Note: Check your spam folder.')
+    else:
+        messages.error(request, f'Problem sending confirmation email.')
+
+
+def send_user_deletion_notice_to_admin(user):
+    admin_users = User.objects.filter(Q(is_superuser=True) | Q(is_staff=True))
+    admin_emails = [user.email for user in admin_users]
+
+    organizations = user.organizations.all()
+    competitions_organizer = user.competitions.all()
+    competitions_participation = Competition.objects.filter(participants__user=user)
+    submissions = user.submission.all()
+    data = Data.objects.filter(created_by=user)
+    data_groups = DataGroup.objects.filter(created_by=user)
+    tasks = Task.objects.filter(created_by=user)
+    queues = user.queues.all()
+    posts = Post.objects.filter(posted_by=user)
+
+    mail_subject = f'Notice: user {user.username} removed his account'
+    message = render_to_string('profiles/emails/template_delete_account_notice.html', {
+        'user': user,
+        'organizations': organizations,
+        'competitions_organizer': competitions_organizer,
+        'competitions_participation': competitions_participation,
+        'submissions': submissions,
+        'data': data,
+        'data_groups': data_groups,
+        'tasks': tasks,
+        'queues': queues,
+        'posts': posts
+    })
+    email = EmailMessage(mail_subject, message, to=admin_emails)
+    email.send()
+
+
+def send_user_deletion_confirmed(email):
+    mail_subject = f'Codabench: your account has been successfully removed'
+    message = render_to_string('profiles/emails/template_delete_account_confirmed.html')
+    email = EmailMessage(mail_subject, message, to=[email])
+    email.send()
+
+
+def delete(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except User.DoesNotExist:
+        user = None
+        messages.error(request, f"User not found.")
+        return redirect('accounts:user_account')
+    if user is not None and default_token_generator.check_token(user, token):
+        # Soft delete the user
+        user.delete()
+
+        messages.success(request, f'Your account has been removed !')
+        return redirect('accounts:logout')
+    else:
+        messages.error(request, f"Confirmation link is invalid or expired.")
+        return redirect('accounts:user_account')
+
+
 def sign_up(request):
 
     # If sign up is not enabled then redirect to login
@@ -181,7 +260,7 @@ def log_in(request):
 
             # Check if the user exists
             try:
-                user = User.objects.get(Q(username=username) | Q(email=username))
+                user = User.objects.get((Q(username=username) | Q(email=username)) & Q(is_deleted=False))
             except User.DoesNotExist:
                 messages.error(request, "User does not exist!")
             else:
@@ -339,3 +418,15 @@ class OrganizationEditView(LoginRequiredMixin, DetailView):
 
 class OrganizationInviteView(LoginRequiredMixin, TemplateView):
     template_name = 'profiles/organization_invite.html'
+
+
+class UserAccountView(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_account.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        return context
