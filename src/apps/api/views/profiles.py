@@ -20,7 +20,6 @@ from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
 from profiles.views import send_delete_account_confirmation_mail
-from utils.email import codalab_send_mail
 
 User = get_user_model()
 

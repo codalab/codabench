@@ -200,11 +200,17 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
     def delete(self, *args, **kwargs):
         """Soft delete the user and anonymize personal data."""
+        from .views import send_user_deletion_notice_to_admin, send_user_deletion_confirmed
+
+        # Send a notice to admins
+        send_user_deletion_notice_to_admin(self)
+
         # Mark the user as deleted
         self.is_deleted = True
         self.deleted_at = now()
-        
+
         # Anonymize or removed personal data
+        user_email = self.email # keep track of the email for the end of the procedure
 
         # Github related
         self.github_uid = None
@@ -246,6 +252,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
         # Save the changes
         self.save()
+
+        # Send a confirmation email notice to the removed user
+        send_user_deletion_confirmed(user_email)
+
     
     def restore(self, *args, **kwargs):
         """Restore a soft-deleted user. Note that personal data remains anonymized."""

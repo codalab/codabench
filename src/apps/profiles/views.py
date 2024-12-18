@@ -173,15 +173,8 @@ def delete(request, uidb64, token):
         messages.error(request, f"User not found.")
         return redirect('accounts:user_account')
     if user is not None and default_token_generator.check_token(user, token):
-        user_email = user.email
-        # Send notice email to admins
-        send_user_deletion_notice_to_admin(user)
-
         # Soft delete the user
         user.delete()
-
-        # Send notice to user
-        send_user_deletion_confirmed(user_email)
 
         messages.success(request, f'Your account has been removed !')
         return redirect('accounts:logout')
