@@ -400,5 +400,10 @@ CODALAB.api = {
     delete_failed_submissions: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
     },
-    
+    /*---------------------------------------------------------------------
+         User Account
+    ---------------------------------------------------------------------*/
+    request_delete_account: (data) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_account/`, data)
+    },
 }
