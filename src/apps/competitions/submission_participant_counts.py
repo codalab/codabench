@@ -40,6 +40,10 @@ def compute_submissions_participants_counts():
         # Update the competition fields
         competition.participants_count = participants_count
         competition.submissions_count = submissions_count
-        competition.save()
+        try:
+            competition.save()
+        except Exception as e:
+            print(f"Fail for competition {competition.pk}")
+            print(e)
 
     print(f"{len(competitions)} Competitions updated successfully!")

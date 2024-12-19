@@ -88,18 +88,27 @@
 
         <!-- Stats section -->
         <div class="ui three column grid" id="general-stats">
-            {% for stat in general_stats %}
-                <div class="column">
-                    <div class="ui statistic">
-                        <div class="value">
-                            {{ stat.count }}
-                        </div>
-                        <div class="label">
-                            {{ stat.label }}
-                        </div>
-                    </div>
+            <!-- Public Competitions -->
+            <div class="column">
+                <div class="ui statistic">
+                    <div class="value">{{ HOME_PAGE_COUNTERS_INFO.public_competitions }}</div>
+                    <div class="label">Public Competitions</div>
                 </div>
-            {% endfor %}
+            </div>
+            <!-- Users -->
+            <div class="column">
+                <div class="ui statistic">
+                    <div class="value">{{ HOME_PAGE_COUNTERS_INFO.users }}</div>
+                    <div class="label">Users</div>
+                </div>
+            </div>
+            <!-- Submissions -->
+            <div class="column">
+                <div class="ui statistic">
+                    <div class="value">{{ HOME_PAGE_COUNTERS_INFO.submissions }}</div>
+                    <div class="label">Submissions</div>
+                </div>
+            </div>
         </div>
 
         <!-- About Section -->

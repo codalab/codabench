@@ -257,6 +257,30 @@ CODALAB.api = {
     create_task: (data) => {
         return CODALAB.api.request('POST', `${URLS.API}tasks/`, data)
     },
+    upload_task: (data_file, progress_update_callback) => {
+        var form_data = new FormData()
+        form_data.append('file', data_file)
+        return $.ajax({
+            type: 'POST',
+            url: URLS.API + 'tasks/upload_task/',
+            data: form_data,
+            processData: false,
+            contentType: false,
+            xhr: function () {
+                var xhr = new window.XMLHttpRequest();
+                // Track upload progress
+                xhr.upload.addEventListener('progress', function (event) {
+                    if (event.lengthComputable) {
+                        var percent_complete = (event.loaded / event.total) * 100;
+                        if (progress_update_callback) {
+                            progress_update_callback(percent_complete);
+                        }
+                    }
+                }, false);
+                return xhr;
+            }
+        });
+    },    
     share_task: (pk, data) => {
         return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
     },

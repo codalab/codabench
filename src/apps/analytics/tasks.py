@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import json
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -548,6 +549,40 @@ def create_storage_analytics_snapshot():
         "Task create_storage_analytics_snapshot stoped. Duration = {:.3f} seconds".format(
             elapsed_time
         )
+    )
+
+
+@app.task(queue="site-worker")
+def update_home_page_counters():
+    starting_time = time.process_time()
+    logger.info("Task update_home_page_counters Started")
+
+    # Count public competitions
+    public_competitions = Competition.objects.filter(published=True).count()
+
+    # Count active users
+    # TODO: do not count deleted users
+    users = User.objects.all().count()
+
+    # Count all submissions
+    submissions = Submission.objects.all().count()
+
+    # Create counters data
+    counters_data = {
+        "public_competitions": public_competitions,
+        "users": users,
+        "submissions": submissions,
+        "last_updated": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Save latest counters in the file
+    log_file = "/app/home_page_counters.json"
+    with open(log_file, "w") as f:
+        json.dump(counters_data, f, indent=4)
+
+    elapsed_time = time.process_time() - starting_time
+    logger.info(
+        "Task update_home_page_counters Completed. Duration = {:.3f} seconds".format(elapsed_time)
     )
 
 
