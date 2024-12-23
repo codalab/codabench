@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <profile-account class="ui text container"></profile-account>
+    <script>
+        const user = JSON.parse("{{ serialized_user | escapejs }}")
+    </script>
+{% endblock %}

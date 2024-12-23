@@ -28,14 +28,15 @@
                 <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
                 <td>{is_bot}</td>
-                <td>{_.startCase(status)}</td>
+                <td>{is_deleted ? "account deleted" : _.startCase(status)}</td>
                 <td class="right aligned">
                     <button class="mini ui red button icon"
                             show="{status !== 'denied'}"
                             onclick="{ revoke_permission.bind(this, id) }"
                             data-tooltip="Revoke"
                             data-inverted=""
-                            data-position="bottom center">
+                            data-position="bottom center"
+                            disabled="{is_deleted}">
                         <i class="close icon"></i>
                     </button>
                     <button class="mini ui green button icon"
@@ -43,14 +44,18 @@
                             onclick="{ approve_permission.bind(this, id) }"
                             data-tooltip="Approve"
                             data-inverted=""
-                            data-position="bottom center">
+                            data-position="bottom center"
+                            disabled="{is_deleted}"
+                            >
                             <i class="checkmark icon"></i>
                     </button>
                     <button class="mini ui blue button icon"
                             data-tooltip="Send Message"
                             data-inverted=""
                             data-position="bottom center"
-                            onclick="{show_email_modal.bind(this, id)}">
+                            onclick="{show_email_modal.bind(this, id)}"
+                            disabled="{is_deleted}"
+                            >
                         <i class="envelope icon"></i>
                     </button>
                 </td>
