@@ -93,6 +93,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 
+    # Soft deletion
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.username, allow_unicode=True)
         super().save(*args, **kwargs)
@@ -192,6 +196,72 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         storage_used += users_submissions_details * 1024 if users_submissions_details else 0
 
         return storage_used
+
+
+    def delete(self, *args, **kwargs):
+        """Soft delete the user and anonymize personal data."""
+        from .views import send_user_deletion_notice_to_admin, send_user_deletion_confirmed
+
+        # Send a notice to admins
+        send_user_deletion_notice_to_admin(self)
+
+        # Mark the user as deleted
+        self.is_deleted = True
+        self.deleted_at = now()
+
+        # Anonymize or removed personal data
+        user_email = self.email # keep track of the email for the end of the procedure
+
+        # Github related
+        self.github_uid = None
+        self.avatar_url = None
+        self.url = None
+        self.html_url = None
+        self.name = None
+        self.company = None
+        self.bio = None
+        if self.github_info:
+            self.github_info.login = None
+            self.github_info.avatar_url = None
+            self.github_info.gravatar_id = None
+            self.github_info.html_url = None
+            self.github_info.name = None
+            self.github_info.company = None
+            self.github_info.bio = None
+            self.github_info.location = None
+
+        # Any user attribute
+        self.username = f"deleted_user_{self.id}"
+        self.slug = f"deleted_slug_{self.id}"
+        self.photo = None
+        self.email = None
+        self.display_name = None
+        self.first_name = None
+        self.last_name = None
+        self.title = None
+        self.location = None
+        self.biography = None
+        self.personal_url = None
+        self.linkedin_url = None
+        self.twitter_url = None
+        self.github_url = None
+
+        # Queues
+        self.rabbitmq_username = None
+        self.rabbitmq_password = None
+
+        # Save the changes
+        self.save()
+
+        # Send a confirmation email notice to the removed user
+        send_user_deletion_confirmed(user_email)
+
+    
+    def restore(self, *args, **kwargs):
+        """Restore a soft-deleted user. Note that personal data remains anonymized."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 
 
 class GithubUserInfo(models.Model):
