@@ -31,7 +31,8 @@ def send_participation_requested_emails(participant):
 
 
 def send_participation_accepted_emails(participant):
-    if participant.user.is_deleted: return
+    if participant.user.is_deleted:
+        return
 
     context = {
         'participant': participant
@@ -54,7 +55,8 @@ def send_participation_accepted_emails(participant):
 
 
 def send_participation_denied_emails(participant):
-    if participant.user.is_deleted: return
+    if participant.user.is_deleted:
+        return
 
     context = {
         'participant': participant
@@ -78,7 +80,8 @@ def send_participation_denied_emails(participant):
 
 
 def send_direct_participant_email(participant, content):
-    if participant.user.is_deleted: return
+    if participant.user.is_deleted:
+        return
 
     codalab_send_markdown_email(
         subject=f'A message from the admins of {participant.competition.title}',
