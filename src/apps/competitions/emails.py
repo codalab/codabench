@@ -6,7 +6,8 @@ def get_organizer_emails(competition):
 
 
 def send_participation_requested_emails(participant):
-    if participant.user.is_deleted: return
+    if participant.user.is_deleted:
+        return
 
     context = {
         'participant': participant
