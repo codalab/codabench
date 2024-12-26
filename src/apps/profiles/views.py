@@ -28,6 +28,7 @@ from competitions.models import Competition
 from datasets.models import Data, DataGroup
 from tasks.models import Task
 from forums.models import Post
+from utils.email import codalab_send_mail
 
 
 class LoginView(auth_views.LoginView):
@@ -110,20 +111,21 @@ def activateEmail(request, user, to_email):
 
 
 def send_delete_account_confirmation_mail(request, user):
-    mail_subject = 'Confirm Your Account Deletion Request'
-    message = render_to_string('profiles/emails/template_delete_account.html', {
+    context = {
         'user': user,
         'domain': get_current_site(request).domain,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': default_token_generator.make_token(user),
         'protocol': 'https' if request.is_secure() else 'http'
-    })
-    email = EmailMessage(mail_subject, message, to=[user.email])
-    if email.send():
-        messages.success(request, f'Dear {user.username}, please go to your email inbox and click on \
-            the link to complete the deletion process. *Note: Check your spam folder.')
-    else:
-        messages.error(request, f'Problem sending confirmation email.')
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Confirm Your Account Deletion Request',
+        html_file="profiles/emails/template_delete_account.html",
+        text_file="profiles/emails/template_delete_account.txt",
+        to_email=[user.email]
+    )
+    messages.success(request, f'Dear {user.username}, please go to your email inbox and click on the link to complete the deletion process. *Note: Check your spam folder.')
 
 
 def send_user_deletion_notice_to_admin(user):
@@ -140,8 +142,7 @@ def send_user_deletion_notice_to_admin(user):
     queues = user.queues.all()
     posts = Post.objects.filter(posted_by=user)
 
-    mail_subject = f'Notice: user {user.username} removed his account'
-    message = render_to_string('profiles/emails/template_delete_account_notice.html', {
+    context = {
         'user': user,
         'organizations': organizations,
         'competitions_organizer': competitions_organizer,
@@ -152,16 +153,24 @@ def send_user_deletion_notice_to_admin(user):
         'tasks': tasks,
         'queues': queues,
         'posts': posts
-    })
-    email = EmailMessage(mail_subject, message, to=admin_emails)
-    email.send()
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Notice: user {user.username} removed his account',
+        html_file="profiles/emails/template_delete_account_notice.html",
+        text_file="profiles/emails/template_delete_account_notice.txt",
+        to_email=admin_emails
+    )
 
 
 def send_user_deletion_confirmed(email):
-    mail_subject = f'Codabench: your account has been successfully removed'
-    message = render_to_string('profiles/emails/template_delete_account_confirmed.html')
-    email = EmailMessage(mail_subject, message, to=[email])
-    email.send()
+    codalab_send_mail(
+        context_data={},
+        subject=f'Codabench: your account has been successfully removed',
+        html_file="profiles/emails/template_delete_account_confirmed.html",
+        text_file="profiles/emails/template_delete_account_confirmed.txt",
+        to_email=[email]
+    )
 
 
 def delete(request, uidb64, token):
