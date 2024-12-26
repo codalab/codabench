@@ -12,6 +12,10 @@
             <option value="denied">Denied</option>
             <option value="unknown">Unknown</option>
         </select>
+        <div class="ui checkbox">
+            <input type="checkbox" ref="participant_show_deleted" onchange="{ update_participants.bind(this, undefined) }">
+            <label>Show deleted accounts</label>
+        </div>
         <div class="ui blue icon button" onclick="{show_email_modal.bind(this, undefined)}"><i class="envelope icon"></i> Email all participants</div>
         <table class="ui celled striped table">
             <thead>
@@ -138,6 +142,11 @@
             let status = self.refs.participant_status.value
             if (status && status !== '-') {
                 filters.status = status
+            }
+
+            let show_deleted_users = self.refs.participant_show_deleted.checked
+            if (show_deleted_users !== null && show_deleted_users === false) {
+                filters.user__is_deleted = show_deleted_users
             }
 
             CODALAB.api.get_participants(filters)
