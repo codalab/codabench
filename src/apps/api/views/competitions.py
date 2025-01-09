@@ -795,7 +795,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('user__username', 'user__email', 'status', 'competition')
+    filter_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
