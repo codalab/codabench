@@ -141,9 +141,11 @@ def send_user_deletion_notice_to_admin(user):
     tasks = Task.objects.filter(created_by=user)
     queues = user.queues.all()
     posts = Post.objects.filter(posted_by=user)
+    deleted_user = user
 
     context = {
-        'user': user,
+        'deleted_user' : user,
+        'user': "",
         'organizations': organizations,
         'competitions_organizer': competitions_organizer,
         'competitions_participation': competitions_participation,
@@ -156,7 +158,7 @@ def send_user_deletion_notice_to_admin(user):
     }
     codalab_send_mail(
         context_data=context,
-        subject=f'Notice: user {user.username} removed his account',
+        subject=f'Notice: user {deleted_user.username} removed his account',
         html_file="profiles/emails/template_delete_account_notice.html",
         text_file="profiles/emails/template_delete_account_notice.txt",
         to_email=admin_emails
