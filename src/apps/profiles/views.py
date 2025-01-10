@@ -144,7 +144,7 @@ def send_user_deletion_notice_to_admin(user):
     deleted_user = user
 
     context = {
-        'deleted_user' : user,
+        'deleted_user': user,
         'user': "",
         'organizations': organizations,
         'competitions_organizer': competitions_organizer,
