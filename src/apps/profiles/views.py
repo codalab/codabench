@@ -11,7 +11,6 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -23,11 +22,12 @@ from api.serializers.profiles import UserSerializer, OrganizationDetailSerialize
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, Organization, Membership
 from oidc_configurations.models import Auth_Organization
-from .tokens import account_activation_token
+from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
 from datasets.models import Data, DataGroup
 from tasks.models import Task
 from forums.models import Post
+from utils.email import codalab_send_mail
 
 
 class LoginView(auth_views.LoginView):
@@ -110,20 +110,21 @@ def activateEmail(request, user, to_email):
 
 
 def send_delete_account_confirmation_mail(request, user):
-    mail_subject = 'Confirm Your Account Deletion Request'
-    message = render_to_string('profiles/emails/template_delete_account.html', {
+    context = {
         'user': user,
         'domain': get_current_site(request).domain,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-        'token': default_token_generator.make_token(user),
+        'token': account_deletion_token.make_token(user),
         'protocol': 'https' if request.is_secure() else 'http'
-    })
-    email = EmailMessage(mail_subject, message, to=[user.email])
-    if email.send():
-        messages.success(request, f'Dear {user.username}, please go to your email inbox and click on \
-            the link to complete the deletion process. *Note: Check your spam folder.')
-    else:
-        messages.error(request, f'Problem sending confirmation email.')
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Confirm Your Account Deletion Request',
+        html_file="profiles/emails/template_delete_account.html",
+        text_file="profiles/emails/template_delete_account.txt",
+        to_email=[user.email]
+    )
+    messages.success(request, f'Dear {user.username}, please go to your email inbox and click on the link to complete the deletion process. *Note: Check your spam folder.')
 
 
 def send_user_deletion_notice_to_admin(user):
@@ -139,10 +140,11 @@ def send_user_deletion_notice_to_admin(user):
     tasks = Task.objects.filter(created_by=user)
     queues = user.queues.all()
     posts = Post.objects.filter(posted_by=user)
+    deleted_user = user
 
-    mail_subject = f'Notice: user {user.username} removed his account'
-    message = render_to_string('profiles/emails/template_delete_account_notice.html', {
-        'user': user,
+    context = {
+        'deleted_user': user,
+        'user': "",
         'organizations': organizations,
         'competitions_organizer': competitions_organizer,
         'competitions_participation': competitions_participation,
@@ -152,16 +154,24 @@ def send_user_deletion_notice_to_admin(user):
         'tasks': tasks,
         'queues': queues,
         'posts': posts
-    })
-    email = EmailMessage(mail_subject, message, to=admin_emails)
-    email.send()
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Notice: user {deleted_user.username} removed his account',
+        html_file="profiles/emails/template_delete_account_notice.html",
+        text_file="profiles/emails/template_delete_account_notice.txt",
+        to_email=admin_emails
+    )
 
 
 def send_user_deletion_confirmed(email):
-    mail_subject = f'Codabench: your account has been successfully removed'
-    message = render_to_string('profiles/emails/template_delete_account_confirmed.html')
-    email = EmailMessage(mail_subject, message, to=[email])
-    email.send()
+    codalab_send_mail(
+        context_data={},
+        subject=f'Codabench: your account has been successfully removed',
+        html_file="profiles/emails/template_delete_account_confirmed.html",
+        text_file="profiles/emails/template_delete_account_confirmed.txt",
+        to_email=[email]
+    )
 
 
 def delete(request, uidb64, token):
@@ -172,15 +182,14 @@ def delete(request, uidb64, token):
         user = None
         messages.error(request, f"User not found.")
         return redirect('accounts:user_account')
-    if user is not None and default_token_generator.check_token(user, token):
+    if user is not None and account_deletion_token.check_token(user, token):
         # Soft delete the user
         user.delete()
-
-        messages.success(request, f'Your account has been removed !')
+        messages.success(request, f'Your account has been removed!')
         return redirect('accounts:logout')
     else:
         messages.error(request, f"Confirmation link is invalid or expired.")
-        return redirect('accounts:user_account')
+        return redirect('pages:home')
 
 
 def sign_up(request):

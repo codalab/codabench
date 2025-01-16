@@ -207,6 +207,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         # Mark the user as deleted
         self.is_deleted = True
         self.deleted_at = now()
+        self.is_active = False
 
         # Anonymize or removed personal data
         user_email = self.email  # keep track of the email for the end of the procedure
