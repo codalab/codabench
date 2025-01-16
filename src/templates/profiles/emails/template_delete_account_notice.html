@@ -36,7 +36,7 @@
     <ul>
         {% for organization in organizations.all %}
             <li>
-                <a class="item" href="{% url 'profiles:organization_profile' pk=organization.id %}">
+                <a class="item" href="{{ protocol }}://{{ domain }}{% url 'profiles:organization_profile' pk=organization.id %}">
                     {{ organization }}
                 </a>
             </li>
@@ -47,7 +47,7 @@
     <ul>
         {% for competition in competitions_organizer.all %}
             <li>
-                <a class="item" href="{% url 'competitions:detail' pk=competition.pk %}">
+                <a class="item" href="{{ protocol }}://{{ domain }}{% url 'competitions:detail' pk=competition.pk %}">
                     {{ competition }}
                 </a>
             </li>
@@ -58,7 +58,7 @@
     <ul>
         {% for competition in competitions_participation.all %}
         <li>
-            <a class="item" href="{% url 'competitions:detail' pk=competition.pk %}">
+            <a class="item" href="{{ protocol }}://{{ domain }}{% url 'competitions:detail' pk=competition.pk %}">
                 {{ competition }}
             </a>
         </li>
@@ -94,7 +94,7 @@
     <ul>
         {% for task in tasks.all %}
         <li>
-            <a class="item" href="{% url 'tasks:detail' pk=task.pk %}">
+            <a class="item" href="{{ protocol }}://{{ domain }}{% url 'tasks:detail' pk=task.pk %}">
                 {{ task }}
             </a>
         </li>
