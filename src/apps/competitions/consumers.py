@@ -1,6 +1,11 @@
 import json
 import logging
 
+
+from asgiref.sync import sync_to_async
+# from channels.db import database_sync_to_async
+
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django_redis import get_redis_connection
 from competitions.models import Submission
@@ -16,7 +21,11 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         secret = self.scope['url_route']['kwargs']['secret']
         try:
-            Submission.objects.get(pk=submission_id, secret=secret)
+            submission = await sync_to_async(Submission.objects.get)(
+                pk=submission_id, secret=secret
+            )
+            # flake was saying I wasn't using "submission" so I reference here.
+            submission
         except Submission.DoesNotExist:
             return await self.close()
 
@@ -29,7 +38,8 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Received websocket input for user = {user_pk}, submission = {submission_id}, text_data = {text_data}")
 
         try:
-            sub = Submission.objects.get(pk=submission_id)
+            # sub = Submission.objects.get(pk=submission_id)
+            sub = await sync_to_async(Submission.objects.get)(pk=submission_id)
         except Submission.DoesNotExist:
             return await self.close()
 
@@ -38,7 +48,8 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
 
         data = json.loads(text_data)
         if data['kind'] == 'detailed_result_update':
-            data['result_url'] = make_url_sassy(Submission.objects.get(id=submission_id).detailed_result.name)
+            sub = await sync_to_async(Submission.objects.get)(id=submission_id)
+            data['result_url'] = make_url_sassy(sub.detailed_result.name)
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
@@ -81,7 +92,10 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
 
         if submission_ids:
             # Filter out submissions not by this user
-            submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+            # submissions = Submission.objects.filter(id__in=submission_ids, owner=self.scope["user"])
+            submissions = await sync_to_async(lambda: list(Submission.objects.filter(
+                id__in=submission_ids, owner=self.scope["user"]
+            )))()
             con = get_redis_connection("default")
 
             for sub in submissions:
