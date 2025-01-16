@@ -324,7 +324,28 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
         validated_data.pop('whitelist_emails', None)
 
         # Continue with the regular update process
-        super(CompetitionSerializer, self).update(instance, validated_data)
+        collaborators = validated_data.get('collaborators', None)
+        instance = super(CompetitionSerializer, self).update(instance, validated_data)
+
+        # Django 3.0 doesn't automatically cascade updates through many to many relationships
+        # Rationale is that there is too much "magic" in database operations through ORM
+        # Therefore we need to explicitly create collaborator users in the CompetitionParticipant table
+        if collaborators is not None:
+            # First update the M2M relationship
+            instance.collaborators.set(collaborators)
+
+            # Then ensure each collaborator has a CompetitionParticipant entry
+            # Also set to 'pending' as '_ensure_organizer_participants_accepted' in 
+            # src/aops/api/views/competitions.py 'CompetitionViewSet' 
+            # adjusts the status to 'approved'
+            for collaborator in collaborators:
+                CompetitionParticipant.objects.get_or_create(
+                    user=collaborator,
+                    competition=instance,
+                    defaults={
+                        'status': 'pending',
+                    }
+                )
 
         return instance
 
