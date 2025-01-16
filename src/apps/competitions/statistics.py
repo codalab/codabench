@@ -12,7 +12,7 @@ Usage:
     For overall platform statistics
     ```
     from competitions.statistics import create_codabench_statistics
-    create_codabench_statistics(year=2024)  
+    create_codabench_statistics(year=2024)
 
     # if year is not specified, current year is used by default
     # a csv file named codabench_statistics_2024.csv is generated in statistics folder (for year=2024)
