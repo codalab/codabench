@@ -11,7 +11,6 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import forms as auth_forms
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -23,7 +22,7 @@ from api.serializers.profiles import UserSerializer, OrganizationDetailSerialize
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, Organization, Membership
 from oidc_configurations.models import Auth_Organization
-from .tokens import account_activation_token
+from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
 from datasets.models import Data, DataGroup
 from tasks.models import Task
@@ -115,7 +114,7 @@ def send_delete_account_confirmation_mail(request, user):
         'user': user,
         'domain': get_current_site(request).domain,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-        'token': default_token_generator.make_token(user),
+        'token': account_deletion_token.make_token(user),
         'protocol': 'https' if request.is_secure() else 'http'
     }
     codalab_send_mail(
@@ -183,15 +182,14 @@ def delete(request, uidb64, token):
         user = None
         messages.error(request, f"User not found.")
         return redirect('accounts:user_account')
-    if user is not None and default_token_generator.check_token(user, token):
+    if user is not None and account_deletion_token.check_token(user, token):
         # Soft delete the user
         user.delete()
-
-        messages.success(request, f'Your account has been removed !')
+        messages.success(request, f'Your account has been removed!')
         return redirect('accounts:logout')
     else:
         messages.error(request, f"Confirmation link is invalid or expired.")
-        return redirect('accounts:user_account')
+        return redirect('pages:home')
 
 
 def sign_up(request):

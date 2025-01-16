@@ -92,7 +92,7 @@ def delete_account(request):
     is_username_valid = user.username == request.data["username"]
     is_password_valid = user.check_password(request.data["password"])
 
-    if(is_username_valid and is_password_valid):
+    if is_username_valid and is_password_valid:
         send_delete_account_confirmation_mail(request, user)
 
         return Response({

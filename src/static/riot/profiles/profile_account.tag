@@ -55,6 +55,7 @@
         self.isDeleteAccountSubmitButtonDisabled = true;
 
         self.show_modal = selector => $(selector).modal('show');
+        self.hide_modal = selector => $(selector).modal('hide');
 
         self.checkFields = function() {
             const formValues = $('#delete-account-form').form('get values');
@@ -80,6 +81,7 @@
                     const success = response.success;
                     if (success) {
                         toastr.success(response.message);
+                        self.hide_modal('.delete-account.modal')
                     } else {
                         toastr.error(response.error);
                     }
