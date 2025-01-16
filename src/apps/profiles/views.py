@@ -153,7 +153,8 @@ def send_user_deletion_notice_to_admin(user):
         'data_groups': data_groups,
         'tasks': tasks,
         'queues': queues,
-        'posts': posts
+        'posts': posts,
+        'domain': settings.DOMAIN_NAME
     }
     codalab_send_mail(
         context_data=context,
