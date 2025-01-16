@@ -154,8 +154,7 @@ def send_user_deletion_notice_to_admin(user):
         'tasks': tasks,
         'queues': queues,
         'posts': posts,
-        'protocol': 'https' if request.is_secure() else 'http',
-        'domain': get_current_site(request).domain
+        'domain': settings.DOMAIN_NAME
     }
     codalab_send_mail(
         context_data=context,
