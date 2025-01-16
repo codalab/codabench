@@ -38,3 +38,5 @@ server_config.yaml
 
 caddy_config/
 caddy_data/
+
+home_page_counters.json

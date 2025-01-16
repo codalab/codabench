@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponse
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework import permissions, mixins
@@ -19,6 +19,7 @@ from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
     OrganizationSerializer, MembershipSerializer, SimpleOrganizationSerializer, DeleteMembershipSerializer
 from profiles.helpers import send_mail
 from profiles.models import Organization, Membership
+from profiles.views import send_delete_account_confirmation_mail
 
 User = get_user_model()
 
@@ -82,6 +83,27 @@ def user_lookup(request):
     return HttpResponse(
         json.dumps({"results": [_get_data(u) for u in users]}),
     )
+
+
+@api_view(['DELETE'])
+def delete_account(request):
+    # Check data
+    user = request.user
+    is_username_valid = user.username == request.data["username"]
+    is_password_valid = user.check_password(request.data["password"])
+
+    if is_username_valid and is_password_valid:
+        send_delete_account_confirmation_mail(request, user)
+
+        return Response({
+            "success": True,
+            "message": "A confirmation link has been sent to your email. Follow the instruction to finish the process"
+        })
+    else:
+        return Response({
+            "success": False,
+            "error": "Wrong username or password"
+        })
 
 
 class OrganizationViewSet(mixins.CreateModelMixin,

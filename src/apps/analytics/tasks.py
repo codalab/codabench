@@ -561,8 +561,7 @@ def update_home_page_counters():
     public_competitions = Competition.objects.filter(published=True).count()
 
     # Count active users
-    # TODO: do not count deleted users
-    users = User.objects.all().count()
+    users = User.objects.filter(is_deleted=False).count()
 
     # Count all submissions
     submissions = Submission.objects.all().count()

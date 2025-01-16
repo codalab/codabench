@@ -478,6 +478,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
+    is_deleted = serializers.BooleanField(source='user.is_deleted')
 
     class Meta:
         model = CompetitionParticipant
@@ -487,6 +488,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'is_bot',
             'email',
             'status',
+            'is_deleted',
         )
 
 
