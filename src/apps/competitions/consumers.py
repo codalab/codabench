@@ -23,8 +23,9 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         try:
             submission = await sync_to_async(Submission.objects.get)(
                 pk=submission_id, secret=secret
-                )
-            # Submission.objects.get(pk=submission_id, secret=secret)
+            )
+            # flake was saying I wasn't using "submission" so I reference here.
+            submission
         except Submission.DoesNotExist:
             return await self.close()
 
@@ -52,7 +53,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
             # update text data to include the newly added sas url for retrieval on page refresh
             text_data = json.dumps(data)
 
-        
         con = get_redis_connection("default")
         con.append(f':1:submission-{submission_id}-log', f'{text_data}\n')
 
