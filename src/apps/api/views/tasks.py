@@ -46,7 +46,6 @@ class TaskViewSet(ModelViewSet):
                 'solutions',
                 'solutions__data'
             )
-
             task_filter = Q(created_by=self.request.user) | Q(shared_with=self.request.user)
             # when there is `public` in the query params, it means user has checked on the front-end
             # the Show public tasks checkbox.
@@ -56,17 +55,31 @@ class TaskViewSet(ModelViewSet):
                 task_filter |= Q(is_public=True)
 
             qs = qs.filter(task_filter)
-
             # Determine whether a task is "valid" by finding some solution with a
             # passing submission
-            task_validate_qs = Submission.objects.filter(
-                md5__in=OuterRef("solutions__md5"),
-                status=Submission.FINISHED,
-                # TODO: This line causes our query to take ~10 seconds. Is this important?
-                # phase__in=OuterRef("phases")
-            )
-            # We have to grab something from task_validate_qs here, so i grab pk
-            qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
+            tasks_with_solutions = Task.objects.prefetch_related("solutions")
+            task_validations = {}
+            for task in tasks_with_solutions:
+                solution_md5s = task.solutions.values_list("md5", flat=True)
+                is_valid = Submission.objects.filter(
+                    md5__in=solution_md5s,
+                    status=Submission.FINISHED,
+                ).exists()
+                task_validations[task.id] = is_valid
+
+            # Annotate queryset with validation results
+            cases = [
+                When(id=task_id, then=Value(validated))
+                for task_id, validated in task_validations.items()
+            ]
+            # The qs has a task in it right now.
+            # Baked into cases is task_id from task_validations.
+            # So if any of the tasks in qs, that are up for consideration,
+            # match a task from task_validations, then grab that task's
+            # validation status and return so that this task in qs now
+            # has a "validated" attribute we can access later in
+            # src/apps/api/tests/test_tasks.py as resp.data["validated"].
+            qs = qs.annotate(validated=Case(*cases, default=Value(False), output_field=BooleanField()))
 
         return qs.order_by('-created_when').distinct()
 

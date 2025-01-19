@@ -340,8 +340,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             instance.collaborators.set(collaborators)
 
             # Then ensure each collaborator has a CompetitionParticipant entry
-            # Also set to 'pending' as '_ensure_organizer_participants_accepted' in 
-            # src/aops/api/views/competitions.py 'CompetitionViewSet' 
+            # Also set to 'pending' as '_ensure_organizer_participants_accepted' in
+            # src/aops/api/views/competitions.py 'CompetitionViewSet'
             # adjusts the status to 'approved'
             for collaborator in collaborators:
                 CompetitionParticipant.objects.get_or_create(
