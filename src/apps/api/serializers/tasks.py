@@ -78,7 +78,10 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
         )
 
     def get_validated(self, instance):
-        return hasattr(instance, 'validated') and instance.validated is not None
+        # We should get the results of TaskViewSet's evaluation
+        # for whether a task is validated or not vs just whether
+        # or not the attribute 'validated' exists...it could be false.
+        return getattr(instance, 'validated', False)
 
 
 class TaskDetailSerializer(WritableNestedModelSerializer):
@@ -116,7 +119,10 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
         )
 
     def get_validated(self, instance):
-        return hasattr(instance, 'validated') and instance.validated is not None
+        # We should get the results of TaskViewSet's evaluation
+        # for whether a task is validated or not vs just whether
+        # or not the attribute 'validated' exists...it could be false.
+        return getattr(instance, 'validated', False)
 
     def get_competitions(self, instance):
 
