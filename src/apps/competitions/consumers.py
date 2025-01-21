@@ -3,7 +3,6 @@ import logging
 
 
 from asgiref.sync import sync_to_async
-# from channels.db import database_sync_to_async
 
 
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -21,11 +20,9 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         secret = self.scope['url_route']['kwargs']['secret']
         try:
-            submission = await sync_to_async(Submission.objects.get)(
+            _ = await sync_to_async(Submission.objects.get)(
                 pk=submission_id, secret=secret
             )
-            # flake was saying I wasn't using "submission" so I reference here.
-            submission
         except Submission.DoesNotExist:
             return await self.close()
 
@@ -38,7 +35,6 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Received websocket input for user = {user_pk}, submission = {submission_id}, text_data = {text_data}")
 
         try:
-            # sub = Submission.objects.get(pk=submission_id)
             sub = await sync_to_async(Submission.objects.get)(pk=submission_id)
         except Submission.DoesNotExist:
             return await self.close()
