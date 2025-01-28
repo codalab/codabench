@@ -134,8 +134,15 @@ def create_codabench_statistics(year=None):
 
         # Loop over each metric in the rows_dict and write the corresponding row
         for metric, values in rows_dict.items():
-            # Calculate the total for the metric (sum of all monthly counts)
-            total = sum(values)
+
+            # for total_users, total_participants, and total_submissions
+            # total is the last value
+            # for others total is the sum
+            if metric in ["total_users", "total_participants", "total_submissions"]:
+                total = values[-1]
+            else:
+                # Calculate the total for the metric (sum of all monthly counts)
+                total = sum(values)
 
             # Create a row with the metric name followed by the values for each month
             row = f"{metric}; " + "; ".join(map(str, values)) + f"; {total} \n"
