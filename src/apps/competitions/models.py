@@ -573,6 +573,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         """ Soft delete the submission: remove files but keep record in DB. """
 
         # Remove related files from storage
+        # 'save=False' prevents a database save, which is handled later after marking the submission as soft-deleted.
         self.prediction_result.delete(save=False)
         self.scoring_result.delete(save=False)
         self.detailed_result.delete(save=False)
