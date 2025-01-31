@@ -515,7 +515,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
-    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE, related_name='submission')
+    data = models.ForeignKey("datasets.Data", on_delete=models.SET_NULL, related_name='submission', null=True, blank=True)
     md5 = models.CharField(max_length=32, null=True, blank=True)
 
     prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True,
@@ -561,8 +561,34 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     fact_sheet_answers = JSONField(null=True, blank=True, max_length=4096)
 
+    # True when submission owner deletes a submission
+    is_soft_deleted = models.BooleanField(default=False)
+    # DataTime of when a submission is soft_deleted
+    soft_deleted_when = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
+
+    def soft_delete(self):
+        """ Soft delete the submission: remove files but keep record in DB. """
+
+        # Remove related files from storage
+        self.prediction_result.delete(save=False)
+        self.scoring_result.delete(save=False)
+        self.detailed_result.delete(save=False)
+
+        # Clear the data field if no other submissions are using it
+        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+        if not other_submissions_using_data:
+            self.data.delete()
+
+        # Clear the data field for this submission
+        self.data = None
+
+        # Mark submission as deleted
+        self.is_soft_deleted = True
+        self.soft_deleted_when = now()
+        self.save()
 
     def delete(self, **kwargs):
 
