@@ -70,7 +70,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     def get_filename(self, instance):
         if instance.data and instance.data.data_file:
             return basename(instance.data.data_file.name)
-        # NOTE: if submission data is None, it means it is soft deleted 
+        # NOTE: if submission data is None, it means it is soft deleted
         return "Deleted File"
 
     def get_auto_run(self, instance):
