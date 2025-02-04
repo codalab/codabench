@@ -34,6 +34,7 @@ class ChaHubUserManager(UserManager):
 
 
 class DeletedUser(models.Model):
+    user_id = models.IntegerField(null=True, blank=True)  # Store the same ID as in the User table
     username = models.CharField(max_length=255)
     email = models.EmailField()
     deleted_at = models.DateTimeField(auto_now_add=True)  # Automatically sets to current time when the record is created
@@ -223,7 +224,11 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         user_email = self.email  # keep track of the email for the end of the procedure
 
         # Store the deleted user's data in the DeletedUser table
-        DeletedUser.objects.create(username=self.username, email=self.email)
+        DeletedUser.objects.create(
+            user_id=self.id,
+            username=self.username,
+            email=self.email
+        )
 
         # Github related
         self.github_uid = None
