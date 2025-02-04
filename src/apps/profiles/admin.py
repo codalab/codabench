@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User, Organization, Membership
+from .models import User, DeletedUser, Organization, Membership
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -12,7 +12,14 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ['username', 'email', 'is_staff', 'is_superuser']
 
 
+class DeletedUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'deleted_at')
+    search_fields = ('username', 'email')
+    list_filter = ('deleted_at',)
+
+
 admin.site.register(User, UserAdmin)
+admin.site.register(DeletedUser, DeletedUserAdmin)
 admin.site.register(Organization)
 admin.site.register(Membership)
 
