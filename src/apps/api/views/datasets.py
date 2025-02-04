@@ -158,7 +158,7 @@ class DataViewSet(ModelViewSet):
         if dataset.submission.first():
             sub = dataset.submission.first()
             if sub.phase:
-                return 'Cannot delete submission: submission belongs to an existing competition'
+                return 'Cannot delete submission: submission belongs to an existing competition. Please visit the competition and delete your submission from there.'
 
 
 class DataGroupViewSet(ModelViewSet):

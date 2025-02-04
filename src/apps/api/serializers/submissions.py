@@ -56,6 +56,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'task',
             'auto_run',
             'can_make_submissions_public',
+            'is_soft_deleted',
         )
         read_only_fields = (
             'pk',
@@ -67,7 +68,10 @@ class SubmissionSerializer(serializers.ModelSerializer):
         )
 
     def get_filename(self, instance):
-        return basename(instance.data.data_file.name)
+        if instance.data and instance.data.data_file:
+            return basename(instance.data.data_file.name)
+        # NOTE: if submission data is None, it means it is soft deleted
+        return "Deleted File"
 
     def get_auto_run(self, instance):
         # returns this submission's competition auto_run_submissions Flag
