@@ -20,7 +20,7 @@ from django.views.generic import DetailView, TemplateView
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
 from .forms import SignUpForm, LoginForm, ActivationForm
-from .models import User, Organization, Membership
+from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
@@ -208,14 +208,20 @@ def sign_up(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            user.is_active = False
-            user.save()
-            activateEmail(request, user, form.cleaned_data.get('email'))
-            return redirect('pages:home')
+            # Check if the email is in the DeletedUser table
+            email = form.cleaned_data.get('email')
+            if DeletedUser.objects.filter(email=email).exists():
+                messages.error(request, "This email has been previously deleted and cannot be used.")
+                context['form'] = form
+            else:
+                form.save()
+                username = form.cleaned_data.get('username')
+                raw_password = form.cleaned_data.get('password1')
+                user = authenticate(username=username, password=raw_password)
+                user.is_active = False
+                user.save()
+                activateEmail(request, user, form.cleaned_data.get('email'))
+                return redirect('pages:home')
         else:
             context['form'] = form
 

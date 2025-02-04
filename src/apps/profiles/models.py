@@ -33,6 +33,15 @@ class ChaHubUserManager(UserManager):
         return super().get_queryset()
 
 
+class DeletedUser(models.Model):
+    username = models.CharField(max_length=255)
+    email = models.EmailField()
+    deleted_at = models.DateTimeField(auto_now_add=True)  # Automatically sets to current time when the record is created
+
+    def __str__(self):
+        return f"{self.username} ({self.email})"
+
+
 class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
@@ -200,6 +209,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     def delete(self, *args, **kwargs):
         """Soft delete the user and anonymize personal data."""
         from .views import send_user_deletion_notice_to_admin, send_user_deletion_confirmed
+        from .models import DeletedUser
 
         # Send a notice to admins
         send_user_deletion_notice_to_admin(self)
@@ -211,6 +221,9 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
         # Anonymize or removed personal data
         user_email = self.email  # keep track of the email for the end of the procedure
+
+        # Store the deleted user's data in the DeletedUser table
+        DeletedUser.objects.create(username=self.username, email=self.email)
 
         # Github related
         self.github_uid = None
