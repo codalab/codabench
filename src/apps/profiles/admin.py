@@ -13,7 +13,7 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class DeletedUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'deleted_at')
+    list_display = ('user_id', 'username', 'email', 'deleted_at')
     search_fields = ('username', 'email')
     list_filter = ('deleted_at',)
 
