@@ -28,16 +28,31 @@ class ForumBaseMixin(object):
         self.forum = get_object_or_404(Forum, pk=self.kwargs['forum_pk'])
         if 'thread_pk' in self.kwargs:
             self.thread = get_object_or_404(Thread, pk=self.kwargs['thread_pk'])
+
+        # Determine if the user is a participant and store it as an instance variable
+        self.is_participant = self.is_user_participant(self.request.user, self.forum)
+
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['forum'] = self.forum
         context['thread'] = self.thread if hasattr(self, 'thread') else None
+        context['is_participant'] = self.is_participant
         return context
 
+    def is_user_participant(self, user, forum):
+        is_participant = False
+        if user.is_authenticated:
+            is_participant = CompetitionParticipant.objects.filter(
+                competition=forum.competition,
+                user=user,
+                status=CompetitionParticipant.APPROVED
+            ).exists()
+        return is_participant
 
-class ForumDetailView(DetailView):
+
+class ForumDetailView(ForumBaseMixin, DetailView):
     """
     Shows the details of a particular Forum.
     """
@@ -47,22 +62,6 @@ class ForumDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        user = self.request.user
-        forum = self.object
-
-        # Default value (user is not a participant if not authenticated)
-        is_participant = False
-
-        # Check if the user is a participant of this forum's competition
-        if user.is_authenticated:
-            is_participant = CompetitionParticipant.objects.filter(
-                competition=forum.competition,
-                user=user,
-                status=CompetitionParticipant.APPROVED
-            ).exists()
-
-        context['is_participant'] = is_participant
 
         context['thread_list_sorted'] = self.object.threads.order_by(
             'pinned_date', '-date_created'
@@ -91,14 +90,7 @@ class CreatePostView(ForumBaseMixin, RedirectToThreadMixin, LoginRequiredMixin, 
 
     def form_valid(self, form):
 
-        # Check if the user is a participant of the competition forum
-        is_participant = CompetitionParticipant.objects.filter(
-            competition=self.forum.competition,
-            user=self.request.user,
-            status=CompetitionParticipant.APPROVED
-        ).exists()
-
-        if not is_participant:
+        if not self.is_participant:
             messages.error(self.request, "You must be a participant of this competition to create a post.")
             return redirect("forums:forum_thread_detail", forum_pk=self.forum.pk, thread_pk=self.thread.pk)
 
@@ -144,14 +136,7 @@ class CreateThreadView(ForumBaseMixin, RedirectToThreadMixin, LoginRequiredMixin
 
     def form_valid(self, form):
 
-        # Check if the user is a participant of the competition forum
-        is_participant = CompetitionParticipant.objects.filter(
-            competition=self.forum.competition,
-            user=self.request.user,
-            status=CompetitionParticipant.APPROVED
-        ).exists()
-
-        if not is_participant:
+        if not self.is_participant:
             messages.error(self.request, "You must be a participant of this competition to create a thread.")
             return redirect("forums:forum_detail", forum_pk=self.forum.pk)
 
