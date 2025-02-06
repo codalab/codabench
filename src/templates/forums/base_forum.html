@@ -71,6 +71,16 @@
                 </div>
             {% endif %}
         {% else %}
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1>{{ forum.competition.title }} Forum</h1>
+                    <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
+                        <button class="ui button">
+                            Go back to competition
+                        </button>
+                    </a>
+                </div>
+            </div>
             <div class="ui yellow message">
                 <a href="{% url 'accounts:login' %}">Log In</a> or
                 <a href="{% url 'accounts:signup' %}" target="_blank">Sign Up</a> to view this competition forum.
