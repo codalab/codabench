@@ -570,13 +570,24 @@ class Submission(ChaHubSaveMixin, models.Model):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
 
     def soft_delete(self):
-        """ Soft delete the submission: remove files but keep record in DB. """
+        """
+        Soft delete the submission: remove files but keep record in DB.
+        Also deletes associated SubmissionDetails and cleans up storage.
+        """
 
         # Remove related files from storage
         # 'save=False' prevents a database save, which is handled later after marking the submission as soft-deleted.
         self.prediction_result.delete(save=False)
+        self.prediction_result_file_size = 0
         self.scoring_result.delete(save=False)
+        self.scoring_result_file_size = 0
         self.detailed_result.delete(save=False)
+        self.detailed_result_file_size = 0
+
+        # Delete related SubmissionDetails files and records
+        for detail in self.details.all():
+            detail.data_file.delete(save=False)  # Delete file from storage
+            detail.delete()  # Remove record from DB
 
         # Clear the data field if no other submissions are using it
         other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()

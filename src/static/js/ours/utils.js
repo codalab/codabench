@@ -89,15 +89,17 @@ function pretty_date(date_string) {
     }
 }
 
-function pretty_bytes(bytes, decimal_places=1, suffix="B") {
-    const units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'];
+function pretty_bytes(bytes, decimalPlaces = 1, suffix = "B", binary = false) {
+    const factor = binary ? 1024.0 : 1000.0;
+    const units = binary ? ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] : ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z'];
+
     for (const unit of units) {
-        if (Math.abs(bytes) < 1024.0 || unit == 'PiB') {
-            return bytes.toFixed(decimal_places) + unit + suffix;
+        if (Math.abs(bytes) < factor || unit === units[units.length - 1]) {
+            return bytes.toFixed(decimalPlaces) + unit + suffix;
         }
-        bytes /= 1024.0;
+        bytes /= factor;
     }
-    return bytes.toFixed(decimal_places) + "Pi" + suffix;
+    return bytes.toFixed(decimalPlaces) + units[units.length - 1] + suffix;
 }
 
 /* ----------------------------------------------------------------------------
