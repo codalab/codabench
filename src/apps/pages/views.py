@@ -49,13 +49,19 @@ class ServerStatusView(TemplateView):
             # filter this user's own submissions
             # and
             # submissions running on queue which belongs to this user
+            # NOTE: exclude all soft-deleted submissions
             if not self.request.user.is_superuser:
                 qs = Submission.objects.filter(
-                    Q(owner=self.request.user) |
-                    Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                    Q(is_soft_deleted=False) &
+                    (
+                        Q(owner=self.request.user) |
+                        Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                    )
                 )
             else:
-                qs = Submission.objects.all()
+                qs = Submission.objects.filter(
+                    Q(is_soft_deleted=False)
+                )
 
         # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
@@ -82,7 +88,10 @@ class ServerStatusView(TemplateView):
 
         for submission in context['submissions']:
             # Get filesize from each submissions's data
-            submission.file_size = self.format_file_size(submission.data.file_size)
+            if submission.data:
+                submission.file_size = self.format_file_size(submission.data.file_size)
+            else:
+                submission.file_size = self.format_file_size(0)
 
             # Get queue from each submission
             queue_name = ""

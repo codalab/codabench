@@ -33,6 +33,16 @@ class ChaHubUserManager(UserManager):
         return super().get_queryset()
 
 
+class DeletedUser(models.Model):
+    user_id = models.IntegerField(null=True, blank=True)  # Store the same ID as in the User table
+    username = models.CharField(max_length=255)
+    email = models.EmailField()
+    deleted_at = models.DateTimeField(auto_now_add=True)  # Automatically sets to current time when the record is created
+
+    def __str__(self):
+        return f"{self.username} ({self.email})"
+
+
 class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
@@ -143,7 +153,9 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         # By default, always push
         return True
 
-    def get_used_storage_space(self):
+    def get_used_storage_space(self, binary=False):
+
+        factor = 1024 if binary else 1000
         from datasets.models import Data
         from competitions.models import Submission, SubmissionDetails
 
@@ -154,7 +166,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             created_by_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_datasets * 1024 if users_datasets else 0
+        storage_used += users_datasets * factor if users_datasets else 0
 
         # Submissions
         users_submissions = Submission.objects.filter(owner_id=self.id).aggregate(
@@ -186,20 +198,21 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             )
         )
 
-        storage_used += users_submissions["size"] * 1024 if users_submissions["size"] else 0
+        storage_used += users_submissions["size"] * factor if users_submissions["size"] else 0
 
         # Submissions details
         users_submissions_details = SubmissionDetails.objects.filter(
             submission__owner_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_submissions_details * 1024 if users_submissions_details else 0
+        storage_used += users_submissions_details * factor if users_submissions_details else 0
 
         return storage_used
 
     def delete(self, *args, **kwargs):
         """Soft delete the user and anonymize personal data."""
         from .views import send_user_deletion_notice_to_admin, send_user_deletion_confirmed
+        from .models import DeletedUser
 
         # Send a notice to admins
         send_user_deletion_notice_to_admin(self)
@@ -211,6 +224,13 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
 
         # Anonymize or removed personal data
         user_email = self.email  # keep track of the email for the end of the procedure
+
+        # Store the deleted user's data in the DeletedUser table
+        DeletedUser.objects.create(
+            user_id=self.id,
+            username=self.username,
+            email=self.email
+        )
 
         # Github related
         self.github_uid = None

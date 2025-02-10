@@ -93,6 +93,9 @@ CODALAB.api = {
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },
+    soft_delete_submission: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/soft_delete/`)
+    },
     delete_many_submissions: function (pks) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/delete_many/`, pks)
     },
