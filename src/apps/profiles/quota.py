@@ -10,10 +10,8 @@ def reset_all_users_quota_to_gb():
     Skips users whose quota is already in GB.
     """
     users = User.objects.all()
-    affted_users_count = 0
     for user in users:
         # If quota is in bytes (greater than 1 GB in bytes)
         if user.quota > 1000 * 1000 * 1000:
             user.quota = user.quota / 1e9  # Convert to GB
             user.save()
-            affted_users_count += 1
