@@ -24,11 +24,12 @@ def get_popular_competitions(limit=4):
     return competitions[:limit]
 
 
-def get_recent_competitions(exclude_comps=None, limit=4):
+def get_recent_competitions(exclude_comps=None, limit=4, random_limit=8):
     """
     Function to return recent competitions, excluding given and featured competitions.
 
     :param limit: Amount of competitions to return. Default is 4.
+    :param random_limit: Limit of recent competitions to take for randomization. Must be greater than `limit`.
     :param exclude_comps: A queryset or list of competitions to exclude.
     :rtype: list
     :return: List of featured competitions.
@@ -41,4 +42,4 @@ def get_recent_competitions(exclude_comps=None, limit=4):
     if len(competitions) <= limit:
         return competitions
     else:
-        return random.sample(list(competitions), limit)
+        return random.sample(list(competitions)[:random_limit], limit)
