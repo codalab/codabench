@@ -449,6 +449,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
+            'is_featured',
         )
 
     def get_created_by(self, obj):
@@ -494,7 +495,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
 
 class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
-    featured_comps = CompetitionSerializerSimple(many=True)
+    recent_comps = CompetitionSerializerSimple(many=True)
 
 
 class PhaseResultsSubmissionSerializer(serializers.Serializer):
