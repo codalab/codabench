@@ -1,6 +1,5 @@
 <competition-tile>
     
-        <!--  <div class="tile-wrapper">  -->
         <div class="tile-wrapper {is_featured ? 'featured' : ''}">
             <div class="ui square tiny bordered image img-wrapper">
                 <img src="{logo_icon ? logo_icon : logo}">
