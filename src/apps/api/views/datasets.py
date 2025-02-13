@@ -14,7 +14,7 @@ from api.pagination import BasicPagination
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 from competitions.models import CompetitionCreationTaskStatus
-from utils.data import make_url_sassy, pretty_bytes
+from utils.data import make_url_sassy, pretty_bytes, gb_to_bytes
 
 
 class DataViewSet(ModelViewSet):
@@ -90,6 +90,7 @@ class DataViewSet(ModelViewSet):
         # Check User quota
         storage_used = float(request.user.get_used_storage_space())
         quota = float(request.user.quota)
+        quota = gb_to_bytes(quota)
         file_size = float(request.data['file_size'])
         if storage_used + file_size > quota:
             available_space = pretty_bytes(quota - storage_used)

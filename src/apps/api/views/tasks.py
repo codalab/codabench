@@ -19,7 +19,7 @@ from competitions.models import Submission, Phase
 from profiles.models import User
 from tasks.models import Task
 from datasets.models import Data
-from utils.data import pretty_bytes
+from utils.data import pretty_bytes, gb_to_bytes
 
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
@@ -210,7 +210,10 @@ class TaskViewSet(ModelViewSet):
 
         # Check if user has enough quota to proceed
         storage_used = float(request.user.get_used_storage_space())
+        # User quota is in GB
         quota = float(request.user.quota)
+        # Convert user quota to bytes
+        quota = gb_to_bytes(quota)
         file_size = uploaded_file.size
         if storage_used + file_size > quota:
             file_size = pretty_bytes(file_size)

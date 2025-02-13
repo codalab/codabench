@@ -7,7 +7,7 @@
 
             <!--  Quota  -->
             <div style="flex: 0 0 auto; margin-left: auto;">
-                Quota: {formatSize(storage_used)} / {formatSize(quota)}
+                Quota: {formatSize(storage_used)} / {quota} GB
             </div>
         </div>
 

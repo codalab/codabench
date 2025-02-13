@@ -131,3 +131,8 @@ def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False):
         bytes /= factor
 
     return f"{bytes:.{decimal_places}f}{units[-1]}{suffix}"
+
+
+def gb_to_bytes(gb, binary=False):
+    factor = 1024**3 if binary else 1000**3
+    return gb * factor
