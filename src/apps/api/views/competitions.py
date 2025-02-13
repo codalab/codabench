@@ -30,7 +30,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
-from competitions.utils import get_popular_competitions, get_featured_competitions
+from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
@@ -507,12 +507,12 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
-        featured_comps = get_featured_competitions()
+        recent_comps = get_recent_competitions(exclude_comps=popular_comps)
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-        featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+        recent_comps_serializer = CompetitionSerializerSimple(recent_comps, many=True)
         return Response(data={
             "popular_comps": popular_comps_serializer.data,
-            "featured_comps": featured_comps_serializer.data
+            "recent_comps": recent_comps_serializer.data
         })
 
     @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
