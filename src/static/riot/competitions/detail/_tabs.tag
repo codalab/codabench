@@ -351,10 +351,22 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            
+            // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+
+            // If no Current phase in this competition 
+            // Find Final phase and set selected phase index to its id
             if (self.selected_phase_index == null) {
                 self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
             }
+
+            // If no Final phase in this competition 
+            // Find the last phase and set selected phase index to its id
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id; 
+            }
+
             self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()
