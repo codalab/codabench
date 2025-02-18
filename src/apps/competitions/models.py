@@ -463,7 +463,7 @@ class SubmissionDetails(models.Model):
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
-    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
     is_scoring = models.BooleanField(default=False)
 
