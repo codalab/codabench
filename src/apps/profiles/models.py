@@ -153,9 +153,8 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         # By default, always push
         return True
 
-    def get_used_storage_space(self, binary=False):
+    def get_used_storage_space(self):
 
-        factor = 1024 if binary else 1000
         from datasets.models import Data
         from competitions.models import Submission, SubmissionDetails
 
@@ -166,7 +165,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             created_by_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_datasets * factor if users_datasets else 0
+        storage_used += users_datasets if users_datasets else 0
 
         # Submissions
         users_submissions = Submission.objects.filter(owner_id=self.id).aggregate(
@@ -198,14 +197,14 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             )
         )
 
-        storage_used += users_submissions["size"] * factor if users_submissions["size"] else 0
+        storage_used += users_submissions["size"] if users_submissions["size"] else 0
 
         # Submissions details
         users_submissions_details = SubmissionDetails.objects.filter(
             submission__owner_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_submissions_details * factor if users_submissions_details else 0
+        storage_used += users_submissions_details if users_submissions_details else 0
 
         return storage_used
 

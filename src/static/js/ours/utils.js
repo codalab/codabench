@@ -102,11 +102,11 @@ function pretty_bytes(bytes, decimalPlaces = 1, suffix = "B", binary = false) {
 
     for (const unit of units) {
         if (Math.abs(bytes) < factor || unit === units[units.length - 1]) {
-            return bytes.toFixed(decimalPlaces) + unit + suffix;
+            return bytes.toFixed(decimalPlaces) + ' ' + unit + suffix;
         }
         bytes /= factor;
     }
-    return bytes.toFixed(decimalPlaces) + units[units.length - 1] + suffix;
+    return bytes.toFixed(decimalPlaces) + ' ' + units[units.length - 1] + suffix;
 }
 
 /* ----------------------------------------------------------------------------
