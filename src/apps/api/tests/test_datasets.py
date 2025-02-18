@@ -12,7 +12,7 @@ faker = Factory.create()
 class DatasetAPITests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')
-        self.existing_dataset = DataFactory(created_by=self.creator, name="Test!", file_size=1024)
+        self.existing_dataset = DataFactory(created_by=self.creator, name="Test!", file_size=1000)
 
     def test_dataset_api_checks_duplicate_names_for_same_user(self):
         self.client.login(username='creator', password='creator')
@@ -23,7 +23,7 @@ class DatasetAPITests(APITestCase):
             'type': Data.COMPETITION_BUNDLE,
             'request_sassy_file_name': faker.file_name(),
             'file_name': faker.file_name(),
-            'file_size': 1024,
+            'file_size': 1000,
         })
 
         assert resp.status_code == 400
@@ -34,7 +34,7 @@ class DatasetAPITests(APITestCase):
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
             'request_sassy_file_name': faker.file_name(),
-            'file_size': 1024,
+            'file_size': 1000,
         })
         assert resp.status_code == 200
 
@@ -53,7 +53,7 @@ class DatasetAPITests(APITestCase):
         quota = float(self.creator.quota)
         storage_used = float(self.creator.get_used_storage_space())
         available_space = quota - storage_used
-        file_size = 1024 * 1024 * 1024 * 1024
+        file_size = 1000 * 1000 * 1000 * 1000
 
         # Fake upload a very big dataset
         resp = self.client.post(reverse("data-list"), {
@@ -68,7 +68,7 @@ class DatasetAPITests(APITestCase):
         assert resp.data["data_file"][0] == f'Insufficient space. Your available space is {pretty_bytes(available_space)}. The file size is {pretty_bytes(file_size)}. Please free up some space and try again. You can manage your files in the Resources page.'
 
         # Fake upload a small file
-        file_size = available_space - 1024
+        file_size = available_space - 1000
         resp = self.client.post(reverse("data-list"), {
             'name': 'new-file-test',
             'type': Data.COMPETITION_BUNDLE,

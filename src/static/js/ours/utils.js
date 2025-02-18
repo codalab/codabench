@@ -90,6 +90,13 @@ function pretty_date(date_string) {
 }
 
 function pretty_bytes(bytes, decimalPlaces = 1, suffix = "B", binary = false) {
+
+    // Ensure bytes is a valid number
+    bytes = parseFloat(bytes)
+    if (isNaN(bytes) || bytes < 0) {
+        return "" // Return empty string for invalid or negative values
+    }
+
     const factor = binary ? 1024.0 : 1000.0;
     const units = binary ? ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] : ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z'];
 
