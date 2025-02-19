@@ -543,7 +543,8 @@
                         CODALAB.events.trigger('reload_quota_cleanup')
                         CODALAB.events.trigger('reload_datasets')
                         self.close_upload_task_modal()
-                        self.update_tasks()
+                        self.page = 1 // set current page to 1
+                        self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
                     }, 500)
                     
                 })
@@ -563,7 +564,8 @@
                 .done((response) => {
                     toastr.success('Task Created')
                     self.close_modal()
-                    self.update_tasks()
+                    self.page = 1 // set current page to 1
+                    self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {
@@ -704,7 +706,7 @@
                 .done((response) => {
                     toastr.success('Task Updated')
                     self.close_edit_modal()
-                    self.update_tasks()
+                    self.update_tasks({page: self.page}) // pass the current page to stay on the page after the update
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {
