@@ -836,16 +836,23 @@ class CompetitionParticipantViewSet(ModelViewSet):
             return CompetitionParticipant.objects.none()
 
     def update(self, request, *args, **kwargs):
-        if request.method == 'PATCH':
-            if 'status' in request.data:
-                participation_status = request.data['status']
-                participant = self.get_object()
-                emails = {
-                    'approved': send_participation_accepted_emails,
-                    'denied': send_participation_denied_emails,
-                }
-                if participation_status in emails:
-                    emails[participation_status](participant)
+        if request.method == 'PATCH' and 'status' in request.data:
+            participation_status = request.data['status']
+            participant = self.get_object()
+
+            # Check if the new status is the same as the current status
+            if participation_status == participant.status:
+                return Response(
+                    {"error": f"Status is already set to `{participation_status}`"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            emails = {
+                'approved': send_participation_accepted_emails,
+                'denied': send_participation_denied_emails,
+            }
+            if participation_status in emails:
+                emails[participation_status](participant)
 
         return super().update(request, *args, **kwargs)
 
