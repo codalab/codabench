@@ -169,6 +169,13 @@
                     }
                     self.update_participants()
                 })
+                .fail((resp) => {
+                    let errorMessage = 'An error occurred while updating the status.'
+                    if (resp.responseJSON && resp.responseJSON.error) {
+                        errorMessage = resp.responseJSON.error
+                    }
+                    toastr.error(errorMessage)
+                })
         }
 
         self.revoke_permission = id => {
@@ -178,7 +185,9 @@
         }
 
         self.approve_permission = id => {
-            self._update_status(id, 'approved')
+            if (confirm("Are you sure you want to accept this user's participation request?")) {
+                self._update_status(id, 'approved')
+            }
         }
 
         self.search_participants = () => {
