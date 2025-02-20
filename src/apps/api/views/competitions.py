@@ -432,7 +432,7 @@ class CompetitionViewSet(ModelViewSet):
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
-    def results(self, request, pk, format=None):
+    def results(self, request, pk, format='json'):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You are not a competition admin or superuser")
