@@ -7,12 +7,10 @@ from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Q
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema, no_body
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -21,21 +19,33 @@ from rest_framework_csv.renderers import CSVRenderer
 from api.pagination import LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
-from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
-    CompetitionCreationTaskStatusSerializer, CompetitionDetailSerializer, CompetitionParticipantSerializer, \
-    FrontPageCompetitionsSerializer, PhaseResultsSerializer, CompetitionUpdateSerializer, CompetitionCreateSerializer
+from api.serializers.competitions import (
+    CompetitionSerializerSimple,
+    CompetitionCreationTaskStatusSerializer,
+    CompetitionDetailSerializer,
+    FrontPageCompetitionsSerializer,
+    CompetitionUpdateSerializer,
+    CompetitionCreateSerializer
+)
 from api.serializers.leaderboards import LeaderboardPhaseSerializer, LeaderboardSerializer
-from competitions.emails import send_participation_requested_emails, send_participation_accepted_emails, \
-    send_participation_denied_emails, send_direct_participant_email
-from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
+from competitions.emails import (
+    send_participation_requested_emails,
+    send_participation_accepted_emails
+)
+from competitions.models import (
+    Competition,
+    Phase,
+    CompetitionCreationTaskStatus,
+    CompetitionParticipant,
+    Submission
+)
 from datasets.models import Data
-from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
+from competitions.tasks import batch_send_email, create_competition_dump
 from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
-from django.conf import settings
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -587,284 +597,3 @@ class CompetitionViewSet(ModelViewSet):
             new_tasks = list(saved_tasks[phase_id] - initial_tasks[phase_id])
             if new_tasks:
                 self.run_new_task_submissions(instance.phases.get(pk=phase_id), new_tasks)
-
-
-class PhaseViewSet(ModelViewSet):
-    serializer_class = PhaseSerializer
-
-    def get_queryset(self):
-        qs = Phase.objects.all()
-        return qs
-
-    def list(self, request, *args, **kwargs):
-        # Check if it's a direct request to /api/phases/
-        # i.e without a pk
-        direct_request = 'pk' not in kwargs or kwargs['pk'] == 'list'
-
-        if direct_request:
-            # return empty response in direct request
-            return Response([], status=status.HTTP_200_OK)
-
-        # Otherwise, allow other functions to use the list functionality as usual
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    # TODO! Security, who can access/delete/etc this?
-
-    @action(detail=True, methods=('POST',), url_name='manually_migrate')
-    def manually_migrate(self, request, pk):
-        """Manually migrates _from_ this phase. The destination phase does not need auto migration set to True"""
-        phase = self.get_object()
-        if not phase.competition.user_has_admin_permission(request.user):
-            return Response(
-                {"detail": "You do not have administrative permissions for this competition"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        manual_migration.apply_async((pk,))
-        return Response({}, status=status.HTTP_200_OK)
-
-    @action(detail=True, url_name='rerun_submissions')
-    def rerun_submissions(self, request, pk):
-
-        phase = self.get_object()
-        comp = phase.competition
-
-        # Get submissions with no parent
-        submissions = phase.submissions.filter(parent__isnull=True)
-
-        can_re_run_submissions = False
-        error_message = ""
-
-        # Super admin can rerun without any restrictions
-        if request.user.is_superuser:
-            can_re_run_submissions = True
-
-        # competition admin can run only if
-        elif request.user in comp.all_organizers:
-
-            # submissions are in limit
-            if len(submissions) <= int(settings.RERUN_SUBMISSION_LIMIT):
-                can_re_run_submissions = True
-
-            # submissions are not in limit
-            else:
-                # Codabemch public queue
-                if comp.queue is None:
-                    can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
-
-                # Other queue where user is not owner and not organizer
-                elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
-                    can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
-
-                # User can rerun submissions where he is owner or organizer
-                else:
-                    can_re_run_submissions = True
-
-        else:
-            can_re_run_submissions = False
-            error_message = 'You do not have permission to re-run submissions'
-
-        # error when user is not super user or admin of the competition
-        if can_re_run_submissions:
-            # rerun all submissions
-            for submission in submissions:
-                submission.re_run()
-            rerun_count = len(submissions)
-            return Response({"count": rerun_count})
-        else:
-            raise PermissionDenied(error_message)
-
-    @swagger_auto_schema(responses={200: PhaseResultsSerializer})
-    @action(detail=True, methods=['GET'])
-    def get_leaderboard(self, request, pk):
-        phase = self.get_object()
-        if phase.competition.fact_sheet:
-            fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
-                               for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
-        else:
-            fact_sheet_keys = None
-        query = LeaderboardPhaseSerializer(phase).data
-        response = {
-            'title': query['leaderboard']['title'],
-            'id': phase.id,
-            'submissions': [],
-            'tasks': [],
-            'fact_sheet_keys': fact_sheet_keys or None,
-            'primary_index': query['leaderboard']['primary_index']
-        }
-        columns = [col for col in query['columns']]
-        submissions_keys = {}
-        submission_detailed_results = {}
-        for submission in query['submissions']:
-            # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions except:
-            # - child submissions (submissions who has a parent i.e. parent field is not null)
-            # - Failed submissions
-            # - Cancelled submissions
-            num_entries = 1  # TMP, remove counting
-            # num_entries = Submission.objects.filter(
-            #     Q(owner__username=submission['owner']) |
-            #     Q(parent__owner__username=submission['owner']),
-            #     phase=phase,
-            # ).exclude(
-            #     Q(status=Submission.FAILED) |
-            #     Q(status=Submission.CANCELLED) |
-            #     Q(parent__isnull=False)
-            # ).count()
-
-            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
-
-            # gather detailed result from submissions for each task
-            # detailed_results are gathered based on submission key
-            # `id` is used to fetch the right detailed result in detailed results page
-            # `detailed_result` url is not needed
-            submission_detailed_results.setdefault(submission_key, []).append({
-                # 'detailed_result': submission['detailed_result'],
-                'task': submission['task'],
-                'id': submission['id']
-            })
-
-            if submission_key not in submissions_keys:
-                submissions_keys[submission_key] = len(response['submissions'])
-                response['submissions'].append({
-                    'id': submission['id'],
-                    'owner': submission['display_name'] or submission['owner'],
-                    'scores': [],
-                    'detailed_results': [],
-                    'fact_sheet_answers': submission['fact_sheet_answers'],
-                    'slug_url': submission['slug_url'],
-                    'organization': submission['organization'],
-                    'num_entries': num_entries,
-                    'created_when': submission['created_when']
-                })
-            for score in submission['scores']:
-
-                # to check if a column is found
-                # this is useful because of `hidden` field
-                # if a column is hidden it will not be shown here so
-                # we will not return that score to the front-end
-                column_found = False
-                # default precision is set to 2
-                precision = 2
-                # default hidden is set to false
-                hidden = False
-
-                # loop over columns to find a column with the same index
-                # replace default precision with column precision
-                for col in columns:
-                    if col["index"] == score["index"]:
-                        precision = col["precision"]
-                        hidden = col["hidden"]
-                        column_found = True
-                        break
-
-                tempScore = score
-                tempScore['task_id'] = submission['task']
-                # round the score to 'precision' decimal points
-                tempScore['score'] = str(round(float(tempScore["score"]), precision))
-
-                # only add scores to the scores list
-                # if this column is found
-                # and
-                # column is not hidden
-                if column_found and not hidden:
-                    response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
-
-        # put detailed results in its submission
-        for k, v in submissions_keys.items():
-            response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
-
-        for task in query['tasks']:
-            # This can be used to rendered variable columns on each task
-            tempTask = {
-                'name': task['name'],
-                'id': task['id'],
-                'colWidth': len(columns),
-                'columns': [],
-            }
-            for col in columns:
-                tempTask['columns'].append(col)
-            response['tasks'].append(tempTask)
-        return Response(response)
-
-
-class CompetitionParticipantViewSet(ModelViewSet):
-    queryset = CompetitionParticipant.objects.all()
-    serializer_class = CompetitionParticipantSerializer
-    filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
-    search_fields = ('user__username', 'user__email',)
-
-    def get_queryset(self):
-
-        # a boolean set to true if the request is considered valid
-        # i.e. it is either GET request with `competition``
-        # or patch request with `status`
-        # or post request with `message`
-        is_valid_request = False
-
-        if self.request.method == "PATCH":
-            # PATCH request is considered valid if it has `status`
-            if 'status' in self.request.data:
-                is_valid_request = True
-
-        if self.request.method == "POST":
-            # POST request is considered valid if it has `message`
-            if 'message' in self.request.data:
-                is_valid_request = True
-
-        if self.request.method == "GET":
-            # GET request is considered valid if it has `competition``
-            # if there is no competition then it si called from /api/participants/
-            # URL which is not considered valid
-            if 'competition' in self.request.GET:
-                is_valid_request = True
-
-        if is_valid_request:
-            # API to act normally i.e return participants
-            qs = super().get_queryset()
-            user = self.request.user
-            if not user.is_superuser:
-                qs = qs.filter(competition__in=user.competitions.all() | user.collaborations.all())
-            qs = qs.select_related('user').order_by('user__username')
-            return qs
-        else:
-            # API will work but will return empty participants list
-            return CompetitionParticipant.objects.none()
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PATCH' and 'status' in request.data:
-            participation_status = request.data['status']
-            participant = self.get_object()
-
-            # Check if the new status is the same as the current status
-            if participation_status == participant.status:
-                return Response(
-                    {"error": f"Status is already set to `{participation_status}`"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            emails = {
-                'approved': send_participation_accepted_emails,
-                'denied': send_participation_denied_emails,
-            }
-            if participation_status in emails:
-                emails[participation_status](participant)
-
-        return super().update(request, *args, **kwargs)
-
-    @action(detail=True, methods=('POST',))
-    def send_email(self, request, pk):
-        participant = self.get_object()
-        competition = participant.competition
-        if not competition.user_has_admin_permission(self.request.user):
-            raise PermissionDenied('You do not have permission to email participants')
-        try:
-            message = request.data['message']
-        except KeyError:
-            return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
-        send_direct_participant_email(participant=participant, content=message)
-        return Response({}, status=status.HTTP_200_OK)

@@ -10,9 +10,10 @@
     </a>
     <table id="leaderboardTable" class="ui celled selectable sortable table">
         <thead>
+        <!--  Leaderboard Title  -->
         <tr>
             <th colspan="100%" class="center aligned">
-                <p class="leaderboard-title">{ selected_leaderboard.title }</p>
+                <span class="leaderboard-title">{ leaderboard.title }</span>
                 <div style="visibility:{show_download}" class="float-right">
                     <div class="ui compact menu">
                         <div class="ui simple dropdown item" style="padding: 0px 5px">
@@ -26,19 +27,28 @@
                 </div>
             </th>
         </tr>
+        <!--  Tasks header  -->
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=4></th>
-            <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
+            <th colspan=3></th>
+            <!--  Factsheet Answers  -->
+            <th if="{leaderboard.fact_sheet_keys}" colspan="{ leaderboard.fact_sheet_keys.length }"> Fact Sheet Answers</th>
+            <!--  Task Names  -->
+            <th each="{ task in leaderboard.tasks }" 
+            class="center aligned" 
+            colspan="{ leaderboard.show_detailed_result ? leaderboard.columns.length + 1 : leaderboard.columns.length }">
+            { task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th>Entries</th>
             <th>Date</th>
             <th>ID</th>
-            <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            
+            <!--  Factsheet Answers  -->
+            <th each="{ fact_sheet_key in leaderboard.fact_sheet_keys}" colspan=1>{ fact_sheet_key.title }</th>
+            <!-- Leaderboard Columns -->
+            <th each="{ column in combinedColumns }">{ column.title }</th>
+                        
         </tr>
         </thead>
         <!--  Show when particpant is not registered  -->
@@ -67,12 +77,12 @@
         </tbody>
         <!--  Show when particpant registration is approved  -->
         <tbody if="{participant_status === 'approved'}">
-        <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
+        <tr if="{_.isEmpty(leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>
             </td>
         </tr>
-        <tr each="{ submission, index in selected_leaderboard.submissions}">
+        <tr each="{ submission, index in leaderboard.submissions}">
             <td class="collapsing index-column center aligned">
                 <gold-medal if="{index + 1 === 1}"></gold-medal>
                 <silver-medal if="{index + 1 === 2}"></silver-medal>
@@ -81,16 +91,23 @@
                 <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
                 <virtual if="{index + 1 > 5}">{index + 1}</virtual>
             </td>
-            <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
+            <td if="{submission.organization === null}"><a href="{submission.slug_url}" target="_blank">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td>{submission.num_entries}</td>
             <td>{ pretty_date(submission.created_when) }</td>
             <td>{submission.id}</td>
-            <td each="{ column in filtered_columns }">
-                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
+            <!--  Factsheet answers  -->
+            <td each="{ fact_sheet_key in leaderboard.fact_sheet_keys }">
+                { submission.fact_sheet_answers[fact_sheet_key.key] || '' }
+            </td>
+            <!--  Submission Scores  -->
+            <td each="{ column in combinedColumns }">
+                <!--  Type = score  -->
+                { column.type === "score" ? (submission.scores[column.task_id] ? submission.scores[column.task_id][column.key] || '' : '') : '' }
+                
+                 <!--  Type = detailed_results  -->
+                <a if="{ column.type === 'detailed_result' }" href="detailed_results/{submission.detailed_results[column.task_id]}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
                 </a>
-                <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
             </td>
         </tr>
         </tbody>
@@ -99,6 +116,7 @@
 
     <script>
         let self = this
+        self.leaderboard = {}
         self.selected_leaderboard = {}
         self.filtered_tasks = []
         self.columns = []
@@ -115,115 +133,94 @@
                 return ''
             }
         }
-       
-        self.bold_class = function(column, submission){
-            // Return `text-bold` if submission has 
-            // more than one scores and score index  == leaderbaord.primary_index
-            // otherwise return empty string
-            return_class = '' // default class value
-            if(column.task_id != -1){ // factsheet check
-                if(submission.scores.length > 1){ // score length check
-                    let column_index = _.get(column, 'index')
-                    if(column_index === self.selected_leaderboard.primary_index){ // column index check
-                        return_class = 'text-bold'
-                    }
-                }
-            }
-            return return_class
-        }
-        self.get_score = function(column, submission) {
-            if(column.task_id === -1){
-                return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
-            } else {
-                let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
-                if (score) {
-                    return score
-                }
-            }
-            return 'n/a'
-        }
 
         self.on("mount" , function () {
-            this.refs.leaderboardFilter.onkeyup = function (e) {
-                self.filter_columns()
-            }
             $('#search-leaderboard-button').click(function() {
                 $(self.refs.leaderboardFilter).focus()
             })
-            $('#leaderboardTable').tablesort()
+            //$('#leaderboardTable').tablesort()
         })
 
-        self.filter_columns = () => {
-            let search_key = self.refs.leaderboardFilter.value.toLowerCase()
-            self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
-            if(search_key){
-                self.filtered_columns = []
-                for (const column of self.columns){
-                    let key = column.key.toLowerCase()
-                    let title = column.title.toLowerCase()
-                    if((key.includes(search_key) || title.includes(search_key))) {
-                        self.filtered_columns.push(column)
-                    }
-                    else {
-                        let task = _.find(self.filtered_tasks, {id: column.task_id})
-                        task.colWidth -= 1
-                    }
-                }
-                self.filtered_tasks = self.filtered_tasks.filter(task => task.colWidth > 0)
-            } else {
-                self.filtered_columns = self.columns
-            }
-            self.update()
-        }
 
         self.update_leaderboard = () => {
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
-                    self.selected_leaderboard = responseData
-                    self.columns = []
-                    // Make fake task and columns for Metadata so it can be filtered like columns
-                    if(self.selected_leaderboard.fact_sheet_keys){
-                        let fake_metadata_task = {
-                            id: -1,
-                            colWidth: self.selected_leaderboard.fact_sheet_keys.length,
-                            columns: [],
-                            name: "Fact Sheet Answers"
-                        }
-                        for(question of self.selected_leaderboard.fact_sheet_keys){
-                            fake_metadata_task.columns.push({
-                                key: question[0],
-                                title: question[1],
-                            })
-                        }
-                        self.selected_leaderboard.tasks.unshift(fake_metadata_task)
-                    }
-                    for(task of self.selected_leaderboard.tasks){
-
-                        for(column of task.columns){
-                            column.task_id = task.id
-                            self.columns.push(column)
-                        }
-                        // -1 id is used for fact sheet answers
-                        if(self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1){
-                            self.columns.push({
-                              task_id: task.id,
-                              title: "Detailed Results"
-                            })
-                            task.colWidth += 1
-                        }
-                    }
-                    self.filter_columns()
-                    $('#leaderboardTable').tablesort()
+                    self.leaderboard = responseData
+                    self.prepare_columns()
+                    console.log(self.leaderboard)
+                    //$('#leaderboardTable').tablesort()
                     self.update()
                 })
+                .fail(resp => {
+                        toastr.error(resp.responseJSON['error'])
+                    })
         }
 
-        self.get_detailed_result_submisison_id = function(column, submisison){
-            for (index in submisison.detailed_results) {
-                if(column.task_id == submisison.detailed_results[index].task){
-                    return submisison.detailed_results[index].id
+        self.prepare_columns = function() {
+            // Function to flatten columns repeated per task
+            // This is done because nested loops don't work well in Riot.js
+
+            // Initialize an empty list to store the combined columns
+            self.combinedColumns = self.leaderboard.tasks.reduce((columnsList, task) => {
+                
+                // Iterate over each column in the leaderboard and associate it with the current task
+                self.leaderboard.columns.forEach(column => {
+                    columnsList.push({ 
+                        task_id: task.id,    // Store task ID instead of just the name
+                        task_name: task.name, 
+                        title: column.title,
+                        key: column.key,     // Key needed for accessing score data
+                        type: "score"        // Mark as a score column
+                    });
+                });
+
+                // If detailed results should be shown, add a "Detailed Result" column for the task
+                if (self.leaderboard.show_detailed_result) {
+                    columnsList.push({ 
+                        task_id: task.id,  // Ensure the task ID is included
+                        task_name: task.name, 
+                        title: "Detailed Result",
+                        type: "detailed_result"
+                    });
                 }
-            }
+
+                // Return the updated list of columns for the next iteration
+                return columnsList;
+
+            }, []); // Start with an empty array
+        }
+
+
+        self.prepare_columnssss = function() {
+            // function to flatten columns repated number of task times
+            // this is done because in riot html nested loop is not working
+
+            // Initialize an empty list to store the combined columns
+            self.combinedColumns = self.leaderboard.tasks.reduce((columnsList, task) => {
+                
+                // Iterate over each column in the leaderboard and associate it with the current task
+                self.leaderboard.columns.forEach(column => {
+                    columnsList.push({ 
+                        task_name: task.name, 
+                        title: column.title,
+                        key: column.key,
+                        type: "score"
+                    })
+                })
+
+                // If detailed results should be shown, add a "Detailed Result" column for the task
+                if (self.leaderboard.show_detailed_result) {
+                    columnsList.push({ 
+                        task_name: task.name, 
+                        title: "Detailed Result",
+                        type: "detailed_result",
+                    });
+                }
+
+                // Return the updated list of columns for the next iteration
+                return columnsList
+
+            }, []) // Start with an empty array
         }
 
 
@@ -257,8 +254,6 @@
         .index-column
             min-width 55px
         .leaderboard-title
-            position absolute
-            left 50%
             transform translate(-50%, 50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
