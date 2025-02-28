@@ -12,9 +12,9 @@
         <thead>
         <!--  Leaderboard Title  -->
         <tr>
-            <th colspan="100%" class="center aligned">
+            <th colspan="100%">
                 <span class="leaderboard-title">{ leaderboard.title }</span>
-                <div style="visibility:{show_download}" class="float-right">
+                <div style="visibility:{show_download}" class="leaderboard-download">
                     <div class="ui compact menu">
                         <div class="ui simple dropdown item" style="padding: 0px 5px">
                             <i class="download icon" style="font-size: 1.5em; margin: 0;"></i>
@@ -253,8 +253,8 @@
             color #8c8c8c
         .index-column
             min-width 55px
-        .leaderboard-title
-            transform translate(-50%, 50%)
+        .leaderboard-download
+            float: right
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
         .eye-icon-link

@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import PhaseSerializer, PhaseResultsSerializer
-from competitions.models import Phase, Submission
+from competitions.models import Phase, Submission, SubmissionScore
 from competitions.tasks import manual_migration
 from leaderboards.models import Column
 from django.conf import settings
@@ -193,66 +193,72 @@ class PhaseViewSet(ModelViewSet):
 
         def _get_leaderboard_submissions(_phase, _tasks, _leaderboard, _columns):
             """
-            Retrieve submissions for the leaderboard of a given competition phase.
+            Retrieve submissions for the leaderboard.
 
-            - If there is only one task:
-                - Fetches submissions that are on the leaderboard and have no children.
-                - Orders them based on the primary column, other leaderboard columns, and created date.
-                - Annotates submissions with their respective scores.
-            - If multiple tasks exist, returns an empty list
+            - Fetches parent submissions (submissions A) with children that belong to `_tasks`.
+            - Fetches independent submissions (submissions B) without children, ensuring they are not part of submissions A.
+            - Orders results using the primary column and other leaderboard columns.
+            - Annotates scores per task to correctly assign them.
+
+            :return: Ordered QuerySet of leaderboard submissions.
             """
 
-            # When we have only 1 task then the query is simple i.e.
-            # fetch all the submissions on the leaderboard
-            # ordered by first the primary col then by other columns then by created date
-            if len(_tasks) == 1:
-                # Intialize ordering as an empty list
-                ordering = []
+            # Extract task IDs
+            task_ids = [task["id"] for task in _tasks]
 
-                # Get primary column from leaderboard columns
-                # We use the primary column for ordering
-                primary_col = _phase.leaderboard.columns.get(index=_phase.leaderboard.primary_index)
-                # primary_col = next((col for col in _columns if col.index == _leaderboard.primary_index), None)
+            submissions = Submission.objects.filter(Q(
+                # Case 1: Standalone submissions
+                Q(phase=_phase, has_children=False, is_specific_task_re_run=False) |
+                # parent__isnull=True
+                # task__in=task_ids,
+                # leaderboard__isnull=False
 
-                # If there is a primary column
-                # add first order by this primary column
-                # Note: annotate submissions by primary_col so that the ordering is applied
-                if primary_col:
-                    ordering.append(f'{"-" if primary_col.sorting == "desc" else ""}primary_col')
+                # Case 2: Parent submissions with children in given tasks
+                Q(phase=_phase, has_children=True, is_specific_task_re_run=False)
+                # children__task__in=task_ids
+            )).select_related(
+                'owner'
+            ).prefetch_related(
+                'scores'
+            ).distinct()
 
-                # Fetch all the submisisons that are on the leaderboard, has no children
-                # Fetch the owner and scores of the submissions
-                # Annotate by primary_col for ordering
-                submissions = Submission.objects.filter(
-                    phase=_phase,
-                    has_children=False,
-                    is_specific_task_re_run=False,
-                    leaderboard__isnull=False,
-                ).select_related(
-                    'owner'
-                ).prefetch_related(
-                    'scores'
-                ).annotate(
-                    primary_col=Sum('scores__score', filter=Q(scores__column=primary_col))
-                )
-                # Loop over all the leaderboard columns
-                # skip the primary column because we have already used it for the annotation
-                # add to ordering each column
-                # annotate submissions with these columns
-                for column in _columns:
-                    if column.index != _leaderboard.primary_index:  # Skip primary column (already added)
-                        col_name = f'col{column.index}'
-                        ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
-                        kwargs = {
-                            col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+            for sub in submissions:
+                print(sub.id, "---")
+                for score in sub.scores.all():
+                    print("\t", f"colum:{score.column_id}", f"score: {score.score}")
+
+            for col in _columns:
+                print(col)
+            return
+
+            # Initialize ordering list
+            ordering = []
+
+
+            # Get primary column for sorting
+            primary_col = _phase.leaderboard.columns.get(index=_phase.leaderboard.primary_index)
+
+            if primary_col:
+                ordering.append(f'{"-" if primary_col.sorting == "desc" else ""}primary_col')
+
+
+            # Annotate scores for each task
+            for column in _columns:
+                if column.index != _leaderboard.primary_index:  # Skip primary column (already added)
+                    col_name = f'col{column.index}'
+                    ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+
+                    submissions = submissions.annotate(
+                        **{
+                            col_name: Sum(
+                                'scores__score',
+                                filter=Q(scores__column__index=column.index)
+                            )
                         }
-                        submissions = submissions.annotate(**kwargs)
+                    )
 
-                # Finally apply the order by
-                submissions = submissions.order_by(*ordering, 'created_when')
-            else:
-                # If there are multiple tasks, return an empty list
-                submissions = []
+            # Apply ordering
+            submissions = submissions.order_by(*ordering, 'created_when')
 
             return submissions
 
@@ -278,8 +284,8 @@ class PhaseViewSet(ModelViewSet):
 
             # NOTE: changes will be needed here when submission has multiple tasks specially the detailed result logic and scores logic
 
-            # Arrange leaderboard in a lookup dict so that
-            # it is easy to get required data without an additional loop
+            # Arrange column in a lookup dict so that it is
+            # easy to get required data without an additional loop
             columns_lookup_dict = {}
             for col in _columns:
                 columns_lookup_dict[col.id] = {
@@ -296,7 +302,7 @@ class PhaseViewSet(ModelViewSet):
             # id, owner, organization, created_when, factsheet answers, scores
             for submission in _submissions:
 
-                # Organize submission meta-data
+                # Organize submission data
                 submisison_data = {
                     "id": submission.id,
                     "owner": submission.owner.display_name or submission.owner.username,
@@ -313,7 +319,7 @@ class PhaseViewSet(ModelViewSet):
                         fact_sheet_answers[fact_sheet_item["key"]] = submission.fact_sheet_answers[fact_sheet_item["key"]]
                 submisison_data["fact_sheet_answers"] = fact_sheet_answers
 
-                # Organize submission scores
+                # Organize submission scores and detailed results
                 # First fetch all scores
                 scores = submission.scores.all()
                 # Create a dict to store detailed result ids per task
@@ -391,7 +397,7 @@ class PhaseViewSet(ModelViewSet):
                 "submissions": leaderboard_submissions,
                 "show_detailed_result": detailed_result_settings["enable_detailed_results"] and detailed_result_settings["show_detailed_results_in_leaderboard"]
             }
-            # print(response)
+
             return Response(response)
 
         except ValidationError as e:
