@@ -304,7 +304,7 @@ class CompetitionViewSet(ModelViewSet):
             data.pop('whitelist_emails', None)
             # Loop over whitelist emails and add them back to whitelist emails in dict format
             for email in whitelist_emails:
-                # user lower case email because some emails in the whitelist may have upper case letters 
+                # user lower case email because some emails in the whitelist may have upper case letters
                 data.setdefault('whitelist_emails', []).append({'email': email.lower()})
 
             serializer = self.get_serializer(instance, data=data, partial=partial)
