@@ -209,18 +209,24 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             # Check if the email is in the DeletedUser table
-            email = form.cleaned_data.get('email')
+            email = form.cleaned_data.get('email').lower()
             if DeletedUser.objects.filter(email=email).exists():
                 messages.error(request, "This email has been previously deleted and cannot be used.")
                 context['form'] = form
             else:
-                form.save()
+                # Update the email field to lowercase before saving
+                form.cleaned_data['email'] = email
+                user = form.save(commit=False)  # Get the user instance without saving
+                user.email = email  # Ensure email is stored in lowercase
+                user.is_active = False  # Set user as inactive
+                user.save()  # Save user instance with updated email
+
+                # Authenticate and send activation email
                 username = form.cleaned_data.get('username')
                 raw_password = form.cleaned_data.get('password1')
                 user = authenticate(username=username, password=raw_password)
-                user.is_active = False
-                user.save()
-                activateEmail(request, user, form.cleaned_data.get('email'))
+                activateEmail(request, user, email)
+
                 return redirect('pages:home')
         else:
             context['form'] = form
@@ -236,7 +242,7 @@ def resend_activation(request):
         form = ActivationForm(request.POST)
         if form.is_valid():
 
-            email = form.cleaned_data.get('email')
+            email = form.cleaned_data.get('email').lower()
             user = User.objects.filter(email=email).first()
 
             if user and not user.is_active:
