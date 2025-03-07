@@ -8,7 +8,12 @@
   "minio-1 | 2024/05/31 12:49:18 http: TLS handshake error from [IP]: EOF" but everything seems to work.
   * Edit: upstream has now also upgraded to caddy 2
 * Enabled TLS/HTTPS for minio by sharing the certificates from caddy.
-They need to be **copied manually** when the certificate gets renewed.
+  They currently need to be **copied manually** when the certificate gets renewed, using something like
+  ```
+  mkdir -p certs/minio && sudo cp certs/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.key $_/private.key
+  mkdir -p certs/minio && sudo cp certs/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.crt $_/public.crt
+  ```
+  Should likely instead either copy it automatically or reverse proxy to minio.
 
 ## What is Codabench?
 
