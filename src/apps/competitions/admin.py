@@ -5,7 +5,7 @@ from . import models
 
 class CompetitionAdmin(admin.ModelAdmin):
     search_fields = ['title', 'docker_image', 'created_by__username']
-    list_display = ['title', 'created_by', 'is_featured']
+    list_display = ['id', 'title', 'created_by', 'is_featured']
     list_filter = ['is_featured']
 
 
