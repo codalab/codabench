@@ -32,7 +32,7 @@
             <th>Task:</th>
             <th colspan=3></th>
             <!--  Factsheet Answers  -->
-            <th if="{leaderboard.fact_sheet_keys}" colspan="{ leaderboard.fact_sheet_keys.length }"> Fact Sheet Answers</th>
+            <th if="{leaderboard.fact_sheet_keys && leaderboard.fact_sheet_keys.length > 0}" colspan="{ leaderboard.fact_sheet_keys.length }"> Fact Sheet Answers</th>
             <!--  Task Names  -->
             <th each="{ task in leaderboard.tasks }" 
             class="center aligned" 
@@ -42,7 +42,7 @@
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th>Date</th>
+            <th class="fixed-width-date">Date</th>
             <th>ID</th>
             <!--  Factsheet Answers  -->
             <th each="{ fact_sheet_key in leaderboard.fact_sheet_keys}" colspan=1>{ fact_sheet_key.title }</th>
@@ -105,7 +105,7 @@
                 { column.type === "score" ? (submission.scores[column.task_id] ? submission.scores[column.task_id][column.key] || '' : '') : '' }
                 
                  <!--  Type = detailed_results  -->
-                <a if="{ column.type === 'detailed_result' }" href="detailed_results/{submission.detailed_results[column.task_id]}" target="_blank" class="eye-icon-link">
+                <a if="{ column.type === 'detailed_result' && submission.detailed_results[column.task_id] }" href="detailed_results/{submission.detailed_results[column.task_id]}" target="_blank" class="eye-icon-link">
                     <i class="icon grey eye eye-icon"></i>
                 </a>
             </td>
@@ -123,8 +123,6 @@
         self.filtered_columns = []
         self.phase_id = null
         self.competition_id = null
-        self.enable_detailed_results = false
-        self.show_detailed_results_in_leaderboard = false
 
         self.pretty_date = function (date_string) {
             if (!!date_string) {
@@ -147,8 +145,7 @@
                 .done(responseData => {
                     self.leaderboard = responseData
                     self.prepare_columns()
-                    console.log(self.leaderboard)
-                    //$('#leaderboardTable').tablesort()
+                    $('#leaderboardTable').tablesort()
                     self.update()
                 })
                 .fail(resp => {
@@ -233,9 +230,6 @@
             self.competition_id = competition.id
             self.participant_status = competition.participant_status
             self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
-            self.enable_detailed_results = competition.enable_detailed_results
-            self.show_detailed_results_in_leaderboard = competition.show_detailed_results_in_leaderboard
-            
         })
 
         CODALAB.events.on('submission_changed_on_leaderboard', self.update_leaderboard)
@@ -265,7 +259,11 @@
             top: 50%
             left: 50%
             transform: translate(-50%, -50%)
-        .text-bold
-            font-weight: bold
+        .fixed-width-date
+            width: 120px
+            min-width: 120px
+            max-width: 120px
+            white-space: nowrap
+            overflow: hidden
     </style>
 </leaderboards>

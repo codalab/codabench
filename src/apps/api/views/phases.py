@@ -1,4 +1,5 @@
-from django.db.models import Q, Sum, Prefetch
+from django.db.models import Q, Sum, Value, Exists, OuterRef
+from django.db.models.functions import Coalesce
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -195,70 +196,67 @@ class PhaseViewSet(ModelViewSet):
             """
             Retrieve submissions for the leaderboard.
 
-            - Fetches parent submissions (submissions A) with children that belong to `_tasks`.
-            - Fetches independent submissions (submissions B) without children, ensuring they are not part of submissions A.
+            - Fetches submissions with no children or parents
+            - Fetches submissions with children
             - Orders results using the primary column and other leaderboard columns.
-            - Annotates scores per task to correctly assign them.
 
             :return: Ordered QuerySet of leaderboard submissions.
             """
-
-            # Extract task IDs
-            task_ids = [task["id"] for task in _tasks]
-
-            submissions = Submission.objects.filter(Q(
-                # Case 1: Standalone submissions
-                Q(phase=_phase, has_children=False, is_specific_task_re_run=False) |
-                # parent__isnull=True
-                # task__in=task_ids,
-                # leaderboard__isnull=False
-
-                # Case 2: Parent submissions with children in given tasks
-                Q(phase=_phase, has_children=True, is_specific_task_re_run=False)
-                # children__task__in=task_ids
-            )).select_related(
-                'owner'
-            ).prefetch_related(
-                'scores'
-            ).distinct()
-
-            for sub in submissions:
-                print(sub.id, "---")
-                for score in sub.scores.all():
-                    print("\t", f"colum:{score.column_id}", f"score: {score.score}")
-
-            for col in _columns:
-                print(col)
-            return
-
-            # Initialize ordering list
+            # Intialize ordering as an empty list
             ordering = []
 
-
-            # Get primary column for sorting
+            # Get primary column from leaderboard columns
+            # We use the primary column for ordering
             primary_col = _phase.leaderboard.columns.get(index=_phase.leaderboard.primary_index)
+            # primary_col = next((col for col in _columns if col.index == _leaderboard.primary_index), None)
 
+            # If there is a primary column
+            # add first order by this primary column
+            # Note: annotate submissions by primary_col so that the ordering is applied
             if primary_col:
                 ordering.append(f'{"-" if primary_col.sorting == "desc" else ""}primary_col')
 
+            # Fetch all the submisisons that are on the leaderboard, has no children
+            # Fetch the owner and scores of the submissions
+            # Annotate by primary_col for ordering
 
-            # Annotate scores for each task
+            submissions = Submission.objects.filter(Q(
+                # Case 1: Standalone submissions
+                Q(
+                    phase=_phase,
+                    has_children=False,
+                    parent__isnull=True,
+                    leaderboard__isnull=False,
+                    is_specific_task_re_run=False,
+                    is_soft_deleted=False
+                ) |
+                # Case 2: Parent submissions with children in given tasks
+                Q(
+                    phase=_phase,
+                    has_children=True,
+                    # leaderboard__isnull=False,
+                    is_specific_task_re_run=False,
+                    is_soft_deleted=False
+                )
+            )).select_related(
+                'owner', 'task'
+            ).prefetch_related(
+                'scores', 'children__task'
+            ).annotate(
+                primary_col=Coalesce(Sum('scores__score', filter=Q(scores__column=primary_col)), Value(0))
+            )
+            # Loop over all the leaderboard columns
+            # skip the primary column because we have already used it for the annotation
+            # add to ordering each column
+            # annotate submissions with these columns
             for column in _columns:
                 if column.index != _leaderboard.primary_index:  # Skip primary column (already added)
                     col_name = f'col{column.index}'
                     ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
-
-                    submissions = submissions.annotate(
-                        **{
-                            col_name: Sum(
-                                'scores__score',
-                                filter=Q(scores__column__index=column.index)
-                            )
-                        }
-                    )
-
-            # Apply ordering
-            submissions = submissions.order_by(*ordering, 'created_when')
+                    kwargs = {
+                        col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
+                    }
+                    submissions = submissions.annotate(**kwargs)
 
             return submissions
 
@@ -281,8 +279,6 @@ class PhaseViewSet(ModelViewSet):
             return leaderboard_columns
 
         def _prepare_leaderboard_submissions(_fact_sheet_keys, _tasks, _columns, _submissions):
-
-            # NOTE: changes will be needed here when submission has multiple tasks specially the detailed result logic and scores logic
 
             # Arrange column in a lookup dict so that it is
             # easy to get required data without an additional loop
@@ -319,9 +315,23 @@ class PhaseViewSet(ModelViewSet):
                         fact_sheet_answers[fact_sheet_item["key"]] = submission.fact_sheet_answers[fact_sheet_item["key"]]
                 submisison_data["fact_sheet_answers"] = fact_sheet_answers
 
-                # Organize submission scores and detailed results
-                # First fetch all scores
-                scores = submission.scores.all()
+                # Arrange submission ids and scores in a dict
+                # for each task so that it is easy to fetch
+                # the scores for score calulations and submission id for detailed result
+                submission_ids_and_scores_per_task = {}
+                if submission.has_children:
+                    # each child task is fetched from the child submission along with its scores and id
+                    for child in submission.children.all():
+                        submission_ids_and_scores_per_task[child.task.id] = {
+                            "scores": child.scores.all(),
+                            "submission_id": child.id
+                        }
+                else:
+                    submission_ids_and_scores_per_task[submission.task.id] = {
+                        "scores": submission.scores.all(),
+                        "submission_id": submission.id
+                    }
+
                 # Create a dict to store detailed result ids per task
                 submission_detailed_results = {task["id"]: {} for task in _tasks}
                 # Create a dict to store scores as key-value pairs
@@ -331,19 +341,30 @@ class PhaseViewSet(ModelViewSet):
                 # Loop over the scores and assign them to each task
                 for task in _tasks:
 
-                    # Store detailed result under the respective task
-                    submission_detailed_results[task["id"]] = submission.id
+                    # Initialize detailed result for this task with None
+                    submission_detailed_results[task["id"]] = None
 
-                    # Loop over the scores to
-                    # - get column key from the lookup dict using column_id in each score
-                    # - round the score value to `precision`
-                    # - add the processed score value to the scores dict
-                    for score in scores:
-                        col_key = columns_lookup_dict[score.column_id]["key"]
-                        col_precision = columns_lookup_dict[score.column_id]["precision"]
-                        score_value = round(float(score.score), col_precision)
-                        # Store scores under the respective task
-                        submission_scores[task["id"]][col_key] = score_value
+                    # Fetch submission id and score dict from the ids_and_scores_per_task dict
+                    # If there is an entry for this task then detailed result is set otherwise the
+                    # default value is already stored as  None
+                    submission_id_and_score = submission_ids_and_scores_per_task.get(task["id"], None)
+                    if submission_id_and_score:
+                        submission_detailed_results[task["id"]] = submission_id_and_score["submission_id"]
+
+                    # Fetch score for the task from submission_ids_and_scores_per_task
+                    # If score is found for this task then:
+                    # Loop over the scores in to fetch the correct score for each task. 
+                    # If score is not found for a task then we do nothing
+                    if submission_id_and_score:
+                        for score in submission_id_and_score["scores"]:
+                            #   - get column key from the lookup dict using column_id in each score
+                            #   - round the score value to `precision`
+                            #   - add the processed score value to the scores dict
+                            col_key = columns_lookup_dict[score.column_id]["key"]
+                            col_precision = columns_lookup_dict[score.column_id]["precision"]
+                            score_value = round(float(score.score), col_precision)
+                            # Store scores under the respective task
+                            submission_scores[task["id"]][col_key] = score_value
 
                 # Assign the structured scores to submission data
                 submisison_data["scores"] = submission_scores
