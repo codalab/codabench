@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Value, Exists, OuterRef
+from django.db.models import Q, Sum, Value
 from django.db.models.functions import Coalesce
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import PhaseSerializer, PhaseResultsSerializer
-from competitions.models import Phase, Submission, SubmissionScore
+from competitions.models import Phase, Submission
 from competitions.tasks import manual_migration
 from leaderboards.models import Column
 from django.conf import settings
@@ -110,24 +110,24 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
 
         """
-        This is an API function that returns leaderboards
+        This is an API function that returns leaderboard
         NOTE: To simplify things, each part of this big function is divided into sub functions
-
+        TODO: modify this function to return multiple leaderboards
         """
         def _get_factsheet_keys(_phase):
             """
             Get Factsheet keys from the competition
 
-            - The function iterates through the competition's factsheet questions.
+            - This function iterates through the competition's factsheet questions.
             - It selects only those questions where `is_on_leaderboard` is set to 'true'.
             - Returns a list of key-title pairs for display on the leaderboard.
             """
             fact_sheet_keys = []
 
-            # Check if the competition has a factsheet
+            # Check if the competition has fact sheet
             if _phase.competition.fact_sheet:
                 for question in _phase.competition.fact_sheet:
-                    # Include only factsheet questions marked as "is_on_leaderboard"
+                    # Include only fact sheet questions marked as "is_on_leaderboard"
                     if _phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true':
                         fact_sheet_keys.append({
                             "key": _phase.competition.fact_sheet[question]['key'],
@@ -141,7 +141,7 @@ class PhaseViewSet(ModelViewSet):
 
             - Filters columns associated with the given leaderboard where `hidden=False`.
             - Raises a ValidationError if no columns are found.
-            - Returns serialized column data.
+            - Returns serialized column query set.
 
             """
             # Get non-hidden columns
@@ -149,6 +149,7 @@ class PhaseViewSet(ModelViewSet):
                 leaderboard=_leaderboard,
                 hidden=False
             )
+            # Raise an error if num columns == 0
             if len(columns) == 0:
                 raise ValidationError("No columns exist on the leaderboard")
             return columns
@@ -161,7 +162,7 @@ class PhaseViewSet(ModelViewSet):
             - Returns a QuerySet containing the relevant task data.
             """
 
-            # Get tasks linked to the phase, selecting only ID and name
+            # Get tasks linked to the phase, selecting only id and name
             tasks = _phase.tasks.values("id", "name")
             return tasks
 
@@ -188,11 +189,13 @@ class PhaseViewSet(ModelViewSet):
             - Returns the leaderboard instance if it is visible.
             """
 
+            # Raise an error if leaderboard is hidden
             if _phase.leaderboard.hidden:
                 raise ValidationError("No visible leaderboard for this phase")
+
             return _phase.leaderboard
 
-        def _get_leaderboard_submissions(_phase, _tasks, _leaderboard, _columns):
+        def _get_leaderboard_submissions(_phase, _leaderboard, _columns):
             """
             Retrieve submissions for the leaderboard.
 
@@ -200,7 +203,7 @@ class PhaseViewSet(ModelViewSet):
             - Fetches submissions with children
             - Orders results using the primary column and other leaderboard columns.
 
-            :return: Ordered QuerySet of leaderboard submissions.
+            Raturns an ordered querySet of leaderboard submissions.
             """
             # Intialize ordering as an empty list
             ordering = []
@@ -208,18 +211,19 @@ class PhaseViewSet(ModelViewSet):
             # Get primary column from leaderboard columns
             # We use the primary column for ordering
             primary_col = _phase.leaderboard.columns.get(index=_phase.leaderboard.primary_index)
-            # primary_col = next((col for col in _columns if col.index == _leaderboard.primary_index), None)
 
             # If there is a primary column
-            # add first order by this primary column
+            # - add first order by this primary column
             # Note: annotate submissions by primary_col so that the ordering is applied
             if primary_col:
                 ordering.append(f'{"-" if primary_col.sorting == "desc" else ""}primary_col')
 
-            # Fetch all the submisisons that are on the leaderboard, has no children
-            # Fetch the owner and scores of the submissions
+            # Fetch all the leaderboard submissions that include:
+            # - standalone submissions: submissions that has no parent and no children
+            # - parent submissions with children
+            # Fetch the owner, task, child task, and scores of the submissions
             # Annotate by primary_col for ordering
-
+            # TODO: to check why sometimes the parent submission is not on the leaderboard but a child is on the leaderboard
             submissions = Submission.objects.filter(Q(
                 # Case 1: Standalone submissions
                 Q(
@@ -234,7 +238,7 @@ class PhaseViewSet(ModelViewSet):
                 Q(
                     phase=_phase,
                     has_children=True,
-                    # leaderboard__isnull=False,
+                    # leaderboard__isnull=False,  # TODO: uncomment this when the problem with parent submission not on leaderboard is resolved
                     is_specific_task_re_run=False,
                     is_soft_deleted=False
                 )
@@ -245,6 +249,7 @@ class PhaseViewSet(ModelViewSet):
             ).annotate(
                 primary_col=Coalesce(Sum('scores__score', filter=Q(scores__column=primary_col)), Value(0))
             )
+
             # Loop over all the leaderboard columns
             # skip the primary column because we have already used it for the annotation
             # add to ordering each column
@@ -261,6 +266,10 @@ class PhaseViewSet(ModelViewSet):
             return submissions
 
         def _prepare_leaderboard_tasks(_tasks):
+            """
+            This function prepares leaderboard tasks for the front-end
+            Returns formatted leaderboard tasks with task id and task name
+            """
             leaderboard_tasks = []
             for task in _tasks:
                 leaderboard_tasks.append({
@@ -270,6 +279,10 @@ class PhaseViewSet(ModelViewSet):
             return leaderboard_tasks
 
         def _prepare_leaderboard_columns(_columns):
+            """
+            This function prepares leaderboard columns for the front-end
+            Returns formatted leaderboard columns with column title and column key
+            """
             leaderboard_columns = []
             for column in _columns:
                 leaderboard_columns.append({
@@ -279,9 +292,14 @@ class PhaseViewSet(ModelViewSet):
             return leaderboard_columns
 
         def _prepare_leaderboard_submissions(_fact_sheet_keys, _tasks, _columns, _submissions):
+            """
+            This function prepares leaderboard submissions for the front-end
+            Returns formatted submissions with id, owner, organization, created_when, slug_url, fact_sheet_answers, scores, detailed_results
+            """
 
-            # Arrange column in a lookup dict so that it is
-            # easy to get required data without an additional loop
+            # Arrange columns in a lookup dict so that it is easy
+            # to get required data without an additional loop
+            # key in the dict is col id and value is a dict with column data (title, key, index, precision)
             columns_lookup_dict = {}
             for col in _columns:
                 columns_lookup_dict[col.id] = {
@@ -294,8 +312,8 @@ class PhaseViewSet(ModelViewSet):
             # Create an empty list for leaderboard submissions
             leaderboard_submissions = []
 
-            # Loop over submissions fetched to prepare submission data that include:
-            # id, owner, organization, created_when, factsheet answers, scores
+            # Loop over submissions to prepare submission data that include:
+            # id, owner, organization, created_when, factsheet answers, scores, detailed_results
             for submission in _submissions:
 
                 # Organize submission data
@@ -315,9 +333,10 @@ class PhaseViewSet(ModelViewSet):
                         fact_sheet_answers[fact_sheet_item["key"]] = submission.fact_sheet_answers[fact_sheet_item["key"]]
                 submisison_data["fact_sheet_answers"] = fact_sheet_answers
 
-                # Arrange submission ids and scores in a dict
-                # for each task so that it is easy to fetch
+                # Arrange submission ids and scores in a dict for each task so that it is easy to fetch
                 # the scores for score calulations and submission id for detailed result
+                # When a submission has children, it means each child submission is run on a different task and for each task, submission(child) has different scores
+                # On the leaderboard we show the parent submission ID but scores are shown from child submissions
                 submission_ids_and_scores_per_task = {}
                 if submission.has_children:
                     # each child task is fetched from the child submission along with its scores and id
@@ -334,6 +353,7 @@ class PhaseViewSet(ModelViewSet):
 
                 # Create a dict to store detailed result ids per task
                 submission_detailed_results = {task["id"]: {} for task in _tasks}
+
                 # Create a dict to store scores as key-value pairs
                 # where key is the column key and value is the score value rounded to a precise value
                 # scores are stored per task, this is helpful when we have scores for multiple tasks
@@ -344,24 +364,23 @@ class PhaseViewSet(ModelViewSet):
                     # Initialize detailed result for this task with None
                     submission_detailed_results[task["id"]] = None
 
-                    # Fetch submission id and score dict from the ids_and_scores_per_task dict
+                    # Fetch submission id and score dict from the `submission_ids_and_scores_per_task` dict
                     # If there is an entry for this task then detailed result is set otherwise the
-                    # default value is already stored as  None
+                    # default value is already stored as `None``
                     submission_id_and_score = submission_ids_and_scores_per_task.get(task["id"], None)
                     if submission_id_and_score:
                         submission_detailed_results[task["id"]] = submission_id_and_score["submission_id"]
 
-                    # Fetch score for the task from submission_ids_and_scores_per_task
+                    # Fetch score for the task from `submission_ids_and_scores_per_task``
                     # If score is found for this task then:
-                    # Loop over the scores in to fetch the correct score for each task. 
-                    # If score is not found for a task then we do nothing
+                    # Loop over the scores to fetch the correct score for each task.
+                    # If submission_id_and_score is not found for a task then we do nothing
                     if submission_id_and_score:
                         for score in submission_id_and_score["scores"]:
-                            #   - get column key from the lookup dict using column_id in each score
-                            #   - round the score value to `precision`
-                            #   - add the processed score value to the scores dict
+                            # get column key and column precision from the lookup dict using column_id in each score
                             col_key = columns_lookup_dict[score.column_id]["key"]
                             col_precision = columns_lookup_dict[score.column_id]["precision"]
+                            # round the score value to `precision`
                             score_value = round(float(score.score), col_precision)
                             # Store scores under the respective task
                             submission_scores[task["id"]][col_key] = score_value
@@ -399,7 +418,7 @@ class PhaseViewSet(ModelViewSet):
             detailed_result_settings = _get_detailed_result_settings(phase)
 
             # Get Leaderboard Submissions
-            submissions = _get_leaderboard_submissions(phase, tasks, leaderboard, columns)
+            submissions = _get_leaderboard_submissions(phase, leaderboard, columns)
 
             # Prepare leaderboard tasks
             leaderboard_tasks = _prepare_leaderboard_tasks(tasks)
