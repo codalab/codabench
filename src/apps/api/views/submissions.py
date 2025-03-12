@@ -15,6 +15,7 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
+from django.http import StreamingHttpResponse
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
@@ -23,6 +24,7 @@ from competitions.models import Submission, SubmissionDetails, Phase, Competitio
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
+
 logger = logging.getLogger()
 
 
@@ -30,7 +32,7 @@ class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('phase__competition', 'phase', 'status')
+    filter_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
 
@@ -117,6 +119,9 @@ class SubmissionViewSet(ModelViewSet):
             if not self.request.user.is_authenticated:
                 return Submission.objects.none()
 
+            # Check if admin is requesting to see soft-deleted submissions
+            show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
+
             if not self.request.user.is_superuser and not self.request.user.is_staff and not self.request.user.is_bot:
                 # if you're the creator of the submission or a collaborator on the competition
                 qs = qs.filter(
@@ -124,6 +129,11 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ).distinct()
+
+            # By default, exclude soft-deleted submissions unless explicitly requested by an admin
+            if not show_is_soft_deleted:
+                qs = qs.filter(is_soft_deleted=False)
+
             qs = qs.select_related(
                 'phase',
                 'phase__competition',
@@ -177,12 +187,41 @@ class SubmissionViewSet(ModelViewSet):
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=('DELETE',))
+    def soft_delete(self, request, pk):
+        submission = self.get_object()
+
+        # Check if submission exists
+        if not submission:
+            return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if owner is requesting soft delete
+        if submission.owner != request.user:
+            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is finished and on the leaderboard
+        if submission.status == Submission.FINISHED and submission.on_leaderboard:
+            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is in running state
+        if submission.status not in [Submission.FAILED, Submission.FINISHED]:
+            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is not already soft deleted
+        if submission.is_soft_deleted:
+            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # soft delete submission and return success response
+        submission.soft_delete()
+        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=('DELETE',))
     def delete_many(self, request, *args, **kwargs):
         qs = self.get_queryset()
         if not qs:
             return Response({'Submission search returned empty'}, status=status.HTTP_404_NOT_FOUND)
-        qs.delete()
+        for submission in qs:
+            submission.delete()  # This will trigger the model's `delete` method
         return Response({})
 
     def get_renderer_context(self):
@@ -310,6 +349,22 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
+    @action(detail=False, methods=['get'])
+    def download_many(self, request):
+        pks = request.query_params.get('pks')
+        if pks:
+            pks = json.loads(pks)  # Convert JSON string to list
+
+        # Doing a local import here to avoid circular imports
+        from competitions.tasks import stream_batch_download
+
+        # in_memory_zip = stream_batch_download.apply_async((pks,)).get()
+        in_memory_zip = stream_batch_download(pks)
+
+        response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
+        return response
+
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
@@ -325,14 +380,14 @@ class SubmissionViewSet(ModelViewSet):
         submission = Submission.objects.get(pk=pk)
         # Check if competition show visualization is true
         if submission.phase.competition.enable_detailed_results:
-            # get submission's competition participants
-            participants = submission.phase.competition.participants.all()
-            participant_usernames = [participant.user.username for participant in participants]
+            # get submission's competition approved participants
+            approved_participants = submission.phase.competition.participants.filter(status=CompetitionParticipant.APPROVED)
+            participant_usernames = [participant.user.username for participant in approved_participants]
 
             # check if in this competition
             # user is collaborator
             # or
-            # user is participant
+            # user is approved participant
             # or
             # user is creator
             # or
@@ -352,15 +407,15 @@ class SubmissionViewSet(ModelViewSet):
                 )
         else:
             return Response({
-                "error_msg": "Visualizations are disabled"},
+                "error_msg": "Detailed results are disable for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=True, methods=('GET',))
     def toggle_public(self, request, pk):
         submission = super().get_object()
-        if not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied(f'You do not have permission to publish this submissions')
+        if not submission.phase.competition.can_participants_make_submissions_public:
+            raise PermissionDenied("You do not have permission to make this submissions public/private")
         is_public = not submission.is_public
         submission.data.is_public = is_public
         submission.data.save(send=False)

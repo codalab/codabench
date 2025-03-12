@@ -1,4 +1,5 @@
 {$DOMAIN_NAME} {
+  # HTTPS Options
 	tls {$TLS_EMAIL} {
 		ca https://acme.sectigo.com/v2/OV
 		eab {$EAB_KID} {$EAB_HMAC}
@@ -9,20 +10,28 @@
 	#	ca https://acme-staging-v02.api.letsencrypt.org/directory
 	#}
 
+
+  # Removing some headers for improved security:
+  header -Server
+
 	# Serves static files, should be the same as `STATIC_ROOT` setting
 	root * /var/www/django
 	file_server
 
-	# Serves dynamic requests
 	@notStatic {
 		not path /static/*
 		not path /media/*
 	}
-	reverse_proxy @notStatic django:8000
+	# Serving dynamic requests:
+  reverse_proxy @noStatic django:8000
 
+  # Allows to use `.gz` files when available:
 	encode gzip
 
-	log {
-		output stdout
-	}
+	# Logs:
+  log {
+    output file /var/log/caddyaccess.log {
+      roll_disabled
+    }
+  }
 }

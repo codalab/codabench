@@ -4,14 +4,16 @@ services:
   #   Web Services
   #-----------------------------------------------
   caddy:
-    image: caddy:2.7.6
+    image: caddy:2.8.4
     env_file: .env
     environment:
       - ACME_AGREE=true
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./certs:/data
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+      - ./var/log/caddy:/var/log/
     restart: unless-stopped
     ports:
       - 80:80
@@ -22,7 +24,7 @@ services:
   django:
     build: .
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
+    command: bash -c "python manage.py collectstatic --noinput && cd /app/src &&  watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
@@ -42,8 +44,8 @@ services:
     tty: true
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -100,8 +102,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -113,6 +115,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
     ports:
       - 5432:5432
     volumes:
@@ -121,8 +124,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Rabbitmq & Flower monitoring tool
@@ -149,8 +152,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   flower:
     # image: mher/flower
@@ -167,8 +170,8 @@ services:
       - rabbit
     logging:
         options:
-            max-size: "20k"
-            max-file: "10"
+            max-size: "20m"
+            max-file: "5"
 
   #-----------------------------------------------
   #   Redis
@@ -180,8 +183,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Celery Service
@@ -201,8 +204,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -231,5 +234,5 @@ services:
       - CODALAB_IGNORE_CLEANUP_STEP=1
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"

@@ -7,7 +7,7 @@ from django.utils.timezone import now
 from competitions.models import Submission, Competition, Phase
 from competitions.tasks import do_phase_migrations
 from factories import UserFactory, CompetitionFactory, PhaseFactory, SubmissionFactory, CompetitionParticipantFactory, \
-    TaskFactory
+    TaskFactory, LeaderboardFactory
 
 twenty_minutes_ago = now() - timedelta(hours=0, minutes=20)
 twenty_five_minutes_ago = now() - timedelta(hours=0, minutes=25)
@@ -22,6 +22,7 @@ class PhaseToPhaseMigrationTests(TestCase):
         self.competition = CompetitionFactory(created_by=self.owner, title="Competition One")
         self.competition_participant = CompetitionParticipantFactory(user=self.normal_user,
                                                                      competition=self.competition)
+        self.leaderboard = LeaderboardFactory()
         self.phase1 = PhaseFactory(
             competition=self.competition,
             auto_migrate_to_this_phase=False,
@@ -59,6 +60,7 @@ class PhaseToPhaseMigrationTests(TestCase):
         kwargs.setdefault('participant', self.competition_participant)
         kwargs.setdefault('phase', self.phase1)
         kwargs.setdefault('status', Submission.FINISHED)
+        kwargs.setdefault('leaderboard', self.leaderboard)
         sub = SubmissionFactory(**kwargs)
         return sub
 

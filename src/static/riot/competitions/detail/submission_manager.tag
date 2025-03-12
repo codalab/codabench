@@ -5,10 +5,8 @@
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item"
-                     each="{phase in opts.competition.phases}"
-                     onclick="{rerun_phase.bind(this, phase)}"
-                >
+                <div class="parent-modal item" each="{phase in opts.competition.phases}"
+                    onclick="{rerun_phase.bind(this, phase)}">
                     { phase.name }
                 </div>
             </div>
@@ -16,15 +14,15 @@
         <a class="ui button" href="{csv_link}">
             <i class="icon download"></i>Download as CSV
         </a>
-        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
-                onclick="{delete_selected_submissions.bind(this)}">
-            <i class="icon trash alternate"></i>
-            Delete Submissions
-        </button>
-        <button type="button" class="ui button right floated" disabled="{checked_submissions.length === 0}"
-                onclick="{rerun_selected_submissions.bind(this)}">
-            <i class="icon redo"></i>
-            Rerun Submissions
+
+        <select class=" ui dropdown floated right " ref="submission_handling_operation">
+            <option value="delete"> Delete selected submissions</option>
+            <option value="download">Download selected submissions</option>
+            <option value="rerun">Rerun selected submissions</option>
+        </select>
+        <button type="button" class="ui button right" disabled="{checked_submissions.length === 0}"
+            onclick="{submission_handling.bind(this)}">
+            Apply
         </button>
     </div>
     <div class="ui icon input">
@@ -48,111 +46,137 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
+    <div class="ui input" if="{opts.admin}">
+        <input 
+        type="checkbox" 
+        checked="{show_is_soft_deleted}"
+        onclick="{toggleShowSoftDeleted}">
+        <label class="checkbox-label">Show soft-deleted submissions</label>
+    </div>
     <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
-        <tr>
-            <th if="{opts.admin}">
-                <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
-                    <input type="checkbox" name="select_all">
-                    <label>All</label>
-                </div>
-            </th>
-            <th class="sorted descending collapsing">ID #</th>
-            <th>File name</th>
-            <th if="{ opts.admin }">Owner</th>
-            <th if="{ opts.admin }">Phase</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Score</th>
-            <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
-        </tr>
+            <tr>
+                <th if="{opts.admin}">
+                    <div class="ui checkbox" onclick="{select_all_pressed.bind(this)}">
+                        <input type="checkbox" name="select_all">
+                        <label>All</label>
+                    </div>
+                </th>
+                <th class="sorted descending collapsing">ID #</th>
+                <th>File name</th>
+                <th if="{ opts.admin }">Owner</th>
+                <th if="{ opts.admin }">Phase</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
+                    Detailed Results
+                </th>
+                <th class="center aligned">Actions</th>
+            </tr>
         </thead>
         <tbody>
-        <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
-            <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
-        </tr>
-        <tr if="{loading}" class="center aligned">
-            <td colspan="100%">
-                <em>Loading Submissions...</em>
-            </td>
-        </tr>
-        <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
-            onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
-            <td if="{opts.admin}">
-                <div class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
-                    <input type="checkbox" name="{submission.id}">
-                    <label></label>
-                </div>
-            </td>
-            <td>{ submission.id }</td>
-            <td>{ submission.filename }</td>
-            <td if="{ opts.admin }">{ submission.owner }</td>
-            <td if="{ opts.admin }">{ submission.phase.name }</td>
-            <td>{ submission.created_when}</td>
-            <td class="right aligned collapsing">
-                { submission.status }
-                <sup data-tooltip="{submission.status_details}">
-                    <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
-                </sup>
-                <sup data-tooltip="An organizer will run your submission soon">
-                    <i if="{submission.status === 'Submitting' && !submission.auto_run}" class="question circle icon"></i>
-                </sup>
-            </td>
-            <td>{get_score(submission)}</td>
-            <td class="center aligned">
-                <virtual if="{ opts.admin }">
-                    <!-- run/rerun submission -->
-                    <!--  run: status = submitting auto_run = false  -->
-                    <!--  rerun: else   -->
-                    <span data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
-                        data-inverted=""
-                        onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
-                        <i class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
-                    </span>
-                    <!-- delete submission -->
-                    <span data-tooltip="Delete Submission"
-                          data-inverted=""
-                          onclick="{ delete_submission.bind(this, submission) }">
-                        <i class="icon red trash alternate"></i>
-                    </span>
-                </virtual>
-                <!-- cancel submission -->
-                <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
-                        data-tooltip="Cancel Submission"
-                        data-inverted=""
+            <tr if="{ _.isEmpty(submissions) && !loading }" class="center aligned">
+                <td colspan="100%"><em>No submissions found! Please make a submission</em></td>
+            </tr>
+            <tr if="{loading}" class="center aligned">
+                <td colspan="100%">
+                    <em>Loading Submissions...</em>
+                </td>
+            </tr>
+            <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
+                onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
+                <td if="{ opts.admin }">
+                    <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
+                        <input type="checkbox" name="{submission.id}">
+                        <label></label>
+                    </div>
+                </td>
+                <td>{ submission.id }</td>
+                <td>{ submission.filename }</td>
+                <td if="{ opts.admin }">{ submission.owner }</td>
+                <td if="{ opts.admin }">{ submission.phase.name }</td>
+                <td>{ pretty_date(submission.created_when) }</td>
+                <td class="right aligned collapsing">
+                    { submission.status }
+                    <sup data-tooltip="{submission.status_details}">
+                        <i if="{submission.status === 'Failed'}" class="failed question circle icon"></i>
+                    </sup>
+                    <sup data-tooltip="An organizer will run your submission soon">
+                        <i if="{submission.status === 'Submitting' && !submission.auto_run}"
+                            class="question circle icon"></i>
+                    </sup>
+                </td>
+                <td>{get_score(submission)}</td>
+                <td
+                    if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel }">
+                    <a if="{submission.status === 'Finished'}" href="detailed_results/{submission.id}" target="_blank"
+                        class="eye-icon-link">
+                        <i class="icon grey eye eye-icon"></i>
+                    </a>
+                </td>
+                <!--  Show Action buttons when submission is not soft deleted  -->
+                <!--  Otherwise show empty <td>  -->
+                <td if="{ submission.is_soft_deleted }"></td>
+                <td class="center aligned" if="{ !submission.is_soft_deleted }">
+                    <virtual if="{ opts.admin}">
+                        <!-- run/rerun submission -->
+                        <!--  run: status = submitting auto_run = false  -->
+                        <!--  rerun: else   -->
+                        <span
+                            data-tooltip="{ submission.status === 'Submitting' && !submission.auto_run ? 'Run Submission' : 'Rerun Submission' }"
+                            data-inverted=""
+                            onclick="{ submission.status === 'Submitting' && !submission.auto_run ? run_submission.bind(this, submission) : rerun_submission.bind(this, submission) }">
+                            <i
+                                class="icon { submission.status === 'Submitting' && !submission.auto_run ? 'green play' : 'blue redo' }"></i>
+                        </span>
+                        <!-- delete submission -->
+                        <span data-tooltip="Delete Submission" data-inverted=""
+                            onclick="{ delete_submission.bind(this, submission) }">
+                            <i class="icon red trash alternate"></i>
+                        </span>
+                    </virtual>
+                    <!-- cancel submission -->
+                    <span if="{!_.includes(['Finished', 'Cancelled', 'Unknown', 'Failed'], submission.status)}"
+                        data-tooltip="Cancel Submission" data-inverted=""
                         onclick="{ cancel_submission.bind(this, submission) }">
-                    <i class="grey minus circle icon"></i>
-                </span>
-                <!-- send submission to leaderboard-->
-                <span if="{!submission.on_leaderboard && submission.status === 'Finished'}"
-                        data-tooltip="Add to Leaderboard"
-                        data-inverted=""
+                        <i class="grey minus circle icon"></i>
+                    </span>
+                    <!-- send submission to leaderboard-->
+                    <span if="{!submission.on_leaderboard && submission.status === 'Finished'}"
+                        data-tooltip="Add to Leaderboard" data-inverted=""
                         onclick="{ add_to_leaderboard.bind(this, submission) }">
-                    <i class="icon green columns"></i>
-                </span>
-                <!--  On leaderboard  -->
-                <span if="{ submission.on_leaderboard }"
-                     data-tooltip="On the Leaderboard"
-                     data-inverted=""
-                     onclick="{ remove_from_leaderboard.bind(this, submission) }">
-                    <i class="icon green check"></i>
-                </span>
-                <!--  Make Public  -->
-                <span if="{!submission.is_public && submission.status === 'Finished'}"
-                      data-tooltip="Make Public"
-                      data-inverted=""
-                      onclick="{toggle_submission_is_public.bind(this, submission)}">
-                    <i class="icon share teal alternate"></i>
-                </span>
-                <!--  Make Private  -->
-                <span if="{!!submission.is_public && submission.status === 'Finished'}"
-                      data-tooltip="Make Private"
-                      data-inverted=""
-                      onclick="{toggle_submission_is_public.bind(this, submission)}">
-                    <i class="icon share grey alternate"></i>
-                </span>
-            </td>
-        </tr>
+                        <i class="icon green columns"></i>
+                    </span>
+                    <!--  On leaderboard  -->
+                    <span if="{ submission.on_leaderboard }" data-tooltip="On the Leaderboard" data-inverted=""
+                        onclick="{ remove_from_leaderboard.bind(this, submission) }">
+                        <i class="icon green check"></i>
+                    </span>
+                    <!--  Make Public  -->
+                    <span
+                        if="{!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
+                        data-tooltip="Make Public" data-inverted=""
+                        onclick="{toggle_submission_is_public.bind(this, submission)}">
+                        <i class="icon share teal alternate"></i>
+                    </span>
+                    <!--  Make Private  -->
+                    <span
+                        if="{!!submission.is_public && submission.status === 'Finished' && submission.can_make_submissions_public}"
+                        data-tooltip="Make Private" data-inverted=""
+                        onclick="{toggle_submission_is_public.bind(this, submission)}">
+                        <i class="icon share grey alternate"></i>
+                    </span>
+                    <!-- Delete Submission -->
+                    <!--  Show only if submission is Finished/Failed and not admin interface  -->
+                    <!--  This condition && !opts.admin is there to not show soft delete button in the admin interface  -->
+                    <span if="{ ((submission.status === 'Finished' && !submission.on_leaderboard) || submission.status === 'Failed')  && !opts.admin}"
+                        data-tooltip="Delete Submission" data-inverted=""
+                        onclick="{ soft_delete_submission.bind(this, submission) }">
+                        <i class="icon red trash"></i>
+                    </span>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -160,14 +184,13 @@
         <div class="content">
             <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
                 <submission-modal hide_output="{selected_phase.hide_output}"
-                                  show_visualization="{opts.competition.enable_detailed_results}"
-                                  submission="{selected_submission}"></submission-modal>
+                    show_visualization="{opts.competition.enable_detailed_results}"
+                    submission="{selected_submission}"></submission-modal>
             </div>
             <div if="{!!selected_submission && _.get(selected_submission, 'has_children', false)}">
                 <div class="ui large green pointing menu">
-                    <div each="{child, i in _.get(selected_submission, 'children')}"
-                         class="parent-modal item"
-                         data-tab="{admin_: is_admin()}child_{i}">
+                    <div each="{child, i in _.get(selected_submission, 'children')}" class="parent-modal item"
+                        data-tab="{admin_: is_admin()}child_{i}">
                         Task {i + 1}
                     </div>
 
@@ -175,16 +198,16 @@
 
                     <!-- Sometimes submissions end up in a bad state with no children..  -->
                     <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
-                        <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error during creation.</i>
+                        <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error
+                            during creation.</i>
                     </div>
                 </div>
 
-                <div each="{child, i in _.get(selected_submission, 'children')}"
-                     class="ui tab"
-                     data-tab="{admin_: is_admin()}child_{i}">
+                <div each="{child, i in _.get(selected_submission, 'children')}" class="ui tab"
+                    data-tab="{admin_: is_admin()}child_{i}">
                     <submission-modal hide_output="{selected_phase.hide_output}"
-                                      show_visualization="{opts.competition.enable_detailed_results}"
-                                      submission="{child}"></submission-modal>
+                        show_visualization="{opts.competition.enable_detailed_results}"
+                        submission="{child}"></submission-modal>
                 </div>
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
                     <submission-scores leaderboards="{leaderboards}"></submission-scores>
@@ -202,14 +225,24 @@
         self.leaderboards = {}
         self.loading = true
         self.checked_submissions = []
+        self.show_is_soft_deleted = false
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
             $(self.refs.status).dropdown()
             $(self.refs.phase).dropdown()
             $(self.refs.rerun_button).dropdown()
+            $(self.refs.submission_handling_operation).dropdown()
             $(self.refs.submission_table).tablesort()
         })
+
+        self.pretty_date = function (date_string) {
+            if (!!date_string) {
+                return luxon.DateTime.fromISO(date_string).toFormat('yyyy-MM-dd HH:mm')
+            } else {
+                return ''
+            }
+        }
 
         self.is_admin = () => {
             return _.get(self.selected_submission, 'admin', false)
@@ -223,15 +256,22 @@
             return _.filter(submissions, sub => !sub.parent)
         }
 
+        self.toggleShowSoftDeleted = function () {
+            self.show_is_soft_deleted = !self.show_is_soft_deleted
+            self.update_submissions()
+            self.update()
+        }
+
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
             if (opts.admin) {
-                filters = filters || {phase__competition: opts.competition.id}
+                filters = filters || { phase__competition: opts.competition.id }
+                filters.show_is_soft_deleted = self.show_is_soft_deleted
             } else {
-                filters = filters || {phase: self.selected_phase.id}
+                filters = filters || { phase: self.selected_phase.id }
             }
-            filters = filters || {phase: self.selected_phase.id}
+            filters = filters || { phase: self.selected_phase.id }
             CODALAB.api.get_submissions(filters)
                 .done(function (submissions) {
                     // TODO: should be able to do this with a serializer?
@@ -286,7 +326,7 @@
             event.stopPropagation()
         }
         self.rerun_phase = function (phase) {
-            if(confirm("Are you sure? This could take hours .. you are re-running all of the submissions in a phase.")) {
+            if (confirm("Are you sure? This could take hours .. you are re-running all of the submissions in a phase.")) {
                 CODALAB.api.re_run_phase_submissions(phase.id)
                     .done(function (response) {
                         toastr.success(`Rerunning ${response.count} submissions`)
@@ -329,14 +369,14 @@
                     self.update_submissions()
                 })
                 .fail(function (response) {
-                    if(response.responseJSON.detail){
+                    if (response.responseJSON.detail) {
                         toastr.error(response.responseJSON.detail)
                     } else {
                         toastr.error(response.responseText)
                     }
                 })
             event.stopPropagation()
-            
+
         }
 
         self.rerun_submission = function (submission) {
@@ -346,10 +386,10 @@
                     self.update_submissions()
                 })
                 .fail(function (response) {
-                    if(response.responseJSON.detail){
+                    if (response.responseJSON.detail) {
                         toastr.error(response.responseJSON.detail)
-                    } 
-                    else if(response.responseJSON.error_msg){
+                    }
+                    else if (response.responseJSON.error_msg) {
                         toastr.error(response.responseJSON.error_msg)
                     }
                     else {
@@ -391,19 +431,36 @@
             event.stopPropagation()
         }
 
+        self.soft_delete_submission = function (submission) {
+            if (confirm(`Are you sure you want to delete your submission: ${submission.filename}?`)) {
+                CODALAB.api.soft_delete_submission(submission.id)
+                    .done(function (response) {
+                        toastr.success(response.message || 'Submission deleted successfully');
+                        self.update_submissions()
+                    })
+                    .fail(function (response) {
+                        let errorMsg = 'An error occurred while deleting the submission.';
+                        if (response.responseJSON && response.responseJSON.error) {
+                            errorMsg = response.responseJSON.error;
+                        }
+                        toastr.error(errorMsg)
+                    })
+            }
+            event.stopPropagation()
+        }
+
         self.delete_selected_submissions = function () {
             if (confirm(`Are you sure you want to delete the selected submissions?`)) {
-                console.log()
                 CODALAB.api.delete_many_submissions(self.checked_submissions)
                     .done(function (response) {
                         toastr.success('Submissions deleted')
                         self.update_submissions()
                     })
-                    .fail(function (response){
+                    .fail(function (response) {
                         toastr.error('Something went wrong')
                     })
             }
-            }
+        }
 
         self.get_score_details = function (submission, column) {
             try {
@@ -417,9 +474,9 @@
         }
 
         self.get_score = function (submission) {
-            try{
+            try {
                 return parseFloat(submission.scores[0].score).toFixed(2)
-                
+
             } catch {
                 return ""
             }
@@ -437,12 +494,12 @@
                         self.update_submissions()
                     })
                     .fail(resp => {
-                        toastr.error('Error updating submission')
+                        toastr.error(resp.responseJSON.detail)
                     })
             }
         }
 
-        self.on_submission_checked = function(event){
+        self.on_submission_checked = function (event) {
             event.stopPropagation()
             self.submission_checked()
         }
@@ -452,14 +509,21 @@
             let checked_boxes = inputs.not(':first').filter('input:checked')
             let unchecked_boxes = inputs.not(':first').filter('input:not(:checked)')
             inputs.first().prop('checked', unchecked_boxes.length === 0)
-            self.checked_submissions = checked_boxes.serializeArray().map((x) => {return x.name})
+            self.checked_submissions = checked_boxes.serializeArray().map((x) => { return x.name })
         }
 
         self.select_all_pressed = function () {
             let check_boxes = $(self.refs.submission_table).find('input')
             // Set checkboxes to be equal to Select_All checkbox
             check_boxes.prop('checked', check_boxes.first().is(':checked'))
+
+
+            let inputs = $(self.refs.submission_table).find('input')
+            let checked_boxes = inputs.not(':first').filter('input:checked')
+            self.checked_submissions = checked_boxes.serializeArray().map((x) => { return x.name })
         }
+
+
 
 
 
@@ -468,7 +532,7 @@
             submission = _.defaultsDeep({}, submission)
             if (submission.has_children) {
                 submission.children = _.map(_.sortBy(submission.children), child => {
-                    return {id: child}
+                    return { id: child }
                 })
                 CODALAB.api.get_submission_details(submission.id)
                     .done(function (data) {
@@ -502,6 +566,41 @@
                 })
                 .modal('show')
             CODALAB.events.trigger('submission_clicked')
+        }
+
+
+        self.bulk_download = function () {
+            CODALAB.api.download_many_submissions(self.checked_submissions)
+            .catch(function (error) {
+                console.error('Error:', error);
+            });
+        }
+
+
+
+        self.submission_handling = function () {
+            // console.log(self.checked_submissions)
+            if (self.checked_submissions.length === 0) {
+                console.log("no submission is selected");
+            } else {
+                var submission_operation = self.refs.submission_handling_operation.value
+                switch (submission_operation) {
+                    case "delete":
+                        // console.log("delete")
+                        self.delete_selected_submissions()
+                        break;
+                    case "download":
+                        // console.log("download")
+                        self.bulk_download()
+                        break;
+                    case "rerun":
+                        // console.log("rerun")
+                        self.rerun_selected_submissions()
+                        break
+                    default:
+                        console.log("should never be in this state of default..")
+                }
+            }
         }
 
         CODALAB.events.on('phase_selected', function (selected_phase) {
@@ -543,12 +642,6 @@
                 cursor auto
                 background-color #21ba45 !important
 
-        .admin-action-column
-            width 200px
-
-        .action-column
-            width 100px
-
         .submission_row
             &:hover
                 cursor pointer
@@ -559,5 +652,11 @@
 
         .failed.question.circle.icon
             color #2c3f4c
+
+        .checkbox-label
+            margin-left 5px
+
+        .soft-deleted
+            background-color #ffdede !important
     </style>
 </submission-manager>

@@ -7,6 +7,9 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
+    <div class="ui blue right floated labeled icon button" onclick="{ show_upload_task_modal }"><i class="upload icon"></i>
+        Upload Task
+    </div>
     <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
@@ -19,9 +22,9 @@
         <thead>
         <tr>
             <th>Name</th>
-            <th class="benchmark-row">Benchmarks</th>
-            <th width="125px">Shared With</th>
-            <th width="125px">Uploaded...</th>
+            <th>Description</th>
+            <th>Creator</th>
+            <th width="50px" class="no-sort">In Use</th>
             <th width="50px" class="no-sort">Public</th>
             <th width="100px" class="no-sort">Actions</th>
             <th width="25px" class="no-sort"></th>
@@ -30,17 +33,11 @@
         <tbody>
         <tr each="{ task in tasks }" class="task-row">
             <td onclick="{show_detail_modal.bind(this, task)}">{ task.name }</td>
-            <td class="benchmark-row">
-                <div show="{task.competitions.length > 0}" class="ui list">
-                    <div class="item" each="{comp in task.competitions}">
-                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
-                    </div>
-                </div>
-            
-            
+            <td onclick="{show_detail_modal.bind(this, task)}">{ task.description }</td>
+            <td><a href="/profiles/user/{task.created_by}/" target=_blank>{task.owner_display_name}</a></td>
+            <td>
+                <i class="checkmark box icon green" show="{task.is_used_in_competitions}"></i>
             </td>
-            <td>{ task.shared_with.join(', ') }</td>
-            <td>{ timeSince(Date.parse(task.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ task.is_public }"></i>
             </td>
@@ -88,6 +85,7 @@
         </tr>
         </tfoot>
     </table>
+    
     <!--  Task Detail Modal  -->
     <div class="ui modal" ref="detail_modal">
         <div class="header">
@@ -101,13 +99,26 @@
             <h4>{selected_task.description}</h4>
             <div class="ui divider" show="{selected_task.description}"></div>
             <div><strong>Created By:</strong> <a href="/profiles/user/{selected_task.created_by}/" target=_blank>{selected_task.owner_display_name}</a></div>
+            <div><strong>Uploaded:</strong>  {timeSince(Date.parse(selected_task.created_when)) } ago</div>
+            <div if="{selected_task.created_by === CODALAB.state.user.username}">
+                <strong>Shared With:</strong> { selected_task.shared_with.join(', ') }
+            </div>
+            <div if="{selected_task.created_by === CODALAB.state.user.username}">
+                <strong>Used in Competitions:</strong>
+                <ul show="{selected_task.competitions.length > 0}">
+                    <li each="{comp in selected_task.competitions}">
+                        <a href="{URLS.COMPETITION_DETAIL(comp.id)}" target="_blank">{comp.title}</a>
+                    </li>
+                </ul>
+            </div>
             <div><strong>Key:</strong> {selected_task.key}</div>
             <div><strong>Has Been Validated
                 <span data-tooltip="A task has been validated once one of its solutions has successfully been run against it">
                     <i class="question circle icon"></i>
                 </span>:</strong> {selected_task.validated ? "Yes" : "No"}</div>
             <div><strong>Is Public:</strong> {selected_task.is_public ? "Yes" : "No"}</div>
-            <div if="{selected_task.validated}"
+            <div
+                if="{selected_task.created_by === CODALAB.state.user.username}"
                  class="ui right floated small green icon button"
                  onclick="{toggle_task_is_public}">
                 <i class="share icon"></i> {selected_task.is_public ? 'Make Private' : 'Make Public'}
@@ -157,6 +168,38 @@
         </div>
         <div class="actions">
             <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
+    <!-- Upload Task Modal  -->
+    <div ref="upload_task_modal" class="ui modal">
+        <div class="header">Upload Task</div>
+
+        <div class="content">
+
+            <form class="ui form coda-animated {error: errors}" ref="upload_form">
+                <p>
+                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="https://github.com/codalab/codabench/wiki/Resource-Management#upload-a-task" target="_blank">here</a>.
+                
+                </p>
+                
+                <input-file name="data_file" ref="data_file"
+                            accept=".zip"></input-file>
+            </form>
+
+            <div class="ui indicating progress" ref="progress">
+                <div class="bar">
+                    <div class="progress">{ upload_progress }%</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="actions">
+            <button class="ui blue icon button" onclick="{check_upload_task_form}">
+                <i class="upload icon"></i>
+                Upload
+            </button>
+            <button class="ui basic red button" onclick="{close_upload_task_modal}">Cancel</button>
         </div>
     </div>
 
@@ -274,7 +317,7 @@
                                 <label>Scoring Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="scoring_program">
                                     <i class="search icon"></i>
-                                    <input type="text" class="prompt" id="editscoring_program" value="{selected_task.scoring_program?.name  || ''}">
+                                    <input type="text" class="prompt" id="edit_scoring_program" value="{selected_task.scoring_program?.name  || ''}" name="edit_scoring_program">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -283,7 +326,7 @@
                                 <label>Ingestion Program</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="ingestion_program">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_ingestion_program" value="{selected_task.ingestion_program?.name  || ''}" name="edit_ingestion_program">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -294,7 +337,7 @@
                                 <label>Reference Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="reference_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}">
+                                    <input  type="text" class="prompt" id="edit_reference_data" value="{selected_task.reference_data?.name || ''}" name="edit_reference_data">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -303,7 +346,7 @@
                                 <label>Input Data</label>
                                 <div class="ui fluid left icon labeled input search dataset" data-name="input_data">
                                     <i class="search icon"></i>
-                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}">
+                                    <input  type="text" class="prompt" id="edit_input_data" value="{selected_task.input_data?.name  || ''}" name="edit_input_data">
                                     <div class="results"></div>
                                 </div>
                             </div>
@@ -327,6 +370,7 @@
     <script>
 
         var self = this
+        self.mixin(ProgressBarMixin)
 
         /*---------------------------------------------------------------------
          Init
@@ -343,6 +387,8 @@
             'scoring_program',
             'ingestion_program'
         ]
+
+        self.upload_progress = undefined
 
 
         self.one("mount", function () {
@@ -424,6 +470,21 @@
         /*---------------------------------------------------------------------
          Modal Methods
         ---------------------------------------------------------------------*/
+        
+        self.show_upload_task_modal = () => {
+            self.reset_upload_task_input()
+            $(self.refs.upload_task_modal).modal('show')
+        }
+        self.close_upload_task_modal = () => {
+            $(self.refs.upload_task_modal).modal('hide')
+            self.reset_upload_task_input()
+        }
+        self.reset_upload_task_input = () => {
+            // Reset file input
+            $('input-file[ref="data_file"]').find("input").val('')
+            // Reset upload progress
+            self.hide_progress_bar()
+        }
         self.show_modal = () => {
             $('.menu .item', self.root).tab('change tab', 'details')
             self.form_datasets = {}
@@ -447,6 +508,54 @@
             self.modal_is_valid = false
         }
 
+        self.check_upload_task_form = () => {
+
+            var data_file = self.refs.data_file.refs.file_input.value
+            
+            if(data_file === undefined || !data_file.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                self.reset_upload_task_input()
+                return
+            }
+
+            self.prepare_upload(self.upload_task)()
+        }
+
+        self.upload_task = () => {
+
+            // Reset upload progress
+            self.file_upload_progress_handler(undefined)
+
+            // get selected file from the input
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+
+            // Check if file is valid
+            if(data_file === undefined || !data_file.name.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                return
+            }
+
+            // Call the API function with the file and progress callback
+            CODALAB.api.upload_task(data_file, self.file_upload_progress_handler)
+                .then(function () {
+                    toastr.success("Task uploaded successfully")
+                    setTimeout(function () {
+                        CODALAB.events.trigger('reload_quota_cleanup')
+                        CODALAB.events.trigger('reload_datasets')
+                        self.close_upload_task_modal()
+                        self.page = 1 // set current page to 1
+                        self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
+                    }, 500)
+                    
+                })
+                .catch(function (error) {
+                    toastr.error("Task upload failed: " + error.responseJSON.error)
+                    self.hide_progress_bar()
+                })
+
+
+        }
+
         self.create_task = () => {
             let data = get_form_data($(self.refs.form))
             _.assign(data, self.form_datasets)
@@ -455,7 +564,8 @@
                 .done((response) => {
                     toastr.success('Task Created')
                     self.close_modal()
-                    self.update_tasks()
+                    self.page = 1 // set current page to 1
+                    self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {
@@ -540,7 +650,7 @@
         }
 
         self.edit_form_updated = () => {
-            self.edit_modal_is_valid = $(self.refs.edit_name).val() && $(self.refs.edit_description).val() && self.form_datasets.scoring_program
+            self.edit_modal_is_valid = $(self.refs.edit_name).val() && $(self.refs.edit_description).val()
             self.update()
         }
 
@@ -555,23 +665,48 @@
             self.edit_modal_is_valid = false
         }
         self.update_task = () => {
+            // Get filled data from the edit fom
             let data = get_form_data($(self.refs.edit_form))
+
+            // Show error when there is no scoring program in the task
+            if(data.edit_scoring_program == ""){
+                toastr.error('Scoring program is required in a task!')
+                return
+            }
             
             // replace property names in the data object
             data.name = data.edit_name;
             data.description = data.edit_description;
 
+            // If ingestion program is not removed, add the new ingestion program from form_datasets to data
+            if(data.edit_ingestion_program != ""){
+                data.ingestion_program = self.form_datasets.ingestion_program 
+            }
+            // If input data is not removed, add the new input data from form_datasets to data
+            if(data.edit_input_data != ""){
+                data.input_data = self.form_datasets.input_data 
+            }
+            // If reference data is not removed, add the new reference data from form_datasets to data
+            if(data.edit_reference_data != ""){
+                data.reference_data = self.form_datasets.reference_data 
+            }
+            // add the new scoring from form_datasets to data
+            data.scoring_program = self.form_datasets.scoring_program 
+
             // delete the old property names
             delete data.edit_name
             delete data.edit_description
+            delete data.edit_ingestion_program
+            delete data.edit_scoring_program
+            delete data.edit_input_data
+            delete data.edit_reference_data
             
-            _.assign(data, self.form_datasets)
             task_id = self.selected_task.id
             CODALAB.api.update_task(task_id, data)
                 .done((response) => {
                     toastr.success('Task Updated')
                     self.close_edit_modal()
-                    self.update_tasks()
+                    self.update_tasks({page: self.page}) // pass the current page to stay on the page after the update
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {

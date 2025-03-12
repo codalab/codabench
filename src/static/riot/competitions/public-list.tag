@@ -35,7 +35,7 @@
                         <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
                         <span if="{competition.report}"><a href="{competition.report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></span></a>
                     </div>
-                    <strong>{competition.participant_count}</strong> Participants
+                    <strong>{competition.participants_count}</strong> Participants
                 </div>
             </div>
     </div>

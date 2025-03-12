@@ -1,0 +1,7 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+    <p>Your account has been successfully removed. Thank you for being part of our community.</p>
+    <br>
+    <p>If you change your mind, you can create a new account at any time. We'd be happy to welcome you back!</p>    
+{% endblock %}

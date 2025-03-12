@@ -9,50 +9,83 @@
 
 {% block content %}
     <div class="ui container">
-        <div class="row">
-            <div class="col-lg-12">
-                <h1>{{ forum.competition.title }} Forum</h1>
-                <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
-                    <button class="ui button">
-                        Go back to competition
-                    </button>
-                </a>
-                {% if thread or 'new_thread' in request.path %}
-                <a href="{% url 'forums:forum_detail' forum_pk=forum.pk %}">
-                    <button class="ui button">
-                        Back to thread list
-                    </button>
-                </a>
+        {% if user.is_authenticated %}
+            {% if is_participant %}
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1>{{ forum.competition.title }} Forum</h1>
+                        <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
+                            <button class="ui button">
+                                Go back to competition
+                            </button>
+                        </a>
+                        {% if thread or 'new_thread' in request.path %}
+                        <a href="{% url 'forums:forum_detail' forum_pk=forum.pk %}">
+                            <button class="ui button">
+                                Back to thread list
+                            </button>
+                        </a>
+                        {% endif %}
+
+                        {% if not thread %}
+                            <a href="{% url 'forums:forum_new_thread' forum_pk=forum.pk %}">
+                                <button class="ui button primary">
+                                    Start a new topic
+                                </button>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if forum.competition.contact_email %}
+                <div class="row">
+                    <div class="forum-contact">
+                        <span>Contact Email: </span>
+                        <span class="forum-contact-email">{{ forum.competition.contact_email }}</span>
+
+                    </div>
+                </div>
                 {% endif %}
 
-                {% if not thread %}
-                    <a href="{% url 'forums:forum_new_thread' forum_pk=forum.pk %}">
-                        <button class="ui button primary">
-                            Start a new topic
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel forum-panel">
+                            {% block forum_content %}
+                            {% endblock forum_content %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1>{{ forum.competition.title }} Forum</h1>
+                        <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
+                            <button class="ui button">
+                                Go back to competition
+                            </button>
+                        </a>
+                    </div>
+                </div>
+                <div class="ui yellow message">
+                    <p>To participate in the forum, send a registration request to the competition.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1>{{ forum.competition.title }} Forum</h1>
+                    <a href="{% url 'competitions:detail' pk=forum.competition.pk %}">
+                        <button class="ui button">
+                            Go back to competition
                         </button>
                     </a>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if forum.competition.contact_email %}
-        <div class="row">
-            <div class="forum-contact">
-                <span>Contact Email: </span>
-                <span class="forum-contact-email">{{ forum.competition.contact_email }}</span>
-
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="panel forum-panel">
-                    {% block forum_content %}
-                    {% endblock forum_content %}
                 </div>
             </div>
-        </div>
+            <div class="ui yellow message">
+                <a href="{% url 'accounts:login' %}">Log In</a> or
+                <a href="{% url 'accounts:signup' %}" target="_blank">Sign Up</a> to view this competition forum.
+            </div>
+        {% endif %}
     </div>
     <style>
         .ui.horizontal.divider {

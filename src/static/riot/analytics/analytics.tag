@@ -132,6 +132,12 @@
             <a class="item" data-tab="usage-history">Usage history</a>
             <a class="item" data-tab="competitions-usage">Competitions usage</a>
             <a class="item" data-tab="users-usage">Users usage</a>
+            <div class="delete-oprhans-container">
+                <button class="ui red button { disabled: delete_orphans_button_modal_disabled }" onclick="{showConfirmationModal}">
+                    <i class="icon { warning: !delete_orphans_button_modal_loading}"></i>
+                    {delete_orphans_button_modal_text}
+                </button>
+            </div>
         </div>
 
         <div class="ui bottom attached tab segment" data-tab="usage-history">
@@ -145,6 +151,27 @@
         <div class="ui bottom attached tab segment" data-tab="users-usage">
             <analytics-storage-users-usage start_date={start_date_string} end_date={end_date_string} resolution={time_unit} is_visible={current_view=="users-usage"}></analytics-storage-users-usage>
         </div>
+
+        <!--  Orphan Deletion Modal  -->
+        <div ref="confirmation_modal" class="ui small modal">
+        <div class="header">
+            Delete orphan files
+        </div>
+        <div class="content">
+            <h4>You are about to delete {nb_orphan_files} orphan files.</h4>
+            <h5><i>Note: The number of orphan files displayed is based on the most recent storage inconsistency analytics. Its value will be updated during the next storage analytics task.</i></h5>
+            <h3>This operation is irreversible!</h3>
+            <h3>Do you want to proceed ?</h3>
+        </div>
+        <div class="actions">
+            <button class="ui icon button {delete_button_color} { disabled: delete_button_disabled }" onclick="{deleteOrphanFiles}">
+                <i if={delete_button_color=="green"} class="check icon"></i>
+                {delete_button_text}
+            </button>
+            <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
     </div>
 
     <script>
@@ -184,6 +211,17 @@
         self.users_data;
 
         /****** Storage *****/
+
+        self.nb_orphan_files = 0
+        self.delete_button_color = "red"
+        self.delete_button_loading = false
+        self.delete_button_disabled = false
+        self.delete_button_text = "Yes, delete all orphan files"
+
+        self.delete_orphans_button_modal_text = "Delete orphan files"
+        self.delete_orphans_button_modal_loading = false
+        self.delete_orphans_button_modal_disabled = false
+        self.pollingInterval;
 
         self.one("mount", function () {
             // Semantic UI
@@ -294,6 +332,8 @@
             self.update_analytics(self.start_date, null, self.time_unit);
             self.time_range_shortcut("month");
             self.update_chart_resolution("day");
+            self.getOrphanFiles();
+            self.startCheckOrphansDeletionStatus();
         })
 
         /*---------------------------------------------------------------------
@@ -482,6 +522,131 @@
             }
         }
 
+        // Orhpan related
+        self.showConfirmationModal = function() {
+            $(self.refs.confirmation_modal).modal('show');
+            self.delete_button_color = "red";
+            self.delete_button_loading = false;
+            self.delete_button_disabled = false;
+            self.delete_button_text = "Yes, delete all orphan files";
+            self.update();
+        }
+
+        self.checkOrphansDeletionStatus = function() {
+            CODALAB.api.check_orphans_deletion_status()
+                .done(function(data) {
+                    if (data.status) {
+                        if (data.status == "SUCCESS") {
+                            toastr.success("Orphan files deletion successful")
+                            self.delete_button_color = "green";
+                            self.delete_button_text = "Deletion Successful";
+                        }
+                        if (data.status == "FAILURE") {
+                            toastr.error("Orphan files deletion failed")
+                            self.delete_button_color = "red";
+                            self.delete_button_text = "Deletion Failed";
+                        }
+                        if (data.status == "REVOKED") {
+                            toastr.error("Orphan files deletion has been canceled")
+                            self.delete_button_color = "red";
+                            self.delete_button_text = "Deletion canceled";
+                        }
+                        if (data.status == "SUCCESS" || data.status == "FAILURE" || data.status == "REVOKED") {
+                            // Task is over
+                            self.stopCheckOrphansDeletionStatus();
+                            self.delete_orphans_button_modal_text = "Delete orphan files";
+                            self.delete_orphans_button_modal_loading = false;
+                            self.delete_orphans_button_modal_disabled = false;
+                            self.delete_button_loading = false;
+                            self.delete_button_disabled = true;
+                        } else {
+                            // Task is running
+                            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
+                            self.delete_orphans_button_modal_disabled = true;
+                            self.delete_orphans_button_modal_loading = true;
+
+                            self.delete_button_text = "Orphan files deletion in progress...";
+                            self.delete_button_disabled = true;
+                            self.delete_button_loading = true;
+                        }
+                    } else {
+                        // No task running
+                        self.stopCheckOrphansDeletionStatus();
+
+                        self.delete_orphans_button_modal_text = "Delete orphan files";
+                        self.delete_orphans_button_modal_disabled = false;
+                        self.delete_orphans_button_modal_loading = false;
+
+                        self.delete_button_color = "red";
+                        self.delete_button_loading = false;
+                        self.delete_button_disabled = false;
+                        self.delete_button_text = "Yes, delete all orphan files";
+                    }
+                    
+                })
+                .fail(function(response) {
+                    toastr.error("Orphan files deletion's task status check failed")
+                    self.delete_orphans_button_modal_text = "Delete orphan files";
+                    self.delete_orphans_button_modal_loading = false;
+                    self.delete_orphans_button_modal_disabled = false;
+
+                    self.delete_button_text = "Yes, delete all orphan files";
+                    self.delete_button_color = "red";
+                    self.delete_button_loading = false;
+                    self.delete_button_disabled = false;
+
+                    self.stopCheckOrphansDeletionStatus();
+                })
+                .always(function() {
+                    self.update();
+                })
+        }
+
+        self.startCheckOrphansDeletionStatus = function () {
+            self.pollingInterval = setInterval(self.checkOrphansDeletionStatus, 2000);
+        }
+
+        self.stopCheckOrphansDeletionStatus = function() {
+            if (self.pollingInterval) {
+                clearInterval(self.pollingInterval);
+                self.pollingInterval = null;
+            }
+        }
+
+        self.deleteOrphanFiles = function() {
+            self.delete_button_loading = true
+            self.delete_button_disabled = true
+            self.delete_orphans_button_modal_loading = true;
+            self.delete_orphans_button_modal_disabled = true;
+            self.delete_button_text = "Orphan files deletion in progress...";
+            self.delete_orphans_button_modal_text = "Orphan files deletion in progress...";
+            self.update()
+            CODALAB.api.delete_orphan_files()
+                .done(function (data) {
+                    if (data && data.success && !self.pollingInterval) {
+                        self.startCheckOrphansDeletionStatus();
+                    }
+                })
+                .fail(function (response) {
+                    toastr.error("Orphan files deletion failed to start")
+                })
+                .always(function () {
+                    self.delete_button_loading = false
+                    self.update()
+                });
+        }
+
+        self.getOrphanFiles = function() {
+            CODALAB.api.get_orphan_files()
+                .done(function (data) {
+                    self.nb_orphan_files = data.data.length
+                    self.update({nb_orphan_files: self.nb_orphan_files});
+                })
+                .fail(function (response) {
+                    toastr.error("Get oprhan files failed, error occurred")
+                });
+        }
+
     </script>
     <style>
         analytics {
@@ -532,6 +697,11 @@
 
         .chart-container {
             min-height: 450px;
+        }
+
+        .delete-oprhans-container {
+            margin-bottom: 5px;
+            margin-left: auto;
         }
     </style>
 </analytics>

@@ -1,5 +1,7 @@
+import os
 import time
 import logging
+import json
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -31,7 +33,7 @@ from utils.data import pretty_bytes
 logger = logging.getLogger()
 
 
-@app.task(queue="site-worker", soft_time_limit=60 * 60 * 12)  # 12 hours
+@app.task(queue="site-worker", soft_time_limit=60 * 60 * 24)  # 24 hours
 def create_storage_analytics_snapshot():
     # Timer started !
     logger.info("Task create_storage_analytics_snapshot started")
@@ -475,7 +477,7 @@ def create_storage_analytics_snapshot():
 
     # Log the results
     log_file = (
-        "/app/logs/" +
+        "/app/var/logs/" +
         "db_storage_inconsistency_" +
         current_datetime.strftime("%Y%m%d-%H%M%S") +
         ".log"
@@ -550,6 +552,39 @@ def create_storage_analytics_snapshot():
     )
 
 
+@app.task(queue="site-worker")
+def update_home_page_counters():
+    starting_time = time.process_time()
+    logger.info("Task update_home_page_counters Started")
+
+    # Count public competitions
+    public_competitions = Competition.objects.filter(published=True).count()
+
+    # Count active users
+    users = User.objects.filter(is_deleted=False).count()
+
+    # Count all submissions
+    submissions = Submission.objects.all().count()
+
+    # Create counters data
+    counters_data = {
+        "public_competitions": public_competitions,
+        "users": users,
+        "submissions": submissions,
+        "last_updated": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Save latest counters in the file
+    log_file = "/app/home_page_counters.json"
+    with open(log_file, "w") as f:
+        json.dump(counters_data, f, indent=4)
+
+    elapsed_time = time.process_time() - starting_time
+    logger.info(
+        "Task update_home_page_counters Completed. Duration = {:.3f} seconds".format(elapsed_time)
+    )
+
+
 @app.task(queue="site-worker")  # 12 hours
 def reset_computed_storage_analytics():
     logger.info("Task reset_computed_storage_analytics started")
@@ -570,3 +605,76 @@ def reset_computed_storage_analytics():
             elapsed_time
         )
     )
+
+
+@app.task(queue="site-worker")
+def delete_orphan_files():
+    logger.info("Task delete_orphan_files started")
+
+    # Find most recent file
+    most_recent_log_file = get_most_recent_storage_inconsistency_log_file(logger)
+    if not most_recent_log_file:
+        logger.warning("No storage inconsistency log file found. Nothing will be removed")
+        raise Exception("No storage inconsistency log file found")
+
+    # Get the list of orphan files from the content of the most recent log file
+    log_folder = "/app/var/logs/"
+    orphan_files_path = get_files_path_from_orphan_log_file(os.path.join(log_folder, most_recent_log_file), logger)
+
+    # Delete those files in batch (max 1000 element at once)
+    batch_size = 1000
+    for i in range(0, len(orphan_files_path), batch_size):
+        batch = orphan_files_path[i:i + batch_size]
+        objects_formatted = [{'Key': path} for path in batch]
+        BundleStorage.bucket.delete_objects(Delete={'Objects': objects_formatted})
+
+    logger.info("Delete oprhan files finished")
+
+
+def get_most_recent_storage_inconsistency_log_file(logger):
+    log_folder = "/app/var/logs/"
+    try:
+        log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
+    except FileNotFoundError:
+        logger.info(f"Folder '{log_folder}' does not exist.")
+        return None
+
+    most_recent_log_file = None
+    most_recent_datetime = None
+    datetime_format = "%Y%m%d-%H%M%S"
+    for file in log_files:
+        try:
+            basename = os.path.basename(file)
+            datetime_str = basename[len("db_storage_inconsistency_"):-len(".log")]
+            file_datetime = datetime.strptime(datetime_str, datetime_format)
+            if most_recent_datetime is None or file_datetime > most_recent_datetime:
+                most_recent_datetime = file_datetime
+                most_recent_log_file = file
+        except ValueError:
+            logger.warning(f"Filename '{file}' does not match the expected format and will be ignored.")
+
+    return most_recent_log_file
+
+
+def get_files_path_from_orphan_log_file(log_file_path, logger):
+    files_path = []
+
+    try:
+        with open(log_file_path) as log_file:
+            lines = log_file.readlines()
+            orphan_files_lines = []
+            for i, line in enumerate(lines):
+                if "Orphaned files" in line:
+                    orphan_files_lines = lines[i + 1:]
+                    break
+
+            for orphan_files_line in orphan_files_lines:
+                files_path.append(orphan_files_line.split(maxsplit=1)[0])
+    except FileNotFoundError:
+        logger.error(f"File '{log_file_path}' does not exist.")
+    except PermissionError:
+        logger.error(f"Permission denied for reading the file '{log_file_path}'.")
+    except IOError as e:
+        logger.error(f"An I/O error occurred while accessing the file at {log_file_path}: {e}")
+
+    return files_path

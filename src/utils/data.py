@@ -43,7 +43,7 @@ class PathWrapper(object):
         return path
 
 
-def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
+def make_url_sassy(path, permission='r', duration=60 * 60 * 24 * 5, content_type='application/zip'):
     assert permission in ('r', 'w'), "SASSY urls only support read and write ('r' or 'w' permission)"
 
     client_method = None  # defined based on storage backend
@@ -121,9 +121,13 @@ def put_blob(url, file_path):
     )
 
 
-def pretty_bytes(bytes, decimal_places=1, suffix="B"):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(bytes) < 1024.0 or unit == 'PiB':
-            return f"{bytes:3.{decimal_places}f}{unit}{suffix}"
-        bytes /= 1024.0
-    return f"{bytes:.{decimal_places}f}Pi{suffix}"
+def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False):
+    factor = 1024.0 if binary else 1000.0
+    units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] if binary else ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z']
+
+    for unit in units:
+        if abs(bytes) < factor or unit == (units[-1] + "B"):
+            return f"{bytes:.{decimal_places}f}{unit}{suffix}"
+        bytes /= factor
+
+    return f"{bytes:.{decimal_places}f}{units[-1]}{suffix}"

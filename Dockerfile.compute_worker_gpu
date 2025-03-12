@@ -1,7 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.1-buster
-
-# We need curl to get docker/nvidia-docker
-RUN apt-get update &&  apt-get install curl wget -y
+FROM --platform=linux/amd64 python:3.9
 
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
@@ -9,18 +6,29 @@ ENV PYTHONUNBUFFERED 1
 # Install Docker
 RUN apt-get update && curl -fsSL https://get.docker.com | sh
 
-# nvidia-docker jazz
-RUN curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
-RUN curl -s -L https://nvidia.github.io/nvidia-docker/$(. /etc/os-release;echo $ID$VERSION_ID)/nvidia-docker.list | \
-  tee /etc/apt/sources.list.d/nvidia-docker.list
-RUN apt-get update && apt-get install -y nvidia-docker2
 
-# make it explicit that we're using GPUs
-ENV NVIDIA_DOCKER 1
+# Nvidia Container Toolkit for cuda use with docker
+# [source](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+    && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+RUN apt-get update -y;
+RUN apt-get install -y nvidia-container-toolkit
+# Make it explicit that we're using GPUs
+# BB - not convinced we need this
+ENV USE_GPU 1
 
-# Python reqs and actual worker stuff
-ADD compute_worker/compute_worker_requirements.txt .
-RUN pip3 install -r compute_worker_requirements.txt
+RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+COPY ./compute_worker/pyproject.toml ./
+COPY ./compute_worker/poetry.lock ./
+RUN poetry install
+
 ADD compute_worker .
 
 CMD celery -A compute_worker worker \

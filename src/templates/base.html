@@ -128,6 +128,7 @@
 {#                                    <a class="item" href="#">Customize Codalab</a>#}
                                     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
                                 {% if request.user.is_staff %}
+                                    <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
                                     <a class="item" href="{% url "admin:index" %}">Django Admin</a>
                                     <a class="item" href="{% url "su_login" %}">Change User</a>
                                     <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
@@ -146,6 +147,10 @@
                                 <a class="item" href="{% url 'profiles:user_edit' username=user.username %}">
                                     </i><i class="edit icon"></i>
                                     Edit profile
+                                </a>
+                                <a class="item" href="{% url 'accounts:user_account' username=user.username %}">
+                                    <i class="cog icon"></i>
+                                    Account
                                 </a>
                                 <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}">
                                     </i><i class="bell icon"></i>
@@ -226,7 +231,12 @@
             </div>
         </div>
     </div>
-
+    {% if VERSION_INFO.tag_name != 'invalid' and VERSION_INFO.tag_name != 'unknown' %}
+        <div id="version">
+            <a href="{{ VERSION_INFO.html_url }}" target="_blank">{{ VERSION_INFO.tag_name }}</a>
+        </div>
+    {% endif %}
+</div>
     {# Admin only user switching #}
     <user_switch></user_switch>
 
@@ -257,10 +267,14 @@
     <script>
         {# From `common_settings` context processor #}
         STORAGE_TYPE = "{{ STORAGE_TYPE }}"
+        MAX_EXECUTION_TIME_LIMIT = "{{ MAX_EXECUTION_TIME_LIMIT }}"
         CURRENT_DATE_TIME = "{% now "c" %}"
         CODALAB = {
             state: {
-                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}")
+                user: JSON.parse("{{ USER_JSON_DATA|escapejs }}"),
+                public_env_variables: {
+                    MAX_EXECUTION_TIME_LIMIT:MAX_EXECUTION_TIME_LIMIT
+                }
             }
         }
 

@@ -179,7 +179,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
                 # Get all submissions which are not failed and belongs to this user for this phase
                 qs = obj.submissions.filter(owner=user, parent__isnull=True).exclude(status='Failed')
                 # Count submissions made today
-                daily_submission_count = qs.filter(created_when__day=now().day).count()
+                daily_submission_count = qs.filter(created_when__date=now().date()).count()
                 return daily_submission_count
         return 0
 
@@ -254,7 +254,10 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'registration_auto_approve',
             'queue',
             'enable_detailed_results',
+            'show_detailed_results_in_submission_panel',
+            'show_detailed_results_in_leaderboard',
             'auto_run_submissions',
+            'can_participants_make_submissions_public',
             'make_programs_available',
             'make_input_data_available',
             'docker_image',
@@ -344,8 +347,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     leaderboards = serializers.SerializerMethodField()
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
-    participant_count = serializers.IntegerField(read_only=True)
-    submission_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
+    submissions_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
@@ -369,11 +372,14 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'participant_status',
             'registration_auto_approve',
             'description',
-            'participant_count',
-            'submission_count',
+            'participants_count',
+            'submissions_count',
             'queue',
             'enable_detailed_results',
+            'show_detailed_results_in_submission_panel',
+            'show_detailed_results_in_leaderboard',
             'auto_run_submissions',
+            'can_participants_make_submissions_public',
             'make_programs_available',
             'make_input_data_available',
             'docker_image',
@@ -406,11 +412,25 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
         # Get the user's display name if not None, otherwise return username
         return obj.created_by.display_name if obj.created_by.display_name else obj.created_by.username
 
+    def to_representation(self, instance):
+        """
+        This is a built-in function where we can choose which fields to include in the serializer's output
+        """
+        representation = super().to_representation(instance)
+        user = self.context['request'].user
+
+        # If user is not admin/creator/collaborator then do not include secret_key and whitelist_emails
+        if not instance.user_has_admin_permission(user):
+            representation.pop('secret_key', None)
+            representation.pop('whitelist_emails', None)
+
+        return representation
+
 
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
-    participant_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Competition
@@ -421,7 +441,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'owner_display_name',
             'created_when',
             'published',
-            'participant_count',
+            'participants_count',
             'logo',
             'logo_icon',
             'description',
@@ -429,6 +449,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
+            'is_featured',
         )
 
     def get_created_by(self, obj):
@@ -458,6 +479,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
+    is_deleted = serializers.BooleanField(source='user.is_deleted')
 
     class Meta:
         model = CompetitionParticipant
@@ -467,12 +489,13 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'is_bot',
             'email',
             'status',
+            'is_deleted',
         )
 
 
 class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
-    featured_comps = CompetitionSerializerSimple(many=True)
+    recent_comps = CompetitionSerializerSimple(many=True)
 
 
 class PhaseResultsSubmissionSerializer(serializers.Serializer):

@@ -1,9 +1,11 @@
-{% extends 'emails/base_email.txt' %}
+{% extends 'emails/base_email.html' %}
 
 {% block content %}
-This is a message updating your access to the competition:
-{{ participant.competition.title }} -> http://{{ site.domain }}{{ participant.competition.get_absolute_url }}
-
-Your participation privileges have been denied.
-
+    <p>
+        Your application for the
+        <a href="http://{{ site.domain }}{{ participant.competition.get_absolute_url }}">{{ participant.competition.title }}</a>
+        competition has been denied. You can reach out to the organizing team for more details.
+    </p>
 {% endblock %}
+
+

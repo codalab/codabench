@@ -1,7 +1,5 @@
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
@@ -79,12 +77,6 @@ class TaskSerializer(DefaultUserCreateMixin, WritableNestedModelSerializer):
             'created_by',
         )
 
-    def validate_is_public(self, is_public):
-        validated = Task.objects.get(id=self.instance.id)._validated
-        if is_public and not validated:
-            raise ValidationError('Task must be validated before it can be published')
-        return is_public
-
     def get_validated(self, instance):
         return hasattr(instance, 'validated') and instance.validated is not None
 
@@ -99,6 +91,7 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
     solutions = SolutionSerializer(many=True, required=False, read_only=True)
     validated = serializers.SerializerMethodField(required=False)
     shared_with = serializers.SerializerMethodField()
+    competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -106,12 +99,13 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'id',
             'name',
             'description',
-            'key',
             'created_by',
             'owner_display_name',
             'created_when',
             'is_public',
             'validated',
+            'shared_with',
+            'competitions',
 
             # Data pieces
             'input_data',
@@ -119,14 +113,23 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
             'reference_data',
             'scoring_program',
             'solutions',
-            'shared_with',
         )
 
-    def get_validated(self, task):
-        return task.validated is not None
+    def get_validated(self, instance):
+        return hasattr(instance, 'validated') and instance.validated is not None
+
+    def get_competitions(self, instance):
+
+        # Fech competitions which hase phases with this task
+        # competitions = Phase.objects.filter(tasks__in=[instance.pk]).values('competition')
+        competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).values("id", "title").distinct()
+
+        return competitions
 
     def get_shared_with(self, instance):
-        return self.context['shared_with'][instance.pk]
+        # Fetch the users with whom the task is shared
+        shared_users = instance.shared_with.all()
+        return [user.username for user in shared_users]
 
     def get_owner_display_name(self, instance):
         # Get the user's display name if not None, otherwise return username
@@ -136,10 +139,9 @@ class TaskDetailSerializer(WritableNestedModelSerializer):
 class TaskListSerializer(serializers.ModelSerializer):
     solutions = SolutionListSerializer(many=True, required=False, read_only=True)
     value = serializers.CharField(source='key', required=False)
-    competitions = serializers.SerializerMethodField()
-    shared_with = serializers.SerializerMethodField()
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
+    is_used_in_competitions = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -150,21 +152,21 @@ class TaskListSerializer(serializers.ModelSerializer):
             'owner_display_name',
             'key',
             'name',
+            'description',
             'solutions',
             'ingestion_only_during_scoring',
             # Value is used for Semantic Multiselect dropdown api calls
             'value',
-            'competitions',
-            'shared_with',
+            'is_public',
+            'is_used_in_competitions',
         )
 
-    def get_competitions(self, instance):
+    def get_is_used_in_competitions(self, instance):
 
-        # Fech competitions which hase phases with this task
-        # competitions = Phase.objects.filter(tasks__in=[instance.pk]).values('competition')
-        competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).values("id", "title").distinct()
+        # Count competitions that are using this task
+        num_competitions = Competition.objects.filter(phases__tasks__in=[instance.pk]).distinct().count()
 
-        return competitions
+        return num_competitions > 0
 
     def get_shared_with(self, instance):
         return self.context['shared_with'][instance.pk]
@@ -207,14 +209,28 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
+
         input_data = instance.task.input_data
         reference_data = instance.task.reference_data
         ingestion_program = instance.task.ingestion_program
         scoring_program = instance.task.scoring_program
+
+        # Some tasks may not have input data, reference data and ingestion program
+        # Checking all the datasets and programs and adding them to dataset_list_ids
+        dataset_list_ids = []
+        if input_data:
+            dataset_list_ids.append(input_data.id)
+        if reference_data:
+            dataset_list_ids.append(reference_data.id)
+        if ingestion_program:
+            dataset_list_ids.append(ingestion_program.id)
+        if scoring_program:
+            dataset_list_ids.append(scoring_program.id)
+
+        # Serializing the datasets
         try:
-            dataset_list_ids = [input_data.id, reference_data.id, ingestion_program.id, scoring_program.id]
             qs = Data.objects.filter(id__in=dataset_list_ids)
             return DataDetailSerializer(qs, many=True).data
-        except AttributeError:
-            print("This phase task has no datasets")
-            return None
+        except Exception:
+            # No datasets or programs to return
+            return []

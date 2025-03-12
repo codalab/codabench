@@ -1,10 +1,8 @@
-from datetime import timedelta
-from django.utils.timezone import now
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.generic import TemplateView
-from django.db.models import Count, Q
+from django.db.models import Q
 
-from competitions.models import Competition, Submission, CompetitionParticipant
-from profiles.models import User
+from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
 from django.shortcuts import render
@@ -15,26 +13,6 @@ class HomeView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
-        data = Competition.objects.aggregate(
-            count=Count('*'),
-            published_comps=Count('pk', filter=Q(published=True)),
-            unpublished_comps=Count('pk', filter=Q(published=False)),
-        )
-
-        total_competitions = data['count']
-        public_competitions = data['published_comps']
-        users = User.objects.all().count()
-        competition_participants = CompetitionParticipant.objects.all().count()
-        submissions = Submission.objects.all().count()
-
-        context['general_stats'] = [
-            {'label': "Total Competitions", 'count': total_competitions},
-            {'label': "Public Competitions", 'count': public_competitions},
-            {'label': "Users", 'count': users},
-            {'label': "Competition Participants", 'count': competition_participants},
-            {'label': "Submissions", 'count': submissions},
-        ]
 
         announcement = Announcement.objects.all().first()
         context['announcement'] = announcement.text if announcement else None
@@ -59,37 +37,61 @@ class ServerStatusView(TemplateView):
     def get_context_data(self, *args, **kwargs):
 
         show_child_submissions = self.request.GET.get('show_child_submissions', False)
+        page = self.request.GET.get('page', 1)
+        submissions_per_page = 50
 
-        # Get all submissions
-        qs = Submission.objects.all()
+        # Start with an empty queryset
+        qs = Submission.objects.none()
 
-        # If user is not super user then:
-        # filter this user's own submissions
-        # and
-        # submissions running on queue which belongs to this user
-        if not self.request.user.is_superuser:
-            qs = qs.filter(
-                Q(owner=self.request.user) |
-                Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
-            )
+        # Only if user is authenticated
+        if self.request.user.is_authenticated:
+            # If user is not super user then:
+            # filter this user's own submissions
+            # and
+            # submissions running on queue which belongs to this user
+            # NOTE: exclude all soft-deleted submissions
+            if not self.request.user.is_superuser:
+                qs = Submission.objects.filter(
+                    Q(is_soft_deleted=False) &
+                    (
+                        Q(owner=self.request.user) |
+                        Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                    )
+                )
+            else:
+                qs = Submission.objects.filter(
+                    Q(is_soft_deleted=False)
+                )
 
-        # filter for fetching last 2 days submissions
-        qs = qs.filter(created_when__gte=now() - timedelta(days=2))
-
-        # filter out child submissions i.e. submission has no parent
+        # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
             qs = qs.filter(parent__isnull=True)
 
         qs = qs.order_by('-created_when')
         qs = qs.select_related('phase__competition', 'owner')
 
+        # Paginate the queryset
+        paginator = Paginator(qs, submissions_per_page)
+
+        try:
+            submissions = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver the first page.
+            submissions = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range, deliver last page of results.
+            submissions = paginator.page(paginator.num_pages)
+
         context = super().get_context_data(*args, **kwargs)
-        context['submissions'] = qs[:250]
+        context['submissions'] = submissions
         context['show_child_submissions'] = show_child_submissions
 
         for submission in context['submissions']:
             # Get filesize from each submissions's data
-            submission.file_size = self.format_file_size(submission.data.file_size)
+            if submission.data:
+                submission.file_size = self.format_file_size(submission.data.file_size)
+            else:
+                submission.file_size = self.format_file_size(0)
 
             # Get queue from each submission
             queue_name = ""
@@ -103,6 +105,9 @@ class ServerStatusView(TemplateView):
             # Add submission owner display name
             submission.owner_display_name = submission.owner.display_name if submission.owner.display_name else submission.owner.username
 
+        context['paginator'] = paginator
+        context['is_paginated'] = paginator.num_pages > 1
+
         return context
 
     def format_file_size(self, file_size):
@@ -111,7 +116,7 @@ class ServerStatusView(TemplateView):
         """
         try:
             n = float(file_size)
-        except ValueError:
+        except Exception:
             return ""
 
         units = ['KB', 'MB', 'GB']
@@ -121,6 +126,10 @@ class ServerStatusView(TemplateView):
             i += 1
 
         return f"{n:.1f} {units[i]}"
+
+
+class MonitorQueuesView(TemplateView):
+    template_name = 'pages/monitor_queues.html'
 
 
 def page_not_found_view(request, exception):

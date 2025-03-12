@@ -35,3 +35,8 @@ server_config.yaml
 
 .DS_Store
 .DS_Store?
+
+caddy_config/
+caddy_data/
+
+home_page_counters.json
