@@ -3,15 +3,13 @@
 ## Major changes to upstream
 
 * Created a django admin command for creating users and approving them for a competition, given a list of users/emails.
-* Upgraded caddy to official caddy 2 image for external account binding.
-  * Since then there is always the same error in the logs
-  "minio-1 | 2024/05/31 12:49:18 http: TLS handshake error from [IP]: EOF" but everything seems to work.
-  * Edit: upstream has now also upgraded to caddy 2
+* Replaced organization logos on homepage with ScaDS.AI logo.
+* Adjusted Caddyfile for external account binding.
 * Enabled TLS/HTTPS for minio by sharing the certificates from caddy.
   They currently need to be **copied manually** when the certificate gets renewed, using something like
   ```
-  mkdir -p certs/minio && sudo cp certs/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.key $_/private.key
-  mkdir -p certs/minio && sudo cp certs/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.crt $_/public.crt
+  mkdir -p certs/minio && sudo cp caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.key $_/private.key
+  mkdir -p certs/minio && sudo cp caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.crt $_/public.crt
   ```
   Should likely instead either copy it automatically or reverse proxy to minio.
 
