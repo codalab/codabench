@@ -18,7 +18,7 @@
 	root * /var/www/django
 	file_server
 
-	@notStatic {
+	@noStatic {
 		not path /static/*
 		not path /media/*
 	}
