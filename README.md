@@ -13,6 +13,41 @@
   ```
   Should likely instead either copy it automatically or reverse proxy to minio.
 
+## Extra deployment instructions
+
+### Development
+
+* Add `127.0.0.1	minio` to `/etc/hosts`.
+
+### Production
+
+* In addition to port 443, open at least port tcp/9000.
+* The following service is used but it might not be necessary (anymore).
+
+  ```
+  # /etc/systemd/system/keep_codabench_worker_running.service
+
+  [Unit]
+  Description=Start the Codabench compute worker again because sometimes it shuts down (either because connection loss or because of the VM causing it somehow)
+
+  [Service]
+  Type=oneshot
+  ExecStart=/usr/bin/docker compose -f /home/hackathon/codabench/docker-compose.yml up -d compute_worker
+  ```
+
+  ```
+  # /etc/systemd/system/keep_codabench_worker_running.timer
+
+  [Unit]
+  Description=Restart Codabench compute_worker container every hour
+
+  [Timer]
+  OnCalendar=*:0/30
+
+  [Install]
+  WantedBy=timers.target
+  ```
+
 ## What is Codabench?
 
 Codabench is an open-source web-based platform that enables researchers, developers, and data scientists to collaborate, with the goal of advancing research fields where machine learning and advanced computation is used. Codabench helps to solve many common problems in the arena of data-oriented research through its online community where people can share worksheets and participate in competitions and benchmarks. It can be seen as a version 2 of [CodaLab Competitions](https://github.com/codalab/codalab-competitions).
