@@ -32,7 +32,7 @@
 
   [Service]
   Type=oneshot
-  ExecStart=/usr/bin/docker compose -f /home/hackathon/codabench/docker-compose.yml up -d compute_worker
+  ExecStart=/usr/bin/docker compose -f /home/hackathon/DIRECTORY HERE/docker-compose.yml up -d compute_worker
   ```
 
   ```
