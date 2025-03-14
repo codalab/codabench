@@ -8,8 +8,8 @@
 * Enabled TLS/HTTPS for minio by sharing the certificates from caddy.
   They currently need to be **copied manually** when the certificate gets renewed, using something like
   ```
-  mkdir -p certs/minio && sudo cp caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.key $_/private.key
-  mkdir -p certs/minio && sudo cp caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.crt $_/public.crt
+  mkdir -p certs/minio && sudo cp -a caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.key $_/private.key
+  mkdir -p certs/minio && sudo cp -a caddy_data/caddy/certificates/acme.sectigo.com-v2-ov/hackathon.scads.ai/hackathon.scads.ai.crt $_/public.crt
   ```
   Should likely instead either copy it automatically or reverse proxy to minio.
 
@@ -22,6 +22,7 @@
 ### Production
 
 * In addition to port 443, open at least port tcp/9000.
+* It seems it is not necessary to set the public bucket to read and write, as it is described in the deployment instructions.
 * The following service is used but it might not be necessary (anymore).
 
   ```
