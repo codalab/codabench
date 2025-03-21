@@ -277,7 +277,8 @@ def log_in(request):
 
         if form.is_valid():
             # Get username and password
-            username = form.cleaned_data.get('username')
+            # use lowecased username/email
+            username = form.cleaned_data.get('username').lower()
             password = form.cleaned_data.get('password')
 
             # Check if the user exists
