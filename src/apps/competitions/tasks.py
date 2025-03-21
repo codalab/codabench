@@ -44,7 +44,8 @@ COMPETITION_FIELDS = [
     "queue",
     "description",
     "registration_auto_approve",
-    "enable_detailed_results"
+    "enable_detailed_results",
+    "forum_enabled"
 ]
 
 TASK_FIELDS = [

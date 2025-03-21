@@ -7,7 +7,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
-            <a class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
+            <a if="{ competition.forum_enabled }" class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"

@@ -227,6 +227,22 @@
             </sup>
         </div>
 
+        <!--  Forum  -->
+        <div class="field">
+            <label>Forum</label>
+            <div class="ui checkbox">
+                <label>Enable Competition Forum</label>
+                <input type="checkbox" ref="forum_enabled" onchange="{form_updated}">
+            </div>
+            <sup>
+                <span data-tooltip="If unchecked, organizers and participants cannot see competition forum"
+                          data-inverted=""
+                          data-position="bottom center">
+                    <i class="help icon circle"></i>
+                </span>
+            </sup>
+        </div>
+
         
     </div>
 
@@ -297,6 +313,7 @@
             self.data["show_detailed_results_in_leaderboard"] = self.refs.show_detailed_results_in_leaderboard.checked
             self.data["auto_run_submissions"] = self.refs.auto_run_submissions.checked
             self.data["can_participants_make_submissions_public"] = self.refs.can_participants_make_submissions_public.checked
+            self.data["forum_enabled"] = self.refs.forum_enabled.checked
             self.data["make_programs_available"] = self.refs.make_programs_available.checked
             self.data["make_input_data_available"] = self.refs.make_input_data_available.checked
             self.data["docker_image"] = $(self.refs.docker_image).val()
@@ -434,6 +451,7 @@
             self.refs.show_detailed_results_in_leaderboard.checked = competition.show_detailed_results_in_leaderboard
             self.refs.auto_run_submissions.checked = competition.auto_run_submissions
             self.refs.can_participants_make_submissions_public.checked = competition.can_participants_make_submissions_public
+            self.refs.forum_enabled.checked = competition.forum_enabled
             self.refs.make_programs_available.checked = competition.make_programs_available
             self.refs.make_input_data_available.checked = competition.make_input_data_available
             $(self.refs.docker_image).val(competition.docker_image)
