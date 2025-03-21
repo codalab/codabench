@@ -304,7 +304,8 @@ class CompetitionViewSet(ModelViewSet):
             data.pop('whitelist_emails', None)
             # Loop over whitelist emails and add them back to whitelist emails in dict format
             for email in whitelist_emails:
-                data.setdefault('whitelist_emails', []).append({'email': email})
+                # user lower case email because some emails in the whitelist may have upper case letters
+                data.setdefault('whitelist_emails', []).append({'email': email.lower()})
 
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
@@ -350,7 +351,8 @@ class CompetitionViewSet(ModelViewSet):
             send_participation_accepted_emails(participant)
         else:
             # check if user is in whitelist emails then approve directly
-            if user.email in list(competition.whitelist_emails.values_list('email', flat=True)):
+            # Using lower case because some users have used uppercased emails addresses
+            if user.email.lower() in list(competition.whitelist_emails.values_list('email', flat=True)):
                 participant.status = 'approved'
                 send_participation_accepted_emails(participant)
             else:

@@ -26,6 +26,11 @@ class ForumBaseMixin(object):
     def dispatch(self, *args, **kwargs):
         # Get object early so we can access it in multiple places
         self.forum = get_object_or_404(Forum, pk=self.kwargs['forum_pk'])
+
+        if not self.forum.competition.forum_enabled:
+            messages.error(self.request, "The forum for this competition is disabled.")
+            return redirect("competitions:detail", pk=self.forum.competition.pk)
+
         if 'thread_pk' in self.kwargs:
             self.thread = get_object_or_404(Thread, pk=self.kwargs['thread_pk'])
 

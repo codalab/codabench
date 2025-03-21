@@ -54,7 +54,8 @@ COMPETITION_FIELDS = [
     "competition_type",
     "reward",
     "contact_email",
-    "fact_sheet"
+    "fact_sheet",
+    "forum_enabled"
 ]
 
 TASK_FIELDS = [
