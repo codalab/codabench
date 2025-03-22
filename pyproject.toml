@@ -20,7 +20,7 @@ channels-redis = "4.0.0"
 django-extra-fields = "0.9"
 pillow = "10.3.0"
 celery = "4.4.7"
-gunicorn = "22.0.0"
+gunicorn = "23.0.0"
 urllib3 = ">=1.21.1,<1.25"
 uvicorn = {version = "0.13.3", extras = ["standard"]}
 pyyaml = "5.3.1"
