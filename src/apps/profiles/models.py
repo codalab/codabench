@@ -154,6 +154,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         return True
 
     def get_used_storage_space(self, binary=False):
+        """
+        Function to calculate storage used by a user
+        Returns in bytes
+        """
 
         factor = 1024 if binary else 1000
         from datasets.models import Data
