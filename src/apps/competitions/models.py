@@ -87,6 +87,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     # Count of participants in this competition (default = 1 because competition creator is also a participant)
     participants_count = models.PositiveIntegerField(default=1)
 
+    # If true, forum is enabled (default=True)
+    forum_enabled = models.BooleanField(default=True)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 

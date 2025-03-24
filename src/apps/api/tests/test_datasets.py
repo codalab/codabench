@@ -3,7 +3,7 @@ from faker import Factory
 from rest_framework.test import APITestCase
 from datasets.models import Data
 from factories import UserFactory, DataFactory
-from utils.data import pretty_bytes
+from utils.data import pretty_bytes, gb_to_bytes
 
 
 faker = Factory.create()
@@ -50,9 +50,18 @@ class DatasetAPITests(APITestCase):
     def test_dataset_api_check_quota(self):
         self.client.login(username='creator', password='creator')
 
+        # User quota is in GB
         quota = float(self.creator.quota)
+        # Convert to bytes to compute available space
+        quota = gb_to_bytes(quota)
+        # Used storage is in bytes
         storage_used = float(self.creator.get_used_storage_space())
+
         available_space = quota - storage_used
+
+        # 1 GB = 1,000,000,000 Bytes
+        # 1 TB = 1,000 GB = 1,000,000,000,000 Bytes
+        # Using a big file size of 1 TB to run the test
         file_size = 1000 * 1000 * 1000 * 1000
 
         # Fake upload a very big dataset
