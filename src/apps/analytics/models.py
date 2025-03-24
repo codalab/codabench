@@ -48,7 +48,7 @@ class UserStorageDataPoint(models.Model):
 
 class AdminStorageDataPoint(models.Model):
     backups_total = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True
-    )
+        max_digits=20, decimal_places=2, null=True, blank=True
+    )  # stores bytes
     at_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)

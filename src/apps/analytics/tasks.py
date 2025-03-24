@@ -43,8 +43,8 @@ def create_storage_analytics_snapshot():
     for dataset in Data.objects.filter(Q(file_size__isnull=True) | Q(file_size__lt=0)):
         try:
             dataset.file_size = Decimal(
-                dataset.data_file.size / 1024
-            )  # file_size is in KiB
+                dataset.data_file.size
+            )  # file_size is in Bytes
         except Exception:
             dataset.file_size = Decimal(-1)
         finally:
@@ -56,8 +56,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.prediction_result_file_size = Decimal(
-                submission.prediction_result.size / 1024
-            )  # prediction_result_file_size is in KiB
+                submission.prediction_result.size
+            )  # prediction_result_file_size is in Bytes
         except Exception:
             submission.prediction_result_file_size = Decimal(-1)
         finally:
@@ -68,8 +68,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.scoring_result_file_size = Decimal(
-                submission.scoring_result.size / 1024
-            )  # scoring_result_file_size is in KiB
+                submission.scoring_result.size
+            )  # scoring_result_file_size is in Bytes
         except Exception:
             submission.scoring_result_file_size = Decimal(-1)
         finally:
@@ -80,8 +80,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.detailed_result_file_size = Decimal(
-                submission.detailed_result.size / 1024
-            )  # detailed_result_file_size is in KiB
+                submission.detailed_result.size
+            )  # detailed_result_file_size is in Bytes
         except Exception:
             submission.detailed_result_file_size = Decimal(-1)
         finally:
@@ -92,8 +92,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submissiondetails.file_size = Decimal(
-                submissiondetails.data_file.size / 1024
-            )  # file_size is in KiB
+                submissiondetails.data_file.size
+            )  # file_size is in Bytes
         except Exception:
             submissiondetails.file_size = Decimal(-1)
         finally:
@@ -277,7 +277,7 @@ def create_storage_analytics_snapshot():
                 admin_storage_at_date[date] += size
 
     for date in admin_storage_day_range:
-        defaults = {"backups_total": admin_storage_at_date[date] / 1024.0}
+        defaults = {"backups_total": admin_storage_at_date[date]}
         lookup_params = {"at_date": date}
         AdminStorageDataPoint.objects.update_or_create(
             defaults=defaults, **lookup_params
@@ -528,7 +528,7 @@ def create_storage_analytics_snapshot():
         )
         admin_data_point = AdminStorageDataPoint.objects.filter(at_date=date).first()
         admin_usage = (admin_data_point.backups_total or 0) if admin_data_point else 0
-        orphaned_file_usage = Decimal(orphaned_files_size_per_date[date] / 1024)
+        orphaned_file_usage = Decimal(orphaned_files_size_per_date[date])
         total_usage = (
             users_usage + admin_usage + orphaned_file_usage
         )  # competitions_usage is included inside users_usage

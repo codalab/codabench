@@ -12,7 +12,7 @@ faker = Factory.create()
 class DatasetAPITests(APITestCase):
     def setUp(self):
         self.creator = UserFactory(username='creator', password='creator')
-        self.existing_dataset = DataFactory(created_by=self.creator, name="Test!", file_size=1024)
+        self.existing_dataset = DataFactory(created_by=self.creator, name="Test!", file_size=1000)
 
     def test_dataset_api_checks_duplicate_names_for_same_user(self):
         self.client.login(username='creator', password='creator')
@@ -23,7 +23,7 @@ class DatasetAPITests(APITestCase):
             'type': Data.COMPETITION_BUNDLE,
             'request_sassy_file_name': faker.file_name(),
             'file_name': faker.file_name(),
-            'file_size': 1024,
+            'file_size': 1000,
         })
 
         assert resp.status_code == 400
@@ -34,7 +34,7 @@ class DatasetAPITests(APITestCase):
             'name': 'Test!',
             'type': Data.COMPETITION_BUNDLE,
             'request_sassy_file_name': faker.file_name(),
-            'file_size': 1024,
+            'file_size': 1000,
         })
         assert resp.status_code == 200
 

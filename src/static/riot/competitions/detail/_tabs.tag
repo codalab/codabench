@@ -91,7 +91,7 @@
                                         <td if="{competition.is_admin}" class="center aligned">
                                             <i if="{file.available}" class="checkmark box icon green"></i>
                                         </td>
-                                        <td>{filesize(file.file_size * 1024)}</td>
+                                        <td>{pretty_bytes(file.file_size)}</td>
                                     </tr>
                                     <!-- Conditional row if no files to show -->
                                     <tr class="center aligned">
