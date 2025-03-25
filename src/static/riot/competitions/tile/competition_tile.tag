@@ -1,6 +1,6 @@
 <competition-tile>
     
-        <div class="tile-wrapper">
+        <div class="tile-wrapper {is_featured ? 'featured' : ''}">
             <div class="ui square tiny bordered image img-wrapper">
                 <img src="{logo_icon ? logo_icon : logo}">
             </div>
@@ -8,6 +8,7 @@
             <div class="comp-info">
                 <h4 class="heading">
                     {title}
+                    <span if="{is_featured}" class="featured-badge">Featured</span>
                 </h4>
                 <p class="comp-description">
                     {pretty_description(description)}
@@ -74,6 +75,11 @@
             .comp-stats
                 background-color #344d5e
                 transition background-color 75ms ease-in-out
+       
+        .tile-wrapper.featured
+            border solid 2px gold
+            background-color #fffbea  /* Light yellow */
+            box-shadow 0 0 10px rgba(255, 215, 0, 0.6)
 
         .img-wrapper
             padding 5px
@@ -89,6 +95,16 @@
             padding 5px
             color #1b1b1b
             margin-bottom 0
+
+        .featured-badge
+            background-color gold
+            color #222
+            font-size 12px
+            font-weight 600
+            padding 2px 7px
+            border-radius 5px
+            margin-left 8px
+            display inline-block
 
         .comp-info .comp-description
             text-align: left;

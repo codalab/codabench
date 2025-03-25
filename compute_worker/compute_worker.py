@@ -161,7 +161,7 @@ def get_folder_size_in_gb(folder):
             total_size += os.path.getsize(path)
         elif os.path.isdir(path):
             total_size += get_folder_size_in_gb(path)
-    return total_size / 1024 / 1024 / 1024
+    return total_size / 1000 / 1000 / 1000 # GB: decimal system (1000^3)
 
 
 def delete_files_in_folder(folder):

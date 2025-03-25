@@ -96,8 +96,10 @@
                 <button class="ui basic red button discard" onclick="{ discard }">
                     Discard Changes
                 </button>
-                <a class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
-                <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
+                <!--  Show back button when updating only  -->
+                <a if="{opts.competition_id}" class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
+                <!--  Show help when creating only  -->
+                <help_button if="{!opts.competition_id}" href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Form"></help_button>
             </div>
         </div>
     </div>

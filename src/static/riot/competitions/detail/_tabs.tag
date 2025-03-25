@@ -7,7 +7,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
-            <a class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
+            <a if="{ competition.forum_enabled }" class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
@@ -91,7 +91,7 @@
                                         <td if="{competition.is_admin}" class="center aligned">
                                             <i if="{file.available}" class="checkmark box icon green"></i>
                                         </td>
-                                        <td>{filesize(file.file_size * 1024)}</td>
+                                        <td>{pretty_bytes(file.file_size)}</td>
                                     </tr>
                                     <!-- Conditional row if no files to show -->
                                     <tr class="center aligned">
@@ -351,10 +351,22 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            
+            // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+
+            // If no Current phase in this competition 
+            // Find Final phase and set selected phase index to its id
             if (self.selected_phase_index == null) {
                 self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
             }
+
+            // If no Final phase in this competition 
+            // Find the last phase and set selected phase index to its id
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id; 
+            }
+
             self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()

@@ -40,11 +40,22 @@ logger = logging.getLogger()
 
 COMPETITION_FIELDS = [
     "title",
+    "description",
     "docker_image",
     "queue",
-    "description",
     "registration_auto_approve",
-    "enable_detailed_results"
+    "enable_detailed_results",
+    "show_detailed_results_in_submission_panel",
+    "show_detailed_results_in_leaderboard",
+    "auto_run_submissions",
+    "can_participants_make_submissions_public",
+    "make_programs_available",
+    "make_input_data_available",
+    "competition_type",
+    "reward",
+    "contact_email",
+    "fact_sheet",
+    "forum_enabled"
 ]
 
 TASK_FIELDS = [

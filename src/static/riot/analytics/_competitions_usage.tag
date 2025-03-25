@@ -42,7 +42,7 @@
                 <td><a href="{ URLS.COMPETITION_DETAIL(competitionUsage.id) }">{ competitionUsage.title }</a></td>
                 <td>{ competitionUsage.organizer }</td>
                 <td>{ formatDate(competitionUsage.created_when) }</td>
-                <td>{ formatSize(competitionUsage.datasets) }</td>
+                <td>{ pretty_bytes(competitionUsage.datasets) }</td>
             </tr>
         </tbody>
     </table>
@@ -474,9 +474,6 @@
             return datetime.fromJSDate(date).toISODate();
         }
 
-        self.formatSize = function(size) {
-            return pretty_bytes(size);
-        }
 
         self.downloadCompetitionsHistory = function() {
             var csv = [];

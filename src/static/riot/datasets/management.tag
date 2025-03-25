@@ -47,7 +47,7 @@
             onclick="{show_info_modal.bind(this, dataset)}">
             <td>{ dataset.name }</td>
             <td>{ dataset.type }</td>
-            <td>{ format_file_size(dataset.file_size) }</td>
+            <td>{ pretty_bytes(dataset.file_size) }</td>
             <td>{ timeSince(Date.parse(dataset.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ dataset.in_use.length > 0 }"></i>
@@ -448,33 +448,6 @@
             }
         }
 
-
-        // Function to format file size 
-        self.format_file_size = function(file_size) {
-            // parse file size from string to float
-            try {
-                n = parseFloat(file_size)
-            }
-            catch(err) {
-                // return empty string if parsing fails
-                return ""
-            }
-            // a file_size of -1 indicated an error
-            if(n < 0) {
-                return ""
-            }
-            // constant units to show with files size
-            // file size is in KB, converting it to MB and GB 
-            const units = ['KB', 'MB', 'GB']
-            // loop incrementer for selecting desired unit
-            let i = 0
-            // loop over n until it is greater than 1000
-            while(n >= 1000 && ++i){
-                n = n/1000;
-            }
-            // restrict file size to 1 decimal number concatinated with unit
-            return(n.toFixed(1) + ' ' + units[i]);
-        }
 
         // Update datasets on unused datasets delete
         CODALAB.events.on('reload_datasets', self.update_datasets)

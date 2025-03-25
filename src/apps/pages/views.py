@@ -6,6 +6,7 @@ from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
 from django.shortcuts import render
+from utils.data import pretty_bytes
 
 
 class HomeView(TemplateView):
@@ -89,9 +90,9 @@ class ServerStatusView(TemplateView):
         for submission in context['submissions']:
             # Get filesize from each submissions's data
             if submission.data:
-                submission.file_size = self.format_file_size(submission.data.file_size)
+                submission.file_size = pretty_bytes(submission.data.file_size)
             else:
-                submission.file_size = self.format_file_size(0)
+                submission.file_size = pretty_bytes(0)
 
             # Get queue from each submission
             queue_name = ""
@@ -109,23 +110,6 @@ class ServerStatusView(TemplateView):
         context['is_paginated'] = paginator.num_pages > 1
 
         return context
-
-    def format_file_size(self, file_size):
-        """
-        A custom function to convert file size to KB, MB, GB and return with the unit
-        """
-        try:
-            n = float(file_size)
-        except Exception:
-            return ""
-
-        units = ['KB', 'MB', 'GB']
-        i = 0
-        while n >= 1000 and i < len(units) - 1:
-            n /= 1000
-            i += 1
-
-        return f"{n:.1f} {units[i]}"
 
 
 class MonitorQueuesView(TemplateView):
