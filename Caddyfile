@@ -8,10 +8,21 @@
   #   ca https://acme-staging-v02.api.letsencrypt.org/directory
   # }
 
-  
+
   # Removing some headers for improved security:
   header -Server
 
+  @maintenanceModeActive file {
+    root /srv
+    try_files maintenance.on
+  }
+	handle @maintenanceModeActive {
+    root * /srv
+		try_files maintenance.html
+		file_server {
+			status 503
+		}
+	}
   # Serves static files, should be the same as `STATIC_ROOT` setting:
   root *  /var/www/django
   file_server
@@ -21,6 +32,7 @@
     not path /media/*
   }
   
+
   # Serving dynamic requests:
   reverse_proxy @noStatic django:8000
 
