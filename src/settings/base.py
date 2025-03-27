@@ -240,10 +240,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_deleted_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
-    'reset_computed_storage_analytics': {
-        'task': 'analytics.tasks.reset_computed_storage_analytics',
-        'schedule': crontab(hour='2', minute='0', day_of_month='1', month_of_year="*/3")  # Every 3 month at 02:00 UTC on the 1st
-    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
