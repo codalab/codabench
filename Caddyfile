@@ -27,10 +27,10 @@
   # Allows to use `.gz` files when available:
   encode gzip
 
-  # Logs:
+  # Logs, will keep 5 GB
   log {
     output file /var/log/caddyaccess.log {
-      roll_disabled
+      roll_size 5000MiB
     }
   }
 }
