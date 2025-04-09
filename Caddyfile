@@ -12,17 +12,22 @@
   # Removing some headers for improved security:
   header -Server
 
+  @noRedirect {
+    not path /maintenance.html
+    not path /offline.png
+  }
   @maintenanceModeActive file {
     root /srv
     try_files maintenance.on
   }
 	handle @maintenanceModeActive {
     root * /srv
-		try_files maintenance.html
+    redir @noRedirect /maintenance.html
 		file_server {
-			status 503
-		}
+      status 503
+    }
 	}
+
   # Serves static files, should be the same as `STATIC_ROOT` setting:
   root *  /var/www/django
   file_server
