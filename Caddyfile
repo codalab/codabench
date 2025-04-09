@@ -8,9 +8,25 @@
   #   ca https://acme-staging-v02.api.letsencrypt.org/directory
   # }
 
-  
+
   # Removing some headers for improved security:
   header -Server
+
+  @noRedirect {
+    not path /maintenance.html
+    not path /offline.png
+  }
+  @maintenanceModeActive file {
+    root /srv
+    try_files maintenance.on
+  }
+	handle @maintenanceModeActive {
+    root * /srv
+    redir @noRedirect /maintenance.html
+		file_server {
+      status 503
+    }
+	}
 
   # Serves static files, should be the same as `STATIC_ROOT` setting:
   root *  /var/www/django
@@ -21,16 +37,17 @@
     not path /media/*
   }
   
+
   # Serving dynamic requests:
   reverse_proxy @noStatic django:8000
 
   # Allows to use `.gz` files when available:
   encode gzip
 
-  # Logs:
+  # Logs, will keep 5 GB
   log {
     output file /var/log/caddyaccess.log {
-      roll_disabled
+      roll_size 5000MiB
     }
   }
 }
