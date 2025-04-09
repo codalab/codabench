@@ -204,7 +204,7 @@ class SubmissionViewSet(ModelViewSet):
             return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
 
         # Check if submission is in running state
-        if submission.status not in [Submission.FAILED, Submission.FINISHED]:
+        if submission.status not in [Submission.FAILED, Submission.FINISHED, Submission.CANCELLED]:
             return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
 
         # Check if submission is not already soft deleted
