@@ -1,5 +1,22 @@
 <public-list>
     <h1>Public Benchmarks and Competitions</h1>
+
+    <!-- Filter/Sort controls here -->
+    <div class="filters" style="margin: 15px 0;">
+      <label style="margin-right: 10px;">
+        <input type="checkbox" onclick="{toggleRewardFilter}" checked="{has_reward}">
+        Has reward
+      </label>
+      <label>
+        Sort by:
+        <select class="ui dropdown" onchange="{handleSort}">
+          <option value="created_when">Most Recent</option>
+          <option value="participants_count">Participants Count</option>
+          <option value="submissions_count">Submissions Count</option>
+        </select>
+      </label>
+    </div>
+
     <div class="pagination-nav"> 
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
@@ -49,14 +66,48 @@
 <script>
     var self = this
     self.competitions = {}
+    self.has_reward = false
+    self.sort_by = 'created_when'
+
+    function setUrlParams() {
+      let urlParams = new URLSearchParams(window.location.search);
+      urlParams.set("page", self.current_page);
+      urlParams.set("has_reward", self.has_reward);
+      urlParams.set("sort_by", self.sort_by);
+      history.pushState("", document.title, "?" + urlParams.toString());
+    }
 
     self.one("mount", function () {
+        let urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('sort_by')){
+            self.sort_by = urlParams.get('sort_by');
+        } else {
+            self.sort_by = 'created_when';
+        }
+        if(urlParams.has('has_reward')){
+            let val = urlParams.get('has_reward');
+            self.has_reward = (val === 'true' || val === '1');
+        } else {
+            self.has_reward = false;
+        }
         self.update_competitions_list(self.get_url_page_number_or_default())
     })
 
     self.handle_ajax_pages = function (num){
         $('.pagination-nav > button').prop('disabled', true)
         self.update_competitions_list(self.get_url_page_number_or_default() + num)
+    }
+
+    // Toggle has_reward, then reload
+    self.toggleRewardFilter = function (e) {
+        self.has_reward = e.target.checked
+        self.update_competitions_list(1)
+    }
+
+    // Update sort_by, then reload
+    self.handleSort = function (e) {
+        self.sort_by = e.target.value
+        self.update_competitions_list(self.current_page)
     }
 
     self.update_competitions_list = function (num) {
@@ -69,21 +120,24 @@
             self.competitions = response;
             $('#loading').hide(); // Hide the loading indicator
             $('.pagination-nav').show(); // Show pagination navigation
-            history.pushState("", document.title, "?page=" + self.current_page);
             $('.pagination-nav > button').prop('disabled', false);
+            //history.pushState("", document.title, "?page=" + self.current_page);
+            setUrlParams();
             self.update();
         }
         // Fetch data using AJAX call
-        return CODALAB.api.get_public_competitions({"page": self.current_page})
+        return CODALAB.api.get_public_competitions({
+            "page": self.current_page,
+            "has_reward": self.has_reward,
+            "sort_by": self.sort_by
+        })
             .fail(function (response) {
                 $('#loading').hide(); // Hide the loading indicator
                 $('.pagination-nav').show(); // Show pagination navigation
                 toastr.error("Could not load competition list");
             })
             .done(handleSuccess);
-        
     };
-
 
     self.get_array_length = function (arr) {
         if(arr === undefined){
@@ -122,6 +176,20 @@
     }
 
     $(window).on('popstate', function (event) {
+        // When the user clicks back/forward, parse the URL again
+        let urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('sort_by')){
+            self.sort_by = urlParams.get('sort_by');
+        } else {
+            self.sort_by = 'created_when';
+        }
+        if(urlParams.has('has_reward')){
+            let val = urlParams.get('has_reward');
+            self.has_reward = (val === 'true' || val === '1');
+        } else {
+            self.has_reward = false;
+        }
+        // Then update page and re-fetch
         self.update_competitions_list(self.get_url_page_number_or_default())
     })
 
