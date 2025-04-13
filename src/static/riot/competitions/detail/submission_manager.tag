@@ -168,9 +168,9 @@
                         <i class="icon share grey alternate"></i>
                     </span>
                     <!-- Delete Submission -->
-                    <!--  Show only if submission is Finished/Failed and not admin interface  -->
+                    <!--  Show only if submission is Finished/Failed/Cancelled and not admin interface  -->
                     <!--  This condition && !opts.admin is there to not show soft delete button in the admin interface  -->
-                    <span if="{ ((submission.status === 'Finished' && !submission.on_leaderboard) || submission.status === 'Failed')  && !opts.admin}"
+                    <span if="{ ((submission.status === 'Finished' && !submission.on_leaderboard) || submission.status === 'Failed' || submission.status === 'Cancelled')  && !opts.admin}"
                         data-tooltip="Delete Submission" data-inverted=""
                         onclick="{ soft_delete_submission.bind(this, submission) }">
                         <i class="icon red trash"></i>
