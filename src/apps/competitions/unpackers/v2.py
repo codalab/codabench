@@ -25,6 +25,7 @@ class V2Unpacker(BaseUnpacker):
             "fact_sheet": self.competition_yaml.get("fact_sheet", None),
             "reward": self.competition_yaml.get("reward", None),
             "contact_email": self.competition_yaml.get("contact_email", None),
+            "forum_enabled": self.competition_yaml.get("forum_enabled", True),
             "pages": [],
             "phases": [],
             "leaderboards": [],

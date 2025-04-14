@@ -32,7 +32,7 @@ class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('phase__competition', 'phase', 'status')
+    filter_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
 
@@ -119,6 +119,9 @@ class SubmissionViewSet(ModelViewSet):
             if not self.request.user.is_authenticated:
                 return Submission.objects.none()
 
+            # Check if admin is requesting to see soft-deleted submissions
+            show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
+
             if not self.request.user.is_superuser and not self.request.user.is_staff and not self.request.user.is_bot:
                 # if you're the creator of the submission or a collaborator on the competition
                 qs = qs.filter(
@@ -126,6 +129,11 @@ class SubmissionViewSet(ModelViewSet):
                     Q(phase__competition__created_by=self.request.user) |
                     Q(phase__competition__collaborators__in=[self.request.user.pk])
                 ).distinct()
+
+            # By default, exclude soft-deleted submissions unless explicitly requested by an admin
+            if not show_is_soft_deleted:
+                qs = qs.filter(is_soft_deleted=False)
+
             qs = qs.select_related(
                 'phase',
                 'phase__competition',
@@ -178,6 +186,34 @@ class SubmissionViewSet(ModelViewSet):
 
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=('DELETE',))
+    def soft_delete(self, request, pk):
+        submission = self.get_object()
+
+        # Check if submission exists
+        if not submission:
+            return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if owner is requesting soft delete
+        if submission.owner != request.user:
+            return Response({'error': 'You are not allowed to delete this submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is finished and on the leaderboard
+        if submission.status == Submission.FINISHED and submission.on_leaderboard:
+            return Response({'error': 'You are not allowed to delete a leaderboard submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is in running state
+        if submission.status not in [Submission.FAILED, Submission.FINISHED]:
+            return Response({'error': 'You are not allowed to delete a running submission'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if submission is not already soft deleted
+        if submission.is_soft_deleted:
+            return Response({'error': 'Submission already deleted'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # soft delete submission and return success response
+        submission.soft_delete()
+        return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=('DELETE',))
     def delete_many(self, request, *args, **kwargs):

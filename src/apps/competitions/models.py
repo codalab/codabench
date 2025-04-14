@@ -87,6 +87,9 @@ class Competition(ChaHubSaveMixin, models.Model):
     # Count of participants in this competition (default = 1 because competition creator is also a participant)
     participants_count = models.PositiveIntegerField(default=1)
 
+    # If true, forum is enabled (default=True)
+    forum_enabled = models.BooleanField(default=True)
+
     def __str__(self):
         return f"competition-{self.title}-{self.pk}-{self.competition_type}"
 
@@ -463,18 +466,16 @@ class SubmissionDetails(models.Model):
     ]
     name = models.CharField(max_length=50)
     data_file = models.FileField(upload_to=PathWrapper('submission_details'), storage=BundleStorage)
-    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
     submission = models.ForeignKey('Submission', on_delete=models.CASCADE, related_name='details')
     is_scoring = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if self.data_file and (not self.file_size or self.file_size == -1):
             try:
-                # save file size as KiB
                 # self.data_file.size returns bytes
-                self.file_size = self.data_file.size / 1024
+                self.file_size = self.data_file.size
             except TypeError:
-                # file returns a None size, can't divide None / 1024
                 # -1 indicates an error
                 self.file_size = -1
             except botocore.exceptions.ClientError:
@@ -515,7 +516,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     status_details = models.TextField(null=True, blank=True)
     phase = models.ForeignKey(Phase, related_name='submissions', on_delete=models.CASCADE)
     appear_on_leaderboards = models.BooleanField(default=False)
-    data = models.ForeignKey("datasets.Data", on_delete=models.CASCADE, related_name='submission')
+    data = models.ForeignKey("datasets.Data", on_delete=models.SET_NULL, related_name='submission', null=True, blank=True)
     md5 = models.CharField(max_length=32, null=True, blank=True)
 
     prediction_result = models.FileField(upload_to=PathWrapper('prediction_result'), null=True, blank=True,
@@ -525,9 +526,9 @@ class Submission(ChaHubSaveMixin, models.Model):
     detailed_result = models.FileField(upload_to=PathWrapper('detailed_result'), null=True, blank=True,
                                        storage=BundleStorage)
 
-    prediction_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
-    scoring_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
-    detailed_result_file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    prediction_result_file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
+    scoring_result_file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
+    detailed_result_file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
 
     secret = models.UUIDField(default=uuid.uuid4)
     celery_task_id = models.UUIDField(null=True, blank=True)
@@ -561,8 +562,46 @@ class Submission(ChaHubSaveMixin, models.Model):
 
     fact_sheet_answers = JSONField(null=True, blank=True, max_length=4096)
 
+    # True when submission owner deletes a submission
+    is_soft_deleted = models.BooleanField(default=False)
+    # DataTime of when a submission is soft_deleted
+    soft_deleted_when = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.phase.competition.title} submission PK={self.pk} by {self.owner.username}"
+
+    def soft_delete(self):
+        """
+        Soft delete the submission: remove files but keep record in DB.
+        Also deletes associated SubmissionDetails and cleans up storage.
+        """
+
+        # Remove related files from storage
+        # 'save=False' prevents a database save, which is handled later after marking the submission as soft-deleted.
+        self.prediction_result.delete(save=False)
+        self.prediction_result_file_size = 0
+        self.scoring_result.delete(save=False)
+        self.scoring_result_file_size = 0
+        self.detailed_result.delete(save=False)
+        self.detailed_result_file_size = 0
+
+        # Delete related SubmissionDetails files and records
+        for detail in self.details.all():
+            detail.data_file.delete(save=False)  # Delete file from storage
+            detail.delete()  # Remove record from DB
+
+        # Clear the data field if no other submissions are using it
+        other_submissions_using_data = Submission.objects.filter(data=self.data).exclude(pk=self.pk).exists()
+        if not other_submissions_using_data:
+            self.data.delete()
+
+        # Clear the data field for this submission
+        self.data = None
+
+        # Mark submission as deleted
+        self.is_soft_deleted = True
+        self.soft_deleted_when = now()
+        self.save()
 
     def delete(self, **kwargs):
 
@@ -603,11 +642,9 @@ class Submission(ChaHubSaveMixin, models.Model):
         for file_path_attr, file_size_attr in files_and_sizes_dict.items():
             if getattr(self, file_path_attr) and (not getattr(self, file_size_attr) or getattr(self, file_size_attr) == -1):
                 try:
-                    # save file size as KiB
                     # self.data_file.size returns bytes
-                    setattr(self, file_size_attr, getattr(self, file_path_attr).size / 1024)
+                    setattr(self, file_size_attr, getattr(self, file_path_attr).size)
                 except TypeError:
-                    # file returns a None size, can't divide None / 1024
                     # -1 indicates an error
                     setattr(self, file_size_attr, Decimal(-1))
                 except botocore.exceptions.ClientError:

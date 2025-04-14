@@ -30,7 +30,7 @@ from competitions.emails import send_participation_requested_emails, send_partic
 from competitions.models import Competition, Phase, CompetitionCreationTaskStatus, CompetitionParticipant, Submission
 from datasets.models import Data
 from competitions.tasks import batch_send_email, manual_migration, create_competition_dump
-from competitions.utils import get_popular_competitions, get_featured_competitions
+from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
@@ -304,7 +304,8 @@ class CompetitionViewSet(ModelViewSet):
             data.pop('whitelist_emails', None)
             # Loop over whitelist emails and add them back to whitelist emails in dict format
             for email in whitelist_emails:
-                data.setdefault('whitelist_emails', []).append({'email': email})
+                # user lower case email because some emails in the whitelist may have upper case letters
+                data.setdefault('whitelist_emails', []).append({'email': email.lower()})
 
             serializer = self.get_serializer(instance, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
@@ -350,7 +351,8 @@ class CompetitionViewSet(ModelViewSet):
             send_participation_accepted_emails(participant)
         else:
             # check if user is in whitelist emails then approve directly
-            if user.email in list(competition.whitelist_emails.values_list('email', flat=True)):
+            # Using lower case because some users have used uppercased emails addresses
+            if user.email.lower() in list(competition.whitelist_emails.values_list('email', flat=True)):
                 participant.status = 'approved'
                 send_participation_accepted_emails(participant)
             else:
@@ -432,7 +434,7 @@ class CompetitionViewSet(ModelViewSet):
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
-    def results(self, request, pk, format=None):
+    def results(self, request, pk, format='json'):
         competition = self.get_object()
         if not competition.user_has_admin_permission(request.user):
             raise PermissionDenied("You are not a competition admin or superuser")
@@ -507,12 +509,12 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
-        featured_comps = get_featured_competitions()
+        recent_comps = get_recent_competitions(exclude_comps=popular_comps)
         popular_comps_serializer = CompetitionSerializerSimple(popular_comps, many=True)
-        featured_comps_serializer = CompetitionSerializerSimple(featured_comps, many=True)
+        recent_comps_serializer = CompetitionSerializerSimple(recent_comps, many=True)
         return Response(data={
             "popular_comps": popular_comps_serializer.data,
-            "featured_comps": featured_comps_serializer.data
+            "recent_comps": recent_comps_serializer.data
         })
 
     @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
@@ -795,7 +797,7 @@ class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('user__username', 'user__email', 'status', 'competition')
+    filter_fields = ('user__username', 'user__email', 'status', 'competition', 'user__is_deleted')
     search_fields = ('user__username', 'user__email',)
 
     def get_queryset(self):
@@ -836,16 +838,23 @@ class CompetitionParticipantViewSet(ModelViewSet):
             return CompetitionParticipant.objects.none()
 
     def update(self, request, *args, **kwargs):
-        if request.method == 'PATCH':
-            if 'status' in request.data:
-                participation_status = request.data['status']
-                participant = self.get_object()
-                emails = {
-                    'approved': send_participation_accepted_emails,
-                    'denied': send_participation_denied_emails,
-                }
-                if participation_status in emails:
-                    emails[participation_status](participant)
+        if request.method == 'PATCH' and 'status' in request.data:
+            participation_status = request.data['status']
+            participant = self.get_object()
+
+            # Check if the new status is the same as the current status
+            if participation_status == participant.status:
+                return Response(
+                    {"error": f"Status is already set to `{participation_status}`"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            emails = {
+                'approved': send_participation_accepted_emails,
+                'denied': send_participation_denied_emails,
+            }
+            if participation_status in emails:
+                emails[participation_status](participant)
 
         return super().update(request, *args, **kwargs)
 

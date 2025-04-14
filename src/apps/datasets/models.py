@@ -59,7 +59,7 @@ class Data(ChaHubSaveMixin, models.Model):
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
-    file_size = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # in KiB
+    file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
 
     # This is true if the Data model was created as part of unpacking a competition. Competition bundles themselves
     # are NOT marked True, since they are not created by unpacking!
@@ -74,11 +74,10 @@ class Data(ChaHubSaveMixin, models.Model):
     def save(self, *args, **kwargs):
         if self.data_file and (not self.file_size or self.file_size == -1):
             try:
-                # save file size as KiB
+                # save file size in bytes
                 # self.data_file.size returns bytes
-                self.file_size = self.data_file.size / 1024
+                self.file_size = self.data_file.size
             except TypeError:
-                # file returns a None size, can't divide None / 1024
                 # -1 indicates an error
                 self.file_size = Decimal(-1)
             except botocore.exceptions.ClientError:

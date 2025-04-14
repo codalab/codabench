@@ -7,7 +7,7 @@
 
             <!--  Quota  -->
             <div style="flex: 0 0 auto; margin-left: auto;">
-                Quota: {formatSize(storage_used)} / {formatSize(quota)}
+                Quota: {pretty_bytes(storage_used)} / {quota} GB
             </div>
         </div>
 
@@ -191,11 +191,6 @@
                         toastr.error("Failed submissions deletion failed!")
                     })
             }
-        }
-
-        // Utils
-        self.formatSize = function(size) {
-            return pretty_bytes(size);
         }
 
         CODALAB.events.on('reload_quota_cleanup', self.get_cleanup)

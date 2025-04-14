@@ -12,6 +12,10 @@
             <option value="denied">Denied</option>
             <option value="unknown">Unknown</option>
         </select>
+        <div class="ui checkbox">
+            <input type="checkbox" ref="participant_show_deleted" onchange="{ update_participants.bind(this, undefined) }">
+            <label>Show deleted accounts</label>
+        </div>
         <div class="ui blue icon button" onclick="{show_email_modal.bind(this, undefined)}"><i class="envelope icon"></i> Email all participants</div>
         <table class="ui celled striped table">
             <thead>
@@ -28,14 +32,15 @@
                 <td><a href="/profiles/user/{username}" target="_BLANK">{username}</a></td>
                 <td>{email}</td>
                 <td>{is_bot}</td>
-                <td>{_.startCase(status)}</td>
+                <td>{is_deleted ? "account deleted" : _.startCase(status)}</td>
                 <td class="right aligned">
                     <button class="mini ui red button icon"
                             show="{status !== 'denied'}"
                             onclick="{ revoke_permission.bind(this, id) }"
                             data-tooltip="Revoke"
                             data-inverted=""
-                            data-position="bottom center">
+                            data-position="bottom center"
+                            disabled="{is_deleted}">
                         <i class="close icon"></i>
                     </button>
                     <button class="mini ui green button icon"
@@ -43,14 +48,18 @@
                             onclick="{ approve_permission.bind(this, id) }"
                             data-tooltip="Approve"
                             data-inverted=""
-                            data-position="bottom center">
+                            data-position="bottom center"
+                            disabled="{is_deleted}"
+                            >
                             <i class="checkmark icon"></i>
                     </button>
                     <button class="mini ui blue button icon"
                             data-tooltip="Send Message"
                             data-inverted=""
                             data-position="bottom center"
-                            onclick="{show_email_modal.bind(this, id)}">
+                            onclick="{show_email_modal.bind(this, id)}"
+                            disabled="{is_deleted}"
+                            >
                         <i class="envelope icon"></i>
                     </button>
                 </td>
@@ -135,6 +144,11 @@
                 filters.status = status
             }
 
+            let show_deleted_users = self.refs.participant_show_deleted.checked
+            if (show_deleted_users !== null && show_deleted_users === false) {
+                filters.user__is_deleted = show_deleted_users
+            }
+
             CODALAB.api.get_participants(filters)
                 .done(participants => {
                     self.participants = participants
@@ -155,6 +169,13 @@
                     }
                     self.update_participants()
                 })
+                .fail((resp) => {
+                    let errorMessage = 'An error occurred while updating the status.'
+                    if (resp.responseJSON && resp.responseJSON.error) {
+                        errorMessage = resp.responseJSON.error
+                    }
+                    toastr.error(errorMessage)
+                })
         }
 
         self.revoke_permission = id => {
@@ -164,7 +185,9 @@
         }
 
         self.approve_permission = id => {
-            self._update_status(id, 'approved')
+            if (confirm("Are you sure you want to accept this user's participation request?")) {
+                self._update_status(id, 'approved')
+            }
         }
 
         self.search_participants = () => {

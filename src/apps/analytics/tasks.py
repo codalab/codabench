@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import json
 from celery_config import app
 from datetime import datetime, timezone, timedelta
 from django.db.models import (
@@ -42,8 +43,8 @@ def create_storage_analytics_snapshot():
     for dataset in Data.objects.filter(Q(file_size__isnull=True) | Q(file_size__lt=0)):
         try:
             dataset.file_size = Decimal(
-                dataset.data_file.size / 1024
-            )  # file_size is in KiB
+                dataset.data_file.size
+            )  # file_size is in Bytes
         except Exception:
             dataset.file_size = Decimal(-1)
         finally:
@@ -55,8 +56,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.prediction_result_file_size = Decimal(
-                submission.prediction_result.size / 1024
-            )  # prediction_result_file_size is in KiB
+                submission.prediction_result.size
+            )  # prediction_result_file_size is in Bytes
         except Exception:
             submission.prediction_result_file_size = Decimal(-1)
         finally:
@@ -67,8 +68,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.scoring_result_file_size = Decimal(
-                submission.scoring_result.size / 1024
-            )  # scoring_result_file_size is in KiB
+                submission.scoring_result.size
+            )  # scoring_result_file_size is in Bytes
         except Exception:
             submission.scoring_result_file_size = Decimal(-1)
         finally:
@@ -79,8 +80,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submission.detailed_result_file_size = Decimal(
-                submission.detailed_result.size / 1024
-            )  # detailed_result_file_size is in KiB
+                submission.detailed_result.size
+            )  # detailed_result_file_size is in Bytes
         except Exception:
             submission.detailed_result_file_size = Decimal(-1)
         finally:
@@ -91,8 +92,8 @@ def create_storage_analytics_snapshot():
     ):
         try:
             submissiondetails.file_size = Decimal(
-                submissiondetails.data_file.size / 1024
-            )  # file_size is in KiB
+                submissiondetails.data_file.size
+            )  # file_size is in Bytes
         except Exception:
             submissiondetails.file_size = Decimal(-1)
         finally:
@@ -276,7 +277,7 @@ def create_storage_analytics_snapshot():
                 admin_storage_at_date[date] += size
 
     for date in admin_storage_day_range:
-        defaults = {"backups_total": admin_storage_at_date[date] / 1024.0}
+        defaults = {"backups_total": admin_storage_at_date[date]}
         lookup_params = {"at_date": date}
         AdminStorageDataPoint.objects.update_or_create(
             defaults=defaults, **lookup_params
@@ -527,7 +528,7 @@ def create_storage_analytics_snapshot():
         )
         admin_data_point = AdminStorageDataPoint.objects.filter(at_date=date).first()
         admin_usage = (admin_data_point.backups_total or 0) if admin_data_point else 0
-        orphaned_file_usage = Decimal(orphaned_files_size_per_date[date] / 1024)
+        orphaned_file_usage = Decimal(orphaned_files_size_per_date[date])
         total_usage = (
             users_usage + admin_usage + orphaned_file_usage
         )  # competitions_usage is included inside users_usage
@@ -551,25 +552,36 @@ def create_storage_analytics_snapshot():
     )
 
 
-@app.task(queue="site-worker")  # 12 hours
-def reset_computed_storage_analytics():
-    logger.info("Task reset_computed_storage_analytics started")
+@app.task(queue="site-worker")
+def update_home_page_counters():
     starting_time = time.process_time()
+    logger.info("Task update_home_page_counters Started")
 
-    # Reset the value of all computed file sizes so they will be re-computed again without any shifting on the next run of the storage analytics task
-    Submission.objects.all().update(
-        prediction_result_file_size=None,
-        scoring_result_file_size=None,
-        detailed_result_file_size=None,
-    )
-    SubmissionDetails.objects.all().update(file_size=None)
-    Data.objects.all().update(file_size=None)
+    # Count public competitions
+    public_competitions = Competition.objects.filter(published=True).count()
+
+    # Count active users
+    users = User.objects.filter(is_deleted=False).count()
+
+    # Count all submissions
+    submissions = Submission.objects.all().count()
+
+    # Create counters data
+    counters_data = {
+        "public_competitions": public_competitions,
+        "users": users,
+        "submissions": submissions,
+        "last_updated": datetime.now(timezone.utc).isoformat()
+    }
+
+    # Save latest counters in the file
+    log_file = "/app/home_page_counters.json"
+    with open(log_file, "w") as f:
+        json.dump(counters_data, f, indent=4)
 
     elapsed_time = time.process_time() - starting_time
     logger.info(
-        "Task reset_computed_storage_analytics stoped. Duration = {:.3f} seconds".format(
-            elapsed_time
-        )
+        "Task update_home_page_counters Completed. Duration = {:.3f} seconds".format(elapsed_time)
     )
 
 

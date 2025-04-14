@@ -6,6 +6,7 @@ from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
 from django.shortcuts import render
+from utils.data import pretty_bytes
 
 
 class HomeView(TemplateView):
@@ -13,31 +14,6 @@ class HomeView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
-        # TODO: Optimize fetching the statistics
-        # Possibly from a file where they are written by an automated script once a day
-        # For now showing latest numbers from live codabench
-        # The following commented code is slowing down the loading of the home page
-
-        # data = Competition.objects.aggregate(
-        #     count=Count('*'),
-        #     published_comps=Count('pk', filter=Q(published=True)),
-        #     unpublished_comps=Count('pk', filter=Q(published=False)),
-        # )
-
-        # public_competitions = data['published_comps']
-        # users = User.objects.all().count()
-        # submissions = Submission.objects.all().count()
-
-        public_competitions = 204
-        users = 12216
-        submissions = 70276
-
-        context['general_stats'] = [
-            {'label': "Public Competitions", 'count': public_competitions},
-            {'label': "Users", 'count': users},
-            {'label': "Submissions", 'count': submissions},
-        ]
 
         announcement = Announcement.objects.all().first()
         context['announcement'] = announcement.text if announcement else None
@@ -74,13 +50,19 @@ class ServerStatusView(TemplateView):
             # filter this user's own submissions
             # and
             # submissions running on queue which belongs to this user
+            # NOTE: exclude all soft-deleted submissions
             if not self.request.user.is_superuser:
                 qs = Submission.objects.filter(
-                    Q(owner=self.request.user) |
-                    Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                    Q(is_soft_deleted=False) &
+                    (
+                        Q(owner=self.request.user) |
+                        Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
+                    )
                 )
             else:
-                qs = Submission.objects.all()
+                qs = Submission.objects.filter(
+                    Q(is_soft_deleted=False)
+                )
 
         # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
@@ -107,7 +89,10 @@ class ServerStatusView(TemplateView):
 
         for submission in context['submissions']:
             # Get filesize from each submissions's data
-            submission.file_size = self.format_file_size(submission.data.file_size)
+            if submission.data:
+                submission.file_size = pretty_bytes(submission.data.file_size)
+            else:
+                submission.file_size = pretty_bytes(0)
 
             # Get queue from each submission
             queue_name = ""
@@ -125,23 +110,6 @@ class ServerStatusView(TemplateView):
         context['is_paginated'] = paginator.num_pages > 1
 
         return context
-
-    def format_file_size(self, file_size):
-        """
-        A custom function to convert file size to KB, MB, GB and return with the unit
-        """
-        try:
-            n = float(file_size)
-        except Exception:
-            return ""
-
-        units = ['KB', 'MB', 'GB']
-        i = 0
-        while n >= 1000 and i < len(units) - 1:
-            n /= 1000
-            i += 1
-
-        return f"{n:.1f} {units[i]}"
 
 
 class MonitorQueuesView(TemplateView):

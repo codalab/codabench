@@ -232,9 +232,13 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'analytics.tasks.create_storage_analytics_snapshot',
         'schedule': crontab(hour='2', minute='0', day_of_week='sun')  # Every Sunday at 02:00 UTC time
     },
-    'reset_computed_storage_analytics': {
-        'task': 'analytics.tasks.reset_computed_storage_analytics',
-        'schedule': crontab(hour='2', minute='0', day_of_month='1', month_of_year="*/3")  # Every 3 month at 02:00 UTC on the 1st
+    'update_home_page_counters': {
+        'task': 'analytics.tasks.update_home_page_counters',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
+    'clean_deleted_users': {
+        'task': 'profiles.tasks.clean_deleted_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
     },
 }
 CELERY_TIMEZONE = 'UTC'
@@ -412,7 +416,8 @@ GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
 # Quota
-DEFAULT_USER_QUOTA = 15 * 1024 * 1024 * 1024  # 15GB
+DEFAULT_USER_QUOTA = 15  # 15GB
+
 
 # =============================================================================
 # Debug

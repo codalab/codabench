@@ -267,7 +267,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'reward',
             'contact_email',
             'report',
-            'whitelist_emails'
+            'whitelist_emails',
+            'forum_enabled'
         )
 
     def validate_phases(self, phases):
@@ -412,6 +413,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'contact_email',
             'report',
             'whitelist_emails',
+            'forum_enabled'
         )
 
     def get_leaderboards(self, instance):
@@ -470,6 +472,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
+            'is_featured',
         )
 
     def get_created_by(self, obj):
@@ -499,6 +502,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
+    is_deleted = serializers.BooleanField(source='user.is_deleted')
 
     class Meta:
         model = CompetitionParticipant
@@ -508,12 +512,13 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'is_bot',
             'email',
             'status',
+            'is_deleted',
         )
 
 
 class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
-    featured_comps = CompetitionSerializerSimple(many=True)
+    recent_comps = CompetitionSerializerSimple(many=True)
 
 
 class PhaseResultsSubmissionSerializer(serializers.Serializer):

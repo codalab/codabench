@@ -33,6 +33,16 @@ class ChaHubUserManager(UserManager):
         return super().get_queryset()
 
 
+class DeletedUser(models.Model):
+    user_id = models.IntegerField(null=True, blank=True)  # Store the same ID as in the User table
+    username = models.CharField(max_length=255)
+    email = models.EmailField()
+    deleted_at = models.DateTimeField(auto_now_add=True)  # Automatically sets to current time when the record is created
+
+    def __str__(self):
+        return f"{self.username} ({self.email})"
+
+
 class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
@@ -93,6 +103,10 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Required for social auth and such to create users
     objects = ChaHubUserManager()
 
+    # Soft deletion
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.username, allow_unicode=True)
         super().save(*args, **kwargs)
@@ -139,7 +153,12 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
         # By default, always push
         return True
 
-    def get_used_storage_space(self):
+    def get_used_storage_space(self, binary=False):
+        """
+        Function to calculate storage used by a user
+        Returns in bytes
+        """
+
         from datasets.models import Data
         from competitions.models import Submission, SubmissionDetails
 
@@ -150,7 +169,7 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             created_by_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_datasets * 1024 if users_datasets else 0
+        storage_used += users_datasets if users_datasets else 0
 
         # Submissions
         users_submissions = Submission.objects.filter(owner_id=self.id).aggregate(
@@ -182,16 +201,89 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
             )
         )
 
-        storage_used += users_submissions["size"] * 1024 if users_submissions["size"] else 0
+        storage_used += users_submissions["size"] if users_submissions["size"] else 0
 
         # Submissions details
         users_submissions_details = SubmissionDetails.objects.filter(
             submission__owner_id=self.id, file_size__gt=0, file_size__isnull=False
         ).aggregate(Sum("file_size"))["file_size__sum"]
 
-        storage_used += users_submissions_details * 1024 if users_submissions_details else 0
+        storage_used += users_submissions_details if users_submissions_details else 0
 
         return storage_used
+
+    def delete(self, *args, **kwargs):
+        """Soft delete the user and anonymize personal data."""
+        from .views import send_user_deletion_notice_to_admin, send_user_deletion_confirmed
+        from .models import DeletedUser
+
+        # Send a notice to admins
+        send_user_deletion_notice_to_admin(self)
+
+        # Mark the user as deleted
+        self.is_deleted = True
+        self.deleted_at = now()
+        self.is_active = False
+
+        # Anonymize or removed personal data
+        user_email = self.email  # keep track of the email for the end of the procedure
+
+        # Store the deleted user's data in the DeletedUser table
+        DeletedUser.objects.create(
+            user_id=self.id,
+            username=self.username,
+            email=self.email
+        )
+
+        # Github related
+        self.github_uid = None
+        self.avatar_url = None
+        self.url = None
+        self.html_url = None
+        self.name = None
+        self.company = None
+        self.bio = None
+        if self.github_info:
+            self.github_info.login = None
+            self.github_info.avatar_url = None
+            self.github_info.gravatar_id = None
+            self.github_info.html_url = None
+            self.github_info.name = None
+            self.github_info.company = None
+            self.github_info.bio = None
+            self.github_info.location = None
+
+        # Any user attribute
+        self.username = f"deleted_user_{self.id}"
+        self.slug = f"deleted_slug_{self.id}"
+        self.photo = None
+        self.email = None
+        self.display_name = None
+        self.first_name = None
+        self.last_name = None
+        self.title = None
+        self.location = None
+        self.biography = None
+        self.personal_url = None
+        self.linkedin_url = None
+        self.twitter_url = None
+        self.github_url = None
+
+        # Queues
+        self.rabbitmq_username = None
+        self.rabbitmq_password = None
+
+        # Save the changes
+        self.save()
+
+        # Send a confirmation email notice to the removed user
+        send_user_deletion_confirmed(user_email)
+
+    def restore(self, *args, **kwargs):
+        """Restore a soft-deleted user. Note that personal data remains anonymized."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
 
 
 class GithubUserInfo(models.Model):

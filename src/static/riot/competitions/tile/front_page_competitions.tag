@@ -18,7 +18,7 @@
 
         <div class="eight wide column">
             <div class="ui large header">
-                Featured Benchmarks
+                Recent Benchmarks
             </div>
             <div class="loader-container popular">
                 <div class="lds-ring">
@@ -28,7 +28,7 @@
                     <div></div>
                 </div>
             </div>
-            <competition-tile each="{featured_competitions}"></competition-tile>
+            <competition-tile each="{recent_competitions}"></competition-tile>
             <a class="show-more" href="/competitions/public/">Show more</a>
         </div>
     </div>
@@ -47,7 +47,7 @@
                     toastr.error("Could not load competition list")
                 })
                 .done(function (data) {
-                    self.featured_competitions = data["featured_comps"]
+                    self.recent_competitions = data["recent_comps"]
                     self.popular_competitions = data["popular_comps"]
                     self.update()
                     $('.loader-container').hide()

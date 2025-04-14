@@ -7,12 +7,12 @@ RUN curl -s -L https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x8
     rpm -Uvh http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
     dnf -y update && \
     dnf module install -y nvidia-driver:latest-dkms && \
-    dnf -y install podman fuse-overlayfs python3.8 python3-pip nvidia-container-runtime nvidia-container-toolkit \
+    dnf -y install podman fuse-overlayfs python3.9 nvidia-container-runtime nvidia-container-toolkit \
      cuda --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
-# Setup user 
+# Setup user
 RUN useradd worker; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
@@ -49,15 +49,24 @@ RUN mkdir /codabench && \
     chown worker:worker /codabench && \
 # Set up podman registry for dockerhub
     echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf && \
-# Get pip for 3.8 
-    python3.8 -m ensurepip --upgrade
 
 WORKDIR /home/worker/compute_worker
 
 ADD compute_worker/ /home/worker/compute_worker
 
-RUN chown worker:worker -R /home/worker/compute_worker && \
- pip3.8 install -r /home/worker/compute_worker/compute_worker_requirements.txt
+RUN curl -sSL https://install.python-poetry.org | python3.9 -
+# Poetry location so future commands (below) work
+ENV PATH $PATH:/root/.local/bin
+# Want poetry to use system python of docker container
+RUN poetry config virtualenvs.create false
+RUN poetry config virtualenvs.in-project false
+# So we get 3.9
+RUN poetry config virtualenvs.prefer-active-python true
+COPY ./compute_worker/pyproject.toml ./
+COPY ./compute_worker/poetry.lock ./
+RUN poetry install
+
+RUN chown worker:worker -R /home/worker/compute_worker
 
 CMD nvidia-smi && celery -A compute_worker worker \
     -l info \
