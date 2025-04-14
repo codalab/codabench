@@ -16,20 +16,22 @@ from .views import (
     submissions,
     tasks,
     queues,
-    quota
+    quota,
+    participants,
+    phases
 )
 
 
 router = SimpleRouter()
 router.register('competitions', competitions.CompetitionViewSet)
-router.register('phases', competitions.PhaseViewSet, 'phases')
+router.register('phases', phases.PhaseViewSet, 'phases')
 router.register('submissions', submissions.SubmissionViewSet)
 router.register('datasets', datasets.DataViewSet)
 router.register('data_groups', datasets.DataGroupViewSet)
 router.register('leaderboards', leaderboards.LeaderboardViewSet)
 router.register('submission_scores', leaderboards.SubmissionScoreViewSet, 'submission_scores')
 router.register('tasks', tasks.TaskViewSet)
-router.register('participants', competitions.CompetitionParticipantViewSet, 'participants')
+router.register('participants', participants.CompetitionParticipantViewSet, 'participants')
 router.register('queues', queues.QueueViewSet, 'queues')
 router.register('users', profiles.UserViewSet, 'users')
 router.register('organizations', profiles.OrganizationViewSet, 'organizations')
