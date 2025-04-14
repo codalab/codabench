@@ -46,7 +46,7 @@ class CompetitionViewSet(ModelViewSet):
 
         qs = super().get_queryset()
 
-        # filter by competition_type first, 'competition' by default
+        # Filter by competition_type first, 'competition' by default
         competition_type = self.request.query_params.get('type', Competition.COMPETITION)
         if competition_type != 'any' and self.detail is False:
             qs = qs.filter(competition_type=competition_type)
@@ -179,7 +179,8 @@ class CompetitionViewSet(ModelViewSet):
         if search_query:
             qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
 
-        qs = qs.order_by('created_when')
+        # Default sort
+        qs = qs.order_by('-created_when')
         return qs
 
     def get_permissions(self):
@@ -537,7 +538,20 @@ class CompetitionViewSet(ModelViewSet):
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
         qs = Competition.objects.filter(published=True)
-        qs = qs.order_by('-id')
+        # Grab `sort_by` and `has_reward` from query params
+        sort_by = self.request.query_params.get('sort_by', None)
+        has_reward = self.request.query_params.get('has_reward', 'false').lower()
+        # Filter for non-empty reward if "has_reward=true"
+        if has_reward in ['true', '1']:
+            qs = qs.exclude(reward__isnull=True).exclude(reward='')
+        # Sort based on `sort_by`
+        if sort_by == 'participants_count':
+            qs = qs.order_by('-participants_count')  # e.g. descending
+        elif sort_by == 'submissions_count':
+            qs = qs.order_by('-submissions_count')
+        else:
+            # Default sort
+            qs = qs.order_by('-created_when')
         queryset = self.filter_queryset(qs)
         page = self.paginate_queryset(queryset)
         if page is not None:
