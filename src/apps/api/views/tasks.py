@@ -57,12 +57,12 @@ class TaskViewSet(ModelViewSet):
             qs = qs.filter(task_filter)
             # Determine whether a task is "valid" by finding some solution with a
             # passing submission
-            ### !CONCERN!
+            # !CONCERN!
             # We are looping through all tasks and potentially storing in memory.
-            # Should we potentially change "Task.objects.prefetch_related" to 
+            # Should we potentially change "Task.objects.prefetch_related" to
             # have similar filters as "qs" so as not to have all tasks in the db
             # in memory.
-            ### !CONCERN!
+            # !CONCERN!
             tasks_with_solutions = Task.objects.prefetch_related("solutions")
             task_validations = {}
             for task in tasks_with_solutions:
