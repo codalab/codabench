@@ -26,8 +26,6 @@ from utils.data import pretty_bytes, gb_to_bytes
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
 #   is there a better way to do it using get_serializer_class() method?
-
-
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
