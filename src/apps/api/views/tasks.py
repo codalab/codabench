@@ -4,7 +4,7 @@ import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
 
-from django.db.models import Q, Case, When, Value, BooleanField, OuterRef, Subquery
+from django.db.models import Q, Case, When, Value, BooleanField
 from django.db import transaction
 
 from rest_framework import status
