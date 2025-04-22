@@ -388,7 +388,7 @@ class SubmissionViewSet(ModelViewSet):
             raise PermissionDenied(
                 "You do not have permission to download one or more of the requested submissions"
             )
-        
+
         # Download
         from competitions.tasks import stream_batch_download
         in_memory_zip = stream_batch_download(pks)
