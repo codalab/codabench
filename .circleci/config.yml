@@ -4,7 +4,7 @@ jobs:
   test:
     machine:
       image: ubuntu-2204:2024.01.2
-    resource_class: large
+    resource_class: xlarge
     steps:
       - checkout
 
