@@ -351,16 +351,47 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def download_many(self, request):
+        """
+        Download a ZIP containing several submissions.
+        """
         pks = request.query_params.get('pks')
         if pks:
             pks = json.loads(pks)  # Convert JSON string to list
+        else:
+            return Response({"error": "`pks` query parameter is required"}, status=400)
 
-        # Doing a local import here to avoid circular imports
+        # Get submissions
+        submissions = Submission.objects.filter(pk__in=pks).select_related(
+            "owner",
+            "phase__competition",
+            "phase__competition__created_by",
+        ).prefetch_related("phase__competition__collaborators")
+        if submissions.count() != len(pks):
+            return Response({"error": "One or more submission IDs are invalid"}, status=404)
+
+        # Check permissions
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to download submissions")
+        # Allow admins
+        if request.user.is_superuser or request.user.is_staff:
+            allowed = True
+        else:
+            # Build one Q object for "owner OR organizer"
+            organiser_q = (
+                Q(phase__competition__created_by=request.user) |
+                Q(phase__competition__collaborators=request.user)
+            )
+            # Submissions that violate the rule
+            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
+            allowed = not disallowed.exists()
+        if not allowed:
+            raise PermissionDenied(
+                "You do not have permission to download one or more of the requested submissions"
+            )
+
+        # Download
         from competitions.tasks import stream_batch_download
-
-        # in_memory_zip = stream_batch_download.apply_async((pks,)).get()
         in_memory_zip = stream_batch_download(pks)
-
         response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
         return response
