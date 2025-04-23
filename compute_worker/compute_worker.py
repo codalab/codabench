@@ -280,7 +280,7 @@ class Run:
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
-                    timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
+                    timeout_error_message = f"WARNING: Detailed results not written before the execution."
                     logger.warning(timeout_error_message)
             await asyncio.sleep(5)
             file_path = self.get_detailed_results_file_path()
