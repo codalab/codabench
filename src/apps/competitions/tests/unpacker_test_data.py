@@ -235,7 +235,8 @@ PHASES = [
 
 V2_SPECIFIC_PHASE_DATA = [
     # Tuples of (key, value) of data specific to v2 unpacker.
-    ('hide_output', False)
+    ('hide_output', False),
+    ('hide_score_output', False)
 ]
 
 
