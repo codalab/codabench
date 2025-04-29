@@ -43,6 +43,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
+            'hide_score_output',
             'leaderboard',
             'public_data',
             'starting_kit',
@@ -124,6 +125,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
+            'hide_score_output',
             # no leaderboard
             'public_data',
             'starting_kit',
