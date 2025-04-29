@@ -190,8 +190,20 @@
                         </div>
                         <div class="field">
                             <div class="ui checkbox">
-                                <label>Hide Submission Output</label>
+                                <label>Hide Submission Output
+                                    <span data-tooltip="Hide all submission output" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
                                 <input type="checkbox" ref="hide_output">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Score Output 
+                                    <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="hide_score_output">
                             </div>
                         </div>
 
@@ -641,7 +653,6 @@
             return new Date(Date.parse(date))
         }
 
-
         self.edit = function (index) {
             self.selected_phase_index = index
             var phase = self.phases[index]
@@ -649,11 +660,11 @@
             self.phase_public_data = [phase.public_data]
             self.phase_starting_kit = [phase.starting_kit]
 
-
             self.update()
             set_form_data(phase, self.refs.form)
             $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
             self.refs.hide_output.checked = phase.hide_output
+            self.refs.hide_score_output.checked = phase.hide_score_output
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -812,6 +823,7 @@
             }
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
             data.hide_output = self.refs.hide_output.checked
+            data.hide_score_output = self.refs.hide_score_output.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {

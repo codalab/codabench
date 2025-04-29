@@ -27,7 +27,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !scoring_result}">
+                            <td class="selectable file-download {disabled: !scoring_result}" show="{!opts.hide_score_output}">
                                 <a href="{ scoring_result }"><i class="file outline icon"></i>Output from scoring step</a>
                             </td>
                         </tr>
