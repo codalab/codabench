@@ -583,7 +583,14 @@ class Run:
 
         return path
 
-    async def _run_program_directory(self, program_dir, kind, can_be_output=False):
+    async def _run_program_directory(self, program_dir, kind):
+        """
+        Function responsible for running program directory
+
+        Args:
+            - program_dir : can be either ingestion program or program/submission
+            - kind : either `program` or `ingestion`
+        """
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
@@ -597,13 +604,11 @@ class Run:
         elif os.path.exists(os.path.join(program_dir, "metadata")):
             metadata_path = 'metadata'
         else:
-            if can_be_output:
+            # Display a warning in logs when there is no metadata file in submission/program dir
+            if kind == "program":
                 logger.info(
-                    "Program directory missing metadata, assuming it's going to be handled by ingestion "
-                    "program so move it to output"
+                    "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
-                # Copying so that we don't move a code submission w/out a metadata command
-                shutil.copytree(program_dir, self.output_dir)
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
@@ -818,7 +823,7 @@ class Run:
         logger.info("Running scoring program, and then ingestion program")
         loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
-            self._run_program_directory(program_dir, kind='program', can_be_output=True),
+            self._run_program_directory(program_dir, kind='program'),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
             self.watch_detailed_results(),
             loop=loop,
