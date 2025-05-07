@@ -15,8 +15,6 @@
 #     ])),
 # })
 
-
-
 # apps/routing.py
 from django.urls import re_path
 from apps.competitions.consumers import SubmissionIOConsumer, SubmissionOutputConsumer
