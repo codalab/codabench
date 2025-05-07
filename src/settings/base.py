@@ -316,13 +316,18 @@ LOGGING = {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
         },
+        'channels': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
 # =============================================================================
 # Channels
 # =============================================================================
-ASGI_APPLICATION = "routing.application"
+ASGI_APPLICATION = "asgi.application"
+# ASGI_APPLICATION = "routing.application"
 
 CHANNEL_LAYERS = {
     "default": {
