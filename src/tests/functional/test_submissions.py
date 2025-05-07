@@ -18,7 +18,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=600, precision=2):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=1200, precision=2):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 

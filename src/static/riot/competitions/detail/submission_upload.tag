@@ -229,7 +229,9 @@
             var url = new URL('/submission_output/', window.location.href);
             url.protocol = url.protocol.replace('http', 'ws');
             var options = {
-                automaticOpen: false
+                automaticOpen: false,
+                maxReconnectAttempts: 10,
+                reconnectInterval: 1000  // milliseconds
             }
             self.ws = new ReconnectingWebSocket(url, null, options)
             self.ws.addEventListener("message", function (event) {
