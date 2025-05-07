@@ -3,9 +3,10 @@ import logging
 
 
 from asgiref.sync import sync_to_async
-
+from django.contrib.auth import get_user_model
 
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.exceptions import DenyConnection
 from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
@@ -39,7 +40,16 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
         except Submission.DoesNotExist:
             return await self.close()
 
-        if sub.phase.hide_output and not sub.phase.competition.user_has_admin_permission(user_pk):
+        # if sub.phase.hide_output and not sub.phase.competition.user_has_admin_permission(user_pk):
+        #     return
+
+        User = get_user_model()
+        user = await sync_to_async(User.objects.get)(pk=user_pk)
+        phase = await sync_to_async(lambda: sub.phase)()
+        competition = await sync_to_async(lambda: phase.competition)()
+        has_admin = await sync_to_async(lambda: competition.user_has_admin_permission(user))()
+
+        if phase.hide_output and not has_admin:
             return
 
         data = json.loads(text_data)
@@ -61,15 +71,24 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
 
 class SubmissionOutputConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.closed_cleanly = False
         if not self.scope["user"].is_authenticated:
-            return await self.close()
+            # return await self.close()
+            raise DenyConnection()
 
-        await self.accept()
+        try:
+            await self.accept()
+        except RuntimeError as e:
+            logger.warning(f"WebSocket accept failed: {e}")
+            self.closed_cleanly = True
+            return  # prevent group_add
+
         await self.channel_layer.group_add(f"submission_listening_{self.scope['user'].pk}", self.channel_name)
 
     async def disconnect(self, close_code):
+        self.closed_cleanly = True
         await self.channel_layer.group_discard(f"submission_listening_{self.scope['user'].pk}", self.channel_name)
-        await self.close()
+        # await self.close()
 
     def group_send(self, text, submission_id, full_text=False):
         return self.channel_layer.group_send(f"submission_listening_{self.scope['user'].pk}", {
@@ -100,9 +119,18 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
                     await self.group_send(text.decode('utf-8'), sub.id, full_text=True)
 
     async def submission_message(self, event):
+        if getattr(self, "closed_cleanly", False):
+            logger.debug("WebSocket already closed, skipping message send.")
+            return
+
         data = {
             "type": "catchup" if event.get('full_text') else "message",
             "submission_id": event['submission_id'],
             "data": event['text']
         }
-        await self.send(json.dumps(data))
+
+        try:
+            await self.send(json.dumps(data))
+        except RuntimeError as e:
+            logger.warning(f"Failed to send WebSocket message: {e}")
+            self.closed_cleanly = True  # flag to avoid future sends
