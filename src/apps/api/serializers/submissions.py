@@ -261,7 +261,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_prediction_result(self, instance):
         if instance.prediction_result.name:
-            if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+            if (instance.phase.hide_output or instance.phase.hide_prediction_output) and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
                 return None
             return make_url_sassy(instance.prediction_result.name)
 

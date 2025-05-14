@@ -89,6 +89,7 @@ class V15Unpacker(BaseUnpacker):
                 'max_submissions_per_person': phase.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase.get('auto_migration', False),
                 'hide_output': phase.get('hide_output', False),
+                'hide_prediction_output': phase.get('hide_prediction_output', False),
                 'hide_score_output': phase.get('hide_score_output', False),
             }
             execution_time_limit = phase.get('execution_time_limit')

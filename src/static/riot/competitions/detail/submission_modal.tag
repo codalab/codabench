@@ -22,7 +22,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !prediction_result}">
+                            <td class="selectable file-download {disabled: !prediction_result}" show="{!opts.hide_prediction_output}">
                                 <a href="{ prediction_result }"><i class="file outline icon"></i>Output from prediction step</a>
                             </td>
                         </tr>
