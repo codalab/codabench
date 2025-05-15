@@ -22,12 +22,12 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !prediction_result}">
+                            <td class="selectable file-download {disabled: !prediction_result}" show="{!opts.hide_prediction_output}">
                                 <a href="{ prediction_result }"><i class="file outline icon"></i>Output from prediction step</a>
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !scoring_result}">
+                            <td class="selectable file-download {disabled: !scoring_result}" show="{!opts.hide_score_output}">
                                 <a href="{ scoring_result }"><i class="file outline icon"></i>Output from scoring step</a>
                             </td>
                         </tr>

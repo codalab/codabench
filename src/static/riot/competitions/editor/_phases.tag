@@ -190,8 +190,29 @@
                         </div>
                         <div class="field">
                             <div class="ui checkbox">
-                                <label>Hide Submission Output</label>
+                                <label>Hide Submission Output
+                                    <span data-tooltip="Hide all submission output" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
                                 <input type="checkbox" ref="hide_output">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Prediction Output 
+                                    <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="hide_prediction_output">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Score Output 
+                                    <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="hide_score_output">
                             </div>
                         </div>
 
@@ -420,22 +441,10 @@
                     }
                 }
 
-                // Create a new options object for the start date calendar by combining 'date_options'
-                // with an additional option to link the end date calendar. This ensures that the start date
-                // cannot be after the selected end date.
-                var start_options = Object.assign({}, date_options, {endCalendar: self.refs.calendar_end_date})
-                
-                // Similarly, create a new options object for the end date calendar, linking it to the start date.
-                // This ensures that the end date cannot be before the selected start date.
-                var end_options = Object.assign({}, date_options, {startCalendar: self.refs.calendar_start_date})
-                
-                // Initialize the start date calendar using the options defined above, including the end date limitation.
-                $(self.refs.calendar_start_date).calendar(start_options)
-
-                // Initialize the end date calendar using the options defined above, which includes the start date limitation.
-                $(self.refs.calendar_end_date).calendar(end_options)
-
-
+                // Create a new options object for the start date calendar using 'date_options'
+                $(self.refs.calendar_start_date).calendar(date_options)
+                // Create a new options object for the end date calendar using 'date_options'
+                $(self.refs.calendar_end_date).calendar(date_options)
 
                 // Initialize the start time calendar with the defined options. 
                 // This will create a time picker for the 'start time' field.
@@ -641,7 +650,6 @@
             return new Date(Date.parse(date))
         }
 
-
         self.edit = function (index) {
             self.selected_phase_index = index
             var phase = self.phases[index]
@@ -649,11 +657,12 @@
             self.phase_public_data = [phase.public_data]
             self.phase_starting_kit = [phase.starting_kit]
 
-
             self.update()
             set_form_data(phase, self.refs.form)
             $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
             self.refs.hide_output.checked = phase.hide_output
+            self.refs.hide_prediction_output.checked = phase.hide_prediction_output
+            self.refs.hide_score_output.checked = phase.hide_score_output
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -795,6 +804,12 @@
                     data.end_time = "00:00"
                 }
                 data.end = self.formatDateTo_Y_m_d_T_H_M_S(data.end_date + " " + data.end_time)
+
+                // Check: start date must not be after end date
+                if (new Date(data.start) > new Date(data.end)) {
+                    toastr.error("End date cannot be earlier than the start date. Please choose a valid date range.")
+                    return
+                }
             }else{
                 // end date is set to null if it is not selected because it is optional in the form
                 data.end = null
@@ -812,6 +827,8 @@
             }
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
             data.hide_output = self.refs.hide_output.checked
+            data.hide_prediction_output = self.refs.hide_prediction_output.checked
+            data.hide_score_output = self.refs.hide_score_output.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {
