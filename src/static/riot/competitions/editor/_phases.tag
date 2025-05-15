@@ -392,8 +392,6 @@
             self.form_updated()
         }
 
-
-
         self.show_modal = function () {
             $(self.refs.modal).modal('show')
 
@@ -435,20 +433,12 @@
                 // Create a new options object for the start date calendar by combining 'date_options'
                 // with an additional option to link the end date calendar. This ensures that the start date
                 // cannot be after the selected end date.
-                var start_options = Object.assign({}, date_options, {endCalendar: self.refs.calendar_end_date})
+                $(self.refs.calendar_start_date).calendar(date_options)
                 
                 // Similarly, create a new options object for the end date calendar, linking it to the start date.
                 // This ensures that the end date cannot be before the selected start date.
-                var end_options = Object.assign({}, date_options, {startCalendar: self.refs.calendar_start_date})
+                $(self.refs.calendar_end_date).calendar(date_options)
                 
-                // Initialize the start date calendar using the options defined above, including the end date limitation.
-                $(self.refs.calendar_start_date).calendar(start_options)
-
-                // Initialize the end date calendar using the options defined above, which includes the start date limitation.
-                $(self.refs.calendar_end_date).calendar(end_options)
-
-
-
                 // Initialize the start time calendar with the defined options. 
                 // This will create a time picker for the 'start time' field.
                 $(self.refs.calendar_start_time).calendar(time_options)
@@ -564,6 +554,18 @@
                     }
                 })
                 _.forEach(_.range(self.phases.length), i => {
+                    // Check that current phase dates are in order
+                    let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
+                    let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].end))
+                    if (end < start && end) {
+                        let message = `Phase "${_.get(self.phases[i], 'name', i + 1)}" must start before it ends`
+                        if (!self.warnings.includes(message)) {
+                            self.warnings.push(message)
+                            self.update()
+                        }
+                        is_valid = false
+                    }
+                    // Check that next phase start after current phase
                     if (i !== 0) {
                         let end = Date.parse(self.formatDateToYYYYMMDD(self.phases[i - 1].end))
                         let start = Date.parse(self.formatDateToYYYYMMDD(self.phases[i].start))
@@ -637,7 +639,6 @@
             $(self.refs.calendar_end_time).calendar('clear');
 
             self.simple_markdown_editor.value('')
-
             self.form_updated()
         }
 
