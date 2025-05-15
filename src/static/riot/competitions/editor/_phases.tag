@@ -432,22 +432,10 @@
                     }
                 }
 
-                // Create a new options object for the start date calendar by combining 'date_options'
-                // with an additional option to link the end date calendar. This ensures that the start date
-                // cannot be after the selected end date.
-                var start_options = Object.assign({}, date_options, {endCalendar: self.refs.calendar_end_date})
-                
-                // Similarly, create a new options object for the end date calendar, linking it to the start date.
-                // This ensures that the end date cannot be before the selected start date.
-                var end_options = Object.assign({}, date_options, {startCalendar: self.refs.calendar_start_date})
-                
-                // Initialize the start date calendar using the options defined above, including the end date limitation.
-                $(self.refs.calendar_start_date).calendar(start_options)
-
-                // Initialize the end date calendar using the options defined above, which includes the start date limitation.
-                $(self.refs.calendar_end_date).calendar(end_options)
-
-
+                // Create a new options object for the start date calendar using 'date_options'
+                $(self.refs.calendar_start_date).calendar(date_options)
+                // Create a new options object for the end date calendar using 'date_options'
+                $(self.refs.calendar_end_date).calendar(date_options)
 
                 // Initialize the start time calendar with the defined options. 
                 // This will create a time picker for the 'start time' field.
@@ -806,6 +794,12 @@
                     data.end_time = "00:00"
                 }
                 data.end = self.formatDateTo_Y_m_d_T_H_M_S(data.end_date + " " + data.end_time)
+
+                // Check: start date must not be after end date
+                if (new Date(data.start) > new Date(data.end)) {
+                    toastr.error("End date cannot be earlier than the start date. Please choose a valid date range.")
+                    return
+                }
             }else{
                 // end date is set to null if it is not selected because it is optional in the form
                 data.end = null
