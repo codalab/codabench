@@ -214,6 +214,7 @@ PHASES = [
         'tasks': [0],
         'status': 'Previous',
         'hide_output': False,
+        'hide_prediction_output': False,
         'hide_score_output': False,
     },
     {
@@ -233,6 +234,7 @@ PHASES = [
         'status': 'Current',
         'is_final_phase': True,
         'hide_output': False,
+        'hide_prediction_output': False,
         'hide_score_output': False,
     }
 ]

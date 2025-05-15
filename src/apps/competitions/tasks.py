@@ -82,6 +82,7 @@ PHASE_FIELDS = [
     'execution_time_limit',
     'auto_migrate_to_this_phase',
     'hide_output',
+    'hide_prediction_output',
     'hide_score_output',
 ]
 PHASE_FILES = [
