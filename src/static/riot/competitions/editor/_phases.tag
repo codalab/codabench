@@ -433,18 +433,9 @@
                 }
 
                 // Create a new options object for the start date calendar using 'date_options'
-                var start_options = Object.assign({}, date_options)
-                
+                $(self.refs.calendar_start_date).calendar(date_options)
                 // Create a new options object for the end date calendar using 'date_options'
-                var end_options = Object.assign({}, date_options)
-                
-                // Initialize the start date calendar using the options defined above
-                $(self.refs.calendar_start_date).calendar(start_options)
-
-                // Initialize the end date calendar using the options defined above
-                $(self.refs.calendar_end_date).calendar(end_options)
-
-
+                $(self.refs.calendar_end_date).calendar(date_options)
 
                 // Initialize the start time calendar with the defined options. 
                 // This will create a time picker for the 'start time' field.
