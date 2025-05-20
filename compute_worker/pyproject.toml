@@ -5,15 +5,14 @@ description = ""
 authors = ["codalab"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-celery = "4.4.0"
-requests = "^2.20.0"
-watchdog = "2.1.1"
-argh = "0.26.2"
-websockets = "8.1"
-aiofiles = "0.4.0"
-pyyaml = "5.3.1"
-
+python     = "^3.12"
+celery     = "^5.5"
+requests   = "^2.32.3"
+watchdog   = "^3.0"
+argh       = "0.26.2"
+websockets = "^15.0"
+aiofiles   = "^24.1"
+pyyaml     = "^6.0.1"
 
 [build-system]
 requires = ["poetry-core"]
