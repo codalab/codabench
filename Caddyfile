@@ -2,7 +2,6 @@
   # HTTPS Options
   tls {$TLS_EMAIL}
 
-
   # Test HTTPS setup
   # tls {$TLS_EMAIL} {
   #   ca https://acme-staging-v02.api.letsencrypt.org/directory
@@ -20,23 +19,23 @@
     root /srv
     try_files maintenance.on
   }
-	handle @maintenanceModeActive {
+  handle @maintenanceModeActive {
     root * /srv
     redir @noRedirect /maintenance.html
-		file_server {
+    file_server {
       status 503
     }
-	}
+  }
 
   # Serves static files, should be the same as `STATIC_ROOT` setting:
-  root *  /var/www/django
+  root * /var/www/django
   file_server
-  
+
   @noStatic {
     not path /static/*
     not path /media/*
   }
-  
+
 
   # Serving dynamic requests:
   reverse_proxy @noStatic django:8000
