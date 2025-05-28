@@ -1,14 +1,12 @@
-FROM fedora:37
+FROM fedora:42
 
 # Include deps
-RUN curl -s -L https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo | tee /etc/yum.repos.d/cuda.repo && \
-    curl -s -L https://nvidia.github.io/nvidia-docker/rhel9.0/nvidia-docker.repo | tee /etc/yum.repos.d/nvidia-docker.repo && \
-    rpm -Uvh http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
-    rpm -Uvh http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
+RUN dnf -y install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
+    dnf -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
+    dnf -y config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora41/$(uname -m)/cuda-fedora41.repo && \
+    dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
     dnf -y update && \
-    dnf module install -y nvidia-driver:latest-dkms && \
-    dnf -y install podman fuse-overlayfs python3.9 nvidia-container-runtime nvidia-container-toolkit \
-     cuda --exclude container-selinux && \
+    dnf -y install podman fuse-overlayfs python3.9 nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
@@ -48,13 +46,13 @@ ENV CONTAINER_ENGINE_EXECUTABLE podman
 RUN mkdir /codabench && \
     chown worker:worker /codabench && \
 # Set up podman registry for dockerhub
-    echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf && \
+    echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf
 
 WORKDIR /home/worker/compute_worker
 
 ADD compute_worker/ /home/worker/compute_worker
 
-RUN curl -sSL https://install.python-poetry.org | python3.9 -
+RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.8.3
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
@@ -68,7 +66,7 @@ RUN poetry install
 
 RUN chown worker:worker -R /home/worker/compute_worker
 
-CMD nvidia-smi && celery -A compute_worker worker \
+CMD celery -A compute_worker worker \
     -l info \
     -Q compute-worker \
     -n compute-worker@%n \
