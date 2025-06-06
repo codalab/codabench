@@ -14,6 +14,9 @@ RUN useradd worker; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
 echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
 
+# Copy the podman-connections file to allow for podman inside the container to connect to podman on the host, running containers alongside podman instead of inside
+COPY podman/podman-connections.json /home/worker/.config/containers/podman-connections.json
+
 # Copy over the podman container configuration
 COPY podman/containers.conf /etc/containers/containers.conf
 COPY podman/worker-containers.conf /home/worker/.config/containers/containers.conf
