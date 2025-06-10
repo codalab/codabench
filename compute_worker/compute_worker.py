@@ -660,8 +660,11 @@ class Run:
         ]
 
         # GPU or not
-        if os.environ.get("USE_GPU"):
+        if os.environ.get("USE_GPU") and CONTAINER_ENGINE_EXECUTABLE=='docker':
             engine_cmd.extend(['--gpus', 'all'])
+        # For podman specifically
+        if CONTAINER_ENGINE_EXECUTABLE=='podman' and os.environ.get("USE_GPU"):
+            engine_cmd.extend(['--device', 'nvidia.com/gpu=all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
