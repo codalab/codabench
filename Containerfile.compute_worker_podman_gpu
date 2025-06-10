@@ -3,19 +3,12 @@ FROM codalab/codabench_worker_podman:latest
 
 
 # Include deps
-RUN dnf -y install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
-    dnf -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
-    dnf -y config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora41/$(uname -m)/cuda-fedora41.repo && \
-    dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
+RUN dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
     dnf -y update && \
-    dnf -y install podman fuse-overlayfs python3.9 nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
+    dnf -y install nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
 # Copy & modify the defaults to provide reference if runtime changes needed.
 # Changes here are required for running with fuse-overlay storage inside container.
-RUN sed -e 's|^#mount_program|mount_program|g' \
-           -e '/additionalimage.*/a "/var/lib/shared",' \
-           -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
-           /usr/share/containers/storage.conf \
-           > /etc/containers/storage.conf; sed -i 's/^#no-cgroups = false/no-cgroups = true/;' /etc/nvidia-container-runtime/config.toml
+RUN sed -i 's/^#no-cgroups = false/no-cgroups = true/;' /etc/nvidia-container-runtime/config.toml

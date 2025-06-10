@@ -25,10 +25,10 @@ RUN mkdir -p /root/.local/share/containers && \
 # Copy & modify the defaults to provide reference if runtime changes needed.
 # Changes here are required for running with fuse-overlay storage inside container.
 RUN sed -e 's|^#mount_program|mount_program|g' \
-           -e '/additionalimage.*/a "/var/lib/shared",' \
-           -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
-           /usr/share/containers/storage.conf \
-           > /etc/containers/storage.conf
+        -e '/additionalimage.*/a "/var/lib/shared",' \
+        -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
+        /usr/share/containers/storage.conf \
+        > /etc/containers/storage.conf
 
 # Add volume for containers
 VOLUME /root/.local/share/containers
