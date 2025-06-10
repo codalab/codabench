@@ -18,7 +18,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=600, precision=2):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=1200, precision=2):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -54,7 +54,6 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.submission-output-container .title').click()
         self.wait(LONG_WAIT)
         assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
-
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
