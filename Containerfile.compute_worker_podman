@@ -9,23 +9,18 @@ RUN dnf -y update && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
-# Setup user
-RUN useradd worker; \
-echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
-echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
-
 # Copy the podman-connections file to allow for podman inside the container to connect to podman on the host, running containers alongside podman instead of inside
-COPY podman/podman-connections.json /home/worker/.config/containers/podman-connections.json
+COPY podman/podman-connections.json /root/.config/containers/podman-connections.json
 
 # Copy over the podman container configuration
 COPY podman/containers.conf /etc/containers/containers.conf
-COPY podman/worker-containers.conf /home/worker/.config/containers/containers.conf
+COPY podman/worker-containers.conf /root/.config/containers/containers.conf
 
 # Copy over the podman storage configuration
-COPY podman/worker-storage.conf /home/worker/.config/containers/storage.conf
+COPY podman/worker-storage.conf /root/.config/containers/storage.conf
 
-RUN mkdir -p /home/worker/.local/share/containers && \
-    chown worker:worker -R /home/worker && \
+RUN mkdir -p /root/.local/share/containers && \
+    chown root:root -R /root && \
     chmod 644 /etc/containers/containers.conf
 
 # Copy & modify the defaults to provide reference if runtime changes needed.
@@ -37,11 +32,11 @@ RUN sed -e 's|^#mount_program|mount_program|g' \
            > /etc/containers/storage.conf
 
 # Add volume for containers
-VOLUME /home/worker/.local/share/containers
+VOLUME /root/.local/share/containers
 
 # Create directory for tmp space
 RUN mkdir /codabench && \
-    chown worker:worker /codabench
+    chown root:root /codabench
 
 # Set up podman registry for dockerhub
 RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf
@@ -50,11 +45,11 @@ RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/container
 ENV PYTHONUNBUFFERED 1
 ENV CONTAINER_ENGINE_EXECUTABLE podman
 
-WORKDIR /home/worker/compute_worker
+WORKDIR /root/compute_worker
 
-ADD compute_worker/ /home/worker/compute_worker
+ADD compute_worker/ /root/compute_worker
 
-RUN chown worker:worker -R /home/worker/compute_worker
+RUN chown root:root -R /root/compute_worker
 
 RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.8.3
 # Poetry location so future commands (below) work
