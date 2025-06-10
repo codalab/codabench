@@ -2,8 +2,6 @@ FROM fedora:42
 
 # Include deps
 RUN dnf -y update && \
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1995337#c3
-    rpm --setcaps shadow-utils 2>/dev/null && \
     dnf -y install podman fuse-overlayfs python3.9 \
         --exclude container-selinux && \
     dnf clean all && \
@@ -19,8 +17,7 @@ COPY podman/worker-containers.conf /root/.config/containers/containers.conf
 # Copy over the podman storage configuration
 COPY podman/worker-storage.conf /root/.config/containers/storage.conf
 
-RUN mkdir -p /root/.local/share/containers && \
-    chmod 644 /etc/containers/containers.conf
+RUN mkdir -p /root/.local/share/containers
 
 # Copy & modify the defaults to provide reference if runtime changes needed.
 # Changes here are required for running with fuse-overlay storage inside container.
@@ -33,9 +30,6 @@ RUN sed -e 's|^#mount_program|mount_program|g' \
 # Add volume for containers
 VOLUME /root/.local/share/containers
 
-# Create directory for tmp space
-RUN mkdir /codabench
-
 # Set up podman registry for dockerhub
 RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf
 
@@ -47,14 +41,14 @@ WORKDIR /root/compute_worker
 
 ADD compute_worker/ /root/compute_worker
 
-RUN chown root:root -R /root/compute_worker
-
 RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.8.3
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
+
 # Want poetry to use system python of docker container
 RUN poetry config virtualenvs.create false
 RUN poetry config virtualenvs.in-project false
+
 # So we get 3.9
 RUN poetry config virtualenvs.prefer-active-python true
 COPY ./compute_worker/pyproject.toml ./

@@ -1,6 +1,4 @@
-#FROM fedora:42
 FROM codalab/codabench_worker_podman:latest
-
 
 # Include deps
 RUN dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
@@ -8,7 +6,3 @@ RUN dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnv
     dnf -y install nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
-
-# Copy & modify the defaults to provide reference if runtime changes needed.
-# Changes here are required for running with fuse-overlay storage inside container.
-RUN sed -i 's/^#no-cgroups = false/no-cgroups = true/;' /etc/nvidia-container-runtime/config.toml
