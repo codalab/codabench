@@ -644,21 +644,27 @@ class Run:
             # Don't allow subprocesses to raise privileges
             '--security-opt=no-new-privileges',
 
-            # Set the volumes
-            '-v', f'{self._get_host_path(program_dir)}:/app/program',
-            '-v', f'{self._get_host_path(self.output_dir)}:/app/output',
+            # Set the volumes, ro for Read Only, and z to allow multiple containers to access the volume (useful for podman)
+            '-v', f'{self._get_host_path(program_dir)}:/app/program:z',
+            '-v', f'{self._get_host_path(self.output_dir)}:/app/output:z',
             '-v', f'{self.data_dir}:/app/data:ro',
 
             # Start in the right directory
             '-w', '/app/program',
-
+            
+            # Set the user namespace mode for the container
+            '--userns', 'host',
+            '--cap-drop', 'all', 
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
 
         # GPU or not
-        if os.environ.get("USE_GPU"):
+        if os.environ.get("USE_GPU") and CONTAINER_ENGINE_EXECUTABLE=='docker':
             engine_cmd.extend(['--gpus', 'all'])
+        # For podman specifically
+        if CONTAINER_ENGINE_EXECUTABLE=='podman' and os.environ.get("USE_GPU"):
+            engine_cmd.extend(['--device', 'nvidia.com/gpu=all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
