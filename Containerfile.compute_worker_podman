@@ -20,7 +20,6 @@ COPY podman/worker-containers.conf /root/.config/containers/containers.conf
 COPY podman/worker-storage.conf /root/.config/containers/storage.conf
 
 RUN mkdir -p /root/.local/share/containers && \
-    chown root:root -R /root && \
     chmod 644 /etc/containers/containers.conf
 
 # Copy & modify the defaults to provide reference if runtime changes needed.
@@ -35,8 +34,7 @@ RUN sed -e 's|^#mount_program|mount_program|g' \
 VOLUME /root/.local/share/containers
 
 # Create directory for tmp space
-RUN mkdir /codabench && \
-    chown root:root /codabench
+RUN mkdir /codabench
 
 # Set up podman registry for dockerhub
 RUN echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf
