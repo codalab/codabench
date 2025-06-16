@@ -225,6 +225,8 @@
 
         }
         self.setup_websocket = function () {
+            // Add message tracking
+            self.processed_messages = new Set();
             // Submission stream handler
             var url = new URL('/submission_output/', window.location.href);
             url.protocol = url.protocol.replace('http', 'ws');
@@ -237,6 +239,16 @@
             self.ws.addEventListener("message", function (event) {
                 self.autoscroll_output()
                 let event_data = JSON.parse(event.data)
+                // Generate message signature for deduplication
+                const msg_signature = `${event_data.type}-${event_data.submission_id}-${JSON.stringify(event_data.data)}`;
+                // Skip if we've already processed this exact message
+                if (self.processed_messages.has(msg_signature)) {
+                    console.log("Skipping duplicate message:", msg_signature);
+                    return;
+                }
+                
+                // Track this message
+                self.processed_messages.add(msg_signature);
                 switch (event_data.type) {
                     case 'catchup':
                         let detailed_result_url = ''
@@ -257,9 +269,16 @@
                 }
             })
             self.ws.addEventListener("open", function(event){
+                console.log("WebSocket connected");
                 // we're connected, so now try to pull logs (otherwise we may hit a race condition,
                 // maybe we don't have submissions yet?)
                 self.pull_logs()
+            })
+            self.ws.addEventListener("close", function(event) {
+                console.log("WebSocket disconnected, reconnecting...");
+            })
+            self.ws.addEventListener("error", function(event) {
+                console.error("WebSocket error:", event);
             })
             self.ws.open()
         }

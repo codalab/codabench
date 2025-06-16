@@ -43,7 +43,8 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
-    'drf_yasg',
+    # 'drf_yasg',
+    'drf_yasg2',
     'redis',
 )
 OUR_APPS = (
