@@ -611,7 +611,7 @@ class Run:
         Function responsible for running program directory
 
         Args:
-            - program_dir : can be either ingestion program or program/submission
+            - program_dir : can be either ingestion program or program(submission or scoring)
             - kind : either `program` or `ingestion`
         """
         # If the directory doesn't even exist, move on
