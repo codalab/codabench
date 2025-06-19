@@ -45,6 +45,7 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'hide_output',
             'hide_prediction_output',
             'hide_score_output',
+            'accepts_only_result_submissions',
             'leaderboard',
             'public_data',
             'starting_kit',
@@ -128,6 +129,7 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'hide_output',
             'hide_prediction_output',
             'hide_score_output',
+            'accepts_only_result_submissions',
             # no leaderboard
             'public_data',
             'starting_kit',

@@ -219,6 +219,7 @@ class Run:
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
+        self.submission_is_result_only = run_args["submission_is_result_only"]  # true when the submission phase only accepts results submissions
         self.user_pk = run_args["user_pk"]
         self.submission_id = run_args["id"]
         self.submissions_api_url = run_args["submissions_api_url"]
@@ -585,7 +586,16 @@ class Run:
 
     async def _run_program_directory(self, program_dir, kind):
         """
-        Function responsible for running program directory
+        This function is executed 2 times during the ingestion and scoring.
+        Ingestion:
+            - During ingestion this function is called for program(submission) and ingestion
+            - For ingestion, a metadata file is expected and if not provided, an error is raised
+            - For program(submission), a metadata file is optional
+
+        Scoring:
+            - During scoring this function is called for program(scoring) and ingestion
+            - Because there is no ingestion during scoring, the function returns without executing ingestion
+            - For program(scoring), a metadata file is optional
 
         Args:
             - program_dir : can be either ingestion program or program(submission or scoring)
@@ -599,6 +609,9 @@ class Run:
             self.completed_program_counter += 1
             return
 
+        # metadata or metadata.yaml file is optional for program(submission/scoring)
+        # result submission is not supposed to have metadata file because it has no program to run just some predictions
+        # if a code submission has no metadata file, it means the ingestion knows how to run the code submission without a metadata file
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
             metadata_path = 'metadata.yaml'
         elif os.path.exists(os.path.join(program_dir, "metadata")):
@@ -609,13 +622,19 @@ class Run:
                 logger.info(
                     "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
-                # Copy program dir content to output directory because in case of only result submission, 
+                # Copy only if is result only phase i.e. self.submission_is_result_only is True
+                # Copy program dir content to output directory because in case of only result submission,
                 # we need to copy the result submission files because the scoring program will use these as predictions
-                shutil.copytree(program_dir, self.output_dir)
+                print(f"---IHSAN---{self.submission_is_result_only}")
+                if self.submission_is_result_only:
+                    shutil.copytree(program_dir, self.output_dir)
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
 
+        # If metadata file is found, then we check for command in the metadata
+        # If command is not there for ingestion, an error is raised
+        # If command is not there for submission/scoring, a warning is displayed
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), 'r') as metadata_file:
             try:  # try to find a command in the metadata, in other cases set metadata to None

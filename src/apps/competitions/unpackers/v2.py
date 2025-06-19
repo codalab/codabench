@@ -200,6 +200,7 @@ class V2Unpacker(BaseUnpacker):
                 'hide_output': phase_data.get('hide_output', False),
                 'hide_prediction_output': phase_data.get('hide_prediction_output', False),
                 'hide_score_output': phase_data.get('hide_score_output', False),
+                'accepts_only_result_submissions': phase_data.get('accepts_only_result_submissions', False)
             }
             try:
                 new_phase['tasks'] = phase_data['tasks']

@@ -357,6 +357,8 @@ class Phase(ChaHubSaveMixin, models.Model):
     public_data = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_public_data")
     starting_kit = models.ForeignKey('datasets.Data', on_delete=models.SET_NULL, null=True, blank=True, related_name="phase_starting_kit")
 
+    accepts_only_result_submissions = models.BooleanField(default=False)
+
     class Meta:
         ordering = ('index',)
 
