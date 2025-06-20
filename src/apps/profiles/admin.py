@@ -8,7 +8,7 @@ class UserAdmin(admin.ModelAdmin):
     change_form_template = "admin/auth/user/change_form.html"
     change_list_template = "admin/auth/user/change_list.html"
     search_fields = ['username', 'email']
-    list_filter = ['is_staff', 'is_superuser', 'deleted', 'is_deleted', 'is_bot']
+    list_filter = ['is_staff', 'is_superuser', 'is_deleted', 'is_bot']
     list_display = ['username', 'email', 'is_staff', 'is_superuser']
 
 
