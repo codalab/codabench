@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from celery_config import app
 from django.contrib.auth import get_user_model
 from profiles.models import DeletedUser
+from competitions.models import Competition, Submission
 
 logger = logging.getLogger()
 
@@ -40,8 +41,22 @@ def clean_non_activated_users():
         # Calculate the threshold date (3 days ago)
         three_days_ago = now() - timedelta(days=3)
 
-        # Delete users who have not activated their accounts in 3 days
-        deleted_count, _ = User.objects.filter(is_active=False, is_deleted=False, date_joined__lt=three_days_ago).delete()
+        # Filter users who are inactive, not deleted and created more than 3 days ago
+        users_to_delete = User.objects.filter(
+            is_active=False,
+            is_deleted=False,
+            date_joined__lt=three_days_ago
+        )
+
+        # Exclude users who have created any competitions or made submissions
+        users_to_delete = users_to_delete.exclude(
+            id__in=Competition.objects.values_list('created_by_id', flat=True)
+        ).exclude(
+            id__in=Submission.objects.values_list('owner_id', flat=True)
+        )
+
+        # Delete users
+        deleted_count, _ = users_to_delete.delete()
 
         logger.info(f"Deleted {deleted_count} non activated users from User table.")
 
