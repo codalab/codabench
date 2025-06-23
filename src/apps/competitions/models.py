@@ -4,7 +4,6 @@ import io
 
 import botocore.exceptions
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.contrib.postgres.fields import JSONField
 from django.core.files.base import ContentFile
 from django.db import models
@@ -14,7 +13,6 @@ from django.utils.timezone import now
 from decimal import Decimal
 
 from celery_config import app, app_for_vhost
-from chahub.models import ChaHubSaveMixin
 from leaderboards.models import SubmissionScore
 from profiles.models import User, Organization
 from utils.data import PathWrapper
@@ -27,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Competition(ChaHubSaveMixin, models.Model):
+class Competition(models.Model):
     COMPETITION = "competition"
     BENCHMARK = "benchmark"
 
@@ -206,46 +204,6 @@ class Competition(ChaHubSaveMixin, models.Model):
     def get_absolute_url(self):
         return reverse('competitions:detail', kwargs={'pk': self.pk})
 
-    @staticmethod
-    def get_chahub_endpoint():
-        return "competitions/"
-
-    def get_chahub_is_valid(self):
-        has_phases = self.phases.exists()
-        upload_finished = all([c.status == CompetitionCreationTaskStatus.FINISHED for c in
-                               self.creation_statuses.all()]) if self.creation_statuses.exists() else True
-        return has_phases and upload_finished
-
-    def get_whitelist(self):
-        return [
-            'remote_id',
-            'participants',
-            'phases',
-            'published',
-        ]
-
-    def get_chahub_data(self):
-        data = {
-            'created_by': self.created_by.username,
-            'creator_id': self.created_by.pk,
-            'created_when': self.created_when.isoformat(),
-            'title': self.title,
-            'url': f'http://{Site.objects.get_current().domain}{self.get_absolute_url()}',
-            'remote_id': self.pk,
-            'published': self.published,
-            'participants': [p.get_chahub_data() for p in self.participants.all()],
-            'phases': [phase.get_chahub_data(send_competition_id=False) for phase in self.phases.all()],
-        }
-        start = getattr(self.phases.order_by('index').first(), 'start', None)
-        data['start'] = start.isoformat() if start is not None else None
-        end = getattr(self.phases.order_by('index').last(), 'end', None)
-        data['end'] = end.isoformat() if end is not None else None
-        if self.logo:
-            data['logo_url'] = self.logo.url
-            data['logo'] = self.logo.url
-
-        return self.clean_private_data(data)
-
     def make_logo_icon(self):
         if self.logo:
             # Read the content of the logo file
@@ -318,7 +276,7 @@ class CompetitionCreationTaskStatus(models.Model):
         return f"pk: {self.pk} ({self.status})"
 
 
-class Phase(ChaHubSaveMixin, models.Model):
+class Phase(models.Model):
     PREVIOUS = "Previous"
     CURRENT = "Current"
     NEXT = "Next"
@@ -387,30 +345,6 @@ class Phase(ChaHubSaveMixin, models.Model):
             if total_submission_count >= self.max_submissions_per_person:
                 return False, 'Reached maximum allowed submissions for this phase'
         return True, None
-
-    @staticmethod
-    def get_chahub_endpoint():
-        return 'phases/'
-
-    def get_whitelist(self):
-        return ['remote_id', 'published', 'tasks', 'index', 'status', 'competition_remote_id']
-
-    def get_chahub_data(self, send_competition_id=True):
-        data = {
-            'remote_id': self.pk,
-            'published': self.published,
-            'status': self.status,
-            'index': self.index,
-            'start': self.start.isoformat(),
-            'end': self.end.isoformat() if self.end else None,
-            'name': self.name,
-            'description': self.description,
-            'is_active': self.is_active,
-            'tasks': [task.get_chahub_data() for task in self.tasks.all()]
-        }
-        if send_competition_id:
-            data['competition_remote_id'] = self.competition.pk
-        return self.clean_private_data(data)
 
     @property
     def is_active(self):
@@ -488,7 +422,7 @@ class SubmissionDetails(models.Model):
         return super().save(*args, **kwargs)
 
 
-class Submission(ChaHubSaveMixin, models.Model):
+class Submission(models.Model):
     NONE = "None"
     SUBMITTING = "Submitting"
     SUBMITTED = "Submitted"
@@ -779,37 +713,8 @@ class Submission(ChaHubSaveMixin, models.Model):
             on_leaderboard = bool(self.children.first().leaderboard)
         return on_leaderboard
 
-    @staticmethod
-    def get_chahub_endpoint():
-        return "submissions/"
 
-    def get_whitelist(self):
-        return [
-            'remote_id',
-            'is_public',
-            'competition',
-            'phase_index',
-            'data',
-        ]
-
-    def get_chahub_data(self):
-        data = {
-            "remote_id": self.id,
-            "is_public": self.is_public,
-            "competition": self.phase.competition_id,
-            "phase_index": self.phase.index,
-            "owner": self.owner.id,
-            "participant_name": self.owner.username,
-            "submitted_at": self.created_when.isoformat(),
-            "data": self.data.get_chahub_data(),
-        }
-        return self.clean_private_data(data)
-
-    def get_chahub_is_valid(self):
-        return self.status == self.FINISHED
-
-
-class CompetitionParticipant(ChaHubSaveMixin, models.Model):
+class CompetitionParticipant(models.Model):
     UNKNOWN = 'unknown'
     DENIED = 'denied'
     APPROVED = 'approved'
@@ -832,25 +737,6 @@ class CompetitionParticipant(ChaHubSaveMixin, models.Model):
 
     def __str__(self):
         return f"({self.id}) - User: {self.user.username} in Competition: {self.competition.title}"
-
-    @staticmethod
-    def get_chahub_endpoint():
-        return 'participants/'
-
-    def get_whitelist(self):
-        return [
-            'remote_id',
-            'competition_id'
-        ]
-
-    def get_chahub_data(self):
-        data = {
-            'remote_id': self.pk,
-            'user': self.user.id,
-            'status': self.status,
-            'competition_id': self.competition_id
-        }
-        return self.clean_private_data(data)
 
     def save(self, *args, **kwargs):
         # Determine if this is a new participant (no existing record in DB)

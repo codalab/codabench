@@ -1,9 +1,8 @@
 import uuid
 
-from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
+from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser
 from django.db import models
 from django.utils.timezone import now
-from chahub.models import ChaHubSaveMixin
 from django.utils.text import slugify
 from utils.data import PathWrapper
 from django.urls import reverse
@@ -25,14 +24,6 @@ PROFILE_DATA_BLACKLIST = [
 ]
 
 
-class ChaHubUserManager(UserManager):
-    def get_queryset(self):
-        return super().get_queryset().filter(deleted=False)
-
-    def all_objects(self):
-        return super().get_queryset()
-
-
 class DeletedUser(models.Model):
     user_id = models.IntegerField(null=True, blank=True)  # Store the same ID as in the User table
     username = models.CharField(max_length=255)
@@ -43,7 +34,7 @@ class DeletedUser(models.Model):
         return f"{self.username} ({self.email})"
 
 
-class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin):
     # Social needs the below setting. Username is not really set to UID.
     USERNAME_FIELD = 'username'
     EMAIL_FIELD = 'email'
@@ -100,9 +91,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     # Robot submissions
     is_bot = models.BooleanField(default=False)
 
-    # Required for social auth and such to create users
-    objects = ChaHubUserManager()
-
     # Soft deletion
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
@@ -126,35 +114,6 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     @property
     def slug_url(self):
         return reverse('profiles:user_profile', args=[self.slug])
-
-    @staticmethod
-    def get_chahub_endpoint():
-        return "profiles/"
-
-    def get_whitelist(self):
-        # all chahub data is ok to send
-        pass
-
-    def clean_private_data(self, data):
-        # overriding this to filter out blacklist data from above, just to make _sure_ we don't send that info
-        return {k: v for k, v in data.items() if k not in PROFILE_DATA_BLACKLIST}
-
-    def get_chahub_data(self):
-        data = {
-            'email': self.email,
-            'username': self.username,
-            'remote_id': self.pk,
-            'details': {
-                "is_active": self.is_active,
-                "last_login": self.last_login.isoformat() if self.last_login else None,
-                "date_joined": self.date_joined.isoformat() if self.date_joined else None,
-            }
-        }
-        return self.clean_private_data(data)
-
-    def get_chahub_is_valid(self):
-        # By default, always push
-        return True
 
     def get_used_storage_space(self, binary=False):
         """
