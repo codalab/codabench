@@ -1,6 +1,6 @@
 import uuid
 
-from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
 from django.utils.timezone import now
 from django.utils.text import slugify
@@ -22,6 +22,14 @@ PROFILE_DATA_BLACKLIST = [
     'groups',
     'user_permissions'
 ]
+
+
+class CodabenchUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter()
+
+    def all_objects(self):
+        return super().get_queryset()
 
 
 class DeletedUser(models.Model):
@@ -90,6 +98,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Robot submissions
     is_bot = models.BooleanField(default=False)
+
+    # Required for social auth and such to create users
+    objects = CodabenchUserManager()
 
     # Soft deletion
     is_deleted = models.BooleanField(default=False)
