@@ -611,7 +611,7 @@ class Run:
         Function responsible for running program directory
 
         Args:
-            - program_dir : can be either ingestion program or program(submission or scoring)
+            - program_dir : can be either ingestion program or program/submission
             - kind : either `program` or `ingestion`
         """
         # If the directory doesn't even exist, move on
@@ -632,9 +632,11 @@ class Run:
                 logger.warning(
                     "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
+
                 # Copy submission files into prediction output
                 # This is useful for results submissions but wrongly uses storage
                 shutil.copytree(program_dir, self.output_dir)
+
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
