@@ -538,8 +538,48 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
+
+        # Receive filters from request query params
+        search = request.query_params.get("search")
+        ordering = request.query_params.get("ordering")
+        participating_in = request.query_params.get("participating_in", "false").lower() == "true"
+        organizing = request.query_params.get("organizing", "false").lower() == "true"
+
+        # If user is not authenticated but trying to use filters that require authentication
+        if not request.user.is_authenticated and (participating_in or organizing):
+            return Response(
+                {"detail": "Authentication required for filtering by participating in or organizing."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         qs = Competition.objects.filter(published=True)
-        qs = qs.order_by('-id')
+
+        # Filter by title (search)
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        # Filter by participation
+        if participating_in:
+            participant_comp_ids = CompetitionParticipant.objects.filter(
+                user=request.user,
+                status="approved"
+            ).values_list("competition_id", flat=True)
+            qs = qs.filter(id__in=participant_comp_ids)
+
+        # Filter by organizing (created_by or collaborator)
+        if organizing:
+            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user))
+
+        # Apply ordering
+        if ordering == "recent":
+            qs = qs.order_by("-id")  # most recently created
+        elif ordering == "popular":
+            qs = qs.order_by("-participants_count")
+        elif ordering == "with_most_submissions":
+            qs = qs.order_by("-submissions_count")
+        else:
+            qs = qs.order_by("-id")  # default fallback
+
         queryset = self.filter_queryset(qs)
         page = self.paginate_queryset(queryset)
         if page is not None:

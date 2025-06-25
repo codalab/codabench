@@ -456,6 +456,8 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'contact_email',
             'report',
             'is_featured',
+            'submissions_count',
+            'participants_count'
         )
 
     def get_created_by(self, obj):
