@@ -1,15 +1,15 @@
 import os
 import django
 
-# For some reason this usually need to be between lines 2 and 3 to work properly
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-from django.core.asgi import get_asgi_application
-
-import routing  # or wherever your websocket_urlpatterns are
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.develop")
 django.setup()
+
+# Django components must be imported after django.setup() - ignore flake8 import order
+from channels.routing import ProtocolTypeRouter, URLRouter   # noqa: E402
+from channels.auth import AuthMiddlewareStack   # noqa: E402
+from django.core.asgi import get_asgi_application   # noqa: E402
+
+import routing  # noqa: E402
 
 
 application = ProtocolTypeRouter({
