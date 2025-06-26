@@ -98,7 +98,7 @@
 
   <script>
     var self = this
-    self.seach_timer = null
+    self.search_timer = null
     self.competitions = {}
 
     // Filters state dictionary to keep track of which filters to apply
