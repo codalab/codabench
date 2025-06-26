@@ -20,9 +20,22 @@ class PublicCompetitionsTests(TestCase):
         self.client.force_authenticate(user=self.user)
 
         # Competitions
-        self.competition1 = CompetitionFactory(title="AI Challenge", published=True, created_by=self.organizer)
-        self.competition2 = CompetitionFactory(title="Vision Contest", published=True)
-        self.competition3 = CompetitionFactory(title="ML Challenge", published=True, created_by=self.other_user)
+        self.competition1 = CompetitionFactory(
+            title="AI Challenge",
+            published=True,
+            created_by=self.organizer,
+            reward="First prize: $5000"
+        )
+        self.competition2 = CompetitionFactory(
+            title="Vision Contest",
+            published=True
+        )
+        self.competition3 = CompetitionFactory(
+            title="ML Challenge",
+            published=True,
+            created_by=self.other_user,
+            reward="Trophy + certificate"
+        )
 
         # Add collaborators
         self.competition1.collaborators.add(self.user)
@@ -200,3 +213,20 @@ class PublicCompetitionsTests(TestCase):
             response.data["detail"],
             "Authentication required for filtering by participating in or organizing."
         )
+
+    def test_filter_by_has_reward(self):
+        # Send a GET request to filter competitions that have a reward
+        response = self.client.get("/api/competitions/public/?has_reward=true")
+
+        # Ensure the response is successful with 200 OK status
+        self.assertEqual(response.status_code, 200)
+
+        # Extract the competition IDs returned in the response
+        returned_ids = [comp["id"] for comp in response.data["results"]]
+
+        # Check that competitions with rewards are returned
+        self.assertIn(self.competition1.id, returned_ids)
+        self.assertIn(self.competition3.id, returned_ids)
+
+        # Check that competition without a reward is not included
+        self.assertNotIn(self.competition2.id, returned_ids)

@@ -544,6 +544,7 @@ class CompetitionViewSet(ModelViewSet):
         ordering = request.query_params.get("ordering")
         participating_in = request.query_params.get("participating_in", "false").lower() == "true"
         organizing = request.query_params.get("organizing", "false").lower() == "true"
+        has_reward = request.query_params.get("has_reward", "false").lower() == "true"
 
         # If user is not authenticated but trying to use filters that require authentication
         if not request.user.is_authenticated and (participating_in or organizing):
@@ -579,6 +580,10 @@ class CompetitionViewSet(ModelViewSet):
             qs = qs.order_by("-submissions_count")
         else:
             qs = qs.order_by("-id")  # default fallback
+
+        # Applying has reward
+        if has_reward:
+            qs = qs.exclude(reward__isnull=True).exclude(reward__exact='')
 
         queryset = self.filter_queryset(qs)
         page = self.paginate_queryset(queryset)

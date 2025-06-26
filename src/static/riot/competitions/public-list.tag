@@ -13,7 +13,9 @@
         <!--  Search by title filter  -->
         <div class="filter-group">
             <label class="filter-label" for="search-title"><strong>Search by Title</strong></label>
-            <input type="text" id="search-title" oninput="{on_title_input}" placeholder="Enter title...">
+            <div class="ui input">
+              <input type="text" id="search-title" oninput="{on_title_input}" placeholder="Enter title...">
+            </div>
         </div>
 
         <!-- Order by filter   -->
@@ -31,9 +33,15 @@
             <label><input type="checkbox" onchange="{toggle_organizing}"> Organizing</label>
         </div>
 
+        <!-- Your Other filter   -->
+        <div class="filter-group">
+            <strong class="filter-label">Other filters</strong>
+            <label><input type="checkbox" onchange="{toggle_has_reward}"> Has reward</label>
+        </div>
+
         <!--  Clear filters  -->
         <div class="filter-group" show="{should_show_clear_filters()}">
-            <button class="clear-filters-btn" onclick="{clear_all_filters}">Clear All Filters</button>
+            <button class="clear-filters-btn ui button" onclick="{clear_all_filters}">Clear All Filters</button>
         </div>
     </div>
 
@@ -68,13 +76,23 @@
         </div>
       </div>
 
-      <div class="pagination-nav" hide="{(competitions.count < 20)}">
+      <!-- Show when there are no competitions in the list -->
+      <div class="no-results-message" if="{competitions.results && competitions.results.length === 0}">
+        <div class="ui warning message">
+          <div class="header">No competitions found</div>
+          Try changing your filters or search term.
+        </div>
+      </div>
+
+      <!--  Pagination  -->
+      <div class="pagination-nav" if="{competitions.next || competitions.previous}">
         <button show="{competitions.previous}" onclick="{handle_ajax_pages.bind(this, -1)}" class="float-left ui inline button active">Back</button>
         <button hide="{competitions.previous}" disabled="disabled" class="float-left ui inline button disabled">Back</button>
         { current_page } of {Math.ceil(competitions.count/competitions.page_size)}
         <button show="{competitions.next}" onclick="{handle_ajax_pages.bind(this, 1)}" class="float-right ui inline button active">Next</button>
         <button hide="{competitions.next}" disabled="disabled" class="float-right ui inline button disabled">Next</button>
       </div>
+
     </div>
   </div>
 
@@ -88,7 +106,8 @@
         search: '',
         ordering: '',
         participating_in: false,
-        organizing: false
+        organizing: false,
+        has_reward: false
     }
     // Function to set search title (triggered when title is typed in the text box)
     self.on_title_input = function(e) {
@@ -122,11 +141,17 @@
         self.update()
         self.update_competitions_list(1)
     }
+    // Function to toggle has reward (triggered when the checkbox is checked/uncheked)
+    self.toggle_has_reward = function(e) {
+        self.filter_state.has_reward = e.target.checked
+        self.update()
+        self.update_competitions_list(1)
+    }
 
     // Function that decides to show clear filter button or not
     self.should_show_clear_filters = function () {
-        const { search, ordering, participating_in, organizing } = self.filter_state
-        return search || ordering || participating_in || organizing
+        const { search, ordering, participating_in, organizing, has_reward } = self.filter_state
+        return search || ordering || participating_in || organizing || has_reward
     }
     // Function to clear all filters
     self.clear_all_filters = function() {
@@ -134,7 +159,8 @@
             search: '',
             ordering: '',
             participating_in: false,
-            organizing: false
+            organizing: false,
+            has_reward: false
         }
 
         // Clear inputs
@@ -190,7 +216,8 @@
             "search": self.filter_state.search,
             "ordering": self.filter_state.ordering,
             "participating_in": self.filter_state.participating_in,
-            "organizing": self.filter_state.organizing
+            "organizing": self.filter_state.organizing,
+            "has_reward": self.filter_state.has_reward
         })
         .fail(function (resp) {
             $('#loading').hide()
@@ -278,7 +305,7 @@
         input[type="text"]
             width 100%
             padding 5px
-            margin 5px 0 15px 0
+            margin 5px 0 5px 0
             border 1px solid #ddd
             border-radius 4px
 
