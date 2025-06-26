@@ -54,7 +54,6 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.submission-output-container .title').click()
         self.wait(LONG_WAIT)
         assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
-
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
