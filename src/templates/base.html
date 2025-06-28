@@ -95,7 +95,7 @@
                     </div>
                 </span>
                 <div class="right menu item">
-                    <div id="competition_dropdown" class="ui dropdown item">
+                    <!-- <div id="competition_dropdown" class="ui dropdown item">
                         <div class="text">
                             <i class="ui small trophy icon"></i>
                             Benchmarks
@@ -106,15 +106,23 @@
                             <a class="item" href="{% url "competitions:management" %}">Management</a>
                             <a class="item" href="{% url "competitions:public" %}">Public</a>
                         </div>
-                    </div>
-                    <a class="item" href="{% url "tasks:task_management" %}">
+                    </div> -->
+                    <a class="item" href="{% url "competitions:public" %}">
+                        <i selenium="tasks" class="ui small trophy icon"></i>
+                        Benchmarks/Competitions
+                    </a>
+                    <a class="item" href="{% url "datasets:public" %}">
+                        <i selenium="tasks" class="ui small database icon"></i>
+                        Datasets
+                    </a>
+                    <!-- <a class="item" href="{% url "tasks:task_management" %}">
                         <i selenium="tasks" class="ui small file icon"></i>
                         Resources
-                    </a>
-                    <a class="item" href="{% url "queues:management" %}">
+                    </a> -->
+                    <!-- <a class="item" href="{% url "queues:management" %}">
                         <i class="ui small computer icon"></i>
                         Queue Management
-                    </a>
+                    </a> -->
                     {% if user.is_authenticated %}
                         <div id="user_dropdown" class="ui dropdown item">
                             <div class="text">
@@ -138,6 +146,20 @@
 {#                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch#}
 {#                                        User</a>#}
                                 {% endif %}
+                                <div class="ui divider"></div>
+                                <div class="header">My Resources</div>
+                                <a class="item" href="{% url 'competitions:management' %}">
+                                    <i class="icon trophy"></i>
+                                    Competitions
+                                </a>
+                                <a class="item" href="{% url 'tasks:task_management' %}">
+                                    <i class="icon file"></i>
+                                    Resources
+                                </a>
+                                 <a class="item" href="{% url 'queues:management' %}">
+                                    <i class="icon computer"></i>
+                                    Queues
+                                </a>
                                 <div class="ui divider"></div>
                                 <div class="header">Account</div>
                                 <a class="item" href="{% url 'profiles:user_profile' username=user.username %}">
