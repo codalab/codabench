@@ -181,8 +181,6 @@ class SubmissionViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         submission = self.get_object()
 
-        print("AAA---")
-
         if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
             raise PermissionDenied("Cannot interact with submission you did not make")
 
