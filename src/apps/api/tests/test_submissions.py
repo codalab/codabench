@@ -22,6 +22,7 @@ class SubmissionAPITests(APITestCase):
         self.collaborator = UserFactory(username='collab', password='collab')
         self.comp = CompetitionFactory(created_by=self.creator, collaborators=[self.collaborator])
         self.phase = PhaseFactory(competition=self.comp)
+        self.leaderboard = LeaderboardFactory()
 
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
@@ -41,7 +42,16 @@ class SubmissionAPITests(APITestCase):
             phase=self.phase,
             owner=self.participant,
             status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-bbc8-bbe91f42d875'
+            secret='7df3600c-1234-5678-bbc8-bbe91f42d875',
+            leaderboard=None
+        )
+
+        # add submission with that is on the leaderboard
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.SUBMITTED,
+            leaderboard=self.leaderboard
         )
 
     def test_can_make_submission_checks_if_you_are_participant(self):
@@ -95,33 +105,38 @@ class SubmissionAPITests(APITestCase):
         # As anonymous user
         resp = self.client.delete(url)
         assert resp.status_code == 403
-        assert resp.data["detail"] == "Cannot interact with submission you did not make"
+        assert resp.data["detail"] == "You do not have permission to delete this submission!"
 
         # As regular user
         self.client.force_login(self.other_user)
         resp = self.client.delete(url)
         assert resp.status_code == 403
-        assert resp.data["detail"] == "Cannot interact with submission you did not make"
+        assert resp.data["detail"] == "You do not have permission to delete this submission!"
 
+    def test_can_delete_submission_you_created(self):
+        url = reverse('submission-detail', args=(self.existing_submission.pk,))
         # As user who made submission
         self.client.force_login(self.participant)
         resp = self.client.delete(url)
         assert resp.status_code == 204
         assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
 
-        # As superuser (re-making submission since it has been destroyed)
-        self.existing_submission = SubmissionFactory(
-            phase=self.phase,
-            owner=self.participant,
-            status=Submission.SUBMITTED,
-            secret='7df3600c-1234-5678-90c8-bbe91f42d875'
-        )
+    def test_super_user_can_delete_submission_you_created(self):
         url = reverse('submission-detail', args=(self.existing_submission.pk,))
 
         self.client.force_login(self.superuser)
         resp = self.client.delete(url)
         assert resp.status_code == 204
         assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
+
+    def test_cannot_delete_leaderboard_submission_you_created(self):
+        url = reverse('submission-detail', args=(self.leaderboard_submission.pk,))
+
+        self.client.force_login(self.participant)
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 403
+        assert resp.data["detail"] == "You cannot delete a leaderboard submission!"
 
     def test_cannot_get_details_of_submission_unless_creator_collab_or_superuser(self):
         url = reverse('submission-get-details', args=(self.existing_submission.pk,))
