@@ -216,6 +216,7 @@ PHASES = [
         'hide_output': False,
         'hide_prediction_output': False,
         'hide_score_output': False,
+        'accepts_only_result_submissions': False
     },
     {
         'index': 1,
@@ -236,6 +237,7 @@ PHASES = [
         'hide_output': False,
         'hide_prediction_output': False,
         'hide_score_output': False,
+        'accepts_only_result_submissions': False
     }
 ]
 

@@ -84,6 +84,7 @@ PHASE_FIELDS = [
     'hide_output',
     'hide_prediction_output',
     'hide_score_output',
+    'accepts_only_result_submissions',
 ]
 PHASE_FILES = [
     "input_data",
@@ -130,6 +131,7 @@ def _send_to_compute_worker(submission, is_scoring):
         "execution_time_limit": min(MAX_EXECUTION_TIME_LIMIT, submission.phase.execution_time_limit),
         "id": submission.pk,
         "is_scoring": is_scoring,
+        "submission_is_result_only": submission.phase.accepts_only_result_submissions
     }
 
     if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:

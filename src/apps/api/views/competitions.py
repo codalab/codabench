@@ -277,6 +277,7 @@ class CompetitionViewSet(ModelViewSet):
                             hide_output=phase["hide_output"],
                             hide_prediction_output=phase["hide_prediction_output"],
                             hide_score_output=phase["hide_score_output"],
+                            accepts_only_result_submissions=phase["accepts_only_result_submissions"],
                             competition=Competition.objects.get(id=data['id'])
                         )
                         # Get phase id
