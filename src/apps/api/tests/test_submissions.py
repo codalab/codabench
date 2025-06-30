@@ -129,6 +129,14 @@ class SubmissionAPITests(APITestCase):
         assert resp.status_code == 204
         assert not Submission.objects.filter(pk=self.existing_submission.pk).exists()
 
+    def test_super_user_can_delete_leaderboard_submission_you_created(self):
+        url = reverse('submission-detail', args=(self.leaderboard_submission.pk,))
+
+        self.client.force_login(self.superuser)
+        resp = self.client.delete(url)
+        assert resp.status_code == 204
+        assert not Submission.objects.filter(pk=self.leaderboard_submission.pk).exists()
+
     def test_cannot_delete_leaderboard_submission_you_created(self):
         url = reverse('submission-detail', args=(self.leaderboard_submission.pk,))
 
