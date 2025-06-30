@@ -538,6 +538,33 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
+        """
+        Retrieve a public list of published competitions with optional filtering and ordering.
+
+        This endpoint returns a paginated list of competitions that are publicly published.
+        It supports several optional query parameters for filtering and sorting the results.
+        Some filters require the user to be authenticated.
+
+        Query Parameters:
+        -----------------
+        - search (str, optional): A search term to filter competitions by their title.
+        - ordering (str, optional): Specifies the order of the results. Supported values:
+            * "recent" - Most recently created competitions.
+            * "popular" - Competitions with the most participants.
+            * "with_most_submissions" - Competitions with the highest number of submissions.
+            Defaults to "recent" if not provided or invalid.
+        - participating_in (bool, optional): If "true", filters competitions where the user
+        is an approved participant. Requires authentication.
+        - organizing (bool, optional): If "true", filters competitions organized by the user
+        (either created or as a collaborator). Requires authentication.
+        - has_reward (bool, optional): If "true", includes only competitions that have a
+        non-empty reward field.
+
+        Returns:
+        --------
+        - 200 OK: A paginated or full list of serialized competitions matching the filter criteria. The response is serialized using `CompetitionSerializerSimple`.
+        - 401 Unauthorized: If the user tries to use filters requiring authentication while not logged in.
+        """
 
         # Receive filters from request query params
         search = request.query_params.get("search")
