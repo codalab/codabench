@@ -60,7 +60,7 @@ class TestSubmissions(SeleniumTestCase):
         # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
         self.wait(LONG_WAIT)
-        # raefresh page
+        # refresh page
         self.selenium.refresh()
         self.wait(SHORT_WAIT)
         row = self.find("tr.submission_row")
