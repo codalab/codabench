@@ -44,23 +44,23 @@ jobs:
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
 
       # Original Selenium tests which includes src/tests/functional/test_submissions.py
+      - run:
+          name: e2e tests
+          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+          no_output_timeout: 60m
+
       # - run:
       #     name: e2e tests
-      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_login.py -m e2e
       #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_login.py -m e2e
-          no_output_timeout: 60m
+      # - run:
+      #     name: e2e tests
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
+      #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
-          no_output_timeout: 60m
-
-      - store_artifacts:
-          path: artifacts/
+      # - store_artifacts:
+      #     path: artifacts/
 
 workflows:
   version: 2

@@ -8,6 +8,8 @@ from factories import UserFactory
 from tasks.models import Solution
 from utils.storage import md5
 from ..utils import SeleniumTestCase
+from selenium.webdriver.common.by import By
+
 
 LONG_WAIT = 4
 SHORT_WAIT = 0.2
@@ -53,11 +55,38 @@ class TestSubmissions(SeleniumTestCase):
         self.wait(LONG_WAIT)
         self.find('.submission-output-container .title').click()
         self.wait(LONG_WAIT)
-        assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
+
+        # Web socket needed to be solid for this to work consistently
+        ## Legacy and BB changed 07_01_2025
+        # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
+        ##
+
+        # refresh page
+        self.wait(LONG_WAIT)
+        self.selenium.refresh()
+        self.wait(SHORT_WAIT)
+        row = self.find("tr.submission_row")
+        second_td = row.find_elements(By.TAG_NAME, "td")[0]
+        self.selenium.execute_script("arguments[0].click();", second_td)
+        logs_tab = self.find('div.submission-modal.item[data-tab="admin_logs"]')
+        logs_tab.click()
+        self.wait(SHORT_WAIT)
+
+        scoring_logs_blade = self.find('div.submission-modal.item[data-tab="admin_scoring"]')
+        scoring_logs_blade.click()
+        stdout_logs_tab = self.find('div.submission-modal.item[data-tab="admin_s_stdout"]')
+        stdout_logs_tab.click()
+        pre_element = self.selenium.find_element(By.CSS_SELECTOR, 'div[data-tab="admin_s_stdout"] pre')
+        pre_text = pre_element.text
+        assert pre_text.find(expected_submission_output) != -1
+
+        self.selenium.refresh()
+        self.wait(SHORT_WAIT)
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
         # Check that md5 information was stored correctly
+        # import pdb; pdb.set_trace()
         submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
         assert Submission.objects.filter(md5=submission_md5).exists()
         if has_solutions:
