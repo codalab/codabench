@@ -56,13 +56,11 @@ class TestSubmissions(SeleniumTestCase):
         self.find('.submission-output-container .title').click()
         self.wait(LONG_WAIT)
 
-        # Web socket needed to be solid for this to work consistently
-        ## Legacy and BB changed 07_01_2025
+        # * Web socket needs to be solid for this to work consistently:
         # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
-        ##
 
-        # refresh page
         self.wait(LONG_WAIT)
+        # raefresh page
         self.selenium.refresh()
         self.wait(SHORT_WAIT)
         row = self.find("tr.submission_row")
