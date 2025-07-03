@@ -54,12 +54,11 @@ class TestSubmissions(SeleniumTestCase):
         # Inside the accordion the output is being streamed
         self.wait(LONG_WAIT)
         self.find('.submission-output-container .title').click()
-        self.wait(LONG_WAIT)
+        self.wait(LONG_WAIT*2)
 
         # * Web socket needs to be solid for this to work consistently:
         # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
 
-        self.wait(LONG_WAIT)
         # refresh page
         self.selenium.refresh()
         self.wait(SHORT_WAIT)
@@ -77,7 +76,6 @@ class TestSubmissions(SeleniumTestCase):
         pre_element = self.selenium.find_element(By.CSS_SELECTOR, 'div[data-tab="admin_s_stdout"] pre')
         pre_text = pre_element.text
         assert pre_text.find(expected_submission_output) != -1
-
         self.selenium.refresh()
         self.wait(SHORT_WAIT)
         # The submission table lists our submission!
