@@ -38,6 +38,9 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
       - run: docker-compose exec django flake8 src/
+      - run: docker pull codalab/codalab-legacy:py37 # not available without "not e2e" tests as they pull ahead of time
+      - run: docker pull codalab/codalab-legacy:py3 # not available without "not e2e" tests as they pull ahead of time
+      - run: docker pull vergilgxw/autotable:v2 # not available without "not e2e" tests as they pull ahead of time
 
       # - run:
       #     name: pytest
