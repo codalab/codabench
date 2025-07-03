@@ -42,15 +42,15 @@ jobs:
       - run: docker pull codalab/codalab-legacy:py3 # not available without "not e2e" tests as they pull ahead of time
       - run: docker pull vergilgxw/autotable:v2 # not available without "not e2e" tests as they pull ahead of time
 
-      # - run:
-      #     name: pytest
-      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
+      - run:
+          name: pytest
+          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
 
       # Original Selenium tests which includes src/tests/functional/test_submissions.py
-      # - run:
-      #     name: e2e tests
-      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
-      #     no_output_timeout: 60m
+      - run:
+          name: e2e tests
+          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+          no_output_timeout: 60m
 
 
       # - run:
@@ -58,25 +58,25 @@ jobs:
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py -m e2e
       #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests - submissions - test_v15_iris_result_submission_end_to_end
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v15_iris_result_submission_end_to_end
-          no_output_timeout: 60m
+      # - run:
+      #     name: e2e tests - submissions - test_v15_iris_result_submission_end_to_end
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v15_iris_result_submission_end_to_end
+      #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests - submissions - test_v15_iris_code_submission_end_to_end
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v15_iris_code_submission_end_to_end
-          no_output_timeout: 60m
+      # - run:
+      #     name: e2e tests - submissions - test_v15_iris_code_submission_end_to_end
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v15_iris_code_submission_end_to_end
+      #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests - submissions - test_v18_submission_end_to_end
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v18_submission_end_to_end
-          no_output_timeout: 60m
+      # - run:
+      #     name: e2e tests - submissions - test_v18_submission_end_to_end
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v18_submission_end_to_end
+      #     no_output_timeout: 60m
 
-      - run:
-          name: e2e tests - submissions - test_v2_submission_end_to_end
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v2_submission_end_to_end
-          no_output_timeout: 60m
+      # - run:
+      #     name: e2e tests - submissions - test_v2_submission_end_to_end
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_submissions.py::TestSubmissions::test_v2_submission_end_to_end
+      #     no_output_timeout: 60m
 
       # - run:
       #     name: e2e tests - login
@@ -88,8 +88,8 @@ jobs:
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
 
-      # - store_artifacts:
-      #     path: artifacts/
+      - store_artifacts:
+          path: artifacts/
 
 workflows:
   version: 2
