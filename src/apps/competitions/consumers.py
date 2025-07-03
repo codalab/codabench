@@ -20,7 +20,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         submission_id = self.scope['url_route']['kwargs']['submission_id']
         secret = self.scope['url_route']['kwargs']['secret']
-        logger.info(f"CONSUMER_MARKER: Connecting for submission {submission_id} with secret {secret}")
+        logger.debug(f"CONSUMER_MARKER: Connecting for submission {submission_id} with secret {secret}")
         try:
             _ = await sync_to_async(Submission.objects.get)(
                 pk=submission_id, secret=secret
@@ -33,7 +33,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         user_pk = self.scope['url_route']['kwargs']['user_pk']
         submission_id = self.scope['url_route']['kwargs']['submission_id']
-        logger.info(f"CONSUMER_MARKER: Received data for submission {submission_id} | {text_data}")
+        logger.debug(f"CONSUMER_MARKER: Received data for submission {submission_id} | {text_data}")
 
         try:
             # Get all necessary data in one transaction if possible
@@ -67,7 +67,7 @@ class SubmissionIOConsumer(AsyncWebsocketConsumer):
                     'text': data,
                     'submission_id': submission_id,
                 })
-                logger.info(f"RELAY_MARKER: Sent message to channel layer for user {user_pk}, submission {submission_id}")
+                logger.debug(f"RELAY_MARKER: Sent message to channel layer for user {user_pk}, submission {submission_id}")
             except Exception as e:
                 logger.error(f"Error sending to channel layer: {e}")
 
@@ -87,7 +87,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
 
         try:
             await self.accept()
-            logger.info(f"WebSocket connected for user {self.scope['user'].pk}")
+            logger.debug(f"WebSocket connected for user {self.scope['user'].pk}")
         except RuntimeError as e:
             logger.warning(f"WebSocket accept failed: {e}")
             return  # prevent group_add

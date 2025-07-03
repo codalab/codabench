@@ -508,7 +508,7 @@ class Run:
         # Start websocket, it will reconnect in the stdout/stderr listener loop below
         # This ensures each task has its own independent WebSocket connection
         websocket_url = f"{self.websocket_url}?kind={kind}"
-        logger.info(f"WORKER_MARKER: Connecting to {websocket_url}")
+        logger.debug(f"WORKER_MARKER: Connecting to {websocket_url}")
         websocket = await websockets.connect(websocket_url)
         # websocket = await websockets.connect(self.websocket_url) # old BB
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
@@ -544,13 +544,12 @@ class Run:
                     except asyncio.TimeoutError:
                         continue
             except websocket_errors:
-                logger.info("\n\nWebsocket error (line 538)\n\n")
+                logger.debug("\n\nWebsocket error (line 538)\n\n")
                 try:
                     # do we need to await websocket.close() on the old socket? before making a new one probably not?
                     await websocket.close()
                 except Exception as e:
                     logger.error(e)
-                    logger.info(e)
                     # TODO: catch proper exceptions here..! What can go wrong failing to close?
                     pass
 
@@ -558,9 +557,9 @@ class Run:
                 tries = 0
                 while tries < 3 and not websocket.open:
                     try:
-                        logger.info(f"\n\nAttempting to reconnect in 2 seconds (attempt {tries+1}/3)")
+                        logger.debug(f"\n\nAttempting to reconnect in 2 seconds (attempt {tries+1}/3)")
                         websocket = await websockets.connect(websocket_url)
-                        logger.info(f"\n\nSuccessfully reconnected to {websocket_url}")
+                        logger.debug(f"\n\nSuccessfully reconnected to {websocket_url}")
                     except websocket_errors:
                         logger.error(f"\n\nReconnection attempt {tries+1} failed: {websocket_errors}")
                         await asyncio.sleep(2)
@@ -568,13 +567,13 @@ class Run:
 
         self.logs[kind]["end"] = time.time()
 
-        logger.info(f"Process exited with {proc.returncode}")
-        logger.info(f"Disconnecting from websocket {websocket_url}")
+        logger.debug(f"Process exited with {proc.returncode}")
+        logger.debug(f"Disconnecting from websocket {websocket_url}")
 
         # Communicate that the program is closing
         self.completed_program_counter += 1
 
-        logger.info(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
+        logger.debug(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
         await websocket.close()
 
     def _get_host_path(self, *paths):
