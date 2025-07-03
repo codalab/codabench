@@ -213,14 +213,17 @@
             $(self.refs.email_modal).modal('hide')
         }
 
-        // Download participants in csv file
+        // Function to download participants in csv file
         self.download_participants_csv = () => {
+            // Show warning when there is no participant
             if (!self.participants || self.participants.length === 0) {
                 toastr.warning('No participants to download')
                 return
             }
 
+            // prepare csv header
             const headers = ['ID', 'Username', 'Email', 'Is Bot', 'Status'];
+            // prepare csv rows
             const rows = self.participants.map(p => [
                 p.id,
                 p.username,
@@ -229,10 +232,12 @@
                 p.status
             ]);
 
+            // prepare csv content using header and rows
             const csvContent = [headers, ...rows]
                 .map(e => e.map(v => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(','))
                 .join('\n')
 
+            // Download prepared csv as `participants.csv`
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
             const url = URL.createObjectURL(blob)
             const link = document.createElement("a")
