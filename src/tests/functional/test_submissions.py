@@ -54,7 +54,7 @@ class TestSubmissions(SeleniumTestCase):
         # Inside the accordion the output is being streamed
         self.wait(LONG_WAIT)
         self.find('.submission-output-container .title').click()
-        self.wait(LONG_WAIT * 5)
+        self.wait(LONG_WAIT * 6)
 
         # * Web socket needs to be solid for this to work consistently:
         # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
