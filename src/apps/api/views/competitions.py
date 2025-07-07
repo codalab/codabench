@@ -227,8 +227,19 @@ class CompetitionViewSet(ModelViewSet):
             leaderboard.is_valid()
             leaderboard.save()
             leaderboard_id = leaderboard["id"].value
+
+            # Set leaderboard id, starting kit and public data for phases
             for phase in data['phases']:
                 phase['leaderboard'] = leaderboard_id
+
+                try:
+                    phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                except TypeError:
+                    phase['public_data'] = None
+                try:
+                    phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                except TypeError:
+                    phase['starting_kit'] = None
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
