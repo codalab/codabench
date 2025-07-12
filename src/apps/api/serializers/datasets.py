@@ -117,9 +117,9 @@ class DataDetailSerializer(serializers.ModelSerializer):
         Called automatically by DRF when serializing a model instance to JSON.
 
         This method customizes the serialized output of the DataDetailSerializer.
-        Specifically, it removes detailed file size fields when the data type is not 'SUBMISSION'. 
+        Specifically, it removes detailed file size fields when the data type is not 'SUBMISSION'.
 
-        Example: For input_data or scoring_program types, submission-related fields 
+        Example: For input_data or scoring_program types, submission-related fields
         are not relevant and will be excluded from the output.
         """
         # First, generate the default serialized representation using the parent method
