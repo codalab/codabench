@@ -43,6 +43,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
+            'hide_prediction_output',
+            'hide_score_output',
             'leaderboard',
             'public_data',
             'starting_kit',
@@ -124,6 +126,8 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
             'max_submissions_per_person',
             'auto_migrate_to_this_phase',
             'hide_output',
+            'hide_prediction_output',
+            'hide_score_output',
             # no leaderboard
             'public_data',
             'starting_kit',
@@ -267,7 +271,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'reward',
             'contact_email',
             'report',
-            'whitelist_emails'
+            'whitelist_emails',
+            'forum_enabled'
         )
 
     def validate_phases(self, phases):
@@ -347,8 +352,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
     leaderboards = serializers.SerializerMethodField()
     collaborators = CollaboratorSerializer(many=True)
     participant_status = serializers.CharField(read_only=True)
-    participant_count = serializers.IntegerField(read_only=True)
-    submission_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
+    submissions_count = serializers.IntegerField(read_only=True)
     queue = QueueSerializer(read_only=True)
     whitelist_emails = serializers.SerializerMethodField()
 
@@ -372,8 +377,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'participant_status',
             'registration_auto_approve',
             'description',
-            'participant_count',
-            'submission_count',
+            'participants_count',
+            'submissions_count',
             'queue',
             'enable_detailed_results',
             'show_detailed_results_in_submission_panel',
@@ -391,6 +396,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'contact_email',
             'report',
             'whitelist_emails',
+            'forum_enabled'
         )
 
     def get_leaderboards(self, instance):
@@ -430,7 +436,7 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
 class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
-    participant_count = serializers.IntegerField(read_only=True)
+    participants_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Competition
@@ -441,7 +447,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'owner_display_name',
             'created_when',
             'published',
-            'participant_count',
+            'participants_count',
             'logo',
             'logo_icon',
             'description',
@@ -449,6 +455,9 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'reward',
             'contact_email',
             'report',
+            'is_featured',
+            'submissions_count',
+            'participants_count'
         )
 
     def get_created_by(self, obj):
@@ -478,6 +487,7 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     is_bot = serializers.BooleanField(source='user.is_bot')
     email = serializers.CharField(source='user.email')
+    is_deleted = serializers.BooleanField(source='user.is_deleted')
 
     class Meta:
         model = CompetitionParticipant
@@ -487,12 +497,13 @@ class CompetitionParticipantSerializer(serializers.ModelSerializer):
             'is_bot',
             'email',
             'status',
+            'is_deleted',
         )
 
 
 class FrontPageCompetitionsSerializer(serializers.Serializer):
     popular_comps = CompetitionSerializerSimple(many=True)
-    featured_comps = CompetitionSerializerSimple(many=True)
+    recent_comps = CompetitionSerializerSimple(many=True)
 
 
 class PhaseResultsSubmissionSerializer(serializers.Serializer):

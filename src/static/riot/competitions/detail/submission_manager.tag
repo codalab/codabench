@@ -46,6 +46,13 @@
         <option value="Submitted">Submitted</option>
         <option value="Submitting">Submitting</option>
     </select>
+    <div class="ui input" if="{opts.admin}">
+        <input 
+        type="checkbox" 
+        checked="{show_is_soft_deleted}"
+        onclick="{toggleShowSoftDeleted}">
+        <label class="checkbox-label">Show soft-deleted submissions</label>
+    </div>
     <table class="ui celled selectable sortable table" ref="submission_table">
         <thead>
             <tr>
@@ -62,10 +69,10 @@
                 <th>Date</th>
                 <th>Status</th>
                 <th>Score</th>
-                <th
-                    if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
-                    Detailed Results</th>
-                <th class="center aligned {admin-action-column: opts.admin, action-column: !opts.admin}">Actions</th>
+                <th if="{ opts.competition.enable_detailed_results && opts.competition.show_detailed_results_in_submission_panel}">
+                    Detailed Results
+                </th>
+                <th class="center aligned">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -78,9 +85,9 @@
                 </td>
             </tr>
             <tr show="{!loading}" each="{ submission, index in filter_children(submissions) }"
-                onclick="{ submission_clicked.bind(this, submission) }" class="submission_row">
-                <td if="{opts.admin}">
-                    <div class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
+                onclick="{ submission_clicked.bind(this, submission) }" class="submission_row {submission.is_soft_deleted ? 'soft-deleted' : ''}">
+                <td if="{ opts.admin }">
+                    <div if="{ !submission.is_soft_deleted }" class="ui checkbox" onclick="{on_submission_checked.bind(this)}">
                         <input type="checkbox" name="{submission.id}">
                         <label></label>
                     </div>
@@ -108,8 +115,11 @@
                         <i class="icon grey eye eye-icon"></i>
                     </a>
                 </td>
-                <td class="center aligned">
-                    <virtual if="{ opts.admin }">
+                <!--  Show Action buttons when submission is not soft deleted  -->
+                <!--  Otherwise show empty <td>  -->
+                <td if="{ submission.is_soft_deleted }"></td>
+                <td class="center aligned" if="{ !submission.is_soft_deleted }">
+                    <virtual if="{ opts.admin}">
                         <!-- run/rerun submission -->
                         <!--  run: status = submitting auto_run = false  -->
                         <!--  rerun: else   -->
@@ -157,6 +167,14 @@
                         onclick="{toggle_submission_is_public.bind(this, submission)}">
                         <i class="icon share grey alternate"></i>
                     </span>
+                    <!-- Delete Submission -->
+                    <!--  Show only if submission is Finished/Failed/Cancelled and not admin interface  -->
+                    <!--  This condition && !opts.admin is there to not show soft delete button in the admin interface  -->
+                    <span if="{ ((submission.status === 'Finished' && !submission.on_leaderboard) || submission.status === 'Failed' || submission.status === 'Cancelled')  && !opts.admin}"
+                        data-tooltip="Delete Submission" data-inverted=""
+                        onclick="{ soft_delete_submission.bind(this, submission) }">
+                        <i class="icon red trash"></i>
+                    </span>
                 </td>
             </tr>
         </tbody>
@@ -201,14 +219,13 @@
     <script>
         var self = this
 
-        
-
         self.selected_phase = undefined
         self.selected_submission = undefined
         self.hide_output = false
         self.leaderboards = {}
         self.loading = true
         self.checked_submissions = []
+        self.show_is_soft_deleted = false
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -239,11 +256,18 @@
             return _.filter(submissions, sub => !sub.parent)
         }
 
+        self.toggleShowSoftDeleted = function () {
+            self.show_is_soft_deleted = !self.show_is_soft_deleted
+            self.update_submissions()
+            self.update()
+        }
+
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
             if (opts.admin) {
                 filters = filters || { phase__competition: opts.competition.id }
+                filters.show_is_soft_deleted = self.show_is_soft_deleted
             } else {
                 filters = filters || { phase: self.selected_phase.id }
             }
@@ -402,6 +426,24 @@
                     .done(function (response) {
                         toastr.success('Submission deleted')
                         self.update_submissions()
+                    })
+            }
+            event.stopPropagation()
+        }
+
+        self.soft_delete_submission = function (submission) {
+            if (confirm(`Are you sure you want to delete your submission: ${submission.filename}?`)) {
+                CODALAB.api.soft_delete_submission(submission.id)
+                    .done(function (response) {
+                        toastr.success(response.message || 'Submission deleted successfully');
+                        self.update_submissions()
+                    })
+                    .fail(function (response) {
+                        let errorMsg = 'An error occurred while deleting the submission.';
+                        if (response.responseJSON && response.responseJSON.error) {
+                            errorMsg = response.responseJSON.error;
+                        }
+                        toastr.error(errorMsg)
                     })
             }
             event.stopPropagation()
@@ -600,12 +642,6 @@
                 cursor auto
                 background-color #21ba45 !important
 
-        .admin-action-column
-            width 200px
-
-        .action-column
-            width 100px
-
         .submission_row
             &:hover
                 cursor pointer
@@ -616,5 +652,11 @@
 
         .failed.question.circle.icon
             color #2c3f4c
+
+        .checkbox-label
+            margin-left 5px
+
+        .soft-deleted
+            background-color #ffdede !important
     </style>
 </submission-manager>

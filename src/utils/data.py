@@ -121,9 +121,28 @@ def put_blob(url, file_path):
     )
 
 
-def pretty_bytes(bytes, decimal_places=1, suffix="B"):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(bytes) < 1024.0 or unit == 'PiB':
-            return f"{bytes:3.{decimal_places}f}{unit}{suffix}"
-        bytes /= 1024.0
-    return f"{bytes:.{decimal_places}f}Pi{suffix}"
+def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False):
+
+    # Ensure bytes is a valid number
+    try:
+        bytes = float(bytes)
+    except (ValueError, TypeError):
+        return ""  # Return empty string for invalid inputs
+
+    if bytes < 0:
+        return ""  # Return empty string for negative values
+
+    factor = 1024.0 if binary else 1000.0
+    units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] if binary else ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z']
+
+    for unit in units:
+        if abs(bytes) < factor or unit == (units[-1] + "B"):
+            return f"{bytes:.{decimal_places}f} {unit}{suffix}"
+        bytes /= factor
+
+    return f"{bytes:.{decimal_places}f}{units[-1]}{suffix}"
+
+
+def gb_to_bytes(gb, binary=False):
+    factor = 1024**3 if binary else 1000**3
+    return gb * factor

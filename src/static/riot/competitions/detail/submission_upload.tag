@@ -477,23 +477,12 @@
                     if (response) {
                         try {
                             let errors = JSON.parse(response.responseText)
-
-                            // Clean up errors to not be arrays but plain text
-                            Object.keys(errors).map(function (key, index) {
-                                errors[key] = errors[key].join('; ')
-                            })
-
-                            // Create a string to concatenate all error messages
-                            let errorMessages = "Error in submission upload:\n"
-                            Object.keys(errors).forEach(function (key) {
-                                errorMessages += key + ": " + errors[key] + "\n"
-                            })
-
-                            toastr.error(errorMessages)
+                            let error_str = Object.keys(errors).map(function (key) { return errors[key] }).join("; ")
+                            toastr.error("Submission upload failed: " + error_str)
                             self.update({errors: errors})
 
                         } catch (e) {
-                            toastr.error("Error in submission upload\n"+e)
+                            toastr.error("Submission upload failed. Server returned: " + response.status + " " + response.statusText);
                         }
                     } else {
                         toastr.error("Something went wrong, please try again later")

@@ -25,6 +25,7 @@ class V2Unpacker(BaseUnpacker):
             "fact_sheet": self.competition_yaml.get("fact_sheet", None),
             "reward": self.competition_yaml.get("reward", None),
             "contact_email": self.competition_yaml.get("contact_email", None),
+            "forum_enabled": self.competition_yaml.get("forum_enabled", True),
             "pages": [],
             "phases": [],
             "leaderboards": [],
@@ -197,6 +198,8 @@ class V2Unpacker(BaseUnpacker):
                 'max_submissions_per_person': phase_data.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
                 'hide_output': phase_data.get('hide_output', False),
+                'hide_prediction_output': phase_data.get('hide_prediction_output', False),
+                'hide_score_output': phase_data.get('hide_score_output', False),
             }
             try:
                 new_phase['tasks'] = phase_data['tasks']

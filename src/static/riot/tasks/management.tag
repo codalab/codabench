@@ -7,6 +7,9 @@
         <label>Show Public Tasks</label>
         <input type="checkbox" ref="public">
     </div>
+    <div class="ui blue right floated labeled icon button" onclick="{ show_upload_task_modal }"><i class="upload icon"></i>
+        Upload Task
+    </div>
     <div selenium="create-task" class="ui green right floated labeled icon button" onclick="{ show_modal }"><i class="add circle icon"></i>
         Create Task
     </div>
@@ -165,6 +168,38 @@
         </div>
         <div class="actions">
             <button class="ui cancel button">Close</button>
+        </div>
+    </div>
+
+    <!-- Upload Task Modal  -->
+    <div ref="upload_task_modal" class="ui modal">
+        <div class="header">Upload Task</div>
+
+        <div class="content">
+
+            <form class="ui form coda-animated {error: errors}" ref="upload_form">
+                <p>
+                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="https://github.com/codalab/codabench/wiki/Resource-Management#upload-a-task" target="_blank">here</a>.
+                
+                </p>
+                
+                <input-file name="data_file" ref="data_file"
+                            accept=".zip"></input-file>
+            </form>
+
+            <div class="ui indicating progress" ref="progress">
+                <div class="bar">
+                    <div class="progress">{ upload_progress }%</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="actions">
+            <button class="ui blue icon button" onclick="{check_upload_task_form}">
+                <i class="upload icon"></i>
+                Upload
+            </button>
+            <button class="ui basic red button" onclick="{close_upload_task_modal}">Cancel</button>
         </div>
     </div>
 
@@ -335,6 +370,7 @@
     <script>
 
         var self = this
+        self.mixin(ProgressBarMixin)
 
         /*---------------------------------------------------------------------
          Init
@@ -351,6 +387,8 @@
             'scoring_program',
             'ingestion_program'
         ]
+
+        self.upload_progress = undefined
 
 
         self.one("mount", function () {
@@ -432,6 +470,21 @@
         /*---------------------------------------------------------------------
          Modal Methods
         ---------------------------------------------------------------------*/
+        
+        self.show_upload_task_modal = () => {
+            self.reset_upload_task_input()
+            $(self.refs.upload_task_modal).modal('show')
+        }
+        self.close_upload_task_modal = () => {
+            $(self.refs.upload_task_modal).modal('hide')
+            self.reset_upload_task_input()
+        }
+        self.reset_upload_task_input = () => {
+            // Reset file input
+            $('input-file[ref="data_file"]').find("input").val('')
+            // Reset upload progress
+            self.hide_progress_bar()
+        }
         self.show_modal = () => {
             $('.menu .item', self.root).tab('change tab', 'details')
             self.form_datasets = {}
@@ -455,6 +508,54 @@
             self.modal_is_valid = false
         }
 
+        self.check_upload_task_form = () => {
+
+            var data_file = self.refs.data_file.refs.file_input.value
+            
+            if(data_file === undefined || !data_file.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                self.reset_upload_task_input()
+                return
+            }
+
+            self.prepare_upload(self.upload_task)()
+        }
+
+        self.upload_task = () => {
+
+            // Reset upload progress
+            self.file_upload_progress_handler(undefined)
+
+            // get selected file from the input
+            var data_file = self.refs.data_file.refs.file_input.files[0]
+
+            // Check if file is valid
+            if(data_file === undefined || !data_file.name.endsWith('.zip')) {
+                toastr.warning("Please select a .zip file to upload")
+                return
+            }
+
+            // Call the API function with the file and progress callback
+            CODALAB.api.upload_task(data_file, self.file_upload_progress_handler)
+                .then(function () {
+                    toastr.success("Task uploaded successfully")
+                    setTimeout(function () {
+                        CODALAB.events.trigger('reload_quota_cleanup')
+                        CODALAB.events.trigger('reload_datasets')
+                        self.close_upload_task_modal()
+                        self.page = 1 // set current page to 1
+                        self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
+                    }, 500)
+                    
+                })
+                .catch(function (error) {
+                    toastr.error("Task upload failed: " + error.responseJSON.error)
+                    self.hide_progress_bar()
+                })
+
+
+        }
+
         self.create_task = () => {
             let data = get_form_data($(self.refs.form))
             _.assign(data, self.form_datasets)
@@ -463,7 +564,8 @@
                 .done((response) => {
                     toastr.success('Task Created')
                     self.close_modal()
-                    self.update_tasks()
+                    self.page = 1 // set current page to 1
+                    self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {
@@ -604,7 +706,7 @@
                 .done((response) => {
                     toastr.success('Task Updated')
                     self.close_edit_modal()
-                    self.update_tasks()
+                    self.update_tasks({page: self.page}) // pass the current page to stay on the page after the update
                     CODALAB.events.trigger('reload_quota_cleanup')
                 })
                 .fail((response) => {

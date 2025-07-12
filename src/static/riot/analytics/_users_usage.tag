@@ -47,9 +47,9 @@
             <tr each="{ userUsage in usersUsageTableData }">
                 <td>{ userUsage.name }</td>
                 <td>{ formatDate(userUsage.date_joined) }</td>
-                <td>{ formatSize(userUsage.datasets) }</td>
-                <td>{ formatSize(userUsage.submissions) }</td>
-                <td>{ formatSize(userUsage.datasets + userUsage.submissions) }</td>
+                <td>{ pretty_bytes(userUsage.datasets) }</td>
+                <td>{ pretty_bytes(userUsage.submissions) }</td>
+                <td>{ pretty_bytes(userUsage.datasets + userUsage.submissions) }</td>
             </tr>
         </tbody>
     </table>
@@ -552,10 +552,6 @@
 
         self.formatDate = function(date) {
             return datetime.fromJSDate(date).toISODate();
-        }
-
-        self.formatSize = function(size) {
-            return pretty_bytes(size);
         }
 
         self.downloadUsersHistory = function() {
