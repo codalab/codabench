@@ -138,15 +138,15 @@
                 </tr>
                 <tr>
                     <td>Prediction result:</td>
-                    <td>{pretty_bytes(selected_row.prediction_file_size)}</td>
+                    <td>{pretty_bytes(selected_row.prediction_result_file_size)}</td>
                 </tr>
                 <tr>
                     <td>Scoring result:</td>
-                    <td>{pretty_bytes(selected_row.scoring_file_size)}</td>
+                    <td>{pretty_bytes(selected_row.scoring_result_file_size)}</td>
                 </tr>
                 <tr>
                     <td>Detailed result:</td>
-                    <td>{pretty_bytes(selected_row.detailed_file_size)}</td>
+                    <td>{pretty_bytes(selected_row.detailed_result_file_size)}</td>
                 </tr>
                 </tbody>
             </table>

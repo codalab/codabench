@@ -83,9 +83,9 @@ class DataDetailSerializer(serializers.ModelSerializer):
 
     # These fields will be conditionally returned for type == SUBMISSION only
     submission_file_size = serializers.SerializerMethodField()
-    prediction_file_size = serializers.SerializerMethodField()
-    scoring_file_size = serializers.SerializerMethodField()
-    detailed_file_size = serializers.SerializerMethodField()
+    prediction_result_file_size = serializers.SerializerMethodField()
+    scoring_result_file_size = serializers.SerializerMethodField()
+    detailed_result_file_size = serializers.SerializerMethodField()
 
     class Meta:
         model = Data
@@ -107,9 +107,9 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'file_name',
             'file_size',
             'submission_file_size',
-            'prediction_file_size',
-            'scoring_file_size',
-            'detailed_file_size',
+            'prediction_result_file_size',
+            'scoring_result_file_size',
+            'detailed_result_file_size',
         )
 
     def to_representation(self, instance):
@@ -129,9 +129,9 @@ class DataDetailSerializer(serializers.ModelSerializer):
         if instance.type != Data.SUBMISSION:
             # These fields are only meaningful for submission-type data
             rep.pop('submission_file_size', None)
-            rep.pop('prediction_file_size', None)
-            rep.pop('scoring_file_size', None)
-            rep.pop('detailed_file_size', None)
+            rep.pop('prediction_result_file_size', None)
+            rep.pop('scoring_result_file_size', None)
+            rep.pop('detailed_result_file_size', None)
 
         # Return the final customized representation
         return rep
@@ -160,13 +160,13 @@ class DataDetailSerializer(serializers.ModelSerializer):
     def get_submission_file_size(self, obj):
         return obj.file_size or 0
 
-    def get_prediction_file_size(self, obj):
+    def get_prediction_result_file_size(self, obj):
         return sum([s.prediction_result_file_size or 0 for s in obj.submission.all()])
 
-    def get_scoring_file_size(self, obj):
+    def get_scoring_result_file_size(self, obj):
         return sum([s.scoring_result_file_size or 0 for s in obj.submission.all()])
 
-    def get_detailed_file_size(self, obj):
+    def get_detailed_result_file_size(self, obj):
         return sum([s.detailed_result_file_size or 0 for s in obj.submission.all()])
 
     def get_competition(self, obj):
