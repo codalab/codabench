@@ -55,5 +55,6 @@ def common_settings(request):
         'ENABLE_SIGN_UP': settings.ENABLE_SIGN_UP,
         'ENABLE_SIGN_IN': settings.ENABLE_SIGN_IN,
         'VERSION_INFO': version_info,
-        'HOME_PAGE_COUNTERS_INFO': home_page_counters_info
+        'HOME_PAGE_COUNTERS_INFO': home_page_counters_info,
+        'CONTACT_EMAIL': settings.CONTACT_EMAIL
     }
