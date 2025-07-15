@@ -13,6 +13,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.urls import reverse
+from django.db import IntegrityError
 
 from api.permissions import IsUserAdminOrIsSelf, IsOrganizationEditor
 from api.serializers.profiles import MyProfileSerializer, UserSerializer, \
@@ -257,17 +258,24 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         try:
             org = Organization.objects.get(id=pk)
             member = org.membership_set.get(user=request.user)
-            if member.group == Membership.OWNER:
-                org.delete()
-                return Response({
-                    "success": True,
-                    "message": "Organization deleted!"
-                })
-            else:
+            if member.group != Membership.OWNER:
                 return Response({
                     "success": False,
                     "message": "You do not have delete rights!"
                 })
+
+            org.delete()
+            return Response({
+                "success": True,
+                "message": "Organization deleted!"
+            })
+
+        except IntegrityError:
+            return Response({
+                "success": False,
+                "message": "This organization cannot be deleted because it is associated with existing submissions. Please remove those submissions first."
+            })
+
         except Exception as e:
             return Response({
                 "success": False,

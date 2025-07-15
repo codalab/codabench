@@ -538,8 +538,80 @@ class CompetitionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('GET',), pagination_class=LargePagination)
     def public(self, request):
+        """
+        Retrieve a public list of published competitions with optional filtering and ordering.
+
+        This endpoint returns a paginated list of competitions that are publicly published.
+        It supports several optional query parameters for filtering and sorting the results.
+        Some filters require the user to be authenticated.
+
+        Query Parameters:
+        -----------------
+        - search (str, optional): A search term to filter competitions by their title.
+        - ordering (str, optional): Specifies the order of the results. Supported values:
+            * "recent" - Most recently created competitions.
+            * "popular" - Competitions with the most participants.
+            * "with_most_submissions" - Competitions with the highest number of submissions.
+            Defaults to "recent" if not provided or invalid.
+        - participating_in (bool, optional): If "true", filters competitions where the user
+        is an approved participant. Requires authentication.
+        - organizing (bool, optional): If "true", filters competitions organized by the user
+        (either created or as a collaborator). Requires authentication.
+        - has_reward (bool, optional): If "true", includes only competitions that have a
+        non-empty reward field.
+
+        Returns:
+        --------
+        - 200 OK: A paginated or full list of serialized competitions matching the filter criteria. The response is serialized using `CompetitionSerializerSimple`.
+        - 401 Unauthorized: If the user tries to use filters requiring authentication while not logged in.
+        """
+
+        # Receive filters from request query params
+        search = request.query_params.get("search")
+        ordering = request.query_params.get("ordering")
+        participating_in = request.query_params.get("participating_in", "false").lower() == "true"
+        organizing = request.query_params.get("organizing", "false").lower() == "true"
+        has_reward = request.query_params.get("has_reward", "false").lower() == "true"
+
+        # If user is not authenticated but trying to use filters that require authentication
+        if not request.user.is_authenticated and (participating_in or organizing):
+            return Response(
+                {"detail": "Authentication required for filtering by participating in or organizing."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         qs = Competition.objects.filter(published=True)
-        qs = qs.order_by('-id')
+
+        # Filter by title (search)
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        # Filter by participation
+        if participating_in:
+            participant_comp_ids = CompetitionParticipant.objects.filter(
+                user=request.user,
+                status="approved"
+            ).values_list("competition_id", flat=True)
+            qs = qs.filter(id__in=participant_comp_ids)
+
+        # Filter by organizing (created_by or collaborator)
+        if organizing:
+            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user))
+
+        # Apply ordering
+        if ordering == "recent":
+            qs = qs.order_by("-id")  # most recently created
+        elif ordering == "popular":
+            qs = qs.order_by("-participants_count")
+        elif ordering == "with_most_submissions":
+            qs = qs.order_by("-submissions_count")
+        else:
+            qs = qs.order_by("-id")  # default fallback
+
+        # Applying has reward
+        if has_reward:
+            qs = qs.exclude(reward__isnull=True).exclude(reward__exact='')
+
         queryset = self.filter_queryset(qs)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -703,24 +775,7 @@ class PhaseViewSet(ModelViewSet):
         submissions_keys = {}
         submission_detailed_results = {}
         for submission in query['submissions']:
-            # count number of entries/number of submissions for the owner of this submission for this phase
-            # count all submissions except:
-            # - child submissions (submissions who has a parent i.e. parent field is not null)
-            # - Failed submissions
-            # - Cancelled submissions
-            num_entries = 1  # TMP, remove counting
-            # num_entries = Submission.objects.filter(
-            #     Q(owner__username=submission['owner']) |
-            #     Q(parent__owner__username=submission['owner']),
-            #     phase=phase,
-            # ).exclude(
-            #     Q(status=Submission.FAILED) |
-            #     Q(status=Submission.CANCELLED) |
-            #     Q(parent__isnull=False)
-            # ).count()
-
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
-
             # gather detailed result from submissions for each task
             # detailed_results are gathered based on submission key
             # `id` is used to fetch the right detailed result in detailed results page
@@ -741,7 +796,6 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
-                    'num_entries': num_entries,
                     'created_when': submission['created_when']
                 })
             for score in submission['scores']:

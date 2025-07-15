@@ -240,6 +240,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_deleted_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
+    'clean_non_activated_users': {
+        'task': 'profiles.tasks.clean_non_activated_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1

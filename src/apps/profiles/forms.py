@@ -25,6 +25,12 @@ class SignUpForm(UserCreationForm):
             )
         return data
 
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if "*" in email:
+            raise forms.ValidationError("Email address cannot contain the '*' character.")
+        return email
+
     class Meta:
 
         model = User
