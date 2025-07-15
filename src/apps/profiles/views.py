@@ -19,9 +19,15 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
-from .forms import SignUpForm, LoginForm
-from .models import User, Organization, Membership
-from .tokens import account_activation_token
+from .forms import SignUpForm, LoginForm, ActivationForm
+from .models import User, DeletedUser, Organization, Membership
+from oidc_configurations.models import Auth_Organization
+from .tokens import account_activation_token, account_deletion_token
+from competitions.models import Competition
+from datasets.models import Data, DataGroup
+from tasks.models import Task
+from forums.models import Post
+from utils.email import codalab_send_mail
 
 
 class LoginView(auth_views.LoginView):
@@ -81,8 +87,8 @@ def activate(request, uidb64, token):
         messages.success(request, f'Your account is fully setup! Please login.')
         return redirect('accounts:login')
     else:
-        messages.error(request, f"Activation link is invalid. Please double check your link.")
-        return redirect('accounts:signup')
+        messages.error(request, f"Activation link is invalid or expired. Please double check your link.")
+        return redirect('accounts:resend_activation')
     return redirect('pages:home')
 
 
@@ -103,7 +109,97 @@ def activateEmail(request, user, to_email):
         messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
 
 
+def send_delete_account_confirmation_mail(request, user):
+    context = {
+        'user': user,
+        'domain': get_current_site(request).domain,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': account_deletion_token.make_token(user),
+        'protocol': 'https' if request.is_secure() else 'http'
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Confirm Your Account Deletion Request',
+        html_file="profiles/emails/template_delete_account.html",
+        text_file="profiles/emails/template_delete_account.txt",
+        to_email=[user.email]
+    )
+    messages.success(request, f'Dear {user.username}, please go to your email inbox and click on the link to complete the deletion process. *Note: Check your spam folder.')
+
+
+def send_user_deletion_notice_to_admin(user):
+    admin_users = User.objects.filter(Q(is_superuser=True) | Q(is_staff=True))
+    admin_emails = [user.email for user in admin_users]
+
+    organizations = user.organizations.all()
+    competitions_organizer = user.competitions.all()
+    competitions_participation = Competition.objects.filter(participants__user=user)
+    submissions = user.submission.all()
+    data = Data.objects.filter(created_by=user)
+    data_groups = DataGroup.objects.filter(created_by=user)
+    tasks = Task.objects.filter(created_by=user)
+    queues = user.queues.all()
+    posts = Post.objects.filter(posted_by=user)
+    deleted_user = user
+
+    context = {
+        'deleted_user': user,
+        'user': "",
+        'organizations': organizations,
+        'competitions_organizer': competitions_organizer,
+        'competitions_participation': competitions_participation,
+        'submissions': submissions,
+        'data': data,
+        'data_groups': data_groups,
+        'tasks': tasks,
+        'queues': queues,
+        'posts': posts,
+        'domain': settings.DOMAIN_NAME
+    }
+    codalab_send_mail(
+        context_data=context,
+        subject=f'Notice: user {deleted_user.username} removed his account',
+        html_file="profiles/emails/template_delete_account_notice.html",
+        text_file="profiles/emails/template_delete_account_notice.txt",
+        to_email=admin_emails
+    )
+
+
+def send_user_deletion_confirmed(email):
+    codalab_send_mail(
+        context_data={},
+        subject=f'Codabench: your account has been successfully removed',
+        html_file="profiles/emails/template_delete_account_confirmed.html",
+        text_file="profiles/emails/template_delete_account_confirmed.txt",
+        to_email=[email]
+    )
+
+
+def delete(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except User.DoesNotExist:
+        user = None
+        messages.error(request, f"User not found.")
+        return redirect('accounts:user_account')
+    if user is not None and account_deletion_token.check_token(user, token):
+        # Soft delete the user
+        user.delete()
+        messages.success(request, f'Your account has been removed!')
+        return redirect('accounts:logout')
+    else:
+        messages.error(request, f"Confirmation link is invalid or expired.")
+        return redirect('pages:home')
+
+
 def sign_up(request):
+
+    # If sign up is not enabled then redirect to login
+    # this is for security as some users may access sign up page using the url
+    if not settings.ENABLE_SIGN_UP:
+        return redirect('accounts:login')
+
     context = {}
     context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
         settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
@@ -112,20 +208,57 @@ def sign_up(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            user.is_active = False
-            user.save()
-            activateEmail(request, user, form.cleaned_data.get('email'))
-            return redirect('pages:home')
+            # Check if the email is in the DeletedUser table
+            email = form.cleaned_data.get('email').lower()
+            if DeletedUser.objects.filter(email=email).exists():
+                messages.error(request, "This email has been previously deleted and cannot be used.")
+                context['form'] = form
+            else:
+                # Update the email field to lowercase before saving
+                form.cleaned_data['email'] = email
+                user = form.save(commit=False)  # Get the user instance without saving
+                user.email = email  # Ensure email is stored in lowercase
+                user.is_active = False  # Set user as inactive
+                user.save()  # Save user instance with updated email
+
+                # Authenticate and send activation email
+                username = form.cleaned_data.get('username')
+                raw_password = form.cleaned_data.get('password1')
+                user = authenticate(username=username, password=raw_password)
+                activateEmail(request, user, email)
+
+                return redirect('pages:home')
         else:
             context['form'] = form
 
     if not context.get('form'):
         context['form'] = SignUpForm()
     return render(request, 'registration/signup.html', context)
+
+
+def resend_activation(request):
+    context = {}
+    if request.method == 'POST':
+        form = ActivationForm(request.POST)
+        if form.is_valid():
+
+            email = form.cleaned_data.get('email').lower()
+            user = User.objects.filter(email=email).first()
+
+            if user and not user.is_active:
+                activateEmail(request, user, email)
+                return redirect('pages:home')
+            else:
+                if not user:
+                    messages.error(request, "No account found with this email.")
+                elif user.is_active:
+                    messages.error(request, "This account is already active.")
+        else:
+            context['form'] = form
+
+    if not context.get('form'):
+        context['form'] = ActivationForm()
+    return render(request, 'registration/resend_activation.html', context)
 
 
 def log_in(request):
@@ -144,12 +277,13 @@ def log_in(request):
 
         if form.is_valid():
             # Get username and password
-            username = form.cleaned_data.get('username')
+            # use lowecased username/email
+            username = form.cleaned_data.get('username').lower()
             password = form.cleaned_data.get('password')
 
             # Check if the user exists
             try:
-                user = User.objects.get(Q(username=username) | Q(email=username))
+                user = User.objects.get((Q(username=username) | Q(email=username)) & Q(is_deleted=False))
             except User.DoesNotExist:
                 messages.error(request, "User does not exist!")
             else:
@@ -166,11 +300,16 @@ def log_in(request):
                         else:
                             return redirect(next)
                     else:
-                        messages.error(request, "Account is not active. Activate your account using the link sent to you by email.")
+                        context['activation_error'] = "Your account is not activated. Please check your email for the activation link"
                 else:
                     messages.error(request, "Wrong Credentials!")
         else:
             context['form'] = form
+
+    # Fetch auth_organizations from the database
+    auth_organizations = Auth_Organization.objects.all()
+    if auth_organizations:
+        context['auth_organizations'] = auth_organizations
 
     if not context.get('form'):
         context['form'] = LoginForm()
@@ -302,3 +441,15 @@ class OrganizationEditView(LoginRequiredMixin, DetailView):
 
 class OrganizationInviteView(LoginRequiredMixin, TemplateView):
     template_name = 'profiles/organization_invite.html'
+
+
+class UserAccountView(LoginRequiredMixin, DetailView):
+    queryset = User.objects.all()
+    template_name = 'profiles/user_account.html'
+    slug_url_kwarg = 'username'
+    query_pk_and_slug = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        return context

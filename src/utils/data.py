@@ -19,23 +19,31 @@ logger = logging.getLogger(__name__)
 class PathWrapper(object):
     """Helper to generate UUID's in file names while maintaining their extension"""
 
-    def __init__(self, base_directory):
+    def __init__(self, base_directory, manual_override=False):
         self.path = base_directory
+        self.manual_override = manual_override
 
     def __call__(self, instance, filename):
-        name, extension = os.path.splitext(filename)
-        truncated_uuid = uuid.uuid4().hex[0:12]
-        truncated_name = name[0:35]
+        if not self.manual_override:
+            name, extension = os.path.splitext(filename)
+            truncated_uuid = uuid.uuid4().hex[0:12]
+            truncated_name = name[0:35]
 
-        return os.path.join(
-            self.path,
-            now().strftime('%Y-%m-%d-%s'),
-            truncated_uuid,
-            "{0}{1}".format(truncated_name, extension)
-        )
+            path = os.path.join(
+                self.path,
+                now().strftime('%Y-%m-%d-%s'),
+                truncated_uuid,
+                "{0}{1}".format(truncated_name, extension)
+            )
+        else:
+            path = os.path.join(
+                filename
+            )
+
+        return path
 
 
-def make_url_sassy(path, permission='r', duration=60 * 60 * 24, content_type='application/zip'):
+def make_url_sassy(path, permission='r', duration=60 * 60 * 24 * 5, content_type='application/zip'):
     assert permission in ('r', 'w'), "SASSY urls only support read and write ('r' or 'w' permission)"
 
     client_method = None  # defined based on storage backend
@@ -111,3 +119,30 @@ def put_blob(url, file_path):
             'x-ms-blob-type': 'BlockBlob',
         }
     )
+
+
+def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False):
+
+    # Ensure bytes is a valid number
+    try:
+        bytes = float(bytes)
+    except (ValueError, TypeError):
+        return ""  # Return empty string for invalid inputs
+
+    if bytes < 0:
+        return ""  # Return empty string for negative values
+
+    factor = 1024.0 if binary else 1000.0
+    units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] if binary else ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z']
+
+    for unit in units:
+        if abs(bytes) < factor or unit == (units[-1] + "B"):
+            return f"{bytes:.{decimal_places}f} {unit}{suffix}"
+        bytes /= factor
+
+    return f"{bytes:.{decimal_places}f}{units[-1]}{suffix}"
+
+
+def gb_to_bytes(gb, binary=False):
+    factor = 1024**3 if binary else 1000**3
+    return gb * factor

@@ -22,12 +22,12 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !prediction_result}">
+                            <td class="selectable file-download {disabled: !prediction_result}" show="{!opts.hide_prediction_output}">
                                 <a href="{ prediction_result }"><i class="file outline icon"></i>Output from prediction step</a>
                             </td>
                         </tr>
                         <tr>
-                            <td class="selectable file-download {disabled: !scoring_result}">
+                            <td class="selectable file-download {disabled: !scoring_result}" show="{!opts.hide_score_output}">
                                 <a href="{ scoring_result }"><i class="file outline icon"></i>Output from scoring step</a>
                             </td>
                         </tr>
@@ -136,7 +136,7 @@
         <div class="ui button green" onclick="{update_fact_sheet.bind(this)}">Save</div>
     </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
-        <iframe sandbox="allow-scripts" src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
+        <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>

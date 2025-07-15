@@ -41,7 +41,7 @@
             <td if="{submission.competition}"><a class="link-no-deco" target="_blank" href="../competitions/{ submission.competition.id }">{ submission.competition.title }</a></td>
             <!--  show empty td if competition is not available  -->
             <td if="{!submission.competition}"></td>
-            <td>{ format_file_size(submission.file_size) }</td>
+            <td>{ pretty_bytes(submission.file_size) }</td>
             <td>{ timeSince(Date.parse(submission.created_when)) } ago</td>
             <td class="center aligned">
                 <i class="checkmark box icon green" show="{ submission.is_public }"></i>
@@ -112,7 +112,7 @@
                     <td if="{selected_row.competition}"><a class="link-no-deco" target="_blank" href="../competitions/{ selected_row.competition.id }">{ selected_row.competition.title }</a></td>
                     <!--  show empty td if competition is not available  -->
                     <td if="{!selected_row.competition}"></td>
-                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.created_by}</a></td>
+                    <td><a href="/profiles/user/{selected_row.created_by}/" target=_blank>{selected_row.owner_display_name}</a></td>
                     <td>{pretty_date(selected_row.created_when)}</td>
                     <td>{_.startCase(selected_row.type)}</td>
                     <td>{_.startCase(selected_row.is_public)}</td>
@@ -125,6 +125,31 @@
                     {selected_row.description}
                 </div>
             </virtual>
+            <table class="ui compact basic table">
+                <thead>
+                <tr>
+                    <th colspan=2>File Sizes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="width: 180px;">Submission:</td>
+                    <td>{pretty_bytes(selected_row.submission_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Prediction result:</td>
+                    <td>{pretty_bytes(selected_row.prediction_result_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Scoring result:</td>
+                    <td>{pretty_bytes(selected_row.scoring_result_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Detailed result:</td>
+                    <td>{pretty_bytes(selected_row.detailed_result_file_size)}</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
         <div class="actions">
             <button show="{selected_row.created_by === CODALAB.state.user.username}"
@@ -418,29 +443,6 @@
             else {
                 self.marked_submissions.splice(self.marked_submissions.indexOf(submission.id), 1)
             }
-        }
-
-        // Function to format file size 
-        self.format_file_size = function(file_size) {
-            // parse file size from string to float
-            try {
-                n = parseFloat(file_size)
-            }
-            catch(err) {
-                // return empty string if parsing fails
-                return ""
-            }
-            // constant units to show with files size
-            // file size is in KB, converting it to MB and GB 
-            const units = ['KB', 'MB', 'GB']
-            // loop incrementer for selecting desired unit
-            let i = 0
-            // loop over n until it is greater than 1000
-            while(n >= 1000 && ++i){
-                n = n/1000;
-            }
-            // restrict file size to 1 decimal number concatinated with unit
-            return(n.toFixed(1) + ' ' + units[i]);
         }
 
         // Update submissions on unused/failed submissions delete

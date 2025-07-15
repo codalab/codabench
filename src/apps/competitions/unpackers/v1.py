@@ -23,6 +23,9 @@ class V15Unpacker(BaseUnpacker):
             "description": self.competition_yaml.get("description", ""),
             "docker_image": docker_image,
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
+            "show_detailed_results_in_submission_panel": self.competition_yaml.get('show_detailed_results_in_submission_panel', True),
+            "show_detailed_results_in_leaderboard": self.competition_yaml.get('show_detailed_results_in_leaderboard', True),
+            "auto_run_submissions": self.competition_yaml.get('auto_run_submissions', True),
             "make_programs_available": self.competition_yaml.get('make_programs_available', False),
             "make_input_data_available": self.competition_yaml.get('make_input_data_available', False),
             "end_date": self.competition_yaml.get('end_date', None),
@@ -85,6 +88,9 @@ class V15Unpacker(BaseUnpacker):
                 'max_submissions_per_day': phase.get('max_submissions_per_day', 5),
                 'max_submissions_per_person': phase.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase.get('auto_migration', False),
+                'hide_output': phase.get('hide_output', False),
+                'hide_prediction_output': phase.get('hide_prediction_output', False),
+                'hide_score_output': phase.get('hide_score_output', False),
             }
             execution_time_limit = phase.get('execution_time_limit')
             if execution_time_limit:

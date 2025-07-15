@@ -87,9 +87,6 @@ META_DATA_FILES = ['metadata', 'metadata.yaml']
 # Setup the container engine that we are using
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
     CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
-# We could probably depreciate this now that we can specify the executable
-elif os.environ.get("NVIDIA_DOCKER"):
-    CONTAINER_ENGINE_EXECUTABLE = "nvidia-docker"
 else:
     CONTAINER_ENGINE_EXECUTABLE = "docker"
 
@@ -169,7 +166,7 @@ def get_folder_size_in_gb(folder):
             total_size += os.path.getsize(path)
         elif os.path.isdir(path):
             total_size += get_folder_size_in_gb(path)
-    return total_size / 1024 / 1024 / 1024
+    return total_size / 1000 / 1000 / 1000 # GB: decimal system (1000^3)
 
 
 def delete_files_in_folder(folder):
@@ -288,7 +285,7 @@ class Run:
             else:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
-                    timeout_error_message = f"Detailed results not written to after {expiration_seconds} seconds, exiting!"
+                    timeout_error_message = f"WARNING: Detailed results not written before the execution."
                     logger.warning(timeout_error_message)
             await asyncio.sleep(5)
             file_path = self.get_detailed_results_file_path()
@@ -339,7 +336,7 @@ class Run:
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
-        resp = self.requests_session.patch(url, data, timeout=15)
+        resp = self.requests_session.patch(url, data, timeout=150)
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
@@ -365,23 +362,32 @@ class Run:
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
-        try:
-            cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
-            container_engine_pull = check_output(cmd)
-            logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
-        except CalledProcessError:
-            error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub."
-            logger.info(error_message)
-            # Prepare data to be sent to submissions api
-            docker_pull_fail_data = {
-                "type": "Docker_Image_Pull_Fail",
-                "error_message": error_message,
-            }
-            # Send data to be written to ingestion logs
-            self._update_submission(docker_pull_fail_data)
-            # Send error through web socket to the frontend
-            asyncio.run(self._send_data_through_socket(error_message))
-            raise DockerImagePullException(f"Pull for {image_name} failed!")
+        retries, max_retries = (0, 3)
+        while retries < max_retries:
+            try:
+                cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
+                container_engine_pull = check_output(cmd)
+                logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
+                break  # Break if the loop is successful
+            except CalledProcessError as pull_error:
+                retries += 1
+                if retries >= max_retries:
+                    error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub. {pull_error}"
+                    logger.info(error_message)
+                    # Prepare data to be sent to submissions api
+                    docker_pull_fail_data = {
+                        "type": "Docker_Image_Pull_Fail",
+                        "error_message": error_message,
+                        "is_scoring": self.is_scoring
+                    }
+                    # Send data to be written to ingestion logs
+                    self._update_submission(docker_pull_fail_data)
+                    # Send error through web socket to the frontend
+                    asyncio.run(self._send_data_through_socket(error_message))
+                    raise DockerImagePullException(f"Pull for {image_name} failed!")
+                else:
+                    logger.info("Failed. Retrying in 5 seconds...")
+                    time.sleep(5)  # Wait 5 seconds before retrying
 
     async def _send_data_through_socket(self, error_message):
         """
@@ -546,12 +552,25 @@ class Run:
         websocket = await websockets.connect(self.websocket_url)
         websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
 
+        # Function to read a line, if the line is larger than the buffer size we will
+        # return the buffer so we can continue reading until we get a newline, rather
+        # than getting a LimitOverrunError
+        async def _readline_or_chunk(stream):
+            try:
+                return await stream.readuntil(b"\n")
+            except asyncio.exceptions.IncompleteReadError as e:
+                # Just return what has been read so far
+                return e.partial
+            except asyncio.exceptions.LimitOverrunError as e:
+                # If we get a LimitOverrunError, we will return the buffer so we can continue reading
+                return await stream.read(e.consumed)
+
         while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
             try:
                 logs = [self.logs[kind][key] for key in ('stdout', 'stderr')]
                 for value in logs:
                     try:
-                        out = await asyncio.wait_for(value["stream"].readline(), timeout=.1)
+                        out = await asyncio.wait_for(_readline_or_chunk(value["stream"]), timeout=.1)
                         if out:
                             value["data"] += out
                             print("WS: " + str(out))
@@ -612,7 +631,14 @@ class Run:
 
         return path
 
-    async def _run_program_directory(self, program_dir, kind, can_be_output=False):
+    async def _run_program_directory(self, program_dir, kind):
+        """
+        Function responsible for running program directory
+
+        Args:
+            - program_dir : can be either ingestion program or program/submission
+            - kind : either `program` or `ingestion`
+        """
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
             logger.info(f"{program_dir} not found, no program to execute")
@@ -626,12 +652,13 @@ class Run:
         elif os.path.exists(os.path.join(program_dir, "metadata")):
             metadata_path = 'metadata'
         else:
-            if can_be_output:
+            # Display a warning in logs when there is no metadata file in submission/program dir
+            if kind == "program":
                 logger.info(
-                    "Program directory missing metadata, assuming it's going to be handled by ingestion "
-                    "program so move it to output"
+                    "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
-                # Copying so that we don't move a code submission w/out a metadata command
+                # Copy submission files into prediction output
+                # This is useful for results submissions but wrongly uses storage
                 shutil.copytree(program_dir, self.output_dir)
                 return
             else:
@@ -679,6 +706,10 @@ class Run:
             # Don't buffer python output, so we don't lose any
             '-e', 'PYTHONUNBUFFERED=1',
         ]
+
+        # GPU or not
+        if os.environ.get("USE_GPU"):
+            engine_cmd.extend(['--gpus', 'all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
@@ -730,7 +761,7 @@ class Run:
             start_time = time.time()
             zip_path = make_archive(os.path.join(self.root_dir, str(uuid.uuid4())), 'zip', directory)
             duration = time.time() - start_time
-            logger.info("Time needed to zip archive: {duration} seconds.")
+            logger.info(f"Time needed to zip archive: {duration} seconds.")
             if is_valid_zip(zip_path): # Check zip integrity
                 self._put_file(url, file=zip_path) # Send the file
                 break # Leave the loop in case of success
@@ -840,7 +871,7 @@ class Run:
         logger.info("Running scoring program, and then ingestion program")
         loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
-            self._run_program_directory(program_dir, kind='program', can_be_output=True),
+            self._run_program_directory(program_dir, kind='program'),
             self._run_program_directory(ingestion_program_dir, kind='ingestion'),
             self.watch_detailed_results(),
             loop=loop,

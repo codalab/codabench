@@ -34,47 +34,125 @@
 
             <!-- Second Column -->
             <div class="eight wide column">
-                <!--  Name  -->
-                <span class="header content">{selected_user.first_name} {selected_user.last_name}</span>
+
+                <!--  Section Personal Info  -->
+                <div id="horiz-margin" class="ui horizontal divider">Personal Info</div>
                 
-                <!--  About  -->
-                <div id="horiz-margin" class="ui horizontal divider">About</div>
-                <div class="about-block">
-                    <i class="marker icon"></i>
-                    <span if="{!selected_user.location}" class="text-placeholder">Location</span>
-                    <span if="{selected_user.location}">{selected_user.location}</span>
-                </div>
-                <div  class="about-block">
-                    <i class="user icon"></i>
-                    <span if="{!selected_user.title}" class="text-placeholder">Job Title</span>
-                    <span if="{selected_user.title}">{selected_user.title}</span>
+                <!-- Name -->
+                <div if="{ selected_user.first_name && selected_user.last_name}" class="about-block">
+                    <div class="flex-container">
+                        <div class="label">Name</div>
+                        <div class="value">{selected_user.first_name} {selected_user.last_name}</div>
+                    </div>
                 </div>
 
-                <!--  Bio  -->
-                <div id="horiz-margin" class="ui horizontal divider">Bio</div>
-                <span if="{!selected_user.biography}" class="text-placeholder">No bio found! Update your profile to show your bio here.</span>
-                <div if="{selected_user.biography}"  class="ui justified container">{selected_user.biography}</div>
-                
-                <!--  Links  -->
-                <div id="horiz-margin" class="ui horizontal divider">Links</div>
-                <div id="grid-margin" class="ui grid">
-                    <div class="social-block">
-                        <span class="three wide column"><i class="world icon"></i>Website:</span>
-                        <a if="{selected_user.personal_url}" href="{selected_user.personal_url}" class="thirteen wide column">{selected_user.personal_url}</a>
+                <!--  Do not show to other users  -->
+                <div if="{selected_user.id === CODALAB.state.user.id}">
+                    <!-- Email -->
+                    <div if="{ selected_user.email }" class="about-block">
+                        <div class="flex-container">
+                            <div class="label">Email</div>
+                            <div class="value">{selected_user.email}</div>
+                        </div>
                     </div>
-                    <div class="social-block">
-                        <span class="three wide column"><i class="github icon"></i>GitHub:</span>
-                        <a if="{selected_user.github_url}" href="https://github.com/" class="thirteen wide column">{selected_user.github_url}</a>
+
+                    <!-- Username -->
+                    <div if="{ selected_user.username }" class="about-block">
+                        <div class="flex-container">
+                            <div class="label">Username</div>
+                            <div class="value">{selected_user.username}</div>
+                        </div>
                     </div>
-                    <div class="social-block">
-                        <span class="three wide column"><i class="linkedin icon"></i>LinkedIn:</span>
-                        <a if="{selected_user.linkedin_url}" href="https://linkedin.com/" class="thirteen wide column">{selected_user.linkedin_url}</a>
-                    </div>
-                    <div class="social-block">
-                        <span class="three wide column"><i class="twitter icon"></i>Twitter:</span>
-                        <a if="{selected_user.twitter_url}" href="https://twitter.com/" class="thirteen wide column">{selected_user.twitter_url}</a>
+
+                    <!-- Display Name -->
+                    <div if="{ selected_user.display_name }" class="about-block">
+                        <div class="flex-container">
+                            <div class="label">Display Name</div>
+                            <div class="value">{selected_user.display_name}</div>
+                        </div>
                     </div>
                 </div>
+                
+                <!--  Section About  -->
+                <div id="horiz-margin" class="ui horizontal divider">About</div>
+
+                <!-- Location -->
+                <div if="{ selected_user.location }" class="about-block">
+                    <div class="flex-container">
+                        <div class="label"></i>Location</div>
+                        <div class="value">{selected_user.location}</div>
+                    </div>
+                </div>
+
+                <!-- Job title -->
+                <div if="{ selected_user.title }" class="about-block">
+                    <div class="flex-container">
+                        <div class="label">Job Title</div>
+                        <div class="value">{selected_user.title}</div>
+                    </div>
+                </div>
+
+                <!--  Empty About Message  -->
+                <span if="{!selected_user.location && !selected_user.title}" class="text-placeholder">Update your profile to show your job title and location here.</span>
+                
+                
+
+                <!--  Section Bio  -->
+                <div id="horiz-margin" class="ui horizontal divider">Bio</div>
+                <!-- Bio  -->
+                <div if="{selected_user.biography}"  class="ui justified container">{selected_user.biography}</div>
+                
+                <!--  Empty Bio Message   -->
+                <span if="{!selected_user.biography}" class="text-placeholder">Update your profile to show your bio here.</span>
+                
+                
+                <!--  Section Links  -->
+                <div id="horiz-margin" class="ui horizontal divider">Links</div>
+
+                <!--  Website   -->
+                <div if="{ selected_user.personal_url }" class="about-block">
+                    <div class="flex-container">
+                        <div class=""><i class="world icon"></i>Website:</div>
+                        <div class="value">
+                            <a href="{selected_user.personal_url}" target="_blank">{selected_user.personal_url}</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!--  GitHub   -->
+                <div if="{ selected_user.github_url }" class="about-block">
+                    <div class="flex-container">
+                        <div class=""><i class="github icon"></i>GitHub:</div>
+                        <div class="value">
+                            <a href="{ selected_user.github_url }" target="_blank">{selected_user.github_url}</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!--  LinkedIn   -->
+                <div if="{ selected_user.linkedin_url }" class="about-block">
+                    <div class="flex-container">
+                        <div class=""><i class="linkedin icon"></i>LinkedIn:</div>
+                        <div class="value">
+                            <a href="{ selected_user.linkedin_url }" target="_blank">{selected_user.linkedin_url}</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!--  Twitter   -->
+                <div if="{ selected_user.twitter_url }" class="about-block">
+                    <div class="flex-container">
+                        <div class=""><i class="twitter icon"></i>Twitter:</div>
+                        <div class="value">
+                            <a href="{ selected_user.twitter_url }" target="_blank">{selected_user.twitter_url}</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!--  Empty Links Message   -->
+                <span if="{!selected_user.personal_url && !selected_user.github_url && !selected_user.linkedin_url && !selected_user.twitter_url}" class="text-placeholder">Update your profile to show your social links here.</span>
+                
+
             </div>
         </div>
     </div>
@@ -159,8 +237,21 @@
 
         .about-block
             margin-top 10px
+            display flex
+            flex-direction column
+
+        .flex-container
+            display flex
+            flex-direction row
 
         .text-placeholder
             color #9e9e9e
+        
+        .label 
+            width 100px
+            color: #999
+        .value
+            font-size 15px
+            margin-left 10px
     </style>
 </profile-detail>

@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import timedelta
+from celery.schedules import crontab
 
 import dj_database_url
 
@@ -36,7 +37,7 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'oauth2_provider',
-    'corsheaders',
+    # 'corsheaders',
     'social_django',
     'django_extensions',
     'django_filters',
@@ -59,6 +60,7 @@ OUR_APPS = (
     'health',
     'forums',
     'announcements',
+    'oidc_configurations',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -71,7 +73,8 @@ MIDDLEWARE = (
     # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware', # BB
+    'django.middleware.common.CommonMiddleware'
 )
 
 ROOT_URLCONF = 'urls'
@@ -208,6 +211,8 @@ CELERY_BROKER_USE_SSL = os.environ.get('BROKER_USE_SSL', False)
 CELERY_BROKER_URL = os.environ.get('BROKER_URL')
 if not CELERY_BROKER_URL:
     CELERY_BROKER_URL = f'pyamqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//'
+CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://redis:6379")
+CELERY_IGNORE_RESULT = False      # Ensure that Celery tracks the state
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ('json',)
 CELERY_BEAT_SCHEDULE = {
@@ -222,6 +227,22 @@ CELERY_BEAT_SCHEDULE = {
     'submission_status_cleanup': {
         'task': 'competitions.tasks.submission_status_cleanup',
         'schedule': timedelta(seconds=3600)
+    },
+    'create_storage_analytics_snapshot': {
+        'task': 'analytics.tasks.create_storage_analytics_snapshot',
+        'schedule': crontab(hour='2', minute='0', day_of_week='sun')  # Every Sunday at 02:00 UTC time
+    },
+    'update_home_page_counters': {
+        'task': 'analytics.tasks.update_home_page_counters',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
+    'clean_deleted_users': {
+        'task': 'profiles.tasks.clean_deleted_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
+    'clean_non_activated_users': {
+        'task': 'profiles.tasks.clean_non_activated_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
     },
 }
 CELERY_TIMEZONE = 'UTC'
@@ -321,6 +342,7 @@ CHANNEL_LAYERS = {
 }
 
 SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
+MAX_EXECUTION_TIME_LIMIT = os.environ.get('MAX_EXECUTION_TIME_LIMIT', "600")  # time limit of the default queue
 
 # =============================================================================
 # Storage
@@ -397,6 +419,10 @@ GS_PUBLIC_BUCKET_NAME = os.environ.get('GS_PUBLIC_BUCKET_NAME')
 GS_PRIVATE_BUCKET_NAME = os.environ.get('GS_PRIVATE_BUCKET_NAME')
 GS_BUCKET_NAME = GS_PUBLIC_BUCKET_NAME  # Default bucket set to public bucket
 
+# Quota
+DEFAULT_USER_QUOTA = 15  # 15GB
+
+
 # =============================================================================
 # Debug
 # =============================================================================
@@ -457,3 +483,10 @@ AJAX_LOOKUP_CHANNELS = {'django_su': dict(model='profiles.User', search_field='u
 # on default queue when number of submissions are < RERUN_SUBMISSION_LIMIT
 # =============================================================================
 RERUN_SUBMISSION_LIMIT = os.environ.get('RERUN_SUBMISSION_LIMIT', 30)
+
+
+# =============================================================================
+# Enable or disbale regular email sign-in an sign-up
+# =============================================================================
+ENABLE_SIGN_UP = os.environ.get('ENABLE_SIGN_UP', 'True').lower() == 'true'
+ENABLE_SIGN_IN = os.environ.get('ENABLE_SIGN_IN', 'True').lower() == 'true'

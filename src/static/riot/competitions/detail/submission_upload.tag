@@ -61,7 +61,7 @@
                     <select name="organizations" id="organization_dropdown" class="ui dropdown">
                         <option value="None">Yourself</option>
                         <option each="{org in organizations}" value="{org.id}">{org.name}</option>
-                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organizaiton</option>
+                        <option if="{_.size(organizations) === 0}" value="add_organization">+ Add New Organization</option>
                     </select> 
                     
                 </div>
@@ -476,19 +476,18 @@
                 .fail(function (response) {
                     if (response) {
                         try {
-                            let errors = JSON.parse(response.responseText);
-
-                            // Clean up errors to not be arrays but plain text
-                            Object.keys(errors).map(function (key, index) {
-                                errors[key] = errors[key].join('; ')
-                            })
-
+                            let errors = JSON.parse(response.responseText)
+                            let error_str = Object.keys(errors).map(function (key) { return errors[key] }).join("; ")
+                            toastr.error("Submission upload failed: " + error_str)
                             self.update({errors: errors})
-                        } catch (e) {
 
+                        } catch (e) {
+                            toastr.error("Submission upload failed. Server returned: " + response.status + " " + response.statusText);
                         }
+                    } else {
+                        toastr.error("Something went wrong, please try again later")
                     }
-                    toastr.error("Creation failed, error occurred")
+                    
                 })
                 .always(function () {
                     setTimeout(self.hide_progress_bar, 500)

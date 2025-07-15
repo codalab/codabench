@@ -93,6 +93,9 @@ CODALAB.api = {
     delete_submission: function (pk) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/`)
     },
+    soft_delete_submission: function (pk) {
+        return CODALAB.api.request('DELETE', `${URLS.API}submissions/${pk}/soft_delete/`)
+    },
     delete_many_submissions: function (pks) {
         return CODALAB.api.request('DELETE', `${URLS.API}submissions/delete_many/`, pks)
     },
@@ -101,6 +104,9 @@ CODALAB.api = {
     },
     cancel_submission: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/cancel_submission/`)
+    },
+    run_submission: function (id) {
+        return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/run_submission/`)
     },
     re_run_submission: function (id) {
         return CODALAB.api.request('POST', `${URLS.API}submissions/${id}/re_run_submission/`)
@@ -120,6 +126,31 @@ CODALAB.api = {
     },
     get_submission_detail_result: function (id) {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
+    },
+    download_many_submissions: function (pks) {
+        console.log('Request bulk');
+        const params = new URLSearchParams({ pks: JSON.stringify(pks) });
+        const url = `${URLS.API}submissions/download_many/?${params}`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.blob();
+        }).then(blob => {
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'bulk_submissions.zip';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }).catch(error => {
+            console.error('Error downloading submissions:', error);
+        });
     },
 
     /*---------------------------------------------------------------------
@@ -165,6 +196,7 @@ CODALAB.api = {
         // Pass the requested file name for the SAS url
         metadata.request_sassy_file_name = data_file.name
         metadata.file_name = data_file.name
+        metadata.file_size = data_file.size
 
         // This will be set on successful dataset creation, then used to complete the dataset upload
         var dataset = {}
@@ -228,6 +260,30 @@ CODALAB.api = {
     create_task: (data) => {
         return CODALAB.api.request('POST', `${URLS.API}tasks/`, data)
     },
+    upload_task: (data_file, progress_update_callback) => {
+        var form_data = new FormData()
+        form_data.append('file', data_file)
+        return $.ajax({
+            type: 'POST',
+            url: URLS.API + 'tasks/upload_task/',
+            data: form_data,
+            processData: false,
+            contentType: false,
+            xhr: function () {
+                var xhr = new window.XMLHttpRequest();
+                // Track upload progress
+                xhr.upload.addEventListener('progress', function (event) {
+                    if (event.lengthComputable) {
+                        var percent_complete = (event.loaded / event.total) * 100;
+                        if (progress_update_callback) {
+                            progress_update_callback(percent_complete);
+                        }
+                    }
+                }, false);
+                return xhr;
+            }
+        });
+    },    
     share_task: (pk, data) => {
         return CODALAB.api.request('PATCH', `${URLS.API}tasks/${pk}/`, data)
     },
@@ -308,11 +364,32 @@ CODALAB.api = {
     get_analytics: (filters) => {
         return CODALAB.api.request('GET', `${URLS.API}analytics/`, filters)
     },
+    get_storage_usage_history: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/storage_usage_history/`, filters);
+    },
+    get_competitions_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/competitions_usage/`, filters);
+    },
+    get_users_usage: (filters) => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/users_usage/`, filters);
+    },
+    delete_orphan_files: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}analytics/delete_orphan_files/`)
+    },
+    get_orphan_files: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/get_orphan_files/`)
+    },
+    check_orphans_deletion_status: () => {
+        return CODALAB.api.request('GET', `${URLS.API}analytics/check_orphans_deletion_status/`)
+    },
     /*---------------------------------------------------------------------
          User Quota and Cleanup
     ---------------------------------------------------------------------*/
     get_user_quota_cleanup: () => {
         return CODALAB.api.request('GET', `${URLS.API}user_quota_cleanup/`)
+    },
+    get_user_quota: () => {
+        return CODALAB.api.request('GET', `${URLS.API}user_quota/`)
     },
     delete_unused_tasks: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_tasks/`)
@@ -326,5 +403,10 @@ CODALAB.api = {
     delete_failed_submissions: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
     },
-    
+    /*---------------------------------------------------------------------
+         User Account
+    ---------------------------------------------------------------------*/
+    request_delete_account: (data) => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_account/`, data)
+    },
 }

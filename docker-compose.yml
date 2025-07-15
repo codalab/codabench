@@ -4,14 +4,17 @@ services:
   #   Web Services
   #-----------------------------------------------
   caddy:
-    image: abiosoft/caddy:1.0.3
+    image: caddy:2.10.0
     env_file: .env
     environment:
       - ACME_AGREE=true
     volumes:
-      - ./Caddyfile:/etc/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./certs/caddy:/etc/caddycerts
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+      - ./var/log/caddy:/var/log/
+      - ./maintenance_mode/:/srv
     restart: unless-stopped
     ports:
       - 80:80
@@ -22,7 +25,7 @@ services:
   django:
     build: .
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: bash -c "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
+    command: bash -c "python manage.py collectstatic --noinput && cd /app/src &&  watchmedo auto-restart -p '*.py' --recursive -- gunicorn asgi:application -w 2 -k uvicorn.workers.UvicornWorker -b :8000 -b :80 --capture-output --log-level debug"
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
@@ -30,6 +33,7 @@ services:
       - .:/app:delegated
       - /tmp/codalab-v2/django:/codalab_tmp
       - ./backups:/app/backups
+      - ./var/logs:/app/logs
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -41,8 +45,8 @@ services:
     tty: true
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -98,8 +102,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
 
   #-----------------------------------------------
@@ -111,6 +115,7 @@ services:
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
     ports:
       - 5432:5432
     volumes:
@@ -119,18 +124,26 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Rabbitmq & Flower monitoring tool
   #-----------------------------------------------
   rabbit:
-    image: rabbitmq:management
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbitmq
+      args:
+        - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
     # setting hostname here makes data persist properly between
     # containers being destroyed..!
     hostname: rabbit
     env_file: .env
+    environment:
+      - http_proxy=${RABBITMQ_HTTP_PROXY}
+      - https_proxy=${RABBITMQ_HTTPS_PROXY}
+      - no_proxy=${RABBITMQ_NO_PROXY}
     ports:
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
@@ -139,8 +152,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   flower:
     # image: mher/flower
@@ -157,8 +170,8 @@ services:
       - rabbit
     logging:
         options:
-            max-size: "20k"
-            max-file: "10"
+            max-size: "20m"
+            max-file: "5"
 
   #-----------------------------------------------
   #   Redis
@@ -170,8 +183,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
 
   #-----------------------------------------------
   #   Celery Service
@@ -191,8 +204,8 @@ services:
     restart: unless-stopped
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -221,5 +234,5 @@ services:
       - CODALAB_IGNORE_CLEANUP_STEP=1
     logging:
       options:
-        max-size: "20k"
-        max-file: "10"
+        max-size: "20m"
+        max-file: "5"

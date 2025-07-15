@@ -28,7 +28,7 @@ class TestCompetitions(SeleniumTestCase):
 
         # Check that the text is a valid datetime by loading it with strptime.
         # This will raise a ValueError if the format is incorrect.
-        assert datetime.strptime(text, '%B %d, %Y, %I:%M %p %Z')
+        assert datetime.strptime(text, '%B %d, %Y At %I:%M %p %Z')
 
     def _upload_competition(self, competition_zip_path):
         """Creates a competition and waits for success message.
@@ -108,11 +108,25 @@ class TestCompetitions(SeleniumTestCase):
         sleep(LONG_WAIT)
         self.find('form[selenium="phase-form"] input[name="name"]').send_keys('Name')
         sleep(SHORT_WAIT)
-        self.find('input[name="start"]').click()
-        self.find('input[name="start"]').send_keys(2)
-        self.find('input[name="start"]').send_keys(Keys.ENTER)
-        self.find('input[name="end"]').send_keys(3)
-        self.find('input[name="end"]').send_keys(Keys.ENTER)
+        # Click start date field, press 2, press enter
+        self.find('input[name="start_date"]').click()
+        self.find('input[name="start_date"]').send_keys(2)
+        self.find('input[name="start_date"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
+        # Click start time field, press 2, press enter
+        self.find('input[name="start_time"]').click()
+        self.find('input[name="start_time"]').send_keys(2)
+        self.find('input[name="start_time"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
+        # Click end date field, press 3, press enter
+        self.find('input[name="end_date"]').click()
+        self.find('input[name="end_date"]').send_keys(3)
+        self.find('input[name="end_date"]').send_keys(Keys.ENTER)
+        sleep(SHORT_WAIT)
+        # Click end time field, press 2, press enter
+        self.find('input[name="end_time"]').click()
+        self.find('input[name="end_time"]').send_keys(3)
+        self.find('input[name="end_time"]').send_keys(Keys.ENTER)
         self.find('label[for="tasks"]').click()
         sleep(SHORT_WAIT)
         self.find("form[selenium='phase-form'] input.search").send_keys("Wheat")

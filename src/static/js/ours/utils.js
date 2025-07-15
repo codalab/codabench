@@ -89,6 +89,26 @@ function pretty_date(date_string) {
     }
 }
 
+function pretty_bytes(bytes, decimalPlaces = 1, suffix = "B", binary = false) {
+
+    // Ensure bytes is a valid number
+    bytes = parseFloat(bytes)
+    if (isNaN(bytes) || bytes < 0) {
+        return "" // Return empty string for invalid or negative values
+    }
+
+    const factor = binary ? 1024.0 : 1000.0;
+    const units = binary ? ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] : ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z'];
+
+    for (const unit of units) {
+        if (Math.abs(bytes) < factor || unit === units[units.length - 1]) {
+            return bytes.toFixed(decimalPlaces) + ' ' + unit + suffix;
+        }
+        bytes /= factor;
+    }
+    return bytes.toFixed(decimalPlaces) + ' ' + units[units.length - 1] + suffix;
+}
+
 /* ----------------------------------------------------------------------------
  Form data helpers
  ----------------------------------------------------------------------------*/
@@ -151,13 +171,23 @@ const easyMDE_rendering_config = {
     }
 }
 
-function create_easyMDE(element) {
+function create_easyMDE(element, showToolBar = true, showStatusBar = true, editorHeight = '300px') {
+
+    var toolbarIcons = []
+    if(showToolBar){
+        toolbarIcons = ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview", "guide"]
+    }
+    let statusItems =  ["lines", "words", "cursor"]
+
+
     var markdown_editor = new EasyMDE({
         element: element,
         autoRefresh: true,
         forceSync: true,
-        hideIcons: ["side-by-side", "fullscreen"],
-        renderingConfig: easyMDE_rendering_config
+        toolbar: toolbarIcons,
+        renderingConfig: easyMDE_rendering_config,
+        status: showStatusBar ? statusItems : showStatusBar,
+        minHeight: editorHeight || '300px' // Adjust the height, default is 300
     })
     element.EASY_MDE = markdown_editor
     return markdown_editor
@@ -300,7 +330,12 @@ function getBase64(file) {
         debug: $.tablesort.DEBUG,
         asc: 'sorted ascending',
         desc: 'sorted descending',
-        compare: function(a, b) {
+        compare: function(a, b, settings) {
+            // Convert the values to numbers for proper sorting
+            if (!isNaN(parseFloat(a)) && !isNaN(parseFloat(b))) {
+                var a = parseFloat(a);
+                var b = parseFloat(b);
+            }
             if (a > b) {
                 return 1;
             } else if (a < b) {

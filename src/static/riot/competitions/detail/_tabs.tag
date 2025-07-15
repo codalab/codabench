@@ -7,7 +7,7 @@
             <div class="item" data-tab="phases-tab">Phases</div>
             <div class="item" data-tab="participate-tab">My Submissions</div>
             <div class="item" data-tab="results-tab">Results</div>
-            <a class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
+            <a if="{ competition.forum_enabled }" class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
                     <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
@@ -33,7 +33,7 @@
                                  data-tab="_tab_page_term">
                                 Terms
                             </div>
-                            <div class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
+                            <div  if={competition.files && competition.files.length != 0} class="{active: _.get(competition.pages, 'length') === 0} item" data-tab="files">
                                 Files
                             </div>
                         </div>
@@ -50,17 +50,25 @@
                             <div class="ui" id="page_term">
                             </div>
                         </div>
-                        <!--  Files  -->
+                        
+                        <!--  Files page  -->
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
-                                <table class="ui celled table">
+                                <!--  Login message if not loggedin  -->
+                                <div if="{!CODALAB.state.user.logged_in}" class="ui yellow message">
+                                    <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
+                                    <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to view availbale files.
+                                </div>
+
+                                <!--  Files table if loggedin  -->
+                                <table if="{CODALAB.state.user.logged_in}" class="ui celled table">
                                     <thead>
                                     <tr>
                                         <th class="index-column">Download</th>
                                         <th>Phase</th>
                                         <th>Task</th>
                                         <th>Type</th>
-                                        <th>Available <span class="ui mini circular icon button"
+                                        <th if="{competition.is_admin}">Available <span class="ui mini circular icon button"
                                                           data-tooltip="Available for download to participants."
                                                           data-position="top center">
                                                           <i class="question icon"></i>
@@ -80,10 +88,10 @@
                                         <td>{file.task}</td>
                                         <td>{file.type}</td>
                                         <!--  <td>{file.type === 'Public Data' || file.type === 'Starting Kit' ? 'yes': 'no'}</td>  -->
-                                        <td class="center aligned">
+                                        <td if="{competition.is_admin}" class="center aligned">
                                             <i if="{file.available}" class="checkmark box icon green"></i>
                                         </td>
-                                        <td>{filesize(file.file_size * 1024)}</td>
+                                        <td>{pretty_bytes(file.file_size)}</td>
                                     </tr>
                                     <!-- Conditional row if no files to show -->
                                     <tr class="center aligned">
@@ -249,27 +257,28 @@
                         }
                     })
                     if(self.competition.participant_status === 'approved' && self.competition.make_programs_available){
-                        self.competition.files.push(ingestion_program)
-                        self.competition.files.push(scoring_program)
+                        Object.keys(ingestion_program).length != 0 ? self.competition.files.push(ingestion_program) : null
+                        Object.keys(scoring_program).length != 0 ? self.competition.files.push(scoring_program) : null
                     }if(self.competition.participant_status === 'approved' && self.competition.make_input_data_available){
-                        self.competition.files.push(input_data)
+                        Object.keys(input_data).length != 0 ? self.competition.files.push(input_data) : null
                     }
                     if(self.competition.admin && !self.competition.make_programs_available){
-                        self.competition.files.push(ingestion_program)
-                        self.competition.files.push(scoring_program)
+                        Object.keys(ingestion_program).length != 0 ? self.competition.files.push(ingestion_program) : null
+                        Object.keys(scoring_program).length != 0 ? self.competition.files.push(scoring_program) : null
                     }
                     if(self.competition.admin && !self.competition.make_input_data_available){
-                        self.competition.files.push(input_data)
+                        Object.keys(input_data).length != 0 ? self.competition.files.push(input_data) : null
                     }
                     if(self.competition.admin){
-                        self.competition.files.push(reference_data)
+                        Object.keys(reference_data).length != 0 ? self.competition.files.push(reference_data) : null
                     }
+
                 })
                 // Need code for public_data and starting_kit at phase level
                 if(self.competition.participant_status === 'approved'){    
                     _.forEach(phase.tasks, task => {
                         _.forEach(task.solutions, solution => {
-                            self.competition.files.push({
+                            soln = {
                                 key: solution.data,
                                 name: solution.name,
                                 file_size: solution.size,
@@ -277,11 +286,12 @@
                                 task: task.name,
                                 type: 'Solution',
                                 available: true
-                            })
+                            }
+                            Object.keys(solution).length != 0 ? self.competition.files.push(soln) : null
                         })
                     })
                     if (phase.starting_kit != null){
-                        self.competition.files.push({
+                        s_kit = {
                             key: phase.starting_kit.key,
                             name: phase.starting_kit.name,
                             file_size: phase.starting_kit.file_size,
@@ -289,10 +299,11 @@
                             task: '-',
                             type: 'Starting Kit',
                             available: true
-                        })
+                        }
+                        Object.keys(phase.starting_kit).length != 0 ? self.competition.files.push(s_kit) : null
                     }
                     if (phase.public_data != null){
-                        self.competition.files.push({
+                        p_data = {
                             key: phase.public_data.key,
                             name: phase.public_data.name,
                             file_size: phase.public_data.file_size,
@@ -300,7 +311,8 @@
                             task: '-',
                             type: 'Public Data',
                             available: true
-                        })
+                        }
+                        Object.keys(phase.public_data).length != 0 ? self.competition.files.push(p_data) : null
                     }
                 }
             })
@@ -339,10 +351,22 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
+            
+            // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
+
+            // If no Current phase in this competition 
+            // Find Final phase and set selected phase index to its id
             if (self.selected_phase_index == null) {
                 self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
             }
+
+            // If no Final phase in this competition 
+            // Find the last phase and set selected phase index to its id
+            if (self.selected_phase_index == null) {
+                self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id; 
+            }
+
             self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
 
             $('.phases-tab .accordion', self.root).accordion()
@@ -400,7 +424,7 @@
         })
 
         self.pretty_date = function (date_string) {
-            if (!!date_string) {
+            if (date_string != null) {
                 return luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATETIME_FULL)
             } else {
                 return ''

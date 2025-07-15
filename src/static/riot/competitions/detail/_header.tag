@@ -41,11 +41,11 @@
                             <!-- Main information -->
                             <div>
                                 <span class="detail-label">Organized by:</span>
-                                <span class="detail-item">{competition.created_by}</span>
+                                <span class="detail-item"><a href="/profiles/user/{competition.created_by}" target="_BLANK">{competition.owner_display_name}</a></span>
                                 <span if="{competition.contact_email}">(<span class="contact-email">{competition.contact_email}</span>)</span>
                             </div>
                             <div>
-                                <span class="detail-label">Current phase ends:</span>
+                                <span class="detail-label">{has_current_phase(competition) ? 'Current Phase Ends' : 'Current Active Phase'}:</span>
                                 <span class="detail-item">{get_end_date(competition)}</span>
                             </div>
                             <div>
@@ -85,11 +85,11 @@
                 <div class="stat-buttons">
                     <!--todo: turn cursor: pointer and hover off on these buttons since they are not clickable-->
                     <div class="ui tiny left labeled fluid button">
-                        <a class="ui tiny basic red label">{competition.participant_count}</a>
+                        <a class="ui tiny basic red label">{competition.participants_count}</a>
                         <div class="ui tiny red button">Participants</div>
                     </div>
                     <div class="ui tiny left labeled fluid button">
-                        <a class="ui tiny basic teal label">{competition.submission_count}</a>
+                        <a class="ui tiny basic teal label">{competition.submissions_count}</a>
                         <div class="ui tiny teal button">Submissions</div>
                     </div>
                 </div>
@@ -274,9 +274,19 @@
             $('.send-pop-report').popup('toggle')
         }
 
+        self.has_current_phase = function (competition) {
+            let current_phase = _.find(competition.phases, {status: 'Current'})
+            return current_phase ? true : false
+        }
+
         self.get_end_date = function (competition) {
-            let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
-            return end_date ? pretty_date(end_date) : 'Never'
+            if(self.has_current_phase(competition)){
+                let end_date = _.get(_.find(competition.phases, {status: 'Current'}), 'end')
+                return end_date ? pretty_date(end_date) : 'Never'
+            }else{
+                return 'None'
+            }
+            
         }
 
         self.migrate_phase = function (phase_id) {

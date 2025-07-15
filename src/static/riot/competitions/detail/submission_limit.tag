@@ -1,22 +1,37 @@
 <submission-limit>
+
     <div class="ui sixteen wide column submission-container">
         <div class="col">
             <div class="col-content">
                 Number of submissions used for the day
+                <a class="float-left" data-tooltip="The submission limit resets at midnight server time." data-position="right center">
+                    <i class="grey question circle icon"></i>
+                </a>
             </div>
-            <span if="{selected_phase.max_submissions_per_day}" class="badge {badgeColor(selected_phase.used_submissions_per_day, selected_phase.max_submissions_per_day)}">
+            <!-- Badge for when there is a limit -->
+            <span if="{selected_phase.max_submissions_per_day > 0}" class="badge {badgeColor(selected_phase.used_submissions_per_day, selected_phase.max_submissions_per_day)}">
                 {selected_phase.used_submissions_per_day} out of {selected_phase.max_submissions_per_day}
+            </span>
+            <!-- Badge for when there is no limit -->
+            <span if="{selected_phase.max_submissions_per_day == 0}" class="badge badge-green">
+                {selected_phase.used_submissions_per_day} out of ∞
             </span>
         </div>
         <div class="col">
             <div class="col-content">
                 Number of total submissions used
             </div>
-            <span if="{selected_phase.max_submissions_per_person}" class="badge {badgeColor(selected_phase.used_submissions_per_person, selected_phase.max_submissions_per_person)}">
+            <!-- Badge for when there is a limit -->
+            <span if="{selected_phase.max_submissions_per_person > 0}" class="badge {badgeColor(selected_phase.used_submissions_per_person, selected_phase.max_submissions_per_person)}">
                 {selected_phase.used_submissions_per_person} out of {selected_phase.max_submissions_per_person}
+            </span>
+            <!-- Badge for when there is no limit -->
+            <span if="{selected_phase.max_submissions_per_person == 0}" class="badge badge-green">
+                {selected_phase.used_submissions_per_person} out of ∞
             </span>
         </div>
     </div>
+
     <script>
         var self = this;
         self.selected_phase = {}

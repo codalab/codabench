@@ -59,7 +59,8 @@
     <div class="ui large modal" ref="modal">
         <i class="close icon"></i>
         <div class="header">
-            Edit phase
+            <!--  When no phase is selected selected_phase_index is undefined  -->
+            { typeof selected_phase_index === 'undefined' ?  'Add Phase' : 'Edit Phase' }
         </div>
         <div class="content">
             <form selenium="phase-form" class="ui form" ref="form">
@@ -68,20 +69,46 @@
                     <input name="name">
                 </div>
 
+                <!--  Start Date and Time  -->
                 <div class="two fields">
-                    <div class="ui calendar field required" ref="calendar_start">
-                        <label>Start</label>
+                    <div class="ui calendar field required" ref="calendar_start_date">
+                        <label>Start Date</label>
                         <div class="ui input left icon">
                             <i class="calendar icon"></i>
-                            <input type="text" name="start">
+                            <input type="text" name="start_date">
+                        </div>
+                    </div>
+                    <div class="ui calendar field required" ref="calendar_start_time">
+                        <label>Start Time
+                        <span data-tooltip="Select time in UTC+0 time zone" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label> 
+                        
+                        <div class="ui input left icon">
+                            <i class="clock icon"></i>
+                            <input type="text" name="start_time">
+                        </div>
+                    </div>
+                </div>
+
+                <!--  End Date and Time  -->
+                <div class="two fields">
+                    <div class="ui calendar field" ref="calendar_end_date">
+                        <label>End Date</label>
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text" name="end_date">
                         </div>
                     </div>
 
-                    <div class="ui calendar field" ref="calendar_end">
-                        <label>End</label>
+                    <div class="ui calendar field" ref="calendar_end_time">
+                        <label>End Time
+                        <span data-tooltip="Select time in UTC+0 time zone" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                        </label>
                         <div class="ui input left icon">
-                            <i class="calendar icon"></i>
-                            <input type="text" name="end">
+                            <i class="clock icon"></i>
+                            <input type="text" name="end_time">
                         </div>
                     </div>
                 </div>
@@ -89,7 +116,7 @@
                 <div class="fluid field required" ref="tasks_select_container" id="tasks_select_container">
                     <label for="tasks">
                         Tasks (Order will be saved) Note: Adding a new task will cause all submissions to be run against it.
-                        <span data-tooltip="Use task manager to create new tasks" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new tasks" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="tasks" id="tasks" class="ui search selection dropdown" ref="multiselect"
@@ -100,7 +127,7 @@
                 <div class="fluid field" ref="public_data_select_container" id="public_data_select_container">
                     <label for="public_data">
                         Public Data (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new public data sets" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new public datasets" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="public_data" id="public_data" class="ui search selection dropdown" ref="public_data_multiselect"
@@ -110,7 +137,7 @@
                 <div class="fluid field" ref="starting_kit_select_container" id="starting_kit_select_container">
                     <label for="starting_kit">
                         Starting Kit (Only 1 per phase)
-                        <span data-tooltip="Use task manager to create new starting kits" data-inverted=""
+                        <span data-tooltip="Use Resources section to create new starting kits" data-inverted=""
                               data-position="bottom center"><i class="help icon circle"></i></span>
                     </label>
                     <select name="starting_kit" id="starting_kit" class="ui search selection dropdown" ref="starting_kit_multiselect"
@@ -133,7 +160,7 @@
                         <div class="three fields">
                             <div class="field">
                                 <label>
-                                    Execution Time Limit <span data-tooltip="In seconds, 600s default if unset"
+                                    Execution Time Limit (seconds)<span data-tooltip="600s if unset, { CODALAB.state.public_env_variables.MAX_EXECUTION_TIME_LIMIT }s max with default queue."
                                                                data-inverted=""
                                                                data-position="bottom center">
                                     <i class="help icon circle"></i></span>
@@ -163,15 +190,41 @@
                         </div>
                         <div class="field">
                             <div class="ui checkbox">
-                                <label>Hide Submission Output</label>
+                                <label>Hide Submission Output
+                                    <span data-tooltip="Hide all submission output" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
                                 <input type="checkbox" ref="hide_output">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Prediction Output 
+                                    <span data-tooltip="Prevent participants from downloading 'Output from prediction step'" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="hide_prediction_output">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox">
+                                <label>Hide Score Output 
+                                    <span data-tooltip="Prevent participants from downloading 'Output from scoring step'" data-inverted=""
+                              data-position="bottom center"><i class="help icon circle"></i></span>
+                                </label>
+                                <input type="checkbox" ref="hide_score_output">
                             </div>
                         </div>
 
                         <div class="inline field" if="{phases.length > 0 && ![null, undefined, 0].includes(selected_phase_index)}">
                             <div class="ui checkbox">
                                 <input type="checkbox" name="auto_migrate_to_this_phase" ref="auto_migrate">
-                                <label>Auto migrate to this phase</label>
+                                <label>
+                                    Auto migrate to this phase <span data-tooltip="Re-submit all leaderboard submissions automatically when the phase starts."
+                                                               data-inverted=""
+                                                               data-position="bottom center">
+                                    <i class="help icon circle"></i></span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -211,7 +264,7 @@
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
-                    url: `${URLS.API}tasks/?search={query}`,
+                    url: `${URLS.API}tasks/?public=true&search={query}`,
                     cache: false,
                     onResponse: (data) => {
                         return {success: true, results: _.values(data.results)}
@@ -358,7 +411,9 @@
 
             // Have to initialize calendars here (instead of on mount) because they don't exist yet
             if (!self.has_initialized_calendars) {
-                var datetime_options = {
+
+                // Initialize date calendars options
+                var date_options = {
                     type: 'date',
                     popupOptions: {
                         position: 'bottom left',
@@ -371,17 +426,48 @@
                     }
                 }
 
-                var start_options = Object.assign({}, datetime_options, {endCalendar: self.refs.calendar_end})
-                var end_options = Object.assign({}, datetime_options, {startCalendar: self.refs.calendar_start})
+                // Initialize time calendars options
+                var time_options = {
+                    type: 'time',
+                    popupOptions: {
+                        position: 'bottom left',
+                        lastResort: 'bottom left',
+                        hideOnScroll: false
+                    },
+                    ampm: false,
+                    onHide: function () {
+                        // Have to do this because onchange isn't fired when date is picked
+                        self.form_updated()
+                    }
+                }
 
-                $(self.refs.calendar_start).calendar(start_options)
-                $(self.refs.calendar_end).calendar(end_options)
+                // Create a new options object for the start date calendar using 'date_options'
+                $(self.refs.calendar_start_date).calendar(date_options)
+                // Create a new options object for the end date calendar using 'date_options'
+                $(self.refs.calendar_end_date).calendar(date_options)
+
+                // Initialize the start time calendar with the defined options. 
+                // This will create a time picker for the 'start time' field.
+                $(self.refs.calendar_start_time).calendar(time_options)
+
+                // Initialize the end time calendar with the same time picker options.
+                // This will create a time picker for the 'end time' field.
+                $(self.refs.calendar_end_time).calendar(time_options)
 
                 self.has_initialized_calendars = true
             }
+
+            // This condition is executed when selected_phase_index is not undefined i.e. a phase is selected
+            // This means that user is updating a phase and is not creating a new phase
             if(!(self.selected_phase_index === undefined)){
-                $(self.refs.calendar_start).calendar('set date', self.phases[self.selected_phase_index].start)
-                $(self.refs.calendar_end).calendar('set date', self.phases[self.selected_phase_index].end)
+                
+                // Set Dates
+                $(self.refs.calendar_start_date).calendar('set date', self.getDate(self.phases[self.selected_phase_index].start))
+                $(self.refs.calendar_end_date).calendar('set date', self.getDate(self.phases[self.selected_phase_index].end))
+
+                // Set times
+                $(self.refs.calendar_start_time).calendar('set date', self.getTime(self.phases[self.selected_phase_index].start))
+                $(self.refs.calendar_end_time).calendar('set date', self.getTime(self.phases[self.selected_phase_index].end))
             }
         }
 
@@ -407,6 +493,57 @@
             }
             return input
         }
+        self.getDate = function(dt) {
+            // function for extracting date only from the start or end date of a phase
+            // format: 'YYYY-MM-DD'
+            if (dt != null){
+                dt = new Date(dt)
+                return dt.toISOString().split('T')[0]
+            }else{
+                return ""
+            }
+        }
+        self.getTime = function(dt) {
+            // function for extracting time only from the start or end date of a phase
+            // format: 'HH:MM' 24-hour format in UTC
+            if (dt != null){
+                dt = new Date(dt)
+                return dt.toLocaleTimeString('en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    timeZone: 'UTC' // Set time zone to UTC
+                })
+            }else{
+                return ""
+            }
+        }
+        self.formatDateTo_Y_m_d_T_H_M_S = function(input) {
+            // This function formats date in the format YYYY-MM-DDTHH:MM:SS
+
+            // Convert input to date
+            var dateObject = new Date(input)
+
+            // Check if date is valid
+            if (!isNaN(dateObject.getTime())) {
+                // Extract year
+                var year = dateObject.getFullYear()
+                // Extract month
+                var month = (dateObject.getMonth() + 1).toString().padStart(2, '0') // Months are zero-based
+                // Extract day
+                var day = dateObject.getDate().toString().padStart(2, '0')
+                // Extract hours
+                var hours = dateObject.getHours().toString().padStart(2, '0')
+                // Extract minutes
+                var minutes = dateObject.getMinutes().toString().padStart(2, '0')
+                // Extract seconds
+                var seconds = dateObject.getSeconds().toString().padStart(2, '0')
+                
+                // Return formatted date string
+                return year + '-' + month + '-' + day + 'T' + hours + ':' + minutes + ':' + seconds
+            }
+            return input
+        }
+
 
         self.form_updated = function () {
             // This checks phases overall to make sure they are ready to go
@@ -462,7 +599,9 @@
         self.form_check_is_valid = function () {
             // This checks our current form to make sure it's valid
             var data = get_form_data(self.refs.form)
-            self.form_is_valid = !!data.name && !!data.start && self.phase_tasks.length > 0
+            // Phase add/update form is valid if it has 
+            // name, start_date, start_time, and at least one task
+            self.form_is_valid = !!data.name && !!data.start_date && !!data.start_time && self.phase_tasks.length > 0
         }
 
         self.clear_form = function () {
@@ -479,6 +618,20 @@
                 $(field).val('')
             })
             $(self.refs.auto_migrate).prop('checked', false)
+
+            // Clear date and time fields values
+            $(self.refs.calendar_start_date).find('input[name="start_date"]').val('')
+            $(self.refs.calendar_start_time).find('input[name="start_time"]').val('')
+            $(self.refs.calendar_end_date).find('input[name="end_date"]').val('')
+            $(self.refs.calendar_end_time).find('input[name="end_time"]').val('')
+
+            // Clear the date fields calendars
+            // This will make sure that when you click add new phase, the date and time pickers
+            // will not show other phase date/time preselected in the date and time pickers
+            $(self.refs.calendar_start_date).calendar('clear');
+            $(self.refs.calendar_end_date).calendar('clear');
+            $(self.refs.calendar_start_time).calendar('clear');
+            $(self.refs.calendar_end_time).calendar('clear');
 
             self.simple_markdown_editor.value('')
 
@@ -497,7 +650,6 @@
             return new Date(Date.parse(date))
         }
 
-
         self.edit = function (index) {
             self.selected_phase_index = index
             var phase = self.phases[index]
@@ -505,11 +657,12 @@
             self.phase_public_data = [phase.public_data]
             self.phase_starting_kit = [phase.starting_kit]
 
-
             self.update()
             set_form_data(phase, self.refs.form)
             $(self.refs.auto_migrate).prop('checked', _.get(phase, 'auto_migrate_to_this_phase', false))
             self.refs.hide_output.checked = phase.hide_output
+            self.refs.hide_prediction_output.checked = phase.hide_prediction_output
+            self.refs.hide_score_output.checked = phase.hide_score_output
 
             // Setting description in markdown editor
             self.simple_markdown_editor.value(self.phases[index].description || '')
@@ -636,6 +789,32 @@
             self.phase_starting_kit = sorted_phase_starting_kit.slice()
 
             var data = get_form_data(self.refs.form)
+
+            // Fill default start time if start time is empty
+            if (data.start_time == "") {
+                data.start_time = "00:00"
+            } 
+            // Change phase start format to ISO date format "Y-m-dTH:M:S"
+            data.start = self.formatDateTo_Y_m_d_T_H_M_S(data.start_date + " " + data.start_time)
+
+            
+            if (data.end_date) {
+                // Fill default end time if end time is empty
+                if (data.end_time == "") {
+                    data.end_time = "00:00"
+                }
+                data.end = self.formatDateTo_Y_m_d_T_H_M_S(data.end_date + " " + data.end_time)
+
+                // Check: start date must not be after end date
+                if (new Date(data.start) > new Date(data.end)) {
+                    toastr.error("End date cannot be earlier than the start date. Please choose a valid date range.")
+                    return
+                }
+            }else{
+                // end date is set to null if it is not selected because it is optional in the form
+                data.end = null
+            }
+
             data.tasks = self.phase_tasks
             data.public_data = self.phase_public_data.length === 0 ? null : self.phase_public_data[0]
             data.starting_kit = self.phase_starting_kit.length === 0 ? null : self.phase_starting_kit[0]
@@ -648,6 +827,8 @@
             }
             data.auto_migrate_to_this_phase = $(self.refs.auto_migrate).prop('checked')
             data.hide_output = self.refs.hide_output.checked
+            data.hide_prediction_output = self.refs.hide_prediction_output.checked
+            data.hide_score_output = self.refs.hide_score_output.checked
             _.forEach(number_fields, field => {
                 let str = _.get(data, field)
                 if (str) {

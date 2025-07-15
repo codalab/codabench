@@ -8,29 +8,15 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-from api.serializers.profiles import SimpleOrganizationSerializer
+# from api.serializers.profiles import SimpleOrganizationSerializer
 from api.serializers.tasks import TaskSerializer
+from api.serializers.submission_leaderboard import SubmissionScoreSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
 from datasets.models import Data
-from leaderboards.models import SubmissionScore
 from utils.data import make_url_sassy
 
 from tasks.models import Task
 from queues.models import Queue
-
-
-class SubmissionScoreSerializer(serializers.ModelSerializer):
-    index = serializers.IntegerField(source='column.index', read_only=True)
-    column_key = serializers.CharField(source='column.key', read_only=True)
-
-    class Meta:
-        model = SubmissionScore
-        fields = (
-            'id',
-            'index',
-            'score',
-            'column_key',
-        )
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -40,7 +26,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
     phase_name = serializers.CharField(source='phase.name')
     on_leaderboard = serializers.BooleanField(read_only=True)
     task = TaskSerializer()
-    created_when = serializers.DateTimeField(format="%Y-%m-%d %H:%M")
+    created_when = serializers.DateTimeField()
+    auto_run = serializers.SerializerMethodField(read_only=True)
+    can_make_submissions_public = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -66,6 +54,9 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'leaderboard',
             'on_leaderboard',
             'task',
+            'auto_run',
+            'can_make_submissions_public',
+            'is_soft_deleted',
         )
         read_only_fields = (
             'pk',
@@ -77,35 +68,18 @@ class SubmissionSerializer(serializers.ModelSerializer):
         )
 
     def get_filename(self, instance):
-        return basename(instance.data.data_file.name)
+        if instance.data and instance.data.data_file:
+            return basename(instance.data.data_file.name)
+        # NOTE: if submission data is None, it means it is soft deleted
+        return "Deleted File"
 
+    def get_auto_run(self, instance):
+        # returns this submission's competition auto_run_submissions Flag
+        return instance.phase.competition.auto_run_submissions
 
-class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
-    scores = SubmissionScoreSerializer(many=True)
-    owner = serializers.CharField(source='owner.username')
-    display_name = serializers.CharField(source='owner.display_name')
-    slug_url = serializers.CharField(source='owner.slug_url')
-    organization = SimpleOrganizationSerializer(allow_null=True)
-
-    class Meta:
-        model = Submission
-        fields = (
-            'id',
-            'parent',
-            'owner',
-            'leaderboard_id',
-            'fact_sheet_answers',
-            'task',
-            'scores',
-            'display_name',
-            'slug_url',
-            'organization',
-            'detailed_result'
-        )
-        extra_kwargs = {
-            "scores": {"read_only": True},
-            "owner": {"read_only": True},
-        }
+    def get_can_make_submissions_public(self, instance):
+        # returns this submission's competition can_participants_make_submissions_public Flag
+        return instance.phase.competition.can_participants_make_submissions_public
 
 
 class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
@@ -149,9 +123,12 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
 
     def create(self, validated_data):
         tasks = validated_data.pop('tasks', None)
-
         sub = super().create(validated_data)
-        sub.start(tasks=tasks)
+
+        # Check if auto_run_submissions is enabled then run the submission
+        # Otherwise organizer will run manually
+        if sub.phase.competition.auto_run_submissions:
+            sub.start(tasks=tasks)
 
         return sub
 
@@ -284,7 +261,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_prediction_result(self, instance):
         if instance.prediction_result.name:
-            if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+            if (instance.phase.hide_output or instance.phase.hide_prediction_output) and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
                 return None
             return make_url_sassy(instance.prediction_result.name)
 
@@ -294,7 +271,7 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
 
     def get_scoring_result(self, instance):
         if instance.scoring_result.name:
-            if instance.phase.hide_output and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
+            if (instance.phase.hide_output or instance.phase.hide_score_output) and not instance.phase.competition.user_has_admin_permission(self.context['request'].user):
                 return None
             return make_url_sassy(instance.scoring_result.name)
 

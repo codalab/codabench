@@ -20,6 +20,10 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
+from urllib.request import urlopen
+from contextlib import closing
+from urllib.error import ContentTooShortError
+
 from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
@@ -36,11 +40,22 @@ logger = logging.getLogger()
 
 COMPETITION_FIELDS = [
     "title",
+    "description",
     "docker_image",
     "queue",
-    "description",
     "registration_auto_approve",
-    "enable_detailed_results"
+    "enable_detailed_results",
+    "show_detailed_results_in_submission_panel",
+    "show_detailed_results_in_leaderboard",
+    "auto_run_submissions",
+    "can_participants_make_submissions_public",
+    "make_programs_available",
+    "make_input_data_available",
+    "competition_type",
+    "reward",
+    "contact_email",
+    "fact_sheet",
+    "forum_enabled"
 ]
 
 TASK_FIELDS = [
@@ -67,6 +82,8 @@ PHASE_FIELDS = [
     'execution_time_limit',
     'auto_migrate_to_this_phase',
     'hide_output',
+    'hide_prediction_output',
+    'hide_score_output',
 ]
 PHASE_FILES = [
     "input_data",
@@ -83,6 +100,7 @@ LEADERBOARD_FIELDS = [
     'title',
     'key',
     'hidden',
+    'submission_rule',
 
     # For later
     # 'force_submission_to_leaderboard',
@@ -98,7 +116,9 @@ COLUMN_FIELDS = [
     'computation',
     'computation_indexes',
     'hidden',
+    'precision',
 ]
+MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
 
 def _send_to_compute_worker(submission, is_scoring):
@@ -107,7 +127,7 @@ def _send_to_compute_worker(submission, is_scoring):
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
         "secret": submission.secret,
         "docker_image": submission.phase.competition.docker_image,
-        "execution_time_limit": submission.phase.execution_time_limit,
+        "execution_time_limit": min(MAX_EXECUTION_TIME_LIMIT, submission.phase.execution_time_limit),
         "id": submission.pk,
         "is_scoring": is_scoring,
     }
@@ -185,8 +205,9 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    if submission.phase.competition.queue:
+    if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
         submission.queue_name = submission.phase.competition.queue.name or ''
+        run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
         submission.save()
 
         # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
@@ -257,6 +278,49 @@ def send_child_id(submission, child_id):
         "kind": "child_update",
         "child_id": child_id
     })
+
+
+def retrieve_data(url, data=None):
+    with closing(urlopen(url, data)) as fp:
+        headers = fp.info()
+
+        bs = 1024 * 8
+        size = -1
+        read = 0
+        if "content-length" in headers:
+            size = int(headers["Content-Length"])
+
+        while True:
+            block = fp.read(bs)
+            if not block:
+                break
+            read += len(block)
+            yield(block)
+
+    if size >= 0 and read < size:
+        raise ContentTooShortError(
+            "retrieval incomplete: got only %i out of %i bytes"
+            % (read, size))
+
+
+def zip_generator(submission_pks):
+    in_memory_zip = BytesIO()
+    with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for submission_id in submission_pks:
+            submission = Submission.objects.get(id=submission_id)
+            short_name = "ID_" + str(submission_id) + '_' + submission.data.data_file.name.split('/')[-1]
+            url = make_url_sassy(path=submission.data.data_file.name)
+            for block in retrieve_data(url):
+                zip_file.writestr(short_name, block)
+
+    in_memory_zip.seek(0)
+
+    return in_memory_zip
+
+
+@app.task(queue='site-worker', soft_time_limit=60 * 60)
+def stream_batch_download(submission_pks):
+    return zip_generator(submission_pks)
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
@@ -406,6 +470,8 @@ def unpack_competition(status_pk):
             # call again, to make sure phases get sent to chahub
             competition.save()
             logger.info("Competition saved!")
+            status.dataset.name += f" - {competition.title}"
+            status.dataset.save()
 
     except CompetitionUnpackingException as e:
         # We want to catch well handled exceptions and display them to the user

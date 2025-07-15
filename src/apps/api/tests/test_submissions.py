@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 
 from competitions.models import Submission, CompetitionParticipant
 from factories import UserFactory, CompetitionFactory, PhaseFactory, CompetitionParticipantFactory, SubmissionFactory, \
-    TaskFactory, OrganizationFactory, DataFactory
+    TaskFactory, OrganizationFactory, DataFactory, LeaderboardFactory
 
 from datasets.models import Data
 from profiles.models import Membership
@@ -26,9 +26,17 @@ class SubmissionAPITests(APITestCase):
         # Extra dummy user to test permissions, they shouldn't have access to many things
         self.other_user = UserFactory(username='other_user', password='other')
 
-        # Make a participant and submission into competition
-        self.participant = UserFactory(username='participant', password='other')
-        CompetitionParticipantFactory(user=self.participant, competition=self.comp)
+        # Make participants
+        self.participant = UserFactory(username='participant_approved', password='other')
+        self.pending_participant = UserFactory(username='participant_pending', password='other')
+        self.denied_participant = UserFactory(username='participant_denied', password='other')
+
+        # Add user as participants in a competition with different statuses
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+        CompetitionParticipantFactory(user=self.pending_participant, competition=self.comp, status=CompetitionParticipant.PENDING)
+        CompetitionParticipantFactory(user=self.denied_participant, competition=self.comp, status=CompetitionParticipant.DENIED)
+
+        # add submission with owner = approved participant
         self.existing_submission = SubmissionFactory(
             phase=self.phase,
             owner=self.participant,
@@ -232,10 +240,20 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-        # Actual user can see their submission detail result
+        # approved user can see submission detail result
         self.client.force_login(self.participant)
         resp = self.client.get(url)
         assert resp.status_code == 200
+
+        # pending user cannot see submission detail result
+        self.client.force_login(self.pending_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
+
+        # denied user cannot see submission detail result
+        self.client.force_login(self.denied_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 403
 
         # Regular user cannot see submission detail result
         self.client.force_login(self.other_user)
@@ -526,3 +544,122 @@ class TaskSelectionTests(APITestCase):
             resp = self.client.post(url)
             assert resp.status_code == 403
             assert resp.data["detail"] == "You do not have permission to re-run submissions"
+
+
+class SubmissionSoftDeletionTest(APITestCase):
+    def setUp(self):
+        self.creator = UserFactory(username='creator', password='creator')
+        self.participant = UserFactory(username='participant', password='participant')
+
+        self.leaderboard = LeaderboardFactory()
+        self.comp = CompetitionFactory(created_by=self.creator)
+        self.phase = PhaseFactory(competition=self.comp)
+        self.organization = OrganizationFactory()
+
+        # Approved participant
+        CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
+
+        # Submissions
+        self.submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=False,
+            leaderboard=None
+        )
+
+        self.leaderboard_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=False,
+            leaderboard=self.leaderboard
+        )
+
+        self.running_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.SUBMITTED,
+            is_soft_deleted=False,
+            leaderboard=None
+        )
+
+        self.soft_deleted_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=True,
+            leaderboard=None
+        )
+
+        self.organization_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=False,
+            leaderboard=None,
+            organization=self.organization
+        )
+
+    def test_cannot_delete_submission_if_not_owner(self):
+        """Ensure that a non-owner cannot soft delete a submission."""
+        self.client.login(username="other_user", password="other")
+        url = reverse("submission-soft-delete", args=[self.submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 403
+        assert resp.data["error"] == "You are not allowed to delete this submission"
+
+    def test_cannot_delete_leaderboard_submission(self):
+        """Ensure that a leaderboard submission cannot be deleted."""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.leaderboard_submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 403
+        assert resp.data["error"] == "You are not allowed to delete a leaderboard submission"
+
+    def test_cannot_delete_running_submission(self):
+        """Ensure that a running submission cannot be deleted."""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.running_submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 403
+        assert resp.data["error"] == "You are not allowed to delete a running submission"
+
+    def test_cannot_delete_already_soft_deleted_submission(self):
+        """Ensure that an already soft-deleted submission cannot be deleted again."""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.soft_deleted_submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 400
+        assert resp.data["error"] == "Submission already deleted"
+
+    def test_can_soft_delete_submission_successfully(self):
+        """Ensure a valid submission can be soft deleted successfully by its owner."""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 200
+        assert resp.data["message"] == "Submission deleted successfully"
+
+        # Refresh from DB to verify
+        self.submission.refresh_from_db()
+        assert self.submission.is_soft_deleted is True
+
+    def test_organization_is_removed_from_soft_deleted_submission(self):
+        """Ensure a organization reference is removed from soft-deleted submission"""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.organization_submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 200
+        assert resp.data["message"] == "Submission deleted successfully"
+
+        # Refresh from DB to verify
+        self.organization_submission.refresh_from_db()
+        assert self.organization_submission.is_soft_deleted is True
+        assert self.organization_submission.organization is None

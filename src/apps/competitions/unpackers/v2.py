@@ -14,6 +14,10 @@ class V2Unpacker(BaseUnpacker):
             "registration_auto_approve": self.competition_yaml.get('registration_auto_approve', False),
             "docker_image": self.competition_yaml.get('docker_image', 'codalab/codalab-legacy:py37'),
             "enable_detailed_results": self.competition_yaml.get('enable_detailed_results', False),
+            "show_detailed_results_in_submission_panel": self.competition_yaml.get('show_detailed_results_in_submission_panel', True),
+            "show_detailed_results_in_leaderboard": self.competition_yaml.get('show_detailed_results_in_leaderboard', True),
+            "auto_run_submissions": self.competition_yaml.get('auto_run_submissions', True),
+            "can_participants_make_submissions_public": self.competition_yaml.get('can_participants_make_submissions_public', True),
             "make_programs_available": self.competition_yaml.get('make_programs_available', False),
             "make_input_data_available": self.competition_yaml.get('make_input_data_available', False),
             "description": self.competition_yaml.get("description", ""),
@@ -21,6 +25,7 @@ class V2Unpacker(BaseUnpacker):
             "fact_sheet": self.competition_yaml.get("fact_sheet", None),
             "reward": self.competition_yaml.get("reward", None),
             "contact_email": self.competition_yaml.get("contact_email", None),
+            "forum_enabled": self.competition_yaml.get("forum_enabled", True),
             "pages": [],
             "phases": [],
             "leaderboards": [],
@@ -193,6 +198,8 @@ class V2Unpacker(BaseUnpacker):
                 'max_submissions_per_person': phase_data.get('max_submissions', 100),
                 'auto_migrate_to_this_phase': phase_data.get('auto_migrate_to_this_phase', False),
                 'hide_output': phase_data.get('hide_output', False),
+                'hide_prediction_output': phase_data.get('hide_prediction_output', False),
+                'hide_score_output': phase_data.get('hide_score_output', False),
             }
             try:
                 new_phase['tasks'] = phase_data['tasks']

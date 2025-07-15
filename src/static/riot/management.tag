@@ -5,6 +5,7 @@
         <div class="active item" data-tab="submissions">Submissions</div>
         <div class="item" data-tab="datasets">Datasets and programs</div>
         <div class="item" data-tab="tasks">Tasks</div>
+        <div class="item" data-tab="bundles">Competition Bundles</div>
         <div class="right menu">
             <div class="item">
                 <help_button href="https://github.com/codalab/competitions-v2/wiki/Task-&-Dataset-Management"
@@ -21,6 +22,9 @@
     </div>
     <div class="ui bottom attached tab segment" data-tab="tasks">
         <task-management></task-management>
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="bundles">
+        <bundle-management></bundle-management>
     </div>
 
     <script>
