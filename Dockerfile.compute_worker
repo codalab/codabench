@@ -1,13 +1,19 @@
-FROM --platform=linux/amd64 python:3.9
+FROM --platform=linux/amd64 fedora:42
 
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
 
 # Install Docker
-RUN apt-get update && curl -fsSL https://get.docker.com | sh
+RUN dnf -y install dnf-plugins-core && \
+    dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo && \
+    dnf -y update && \
+    dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    dnf install -y python3.9 && \
+    dnf clean all && \
+    rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
 
-RUN curl -sSL https://install.python-poetry.org | python3 - --version 1.8.3
+RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.8.3
 # Poetry location so future commands (below) work
 ENV PATH $PATH:/root/.local/bin
 # Want poetry to use system python of docker container
@@ -15,7 +21,8 @@ RUN poetry config virtualenvs.create false
 RUN poetry config virtualenvs.in-project false
 COPY ./compute_worker/pyproject.toml ./
 COPY ./compute_worker/poetry.lock ./
-RUN poetry install
+# To use python3.9 instead of system python
+RUN poetry config virtualenvs.prefer-active-python true && poetry install
 
 ADD compute_worker .
 
