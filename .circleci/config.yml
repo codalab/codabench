@@ -38,6 +38,9 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
       - run: docker-compose exec django flake8 src/
+      - run: docker pull codalab/codalab-legacy:py37 # not available without "not e2e" tests as they pull ahead of time
+      - run: docker pull codalab/codalab-legacy:py3 # not available without "not e2e" tests as they pull ahead of time
+      - run: docker pull vergilgxw/autotable:v2 # not available without "not e2e" tests as they pull ahead of time
 
       - run:
           name: pytest
@@ -47,6 +50,13 @@ jobs:
           name: e2e tests
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
+
+      # Example to run specific set of tests (for debugging individual tests from a batch of tests)
+      # - run:
+      #     name: e2e tests - competitions
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
+      #     no_output_timeout: 60m
+
 
       - store_artifacts:
           path: artifacts/
