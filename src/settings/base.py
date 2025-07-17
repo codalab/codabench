@@ -43,7 +43,6 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
-    # 'drf_yasg',
     'drf_yasg2',
     'redis',
 )
@@ -328,7 +327,6 @@ LOGGING = {
 # Channels
 # =============================================================================
 ASGI_APPLICATION = "asgi.application"
-# ASGI_APPLICATION = "routing.application"
 
 CHANNEL_LAYERS = {
     "default": {
