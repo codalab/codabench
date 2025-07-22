@@ -95,7 +95,7 @@ def activate(request, uidb64, token):
 def activateEmail(request, user, to_email):
     mail_subject = 'Activate your user account.'
     message = render_to_string('profiles/emails/template_activate_account.html', {
-        'user': user.username,
+        'username': user.username,
         'domain': get_current_site(request).domain,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': account_activation_token.make_token(user),
@@ -103,8 +103,8 @@ def activateEmail(request, user, to_email):
     })
     email = EmailMessage(mail_subject, message, to=[to_email])
     if email.send():
-        messages.success(request, f'Dear {user.username}, please go to you email {to_email} inbox and click on \
-            received activation link to confirm and complete the registration. *Note: Check your spam folder.')
+        messages.success(request, f'Dear {user.username}, please go to your email {to_email} inbox and click on \
+            the activation link to confirm and complete the registration. *Note: Check your spam folder.')
     else:
         messages.error(request, f'Problem sending confirmation email to {to_email}, check if you typed it correctly.')
 
