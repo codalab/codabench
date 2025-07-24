@@ -125,6 +125,31 @@
                     {selected_row.description}
                 </div>
             </virtual>
+            <table class="ui compact basic table">
+                <thead>
+                <tr>
+                    <th colspan=2>File Sizes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td style="width: 180px;">Submission:</td>
+                    <td>{pretty_bytes(selected_row.submission_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Prediction result:</td>
+                    <td>{pretty_bytes(selected_row.prediction_result_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Scoring result:</td>
+                    <td>{pretty_bytes(selected_row.scoring_result_file_size)}</td>
+                </tr>
+                <tr>
+                    <td>Detailed result:</td>
+                    <td>{pretty_bytes(selected_row.detailed_result_file_size)}</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
         <div class="actions">
             <button show="{selected_row.created_by === CODALAB.state.user.username}"

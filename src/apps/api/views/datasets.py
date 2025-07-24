@@ -52,8 +52,15 @@ class DataViewSet(ModelViewSet):
 
             # filter datasets and programs
             if is_dataset:
-                qs = qs.filter(~Q(type=Data.SUBMISSION))
-                qs = qs.exclude(Q(type=Data.COMPETITION_BUNDLE))
+                qs = qs.filter(type__in=[
+                    Data.INPUT_DATA,
+                    Data.PUBLIC_DATA,
+                    Data.REFERENCE_DATA,
+                    Data.INGESTION_PROGRAM,
+                    Data.SCORING_PROGRAM,
+                    Data.STARTING_KIT,
+                    Data.SOLUTION
+                ])
 
             # filter bundles
             if is_bundle:

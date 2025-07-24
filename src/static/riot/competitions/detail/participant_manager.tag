@@ -16,7 +16,16 @@
             <input type="checkbox" ref="participant_show_deleted" onchange="{ update_participants.bind(this, undefined) }">
             <label>Show deleted accounts</label>
         </div>
-        <div class="ui blue icon button" onclick="{show_email_modal.bind(this, undefined)}"><i class="envelope icon"></i> Email all participants</div>
+        <div style="margin-top: 1em;">
+            <!--  Email all participants button  -->
+            <div class="ui blue icon button" onclick="{show_email_modal.bind(this, undefined)}">
+                <i class="envelope icon"></i> Email all participants
+            </div>
+            <!--  Download all participants button  -->
+            <div class="ui blue icon button" onclick="{download_participants_csv}">
+                <i class="download icon"></i> Download all participants
+            </div>
+        </div>
         <table class="ui celled striped table">
             <thead>
             <tr>
@@ -202,6 +211,41 @@
 
         self.close_email_modal = () => {
             $(self.refs.email_modal).modal('hide')
+        }
+
+        // Function to download participants in csv file
+        self.download_participants_csv = () => {
+            // Show warning when there is no participant
+            if (!self.participants || self.participants.length === 0) {
+                toastr.warning('No participants to download')
+                return
+            }
+
+            // prepare csv header
+            const headers = ['ID', 'Username', 'Email', 'Is Bot', 'Status'];
+            // prepare csv rows
+            const rows = self.participants.map(p => [
+                p.id,
+                p.username,
+                p.email,
+                p.is_bot ? 'Yes' : 'No',
+                p.status
+            ]);
+
+            // prepare csv content using header and rows
+            const csvContent = [headers, ...rows]
+                .map(e => e.map(v => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(','))
+                .join('\n')
+
+            // Download prepared csv as `participants.csv`
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement("a")
+            link.setAttribute("href", url)
+            link.setAttribute("download", "participants.csv")
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
         }
 
     </script>

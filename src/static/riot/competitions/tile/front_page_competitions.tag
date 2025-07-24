@@ -13,7 +13,7 @@
                 </div>
             </div>
             <competition-tile each="{popular_competitions}"></competition-tile>
-            <a class="show-more" href="/competitions/public/">Show more</a>
+            <a class="show-more" href="/competitions/public/?ordering=popular">Show more</a>
         </div>
 
         <div class="eight wide column">
@@ -29,7 +29,7 @@
                 </div>
             </div>
             <competition-tile each="{recent_competitions}"></competition-tile>
-            <a class="show-more" href="/competitions/public/">Show more</a>
+            <a class="show-more" href="/competitions/public/?ordering=recent">Show more</a>
         </div>
     </div>
 
