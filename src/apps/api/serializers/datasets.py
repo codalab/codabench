@@ -62,6 +62,33 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         return instance
 
 
+class DatasetsSerializer(serializers.ModelSerializer):
+    download_url = serializers.SerializerMethodField()
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Data
+        fields = (
+            'id',
+            'type',
+            'name',
+            'description',
+            'file_size',
+            'license',
+            'downloads',
+            'is_verified',
+            'created_when',
+            'created_by',
+            'download_url',
+        )
+
+    def get_download_url(self, obj):
+        return obj.get_download_url()
+
+    def get_created_by(self, obj):
+        return obj.created_by.username
+
+
 class DataSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:

@@ -12,7 +12,7 @@ class DataManagement(LoginRequiredMixin, TemplateView):
 
 
 class DatasetsPublic(TemplateView):
-    template_name = 'competitions/public.html'
+    template_name = 'datasets/public.html'
 
 
 def download(request, key):

@@ -10,7 +10,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from api.pagination import BasicPagination
+from api.pagination import BasicPagination, LargePagination
 from api.serializers import datasets as serializers
 from datasets.models import Data, DataGroup
 from competitions.models import CompetitionCreationTaskStatus
@@ -81,7 +81,9 @@ class DataViewSet(ModelViewSet):
         return qs
 
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action == 'public':
+            return serializers.DatasetsSerializer
+        elif self.request.method == 'GET':
             return serializers.DataDetailSerializer
         else:
             return serializers.DataSerializer
@@ -160,6 +162,72 @@ class DataViewSet(ModelViewSet):
             sub = dataset.submission.first()
             if sub.phase:
                 return 'Cannot delete submission: submission belongs to an existing competition. Please visit the competition and delete your submission from there.'
+
+    @action(detail=False, methods=('GET',), pagination_class=LargePagination)
+    def public(self, request):
+        """
+        Retrieve a public list of datasets with optional filtering and ordering.
+
+        This endpoint returns a paginated list of datasets that are public.
+        It supports several optional query parameters for filtering and sorting the results.
+
+        Query Parameters:
+        -----------------
+        - search (str, optional): A search term to filter competitions by their title.
+        - ordering (str, optional): Specifies the order of the results. Supported values:
+            * "recently_added" - Most recently created datasets.
+            * "most_downloaded" - Datasets with the most downloads.
+            Defaults to "recently_added" if not provided or invalid.
+        - has_license (bool, optional): If "true", filters datasets that has license.
+        - is_verified (bool, optional): If "true", filters datasets that are verified.
+
+        Returns:
+        --------
+        - 200 OK: A paginated or full list of serialized datasets matching the filter criteria. The response is serialized using `DatasetsSerializer`.
+        """
+
+        # Receive filters from request query params
+        search = request.query_params.get("search")
+        ordering = request.query_params.get("ordering")
+        has_license = request.query_params.get("has_license", "false").lower() == "true"
+        is_verified = request.query_params.get("is_verified", "false").lower() == "true"
+
+        qs = Data.objects.filter(
+            is_public=True,
+            type=Data.PUBLIC_DATA
+        )
+
+        # Filter by title and description (search)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        # Filter by has_license
+        if has_license:
+            qs = qs.filter(license__isnull=False)
+
+        # Filter by is_verified
+        if is_verified:
+            qs = qs.filter(is_verified=True)
+
+        # Apply ordering
+        if ordering == "recently_added":
+            qs = qs.order_by("-id")  # most recently created
+        elif ordering == "most_downloaded":
+            qs = qs.order_by("-downloads")  # descending by download count
+        else:
+            qs = qs.order_by("-id")  # default fallback
+
+        queryset = self.filter_queryset(qs)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class DataGroupViewSet(ModelViewSet):

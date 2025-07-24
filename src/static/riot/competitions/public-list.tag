@@ -302,16 +302,16 @@
       margin-left 0 !important
       background #f9f9f9
 
-        input[type="text"]
-            width 100%
-            padding 5px
-            margin 5px 0 5px 0
-            border 1px solid #ddd
-            border-radius 4px
+      input[type="text"]
+          width 100%
+          padding 5px
+          margin 5px 0 5px 0
+          border 1px solid #ddd
+          border-radius 4px
 
-        input[type="radio"],
-        input[type="checkbox"]
-            margin-right 5px
+      input[type="radio"],
+      input[type="checkbox"]
+          margin-right 5px
 
     .filter-group
         margin-bottom 20px
@@ -364,8 +364,8 @@
     .tile-wrapper:hover
       box-shadow 0 3px 4px -1px #9c9c9c
       transition all 75ms ease-in-out
-      background-color #e8e8e8
-      border solid 1px #b9b9b9
+      background-color #d9eefcff
+      border solid 1px #42b0f9ff
 
       .comp-stats
         background-color #344d5e

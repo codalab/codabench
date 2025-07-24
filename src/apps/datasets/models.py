@@ -68,6 +68,10 @@ class Data(ChaHubSaveMixin, models.Model):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, related_name='submission')
     file_name = models.CharField(max_length=64, default="")
 
+    is_verified = models.BooleanField(default=False)
+    downloads = models.PositiveIntegerField(default=0)
+    license = models.CharField(max_length=128, null=True, blank=True)
+
     def get_download_url(self):
         return reverse('datasets:download', kwargs={'key': self.key})
 
