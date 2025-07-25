@@ -33,11 +33,18 @@
       <div class="field">
         <label>License</label>
         <select id="dataset-license" class="ui dropdown" name="license" onchange="{on_license_change}">
+          <option value="">Select a License</option>
+          <option value="CC0-1.0">Creative Commons Zero (CC0) 1.0</option>
+          <option value="CC-BY-4.0">Creative Commons Attribution (CC BY) 4.0</option>
+          <option value="CC-BY-SA-4.0">Creative Commons Attribution-ShareAlike (CC BY-SA) 4.0</option>
+          <option value="CC-BY-NC-4.0">Creative Commons Attribution-NonCommercial (CC BY-NC) 4.0
+          <option value="ODC-By">Open Data Commons Attribution License (ODC-By)</option>
+          <option value="ODbL-1.0">Open Database License (ODbL) 1.0</option>
           <option value="MIT">MIT License</option>
           <option value="Apache-2.0">Apache License 2.0</option>
-          <option value="GPL-3.0">GNU GPLv3</option>
-          <option value="BSD-3-Clause">BSD 3-Clause</option>
-          <option value="CC-BY-4.0">Creative Commons BY 4.0</option>
+          <option value="GPL-3.0">GNU General Public License v3.0</option>
+          <option value="BSD-3-Clause">BSD 3-Clause License</option>
+          <option value="Research-Only">Research Use Only</option>
           <option value="N/A">N/A</option>
           <option value="Other">Other</option>
         </select>
@@ -57,7 +64,7 @@
 
       <!-- Submit Button -->
       <button type="submit" class="ui button bg-codabench">
-        <i class="upload icon"></i> Submit Dataset
+        <i class="bi bi-cloud-arrow-up-fill"></i> Submit Dataset
       </button>
     </form>
   </div>
@@ -111,11 +118,11 @@
       border-radius: 4px;
     }
     .bg-codabench{
-        background-color: #2d3f4d !important;
+        background-color: #43637a !important;
         color: #fff !important;
     }
     .bg-codabench:hover {
-      background-color: rgba(67, 99, 122, 1) !important;
+      background-color: #2d3f4d !important;
     }
   </style>
 </dataset-create>

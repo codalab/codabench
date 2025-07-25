@@ -3,7 +3,7 @@
   <div class="page-header">
     <h1 class="page-title">Public Datasets</h1>
     <a class="create-btn" href="{ URLS.DATASET_CREATE }">
-      <i class="bi bi-plus-circle me-1"></i> Create
+      <i class="bi bi-plus-square-fill me-1"></i> Create
     </a>
   </div>
 
@@ -239,7 +239,7 @@
     .create-btn
       font-size 14px
       padding 0.5em 1em
-      background-color #2d3f4d
+      background-color #43637a
       color #fff
       text-decoration none
       border-radius 4px
@@ -248,7 +248,7 @@
       transition background-color 0.2s ease
 
       &:hover
-        background-color rgba(67, 99, 122, 1)
+        background-color #2d3f4d
         color #fff
         text-decoration none
 

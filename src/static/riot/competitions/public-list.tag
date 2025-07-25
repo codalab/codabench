@@ -2,9 +2,14 @@
   <!-- Title -->
   <div class="page-header">
     <h1 class="page-title">Public Benchmarks and Competitions</h1>
-    <a class="create-btn" href="{ URLS.DATASET_CREATE }">
-      <i class="bi bi-plus-circle me-1"></i> Create
-    </a>
+    <div class="action-buttons">
+      <a class="create-btn" href="{ URLS.COMPETITION_ADD }">
+        <i class="bi bi-plus-square-fill me-1"></i> Create
+      </a>
+      <a class="create-btn" href="{ URLS.COMPETITION_UPLOAD }">
+        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
+      </a>
+    </div>
   </div>
 
   <!-- Two-column layout -->
@@ -294,6 +299,10 @@
       justify-content space-between
       margin-bottom 20px
 
+      .action-buttons
+        display flex
+        gap 10px
+
     .page-title
       margin 0
       font-size 24px
@@ -303,7 +312,7 @@
     .create-btn
       font-size 14px
       padding 0.5em 1em
-      background-color #2d3f4d
+      background-color #43637a
       color #fff
       text-decoration none
       border-radius 4px
@@ -312,7 +321,7 @@
       transition background-color 0.2s ease
 
       &:hover
-        background-color rgba(67, 99, 122, 1)
+        background-color #2d3f4d
         color #fff
         text-decoration none
 
