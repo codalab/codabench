@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import AllowAny
 
 from api.pagination import BasicPagination, LargePagination
 from api.serializers import datasets as serializers
@@ -87,6 +88,11 @@ class DataViewSet(ModelViewSet):
             return serializers.DataDetailSerializer
         else:
             return serializers.DataSerializer
+
+    def get_permissions(self):
+        if self.action == 'public':
+            return [AllowAny()]
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         # Check User quota

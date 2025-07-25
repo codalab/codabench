@@ -1,6 +1,11 @@
 <public-datasets>
   <!-- Title -->
-  <h1 class="page-title">Public Datasets</h1>
+  <div class="page-header">
+    <h1 class="page-title">Public Datasets</h1>
+    <a class="create-btn" href="{ URLS.DATASET_CREATE }">
+      <i class="bi bi-plus-circle me-1"></i> Create
+    </a>
+  </div>
 
   <!-- Two-column layout -->
   <div class="content-container">
@@ -57,7 +62,7 @@
                         <em>Uploaded by: <strong>{dataset.created_by}</strong></em>
                       </div>
                       <div class="uploader">
-                        <a href="{dataset.download_url}" class="btn btn-sm btn-primary text-white" download>
+                        <a href="{dataset.download_url}" class="btn text-white" download>
                             <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Download
                         </a>
                       </div>
@@ -177,7 +182,7 @@
             .fail(function (resp) {
                 $('#loading').hide()
                 $('.pagination-nav').show()
-                let message = "Could not load competition list"
+                let message = "Could not load datasets list"
                 try {
                     const json = JSON.parse(resp.responseText)
                     if (json.detail) message = json.detail
@@ -219,11 +224,33 @@
       display block
       margin-bottom 5px
 
+    .page-header
+      display flex
+      align-items center
+      justify-content space-between
+      margin-bottom 20px
+
     .page-title
-      margin 0 0 20px 0
+      margin 0
       font-size 24px
       font-weight bold
       color #1b1b1b
+    
+    .create-btn
+      font-size 14px
+      padding 0.5em 1em
+      background-color #2d3f4d
+      color #fff
+      text-decoration none
+      border-radius 4px
+      display inline-block
+      cursor pointer
+      transition background-color 0.2s ease
+
+      &:hover
+        background-color rgba(67, 99, 122, 1)
+        color #fff
+        text-decoration none
 
     .content-container
       display flex
@@ -294,8 +321,8 @@
 
     .tile-wrapper:hover
       box-shadow 0 3px 4px -1px #cac9c9ff
-      background-color #d9eefcff
-      border solid 1px #42b0f9ff
+      background-color #e6edf2
+      border solid 1px #a5b7c5
 
     .dataset-info
       width 100%
