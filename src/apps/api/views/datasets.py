@@ -83,7 +83,7 @@ class DataViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'public':
-            return serializers.DatasetsSerializer
+            return serializers.DatasetSerializer
         elif self.request.method == 'GET':
             return serializers.DataDetailSerializer
         else:
@@ -189,7 +189,7 @@ class DataViewSet(ModelViewSet):
 
         Returns:
         --------
-        - 200 OK: A paginated or full list of serialized datasets matching the filter criteria. The response is serialized using `DatasetsSerializer`.
+        - 200 OK: A paginated or full list of serialized datasets matching the filter criteria. The response is serialized using `DatasetSerializer`.
         """
 
         # Receive filters from request query params

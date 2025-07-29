@@ -10,4 +10,5 @@ urlpatterns = [
     path('public/', views.DatasetsPublic.as_view(), name="public"),
     path('create/', views.DatasetCreate.as_view(), name="create"),
     path('download/<str:key>/', views.download, name="download"),
+    path('<int:pk>/', views.DatasetDetail.as_view(), name="detail"),
 ]

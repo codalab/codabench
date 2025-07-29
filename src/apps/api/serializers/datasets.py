@@ -62,8 +62,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         return instance
 
 
-class DatasetsSerializer(serializers.ModelSerializer):
-    download_url = serializers.SerializerMethodField()
+class DatasetSerializer(serializers.ModelSerializer):
     created_by = serializers.SerializerMethodField()
 
     class Meta:
@@ -79,11 +78,7 @@ class DatasetsSerializer(serializers.ModelSerializer):
             'is_verified',
             'created_when',
             'created_by',
-            'download_url',
         )
-
-    def get_download_url(self, obj):
-        return obj.get_download_url()
 
     def get_created_by(self, obj):
         return obj.created_by.username

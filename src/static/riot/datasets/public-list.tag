@@ -46,28 +46,25 @@
 
         <!-- Dataset tiles -->
         <div each="{dataset in datasets.results}" class="tile-wrapper">
-            <div class="link-no-deco full-width">
-                <div class="dataset-info">
-                    <h4 class="heading">{dataset.name}</h4>
-                    <p class="dataset-description">{ pretty_description(dataset.description) }</p>
-                    <div class="dataset-stats">
-                      <div title="Created Date"><i class="bi bi-calendar-event-fill"></i> {pretty_date(dataset.created_when)}</div>
-                      <div title="File Size"><i class="bi bi-file-earmark-fill"></i> {pretty_bytes(dataset.file_size)}</div>
-                      <div title="License"><i class="bi bi-shield-shaded"></i> {dataset.license || 'N/A'}</div>
-                      <div title="Downloads"><i class="bi bi-file-earmark-arrow-down-fill"></i> {dataset.downloads}</div>
-                      <div if="{dataset.is_verified}" title="Verified"><i class="bi bi-check-circle-fill green"></i>Verified</div>
-                    </div>
-                    <div class="dataset-stats">
-                      <div class="uploader">
-                        <em>Uploaded by: <strong>{dataset.created_by}</strong></em>
+            <div class="full-width">
+                <a class="link-no-deco" href="../{dataset.id}">
+                  <div class="dataset-info">
+                      <h4 class="heading">{dataset.name}</h4>
+                      <p class="dataset-description">{ pretty_description(dataset.description) }</p>
+                      <div class="dataset-stats">
+                        <div title="Created Date"><i class="bi bi-calendar-event-fill"></i> {pretty_date(dataset.created_when)}</div>
+                        <div title="File Size"><i class="bi bi-file-earmark-fill"></i> {pretty_bytes(dataset.file_size)}</div>
+                        <div title="License"><i class="bi bi-shield-shaded"></i> {dataset.license || 'N/A'}</div>
+                        <div title="Downloads"><i class="bi bi-file-earmark-arrow-down-fill"></i> {dataset.downloads}</div>
+                        <div if="{dataset.is_verified}" title="Verified"><i class="bi bi-check-circle-fill green"></i>Verified</div>
                       </div>
-                      <div class="uploader">
-                        <a href="{dataset.download_url}" class="btn text-white" download>
-                            <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Download
-                        </a>
+                      <div class="dataset-stats">
+                        <div class="uploader">
+                          <em>Uploaded by: <strong>{dataset.created_by}</strong></em>
+                        </div>
                       </div>
-                    </div>
-                </div>
+                  </div>
+                </a>
             </div>
         </div>
 
@@ -308,6 +305,9 @@
       all unset
       text-decoration none
       cursor pointer
+      width 100%
+    
+    .full-width
       width 100%
 
     .tile-wrapper
