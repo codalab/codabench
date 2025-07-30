@@ -2,7 +2,7 @@
   <!-- Title -->
   <div class="page-header">
     <h1 class="page-title">Public Datasets</h1>
-    <a class="create-btn" href="{ URLS.DATASET_CREATE }">
+    <a class="create-btn" href="{ URLS.DATASET_CREATE }?from=public">
       <i class="bi bi-plus-square-fill me-1"></i> Create
     </a>
   </div>

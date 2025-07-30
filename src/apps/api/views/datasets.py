@@ -101,7 +101,8 @@ class DataViewSet(ModelViewSet):
         quota = gb_to_bytes(quota)
         file_size = float(request.data['file_size'])
         if storage_used + file_size > quota:
-            available_space = pretty_bytes(quota - storage_used)
+            available_space = quota - storage_used
+            available_space = pretty_bytes(available_space, return_0_for_invalid=True)
             file_size = pretty_bytes(file_size)
             message = f'Insufficient space. Your available space is {available_space}. The file size is {file_size}. Please free up some space and try again. You can manage your files in the Resources page.'
             return Response({'data_file': [message]}, status=status.HTTP_400_BAD_REQUEST)
