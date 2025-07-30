@@ -166,7 +166,13 @@
             self.update();
         }
 
-        return CODALAB.api.get_public_datasets(self.filter_state)
+        return CODALAB.api.get_public_datasets({
+              "page": self.current_page,
+              "search": self.filter_state.search,
+              "ordering": self.filter_state.ordering,
+              "has_license": self.filter_state.has_license,
+              "is_verified": self.filter_state.is_verified
+            })
             .fail(function (resp) {
                 $('#loading').hide()
                 $('.pagination-nav').show()
