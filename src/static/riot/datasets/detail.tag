@@ -39,9 +39,9 @@
         </tr>
         <tr>
           <td colspan=2>
-            <button class="ui button small primary" onclick="{downloadDataset}">
+            <a class="ui button small primary" target="_blank" href="{URLS.DATASET_DOWNLOAD_BY_PK(dataset.id)}">
               <i class="bi bi-file-earmark-arrow-down-fill"></i> Download
-            </button>
+            </a>
           </td>
         </tr>
       </tbody>

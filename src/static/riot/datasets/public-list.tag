@@ -46,26 +46,26 @@
 
         <!-- Dataset tiles -->
         <div each="{dataset in datasets.results}" class="tile-wrapper">
-            <div class="full-width">
-                <a class="link-no-deco" href="../{dataset.id}">
-                  <div class="dataset-info">
-                      <h4 class="heading">{dataset.name}</h4>
-                      <p class="dataset-description">{ pretty_description(dataset.description) }</p>
-                      <div class="dataset-stats">
-                        <div title="Created Date"><i class="bi bi-calendar-event-fill"></i> {pretty_date(dataset.created_when)}</div>
-                        <div title="File Size"><i class="bi bi-file-earmark-fill"></i> {pretty_bytes(dataset.file_size)}</div>
-                        <div title="License"><i class="bi bi-shield-shaded"></i> {dataset.license || 'N/A'}</div>
-                        <div title="Downloads"><i class="bi bi-file-earmark-arrow-down-fill"></i> {dataset.downloads}</div>
-                        <div if="{dataset.is_verified}" title="Verified"><i class="bi bi-check-circle-fill green"></i>Verified</div>
-                      </div>
-                      <div class="dataset-stats">
-                        <div class="uploader">
-                          <em>Uploaded by: <strong>{dataset.created_by}</strong></em>
-                        </div>
-                      </div>
+          <div class="full-width">
+            <a class="link-no-deco" href="../{dataset.id}">
+              <div class="dataset-info">
+                  <h4 class="heading">{dataset.name}</h4>
+                  <p class="dataset-description">{ pretty_description(dataset.description) }</p>
+                  <div class="dataset-stats">
+                    <div title="Created Date"><i class="bi bi-calendar-event-fill"></i> {pretty_date(dataset.created_when)}</div>
+                    <div title="File Size"><i class="bi bi-file-earmark-fill"></i> {pretty_bytes(dataset.file_size)}</div>
+                    <div title="License"><i class="bi bi-shield-shaded"></i> {dataset.license || 'N/A'}</div>
+                    <div title="Downloads"><i class="bi bi-file-earmark-arrow-down-fill"></i> {dataset.downloads}</div>
+                    <div if="{dataset.is_verified}" title="Verified"><i class="bi bi-check-circle-fill green"></i>Verified</div>
                   </div>
-                </a>
-            </div>
+                  <div class="dataset-stats">
+                    <div class="uploader">
+                      <em>Uploaded by: <strong>{dataset.created_by}</strong></em>
+                    </div>
+                  </div>
+              </div>
+            </a>
+          </div>
         </div>
 
         <div class="no-results-message" if="{datasets.results && datasets.results.length === 0}">
@@ -144,15 +144,6 @@
     }
 
     self.one("mount", function () {
-        const urlParams = new URLSearchParams(window.location.search)
-        if (urlParams.has("ordering")) {
-            const ordering = urlParams.get("ordering")
-            if (["popular", "recent"].includes(ordering)) {
-                self.filter_state.ordering = ordering
-                const radio = document.querySelector(`input[name="order"][value="${ordering}"]`)
-                if (radio) radio.checked = true
-            }
-        }
         self.update_datasets_list(self.get_url_page_number_or_default())
     })
 

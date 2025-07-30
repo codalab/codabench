@@ -338,6 +338,9 @@
             DATASET_DOWNLOAD: function (key) {
                 return "{% url "datasets:download" key=0 %}".replace(0, key)
             },
+            DATASET_DOWNLOAD_BY_PK: function (pk) {
+                return "{% url "datasets:download_by_pk" pk=0 %}".replace(0, pk)
+            },
             DATASET_CREATE: "{% url "datasets:create" %}",
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",

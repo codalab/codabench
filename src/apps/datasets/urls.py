@@ -11,4 +11,5 @@ urlpatterns = [
     path('create/', views.DatasetCreate.as_view(), name="create"),
     path('download/<str:key>/', views.download, name="download"),
     path('<int:pk>/', views.DatasetDetail.as_view(), name="detail"),
+    path('download/id/<int:pk>/', views.download_by_pk, name="download_by_pk"),
 ]

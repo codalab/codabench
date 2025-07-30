@@ -27,13 +27,13 @@ class DatasetDetail(DetailView):
     def get_object(self, *args, **kwargs):
         dataset = super().get_object(*args, **kwargs)
 
-        # If dataset is public or user is authenticated and is owner, return dataset
+        # If dataset is public or (user is authenticated and is owner), return dataset
         if dataset.is_public or (
             self.request.user.is_authenticated and dataset.created_by == self.request.user
         ):
             return dataset
 
-        # Otherwise return error
+        # Otherwise return 404
         raise Http404()
 
     def get_context_data(self, **kwargs):
@@ -48,3 +48,17 @@ class DatasetDetail(DetailView):
 def download(request, key):
     data = get_object_or_404(Data, key=key)
     return HttpResponseRedirect(make_url_sassy(data.data_file.name))
+
+
+def download_by_pk(request, pk):
+    dataset = get_object_or_404(Data, pk=pk)
+
+    if dataset.is_public or dataset.created_by == request.user:
+        # Increment download count
+        dataset.downloads = (dataset.downloads or 0) + 1
+        dataset.save(update_fields=["downloads"])
+
+        # Redirect to the actual file URL
+        return HttpResponseRedirect(make_url_sassy(dataset.data_file.name))
+
+    raise Http404()
