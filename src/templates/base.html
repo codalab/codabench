@@ -95,36 +95,16 @@
                     </div>
                 </span>
                 <div class="right menu item">
-                    <!-- <div id="competition_dropdown" class="ui dropdown item">
-                        <div class="text">
-                            <i class="ui small trophy icon"></i>
-                            Benchmarks
-                        </div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="header"></div>
-                            <a class="item" href="{% url "competitions:management" %}">Management</a>
-                            <a class="item" href="{% url "competitions:public" %}">Public</a>
-                        </div>
-                    </div> -->
                     <a class="item" href="{% url "competitions:public" %}">
-                        <i selenium="tasks" class="ui small trophy icon"></i>
+                        <i class="ui small trophy icon"></i>
                         Benchmarks/Competitions
                     </a>
                     <a class="item" href="{% url "datasets:public" %}">
-                        <i selenium="tasks" class="ui small database icon"></i>
+                        <i class="ui small database icon"></i>
                         Datasets
                     </a>
-                    <!-- <a class="item" href="{% url "tasks:task_management" %}">
-                        <i selenium="tasks" class="ui small file icon"></i>
-                        Resources
-                    </a> -->
-                    <!-- <a class="item" href="{% url "queues:management" %}">
-                        <i class="ui small computer icon"></i>
-                        Queue Management
-                    </a> -->
                     {% if user.is_authenticated %}
-                        <div id="user_dropdown" class="ui dropdown item">
+                        <div selenium="user_dropdown" id="user_dropdown" class="ui dropdown item">
                             <div class="text">
                                 <i class="icon user outline"></i>
                                 {{ request.user.username }}
@@ -144,7 +124,7 @@
                                 <!-- My Resources -->
                                 <div class="header">My Resources</div>
                                 <a class="item" href="{% url 'competitions:management' %}"><i class="icon bi bi-trophy"></i>Competitions</a>
-                                <a class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
+                                <a selenium="resources" class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
                                  <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
                                 <div class="ui divider"></div>
                                 <!-- Account -->

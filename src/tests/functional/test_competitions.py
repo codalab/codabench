@@ -59,7 +59,10 @@ class TestCompetitions(SeleniumTestCase):
     def test_manual_competition_creation(self):
 
         # Dataset Creation
-        self.find('i[selenium="tasks"]').click()
+        # click user menu
+        self.find('div[selenium="user_dropdown"]').click()
+        # click resources item
+        self.find('a[selenium="resources"]').click()
         self.find('div[data-tab="datasets"]').click()
         self.find('i[selenium="add-dataset"]').click()
         self.find('input-text[selenium="scoring-name"] input').send_keys('sCoRiNg NaMe')
