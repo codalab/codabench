@@ -33,8 +33,6 @@ from utils.email import codalab_send_mail
 class LoginView(auth_views.LoginView):
     def get_context_data(self, *args, **kwargs):
         context = super(LoginView, self).get_context_data(*args, **kwargs)
-        # "http://localhost:8888/profiles/signup?next=http://localhost/social/login/chahub"
-        context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
         return context
 
 
@@ -201,10 +199,6 @@ def sign_up(request):
         return redirect('accounts:login')
 
     context = {}
-    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
-        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
-        settings.SITE_DOMAIN
-    )
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -268,10 +262,6 @@ def log_in(request):
     next = request.GET.get('next', None)
 
     context = {}
-    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
-        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
-        settings.SITE_DOMAIN
-    )
     if request.method == 'POST':
         form = LoginForm(request.POST)
 
