@@ -186,6 +186,9 @@ CODALAB.api = {
     delete_datasets: function(pk_list) {
         return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
     },
+    get_public_datasets: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "datasets/public/", query)
+    },
     /**
      * Creates a dataset
      * @param {object} metadata - name, description, type, data_file, is_public

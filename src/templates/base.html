@@ -95,76 +95,48 @@
                     </div>
                 </span>
                 <div class="right menu item">
-                    <div id="competition_dropdown" class="ui dropdown item">
-                        <div class="text">
-                            <i class="ui small trophy icon"></i>
-                            Benchmarks
-                        </div>
-                        <i class="dropdown icon"></i>
-                        <div class="menu">
-                            <div class="header"></div>
-                            <a class="item" href="{% url "competitions:management" %}">Management</a>
-                            <a class="item" href="{% url "competitions:public" %}">Public</a>
-                        </div>
-                    </div>
-                    <a class="item" href="{% url "tasks:task_management" %}">
-                        <i selenium="tasks" class="ui small file icon"></i>
-                        Resources
+                    <a class="item" href="{% url "competitions:public" %}">
+                        <i class="ui small trophy icon"></i>
+                        Benchmarks/Competitions
                     </a>
-                    <a class="item" href="{% url "queues:management" %}">
-                        <i class="ui small computer icon"></i>
-                        Queue Management
+                    <a class="item" href="{% url "datasets:public" %}">
+                        <i class="ui small database icon"></i>
+                        Datasets
                     </a>
                     {% if user.is_authenticated %}
-                        <div id="user_dropdown" class="ui dropdown item">
+                        <div selenium="user_dropdown" id="user_dropdown" class="ui dropdown item">
                             <div class="text">
                                 <i class="icon user outline"></i>
                                 {{ request.user.username }}
                             </div>
                             <i class="dropdown icon"></i>
                             <div class="menu">
-                                
-                                    <div class="header">Admin management</div>
-{#                                    <a class="item" href="#">Customize Codalab</a>#}
+                                <!-- Admin management -->
+                                <div class="header">Admin management</div>
                                     <a class="item" href="{% url "pages:server_status" %}">Server Status</a>
-                                {% if request.user.is_staff %}
-                                    <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
-                                    <a class="item" href="{% url "admin:index" %}">Django Admin</a>
-                                    <a class="item" href="{% url "su_login" %}">Change User</a>
-                                    <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
-{#                                    <a class="item" href="#">Health</a>#}
-{#                                    <a class="item" href="#">Users</a>#}
-{#                                    <a class="item" href="#">Submissions</a>#}
-{#                                    <a class="item" href="#" onclick="$('#user_switch_modal').modal('show')">Switch#}
-{#                                        User</a>#}
-                                {% endif %}
+                                    {% if request.user.is_staff %}
+                                        <a class="item" href="{% url "pages:monitor_queues" %}">Monitor Queues</a>
+                                        <a class="item" href="{% url "admin:index" %}">Django Admin</a>
+                                        <a class="item" href="{% url "su_login" %}">Change User</a>
+                                        <a class="item" href="{% url "analytics:analytics" %}">Analytics</a>
+                                    {% endif %}
                                 <div class="ui divider"></div>
+                                <!-- My Resources -->
+                                <div class="header">My Resources</div>
+                                <a class="item" href="{% url 'competitions:management' %}"><i class="icon bi bi-trophy"></i>Competitions</a>
+                                <a selenium="resources" class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
+                                 <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
+                                <div class="ui divider"></div>
+                                <!-- Account -->
                                 <div class="header">Account</div>
-                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}">
-                                    <i class="icon user"></i>
-                                    View Profile
-                                </a>
-                                <a class="item" href="{% url 'profiles:user_edit' username=user.username %}">
-                                    </i><i class="edit icon"></i>
-                                    Edit profile
-                                </a>
-                                <a class="item" href="{% url 'accounts:user_account' username=user.username %}">
-                                    <i class="cog icon"></i>
-                                    Account
-                                </a>
-                                <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}">
-                                    </i><i class="bell icon"></i>
-                                    Notifications
-                                </a>
-                                <a class="item" href="{% url 'accounts:password_reset' %}">
-                                    <i class="lock icon"></i>
-                                    Change Password
-                                </a>
-                                <a class="item" href="{% url 'accounts:logout' %}">
-                                    <i class="icon sign out"></i>
-                                    Logout
-                                </a>
+                                <a class="item" href="{% url 'profiles:user_profile' username=user.username %}"><i class="icon bi bi-person"></i>View Profile</a>
+                                <a class="item" href="{% url 'profiles:user_edit' username=user.username %}"></i><i class="icon bi bi-pencil-square"></i>Edit profile</a>
+                                <a class="item" href="{% url 'accounts:user_account' username=user.username %}"><i class="icon bi bi-gear"></i>Settings</a>
+                                <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}"></i><i class="icon bi bi-bell"></i>Notifications</a>
+                                <a class="item" href="{% url 'accounts:password_reset' %}"><i class="icon bi bi-lock"></i>Change Password</a>
+                                <a class="item" href="{% url 'accounts:logout' %}"><i class="icon bi bi-door-open"></i>Logout</a>
                                 <div class="ui divider"></div>
+
                                 <div class="header">Organizations</div>
                             {% for org in user.organizations.all %}
                                 {% if user in org.user_record.all %}
@@ -346,6 +318,10 @@
             DATASET_DOWNLOAD: function (key) {
                 return "{% url "datasets:download" key=0 %}".replace(0, key)
             },
+            DATASET_DOWNLOAD_BY_PK: function (pk) {
+                return "{% url "datasets:download_by_pk" pk=0 %}".replace(0, pk)
+            },
+            DATASET_CREATE: "{% url "datasets:create" %}",
             // Tasks
             TASK_MANAGEMENT: "{% url "tasks:task_management" %}",
             TASK_DETAIL: function (pk) {
@@ -353,6 +329,7 @@
             },
             LOGIN: "{% url 'accounts:login' %}",
             SIGNUP: "{% url 'accounts:signup' %}",
+
         }
         // Django returns <input type="hidden" value="csrf-token-secret"> so we just grab the `value` attribute from this
         CSRF_TOKEN = $('{% csrf_token %}').attr('value')

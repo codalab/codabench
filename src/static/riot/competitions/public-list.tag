@@ -1,6 +1,16 @@
 <public-list>
   <!-- Title -->
-  <h1 class="page-title">Public Benchmarks and Competitions</h1>
+  <div class="page-header">
+    <h1 class="page-title">Public Benchmarks and Competitions</h1>
+    <div class="action-buttons">
+      <a class="create-btn" href="{ URLS.COMPETITION_ADD }">
+        <i class="bi bi-plus-square-fill me-1"></i> Create
+      </a>
+      <a class="create-btn" href="{ URLS.COMPETITION_UPLOAD }">
+        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
+      </a>
+    </div>
+  </div>
 
   <!-- Two-column layout -->
   <div class="content-container">
@@ -283,11 +293,37 @@
       display block
       margin-bottom 5px
 
+    .page-header
+      display flex
+      align-items center
+      justify-content space-between
+      margin-bottom 20px
+
+      .action-buttons
+        display flex
+        gap 10px
+
     .page-title
-      margin 0 0 20px 0
+      margin 0
       font-size 24px
       font-weight bold
       color #1b1b1b
+    
+    .create-btn
+      font-size 14px
+      padding 0.5em 1em
+      background-color #43637a
+      color #fff
+      text-decoration none
+      border-radius 4px
+      display inline-block
+      cursor pointer
+      transition background-color 0.2s ease
+
+      &:hover
+        background-color #2d3f4d
+        color #fff
+        text-decoration none
 
     .content-container
       display flex
@@ -302,16 +338,16 @@
       margin-left 0 !important
       background #f9f9f9
 
-        input[type="text"]
-            width 100%
-            padding 5px
-            margin 5px 0 5px 0
-            border 1px solid #ddd
-            border-radius 4px
+      input[type="text"]
+          width 100%
+          padding 5px
+          margin 5px 0 5px 0
+          border 1px solid #ddd
+          border-radius 4px
 
-        input[type="radio"],
-        input[type="checkbox"]
-            margin-right 5px
+      input[type="radio"],
+      input[type="checkbox"]
+          margin-right 5px
 
     .filter-group
         margin-bottom 20px
@@ -362,10 +398,10 @@
       margin-bottom 6px
 
     .tile-wrapper:hover
-      box-shadow 0 3px 4px -1px #9c9c9c
+      box-shadow 0 3px 4px -1px #cac9c9ff
       transition all 75ms ease-in-out
-      background-color #e8e8e8
-      border solid 1px #b9b9b9
+      background-color #e6edf2
+      border solid 1px #a5b7c5
 
       .comp-stats
         background-color #344d5e

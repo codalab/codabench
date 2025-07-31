@@ -62,6 +62,28 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         return instance
 
 
+class DatasetSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Data
+        fields = (
+            'id',
+            'type',
+            'name',
+            'description',
+            'file_size',
+            'license',
+            'downloads',
+            'is_verified',
+            'created_when',
+            'created_by',
+        )
+
+    def get_created_by(self, obj):
+        return obj.created_by.username
+
+
 class DataSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
