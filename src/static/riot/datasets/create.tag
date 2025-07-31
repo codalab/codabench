@@ -16,9 +16,9 @@
           </ul>
       </div>
       
-      <!-- Dataset Name -->
+      <!-- Name -->
       <div class="field">
-        <label>Dataset Name</label>
+        <label>Name</label>
         <input id="dataset-name" type="text" name="name" ref="name" required placeholder="Enter dataset name" error="{errors.name}">
       </div>
 
@@ -30,7 +30,7 @@
 
       <!-- Dataset Type -->
       <div class="field">
-        <label>Dataset Type</label>
+        <label>Type</label>
         <select id="dataset-type" class="ui dropdown" name="type" ref="type" required error="{errors.type}"> 
           <option value="public_data" selected>Public Data</option>
           <option value="input_data">Input Data</option>
@@ -70,7 +70,7 @@
 
       <!-- File Upload -->
       <div class="field">
-        <label>Upload Dataset (.zip only)</label>
+        <label>Attach Dataset File (.zip only)</label>
         <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip" required></input-file>
       </div>
 

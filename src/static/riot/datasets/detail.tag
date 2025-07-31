@@ -5,7 +5,7 @@
     <table class="ui celled table">
       <tbody if="{dataset}">
         <tr>
-          <td><strong>Title</strong></td>
+          <td><strong>Name</strong></td>
           <td>{dataset.name}</td>
         </tr>
         <tr>
