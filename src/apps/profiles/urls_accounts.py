@@ -1,12 +1,12 @@
-from django.conf.urls import url
-from django.urls import path
+# from django.conf.urls import url # old
+from django.urls import path, re_path
 from . import views
 from django.contrib.auth import views as auth_views
 
 app_name = "accounts"
 
 urlpatterns = [
-    url(r'^signup', views.sign_up, name="signup"),
+    re_path(r'^signup', views.sign_up, name="signup"),
     path('resend_activation/', views.resend_activation, name='resend_activation'),
     path('login/', views.log_in, name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
