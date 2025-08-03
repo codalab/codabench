@@ -4,7 +4,8 @@ import io
 
 import botocore.exceptions
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
+from django.contrib.sites.models import Site
+# from django.contrib.postgres.fields import JSONField # old
 from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
@@ -63,7 +64,7 @@ class Competition(models.Model):
     # we use filed type to distinguish 'competition' and 'benchmark'
     competition_type = models.CharField(max_length=128, choices=COMPETITION_TYPE, default=COMPETITION)
 
-    fact_sheet = JSONField(blank=True, null=True, max_length=4096, default=None)
+    fact_sheet = models.JSONField(blank=True, null=True, max_length=4096, default=None)
 
     contact_email = models.EmailField(max_length=256, null=True, blank=True)
     reward = models.CharField(max_length=256, null=True, blank=True)
@@ -496,7 +497,7 @@ class Submission(models.Model):
     has_children = models.BooleanField(default=False)
     parent = models.ForeignKey('Submission', on_delete=models.CASCADE, blank=True, null=True, related_name='children')
 
-    fact_sheet_answers = JSONField(null=True, blank=True, max_length=4096)
+    fact_sheet_answers = models.JSONField(null=True, blank=True, max_length=4096)
 
     # True when submission owner deletes a submission
     is_soft_deleted = models.BooleanField(default=False)

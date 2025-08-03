@@ -4,6 +4,10 @@ from django.db import migrations, models
 import storages.backends.s3boto3
 import utils.data
 
+# New
+from storages.backends.s3boto3 import S3Boto3Storage
+class _MigrationPrivateStorage(S3Boto3Storage):
+    bucket_name = 'private'
 
 class Migration(migrations.Migration):
 
@@ -15,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='data',
             name='data_file',
-            field=models.FileField(blank=True, null=True, storage=storages.backends.s3boto3.S3Boto3Storage(), upload_to=utils.data.PathWrapper('dataset')),
+            field=models.FileField(blank=True, null=True, storage=_MigrationPrivateStorage(), upload_to=utils.data.PathWrapper('dataset')),
         ),
     ]

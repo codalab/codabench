@@ -1,4 +1,4 @@
-FROM python:3.9.20
+FROM python:3.10.0
 
 RUN apt-get update && apt-get install -y gcc build-essential && rm -rf /var/lib/apt/lists/*
 
