@@ -8,7 +8,8 @@ from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg2.utils import swagger_auto_schema, no_body
+# from drf_yasg.utils import swagger_auto_schema, no_body
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -505,7 +506,8 @@ class CompetitionViewSet(ModelViewSet):
                 dict_writer.writerow(row)
             return response
 
-    @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
+    # @swagger_auto_schema(responses={200: CompetitionCreationTaskStatusSerializer()})
+    @extend_schema(responses={200: CompetitionCreationTaskStatusSerializer})
     @action(detail=True, methods=('GET',))
     def creation_status(self, request, pk):
         """This endpoint gets the creation status for a competition during upload"""
@@ -518,7 +520,8 @@ class CompetitionViewSet(ModelViewSet):
 
         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
+    # @swagger_auto_schema(responses={200: FrontPageCompetitionsSerializer()})
+    @extend_schema(responses={200: FrontPageCompetitionsSerializer})
     @action(detail=False, methods=('GET',), permission_classes=(AllowAny,))
     def front_page(self, request):
         popular_comps = get_popular_competitions()
@@ -530,7 +533,8 @@ class CompetitionViewSet(ModelViewSet):
             "recent_comps": recent_comps_serializer.data
         })
 
-    @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
+    # @swagger_auto_schema(request_body=no_body, responses={201: CompetitionCreationTaskStatusSerializer()})
+    @extend_schema(request=None, responses={201: CompetitionCreationTaskStatusSerializer})
     @action(detail=True, methods=('POST',), serializer_class=CompetitionCreationTaskStatusSerializer)
     def create_dump(self, request, pk=None):
         competition = self.get_object()
@@ -764,7 +768,8 @@ class PhaseViewSet(ModelViewSet):
         else:
             raise PermissionDenied(error_message)
 
-    @swagger_auto_schema(responses={200: PhaseResultsSerializer})
+    # @swagger_auto_schema(responses={200: PhaseResultsSerializer})
+    @extend_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'], permission_classes=[AllowAny])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
