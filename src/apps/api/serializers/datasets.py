@@ -78,7 +78,14 @@ class DataDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
     competition = serializers.SerializerMethodField()
+    file_size = serializers.SerializerMethodField()
     value = serializers.CharField(source='key', required=False)
+
+    # These fields will be conditionally returned for type == SUBMISSION only
+    submission_file_size = serializers.SerializerMethodField()
+    prediction_result_file_size = serializers.SerializerMethodField()
+    scoring_result_file_size = serializers.SerializerMethodField()
+    detailed_result_file_size = serializers.SerializerMethodField()
 
     class Meta:
         model = Data
@@ -96,10 +103,71 @@ class DataDetailSerializer(serializers.ModelSerializer):
             'value',
             'was_created_by_competition',
             'in_use',
-            'file_size',
             'competition',
             'file_name',
+            'file_size',
+            'submission_file_size',
+            'prediction_result_file_size',
+            'scoring_result_file_size',
+            'detailed_result_file_size',
         )
+
+    def to_representation(self, instance):
+        """
+        Called automatically by DRF when serializing a model instance to JSON.
+
+        This method customizes the serialized output of the DataDetailSerializer.
+        Specifically, it removes detailed file size fields when the data type is not 'SUBMISSION'.
+
+        Example: For input_data or scoring_program types, submission-related fields
+        are not relevant and will be excluded from the output.
+        """
+        # First, generate the default serialized representation using the parent method
+        rep = super().to_representation(instance)
+
+        # If this data object is NOT of type 'submission', remove the following fields
+        if instance.type != Data.SUBMISSION:
+            # These fields are only meaningful for submission-type data
+            rep.pop('submission_file_size', None)
+            rep.pop('prediction_result_file_size', None)
+            rep.pop('scoring_result_file_size', None)
+            rep.pop('detailed_result_file_size', None)
+
+        # Return the final customized representation
+        return rep
+
+    def get_file_size(self, obj):
+        # Check if the data object is of type 'SUBMISSION'
+        if obj.type == Data.SUBMISSION:
+            # Start with the base file size of the data file itself (if present)
+            total_size = obj.file_size or 0
+
+            # Loop through all submissions that use this data
+            for submission in obj.submission.all():
+                # Add the size of the prediction result file (if any)
+                total_size += submission.prediction_result_file_size or 0
+                # Add the size of the scoring result file (if any)
+                total_size += submission.scoring_result_file_size or 0
+                # Add the size of the detailed result file (if any)
+                total_size += submission.detailed_result_file_size or 0
+
+            # Return the combined size of data file and all associated result files
+            return total_size
+
+        # For non-submission data types, just return the file size as-is
+        return obj.file_size
+
+    def get_submission_file_size(self, obj):
+        return obj.file_size or 0
+
+    def get_prediction_result_file_size(self, obj):
+        return sum([s.prediction_result_file_size or 0 for s in obj.submission.all()])
+
+    def get_scoring_result_file_size(self, obj):
+        return sum([s.scoring_result_file_size or 0 for s in obj.submission.all()])
+
+    def get_detailed_result_file_size(self, obj):
+        return sum([s.detailed_result_file_size or 0 for s in obj.submission.all()])
 
     def get_competition(self, obj):
         if obj.competition:

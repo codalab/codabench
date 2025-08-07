@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% load staticfiles %}
+{% load static %}
+
+{% block title %}{{ user.username }} - Codabench{% endblock %}
 
 {% block content %}
     <profile-detail></profile-detail>

@@ -48,6 +48,7 @@ class CompetitionTests(APITestCase):
 
         resp = self.client.put(url, data=json.dumps(data), content_type="application/json")
         assert resp.status_code == 200
+
         assert CompetitionParticipant.objects.filter(
             user=self.other_user,
             competition=self.comp,

@@ -1,7 +1,7 @@
 from django.conf.urls import include
 from django.urls import path, re_path
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
+from drf_yasg2 import openapi
+from drf_yasg2.views import get_schema_view
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
 from rest_framework.permissions import AllowAny

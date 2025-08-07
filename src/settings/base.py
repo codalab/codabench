@@ -43,7 +43,7 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
-    'drf_yasg',
+    'drf_yasg2',
     'redis',
 )
 OUR_APPS = (
@@ -240,6 +240,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'profiles.tasks.clean_deleted_users',
         'schedule': timedelta(days=1),  # Run every 24 hours
     },
+    'clean_non_activated_users': {
+        'task': 'profiles.tasks.clean_non_activated_users',
+        'schedule': timedelta(days=1),  # Run every 24 hours
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
@@ -316,13 +320,17 @@ LOGGING = {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
         },
+        'channels': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
 # =============================================================================
 # Channels
 # =============================================================================
-ASGI_APPLICATION = "routing.application"
+ASGI_APPLICATION = "asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
