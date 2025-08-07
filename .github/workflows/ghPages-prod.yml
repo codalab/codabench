@@ -1,0 +1,25 @@
+name: github-pages-prod
+on:
+  push:
+    tags:
+      - '*'
+permissions:
+  contents: write
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    defaults:
+        run:
+            working-directory: documentation/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - run: /home/runner/.local/bin/uv sync 
+      - run: git fetch origin gh-pages --depth=1 && PDF=1 /home/runner/.local/bin/uv run mike deploy -u  ${{ github.ref_name }} latest --push

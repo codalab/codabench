@@ -1,0 +1,6 @@
+- Use [Codabench](https://codabench.org/) by either participating in a competition or hosting a new competition.
+- Find a bug? Got a feature request? Submit a [GitHub issue](https://github.com/codalab/codalab/issues?state=open).
+- [P1 issues](https://github.com/codalab/codabench/issues?q=is%3Aissue+is%3Aopen+label%3AP1) are the most important ones.
+- Submit pull requests on GitHub to implement new features or fix bugs (see [the contributing section](contributing.md)).
+- Improve this documentation.
+- Let others know about Codabench!
