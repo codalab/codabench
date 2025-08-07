@@ -4,7 +4,7 @@ import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
 
-from django.db.models import Q, Case, When, Value, BooleanField
+from django.db.models import Q, Value, BooleanField
 from django.db import transaction
 
 from rest_framework import status
@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
-from competitions.models import Submission, Phase
+from competitions.models import Phase
 from profiles.models import User
 from tasks.models import Task
 from datasets.models import Data
