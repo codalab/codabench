@@ -4,7 +4,7 @@ import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
 
-from django.db.models import Q, Case, When, Value, BooleanField
+from django.db.models import Q, Value, BooleanField
 from django.db import transaction
 
 from rest_framework import status
@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
-from competitions.models import Submission, Phase
+from competitions.models import Phase
 from profiles.models import User
 from tasks.models import Task
 from datasets.models import Data
@@ -53,40 +53,10 @@ class TaskViewSet(ModelViewSet):
             # the public task to the user and hence we check the `retrieve` action
             if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
-
+            # Removed the "task validation" process (https://github.com/codalab/codabench/pull/1962)
+            # We now always set "validated" to False. The "task validation" was only partly implemented and never used.
             qs = qs.filter(task_filter)
-            # Determine whether a task is "valid" by finding some solution with a
-            # passing submission
-            # !CONCERN!
-            # We are looping through all tasks and potentially storing in memory.
-            # Should we potentially change "Task.objects.prefetch_related" to
-            # have similar filters as "qs" so as not to have all tasks in the db
-            # in memory.
-            # !CONCERN!
-            tasks_with_solutions = Task.objects.prefetch_related("solutions")
-            task_validations = {}
-            for task in tasks_with_solutions:
-                solution_md5s = task.solutions.values_list("md5", flat=True)
-                is_valid = Submission.objects.filter(
-                    md5__in=solution_md5s,
-                    status=Submission.FINISHED,
-                ).exists()
-                task_validations[task.id] = is_valid
-
-            # Annotate queryset with validation results
-            cases = [
-                When(id=task_id, then=Value(validated))
-                for task_id, validated in task_validations.items()
-            ]
-            # The qs has a task in it right now.
-            # Baked into cases is task_id from task_validations.
-            # So if any of the tasks in qs, that are up for consideration,
-            # match a task from task_validations, then grab that task's
-            # validation status and return so that this task in qs now
-            # has a "validated" attribute we can access later in
-            # src/apps/api/tests/test_tasks.py as resp.data["validated"].
-            qs = qs.annotate(validated=Case(*cases, default=Value(False), output_field=BooleanField()))
-
+            qs = qs.annotate(validated=Value(False, output_field=BooleanField()))
         return qs.order_by('-created_when').distinct()
 
     def get_serializer_class(self):
