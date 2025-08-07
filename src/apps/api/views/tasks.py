@@ -53,7 +53,8 @@ class TaskViewSet(ModelViewSet):
             # the public task to the user and hence we check the `retrieve` action
             if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
-            # Set validated to False. This logic is never used in the software.
+            # Removed the "task validation" process (https://github.com/codalab/codabench/pull/1962)
+            # We now always set "validated" to False. The "task validation" was only partly implemented and never used.
             qs = qs.filter(task_filter)
             qs = qs.annotate(validated=Value(False, output_field=BooleanField()))
         return qs.order_by('-created_when').distinct()
