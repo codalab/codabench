@@ -3,52 +3,51 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from competitions.models import Submission
-from factories import UserFactory, CompetitionFactory, TaskFactory, SolutionFactory, PhaseFactory, SubmissionFactory, DataFactory
+from factories import UserFactory, DataFactory
 
 # Removed this test because of the changes of this PR : https://github.com/codalab/codabench/pull/1963
-#class TestTasks(APITestCase):
-    #def test_task_shown_as_validated_properly(self):
-    #    user = UserFactory(username='test')
-    #    solution = SolutionFactory(md5="12345")
-    #    task = TaskFactory(created_by=user, solutions=[solution])
-    #    competition = CompetitionFactory(created_by=user)
-    #    phase = PhaseFactory(competition=competition, tasks=[task])
-    #    submission = SubmissionFactory(md5="12345", phase=phase, status=Submission.FINISHED)
-    #    url = reverse('task-detail', kwargs={'pk': task.id})
-    #    self.client.login(username=user.username, password='test')
+# class TestTasks(APITestCase):
+#    def test_task_shown_as_validated_properly(self):
+#        user = UserFactory(username='test')
+#        solution = SolutionFactory(md5="12345")
+#        task = TaskFactory(created_by=user, solutions=[solution])
+#        competition = CompetitionFactory(created_by=user)
+#        phase = PhaseFactory(competition=competition, tasks=[task])
+#        submission = SubmissionFactory(md5="12345", phase=phase, status=Submission.FINISHED)
+#        url = reverse('task-detail', kwargs={'pk': task.id})
+#        self.client.login(username=user.username, password='test')
 
-        # task should be validated because we have a successful submission matching
-        # our solution
-    #    resp = self.client.get(url)
-    #    assert resp.status_code == 200
-    #    assert resp.data["validated"]
+#        # task should be validated because we have a successful submission matching
+#        # our solution
+#        resp = self.client.get(url)
+#        assert resp.status_code == 200
+#        assert resp.data["validated"]
 
-        # make submission anything but Submission.FINISHED, task -> invalidated
-    #    submission.status = Submission.FAILED
-    #    submission.save()
-    #    resp = self.client.get(url)
-    #    assert resp.status_code == 200
-    #    assert not resp.data["validated"]
+#        # make submission anything but Submission.FINISHED, task -> invalidated
+#        submission.status = Submission.FAILED
+#        submission.save()
+#        resp = self.client.get(url)
+#        assert resp.status_code == 200
+#        assert not resp.data["validated"]
 
-        # make submission Submission.Finished, task -> re-validated
-    #    submission.status = Submission.FINISHED
-    #    submission.save()
-    #    resp = self.client.get(url)
-    #    assert resp.status_code == 200
-    #    assert resp.data["validated"]
+#        # make submission Submission.Finished, task -> re-validated
+#        submission.status = Submission.FINISHED
+#        submission.save()
+#        resp = self.client.get(url)
+#        assert resp.status_code == 200
+#        assert resp.data["validated"]
 
-        # delete submission, task -> re-invalidated
-    #    submission.delete()
-    #    resp = self.client.get(url)
-    #    assert resp.status_code == 200
-    #    assert not resp.data["validated"]
+#        # delete submission, task -> re-invalidated
+#        submission.delete()
+#        resp = self.client.get(url)
+#        assert resp.status_code == 200
+#        assert not resp.data["validated"]
 
-        # make submission with different Sha -> still invalid
-    #    SubmissionFactory(md5="different", phase=phase, status=Submission.FINISHED)
-    #    resp = self.client.get(url)
-    #    assert resp.status_code == 200
-    #    assert not resp.data["validated"]
+#        # make submission with different Sha -> still invalid
+#        SubmissionFactory(md5="different", phase=phase, status=Submission.FINISHED)
+#        resp = self.client.get(url)
+#        assert resp.status_code == 200
+#        assert not resp.data["validated"]
 
 
 class TestUploadTask(APITestCase):
