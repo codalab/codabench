@@ -1,75 +1,8 @@
-FROM fedora:37
+FROM codalab/codabench_worker_podman:latest
 
 # Include deps
-RUN curl -s -L https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo | tee /etc/yum.repos.d/cuda.repo && \
-    curl -s -L https://nvidia.github.io/nvidia-docker/rhel9.0/nvidia-docker.repo | tee /etc/yum.repos.d/nvidia-docker.repo && \
-    rpm -Uvh http://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
-    rpm -Uvh http://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
+RUN dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
     dnf -y update && \
-    dnf module install -y nvidia-driver:latest-dkms && \
-    dnf -y install podman fuse-overlayfs python3.9 nvidia-container-runtime nvidia-container-toolkit \
-     cuda --exclude container-selinux && \
+    dnf -y install nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
-
-# Setup user
-RUN useradd worker; \
-echo -e "worker:1:999\nworker:1001:64535" > /etc/subuid; \
-echo -e "worker:1:999\nworker:1001:64535" > /etc/subgid;
-
-# Copy over the podman container configuration
-COPY podman/containers.conf /etc/containers/containers.conf
-COPY podman/worker-containers.conf /home/worker/.config/containers/containers.conf
-
-# Copy over the podman storage configuration
-COPY podman/worker-storage.conf /home/worker/.config/containers/storage.conf
-
-RUN mkdir -p /home/worker/.local/share/containers && \
-    chown worker:worker -R /home/worker && \
-    chmod 644 /etc/containers/containers.conf
-
-# Copy & modify the defaults to provide reference if runtime changes needed.
-# Changes here are required for running with fuse-overlay storage inside container.
-RUN sed -e 's|^#mount_program|mount_program|g' \
-           -e '/additionalimage.*/a "/var/lib/shared",' \
-           -e 's|^mountopt[[:space:]]*=.*$|mountopt = "nodev,fsync=0"|g' \
-           /usr/share/containers/storage.conf \
-           > /etc/containers/storage.conf; sed -i 's/^#no-cgroups = false/no-cgroups = true/;' /etc/nvidia-container-runtime/config.toml
-
-
-# Add volume for containers
-VOLUME /home/worker/.local/share/containers
-
-# This makes output not buffer and return immediately, nice for seeing results in stdout
-ENV PYTHONUNBUFFERED 1
-ENV CONTAINER_ENGINE_EXECUTABLE podman
-
-# Create directory for tmp space
-RUN mkdir /codabench && \
-    chown worker:worker /codabench && \
-# Set up podman registry for dockerhub
-    echo -e "[registries.search]\nregistries = ['docker.io']\n" > /etc/containers/registries.conf && \
-
-WORKDIR /home/worker/compute_worker
-
-ADD compute_worker/ /home/worker/compute_worker
-
-RUN curl -sSL https://install.python-poetry.org | python3.9 -
-# Poetry location so future commands (below) work
-ENV PATH $PATH:/root/.local/bin
-# Want poetry to use system python of docker container
-RUN poetry config virtualenvs.create false
-RUN poetry config virtualenvs.in-project false
-# So we get 3.9
-RUN poetry config virtualenvs.prefer-active-python true
-COPY ./compute_worker/pyproject.toml ./
-COPY ./compute_worker/poetry.lock ./
-RUN poetry install
-
-RUN chown worker:worker -R /home/worker/compute_worker
-
-CMD nvidia-smi && celery -A compute_worker worker \
-    -l info \
-    -Q compute-worker \
-    -n compute-worker@%n \
-    --concurrency=1
