@@ -18,6 +18,7 @@ theme:
     - navigation.top
     - content.action.edit
     - content.action.view
+    - navigation.expand
   palette:
     # Palette toggle for light mode
     - scheme: slate
