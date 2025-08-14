@@ -1,0 +1,1457 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<link href="../Getting-started-with-Codabench/" rel="prev"/>
+<link href="../How-to-transition-from-CodaLab-to-Codabench%3F/" rel="next"/>
+<link href="../../../assets/images/favicon.png" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.16" name="generator"/>
+<title>Advanced Tutorial - Codabench Wiki</title>
+<link href="../../../assets/stylesheets/main.7e37652d.min.css" rel="stylesheet"/>
+<link href="../../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
+
+<link href="../../../assets/external/fonts.googleapis.com/css.49ea35f2.css" rel="stylesheet">
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<link href="../../../css/open_in_new_tab.css" rel="stylesheet"/>
+<script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+ <link href="../../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../../assets/javascripts/glightbox.min.js"></script></head>
+<body data-md-color-accent="orange" data-md-color-primary="indigo" data-md-color-scheme="slate" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#creating-a-benchmark-by-editor">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<div data-md-color-scheme="default" data-md-component="outdated" hidden="">
+</div>
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="Codabench Wiki" class="md-header__button md-logo" data-md-component="logo" href="../../.." title="Codabench Wiki">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            Codabench Wiki
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              Advanced Tutorial
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="orange" data-md-color-media="" data-md-color-primary="indigo" data-md-color-scheme="slate" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+</label>
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="indigo" data-md-color-media="" data-md-color-primary="indigo" data-md-color-scheme="default" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<a aria-label="Share" class="md-search__icon md-icon" data-clipboard="" data-clipboard-text="" data-md-component="search-share" href="javascript:void(0)" tabindex="-1" title="Share">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"></path></svg>
+</a>
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/codalab/codabench" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2" fill="currentColor"></path></svg>
+</div>
+<div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+</div>
+<a class="md-header-nav__button md-icon" href="../../../codabench-wiki.pdf" title="PDF">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<path d="M128,0c-17.6,0-32,14.4-32,32v448c0,17.6,14.4,32,32,32h320c17.6,0,32-14.4,32-32V128L352,0H128z" fill="#E2E5E7"></path>
+<path d="m384 128h96l-128-128v96c0 17.6 14.4 32 32 32z" fill="#B0B7BD"></path>
+<polygon fill="#CAD1D8" points="480 224 384 128 480 128"></polygon>
+<path d="M416,416c0,8.8-7.2,16-16,16H48c-8.8,0-16-7.2-16-16V256c0-8.8,7.2-16,16-16h352c8.8,0,16,7.2,16,16  V416z" fill="#F15642"></path>
+<g fill="#fff">
+<path d="m101.74 303.15c0-4.224 3.328-8.832 8.688-8.832h29.552c16.64 0 31.616 11.136 31.616 32.48 0 20.224-14.976 31.488-31.616 31.488h-21.36v16.896c0 5.632-3.584 8.816-8.192 8.816-4.224 0-8.688-3.184-8.688-8.816v-72.032zm16.88 7.28v31.872h21.36c8.576 0 15.36-7.568 15.36-15.504 0-8.944-6.784-16.368-15.36-16.368h-21.36z"></path>
+<path d="m196.66 384c-4.224 0-8.832-2.304-8.832-7.92v-72.672c0-4.592 4.608-7.936 8.832-7.936h29.296c58.464 0 57.184 88.528 1.152 88.528h-30.448zm8.064-72.912v57.312h21.232c34.544 0 36.08-57.312 0-57.312h-21.232z"></path>
+<path d="m303.87 312.11v20.336h32.624c4.608 0 9.216 4.608 9.216 9.072 0 4.224-4.608 7.68-9.216 7.68h-32.624v26.864c0 4.48-3.184 7.92-7.664 7.92-5.632 0-9.072-3.44-9.072-7.92v-72.672c0-4.592 3.456-7.936 9.072-7.936h44.912c5.632 0 8.96 3.344 8.96 7.936 0 4.096-3.328 8.704-8.96 8.704h-37.248v0.016z"></path>
+</g>
+<path d="m400 432h-304v16h304c8.8 0 16-7.2 16-16v-16c0 8.8-7.2 16-16 16z" fill="#CAD1D8"></path>
+</svg>
+</a></nav>
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../..">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../Participants/User_Participating-in-a-Competition/">
+          
+  
+  
+    
+  
+  Participants
+
+        </a>
+</li>
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href="../Getting-started-with-Codabench/">
+          
+  
+  
+    
+  
+  Organizers
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../Developers_and_Administrators/Codabench-Installation/">
+          
+  
+  
+    
+  
+  Developers and Administrators
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../Newsletters_Archive/CodaLab-in-2024/">
+          
+  
+  
+    
+  
+  Newsletters Archive
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../Contribute/">
+          
+  
+  
+    
+  
+  How you can contribue
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../Project_CodaBench_FAQ/">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../contact-us/">
+        
+  
+  
+    
+  
+  Contact Us
+
+      </a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="Codabench Wiki" class="md-nav__button md-logo" data-md-component="logo" href="../../.." title="Codabench Wiki">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+</a>
+    Codabench Wiki
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/codalab/codabench" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2" fill="currentColor"></path></svg>
+</div>
+<div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../..">
+<span class="md-ellipsis">
+    Home
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Participants
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            Participants
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Participants/User_Participating-in-a-Competition/">
+<span class="md-ellipsis">
+    Participating in a Competition
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="https://www.codabench.org/competitions/public/?page=1">
+<span class="md-ellipsis">
+    List of Current Benchmarks and Competitions
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+<span class="md-ellipsis">
+    Organizers
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            Organizers
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+<span class="md-ellipsis">
+    Benchmark Creation
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_1_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_1">
+<span class="md-nav__icon md-icon"></span>
+            Benchmark Creation
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Getting-started-with-Codabench/">
+<span class="md-ellipsis">
+    Getting Started Tutorial
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    Advanced Tutorial
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./">
+<span class="md-ellipsis">
+    Advanced Tutorial
+    
+  </span>
+</a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#creating-a-benchmark-by-editor">
+<span class="md-ellipsis">
+      Creating a Benchmark by Editor
+    </span>
+</a>
+<nav aria-label="Creating a Benchmark by Editor" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-click-on-management-in-the-top-right-corner-of-codabenchs-home-page-under-competitions">
+<span class="md-ellipsis">
+      Step 1: Click on Management in the top right corner of Codabench's home page under Competitions.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-click-on-the-create-button-in-the-top-right-corner-of-competition-management">
+<span class="md-ellipsis">
+      Step 2: Click on the Create button in the top right corner of Competition Management.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-fill-in-the-details-tab-content">
+<span class="md-ellipsis">
+      Step 3: Fill in the Details tab content.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-fill-in-the-participant-tab">
+<span class="md-ellipsis">
+      Step 4: Fill in the Participant Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-5-fill-in-the-pages-tab">
+<span class="md-ellipsis">
+      Step 5: Fill in the Pages Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-6-fill-in-the-phases-tab">
+<span class="md-ellipsis">
+      Step 6: Fill in the Phases Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-7-fill-in-the-leaderboard-tab">
+<span class="md-ellipsis">
+      Step 7: Fill in the Leaderboard Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-8-save-and-publish-the-benchmark">
+<span class="md-ellipsis">
+      Step 8: Save and Publish the Benchmark
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#creating-a-benchmark-by-bundle">
+<span class="md-ellipsis">
+      Creating a Benchmark by Bundle
+    </span>
+</a>
+<nav aria-label="Creating a Benchmark by Bundle" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#simple-version-example-classify-wheat-seeds">
+<span class="md-ellipsis">
+      Simple Version Example: CLASSIFY WHEAT SEEDS
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-download-bundle">
+<span class="md-ellipsis">
+      Step 1: Download bundle
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-go-to-the-benchmark-upload-page">
+<span class="md-ellipsis">
+      Step 2: Go to the benchmark upload page
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-upload-the-bundle">
+<span class="md-ellipsis">
+      Step 3: Upload the bundle
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-view-your-new-benchmark">
+<span class="md-ellipsis">
+      Step 4: View your new benchmark
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#benchmark-examples">
+<span class="md-ellipsis">
+      Benchmark Examples
+    </span>
+</a>
+<nav aria-label="Benchmark Examples" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#iris">
+<span class="md-ellipsis">
+      Iris
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#autowsl">
+<span class="md-ellipsis">
+      AutoWSL
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#mini-automl">
+<span class="md-ellipsis">
+      Mini-AutoML
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#how-do-i-set-up-submission-comments-for-multiple-submissions">
+<span class="md-ellipsis">
+      How do I set up submission comments for multiple submissions?
+    </span>
+</a>
+<nav aria-label="How do I set up submission comments for multiple submissions?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#steps">
+<span class="md-ellipsis">
+      Steps
+    </span>
+</a>
+<nav aria-label="Steps" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-click-the-edit-button">
+<span class="md-ellipsis">
+      Step 1: Click the edit button
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-enable-multiple-submissions-on-leaderboard">
+<span class="md-ellipsis">
+      Step 2: Enable multiple submissions on leaderboard
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-set-up-submission-comment">
+<span class="md-ellipsis">
+      Step 3: Set up submission comment
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-save-all-changes">
+<span class="md-ellipsis">
+      Step 4: Save all changes
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-5-leave-a-comment-before-making-submission">
+<span class="md-ellipsis">
+      Step 5: Leave a comment before making submission
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-6-check-out-the-leaderboard">
+<span class="md-ellipsis">
+      Step 6: Check out the leaderboard
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../How-to-transition-from-CodaLab-to-Codabench%3F/">
+<span class="md-ellipsis">
+    How to Transition from Codalab to Codabench?
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Competition-Creation/">
+<span class="md-ellipsis">
+    Competition Creation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Competition-Creation%3A-Form/">
+<span class="md-ellipsis">
+    Competition Creation Form
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Competition-Creation%3A-Bundle/">
+<span class="md-ellipsis">
+    Competition Creation Bundle
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Competition-Bundle-Structure/">
+<span class="md-ellipsis">
+    Competition YAML Structure
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Yaml-Structure/">
+<span class="md-ellipsis">
+    YAML Structure
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Competition-docker-image/">
+<span class="md-ellipsis">
+    Competition Docker Image
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Dataset-competition-creation-and-participate-instruction/">
+<span class="md-ellipsis">
+    Dataset Competition Creation and participate instruction
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Leaderboard-Functionality/">
+<span class="md-ellipsis">
+    Leaderboard Features
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="https://github.com/codalab/competition-examples/tree/master/codabench">
+<span class="md-ellipsis">
+    Competition Examples
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Cancer-Benchmarks/">
+<span class="md-ellipsis">
+    Example Cancer Benchmarks
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Public-Tasks-and-Tasks-Sharing/">
+<span class="md-ellipsis">
+    Public Tasks and Tasks Sharing
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../Detailed-Results-and-Visualizations/">
+<span class="md-ellipsis">
+    Detailed Results and Visualization
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Running a Benchmarks
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_2">
+<span class="md-nav__icon md-icon"></span>
+            Running a Benchmarks
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Competition-Management-%26-List/">
+<span class="md-ellipsis">
+    Benchmark Management &amp; List Page
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Competition-Detail-Page/">
+<span class="md-ellipsis">
+    Benchmark Detail Page
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Resource-Management/">
+<span class="md-ellipsis">
+    Ressource Management Submissions, Datasets/Programs, Tasks and Competition Bundles
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Update-programs-or-data/">
+<span class="md-ellipsis">
+    Update programs or data
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Queue-Management/">
+<span class="md-ellipsis">
+    Queue Management
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Compute-Worker-Management---Setup/">
+<span class="md-ellipsis">
+    Compute Worker Management &amp; Setup
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Compute-worker-installation-with-Podman/">
+<span class="md-ellipsis">
+    Compute Worker Management with Podman
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Running_a_benchmark/Server-status-page/">
+<span class="md-ellipsis">
+    Server Status
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Developers and Administrators
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            Developers and Administrators
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Codabench-Installation/">
+<span class="md-ellipsis">
+    Codabench Basic Installtion Guide
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/How-to-deploy-Codabench-on-your-server/">
+<span class="md-ellipsis">
+    How to Deploy a Server
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Administrator-procedures/">
+<span class="md-ellipsis">
+    Administrative Procedures
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Codabench-Architecture/">
+<span class="md-ellipsis">
+    Codabench Docker Architecture
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Submission-Docker-Container-Layout/">
+<span class="md-ellipsis">
+    Submission Docker Container Layout
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Creating-and-Restoring-from-Backup/">
+<span class="md-ellipsis">
+    Backups - Automating Creation and Restoring
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Submission-Process-Overview/">
+<span class="md-ellipsis">
+    Submission Process Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Robot-submissions/">
+<span class="md-ellipsis">
+    Robot Submissions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Running-tests/">
+<span class="md-ellipsis">
+    Running Tests
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Automating-with-Selenium/">
+<span class="md-ellipsis">
+    Automation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Manual-validation/">
+<span class="md-ellipsis">
+    Manual Validation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Validation-and-deployment-of-pull-requests/">
+<span class="md-ellipsis">
+    Validation and deplyement of pull requests
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4_13" type="checkbox"/>
+<div class="md-nav__link md-nav__container">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/">
+<span class="md-ellipsis">
+    Upgrading Codabench
+    
+  </span>
+</a>
+<label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+<span class="md-nav__icon md-icon"></span>
+</label>
+</div>
+<nav aria-expanded="false" aria-labelledby="__nav_4_13_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_4_13">
+<span class="md-nav__icon md-icon"></span>
+            Upgrading Codabench
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Upgrade-RabbitMQ/">
+<span class="md-ellipsis">
+    Upgrade RabbitMQ (version &lt; 1.0.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Create-new-logos-for-each-competition/">
+<span class="md-ellipsis">
+    Create new logos for each competitions (version &lt; 1.4.1)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Worker-Docker-Image-manual-update/">
+<span class="md-ellipsis">
+    Worker docker image manual update (version &lt; 1.3.1)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Add-line-into-.env-for-default-queue-worker-duration/">
+<span class="md-ellipsis">
+    Add line in .env file for default worker queue duration (version &lt; 1.7.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Uncomment-a-line-in-your-.env-file/">
+<span class="md-ellipsis">
+    Uncomment a line in your .env file (version &lt; 1.8.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Rebuilding-all-docker-images/">
+<span class="md-ellipsis">
+    Rebuilding all docker images (version &lt; 1.9.2)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder/">
+<span class="md-ellipsis">
+    Move the latest storage_inconsistency files from the logs folder to var/logs (version &lt; 1.12.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Submissions-and-Participants-Counts/">
+<span class="md-ellipsis">
+    Submissions and Participants count (version &lt; 1.14.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Homepage-counters/">
+<span class="md-ellipsis">
+    Homepage Counters (version &lt; 1.15.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/User-removal/">
+<span class="md-ellipsis">
+    User Removal (version &lt; 1.17.0)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes/">
+<span class="md-ellipsis">
+    Database size fix (version &lt; 1.18.0)
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Newsletters Archive
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_5">
+<span class="md-nav__icon md-icon"></span>
+            Newsletters Archive
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Newsletters_Archive/CodaLab-in-2024/">
+<span class="md-ellipsis">
+    2024
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_6" type="checkbox"/>
+<div class="md-nav__link md-nav__container">
+<a class="md-nav__link" href="../../../Contribute/">
+<span class="md-ellipsis">
+    How you can contribue
+    
+  </span>
+</a>
+<label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+<span class="md-nav__icon md-icon"></span>
+</label>
+</div>
+<nav aria-expanded="false" aria-labelledby="__nav_6_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_6">
+<span class="md-nav__icon md-icon"></span>
+            How you can contribue
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Contribute/contributing/">
+<span class="md-ellipsis">
+    Contributing
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Project_CodaBench_FAQ/">
+<span class="md-ellipsis">
+    FAQ
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../contact-us/">
+<span class="md-ellipsis">
+    Contact Us
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#creating-a-benchmark-by-editor">
+<span class="md-ellipsis">
+      Creating a Benchmark by Editor
+    </span>
+</a>
+<nav aria-label="Creating a Benchmark by Editor" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-click-on-management-in-the-top-right-corner-of-codabenchs-home-page-under-competitions">
+<span class="md-ellipsis">
+      Step 1: Click on Management in the top right corner of Codabench's home page under Competitions.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-click-on-the-create-button-in-the-top-right-corner-of-competition-management">
+<span class="md-ellipsis">
+      Step 2: Click on the Create button in the top right corner of Competition Management.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-fill-in-the-details-tab-content">
+<span class="md-ellipsis">
+      Step 3: Fill in the Details tab content.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-fill-in-the-participant-tab">
+<span class="md-ellipsis">
+      Step 4: Fill in the Participant Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-5-fill-in-the-pages-tab">
+<span class="md-ellipsis">
+      Step 5: Fill in the Pages Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-6-fill-in-the-phases-tab">
+<span class="md-ellipsis">
+      Step 6: Fill in the Phases Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-7-fill-in-the-leaderboard-tab">
+<span class="md-ellipsis">
+      Step 7: Fill in the Leaderboard Tab.
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-8-save-and-publish-the-benchmark">
+<span class="md-ellipsis">
+      Step 8: Save and Publish the Benchmark
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#creating-a-benchmark-by-bundle">
+<span class="md-ellipsis">
+      Creating a Benchmark by Bundle
+    </span>
+</a>
+<nav aria-label="Creating a Benchmark by Bundle" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#simple-version-example-classify-wheat-seeds">
+<span class="md-ellipsis">
+      Simple Version Example: CLASSIFY WHEAT SEEDS
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-download-bundle">
+<span class="md-ellipsis">
+      Step 1: Download bundle
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-go-to-the-benchmark-upload-page">
+<span class="md-ellipsis">
+      Step 2: Go to the benchmark upload page
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-upload-the-bundle">
+<span class="md-ellipsis">
+      Step 3: Upload the bundle
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-view-your-new-benchmark">
+<span class="md-ellipsis">
+      Step 4: View your new benchmark
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#benchmark-examples">
+<span class="md-ellipsis">
+      Benchmark Examples
+    </span>
+</a>
+<nav aria-label="Benchmark Examples" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#iris">
+<span class="md-ellipsis">
+      Iris
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#autowsl">
+<span class="md-ellipsis">
+      AutoWSL
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#mini-automl">
+<span class="md-ellipsis">
+      Mini-AutoML
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#how-do-i-set-up-submission-comments-for-multiple-submissions">
+<span class="md-ellipsis">
+      How do I set up submission comments for multiple submissions?
+    </span>
+</a>
+<nav aria-label="How do I set up submission comments for multiple submissions?" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#steps">
+<span class="md-ellipsis">
+      Steps
+    </span>
+</a>
+<nav aria-label="Steps" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-1-click-the-edit-button">
+<span class="md-ellipsis">
+      Step 1: Click the edit button
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-2-enable-multiple-submissions-on-leaderboard">
+<span class="md-ellipsis">
+      Step 2: Enable multiple submissions on leaderboard
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-3-set-up-submission-comment">
+<span class="md-ellipsis">
+      Step 3: Set up submission comment
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-4-save-all-changes">
+<span class="md-ellipsis">
+      Step 4: Save all changes
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-5-leave-a-comment-before-making-submission">
+<span class="md-ellipsis">
+      Step 5: Leave a comment before making submission
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#step-6-check-out-the-leaderboard">
+<span class="md-ellipsis">
+      Step 6: Check out the leaderboard
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/documentation/docs/Organizers/Benchmark_Creation/Advanced-Tutorial.md" rel="edit" title="Edit this page">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
+</a>
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/documentation/docs/Organizers/Benchmark_Creation/Advanced-Tutorial.md" title="View source of this page">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
+</a>
+<h1>Advanced Tutorial</h1>
+<p>Here is an advanced tutorial. If you are new to CodaBench, please refer to <a href="https://github.com/codalab/codabench/wiki/Getting-started-with-Codabench">get started tutorial</a> first.
+In this article, you'll learn how to use more advanced features and how to create benchmarks using either the editor or bundles.
+Before proceeding to our tutorial, make sure you have registered for an account on the <a href="https://www.codabench.org/">Codabench</a> website.</p>
+<p>The image below is an overview of the benchmark creation process
+<a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102429234-771d4b00-404d-11eb-9ec3-bc75d39d3194_17528513092407322.png"/></a></p>
+<h2 id="creating-a-benchmark-by-editor">Creating a Benchmark by Editor<a class="headerlink" href="#creating-a-benchmark-by-editor" title="Permanent link">¶</a></h2>
+<p>In this chapter, I'll take you step by step through the Editor's approach to creating benchmark, including algorithm type and dataset type.</p>
+<h3 id="step-1-click-on-management-in-the-top-right-corner-of-codabenchs-home-page-under-competitions">Step 1: Click on Management in the top right corner of Codabench's home page under Competitions.<a class="headerlink" href="#step-1-click-on-management-in-the-top-right-corner-of-codabenchs-home-page-under-competitions" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102429989-a9c74380-404d-11eb-8b99-9e7829fe8678_17528513092920961.png"/></a>
+When you click on it, you will see the screen as shown in the screenshot below.
+<a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102430225-b9468c80-404d-11eb-81f1-879138afad2c_175285130932125.png"/></a></p>
+<h3 id="step-2-click-on-the-create-button-in-the-top-right-corner-of-competition-management">Step 2: Click on the Create button in the top right corner of Competition Management.<a class="headerlink" href="#step-2-click-on-the-create-button-in-the-top-right-corner-of-competition-management" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102430591-d24f3d80-404d-11eb-8adf-1f562d2f9cb4_17528513093284764.png"/></a></p>
+<h3 id="step-3-fill-in-the-details-tab-content">Step 3: Fill in the Details tab content.<a class="headerlink" href="#step-3-fill-in-the-details-tab-content" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102431578-12aebb80-404e-11eb-8d07-d74e9de46280_17528513097437637.png"/></a></p>
+<h3 id="step-4-fill-in-the-participant-tab">Step 4: Fill in the Participant Tab.<a class="headerlink" href="#step-4-fill-in-the-participant-tab" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102431721-1d695080-404e-11eb-87a4-92a4b43b349c_1752851309399166.png"/></a></p>
+<h3 id="step-5-fill-in-the-pages-tab">Step 5: Fill in the Pages Tab.<a class="headerlink" href="#step-5-fill-in-the-pages-tab" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102431937-2c500300-404e-11eb-9a28-344f26d79013_17528513093988035.png"/></a></p>
+<h3 id="step-6-fill-in-the-phases-tab">Step 6: Fill in the Phases Tab.<a class="headerlink" href="#step-6-fill-in-the-phases-tab" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432087-36720180-404e-11eb-9dda-a593d7a45af2_17528513094299598.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432234-40940000-404e-11eb-8a3d-1e72b2688267_17528513094664094.png"/></a></p>
+<p>When you click on the Manage Tasks/Datasets button, you will see the screenshot shown below</p>
+<p>Click the Add Dataset button in the diagram to upload the resource files needed to create the competition.</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432435-4d185880-404e-11eb-967f-1735f6a9f145_17528513094839308.png"/></a></p>
+<p>Creating a phase will require a bundle of the following types (.zip format), I'll give you more details on how to write these bundle later.</p>
+<p>Now you just need to have this concept in your mind</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432573-56092a00-404e-11eb-9788-512586edd693_1752851309496168.png"/></a></p>
+<p>Here are the screenshots of the 5 types of bundles after they were uploaded</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432684-5e616500-404e-11eb-8b82-8ea332050cdf_17528513095790792.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432819-67523680-404e-11eb-9032-b725058ffa3c_17528513102032712.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102432974-71743500-404e-11eb-95ef-84d39597a412_1752851309572427.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433142-7b963380-404e-11eb-9ad0-035eb60d7f64_17528513096323566.png"/></a></p>
+<h3 id="step-7-fill-in-the-leaderboard-tab">Step 7: Fill in the Leaderboard Tab.<a class="headerlink" href="#step-7-fill-in-the-leaderboard-tab" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433276-84870500-404e-11eb-8638-60eeab21fe8d_17528513096378942.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433391-8c46a980-404e-11eb-871c-6d443be44062_1752851309654381.png"/></a></p>
+<h3 id="step-8-save-and-publish-the-benchmark">Step 8: Save and Publish the Benchmark<a class="headerlink" href="#step-8-save-and-publish-the-benchmark" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433537-95377b00-404e-11eb-8649-57f70a830564_1752851309686341.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433657-9cf71f80-404e-11eb-9aa0-d23cf595c7db_1752851309773052.png"/></a></p>
+<h2 id="creating-a-benchmark-by-bundle">Creating a Benchmark by Bundle<a class="headerlink" href="#creating-a-benchmark-by-bundle" title="Permanent link">¶</a></h2>
+<p>Creating a benchmark through bundles is a much more efficient way than using editors.</p>
+<h3 id="simple-version-example-classify-wheat-seeds">Simple Version Example: CLASSIFY WHEAT SEEDS<a class="headerlink" href="#simple-version-example-classify-wheat-seeds" title="Permanent link">¶</a></h3>
+<h3 id="step-1-download-bundle">Step 1: Download bundle<a class="headerlink" href="#step-1-download-bundle" title="Permanent link">¶</a></h3>
+<p>https://github.com/codalab/competition-examples/blob/master/codabench/wheat_seeds/code_submission_bundle.zip</p>
+<p>Click on the link above to download the bundle in the screenshot.</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433828-aa140e80-404e-11eb-9886-3f6960eb6a5e_17528513100792131.png"/></a></p>
+<h3 id="step-2-go-to-the-benchmark-upload-page">Step 2: Go to the benchmark upload page<a class="headerlink" href="#step-2-go-to-the-benchmark-upload-page" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433943-b1d3b300-404e-11eb-9594-39de8566c6a0_17528513097862737.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433960-bbf5b180-404e-11eb-8102-26c03d5084b8_17528513098046653.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433974-c57f1980-404e-11eb-9b50-54b170755850_17528513098181317.png"/></a></p>
+<h3 id="step-3-upload-the-bundle">Step 3: Upload the bundle<a class="headerlink" href="#step-3-upload-the-bundle" title="Permanent link">¶</a></h3>
+<p>After the bundle has been uploaded, you will see the screenshot shown below.</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102433995-ce6feb00-404e-11eb-95c9-2ed9e5d8bb54_1752851309822554.png"/></a></p>
+<h3 id="step-4-view-your-new-benchmark">Step 4: View your new benchmark<a class="headerlink" href="#step-4-view-your-new-benchmark" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434012-d6c82600-404e-11eb-85dd-88338d7aa033_17528513098401737.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434028-e182bb00-404e-11eb-9de8-002e4589db66_17528513099222646.png"/></a></p>
+<h2 id="benchmark-examples">Benchmark Examples<a class="headerlink" href="#benchmark-examples" title="Permanent link">¶</a></h2>
+<p>Example bundles for code &amp; dataset competition can be found here:</p>
+<p>https://github.com/codalab/competition-examples/tree/master/codabench</p>
+<h3 id="iris">Iris<a class="headerlink" href="#iris" title="Permanent link">¶</a></h3>
+<p><a href="https://github.com/codalab/competition-examples/tree/master/codabench/iris">Iris Codabench Bundle</a> is a simple benchmark involving two phases, code submission and results submission.</p>
+<h3 id="autowsl">AutoWSL<a class="headerlink" href="#autowsl" title="Permanent link">¶</a></h3>
+<p>Two versions of the <a href="https://github.com/codalab/competition-examples/tree/master/codabench/autowsl">Automated Weakly Supervised Learning Benchmark</a>:
+- <a href="https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/code_submission">Code submission benchmark</a>
+- <a href="https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/dataset_submission">Dataset submission benchmark</a></p>
+<h3 id="mini-automl">Mini-AutoML<a class="headerlink" href="#mini-automl" title="Permanent link">¶</a></h3>
+<p><a href="https://github.com/codalab/competition-examples/tree/master/codabench/mini-automl">Mini-AutoML Bundle</a> is a benchmark template for Codabench, featuring code submission to multiple datasets (tasks).</p>
+<h2 id="how-do-i-set-up-submission-comments-for-multiple-submissions">How do I set up submission comments for multiple submissions?<a class="headerlink" href="#how-do-i-set-up-submission-comments-for-multiple-submissions" title="Permanent link">¶</a></h2>
+<h3 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">¶</a></h3>
+<h4 id="step-1-click-the-edit-button">Step 1: Click the edit button<a class="headerlink" href="#step-1-click-the-edit-button" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434058-f5c6b800-404e-11eb-98e2-88ee12195d7a_17528513098936615.png"/></a></p>
+<h4 id="step-2-enable-multiple-submissions-on-leaderboard">Step 2: Enable multiple submissions on leaderboard<a class="headerlink" href="#step-2-enable-multiple-submissions-on-leaderboard" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434073-fcedc600-404e-11eb-859c-658fdc57bb37_17528513098851938.png"/></a></p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434089-04ad6a80-404f-11eb-9f70-faa80fa8b6ba_17528513099604332.png"/></a></p>
+<h4 id="step-3-set-up-submission-comment">Step 3: Set up submission comment<a class="headerlink" href="#step-3-set-up-submission-comment" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434105-0e36d280-404f-11eb-99b1-dae0127cb941_1752851309982288.png"/></a></p>
+<h4 id="step-4-save-all-changes">Step 4: Save all changes<a class="headerlink" href="#step-4-save-all-changes" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434120-168f0d80-404f-11eb-91e1-04f52a7dd77a_1752851309963938.png"/></a></p>
+<h4 id="step-5-leave-a-comment-before-making-submission">Step 5: Leave a comment before making submission<a class="headerlink" href="#step-5-leave-a-comment-before-making-submission" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434132-1d1d8500-404f-11eb-8370-11fe623f3d2f_17528513103749812.png"/></a></p>
+<h4 id="step-6-check-out-the-leaderboard">Step 6: Check out the leaderboard<a class="headerlink" href="#step-6-check-out-the-leaderboard" title="Permanent link">¶</a></h4>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../../_attachments/102434153-27d81a00-404f-11eb-9aea-86763cc0d631_17528513100395033.png"/></a></p>
+</article>
+</div>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<nav aria-label="Footer" class="md-footer__inner md-grid">
+<a aria-label="Previous: Getting Started Tutorial" class="md-footer__link md-footer__link--prev" href="../Getting-started-with-Codabench/">
+<div class="md-footer__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</div>
+<div class="md-footer__title">
+<span class="md-footer__direction">
+                Previous
+              </span>
+<div class="md-ellipsis">
+                Getting Started Tutorial
+              </div>
+</div>
+</a>
+<a aria-label="Next: How to Transition from Codalab to Codabench?" class="md-footer__link md-footer__link--next" href="../How-to-transition-from-CodaLab-to-Codabench%3F/">
+<div class="md-footer__title">
+<span class="md-footer__direction">
+                Next
+              </span>
+<div class="md-ellipsis">
+                How to Transition from Codalab to Codabench?
+              </div>
+</div>
+<div class="md-footer__button md-icon">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"></path></svg>
+</div>
+</a>
+</nav>
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+<div class="md-copyright__highlight">
+        Apache-2.0
+        
+        :: <a href="https://github.com/codalab/codalab-competitions/wiki/Community-Governance" rel="noopener" target="_blank">Governance Document</a>
+        
+        :: <a href="https://github.com/codalab/codalab-competitions/wiki/Privacy" rel="noopener" target="_blank">Privacy Policy</a>
+        
+        :: <a href="https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab" rel="noopener" target="_blank">About</a>
+</div>
+    
+    
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+        Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.tabs", "navigation.tabs.sticky", "navigation.indexes", "search.share", "navigation.footer", "navigation.top", "content.action.edit", "content.action.view", "navigation.expand"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+<script src="../../../assets/javascripts/bundle.50899def.min.js"></script>
+<script src="../../../js/open_in_new_tab.js"></script>
+<script src="../../../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+<script id="init-glightbox">document.querySelectorAll('.glightbox').forEach(function(element) {
+    try {
+        var img = element.querySelector('img');
+        if (img && img.src) {
+            element.setAttribute('href', img.src);
+        } else {
+            console.log('No img element with src attribute found');
+        }
+    } catch (error) {
+        console.log('Error:', error);
+    }
+});
+const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
+</html>
