@@ -3,8 +3,10 @@ import yaml
 import zipfile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from collections import defaultdict
-from django.db.models import Q, OuterRef, Subquery
+
+from django.db.models import Q, Value, BooleanField
 from django.db import transaction
+
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -15,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from api.pagination import BasicPagination
 from api.serializers import tasks as serializers
-from competitions.models import Submission, Phase
+from competitions.models import Phase
 from profiles.models import User
 from tasks.models import Task
 from datasets.models import Data
@@ -24,8 +26,6 @@ from utils.data import pretty_bytes, gb_to_bytes
 
 # TODO:// TaskViewSimple uses simple serializer from tasks, which exists purely for the use of Select2 on phase modal
 #   is there a better way to do it using get_serializer_class() method?
-
-
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = serializers.TaskSerializer
@@ -46,7 +46,6 @@ class TaskViewSet(ModelViewSet):
                 'solutions',
                 'solutions__data'
             )
-
             task_filter = Q(created_by=self.request.user) | Q(shared_with=self.request.user)
             # when there is `public` in the query params, it means user has checked on the front-end
             # the Show public tasks checkbox.
@@ -54,20 +53,10 @@ class TaskViewSet(ModelViewSet):
             # the public task to the user and hence we check the `retrieve` action
             if self.request.query_params.get('public') or self.action == 'retrieve':
                 task_filter |= Q(is_public=True)
-
+            # Removed the "task validation" process (https://github.com/codalab/codabench/pull/1962)
+            # We now always set "validated" to False. The "task validation" was only partly implemented and never used.
             qs = qs.filter(task_filter)
-
-            # Determine whether a task is "valid" by finding some solution with a
-            # passing submission
-            task_validate_qs = Submission.objects.filter(
-                md5__in=OuterRef("solutions__md5"),
-                status=Submission.FINISHED,
-                # TODO: This line causes our query to take ~10 seconds. Is this important?
-                # phase__in=OuterRef("phases")
-            )
-            # We have to grab something from task_validate_qs here, so i grab pk
-            qs = qs.annotate(validated=Subquery(task_validate_qs.values('pk')[:1]))
-
+            qs = qs.annotate(validated=Value(False, output_field=BooleanField()))
         return qs.order_by('-created_when').distinct()
 
     def get_serializer_class(self):

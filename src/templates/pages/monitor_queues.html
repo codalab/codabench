@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% load staticfiles %}
+{% load static %}
+
 
 {% block extra_head %}
 {% endblock %}
@@ -13,7 +14,7 @@
                     <div class="column">
                         <div class="ui fluid card">
                             <a class="image" href="{{ RABBITMQ_MANAGEMENT_URL}}" target="_blank">
-                                <img class="ui large image" src="/static/img/RabbitMQ.png">
+                                <img class="ui large image" src="{% static 'img/RabbitMQ.png' %}">
                             </a>
                             <div class="content">
                                 <a class="header" href="{{ RABBITMQ_MANAGEMENT_URL }}" target="_blank">RabbitMQ</a>
@@ -28,7 +29,7 @@
                     <div class="column">
                         <div class="ui fluid card">
                             <a class="image" href="{{ FLOWER_URL }}" target="_blank">
-                                <img class="ui large image" src="/static/img/Flower.png">
+                                <img class="ui large image" src="{% static 'img/Flower.png' %}">
                             </a>
                             <div class="content">
                                 <a class="header" href="{{ FLOWER_URL }}" target="_blank">Flower</a>

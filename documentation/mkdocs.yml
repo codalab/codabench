@@ -1,0 +1,170 @@
+site_name: Codabench Wiki
+repo_url: https://github.com/codalab/codabench
+copyright: Apache-2.0
+edit_uri: documentation/docs
+
+theme:
+  name: material
+  #logo: assets/favicon.ico
+  #favicon: assets/favicon.ico
+  custom_dir: overrides
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes
+    - search.share
+    - navigation.footer
+    - navigation.top
+    - content.action.edit
+    - content.action.view
+    - navigation.expand
+  palette:
+    # Palette toggle for light mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      primary: indigo
+      accent: orange
+
+    # Palette toggle for dark mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - attr_list
+  - abbr
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - to-pdf:
+      enabled_if_env: PDF
+      download_link: header
+      author: Codabench Team
+      copyright: Apache-2.0
+      cover_subtitle: Codabench Wiki PDF
+      output_path: codabench-wiki.pdf
+      toc_level: 3
+
+  # Version docs (with git)
+  - mike:
+      # These fields are all optional; the defaults are as below...
+      alias_type: symlink
+      redirect_template: null
+      deploy_prefix: ""
+      canonical_version: null
+      version_selector: true
+      css_dir: css
+      javascript_dir: js
+
+  - open-in-new-tab:
+      add_icon: true
+
+  # Image zoom
+  - glightbox
+
+  - privacy
+
+extra:
+  version:
+    provider: mike
+    alias: true
+  footer_links:
+    - text: "Governance Document"
+      href: "https://github.com/codalab/codalab-competitions/wiki/Community-Governance"
+    - text: "Privacy Policy"
+      href: "https://github.com/codalab/codalab-competitions/wiki/Privacy"
+    - text: "About"
+      href: "https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab"
+
+nav:
+  - Home: index.md
+  - Participants:
+      - Participating in a Competition: Participants/User_Participating-in-a-Competition.md
+      - List of Current Benchmarks and Competitions: https://www.codabench.org/competitions/public/?page=1
+  - Organizers:
+      - Benchmark Creation:
+          - Getting Started Tutorial: Organizers/Benchmark_Creation/Getting-started-with-Codabench.md
+          - Advanced Tutorial: Organizers/Benchmark_Creation/Advanced-Tutorial.md
+          - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench?.md
+          - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
+          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation:-Form.md
+          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation:-Bundle.md
+          - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
+          - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
+          - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
+          - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
+          - Leaderboard Features: Organizers/Benchmark_Creation/Leaderboard-Functionality.md
+          - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
+          - Example Cancer Benchmarks: Organizers/Benchmark_Creation/Cancer-Benchmarks.md
+          - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
+          - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
+      - Running a Benchmarks:
+          - Benchmark Management & List Page: Organizers/Running_a_benchmark/Competition-Management-&-List.md
+          - Benchmark Detail Page: Organizers/Running_a_benchmark/Competition-Detail-Page.md
+          - Ressource Management Submissions, Datasets/Programs, Tasks and Competition Bundles: Organizers/Running_a_benchmark/Resource-Management.md
+          - Update programs or data: Organizers/Running_a_benchmark/Update-programs-or-data.md
+          - Queue Management: Organizers/Running_a_benchmark/Queue-Management.md
+          - Compute Worker Management & Setup: Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md
+          - Compute Worker Management with Podman: Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md
+          - Server Status: Organizers/Running_a_benchmark/Server-status-page.md
+  - Developers and Administrators:
+      - Codabench Basic Installtion Guide: Developers_and_Administrators/Codabench-Installation.md
+      - How to Deploy a Server: Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md
+      - Administrative Procedures: Developers_and_Administrators/Administrator-procedures.md
+      - Codabench Docker Architecture: Developers_and_Administrators/Codabench-Architecture.md
+      - Submission Docker Container Layout: Developers_and_Administrators/Submission-Docker-Container-Layout.md
+      - Backups - Automating Creation and Restoring: Developers_and_Administrators/Creating-and-Restoring-from-Backup.md
+      - Submission Process Overview: Developers_and_Administrators/Submission-Process-Overview.md
+      - Robot Submissions: Developers_and_Administrators/Robot-submissions.md
+      - Running Tests: Developers_and_Administrators/Running-tests.md
+      - Automation: Developers_and_Administrators/Automating-with-Selenium.md
+      - Manual Validation: Developers_and_Administrators/Manual-validation.md
+      - Validation and deplyement of pull requests: Developers_and_Administrators/Validation-and-deployment-of-pull-requests.md
+      - Upgrading Codabench:
+          - Developers_and_Administrators/Upgrading_Codabench/index.md
+          - Upgrade RabbitMQ (version < 1.0.0): Developers_and_Administrators/Upgrading_Codabench/Upgrade-RabbitMQ.md
+          - Create new logos for each competitions (version < 1.4.1): Developers_and_Administrators/Upgrading_Codabench/Create-new-logos-for-each-competition.md
+          - Worker docker image manual update (version < 1.3.1): Developers_and_Administrators/Upgrading_Codabench/Worker-Docker-Image-manual-update.md
+          - Add line in .env file for default worker queue duration (version < 1.7.0): Developers_and_Administrators/Upgrading_Codabench/Add-line-into-.env-for-default-queue-worker-duration.md
+          - Uncomment a line in your .env file (version < 1.8.0): Developers_and_Administrators/Upgrading_Codabench/Uncomment-a-line-in-your-.env-file.md
+          - Rebuilding all docker images (version < 1.9.2): Developers_and_Administrators/Upgrading_Codabench/Rebuilding-all-docker-images.md
+          - Move the latest storage_inconsistency files from the logs folder to var/logs (version < 1.12.0): Developers_and_Administrators/Upgrading_Codabench/Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder.md
+          - Submissions and Participants count (version < 1.14.0): Developers_and_Administrators/Upgrading_Codabench/Submissions-and-Participants-Counts.md
+          - Homepage Counters (version < 1.15.0): Developers_and_Administrators/Upgrading_Codabench/Homepage-counters.md
+          - User Removal (version < 1.17.0): Developers_and_Administrators/Upgrading_Codabench/User-removal.md
+          - Database size fix (version < 1.18.0): Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes.md
+  - Newsletters Archive:
+      - 2024: Newsletters_Archive/CodaLab-in-2024.md
+  - How you can contribue:
+      - Contribute/index.md
+      - Contribute/contributing.md
+  - FAQ: Project_CodaBench_FAQ.md
+  - Contact Us: contact-us.md
