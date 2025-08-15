@@ -1,7 +1,7 @@
 site_name: Codabench Wiki
 repo_url: https://github.com/codalab/codabench
 copyright: Apache-2.0
-edit_uri: documentation/docs
+edit_uri: edit/develop/documentation/docs
 
 theme:
   name: material
