@@ -23,7 +23,9 @@ cd codabench
 cp .env_sample .env
 ```
 
-Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick local setup, you should not need to edit this file.
+Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick **local** setup, you should not need to edit this file. For a [public server deployment](How-to-deploy-Codabench-on-your-server.md), you will have to modify some settings.
+
+!!! warning "It is important to change the default passwords if you intend for the instance to be public"
 
 If you are using `AWS_S3_ENDPOINT_URL=http://minio:9000/` in your `.env`, edit your `/etc/hosts` file by adding this line `127.0.0.1 minio`
 
@@ -78,6 +80,8 @@ To run automated tests for your local instance, get inside the Django container 
 To enable SSL:
 
 - If you already have a DNS for your server that is appropriate, in the `.env` simply set `DOMAIN_NAME` to your DNS. Remove any port designation like `:80`. This will have Caddy serve both HTTP and HTTPS.
+
+!!! warning "For a public instance, HTTPS is strongly recomended"
 
 ### Validate user account on local instance
 
@@ -135,6 +139,12 @@ To set up remote compute workers, you can follow the steps described in our
 
 ## Troubleshooting
 
-Read the following guide for troubleshooting: [How to deploy Codabench](How-to-deploy-Codabench-on-your-server.md).
+Read the following guide for troubleshooting: [How to deploy Codabench](How-to-deploy-Codabench-on-your-server.md#frequently-asked-questions-faqs).
 
 Also, adding `DEBUG=True` to the `.env` file can help with troubleshooting the deployment.
+
+Open a [Github issue](https://github.com/codalab/codabench/issues) to find help with your installation
+
+## Online Deployement
+
+For information about online deployment of Codabench, go to the [following page](How-to-deploy-Codabench-on-your-server.md)
