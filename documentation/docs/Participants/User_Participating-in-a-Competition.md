@@ -22,7 +22,7 @@ Making a submission to a benchmark involves uploading a bundle (.zip archive) co
 
 On this page, you can make new submissions, and see previous submissions for each phase in the competition.
 
-You can also view all your submissions in the [Resources Interface](https://github.com/codalab/codabench/wiki/Task-&-Dataset-Management).
+You can also view all your submissions in the [Resources Interface](../Organizers/Running_a_benchmark/Resource-Management.md).
 
 ### Viewing Benchmark Results
 You can keep up with the progress of benchmarks you are participating in by clicking on the **Results** tab. This will display the leaderboard.

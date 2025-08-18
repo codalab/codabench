@@ -108,9 +108,9 @@ The scoring program outputs a `scores.json` file containing the results for each
 {"accuracy": 0.886, "duration": 42.4}
 ```
 
-The keys should match the leaderboard columns keys defined in [the `competition.yaml` file](https://github.com/codalab/codabench/wiki/Yaml-Structure#leaderboards).
+The keys should match the leaderboard columns keys defined in [the `competition.yaml` file](Yaml-Structure.md#leaderboards).
 
-The scoring program can also output detailed results as an HTML file for each submission. [Click here for more information](https://github.com/codalab/codabench/wiki/Detailed-Results-and-Visualizations).
+The scoring program can also output detailed results as an HTML file for each submission. [Click here for more information](Detailed-Results-and-Visualizations.md).
 
 ### Ingestion Program
 The ingestion program is a file that gets ran to generate the predictions from the submissions if necessary. This is usually a python script or a script in another language, but it can generally be anything.
@@ -122,7 +122,7 @@ Example: Here's what an ingestion `metdata.yaml` might look like this:
 command: python3 /app/program/ingestion.py /app/input_data/ /app/output/ /app/program /app/ingested_program
 ```
 
-Just like the example above, this specifies we're using python to run our ingestion program. Please note that it is not necessary to pass these directories as arguments to the programs, but it can be convenient. More information about the folder layout [here](https://github.com/codalab/codabench/wiki/Submission-Docker-Container-Layout#submission-container).
+Just like the example above, this specifies we're using python to run our ingestion program. Please note that it is not necessary to pass these directories as arguments to the programs, but it can be convenient. More information about the folder layout [here](../../Developers_and_Administrators/Submission-Docker-Container-Layout.md#submission-container).
 
 ### Input Data
 This is usually the test data used to generate predictions from a user's code submission when paired with an ingestion program.

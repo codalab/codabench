@@ -1,5 +1,5 @@
 
-Here is an advanced tutorial. If you are new to CodaBench, please refer to [get started tutorial](https://github.com/codalab/codabench/wiki/Getting-started-with-Codabench) first.
+Here is an advanced tutorial. If you are new to CodaBench, please refer to [get started tutorial](Getting-started-with-Codabench.md) first.
 In this article, you'll learn how to use more advanced features and how to create benchmarks using either the editor or bundles.
 Before proceeding to our tutorial, make sure you have registered for an account on the [Codabench](https://www.codabench.org/) website.
 
