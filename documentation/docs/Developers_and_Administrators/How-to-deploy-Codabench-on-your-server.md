@@ -1,37 +1,35 @@
 ## Overview
 This document focuses on how to deploy the current project to the local machine or server you are on.
 
-## Pull codabench develop branch code locally
+## Preliminary steps
 
-You need to complete the following steps
+As for the [minimal local installation](Codabench-Installation.md), you first need to:
 
-- Generate ssh keys on your machine.
-- Add the ssh key into the Github account.
-- Cloning the repository locally.
-    - git clone [https://github.com/codalab/codabench.git](https://github.com/codalab/codabench.git)
+1. Install docker and docker-compose (see [instructions](Codabench-Installation.md#pre-requisites))
 
-## Installing docker and common docker commands
+2. Clone Codabench repository:
 
-- Install the [official](https://docs.docker.com/engine/install/ubuntu/) version of docker (preferably not the `snap` version)
+```sh
+git clone https://github.com/codalab/codabench
+```
+
 
 ## Modify .env file configuration
 
-- Go to the folder where codabench is located then run the following command to generate an `.env` file to set the environment variables required by the service
+Then you need to modify the `.env` file with the relevant settings. This step is critical to have a working and secure deployment.
+
+- Go to the folder where codabench is located (`cd codabench`)
 ```bash
 cp .env_sample .env
 ```
 
 
-In the `.env` file, edit the following variables.
+Then edit the variables inside the `.env` file.
 
-a) For a local deployment it looks like this:
+### Submissions endpoint
+For an online deployment, you'll need to fill in the IP address or domain name in some environment variables.
 
-```ini title=".env"
-SUBMISSIONS_API_URL=localhost
-#SUBMISSIONS_API_URL=http://django:8000/api
-DOMAIN_NAME=localhost:80
-AWS_S3_ENDPOINT_URL=http://minio:9000
-```
+#### Using an IP address
 
 b) For an online deployment using IP address:
 !!! note 
@@ -51,15 +49,40 @@ DOMAIN_NAME=<IP ADDRESS>:80
 AWS_S3_ENDPOINT_URL=http://<IP ADDRESS>/
 ```
 
-c) For an online deployment using domain name:
+#### Using a domain name (DNS)
 
 ```ini title=".env"
-SUBMISSIONS_API_URL=https://codabench-test.yourdomain.com/api
-DOMAIN_NAME=codabench-test.yourdomain.com
-AWS_S3_ENDPOINT_URL=https://minio-test.yourdomain.com
+SUBMISSIONS_API_URL=https://yourdomain.com/api
+DOMAIN_NAME=yourdomain.com
+AWS_S3_ENDPOINT_URL=https://yourdomain.com
 ```
 
 !!! tip "If you are deploying on an azure machine, then AWS_S3_ENDPOINT_URL needs to be set to an IP address that is accessible on the external network"
+
+
+### Change default usernames and passwords
+
+Set up new usernames and passwords:
+
+```
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+[...]
+RABBITMQ_DEFAULT_USER=rabbit-username
+RABBITMQ_DEFAULT_PASS=rabbit-password-you-should-change
+[...]
+FLOWER_BASIC_AUTH=root:password-you-should-change
+[...]
+#EMAIL_HOST_USER=user
+#EMAIL_HOST_PASSWORD=pass
+[...]
+MINIO_ACCESS_KEY=testkey
+MINIO_SECRET_KEY=testsecret
+# or
+AWS_ACCESS_KEY_ID=testkey
+AWS_SECRET_ACCESS_KEY=testsecret
+```
+!!! warning "It is very important to set up an SSL certificate for Public deployement"
 
 ## Open Access Permissions for following port number
 
@@ -79,9 +102,37 @@ If you are deploying on a Linux server, which usually has a firewall, you need t
     - `DEBUG = os.environ.get("DEBUG", True)`
 !!! note "If DEBUG is not set to true, then you will not be able to load to the static resource file"
 - Comment out the following code
-
-    ![image](../_attachments/112937133-b59cc880-9159-11eb-8bc8-06a11e63b293_17528513110527873.png)
-
+```py
+# =============================================================================
+# Debug
+# =============================================================================
+#if DEBUG:
+#    INSTALLED_APPS += ('debug_toolbar',)
+#    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
+#                  'querycount.middleware.QueryCountMiddleware',
+#                  ) + MIDDLEWARE  # we want Debug Middleware at the top
+#    # tricks to have debug toolbar when developing with docker
+#
+#    INTERNAL_IPS = ['127.0.0.1']
+#
+#    import socket
+#
+#    try:
+#        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])
+#    except socket.gaierror:
+#        pass
+#
+#    QUERYCOUNT = {
+#        'IGNORE_REQUEST_PATTERNS': [
+#            r'^/admin/',
+#            r'^/static/',
+#        ]
+#    }
+#
+#    DEBUG_TOOLBAR_CONFIG = {
+#        "SHOW_TOOLBAR_CALLBACK": lambda request: True
+#    }
+```
 ## Start service
 
 - Execute command `docker compose up -d`
