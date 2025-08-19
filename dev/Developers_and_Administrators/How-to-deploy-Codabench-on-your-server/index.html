@@ -8,7 +8,7 @@
 <link href="../Codabench-Installation/" rel="prev"/>
 <link href="../Administrator-procedures/" rel="next"/>
 <link href="../../assets/images/favicon.png" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.6.16" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.17" name="generator"/>
 <title>How to Deploy a Server - Codabench Wiki</title>
 <link href="../../assets/stylesheets/main.7e37652d.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
@@ -583,16 +583,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#pull-codabench-develop-branch-code-locally">
+<a class="md-nav__link" href="#preliminary-steps">
 <span class="md-ellipsis">
-      Pull codabench develop branch code locally
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#installing-docker-and-common-docker-commands">
-<span class="md-ellipsis">
-      Installing docker and common docker commands
+      Preliminary steps
     </span>
 </a>
 </li>
@@ -602,6 +595,42 @@
       Modify .env file configuration
     </span>
 </a>
+<nav aria-label="Modify .env file configuration" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#submissions-endpoint">
+<span class="md-ellipsis">
+      Submissions endpoint
+    </span>
+</a>
+<nav aria-label="Submissions endpoint" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-an-ip-address">
+<span class="md-ellipsis">
+      Using an IP address
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-a-domain-name-dns">
+<span class="md-ellipsis">
+      Using a domain name (DNS)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#change-default-usernames-and-passwords">
+<span class="md-ellipsis">
+      Change default usernames and passwords
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#open-access-permissions-for-following-port-number">
@@ -1034,16 +1063,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#pull-codabench-develop-branch-code-locally">
+<a class="md-nav__link" href="#preliminary-steps">
 <span class="md-ellipsis">
-      Pull codabench develop branch code locally
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#installing-docker-and-common-docker-commands">
-<span class="md-ellipsis">
-      Installing docker and common docker commands
+      Preliminary steps
     </span>
 </a>
 </li>
@@ -1053,6 +1075,42 @@
       Modify .env file configuration
     </span>
 </a>
+<nav aria-label="Modify .env file configuration" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#submissions-endpoint">
+<span class="md-ellipsis">
+      Submissions endpoint
+    </span>
+</a>
+<nav aria-label="Submissions endpoint" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-an-ip-address">
+<span class="md-ellipsis">
+      Using an IP address
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#using-a-domain-name-dns">
+<span class="md-ellipsis">
+      Using a domain name (DNS)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#change-default-usernames-and-passwords">
+<span class="md-ellipsis">
+      Change default usernames and passwords
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#open-access-permissions-for-following-port-number">
@@ -1211,33 +1269,29 @@
 <h1>How to Deploy a Server</h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
 <p>This document focuses on how to deploy the current project to the local machine or server you are on.</p>
-<h2 id="pull-codabench-develop-branch-code-locally">Pull codabench develop branch code locally<a class="headerlink" href="#pull-codabench-develop-branch-code-locally" title="Permanent link">¶</a></h2>
-<p>You need to complete the following steps</p>
-<ul>
-<li>Generate ssh keys on your machine.</li>
-<li>Add the ssh key into the Github account.</li>
-<li>Cloning the repository locally.<ul>
-<li>git clone <a href="https://github.com/codalab/codabench.git">https://github.com/codalab/codabench.git</a></li>
-</ul>
+<h2 id="preliminary-steps">Preliminary steps<a class="headerlink" href="#preliminary-steps" title="Permanent link">¶</a></h2>
+<p>As for the <a href="../Codabench-Installation/">minimal local installation</a>, you first need to:</p>
+<ol>
+<li>
+<p>Install docker and docker-compose (see <a href="../Codabench-Installation/#pre-requisites">instructions</a>)</p>
 </li>
-</ul>
-<h2 id="installing-docker-and-common-docker-commands">Installing docker and common docker commands<a class="headerlink" href="#installing-docker-and-common-docker-commands" title="Permanent link">¶</a></h2>
-<ul>
-<li>Install the <a href="https://docs.docker.com/engine/install/ubuntu/">official</a> version of docker (preferably not the <code>snap</code> version)</li>
-</ul>
+<li>
+<p>Clone Codabench repository:</p>
+</li>
+</ol>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/codalab/codabench
+</span></code></pre></div>
 <h2 id="modify-env-file-configuration">Modify .env file configuration<a class="headerlink" href="#modify-env-file-configuration" title="Permanent link">¶</a></h2>
+<p>Then you need to modify the <code>.env</code> file with the relevant settings. This step is critical to have a working and secure deployment.</p>
 <ul>
-<li>Go to the folder where codabench is located then run the following command to generate an <code>.env</code> file to set the environment variables required by the service
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>cp<span class="w"> </span>.env_sample<span class="w"> </span>.env
+<li>Go to the folder where codabench is located (<code>cd codabench</code>)
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>cp<span class="w"> </span>.env_sample<span class="w"> </span>.env
 </span></code></pre></div></li>
 </ul>
-<p>In the <code>.env</code> file, edit the following variables.</p>
-<p>a) For a local deployment it looks like this:</p>
-<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="na">SUBMISSIONS_API_URL</span><span class="o">=</span><span class="s">localhost</span>
-</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="c1">#SUBMISSIONS_API_URL=http://django:8000/api</span>
-</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">localhost:80</span>
-</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">http://minio:9000</span>
-</span></code></pre></div>
+<p>Then edit the variables inside the <code>.env</code> file.</p>
+<h3 id="submissions-endpoint">Submissions endpoint<a class="headerlink" href="#submissions-endpoint" title="Permanent link">¶</a></h3>
+<p>For an online deployment, you'll need to fill in the IP address or domain name in some environment variables.</p>
+<h4 id="using-an-ip-address">Using an IP address<a class="headerlink" href="#using-an-ip-address" title="Permanent link">¶</a></h4>
 <p>b) For an online deployment using IP address:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1255,13 +1309,35 @@
 </span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">&lt;IP ADDRESS&gt;:80</span>
 </span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">http://&lt;IP ADDRESS&gt;/</span>
 </span></code></pre></div>
-<p>c) For an online deployment using domain name:</p>
-<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="na">SUBMISSIONS_API_URL</span><span class="o">=</span><span class="s">https://codabench-test.yourdomain.com/api</span>
-</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">codabench-test.yourdomain.com</span>
-</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">https://minio-test.yourdomain.com</span>
+<h4 id="using-a-domain-name-dns">Using a domain name (DNS)<a class="headerlink" href="#using-a-domain-name-dns" title="Permanent link">¶</a></h4>
+<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="na">SUBMISSIONS_API_URL</span><span class="o">=</span><span class="s">https://yourdomain.com/api</span>
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">yourdomain.com</span>
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">https://yourdomain.com</span>
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">If you are deploying on an azure machine, then AWS_S3_ENDPOINT_URL needs to be set to an IP address that is accessible on the external network</p>
+</div>
+<h3 id="change-default-usernames-and-passwords">Change default usernames and passwords<a class="headerlink" href="#change-default-usernames-and-passwords" title="Permanent link">¶</a></h3>
+<p>Set up new usernames and passwords:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a>DB_USERNAME=postgres
+</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a>DB_PASSWORD=postgres
+</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a>[...]
+</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a>RABBITMQ_DEFAULT_USER=rabbit-username
+</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a>RABBITMQ_DEFAULT_PASS=rabbit-password-you-should-change
+</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a>[...]
+</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a>FLOWER_BASIC_AUTH=root:password-you-should-change
+</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a>[...]
+</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a>#EMAIL_HOST_USER=user
+</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a>#EMAIL_HOST_PASSWORD=pass
+</span><span id="__span-4-11"><a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a>[...]
+</span><span id="__span-4-12"><a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a>MINIO_ACCESS_KEY=testkey
+</span><span id="__span-4-13"><a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a>MINIO_SECRET_KEY=testsecret
+</span><span id="__span-4-14"><a href="#__codelineno-4-14" id="__codelineno-4-14" name="__codelineno-4-14"></a># or
+</span><span id="__span-4-15"><a href="#__codelineno-4-15" id="__codelineno-4-15" name="__codelineno-4-15"></a>AWS_ACCESS_KEY_ID=testkey
+</span><span id="__span-4-16"><a href="#__codelineno-4-16" id="__codelineno-4-16" name="__codelineno-4-16"></a>AWS_SECRET_ACCESS_KEY=testsecret
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">It is very important to set up an SSL certificate for Public deployement</p>
 </div>
 <h2 id="open-access-permissions-for-following-port-number">Open Access Permissions for following port number<a class="headerlink" href="#open-access-permissions-for-following-port-number" title="Permanent link">¶</a></h2>
 <p>If you are deploying on a Linux server, which usually has a firewall, you need to open access permissions to the following port numbers</p>
@@ -1287,26 +1363,53 @@
 <p class="admonition-title">If DEBUG is not set to true, then you will not be able to load to the static resource file</p>
 </div>
 <ul>
-<li>
-<p>Comment out the following code</p>
-<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../_attachments/112937133-b59cc880-9159-11eb-8bc8-06a11e63b293_17528513110527873.png"/></a></p>
-</li>
+<li>Comment out the following code
+<div class="language-py highlight"><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="c1"># =============================================================================</span>
+</span><span id="__span-5-2"><a href="#__codelineno-5-2" id="__codelineno-5-2" name="__codelineno-5-2"></a><span class="c1"># Debug</span>
+</span><span id="__span-5-3"><a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="c1"># =============================================================================</span>
+</span><span id="__span-5-4"><a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="c1">#if DEBUG:</span>
+</span><span id="__span-5-5"><a href="#__codelineno-5-5" id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="c1">#    INSTALLED_APPS += ('debug_toolbar',)</span>
+</span><span id="__span-5-6"><a href="#__codelineno-5-6" id="__codelineno-5-6" name="__codelineno-5-6"></a><span class="c1">#    MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',</span>
+</span><span id="__span-5-7"><a href="#__codelineno-5-7" id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="c1">#                  'querycount.middleware.QueryCountMiddleware',</span>
+</span><span id="__span-5-8"><a href="#__codelineno-5-8" id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="c1">#                  ) + MIDDLEWARE  # we want Debug Middleware at the top</span>
+</span><span id="__span-5-9"><a href="#__codelineno-5-9" id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="c1">#    # tricks to have debug toolbar when developing with docker</span>
+</span><span id="__span-5-10"><a href="#__codelineno-5-10" id="__codelineno-5-10" name="__codelineno-5-10"></a><span class="c1">#</span>
+</span><span id="__span-5-11"><a href="#__codelineno-5-11" id="__codelineno-5-11" name="__codelineno-5-11"></a><span class="c1">#    INTERNAL_IPS = ['127.0.0.1']</span>
+</span><span id="__span-5-12"><a href="#__codelineno-5-12" id="__codelineno-5-12" name="__codelineno-5-12"></a><span class="c1">#</span>
+</span><span id="__span-5-13"><a href="#__codelineno-5-13" id="__codelineno-5-13" name="__codelineno-5-13"></a><span class="c1">#    import socket</span>
+</span><span id="__span-5-14"><a href="#__codelineno-5-14" id="__codelineno-5-14" name="__codelineno-5-14"></a><span class="c1">#</span>
+</span><span id="__span-5-15"><a href="#__codelineno-5-15" id="__codelineno-5-15" name="__codelineno-5-15"></a><span class="c1">#    try:</span>
+</span><span id="__span-5-16"><a href="#__codelineno-5-16" id="__codelineno-5-16" name="__codelineno-5-16"></a><span class="c1">#        INTERNAL_IPS.append(socket.gethostbyname(socket.gethostname())[:-1])</span>
+</span><span id="__span-5-17"><a href="#__codelineno-5-17" id="__codelineno-5-17" name="__codelineno-5-17"></a><span class="c1">#    except socket.gaierror:</span>
+</span><span id="__span-5-18"><a href="#__codelineno-5-18" id="__codelineno-5-18" name="__codelineno-5-18"></a><span class="c1">#        pass</span>
+</span><span id="__span-5-19"><a href="#__codelineno-5-19" id="__codelineno-5-19" name="__codelineno-5-19"></a><span class="c1">#</span>
+</span><span id="__span-5-20"><a href="#__codelineno-5-20" id="__codelineno-5-20" name="__codelineno-5-20"></a><span class="c1">#    QUERYCOUNT = {</span>
+</span><span id="__span-5-21"><a href="#__codelineno-5-21" id="__codelineno-5-21" name="__codelineno-5-21"></a><span class="c1">#        'IGNORE_REQUEST_PATTERNS': [</span>
+</span><span id="__span-5-22"><a href="#__codelineno-5-22" id="__codelineno-5-22" name="__codelineno-5-22"></a><span class="c1">#            r'^/admin/',</span>
+</span><span id="__span-5-23"><a href="#__codelineno-5-23" id="__codelineno-5-23" name="__codelineno-5-23"></a><span class="c1">#            r'^/static/',</span>
+</span><span id="__span-5-24"><a href="#__codelineno-5-24" id="__codelineno-5-24" name="__codelineno-5-24"></a><span class="c1">#        ]</span>
+</span><span id="__span-5-25"><a href="#__codelineno-5-25" id="__codelineno-5-25" name="__codelineno-5-25"></a><span class="c1">#    }</span>
+</span><span id="__span-5-26"><a href="#__codelineno-5-26" id="__codelineno-5-26" name="__codelineno-5-26"></a><span class="c1">#</span>
+</span><span id="__span-5-27"><a href="#__codelineno-5-27" id="__codelineno-5-27" name="__codelineno-5-27"></a><span class="c1">#    DEBUG_TOOLBAR_CONFIG = {</span>
+</span><span id="__span-5-28"><a href="#__codelineno-5-28" id="__codelineno-5-28" name="__codelineno-5-28"></a><span class="c1">#        "SHOW_TOOLBAR_CALLBACK": lambda request: True</span>
+</span><span id="__span-5-29"><a href="#__codelineno-5-29" id="__codelineno-5-29" name="__codelineno-5-29"></a><span class="c1">#    }</span>
+</span></code></pre></div></li>
 </ul>
 <h2 id="start-service">Start service<a class="headerlink" href="#start-service" title="Permanent link">¶</a></h2>
 <ul>
 <li>Execute command <code>docker compose up -d</code></li>
 <li>Check if the service is started properly <code>docker compose ps</code></li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a>codabench_compute_worker_1<span class="w">   </span><span class="s2">"bash -c 'watchmedo …"</span><span class="w">   </span>running<span class="w">      </span>
-</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a>codabench_caddy_1<span class="w">            </span><span class="s2">"/bin/parent caddy -…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:80-&gt;80/tcp,<span class="w"> </span>:::80-&gt;80/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:443-&gt;443/tcp,<span class="w"> </span>:::443-&gt;443/tcp,<span class="w"> </span><span class="m">2015</span>/tcp
-</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a>codabench_site_worker_1<span class="w">      </span><span class="s2">"bash -c 'watchmedo …"</span><span class="w">   </span>running<span class="w">      </span>
-</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a>codabench_django_1<span class="w">           </span><span class="s2">"bash -c 'cd /app/sr…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:8000-&gt;8000/tcp,<span class="w"> </span>:::8000-&gt;8000/tcp
-</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a>codabench_flower_1<span class="w">           </span><span class="s2">"flower"</span><span class="w">                 </span>restarting<span class="w">   </span>
-</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a>codabench_rabbit_1<span class="w">           </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">4369</span>/tcp,<span class="w"> </span><span class="m">5671</span>/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:5672-&gt;5672/tcp,<span class="w"> </span>:::5672-&gt;5672/tcp,<span class="w"> </span><span class="m">15671</span>/tcp,<span class="w"> </span><span class="m">25672</span>/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:15672-&gt;15672/tcp,<span class="w"> </span>:::15672-&gt;15672/tcp
-</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a>codabench_minio_1<span class="w">            </span><span class="s2">"/usr/bin/docker-ent…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:9000-&gt;9000/tcp,<span class="w"> </span>:::9000-&gt;9000/tcp
-</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a>codabench_db_1<span class="w">               </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:5432-&gt;5432/tcp,<span class="w"> </span>:::5432-&gt;5432/tcp
-</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a>codabench_builder_1<span class="w">          </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span>
-</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a>codabench_redis_1<span class="w">            </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:6379-&gt;6379/tcp,<span class="w"> </span>:::6379-&gt;6379/tcp
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a>codabench_compute_worker_1<span class="w">   </span><span class="s2">"bash -c 'watchmedo …"</span><span class="w">   </span>running<span class="w">      </span>
+</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a>codabench_caddy_1<span class="w">            </span><span class="s2">"/bin/parent caddy -…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:80-&gt;80/tcp,<span class="w"> </span>:::80-&gt;80/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:443-&gt;443/tcp,<span class="w"> </span>:::443-&gt;443/tcp,<span class="w"> </span><span class="m">2015</span>/tcp
+</span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a>codabench_site_worker_1<span class="w">      </span><span class="s2">"bash -c 'watchmedo …"</span><span class="w">   </span>running<span class="w">      </span>
+</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a>codabench_django_1<span class="w">           </span><span class="s2">"bash -c 'cd /app/sr…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:8000-&gt;8000/tcp,<span class="w"> </span>:::8000-&gt;8000/tcp
+</span><span id="__span-6-5"><a href="#__codelineno-6-5" id="__codelineno-6-5" name="__codelineno-6-5"></a>codabench_flower_1<span class="w">           </span><span class="s2">"flower"</span><span class="w">                 </span>restarting<span class="w">   </span>
+</span><span id="__span-6-6"><a href="#__codelineno-6-6" id="__codelineno-6-6" name="__codelineno-6-6"></a>codabench_rabbit_1<span class="w">           </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">4369</span>/tcp,<span class="w"> </span><span class="m">5671</span>/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:5672-&gt;5672/tcp,<span class="w"> </span>:::5672-&gt;5672/tcp,<span class="w"> </span><span class="m">15671</span>/tcp,<span class="w"> </span><span class="m">25672</span>/tcp,<span class="w"> </span><span class="m">0</span>.0.0.0:15672-&gt;15672/tcp,<span class="w"> </span>:::15672-&gt;15672/tcp
+</span><span id="__span-6-7"><a href="#__codelineno-6-7" id="__codelineno-6-7" name="__codelineno-6-7"></a>codabench_minio_1<span class="w">            </span><span class="s2">"/usr/bin/docker-ent…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:9000-&gt;9000/tcp,<span class="w"> </span>:::9000-&gt;9000/tcp
+</span><span id="__span-6-8"><a href="#__codelineno-6-8" id="__codelineno-6-8" name="__codelineno-6-8"></a>codabench_db_1<span class="w">               </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:5432-&gt;5432/tcp,<span class="w"> </span>:::5432-&gt;5432/tcp
+</span><span id="__span-6-9"><a href="#__codelineno-6-9" id="__codelineno-6-9" name="__codelineno-6-9"></a>codabench_builder_1<span class="w">          </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span>
+</span><span id="__span-6-10"><a href="#__codelineno-6-10" id="__codelineno-6-10" name="__codelineno-6-10"></a>codabench_redis_1<span class="w">            </span><span class="s2">"docker-entrypoint.s…"</span><span class="w">   </span>running<span class="w">      </span><span class="m">0</span>.0.0.0:6379-&gt;6379/tcp,<span class="w"> </span>:::6379-&gt;6379/tcp
 </span></code></pre></div>
 <ul>
 <li>Create the required tables in the database: <code>docker compose exec django ./manage.py migrate</code></li>
@@ -1340,19 +1443,19 @@ If on your production server, you are using remote MinIO or another cloud storag
 If you have already buckets available for your s3 storage, you don't need <strong>createbuckets</strong> container.
 Therefore, you should disable minio and createbuckets containers. You may also want to disable the compute worker that is contained in the main server compute, to keep only remote compute workers.</p>
 <p>Add this to your <code>docker-compose.override.yml</code>:</p>
-<div class="language-yaml highlight"><span class="filename">docker-compose.override.yml</span><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.4'</span>
-</span><span id="__span-5-2"><a href="#__codelineno-5-2" id="__codelineno-5-2" name="__codelineno-5-2"></a><span class="nt">services</span><span class="p">:</span>
-</span><span id="__span-5-3"><a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="w">  </span><span class="nt">compute_worker</span><span class="p">:</span>
-</span><span id="__span-5-4"><a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
-</span><span id="__span-5-5"><a href="#__codelineno-5-5" id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="w">  </span><span class="nt">minio</span><span class="p">:</span>
-</span><span id="__span-5-6"><a href="#__codelineno-5-6" id="__codelineno-5-6" name="__codelineno-5-6"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
-</span><span id="__span-5-7"><a href="#__codelineno-5-7" id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
-</span><span id="__span-5-8"><a href="#__codelineno-5-8" id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="w">  </span><span class="nt">createbuckets</span><span class="p">:</span>
-</span><span id="__span-5-9"><a href="#__codelineno-5-9" id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
-</span><span id="__span-5-10"><a href="#__codelineno-5-10" id="__codelineno-5-10" name="__codelineno-5-10"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
-</span><span id="__span-5-11"><a href="#__codelineno-5-11" id="__codelineno-5-11" name="__codelineno-5-11"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
-</span><span id="__span-5-12"><a href="#__codelineno-5-12" id="__codelineno-5-12" name="__codelineno-5-12"></a><span class="w">      </span><span class="nt">minio</span><span class="p">:</span>
-</span><span id="__span-5-13"><a href="#__codelineno-5-13" id="__codelineno-5-13" name="__codelineno-5-13"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_started</span>
+<div class="language-yaml highlight"><span class="filename">docker-compose.override.yml</span><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.4'</span>
+</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="nt">services</span><span class="p">:</span>
+</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="w">  </span><span class="nt">compute_worker</span><span class="p">:</span>
+</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
+</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="w">  </span><span class="nt">minio</span><span class="p">:</span>
+</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
+</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
+</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="w">  </span><span class="nt">createbuckets</span><span class="p">:</span>
+</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="s">"/bin/true"</span>
+</span><span id="__span-7-10"><a href="#__codelineno-7-10" id="__codelineno-7-10" name="__codelineno-7-10"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
+</span><span id="__span-7-11"><a href="#__codelineno-7-11" id="__codelineno-7-11" name="__codelineno-7-11"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+</span><span id="__span-7-12"><a href="#__codelineno-7-12" id="__codelineno-7-12" name="__codelineno-7-12"></a><span class="w">      </span><span class="nt">minio</span><span class="p">:</span>
+</span><span id="__span-7-13"><a href="#__codelineno-7-13" id="__codelineno-7-13" name="__codelineno-7-13"></a><span class="w">        </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service_started</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1369,9 +1472,9 @@ Therefore, you should disable minio and createbuckets containers. You may also w
 By default, the compute worker of the default queue is a docker container run by the main VM. If your server is used by many users and receives several submissions per day, it is recommended to use separate compute workers and to link them to the default queue.</p>
 <p>To set up a compute worker, follow this <a href="../../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup/">guide</a></p>
 <p>In the <code>.env</code> file of the compute worker, the <code>BROKER_URL</code> should reflect settings of the <code>.env</code> file of the platform:</p>
-<div class="language-bash highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="nv">BROKER_URL</span><span class="o">=</span>pyamqp://&lt;RABBITMQ_DEFAULT_USER&gt;:&lt;RABBITMQ_DEFAULT_PASS&gt;@&lt;DOMAIN_NAME&gt;:&lt;RABBITMQ_PORT&gt;/
-</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="nv">HOST_DIRECTORY</span><span class="o">=</span>/codabench
-</span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="nv">BROKER_USE_SSL</span><span class="o">=</span>True
+<div class="language-bash highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a><span class="nv">BROKER_URL</span><span class="o">=</span>pyamqp://&lt;RABBITMQ_DEFAULT_USER&gt;:&lt;RABBITMQ_DEFAULT_PASS&gt;@&lt;DOMAIN_NAME&gt;:&lt;RABBITMQ_PORT&gt;/
+</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="nv">HOST_DIRECTORY</span><span class="o">=</span>/codabench
+</span><span id="__span-8-3"><a href="#__codelineno-8-3" id="__codelineno-8-3" name="__codelineno-8-3"></a><span class="nv">BROKER_USE_SSL</span><span class="o">=</span>True
 </span></code></pre></div>
 <h2 id="personalize-main-banner">Personalize Main Banner<a class="headerlink" href="#personalize-main-banner" title="Permanent link">¶</a></h2>
 <p>The main banner on the Codabench home page shows 3 organization logos</p>
@@ -1389,17 +1492,17 @@ By default, the compute worker of the default queue is a docker container run by
 <h2 id="frequently-asked-questions-faqs">Frequently asked questions (FAQs)<a class="headerlink" href="#frequently-asked-questions-faqs" title="Permanent link">¶</a></h2>
 <h3 id="invalid-http-method">Invalid HTTP method<a class="headerlink" href="#invalid-http-method" title="Permanent link">¶</a></h3>
 <p>Exception detail (by using <code>docker logs -f codabench_django_1</code>)</p>
-<div class="language-java highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="n">Traceback</span><span class="w"> </span><span class="p">(</span><span class="n">most</span><span class="w"> </span><span class="n">recent</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">last</span><span class="p">):</span>
-</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"/usr/local/lib/python3.8/site-packages/uvicorn/protocols/http/httptools_impl.py"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">165</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">data_received</span>
-</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"httptools/parser/parser.pyx"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">193</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">HttpParser</span><span class="p">.</span><span class="na">feed_data</span>
-</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">errors</span><span class="p">.</span><span class="na">HttpParserInvalidMethodError</span><span class="p">:</span><span class="w"> </span><span class="n">invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">method</span>
-</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="o">[</span><span class="mi">2021</span><span class="o">-</span><span class="mo">02</span><span class="o">-</span><span class="mi">09</span><span class="w"> </span><span class="mo">06</span><span class="p">:</span><span class="mi">58</span><span class="p">:</span><span class="mi">58</span><span class="w"> </span><span class="o">+</span><span class="mo">0000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span><span class="mi">14</span><span class="o">]</span><span class="w"> </span><span class="o">[</span><span class="n">WARNING</span><span class="o">]</span><span class="w"> </span><span class="n">Invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="n">received</span><span class="p">.</span>
-</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a><span class="nf">Traceback</span><span class="w"> </span><span class="p">(</span><span class="n">most</span><span class="w"> </span><span class="n">recent</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">last</span><span class="p">):</span>
-</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"/usr/local/lib/python3.8/site-packages/uvicorn/protocols/http/httptools_impl.py"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">165</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">data_received</span>
-</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="__span-7-10"><a href="#__codelineno-7-10" id="__codelineno-7-10" name="__codelineno-7-10"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"httptools/parser/parser.pyx"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">193</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">HttpParser</span><span class="p">.</span><span class="na">feed_data</span>
-</span><span id="__span-7-11"><a href="#__codelineno-7-11" id="__codelineno-7-11" name="__codelineno-7-11"></a><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">errors</span><span class="p">.</span><span class="na">HttpParserInvalidMethodError</span><span class="p">:</span><span class="w"> </span><span class="n">invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">method</span>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="n">Traceback</span><span class="w"> </span><span class="p">(</span><span class="n">most</span><span class="w"> </span><span class="n">recent</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">last</span><span class="p">):</span>
+</span><span id="__span-9-2"><a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"/usr/local/lib/python3.8/site-packages/uvicorn/protocols/http/httptools_impl.py"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">165</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">data_received</span>
+</span><span id="__span-9-3"><a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="__span-9-4"><a href="#__codelineno-9-4" id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"httptools/parser/parser.pyx"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">193</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">HttpParser</span><span class="p">.</span><span class="na">feed_data</span>
+</span><span id="__span-9-5"><a href="#__codelineno-9-5" id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">errors</span><span class="p">.</span><span class="na">HttpParserInvalidMethodError</span><span class="p">:</span><span class="w"> </span><span class="n">invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">method</span>
+</span><span id="__span-9-6"><a href="#__codelineno-9-6" id="__codelineno-9-6" name="__codelineno-9-6"></a><span class="o">[</span><span class="mi">2021</span><span class="o">-</span><span class="mo">02</span><span class="o">-</span><span class="mi">09</span><span class="w"> </span><span class="mo">06</span><span class="p">:</span><span class="mi">58</span><span class="p">:</span><span class="mi">58</span><span class="w"> </span><span class="o">+</span><span class="mo">0000</span><span class="o">]</span><span class="w"> </span><span class="o">[</span><span class="mi">14</span><span class="o">]</span><span class="w"> </span><span class="o">[</span><span class="n">WARNING</span><span class="o">]</span><span class="w"> </span><span class="n">Invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="n">received</span><span class="p">.</span>
+</span><span id="__span-9-7"><a href="#__codelineno-9-7" id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="nf">Traceback</span><span class="w"> </span><span class="p">(</span><span class="n">most</span><span class="w"> </span><span class="n">recent</span><span class="w"> </span><span class="n">call</span><span class="w"> </span><span class="n">last</span><span class="p">):</span>
+</span><span id="__span-9-8"><a href="#__codelineno-9-8" id="__codelineno-9-8" name="__codelineno-9-8"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"/usr/local/lib/python3.8/site-packages/uvicorn/protocols/http/httptools_impl.py"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">165</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">data_received</span>
+</span><span id="__span-9-9"><a href="#__codelineno-9-9" id="__codelineno-9-9" name="__codelineno-9-9"></a><span class="w">    </span><span class="n">self</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="__span-9-10"><a href="#__codelineno-9-10" id="__codelineno-9-10" name="__codelineno-9-10"></a><span class="w">  </span><span class="n">File</span><span class="w"> </span><span class="s">"httptools/parser/parser.pyx"</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="mi">193</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">HttpParser</span><span class="p">.</span><span class="na">feed_data</span>
+</span><span id="__span-9-11"><a href="#__codelineno-9-11" id="__codelineno-9-11" name="__codelineno-9-11"></a><span class="n">httptools</span><span class="p">.</span><span class="na">parser</span><span class="p">.</span><span class="na">errors</span><span class="p">.</span><span class="na">HttpParserInvalidMethodError</span><span class="p">:</span><span class="w"> </span><span class="n">invalid</span><span class="w"> </span><span class="n">HTTP</span><span class="w"> </span><span class="n">method</span>
 </span></code></pre></div>
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../_attachments/113236785-28cc4900-92d8-11eb-8b2d-bbec05090788_17528513112217138.png"/></a></p>
 <p>Solution</p>
@@ -1411,8 +1514,8 @@ By default, the compute worker of the default queue is a docker container run by
 <p>Then, restart services by using following docker-compose command</p>
 </li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>--volumes
-</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>--volumes
+</span><span id="__span-10-2"><a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <h3 id="missing-static-resources-cssjs">Missing static resources (css/js)<a class="headerlink" href="#missing-static-resources-cssjs" title="Permanent link">¶</a></h3>
 <p>Solution: Change the value of the <code>DEBUG</code> parameter to <code>True</code></p>
@@ -1427,7 +1530,7 @@ By default, the compute worker of the default queue is a docker container run by
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../_attachments/113236871-544f3380-92d8-11eb-86bf-05ffb9fac5d2_17528513120945034.png"/></a></p>
 <h3 id="cors-error-could-not-upload-bundle">CORS Error (could not upload bundle)<a class="headerlink" href="#cors-error-could-not-upload-bundle" title="Permanent link">¶</a></h3>
 <p>Exception detail (by checkout google develop tools)</p>
-<div class="language-java highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="n">botocore</span><span class="p">.</span><span class="na">exceptions</span><span class="p">.</span><span class="na">EndpointConnectionError</span><span class="p">:</span><span class="w"> </span><span class="n">Could</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">connect</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">endpoint</span><span class="w"> </span><span class="n">URL</span><span class="p">:</span><span class="w"> </span><span class="s">"[http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip](http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip)"</span>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-11-1"><a href="#__codelineno-11-1" id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="n">botocore</span><span class="p">.</span><span class="na">exceptions</span><span class="p">.</span><span class="na">EndpointConnectionError</span><span class="p">:</span><span class="w"> </span><span class="n">Could</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">connect</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">endpoint</span><span class="w"> </span><span class="n">URL</span><span class="p">:</span><span class="w"> </span><span class="s">"[http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip](http://docker.for.mac.localhost:9000/private/dataset/2021-02-18-1613624215/24533cfc523e/competition.zip)"</span>
 </span></code></pre></div>
 <p>Solution: Set AWS_S3_ENDPOINT_URL to an address that is accessible to the external network</p>
 <ul>
@@ -1476,55 +1579,55 @@ By default, the compute worker of the default queue is a docker container run by
 <li>Add "- ./certs/minio:/root/.minio" under the minio service's "volumes" section</li>
 <li>Certs must be in /${HOME}/.minio and for dockers ends up being /root/.minio</li>
 <li>Edit the .env with minio cert location:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="nv">MINIO_CERT_FILE</span><span class="o">=</span>/root/.minio/certs/public.crt
-</span><span id="__span-10-2"><a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="nv">MINIO_KEY_FILE</span><span class="o">=</span>/root/.minio/certs/private.key
-</span><span id="__span-10-3"><a href="#__codelineno-10-3" id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="c1"># MINIO_CERTS_DIR=/certs/caddy # was told .pem files could work but for now separating</span>
-</span><span id="__span-10-4"><a href="#__codelineno-10-4" id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="nv">MINIO_CERTS_DIR</span><span class="o">=</span>/root/.minio/certs<span class="w"> </span><span class="c1"># either this or the CERT\KEY above is redundant...but it works for now.</span>
-</span><span id="__span-10-5"><a href="#__codelineno-10-5" id="__codelineno-10-5" name="__codelineno-10-5"></a><span class="c1"># NOTE! if you change this port, change it in AWS_S3_ENDPOINT_URL as well</span>
-</span><span id="__span-10-6"><a href="#__codelineno-10-6" id="__codelineno-10-6" name="__codelineno-10-6"></a><span class="nv">MINIO_PORT</span><span class="o">=</span><span class="m">9000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a href="#__codelineno-12-1" id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="nv">MINIO_CERT_FILE</span><span class="o">=</span>/root/.minio/certs/public.crt
+</span><span id="__span-12-2"><a href="#__codelineno-12-2" id="__codelineno-12-2" name="__codelineno-12-2"></a><span class="nv">MINIO_KEY_FILE</span><span class="o">=</span>/root/.minio/certs/private.key
+</span><span id="__span-12-3"><a href="#__codelineno-12-3" id="__codelineno-12-3" name="__codelineno-12-3"></a><span class="c1"># MINIO_CERTS_DIR=/certs/caddy # was told .pem files could work but for now separating</span>
+</span><span id="__span-12-4"><a href="#__codelineno-12-4" id="__codelineno-12-4" name="__codelineno-12-4"></a><span class="nv">MINIO_CERTS_DIR</span><span class="o">=</span>/root/.minio/certs<span class="w"> </span><span class="c1"># either this or the CERT\KEY above is redundant...but it works for now.</span>
+</span><span id="__span-12-5"><a href="#__codelineno-12-5" id="__codelineno-12-5" name="__codelineno-12-5"></a><span class="c1"># NOTE! if you change this port, change it in AWS_S3_ENDPOINT_URL as well</span>
+</span><span id="__span-12-6"><a href="#__codelineno-12-6" id="__codelineno-12-6" name="__codelineno-12-6"></a><span class="nv">MINIO_PORT</span><span class="o">=</span><span class="m">9000</span>
 </span></code></pre></div></li>
 <li>Here is an example docker-compose.yml change for this:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a href="#__codelineno-11-1" id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="w">  </span><span class="c1">#-----------------------------------------------</span>
-</span><span id="__span-11-2"><a href="#__codelineno-11-2" id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="w">  </span><span class="c1"># Minio local storage helper</span>
-</span><span id="__span-11-3"><a href="#__codelineno-11-3" id="__codelineno-11-3" name="__codelineno-11-3"></a><span class="w">  </span><span class="c1">#-----------------------------------------------</span>
-</span><span id="__span-11-4"><a href="#__codelineno-11-4" id="__codelineno-11-4" name="__codelineno-11-4"></a><span class="w">  </span>minio:
-</span><span id="__span-11-5"><a href="#__codelineno-11-5" id="__codelineno-11-5" name="__codelineno-11-5"></a><span class="w">    </span>image:<span class="w"> </span>minio/minio:RELEASE.2020-10-03T02-19-42Z
-</span><span id="__span-11-6"><a href="#__codelineno-11-6" id="__codelineno-11-6" name="__codelineno-11-6"></a><span class="w">    </span>command:<span class="w"> </span>server<span class="w"> </span>/export<span class="w"> </span>--certs-dir<span class="w"> </span>/root/.minio/certs
-</span><span id="__span-11-7"><a href="#__codelineno-11-7" id="__codelineno-11-7" name="__codelineno-11-7"></a><span class="w">    </span>volumes:
-</span><span id="__span-11-8"><a href="#__codelineno-11-8" id="__codelineno-11-8" name="__codelineno-11-8"></a><span class="w">      </span>-<span class="w"> </span>./var/minio:/export
-</span><span id="__span-11-9"><a href="#__codelineno-11-9" id="__codelineno-11-9" name="__codelineno-11-9"></a><span class="w">      </span>-<span class="w"> </span>./certs/minio:/root/.minio
-</span><span id="__span-11-10"><a href="#__codelineno-11-10" id="__codelineno-11-10" name="__codelineno-11-10"></a><span class="w">    </span>restart:<span class="w"> </span>unless-stopped
-</span><span id="__span-11-11"><a href="#__codelineno-11-11" id="__codelineno-11-11" name="__codelineno-11-11"></a><span class="w">    </span>ports:
-</span><span id="__span-11-12"><a href="#__codelineno-11-12" id="__codelineno-11-12" name="__codelineno-11-12"></a><span class="w">      </span>-<span class="w"> </span><span class="nv">$MINIO_PORT</span>:9000
-</span><span id="__span-11-13"><a href="#__codelineno-11-13" id="__codelineno-11-13" name="__codelineno-11-13"></a><span class="w">    </span>env_file:<span class="w"> </span>.env
-</span><span id="__span-11-14"><a href="#__codelineno-11-14" id="__codelineno-11-14" name="__codelineno-11-14"></a><span class="w">    </span>healthcheck:
-</span><span id="__span-11-15"><a href="#__codelineno-11-15" id="__codelineno-11-15" name="__codelineno-11-15"></a><span class="w">      </span>test:<span class="w"> </span><span class="o">[</span><span class="s2">"CMD"</span>,<span class="w"> </span><span class="s2">"nc"</span>,<span class="w"> </span><span class="s2">"-z"</span>,<span class="w"> </span><span class="s2">"minio"</span>,<span class="w"> </span><span class="s2">"9000"</span><span class="o">]</span>
-</span><span id="__span-11-16"><a href="#__codelineno-11-16" id="__codelineno-11-16" name="__codelineno-11-16"></a><span class="w">      </span>interval:<span class="w"> </span>5s
-</span><span id="__span-11-17"><a href="#__codelineno-11-17" id="__codelineno-11-17" name="__codelineno-11-17"></a><span class="w">      </span>retries:<span class="w"> </span><span class="m">5</span>
-</span><span id="__span-11-18"><a href="#__codelineno-11-18" id="__codelineno-11-18" name="__codelineno-11-18"></a><span class="w">  </span>createbuckets:
-</span><span id="__span-11-19"><a href="#__codelineno-11-19" id="__codelineno-11-19" name="__codelineno-11-19"></a><span class="w">    </span>image:<span class="w"> </span>minio/mc
-</span><span id="__span-11-20"><a href="#__codelineno-11-20" id="__codelineno-11-20" name="__codelineno-11-20"></a><span class="w">    </span>depends_on:
-</span><span id="__span-11-21"><a href="#__codelineno-11-21" id="__codelineno-11-21" name="__codelineno-11-21"></a><span class="w">      </span>minio:
-</span><span id="__span-11-22"><a href="#__codelineno-11-22" id="__codelineno-11-22" name="__codelineno-11-22"></a><span class="w">        </span>condition:<span class="w"> </span>service_healthy
-</span><span id="__span-11-23"><a href="#__codelineno-11-23" id="__codelineno-11-23" name="__codelineno-11-23"></a><span class="w">    </span>env_file:<span class="w"> </span>.env
-</span><span id="__span-11-24"><a href="#__codelineno-11-24" id="__codelineno-11-24" name="__codelineno-11-24"></a><span class="w">    </span><span class="c1"># volumes:</span>
-</span><span id="__span-11-25"><a href="#__codelineno-11-25" id="__codelineno-11-25" name="__codelineno-11-25"></a><span class="w">    </span><span class="c1">#   This volume is shared with `minio`, so `z` to share it</span>
-</span><span id="__span-11-26"><a href="#__codelineno-11-26" id="__codelineno-11-26" name="__codelineno-11-26"></a><span class="w">    </span><span class="c1">#   - ./var/minio:/export</span>
-</span><span id="__span-11-27"><a href="#__codelineno-11-27" id="__codelineno-11-27" name="__codelineno-11-27"></a><span class="w">    </span>entrypoint:<span class="w"> </span>&gt;
-</span><span id="__span-11-28"><a href="#__codelineno-11-28" id="__codelineno-11-28" name="__codelineno-11-28"></a><span class="w">      </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
-</span><span id="__span-11-29"><a href="#__codelineno-11-29" id="__codelineno-11-29" name="__codelineno-11-29"></a><span class="s2">      set -x;</span>
-</span><span id="__span-11-30"><a href="#__codelineno-11-30" id="__codelineno-11-30" name="__codelineno-11-30"></a><span class="s2">      if [ -n \"</span><span class="nv">$MINIO_ACCESS_KEY</span><span class="s2">\" ] &amp;&amp; [ -n \"</span><span class="nv">$MINIO_SECRET_KEY</span><span class="s2">\" ] &amp;&amp; [ -n \"</span><span class="nv">$MINIO_PORT</span><span class="s2">\" ]; then</span>
-</span><span id="__span-11-31"><a href="#__codelineno-11-31" id="__codelineno-11-31" name="__codelineno-11-31"></a><span class="s2">        until /usr/bin/mc config host add minio_docker https://minio:</span><span class="nv">$MINIO_PORT</span><span class="s2"> </span><span class="nv">$MINIO_ACCESS_KEY</span><span class="s2"> </span><span class="nv">$MINIO_SECRET_KEY</span><span class="s2"> &amp;&amp; break; do</span>
-</span><span id="__span-11-32"><a href="#__codelineno-11-32" id="__codelineno-11-32" name="__codelineno-11-32"></a><span class="s2">          echo '...waiting...' &amp;&amp; sleep 5;</span>
-</span><span id="__span-11-33"><a href="#__codelineno-11-33" id="__codelineno-11-33" name="__codelineno-11-33"></a><span class="s2">        done;</span>
-</span><span id="__span-11-34"><a href="#__codelineno-11-34" id="__codelineno-11-34" name="__codelineno-11-34"></a><span class="s2">        /usr/bin/mc mb minio_docker/</span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2"> || echo 'Bucket </span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2"> already exists.';</span>
-</span><span id="__span-11-35"><a href="#__codelineno-11-35" id="__codelineno-11-35" name="__codelineno-11-35"></a><span class="s2">        /usr/bin/mc mb minio_docker/</span><span class="nv">$AWS_STORAGE_PRIVATE_BUCKET_NAME</span><span class="s2"> || echo 'Bucket </span><span class="nv">$AWS_STORAGE_PRIVATE_BUCKET_NAME</span><span class="s2"> already exists.';</span>
-</span><span id="__span-11-36"><a href="#__codelineno-11-36" id="__codelineno-11-36" name="__codelineno-11-36"></a><span class="s2">        /usr/bin/mc anonymous set download minio_docker/</span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2">;</span>
-</span><span id="__span-11-37"><a href="#__codelineno-11-37" id="__codelineno-11-37" name="__codelineno-11-37"></a><span class="s2">      else</span>
-</span><span id="__span-11-38"><a href="#__codelineno-11-38" id="__codelineno-11-38" name="__codelineno-11-38"></a><span class="s2">        echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';</span>
-</span><span id="__span-11-39"><a href="#__codelineno-11-39" id="__codelineno-11-39" name="__codelineno-11-39"></a><span class="s2">      fi;</span>
-</span><span id="__span-11-40"><a href="#__codelineno-11-40" id="__codelineno-11-40" name="__codelineno-11-40"></a><span class="s2">      exit 0;</span>
-</span><span id="__span-11-41"><a href="#__codelineno-11-41" id="__codelineno-11-41" name="__codelineno-11-41"></a><span class="s2">      "</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="w">  </span><span class="c1">#-----------------------------------------------</span>
+</span><span id="__span-13-2"><a href="#__codelineno-13-2" id="__codelineno-13-2" name="__codelineno-13-2"></a><span class="w">  </span><span class="c1"># Minio local storage helper</span>
+</span><span id="__span-13-3"><a href="#__codelineno-13-3" id="__codelineno-13-3" name="__codelineno-13-3"></a><span class="w">  </span><span class="c1">#-----------------------------------------------</span>
+</span><span id="__span-13-4"><a href="#__codelineno-13-4" id="__codelineno-13-4" name="__codelineno-13-4"></a><span class="w">  </span>minio:
+</span><span id="__span-13-5"><a href="#__codelineno-13-5" id="__codelineno-13-5" name="__codelineno-13-5"></a><span class="w">    </span>image:<span class="w"> </span>minio/minio:RELEASE.2020-10-03T02-19-42Z
+</span><span id="__span-13-6"><a href="#__codelineno-13-6" id="__codelineno-13-6" name="__codelineno-13-6"></a><span class="w">    </span>command:<span class="w"> </span>server<span class="w"> </span>/export<span class="w"> </span>--certs-dir<span class="w"> </span>/root/.minio/certs
+</span><span id="__span-13-7"><a href="#__codelineno-13-7" id="__codelineno-13-7" name="__codelineno-13-7"></a><span class="w">    </span>volumes:
+</span><span id="__span-13-8"><a href="#__codelineno-13-8" id="__codelineno-13-8" name="__codelineno-13-8"></a><span class="w">      </span>-<span class="w"> </span>./var/minio:/export
+</span><span id="__span-13-9"><a href="#__codelineno-13-9" id="__codelineno-13-9" name="__codelineno-13-9"></a><span class="w">      </span>-<span class="w"> </span>./certs/minio:/root/.minio
+</span><span id="__span-13-10"><a href="#__codelineno-13-10" id="__codelineno-13-10" name="__codelineno-13-10"></a><span class="w">    </span>restart:<span class="w"> </span>unless-stopped
+</span><span id="__span-13-11"><a href="#__codelineno-13-11" id="__codelineno-13-11" name="__codelineno-13-11"></a><span class="w">    </span>ports:
+</span><span id="__span-13-12"><a href="#__codelineno-13-12" id="__codelineno-13-12" name="__codelineno-13-12"></a><span class="w">      </span>-<span class="w"> </span><span class="nv">$MINIO_PORT</span>:9000
+</span><span id="__span-13-13"><a href="#__codelineno-13-13" id="__codelineno-13-13" name="__codelineno-13-13"></a><span class="w">    </span>env_file:<span class="w"> </span>.env
+</span><span id="__span-13-14"><a href="#__codelineno-13-14" id="__codelineno-13-14" name="__codelineno-13-14"></a><span class="w">    </span>healthcheck:
+</span><span id="__span-13-15"><a href="#__codelineno-13-15" id="__codelineno-13-15" name="__codelineno-13-15"></a><span class="w">      </span>test:<span class="w"> </span><span class="o">[</span><span class="s2">"CMD"</span>,<span class="w"> </span><span class="s2">"nc"</span>,<span class="w"> </span><span class="s2">"-z"</span>,<span class="w"> </span><span class="s2">"minio"</span>,<span class="w"> </span><span class="s2">"9000"</span><span class="o">]</span>
+</span><span id="__span-13-16"><a href="#__codelineno-13-16" id="__codelineno-13-16" name="__codelineno-13-16"></a><span class="w">      </span>interval:<span class="w"> </span>5s
+</span><span id="__span-13-17"><a href="#__codelineno-13-17" id="__codelineno-13-17" name="__codelineno-13-17"></a><span class="w">      </span>retries:<span class="w"> </span><span class="m">5</span>
+</span><span id="__span-13-18"><a href="#__codelineno-13-18" id="__codelineno-13-18" name="__codelineno-13-18"></a><span class="w">  </span>createbuckets:
+</span><span id="__span-13-19"><a href="#__codelineno-13-19" id="__codelineno-13-19" name="__codelineno-13-19"></a><span class="w">    </span>image:<span class="w"> </span>minio/mc
+</span><span id="__span-13-20"><a href="#__codelineno-13-20" id="__codelineno-13-20" name="__codelineno-13-20"></a><span class="w">    </span>depends_on:
+</span><span id="__span-13-21"><a href="#__codelineno-13-21" id="__codelineno-13-21" name="__codelineno-13-21"></a><span class="w">      </span>minio:
+</span><span id="__span-13-22"><a href="#__codelineno-13-22" id="__codelineno-13-22" name="__codelineno-13-22"></a><span class="w">        </span>condition:<span class="w"> </span>service_healthy
+</span><span id="__span-13-23"><a href="#__codelineno-13-23" id="__codelineno-13-23" name="__codelineno-13-23"></a><span class="w">    </span>env_file:<span class="w"> </span>.env
+</span><span id="__span-13-24"><a href="#__codelineno-13-24" id="__codelineno-13-24" name="__codelineno-13-24"></a><span class="w">    </span><span class="c1"># volumes:</span>
+</span><span id="__span-13-25"><a href="#__codelineno-13-25" id="__codelineno-13-25" name="__codelineno-13-25"></a><span class="w">    </span><span class="c1">#   This volume is shared with `minio`, so `z` to share it</span>
+</span><span id="__span-13-26"><a href="#__codelineno-13-26" id="__codelineno-13-26" name="__codelineno-13-26"></a><span class="w">    </span><span class="c1">#   - ./var/minio:/export</span>
+</span><span id="__span-13-27"><a href="#__codelineno-13-27" id="__codelineno-13-27" name="__codelineno-13-27"></a><span class="w">    </span>entrypoint:<span class="w"> </span>&gt;
+</span><span id="__span-13-28"><a href="#__codelineno-13-28" id="__codelineno-13-28" name="__codelineno-13-28"></a><span class="w">      </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+</span><span id="__span-13-29"><a href="#__codelineno-13-29" id="__codelineno-13-29" name="__codelineno-13-29"></a><span class="s2">      set -x;</span>
+</span><span id="__span-13-30"><a href="#__codelineno-13-30" id="__codelineno-13-30" name="__codelineno-13-30"></a><span class="s2">      if [ -n \"</span><span class="nv">$MINIO_ACCESS_KEY</span><span class="s2">\" ] &amp;&amp; [ -n \"</span><span class="nv">$MINIO_SECRET_KEY</span><span class="s2">\" ] &amp;&amp; [ -n \"</span><span class="nv">$MINIO_PORT</span><span class="s2">\" ]; then</span>
+</span><span id="__span-13-31"><a href="#__codelineno-13-31" id="__codelineno-13-31" name="__codelineno-13-31"></a><span class="s2">        until /usr/bin/mc config host add minio_docker https://minio:</span><span class="nv">$MINIO_PORT</span><span class="s2"> </span><span class="nv">$MINIO_ACCESS_KEY</span><span class="s2"> </span><span class="nv">$MINIO_SECRET_KEY</span><span class="s2"> &amp;&amp; break; do</span>
+</span><span id="__span-13-32"><a href="#__codelineno-13-32" id="__codelineno-13-32" name="__codelineno-13-32"></a><span class="s2">          echo '...waiting...' &amp;&amp; sleep 5;</span>
+</span><span id="__span-13-33"><a href="#__codelineno-13-33" id="__codelineno-13-33" name="__codelineno-13-33"></a><span class="s2">        done;</span>
+</span><span id="__span-13-34"><a href="#__codelineno-13-34" id="__codelineno-13-34" name="__codelineno-13-34"></a><span class="s2">        /usr/bin/mc mb minio_docker/</span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2"> || echo 'Bucket </span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2"> already exists.';</span>
+</span><span id="__span-13-35"><a href="#__codelineno-13-35" id="__codelineno-13-35" name="__codelineno-13-35"></a><span class="s2">        /usr/bin/mc mb minio_docker/</span><span class="nv">$AWS_STORAGE_PRIVATE_BUCKET_NAME</span><span class="s2"> || echo 'Bucket </span><span class="nv">$AWS_STORAGE_PRIVATE_BUCKET_NAME</span><span class="s2"> already exists.';</span>
+</span><span id="__span-13-36"><a href="#__codelineno-13-36" id="__codelineno-13-36" name="__codelineno-13-36"></a><span class="s2">        /usr/bin/mc anonymous set download minio_docker/</span><span class="nv">$AWS_STORAGE_BUCKET_NAME</span><span class="s2">;</span>
+</span><span id="__span-13-37"><a href="#__codelineno-13-37" id="__codelineno-13-37" name="__codelineno-13-37"></a><span class="s2">      else</span>
+</span><span id="__span-13-38"><a href="#__codelineno-13-38" id="__codelineno-13-38" name="__codelineno-13-38"></a><span class="s2">        echo 'MINIO_ACCESS_KEY, MINIO_SECRET_KEY, or MINIO_PORT are not defined. Skipping buckets creation.';</span>
+</span><span id="__span-13-39"><a href="#__codelineno-13-39" id="__codelineno-13-39" name="__codelineno-13-39"></a><span class="s2">      fi;</span>
+</span><span id="__span-13-40"><a href="#__codelineno-13-40" id="__codelineno-13-40" name="__codelineno-13-40"></a><span class="s2">      exit 0;</span>
+</span><span id="__span-13-41"><a href="#__codelineno-13-41" id="__codelineno-13-41" name="__codelineno-13-41"></a><span class="s2">      "</span>
 </span></code></pre></div>
 <a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../_attachments/893b1d55-3d6e-45ed-887b-3df882c7e127_17528513131864328.jpg"/></a></li>
 </ul>
@@ -1535,19 +1638,19 @@ By default, the compute worker of the default queue is a docker container run by
 <h2 id="workaround-minio-and-django-on-the-same-machine-with-only-the-port-443-opened-to-the-external-network">Workaround: MinIO and Django on the same machine with only the port 443 opened to the external network.<a class="headerlink" href="#workaround-minio-and-django-on-the-same-machine-with-only-the-port-443-opened-to-the-external-network" title="Permanent link">¶</a></h2>
 <p>The S3 API signature calculation algorithm does not support proxy schemes where you host the MinIO Server API such as example.net/s3/.</p>
 <p>However, we can set the same URL for minio and django site and configure a proxy for each bucket in the Caddyfile :
-<div class="language-ini highlight"><pre><span></span><code><span id="__span-12-1"><a href="#__codelineno-12-1" id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">https://mysite.com</span>
-</span><span id="__span-12-2"><a href="#__codelineno-12-2" id="__codelineno-12-2" name="__codelineno-12-2"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">https://mysite.com</span>
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-14-1"><a href="#__codelineno-14-1" id="__codelineno-14-1" name="__codelineno-14-1"></a><span class="na">DOMAIN_NAME</span><span class="o">=</span><span class="s">https://mysite.com</span>
+</span><span id="__span-14-2"><a href="#__codelineno-14-2" id="__codelineno-14-2" name="__codelineno-14-2"></a><span class="na">AWS_S3_ENDPOINT_URL</span><span class="o">=</span><span class="s">https://mysite.com</span>
 </span></code></pre></div></p>
 <p>Caddyfile : 
-<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a>    @dynamic {
-</span><span id="__span-13-2"><a href="#__codelineno-13-2" id="__codelineno-13-2" name="__codelineno-13-2"></a>        not path /static/* /media/* /{$AWS_STORAGE_BUCKET_NAME}* /{$AWS_STORAGE_PRIVATE_BUCKET_NAME}* /minio*
-</span><span id="__span-13-3"><a href="#__codelineno-13-3" id="__codelineno-13-3" name="__codelineno-13-3"></a>    }
-</span><span id="__span-13-4"><a href="#__codelineno-13-4" id="__codelineno-13-4" name="__codelineno-13-4"></a>    reverse_proxy @dynamic django:8000 
-</span><span id="__span-13-5"><a href="#__codelineno-13-5" id="__codelineno-13-5" name="__codelineno-13-5"></a>
-</span><span id="__span-13-6"><a href="#__codelineno-13-6" id="__codelineno-13-6" name="__codelineno-13-6"></a>    @min_bucket {
-</span><span id="__span-13-7"><a href="#__codelineno-13-7" id="__codelineno-13-7" name="__codelineno-13-7"></a>      path /{$AWS_STORAGE_BUCKET_NAME}* /{$AWS_STORAGE_PRIVATE_BUCKET_NAME}*
-</span><span id="__span-13-8"><a href="#__codelineno-13-8" id="__codelineno-13-8" name="__codelineno-13-8"></a>    }
-</span><span id="__span-13-9"><a href="#__codelineno-13-9" id="__codelineno-13-9" name="__codelineno-13-9"></a>    reverse_proxy @min_bucket minio:{$MINIO_PORT}
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a href="#__codelineno-15-1" id="__codelineno-15-1" name="__codelineno-15-1"></a>    @dynamic {
+</span><span id="__span-15-2"><a href="#__codelineno-15-2" id="__codelineno-15-2" name="__codelineno-15-2"></a>        not path /static/* /media/* /{$AWS_STORAGE_BUCKET_NAME}* /{$AWS_STORAGE_PRIVATE_BUCKET_NAME}* /minio*
+</span><span id="__span-15-3"><a href="#__codelineno-15-3" id="__codelineno-15-3" name="__codelineno-15-3"></a>    }
+</span><span id="__span-15-4"><a href="#__codelineno-15-4" id="__codelineno-15-4" name="__codelineno-15-4"></a>    reverse_proxy @dynamic django:8000 
+</span><span id="__span-15-5"><a href="#__codelineno-15-5" id="__codelineno-15-5" name="__codelineno-15-5"></a>
+</span><span id="__span-15-6"><a href="#__codelineno-15-6" id="__codelineno-15-6" name="__codelineno-15-6"></a>    @min_bucket {
+</span><span id="__span-15-7"><a href="#__codelineno-15-7" id="__codelineno-15-7" name="__codelineno-15-7"></a>      path /{$AWS_STORAGE_BUCKET_NAME}* /{$AWS_STORAGE_PRIVATE_BUCKET_NAME}*
+</span><span id="__span-15-8"><a href="#__codelineno-15-8" id="__codelineno-15-8" name="__codelineno-15-8"></a>    }
+</span><span id="__span-15-9"><a href="#__codelineno-15-9" id="__codelineno-15-9" name="__codelineno-15-9"></a>    reverse_proxy @min_bucket minio:{$MINIO_PORT}
 </span></code></pre></div></p>
 </article>
 </div>
@@ -1613,8 +1716,8 @@ By default, the compute worker of the default queue is a docker container run by
 <div class="md-dialog" data-md-component="dialog">
 <div class="md-dialog__inner md-typeset"></div>
 </div>
-<script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.tabs", "navigation.tabs.sticky", "navigation.indexes", "search.share", "navigation.footer", "navigation.top", "content.action.edit", "content.action.view", "navigation.expand"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
-<script src="../../assets/javascripts/bundle.50899def.min.js"></script>
+<script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.tabs", "navigation.tabs.sticky", "navigation.indexes", "search.share", "navigation.footer", "navigation.top", "content.action.edit", "content.action.view", "navigation.expand"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+<script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
 <script src="../../js/open_in_new_tab.js"></script>
 <script src="../../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
 <script id="init-glightbox">document.querySelectorAll('.glightbox').forEach(function(element) {

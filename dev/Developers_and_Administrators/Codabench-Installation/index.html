@@ -8,7 +8,7 @@
 <link href="../../Organizers/Running_a_benchmark/Server-status-page/" rel="prev"/>
 <link href="../How-to-deploy-Codabench-on-your-server/" rel="next"/>
 <link href="../../assets/images/favicon.png" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.6.16" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.17" name="generator"/>
 <title>Codabench Basic Installtion Guide - Codabench Wiki</title>
 <link href="../../assets/stylesheets/main.7e37652d.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
@@ -691,6 +691,13 @@
     </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#online-deployement">
+<span class="md-ellipsis">
+      Online Deployement
+    </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -1105,6 +1112,13 @@
     </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#online-deployement">
+<span class="md-ellipsis">
+      Online Deployement
+    </span>
+</a>
+</li>
 </ul>
 </nav>
 </div>
@@ -1136,7 +1150,10 @@ On a fresh installation, you will need to use the following command to get your 
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
 </span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>cp<span class="w"> </span>.env_sample<span class="w"> </span>.env
 </span></code></pre></div>
-<p>Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick local setup, you should not need to edit this file.</p>
+<p>Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick <strong>local</strong> setup, you should not need to edit this file. For a <a href="../How-to-deploy-Codabench-on-your-server/">public server deployment</a>, you will have to modify some settings.</p>
+<div class="admonition warning">
+<p class="admonition-title">It is important to change the default passwords if you intend for the instance to be public</p>
+</div>
 <p>If you are using <code>AWS_S3_ENDPOINT_URL=http://minio:9000/</code> in your <code>.env</code>, edit your <code>/etc/hosts</code> file by adding this line <code>127.0.0.1 minio</code></p>
 <h4 id="for-macos">For MacOS<a class="headerlink" href="#for-macos" title="Permanent link">¶</a></h4>
 <p>In <code>.env</code>, replace:
@@ -1168,6 +1185,9 @@ On a fresh installation, you will need to use the following command to get your 
 <ul>
 <li>If you already have a DNS for your server that is appropriate, in the <code>.env</code> simply set <code>DOMAIN_NAME</code> to your DNS. Remove any port designation like <code>:80</code>. This will have Caddy serve both HTTP and HTTPS.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">For a public instance, HTTPS is strongly recomended</p>
+</div>
 <h3 id="validate-user-account-on-local-instance">Validate user account on local instance<a class="headerlink" href="#validate-user-account-on-local-instance" title="Permanent link">¶</a></h3>
 <p>When deploying a local instance, the email server is not configured by default, so you won't receive the confirmation email during signup.</p>
 <p>To manually confirm your account:</p>
@@ -1204,8 +1224,11 @@ https://django-storages.readthedocs.io/en/latest/</p>
 <p>To set up remote compute workers, you can follow the steps described in our
 <a href="../../Organizers/Running_a_benchmark/Compute-Worker-Management---Setup/">Compute Worker Management</a> page.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">¶</a></h2>
-<p>Read the following guide for troubleshooting: <a href="../How-to-deploy-Codabench-on-your-server/">How to deploy Codabench</a>.</p>
+<p>Read the following guide for troubleshooting: <a href="../How-to-deploy-Codabench-on-your-server/#frequently-asked-questions-faqs">How to deploy Codabench</a>.</p>
 <p>Also, adding <code>DEBUG=True</code> to the <code>.env</code> file can help with troubleshooting the deployment.</p>
+<p>Open a <a href="https://github.com/codalab/codabench/issues">Github issue</a> to find help with your installation</p>
+<h2 id="online-deployement">Online Deployement<a class="headerlink" href="#online-deployement" title="Permanent link">¶</a></h2>
+<p>For information about online deployment of Codabench, go to the <a href="../How-to-deploy-Codabench-on-your-server/">following page</a></p>
 </article>
 </div>
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
@@ -1270,8 +1293,8 @@ https://django-storages.readthedocs.io/en/latest/</p>
 <div class="md-dialog" data-md-component="dialog">
 <div class="md-dialog__inner md-typeset"></div>
 </div>
-<script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.tabs", "navigation.tabs.sticky", "navigation.indexes", "search.share", "navigation.footer", "navigation.top", "content.action.edit", "content.action.view", "navigation.expand"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
-<script src="../../assets/javascripts/bundle.50899def.min.js"></script>
+<script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.tabs", "navigation.tabs.sticky", "navigation.indexes", "search.share", "navigation.footer", "navigation.top", "content.action.edit", "content.action.view", "navigation.expand"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+<script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
 <script src="../../js/open_in_new_tab.js"></script>
 <script src="../../assets/external/unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
 <script id="init-glightbox">document.querySelectorAll('.glightbox').forEach(function(element) {
