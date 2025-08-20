@@ -159,11 +159,18 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             is_soft_deleted=False,
             has_children=False,
             is_specific_task_re_run=False,
-            leaderboard__isnull=False, ) \
-            .select_related('owner').prefetch_related('scores') \
+            leaderboard=instance.leaderboard,
+            )\
+            .select_related('owner')\
+            .prefetch_related('scores', 'scores__column')\
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
-        for column in instance.leaderboard.columns.exclude(id=primary_col.id, hidden=False).order_by('index'):
+        for column in (
+            instance.leaderboard.columns
+            .filter(hidden=False)
+            .exclude(id=primary_col.id)
+            .order_by('index')
+        ):
             col_name = f'col{column.index}'
             ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
             kwargs = {

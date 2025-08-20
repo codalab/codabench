@@ -117,7 +117,28 @@ class SubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
-                return Submission.objects.none()
+                # Show leaderboard submissions to unauthenticated users
+                return (
+                    qs.filter(
+                        leaderboard__isnull=False,
+                        is_soft_deleted=False,
+                        status=Submission.FINISHED,
+                    )
+                    .select_related(
+                        'phase',
+                        'phase__competition',
+                        'participant',
+                        'participant__user',
+                        'owner',
+                        'data',
+                    )
+                    .prefetch_related(
+                        'children',
+                        'scores',
+                        'scores__column',
+                        'task',
+                    )
+                )
 
             # Check if admin is requesting to see soft-deleted submissions
             show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'

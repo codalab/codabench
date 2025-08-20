@@ -37,7 +37,6 @@
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            
         </tr>
         </thead>
         <!--  Always show leaderboard  -->
