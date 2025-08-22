@@ -15,7 +15,7 @@ RUN poetry config virtualenvs.in-project false
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies
+RUN poetry lock
 RUN poetry install 
-
 
 WORKDIR /app

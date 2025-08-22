@@ -36,11 +36,13 @@ class Column(models.Model):
     SUM = 'sum'
     MIN = 'min'
     MAX = 'max'
+    AVG_RANK = 'avg_rank'
     COMPUTATION_CHOICES = (
         (AVERAGE, 'Average'),
         (SUM, 'Sum'),
         (MIN, 'Min'),
         (MAX, 'Max'),
+        (AVG_RANK, 'Average rank'),
     )
     SORTING = (
         ('desc', 'Descending'),
@@ -72,6 +74,8 @@ class Column(models.Model):
         return f'ID={self.id} - {self.title}'
 
     def compute(self, scores):
+        if self.computation == self.AVG_RANK:
+            raise NotImplementedError("Average rank is global; compute via aggregator")
         return self.COMPUTATION_FUNCTIONS[self.computation](scores)
 
 

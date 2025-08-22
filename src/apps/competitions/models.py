@@ -753,6 +753,7 @@ class Submission(ChaHubSaveMixin, models.Model):
     def calculate_scores(self):
         # leaderboards = self.phase.competition.leaderboards.all()
         # for leaderboard in leaderboards:
+        # Local columns
         columns = self.phase.leaderboard.columns.exclude(computation__isnull=True)
         for column in columns:
             scores = self.scores.filter(column__index__in=column.computation_indexes.split(',')).values_list('score',
@@ -769,6 +770,9 @@ class Submission(ChaHubSaveMixin, models.Model):
                         score=score
                     )
                     self.scores.add(sub_score)
+        # Global columns
+        for comp_col in columns.filter(computation='avg_rank'):
+            compute_avg_rank(self.phase, comp_col, precision=comp_col.precision, missing_policy='ignore')
 
     @property
     def on_leaderboard(self):
