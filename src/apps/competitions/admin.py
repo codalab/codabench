@@ -30,7 +30,6 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         `self.value()`.
         """
         # Only show private competitions with >= 25 submissions and >=10 participants
-        print(request.__dict__)
         if self.value() == "privateSmall":
                 return queryset.filter(
                     published=False,
