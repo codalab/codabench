@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from . import models
 
+
 class privateCompetitionsFilter(admin.SimpleListFilter):
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
@@ -31,11 +32,12 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         """
         # Only show private competitions with >= 25 submissions and >=10 participants
         if self.value() == "privateSmall":
-                return queryset.filter(
-                    published=False,
-                    submissions_count__gte=25,
-                    participants_count__gte=10
-                )
+            return queryset.filter(
+                published=False,
+                submissions_count__gte=25,
+                participants_count__gte=10
+            )
+
 
 class CompetitionAdmin(admin.ModelAdmin):
     search_fields = ['title', 'docker_image', 'created_by__username']
