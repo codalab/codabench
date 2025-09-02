@@ -34,8 +34,8 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         if self.value() == "privateSmall":
             return queryset.filter(
                 published=False,
-                submissions_count__gte=25,
-                participants_count__gte=10
+                submissions_count__gte=10,
+                participants_count__gte=5
             )
 
 
