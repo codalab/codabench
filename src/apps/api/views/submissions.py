@@ -382,6 +382,7 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
+
     @action(detail=False, methods=['get'])
     def download_many(self, request):
         """
@@ -396,12 +397,15 @@ class SubmissionViewSet(ModelViewSet):
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
-            "phase__competition",
-            "phase__competition__created_by",
-        ).prefetch_related("phase__competition__collaborators")
+            "phase",
+            "data",
+        )
+        # .only("id","owner", "data__data_file")
+        # .prefetch_related("phase__competition__collaborators")
         if submissions.count() != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
+        # NH : should should create a function for this ? 
         # Check permissions
         if not request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to download submissions")
@@ -422,12 +426,63 @@ class SubmissionViewSet(ModelViewSet):
                 "You do not have permission to download one or more of the requested submissions"
             )
 
-        # Download
-        from competitions.tasks import stream_batch_download
-        in_memory_zip = stream_batch_download(pks)
-        response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
-        response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
-        return response
+        files = [] 
+        for sub in submissions:
+            file_path = sub.data.data_file.name.split('/')[-1]
+            short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+
+            url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
+            files.append({"name": short_name, "url": url})
+
+        return Response(files)
+    
+
+    # @action(detail=False, methods=['get'])
+    # def download_many(self, request):
+    #     """
+    #     Download a ZIP containing several submissions.
+    #     """
+    #     pks = request.query_params.get('pks')
+    #     if pks:
+    #         pks = json.loads(pks)  # Convert JSON string to list
+    #     else:
+    #         return Response({"error": "`pks` query parameter is required"}, status=400)
+
+    #     # Get submissions
+    #     submissions = Submission.objects.filter(pk__in=pks).select_related(
+    #         "owner",
+    #         "phase__competition",
+    #         "phase__competition__created_by",
+    #     ).prefetch_related("phase__competition__collaborators")
+    #     if submissions.count() != len(pks):
+    #         return Response({"error": "One or more submission IDs are invalid"}, status=404)
+
+    #     # Check permissions
+    #     if not request.user.is_authenticated:
+    #         raise PermissionDenied("You must be logged in to download submissions")
+    #     # Allow admins
+    #     if request.user.is_superuser or request.user.is_staff:
+    #         allowed = True
+    #     else:
+    #         # Build one Q object for "owner OR organizer"
+    #         organiser_q = (
+    #             Q(phase__competition__created_by=request.user) |
+    #             Q(phase__competition__collaborators=request.user)
+    #         )
+    #         # Submissions that violate the rule
+    #         disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
+    #         allowed = not disallowed.exists()
+    #     if not allowed:
+    #         raise PermissionDenied(
+    #             "You do not have permission to download one or more of the requested submissions"
+    #         )
+
+    #     # Download
+    #     from competitions.tasks import stream_batch_download
+    #     in_memory_zip = stream_batch_download(pks)
+    #     response = StreamingHttpResponse(in_memory_zip, content_type='application/zip')
+    #     response['Content-Disposition'] = 'attachment; filename="bulk_submissions.zip"'
+    #     return response
 
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
