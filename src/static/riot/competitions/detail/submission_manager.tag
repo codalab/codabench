@@ -571,9 +571,9 @@
 
         self.bulk_download = function () {
             CODALAB.api.download_many_submissions(self.checked_submissions)
-            .catch(function (error) {
-                console.error('Error:', error);
-            });
+            #.catch(function (error) {
+            #    console.error('Error:', error);
+            #});
         }
 
 

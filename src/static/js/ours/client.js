@@ -128,29 +128,42 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
     },
     download_many_submissions: function (pks) {
-        console.log('Request bulk');
         const params = new URLSearchParams({ pks: JSON.stringify(pks) });
         const url = `${URLS.API}submissions/download_many/?${params}`;
-        return fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.blob();
-        }).then(blob => {
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = 'bulk_submissions.zip';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }).catch(error => {
-            console.error('Error downloading submissions:', error);
-        });
+        // return CODALAB.api.request('GET', url)
+        CODALAB.api.request('GET', url)
+            .done(function(files) {
+                // files is already parsed JSON array
+                console.log("Files returned by server:", files);
+
+                // Iterate files
+                files.forEach(file => {
+                    console.log(file.name, file.url);
+                });
+                // return files
+                
+                const zip = new JSZip();
+                const fetchFiles = files.map(async file => {
+                    const response = await fetch(file.url);
+                    const blob = await response.blob();
+                    zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+                });
+
+                Promise.all(fetchFiles).then(() => {
+                    zip.generateAsync({ type: 'blob' }).then(blob => {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'bulk_submissions.zip';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    });
+                });
+
+            })
+            .fail(function(err) {
+                console.error("Error downloading submissions:", err);
+            });
     },
 
     /*---------------------------------------------------------------------
