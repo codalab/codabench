@@ -1,3 +1,4 @@
+import pdb
 import json
 import random
 import csv
@@ -120,9 +121,9 @@ class PhaseMigrationTests(APITestCase):
             url = reverse('phases-manually_migrate', kwargs={"pk": self.phase_1.pk})
             resp = self.client.post(url)
             assert resp.status_code == 200
-            import pdb; pdb.set_trace()
             assert run_submission_mock.call_count == 5
 
+        self.phase_2.refresh_from_db()
         # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 5
