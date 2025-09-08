@@ -131,39 +131,39 @@ CODALAB.api = {
         const params = new URLSearchParams({ pks: JSON.stringify(pks) });
         const url = `${URLS.API}submissions/download_many/?${params}`;
         // return CODALAB.api.request('GET', url)
-        CODALAB.api.request('GET', url)
-            .done(function(files) {
-                // files is already parsed JSON array
-                console.log("Files returned by server:", files);
+        return CODALAB.api.request('GET', url)
+            // .done(function(files) {
+            //     // files is already parsed JSON array
+            //     console.log("Files returned by server:", files);
 
-                // Iterate files
-                files.forEach(file => {
-                    console.log(file.name, file.url);
-                });
-                // return files
+            //     // Iterate files
+            //     files.forEach(file => {
+            //         console.log(file.name, file.url);
+            //     });
+            //     // return files
                 
-                const zip = new JSZip();
-                const fetchFiles = files.map(async file => {
-                    const response = await fetch(file.url);
-                    const blob = await response.blob();
-                    zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
-                });
+            //     const zip = new JSZip();
+            //     const fetchFiles = files.map(async file => {
+            //         const response = await fetch(file.url);
+            //         const blob = await response.blob();
+            //         zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+            //     });
 
-                Promise.all(fetchFiles).then(() => {
-                    zip.generateAsync({ type: 'blob' }).then(blob => {
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = 'bulk_submissions.zip';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    });
-                });
+            //     Promise.all(fetchFiles).then(() => {
+            //         zip.generateAsync({ type: 'blob' }).then(blob => {
+            //             const link = document.createElement('a');
+            //             link.href = URL.createObjectURL(blob);
+            //             link.download = 'bulk_submissions.zip';
+            //             document.body.appendChild(link);
+            //             link.click();
+            //             document.body.removeChild(link);
+            //         });
+            //     });
 
-            })
-            .fail(function(err) {
-                console.error("Error downloading submissions:", err);
-            });
+            // })
+            // .fail(function(err) {
+            //     console.error("Error downloading submissions:", err);
+            // });
     },
 
     /*---------------------------------------------------------------------
