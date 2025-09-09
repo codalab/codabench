@@ -1,29 +1,36 @@
 <submission-manager class="submission-manager">
-    <div if="{ opts.admin }" class="admin-buttons">
-        <div class="ui dropdown button" ref="rerun_button">
+    <div if="{ opts.admin }" class="admin-buttons" style="display: flex; align-items: center; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="ui dropdown button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item" each="{phase in opts.competition.phases}"
-                    onclick="{rerun_phase.bind(this, phase)}">
-                    { phase.name }
+                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">
+                { phase.name }
                 </div>
             </div>
-        </div>
-        <a class="ui button" href="{csv_link}">
-            <i class="icon download"></i>Download as CSV
-        </a>
+            </div>
 
-        <select class=" ui dropdown floated right " ref="submission_handling_operation">
-            <option value="delete"> Delete selected submissions</option>
+            <a class="ui button" href="{csv_link}">
+            <i class="icon download"></i>Download as CSV
+            </a>
+
+            <select class="ui dropdown" ref="submission_handling_operation">
             <option value="download">Download selected submissions</option>
+            <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
-        </select>
-        <button type="button" class="ui button right" disabled="{checked_submissions.length === 0}"
-            onclick="{submission_handling.bind(this)}">
+            </select>
+
+            <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
             Apply
-        </button>
+            </button>
+        </div>
+        <div id="downloadStatus" style="display:none; display: flex; flex-direction: column; align-items: flex-start;">
+            <progress id="downloadProgress" value="0" max="100"  style="display:none; width: 150px;"></progress>
+            <div id="progressText" style="margin-top: 4px;"></div>
+            <!-- -->
+        </div>
     </div>
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter }">
@@ -568,15 +575,65 @@
             CODALAB.events.trigger('submission_clicked')
         }
 
-
         self.bulk_download = function () {
+            const statusBox = document.getElementById('downloadStatus');
+            const progressEl = document.getElementById('downloadProgress');
+            const textEl = document.getElementById('progressText');
+
+            statusBox.style.display = "flex";
+            // statusBox.style.display = "inline";
+
+            
+            progressEl.style.display="flex";
+            progressEl.value = 0;
+            textEl.textContent = "Preparing download...";
+
             CODALAB.api.download_many_submissions(self.checked_submissions)
-            .catch(function (error) {
-                console.error('Error:', error);
-            });
-        }
+                .done(function(files) {
+                    console.log("Files returned by server:", files);
 
+                    const zip = new JSZip();
+                    const total = files.length;
+                    let completed = 0;
 
+                    const fetchFiles = files.map(async file => {
+                        const response = await fetch(file.url);
+                        const blob = await response.blob();
+
+                        zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+
+                        // Update progress
+                        completed++;
+                        const percent = Math.round((completed / total) * 100);
+                        progressEl.value = percent;
+                        // progressBar.progress({ percent: percent });
+                        textEl.textContent = `${completed} / ${total} files (${percent}%)`;
+                    });
+
+                    Promise.all(fetchFiles).then(() => {
+                        textEl.textContent = "Generating bundle";
+                        progressEl.style.display="none";
+                        
+                        zip.generateAsync({ type: 'blob' }).then(blob => {
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = 'bulk_submissions.zip';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+
+                            textEl.textContent = "Download ready!";
+                            setTimeout(() => {
+                                statusBox.style.display = "none";
+                            }, 3000);
+                        });
+                    });
+                })
+                .fail(function(err) {
+                    console.error("Error downloading submissions:", err);
+                    textEl.textContent = "Error downloading!";
+                });
+        };
 
         self.submission_handling = function () {
             // console.log(self.checked_submissions)
