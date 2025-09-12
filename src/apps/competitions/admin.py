@@ -21,7 +21,7 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         in the right sidebar.
         """
         return [
-            ("privateSmall", _("Submission >= 25 & Participants >= 10")),
+            ("privateSmall", _("Submissions >= 25 and Participants >= 10")),
         ]
 
     def queryset(self, request, queryset):
