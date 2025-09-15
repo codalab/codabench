@@ -3,12 +3,13 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import storages.backends.s3boto3
 import utils.data
 import uuid
 
 # New
 from storages.backends.s3boto3 import S3Boto3Storage
+
+
 class _MigrationPrivateStorage(S3Boto3Storage):
     bucket_name = 'private'
 
