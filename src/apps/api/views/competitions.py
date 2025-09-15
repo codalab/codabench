@@ -8,8 +8,7 @@ from tempfile import SpooledTemporaryFile
 from django.db import IntegrityError
 from django.db.models import Subquery, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
-# from drf_yasg.utils import swagger_auto_schema, no_body
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -712,6 +711,7 @@ class PhaseViewSet(ModelViewSet):
                 {"detail": "You do not have administrative permissions for this competition"},
                 status=status.HTTP_403_FORBIDDEN
             )
+        # import pdb; pdb.set_trace()
         manual_migration.apply_async((pk,))
         return Response({}, status=status.HTTP_200_OK)
 

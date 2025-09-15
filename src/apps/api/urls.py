@@ -1,14 +1,12 @@
 from django.conf.urls import include
-from django.urls import path, re_path
-# from drf_yasg import openapi
-# from drf_yasg.views import get_schema_view
+from django.urls import path
+
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import SimpleRouter
-from rest_framework.permissions import AllowAny
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from .views import (
@@ -79,10 +77,6 @@ urlpatterns = [
     path('analytics/check_orphans_deletion_status/', analytics.check_orphans_deletion_status, name="check_orphans_deletion_status"),
 
     # API Docs
-    # Old drf-yasg
-    # re_path(r'docs(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    # path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    # path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     # New
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
