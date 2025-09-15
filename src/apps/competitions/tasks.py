@@ -780,7 +780,6 @@ def do_phase_migrations():
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
 def manual_migration(phase_id):
-    # import pdb; pdb.set_trace()
     try:
         source_phase = Phase.objects.get(id=phase_id)
     except Phase.DoesNotExist:
