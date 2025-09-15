@@ -6,8 +6,14 @@ DEBUG = True
 CELERY_TASK_ALWAYS_EAGER = True
 
 # Don't use whitenoise -- so we don't get exceptions for missing files
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
+# Replace this:
+# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# With this:
+STORAGES["staticfiles"] = {
+    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+}
 # NOTE! We cannot use in memory databases at the moment with Channels. If we remove channels,
 # we can turn this back on:
 #     # Use in memory database
