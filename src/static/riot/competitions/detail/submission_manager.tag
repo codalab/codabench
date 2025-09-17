@@ -574,7 +574,8 @@
                 .modal('show')
             CODALAB.events.trigger('submission_clicked')
         }
-
+        
+        
         self.bulk_download = function () {
             const statusBox = document.getElementById('downloadStatus');
             const progressEl = document.getElementById('downloadProgress');
@@ -589,50 +590,111 @@
             textEl.textContent = "Preparing download...";
 
             CODALAB.api.download_many_submissions(self.checked_submissions)
-                .done(function(files) {
-                    console.log("Files returned by server:", files);
+            .done(function(files) {
+                console.log("Files returned by server:", files);
 
-                    const zip = new JSZip();
-                    const total = files.length;
-                    let completed = 0;
+                const zip = new JSZip();
+                const total = files.length;
+                let completed = 0;
+                const failed = [];
 
-                    const fetchFiles = files.map(async file => {
-                        const response = await fetch(file.url);
-                        const blob = await response.blob();
+                const fetchFiles = files.map(async file => {
+                try {
+                    const response = await fetch(file.url);
 
-                        zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+                    if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                    }
 
-                        // Update progress
-                        completed++;
-                        const percent = Math.round((completed / total) * 100);
-                        progressEl.value = percent;
-                        // progressBar.progress({ percent: percent });
-                        textEl.textContent = `${completed} / ${total} files (${percent}%)`;
-                    });
+                    const blob = await response.blob();
 
-                    Promise.all(fetchFiles).then(() => {
-                        textEl.textContent = "Generating bundle";
-                        progressEl.style.display="none";
-                        
-                        zip.generateAsync({ type: 'blob' }).then(blob => {
-                            const link = document.createElement('a');
-                            link.href = URL.createObjectURL(blob);
-                            link.download = 'bulk_submissions.zip';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-
-                            textEl.textContent = "Download ready!";
-                            setTimeout(() => {
-                                statusBox.style.display = "none";
-                            }, 3000);
-                        });
-                    });
-                })
-                .fail(function(err) {
-                    console.error("Error downloading submissions:", err);
-                    textEl.textContent = "Error downloading!";
+                    zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+                } catch (err) {
+                    console.error(`Failed to fetch ${file.name}:`, err);
+                    failed.push(file.name);
+                } finally {
+                    // Update progress regardless of success/failure
+                    completed++;
+                    const percent = Math.floor((completed / total) * 100);
+                    progressEl.value = percent;
+                    textEl.textContent = `${completed} / ${total} files (${percent}%)`;
+                }
                 });
+
+                Promise.allSettled(fetchFiles).then(() => {
+                textEl.textContent = "Generating bundle";
+                progressEl.style.display = "none";
+
+                zip.generateAsync({ type: 'blob' }).then(blob => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'bulk_submissions.zip';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    if (failed.length > 0) {
+                    textEl.textContent = `Download complete, but ${failed.length} failed: ${failed.join(', ')}`;
+                    } else {
+                    textEl.textContent = "Download ready!";
+                    }
+
+                    setTimeout(() => {
+                    statusBox.style.display = "none";
+                    }, 5000);
+                });
+                });
+            })
+            .fail(function(err) {
+                console.error("Error downloading submissions:", err);
+                textEl.textContent = "Error downloading!";
+            });
+
+            // CODALAB.api.download_many_submissions(self.checked_submissions)
+            //     .done(function(files) {
+            //         console.log("Files returned by server:", files);
+
+            //         const zip = new JSZip();
+            //         const total = files.length;
+            //         let completed = 0;
+
+            //         const fetchFiles = files.map(async file => {
+            //             const response = await fetch(file.url);
+            //             const blob = await response.blob();
+
+            //             zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+
+            //             // Update progress
+            //             completed++;
+            //             const percent = Math.floor((completed / total) * 100);
+            //             progressEl.value = percent;
+            //             // progressBar.progress({ percent: percent });
+            //             textEl.textContent = `${completed} / ${total} files (${percent}%)`;
+            //         });
+
+            //         Promise.all(fetchFiles).then(() => {
+            //             textEl.textContent = "Generating bundle";
+            //             progressEl.style.display="none";
+                        
+            //             zip.generateAsync({ type: 'blob' }).then(blob => {
+            //                 const link = document.createElement('a');
+            //                 link.href = URL.createObjectURL(blob);
+            //                 link.download = 'bulk_submissions.zip';
+            //                 document.body.appendChild(link);
+            //                 link.click();
+            //                 document.body.removeChild(link);
+
+            //                 textEl.textContent = "Download ready!";
+            //                 setTimeout(() => {
+            //                     statusBox.style.display = "none";
+            //                 }, 3000);
+            //             });
+            //         });
+            //     })
+            //     .fail(function(err) {
+            //         console.error("Error downloading submissions:", err);
+            //         textEl.textContent = "Error downloading!";
+            //     });
         };
 
         self.submission_handling = function () {

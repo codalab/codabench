@@ -349,7 +349,6 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
-
     @action(detail=False, methods=['get'])
     def download_many(self, request):
         """
@@ -372,7 +371,7 @@ class SubmissionViewSet(ModelViewSet):
         if submissions.count() != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
-        # NH : should should create a function for this ? 
+        # NH : should should create a function for this ?
         # Check permissions
         if not request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to download submissions")
@@ -393,7 +392,7 @@ class SubmissionViewSet(ModelViewSet):
                 "You do not have permission to download one or more of the requested submissions"
             )
 
-        files = [] 
+        files = []
         for sub in submissions:
             file_path = sub.data.data_file.name.split('/')[-1]
             short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
