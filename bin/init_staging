@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-# Make some dummy data, including making an admin user:
-#   email: admin@admin.com
-#   username: admin
-#   password: admin
-python manage.py generate_data
