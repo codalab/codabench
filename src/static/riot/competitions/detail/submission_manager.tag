@@ -622,19 +622,25 @@
                 });
 
                 Promise.allSettled(fetchFiles).then(() => {
+                // If some files failed, include them as failed.txt inside the zip
+                if (failed.length > 0) {
+                    const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
+                    zip.file("failed.txt", failedContent);
+                }
+
                 textEl.textContent = "Generating bundle";
                 progressEl.style.display = "none";
 
-                zip.generateAsync({ type: 'blob' }).then(blob => {
-                    const link = document.createElement('a');
+                zip.generateAsync({ type: "blob" }).then(blob => {
+                    const link = document.createElement("a");
                     link.href = URL.createObjectURL(blob);
-                    link.download = 'bulk_submissions.zip';
+                    link.download = "bulk_submissions.zip";
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
 
                     if (failed.length > 0) {
-                    textEl.textContent = `Download complete, but ${failed.length} failed: ${failed.join(', ')}`;
+                    textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
                     } else {
                     textEl.textContent = "Download ready!";
                     }

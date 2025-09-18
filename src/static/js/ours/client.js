@@ -128,11 +128,24 @@ CODALAB.api = {
         return CODALAB.api.request('GET', `${URLS.API}submissions/${id}/get_detail_result/`)
     },
     download_many_submissions: function (pks) {
-        const params = new URLSearchParams({ pks: JSON.stringify(pks) });
-        const url = `${URLS.API}submissions/download_many/?${params}`;
-        return CODALAB.api.request('GET', url)
+        return CODALAB.api.request(
+            'POST',
+            URLS.API + "submissions/download_many/",
+            { pks: pks }   // body is JSON by convention
+        );
     },
-
+        
+    // download_many_submissions: function (pks) {
+    //     return CODALAB.api.request('POST', `${URLS.API}submissions/download_many/`, {
+    //     body: JSON.stringify({ pks: pks }),
+    //     headers: {
+    //         "Content-Type": "application/json"
+    //     }
+    // });
+        // const params = new URLSearchParams({ pks: JSON.stringify(pks) });
+        // const url = `${URLS.API}submissions/download_many/?${params}`;
+        // return CODALAB.api.request('GET', url)
+    // },
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/
