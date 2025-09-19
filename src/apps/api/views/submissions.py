@@ -19,7 +19,7 @@ from django.http import StreamingHttpResponse
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer,SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
@@ -353,6 +353,8 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
+        # logger.warning("Starting download Many.")
+
         pks = request.data.get('pks')
         if not pks:
             return Response({"error": "`pks` field is required"}, status=400)
@@ -361,16 +363,25 @@ class SubmissionViewSet(ModelViewSet):
         if not isinstance(pks, list):
             return Response({"error": "`pks` must be a list"}, status=400)
         
+
+
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
             "phase",
             "data"
-        )
-        # .only("id","owner", "data__data_file")
+        )#.only("id","owner", "data__data_file")
+
+        # logger.warning("Submissions fetch from DB.")
+
+
         # .prefetch_related("phase__competition__collaborators")
-        if submissions.count() != len(pks):
+
+        # .count()
+        if len(list(submissions))  != len(pks):
+        # if submissions.count()  != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
+
 
         # NH : should should create a function for this ?
         # Check permissions
@@ -394,13 +405,19 @@ class SubmissionViewSet(ModelViewSet):
             )
 
         files = []
+
+        # logger.warning("Submissions security passed")
+
+
+
         for sub in submissions:
             file_path = sub.data.data_file.name.split('/')[-1]
             short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
-
-            url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
+            # url = sub.data.data_file.url
+            url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
+            # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
             files.append({"name": short_name, "url": url})
-
+        
         return Response(files)
     
     @action(detail=True, methods=('GET',))

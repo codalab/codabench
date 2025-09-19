@@ -715,7 +715,6 @@
                 let completed = 0;
                 const failed = [];
 
-                // concurrency limit (tune this; 5-10 is usually a good start)
                 const limit = 5;
                 const queue = files.slice(); // clone
                 const running = [];
@@ -754,7 +753,6 @@
                         await Promise.race(running);
                     }
                 }
-                // wait for remaining ones
                 await Promise.all(running);
 
                 // Add failed.txt if necessary
