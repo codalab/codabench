@@ -386,8 +386,6 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
-        # logger.warning("Starting download Many.")
-
         pks = request.data.get('pks')
         if not pks:
             return Response({"error": "`pks` field is required"}, status=400)
@@ -405,12 +403,8 @@ class SubmissionViewSet(ModelViewSet):
             "data"
         )#.only("id","owner", "data__data_file")
 
-        # logger.warning("Submissions fetch from DB.")
-
-
         # .prefetch_related("phase__competition__collaborators")
 
-        # .count()
         if len(list(submissions))  != len(pks):
         # if submissions.count()  != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
@@ -438,10 +432,6 @@ class SubmissionViewSet(ModelViewSet):
             )
 
         files = []
-
-        # logger.warning("Submissions security passed")
-
-
 
         for sub in submissions:
             file_path = sub.data.data_file.name.split('/')[-1]

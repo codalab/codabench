@@ -135,17 +135,6 @@ CODALAB.api = {
         );
     },
         
-    // download_many_submissions: function (pks) {
-    //     return CODALAB.api.request('POST', `${URLS.API}submissions/download_many/`, {
-    //     body: JSON.stringify({ pks: pks }),
-    //     headers: {
-    //         "Content-Type": "application/json"
-    //     }
-    // });
-        // const params = new URLSearchParams({ pks: JSON.stringify(pks) });
-        // const url = `${URLS.API}submissions/download_many/?${params}`;
-        // return CODALAB.api.request('GET', url)
-    // },
     /*---------------------------------------------------------------------
          Leaderboards
     ---------------------------------------------------------------------*/
