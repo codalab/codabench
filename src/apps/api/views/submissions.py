@@ -382,17 +382,9 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
-    # @action(detail=False, methods=['get'])
-    # def download_many(self, request):
-    #     """
-    #     Download a ZIP containing several submissions.
-    #     """
-    #     pks = request.query_params.get('pks')
-    #     if pks:
-    #         pks = json.loads(pks)  # Convert JSON string to list
-    #     else:
-    #         return Response({"error": "`pks` query parameter is required"}, status=400)
-    @action(detail=False, methods=['POST'])
+
+
+    @action(detail=False, methods=('POST',))
     def download_many(self, request):
         pks = request.data.get('pks')
         if not pks:

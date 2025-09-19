@@ -575,22 +575,139 @@
             CODALAB.events.trigger('submission_clicked')
         }
         
-        
+
+        // self.bulk_download = function () {
+        //     const statusBox = document.getElementById('downloadStatus');
+        //     const progressEl = document.getElementById('downloadProgress');
+        //     const textEl = document.getElementById('progressText');
+
+        //     statusBox.style.display = "flex";
+        //     // statusBox.style.display = "inline";
+
+            
+        //     progressEl.style.display="flex";
+        //     progressEl.value = 0;
+        //     textEl.textContent = "Preparing download...";
+
+        //     console.log("Files returned by server:", files);
+
+
+        //     CODALAB.api.download_many_submissions(self.checked_submissions)
+        //     .done( async function(files) {
+        //     // .done( function(files) {
+        //         console.log("Files returned by server:", files);
+
+        //         const zip = new JSZip();
+        //         const total = files.length;
+        //         let completed = 0;
+        //         const failed = [];
+
+        //         const fetchFiles = files.map(async file => {
+        //         try {
+        //             const response = await fetch(file.url);
+
+        //             if (!response.ok) {
+        //             throw new Error(`HTTP ${response.status}`);
+        //             }
+
+        //             const blob = await response.blob();
+
+        //             zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+        //         } catch (err) {
+        //             console.error(`Failed to fetch ${file.name}:`, err);
+        //             failed.push(file.name);
+        //         } finally {
+        //             // Update progress regardless of success/failure
+        //             completed++;
+        //             const percent = Math.floor((completed / total) * 100);
+        //             progressEl.value = percent;
+        //             textEl.textContent = `${completed} / ${total} files (${percent}%)`;
+        //         }
+        //         });
+
+        //         Promise.allSettled(fetchFiles).then(() => {
+        //         // If some files failed, include them as failed.txt inside the zip
+        //         if (failed.length > 0) {
+        //             const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
+        //             zip.file("failed.txt", failedContent);
+        //         }
+                
+
+        //         textEl.textContent = "Generating bundle";
+        //         progressEl.style.display = "none";
+
+        //         zip.generateAsync({ type: "blob" }).then(blob => {
+        //             const link = document.createElement("a");
+        //             link.href = URL.createObjectURL(blob);
+        //             link.download = "bulk_submissions.zip";
+        //             document.body.appendChild(link);
+        //             link.click();
+        //             document.body.removeChild(link);
+
+        //             if (failed.length > 0) {
+        //             textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
+        //             } else {
+        //             textEl.textContent = "Download ready!";
+        //             }
+
+        //             setTimeout(() => {
+        //             statusBox.style.display = "none";
+        //             }, 5000);
+        //         });
+        //         });
+        //     })
+        //     .fail(function(err) {
+        //         console.error("Error downloading submissions:", err);
+        //         textEl.textContent = "Error downloading!";
+        //     });
+        // };
+
         self.bulk_download = function () {
             const statusBox = document.getElementById('downloadStatus');
             const progressEl = document.getElementById('downloadProgress');
             const textEl = document.getElementById('progressText');
 
             statusBox.style.display = "flex";
-            // statusBox.style.display = "inline";
-
-            
-            progressEl.style.display="flex";
+            progressEl.style.display = "flex";
             progressEl.value = 0;
             textEl.textContent = "Preparing download...";
 
-            CODALAB.api.download_many_submissions(self.checked_submissions)
-            .done(function(files) {
+            // Kick the API request
+            const req = CODALAB.api.download_many_submissions(self.checked_submissions);
+
+            // Common error handler
+            const handleError = (err) => {
+                console.error("Error downloading submissions:", err);
+                textEl.textContent = "Error downloading!";
+                setTimeout(() => { statusBox.style.display = "none"; }, 5000);
+            };
+
+            // Success handler (async because we await inside)
+            const handleSuccess = async (resp) => {
+                // Normalize response -> files array
+                let files = resp;
+                if (resp && typeof resp === 'object' && !Array.isArray(resp)) {
+                // common shapes: { files: [...] } or { data: [...] } or direct array
+                if (Array.isArray(resp.files)) files = resp.files;
+                else if (Array.isArray(resp.data)) files = resp.data;
+                else if (Array.isArray(resp.results)) files = resp.results;
+                else if (Array.isArray(resp)) files = resp;
+                else {
+                    // if jQuery passes multiple args (data, textStatus, jqXHR), pick the first arg
+                    if (arguments && arguments[0] && Array.isArray(arguments[0])) files = arguments[0];
+                    else {
+                    console.warn("Unexpected response shape from download_many_submissions:", resp);
+                    files = [];
+                    }
+                }
+                }
+
+                if (!Array.isArray(files) || files.length === 0) {
+                textEl.textContent = "No files to download";
+                setTimeout(() => { statusBox.style.display = "none"; }, 3000);
+                return;
+                }
+
                 console.log("Files returned by server:", files);
 
                 const zip = new JSZip();
@@ -598,109 +715,90 @@
                 let completed = 0;
                 const failed = [];
 
-                const fetchFiles = files.map(async file => {
+                // concurrency limit (tune this; 5-10 is usually a good start)
+                const limit = 5;
+                const queue = files.slice(); // clone
+                const running = [];
+
+                // worker to fetch one file
+                async function worker(file) {
                 try {
                     const response = await fetch(file.url);
-
-                    if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                    }
-
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const blob = await response.blob();
-
-                    zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
+                    zip.file(file.name.replace(/[:/\\]/g, "_"), blob);
                 } catch (err) {
                     console.error(`Failed to fetch ${file.name}:`, err);
-                    failed.push(file.name);
+                    failed.push(`${file.name} (${err.message || 'fetch error'})`);
                 } finally {
-                    // Update progress regardless of success/failure
                     completed++;
                     const percent = Math.floor((completed / total) * 100);
                     progressEl.value = percent;
                     textEl.textContent = `${completed} / ${total} files (${percent}%)`;
                 }
-                });
+                }
 
-                Promise.allSettled(fetchFiles).then(() => {
-                // If some files failed, include them as failed.txt inside the zip
+                // run queue with limited concurrency
+                while (queue.length > 0) {
+                    while (running.length < limit && queue.length > 0) {
+                        const file = queue.shift();
+                        const p = worker(file).then(() => {
+                        // remove finished promise from running
+                        const idx = running.indexOf(p);
+                        if (idx !== -1) running.splice(idx, 1);
+                        });
+                        running.push(p);
+                    }
+                    // Wait for at least one running promise to finish
+                    if (running.length > 0) {
+                        await Promise.race(running);
+                    }
+                }
+                // wait for remaining ones
+                await Promise.all(running);
+
+                // Add failed.txt if necessary
                 if (failed.length > 0) {
-                    const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
-                    zip.file("failed.txt", failedContent);
+                const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
+                zip.file("failed.txt", failedContent);
                 }
 
                 textEl.textContent = "Generating bundle";
                 progressEl.style.display = "none";
 
-                zip.generateAsync({ type: "blob" }).then(blob => {
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.download = "bulk_submissions.zip";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                const blob = await zip.generateAsync({ type: "blob" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "bulk_submissions.zip";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
 
-                    if (failed.length > 0) {
-                    textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
-                    } else {
-                    textEl.textContent = "Download ready!";
-                    }
+                if (failed.length > 0) {
+                textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
+                } else {
+                textEl.textContent = "Download ready!";
+                }
 
-                    setTimeout(() => {
-                    statusBox.style.display = "none";
-                    }, 5000);
-                });
-                });
-            })
-            .fail(function(err) {
-                console.error("Error downloading submissions:", err);
-                textEl.textContent = "Error downloading!";
-            });
+                setTimeout(() => { statusBox.style.display = "none"; }, 5000);
+            };
 
-            // CODALAB.api.download_many_submissions(self.checked_submissions)
-            //     .done(function(files) {
-            //         console.log("Files returned by server:", files);
-
-            //         const zip = new JSZip();
-            //         const total = files.length;
-            //         let completed = 0;
-
-            //         const fetchFiles = files.map(async file => {
-            //             const response = await fetch(file.url);
-            //             const blob = await response.blob();
-
-            //             zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
-
-            //             // Update progress
-            //             completed++;
-            //             const percent = Math.floor((completed / total) * 100);
-            //             progressEl.value = percent;
-            //             // progressBar.progress({ percent: percent });
-            //             textEl.textContent = `${completed} / ${total} files (${percent}%)`;
-            //         });
-
-            //         Promise.all(fetchFiles).then(() => {
-            //             textEl.textContent = "Generating bundle";
-            //             progressEl.style.display="none";
-                        
-            //             zip.generateAsync({ type: 'blob' }).then(blob => {
-            //                 const link = document.createElement('a');
-            //                 link.href = URL.createObjectURL(blob);
-            //                 link.download = 'bulk_submissions.zip';
-            //                 document.body.appendChild(link);
-            //                 link.click();
-            //                 document.body.removeChild(link);
-
-            //                 textEl.textContent = "Download ready!";
-            //                 setTimeout(() => {
-            //                     statusBox.style.display = "none";
-            //                 }, 3000);
-            //             });
-            //         });
-            //     })
-            //     .fail(function(err) {
-            //         console.error("Error downloading submissions:", err);
-            //         textEl.textContent = "Error downloading!";
-            //     });
+            // Support both jQuery jqXHR (.done/.fail) and native Promise (.then/.catch)
+            if (req && typeof req.done === "function") {
+                // jQuery-style
+                req.done(function() { 
+                // jQuery passes (data, textStatus, jqXHR)
+                // forward only the first argument to our handler
+                const args = Array.from(arguments);
+                handleSuccess(args[0]);
+                }).fail(handleError);
+            } else if (req && typeof req.then === "function") {
+                // native Promise
+                req.then(handleSuccess).catch(handleError);
+            } else {
+                console.error("download_many_submissions returned non-promise/non-jqXHR:", req);
+                handleError(new Error("Invalid request return type"));
+            }
         };
 
         self.submission_handling = function () {
