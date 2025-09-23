@@ -14,11 +14,10 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
-from django.http import StreamingHttpResponse
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer,SubmissionDetailSerializer
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
@@ -382,8 +381,6 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
-
-
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
         pks = request.data.get('pks')
@@ -393,24 +390,18 @@ class SubmissionViewSet(ModelViewSet):
         # pks is already parsed as a list if JSON was sent properly
         if not isinstance(pks, list):
             return Response({"error": "`pks` must be a list"}, status=400)
-        
-
 
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
             "phase",
             "data"
-        )#.only("id","owner", "data__data_file")
+        )
 
-        # .prefetch_related("phase__competition__collaborators")
-
-        if len(list(submissions))  != len(pks):
-        # if submissions.count()  != len(pks):
+        if len(list(submissions)) != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
-
-        # NH : should should create a function for this ?
+        # Nicolas Homberg : should create a function for this ?
         # Check permissions
         if not request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to download submissions")
@@ -440,9 +431,9 @@ class SubmissionViewSet(ModelViewSet):
             url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
             # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
             files.append({"name": short_name, "url": url})
-        
+
         return Response(files)
-    
+
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
