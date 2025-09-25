@@ -43,7 +43,7 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
-    'drf_yasg',
+    'drf_yasg2',
     'redis',
 )
 OUR_APPS = (
@@ -158,7 +158,7 @@ SOCIAL_AUTH_USER_MODEL = 'profiles.User'
 # =============================================================================
 # Debugging
 # =============================================================================
-DEBUG = os.environ.get("DEBUG", False)
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 # =============================================================================
 # Database
@@ -320,13 +320,17 @@ LOGGING = {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
         },
+        'channels': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
 # =============================================================================
 # Channels
 # =============================================================================
-ASGI_APPLICATION = "routing.application"
+ASGI_APPLICATION = "asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {

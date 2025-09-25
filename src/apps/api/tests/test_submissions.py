@@ -554,6 +554,7 @@ class SubmissionSoftDeletionTest(APITestCase):
         self.leaderboard = LeaderboardFactory()
         self.comp = CompetitionFactory(created_by=self.creator)
         self.phase = PhaseFactory(competition=self.comp)
+        self.organization = OrganizationFactory()
 
         # Approved participant
         CompetitionParticipantFactory(user=self.participant, competition=self.comp, status=CompetitionParticipant.APPROVED)
@@ -589,6 +590,15 @@ class SubmissionSoftDeletionTest(APITestCase):
             status=Submission.FINISHED,
             is_soft_deleted=True,
             leaderboard=None
+        )
+
+        self.organization_submission = SubmissionFactory(
+            phase=self.phase,
+            owner=self.participant,
+            status=Submission.FINISHED,
+            is_soft_deleted=False,
+            leaderboard=None,
+            organization=self.organization
         )
 
     def test_cannot_delete_submission_if_not_owner(self):
@@ -639,3 +649,17 @@ class SubmissionSoftDeletionTest(APITestCase):
         # Refresh from DB to verify
         self.submission.refresh_from_db()
         assert self.submission.is_soft_deleted is True
+
+    def test_organization_is_removed_from_soft_deleted_submission(self):
+        """Ensure a organization reference is removed from soft-deleted submission"""
+        self.client.login(username="participant", password="participant")
+        url = reverse("submission-soft-delete", args=[self.organization_submission.pk])
+        resp = self.client.delete(url)
+
+        assert resp.status_code == 200
+        assert resp.data["message"] == "Submission deleted successfully"
+
+        # Refresh from DB to verify
+        self.organization_submission.refresh_from_db()
+        assert self.organization_submission.is_soft_deleted is True
+        assert self.organization_submission.organization is None

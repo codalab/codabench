@@ -28,13 +28,12 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=4></th>
+            <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
-            <th>Entries</th>
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
@@ -83,7 +82,6 @@
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td>{submission.num_entries}</td>
             <td>{ pretty_date(submission.created_when) }</td>
             <td>{submission.id}</td>
             <td each="{ column in filtered_columns }">
@@ -256,10 +254,10 @@
             color #8c8c8c
         .index-column
             min-width 55px
-        .leaderboard-title
-            position absolute
-            left 50%
-            transform translate(-50%, 50%)
+        .leaderboard-title 
+            position: absolute
+            left: 50%
+            transform: translate(-50%, -50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
         .eye-icon-link

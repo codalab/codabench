@@ -576,6 +576,7 @@ class Submission(ChaHubSaveMixin, models.Model):
         """
         Soft delete the submission: remove files but keep record in DB.
         Also deletes associated SubmissionDetails and cleans up storage.
+        Also removes organization reference from the submission
         """
 
         # Remove related files from storage
@@ -599,6 +600,9 @@ class Submission(ChaHubSaveMixin, models.Model):
 
         # Clear the data field for this submission
         self.data = None
+
+        # Clear the organization field for this submission
+        self.organization = None
 
         # Mark submission as deleted
         self.is_soft_deleted = True

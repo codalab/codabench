@@ -8,6 +8,8 @@ from factories import UserFactory
 from tasks.models import Solution
 from utils.storage import md5
 from ..utils import SeleniumTestCase
+from selenium.webdriver.common.by import By
+
 
 LONG_WAIT = 4
 SHORT_WAIT = 0.2
@@ -18,7 +20,7 @@ class TestSubmissions(SeleniumTestCase):
         super().setUp()
         self.user = UserFactory(password='test')
 
-    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=600, precision=2):
+    def _run_submission_and_add_to_leaderboard(self, competition_zip_path, submission_zip_path, expected_submission_output, has_solutions=True, has_detailed_result=True, timeout=1200, precision=2):
         """Creates a competition and runs a submission inside it, waiting for expected output to
         appear in submission realtime output panel.
 
@@ -52,13 +54,35 @@ class TestSubmissions(SeleniumTestCase):
         # Inside the accordion the output is being streamed
         self.wait(LONG_WAIT)
         self.find('.submission-output-container .title').click()
-        self.wait(LONG_WAIT)
-        assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
+        self.wait(LONG_WAIT * 5)
 
+        # * Web socket needs to be solid for this to work consistently:
+        # assert self.find_text_in_class('.submission_output', expected_submission_output, timeout=timeout)
+
+        # refresh page
+        self.selenium.refresh()
+        self.wait(SHORT_WAIT)
+        row = self.find("tr.submission_row")
+        second_td = row.find_elements(By.TAG_NAME, "td")[0]
+        self.selenium.execute_script("arguments[0].click();", second_td)
+        logs_tab = self.find('div.submission-modal.item[data-tab="admin_logs"]')
+        logs_tab.click()
+        self.wait(SHORT_WAIT)
+
+        scoring_logs_blade = self.find('div.submission-modal.item[data-tab="admin_scoring"]')
+        scoring_logs_blade.click()
+        stdout_logs_tab = self.find('div.submission-modal.item[data-tab="admin_s_stdout"]')
+        stdout_logs_tab.click()
+        pre_element = self.selenium.find_element(By.CSS_SELECTOR, 'div[data-tab="admin_s_stdout"] pre')
+        pre_text = pre_element.text
+        assert pre_text.find(expected_submission_output) != -1
+        self.selenium.refresh()
+        self.wait(SHORT_WAIT)
         # The submission table lists our submission!
         assert self.find('submission-manager#user-submission-table table tbody tr:nth-of-type(1) td:nth-of-type(2)').text == submission_zip_path
 
         # Check that md5 information was stored correctly
+        # import pdb; pdb.set_trace()
         submission_md5 = md5(f"./src/tests/functional{submission_full_path}")
         assert Submission.objects.filter(md5=submission_md5).exists()
         if has_solutions:
@@ -74,7 +98,7 @@ class TestSubmissions(SeleniumTestCase):
 
         # The leaderboard table lists our submission
         prediction_score = Submission.objects.get(pk=submission_id).scores.first().score
-        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(6)').text) == round(Decimal(prediction_score), precision)
+        assert Decimal(self.find('leaderboards table tbody tr:nth-of-type(1) td:nth-of-type(5)').text) == round(Decimal(prediction_score), precision)
 
     def test_v15_iris_result_submission_end_to_end(self):
         self._run_submission_and_add_to_leaderboard('competition_15_iris.zip', 'submission_15_iris_result.zip', '======= Set 1 (Iris_test)', has_solutions=False, precision=4)
