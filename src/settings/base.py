@@ -22,6 +22,9 @@ SITE_ID = 1
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+
+
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
     'ajax_select',  # For django_su

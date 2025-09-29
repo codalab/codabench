@@ -15,7 +15,7 @@ social-auth-core = "^4.1.0"
 social-auth-app-django = "^5.0.0"
 six = "1.16.0"
 django-extensions = "^3.2"
-channels = ">=4.0.0"
+channels = "4.2.0"
 channels-redis = "4.0.0"
 django-extra-fields = "0.9"
 pillow = "10.3.0"
@@ -72,7 +72,7 @@ coreapi = "^2.3.3"
 daphne = "^4.0.0"
 loguru = "^0.7.3"
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "settings"  # Just "settings" since pytest will be running from src/
+DJANGO_SETTINGS_MODULE = "settings.develop"  # Just "settings" since pytest will be running from src/
 pythonpath = [".", "src", "src/apps"]
 testpaths = ["src"]  # Tell pytest to look for tests in src/
 addopts = "-v --tb=short --reuse-db"
