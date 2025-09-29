@@ -17,19 +17,19 @@
       </div>
       
       <!-- Name -->
-      <div class="field">
+      <div class="field required">
         <label>Name</label>
         <input id="dataset-name" type="text" name="name" ref="name" required placeholder="Enter dataset name" error="{errors.name}">
       </div>
 
       <!-- Description -->
-      <div class="field">
+      <div class="field required">
         <label>Description</label>
         <textarea id="dataset-description" name="description" ref="description" rows="4" required placeholder="Enter a description..." error="{errors.description}"></textarea>
       </div>
 
       <!-- Dataset Type -->
-      <div class="field">
+      <div class="field required">
         <label>Type</label>
         <select id="dataset-type" class="ui dropdown" name="type" ref="type" required error="{errors.type}"> 
           <option value="public_data" selected>Public Data</option>
@@ -41,8 +41,21 @@
         </p>
       </div>
 
-      <!-- Dataset License -->
+      <!-- Dataset Public -->
       <div class="field">
+        <label>Make Public</label>
+        <div class="ui checkbox">
+          <input type="checkbox" id="dataset-public" name="is_public" ref="is_public">
+          <label for="dataset-public">List on Public Datasets page</label>
+        </div>
+        <p class="form-note">
+          NOTE: Only datasets that are marked `public` are listed on the Public Datasets.
+        </p>
+      </div>
+
+
+      <!-- Dataset License -->
+      <div class="field required">
         <label>License</label>
         <select id="dataset-license" class="ui dropdown" name="license" ref="license" onchange="{on_license_change}" error="{errors.license}">
           <option value="">Select a License</option>
@@ -69,7 +82,7 @@
       </div>
 
       <!-- File Upload -->
-      <div class="field">
+      <div class="field required">
         <label>Attach Dataset File (.zip only)</label>
         <input-file name="data_file" ref="data_file" error="{errors.data_file}" accept=".zip" required></input-file>
       </div>
@@ -132,8 +145,12 @@
       
       // Get form data
       var metadata = get_form_data(self.refs.form)
+
       // Remove data_file from form data (we don't want to send the file in the meta-data)
       delete metadata.data_file
+
+      // Set is_public filed from the checkbox value
+      metadata.is_public = self.refs.is_public.checked
 
       // Get data_file
       var data_file = self.refs.data_file.refs.file_input.files[0]
