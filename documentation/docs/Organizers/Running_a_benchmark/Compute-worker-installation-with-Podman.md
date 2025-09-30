@@ -106,6 +106,10 @@ podman run --rm -it \
 ```
 The result should show as same as the command `nvidia-smi` above.
 
+You will also need to add this line in your `.env` file:
+```bash
+USE_GPU=True
+```
 
 ## Compute worker installation 
 
