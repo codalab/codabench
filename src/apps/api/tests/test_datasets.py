@@ -215,6 +215,8 @@ class DatasetCreateTests(APITestCase):
         fake_sassy_url = "https://codabench-storage/dataset.zip"
         mock_make_url_sassy.return_value = fake_sassy_url
 
+        
+        # Case 1: Without is_public (should default to False)
         resp = self.client.post(reverse("data-list"), {
             'name': 'my-new-dataset',
             'type': Data.PUBLIC_DATA,
@@ -228,6 +230,22 @@ class DatasetCreateTests(APITestCase):
 
         dataset = Data.objects.get(name="my-new-dataset")
         self.assertEqual(dataset.created_by, self.user)
+        self.assertFalse(dataset.is_public)
+        mock_make_url_sassy.assert_called_once_with(dataset.data_file.name, 'w')
+
+        # Case 2: With is_public=True
+        mock_make_url_sassy.reset_mock()
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'my-public-dataset',
+            'type': Data.PUBLIC_DATA,
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+            'file_size': 1234,
+            'file_name': faker.file_name(),
+            'is_public': True
+        })
+        self.assertEqual(resp.status_code, 201)
+        dataset = Data.objects.get(name="my-public-dataset")
+        self.assertTrue(dataset.is_public)
         mock_make_url_sassy.assert_called_once_with(dataset.data_file.name, 'w')
 
     def test_cannot_create_dataset_with_missing_fields(self):
