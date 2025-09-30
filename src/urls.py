@@ -10,7 +10,6 @@ from ajax_select import urls as ajax_select_urls
 urlpatterns = [
     # Our URLS
     path('', include('pages.urls', namespace='pages')),
-    path('management/', include('management.urls', namespace='management')),
     path('competitions/', include('competitions.urls', namespace='competitions')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
     path('datasets/', include('datasets.urls', namespace='datasets')),
