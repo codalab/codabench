@@ -203,3 +203,89 @@ class DatasetDownloadTests(TestCase):
 
         # Should return 404 (access denied)
         self.assertEqual(response.status_code, 404)
+
+
+class DatasetCreateTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username='creator', password='creator')
+        self.client.login(username='creator', password='creator')
+
+    @patch("api.views.datasets.make_url_sassy")  # Replaces the real `make_url_sassy` function in this test only
+    def test_create_dataset_success(self, mock_make_url_sassy):
+        fake_sassy_url = "https://codabench-storage/dataset.zip"
+        mock_make_url_sassy.return_value = fake_sassy_url
+
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'my-new-dataset',
+            'type': Data.PUBLIC_DATA,
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+            'file_size': 1234,
+            'file_name': faker.file_name(),
+        })
+        self.assertEqual(resp.status_code, 201)
+        self.assertIn("key", resp.data)
+        self.assertEqual(resp.data["sassy_url"], fake_sassy_url)
+
+        dataset = Data.objects.get(name="my-new-dataset")
+        self.assertEqual(dataset.created_by, self.user)
+        mock_make_url_sassy.assert_called_once_with(dataset.data_file.name, 'w')
+
+    def test_cannot_create_dataset_with_missing_fields(self):
+
+        # missing file_size
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'incomplete-dataset',
+            'file_name': faker.file_name(),
+            'type': Data.PUBLIC_DATA,
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("file_size", resp.data)
+        self.assertEqual(resp.data["file_size"], "This field is required.")
+
+        # missing request_sassy_file_name
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'incomplete-dataset',
+            'file_name': faker.file_name(),
+            'type': Data.PUBLIC_DATA,
+            'file_size': 1234,
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("request_sassy_file_name", resp.data)
+        self.assertEqual(resp.data["request_sassy_file_name"][0], "This field is required.")
+
+        # missing type
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'incomplete-dataset',
+            'file_name': faker.file_name(),
+            'file_size': 1234,
+            'request_sassy_file_name': faker.file_name(extension='.zip'),
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("type", resp.data)
+        self.assertEqual(resp.data["type"][0], "This field is required.")
+
+    def test_cannot_create_dataset_with_invalid_file_size(self):
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'invalid-size-dataset',
+            'file_name': faker.file_name(),
+            'type': Data.PUBLIC_DATA,
+            'request_sassy_file_name': faker.file_name(),
+            'file_size': "not-a-number",  # invalid type
+        })
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("file_size", resp.data)
+        self.assertEqual(resp.data["file_size"][0], "A valid number is required.")
+
+    def test_cannot_create_dataset_unauthenticated(self):
+        self.client.logout()
+        resp = self.client.post(reverse("data-list"), {
+            'name': 'unauth-dataset',
+            'file_name': faker.file_name(),
+            'type': Data.PUBLIC_DATA,
+            'request_sassy_file_name': faker.file_name(),
+            'file_size': 1234,
+        })
+        self.assertEqual(resp.status_code, 403)

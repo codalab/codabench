@@ -102,11 +102,22 @@ class DataViewSet(ModelViewSet):
         return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
+        # Check required field
+        if not request.data.get("file_size"):
+            return Response({"file_size": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+        # Check file_size is float
+        try:
+            file_size = float(request.data.get('file_size', 0))
+        except (TypeError, ValueError):
+            return Response(
+                {"file_size": ["A valid number is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Check User quota
         storage_used = float(request.user.get_used_storage_space())
         quota = float(request.user.quota)
         quota = gb_to_bytes(quota)
-        file_size = float(request.data['file_size'])
         if storage_used + file_size > quota:
             available_space = quota - storage_used
             available_space = pretty_bytes(available_space, return_0_for_invalid=True)
