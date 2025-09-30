@@ -215,7 +215,6 @@ class DatasetCreateTests(APITestCase):
         fake_sassy_url = "https://codabench-storage/dataset.zip"
         mock_make_url_sassy.return_value = fake_sassy_url
 
-        
         # Case 1: Without is_public (should default to False)
         resp = self.client.post(reverse("data-list"), {
             'name': 'my-new-dataset',
