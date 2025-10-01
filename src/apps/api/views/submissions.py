@@ -186,6 +186,28 @@ class SubmissionViewSet(ModelViewSet):
 
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+    def check_submission_permissions(self,request,submissions):
+        # Check permissions
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to download submissions")
+        # Allow admins
+        if request.user.is_superuser or request.user.is_staff:
+            allowed = True
+        else:
+            # Build one Q object for "owner OR organizer"
+            organiser_q = (
+                Q(phase__competition__created_by=request.user) |
+                Q(phase__competition__collaborators=request.user)
+            )
+            # Submissions that violate the rule
+            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
+            allowed = not disallowed.exists()
+        if not allowed:
+            raise PermissionDenied(
+                "You do not have permission to download one or more of the requested submissions"
+            )
 
     @action(detail=True, methods=('DELETE',))
     def soft_delete(self, request, pk):
@@ -350,7 +372,7 @@ class SubmissionViewSet(ModelViewSet):
         return Response({})
 
 
-
+#todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
         pks = request.data.get('pks')
@@ -361,52 +383,96 @@ class SubmissionViewSet(ModelViewSet):
         if not isinstance(pks, list):
             return Response({"error": "`pks` must be a list"}, status=400)
         
-
-
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
             "phase",
             "data"
-        )#.only("id","owner", "data__data_file")
-
-        # .prefetch_related("phase__competition__collaborators")
+        )
 
         if len(list(submissions))  != len(pks):
-        # if submissions.count()  != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
-
-        # NH : should should create a function for this ?
-        # Check permissions
-        if not request.user.is_authenticated:
-            raise PermissionDenied("You must be logged in to download submissions")
-        # Allow admins
-        if request.user.is_superuser or request.user.is_staff:
-            allowed = True
-        else:
-            # Build one Q object for "owner OR organizer"
-            organiser_q = (
-                Q(phase__competition__created_by=request.user) |
-                Q(phase__competition__collaborators=request.user)
-            )
-            # Submissions that violate the rule
-            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
-            allowed = not disallowed.exists()
-        if not allowed:
-            raise PermissionDenied(
-                "You do not have permission to download one or more of the requested submissions"
-            )
+        self.check_submission_permissions(request,submissions) 
 
         files = []
 
         for sub in submissions:
             file_path = sub.data.data_file.name.split('/')[-1]
-            short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            short_name = f"sub_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
             # url = sub.data.data_file.url
             url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
             # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
             files.append({"name": short_name, "url": url})
+        
+        return Response(files)
+    
+    @action(detail=False, methods=('POST',))
+    def download_many_prediction(self, request):
+        logger.warning("Download Many Preds.")
+
+        pks = request.data.get('pks')
+        if not pks:
+            return Response({"error": "`pks` field is required"}, status=400)
+
+        if not isinstance(pks, list):
+            return Response({"error": "`pks` must be a list"}, status=400)
+        
+        submissions = Submission.objects.filter(pk__in=pks).select_related(
+            "owner",
+            "phase",
+            "data"
+        )
+
+        if len(list(submissions))  != len(pks):
+            return Response({"error": "One or more submission IDs are invalid"}, status=404)
+
+        self.check_submission_permissions(request,submissions) 
+
+        files = []
+        serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
+
+        for sub in submissions:
+            file_path = sub.data.data_file.name.split('/')[-1]
+            detailed_name = f"pred_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            prediction_url = serializer.get_prediction_result(sub)
+            files.append({"name": detailed_name, "url": prediction_url})
+        
+        return Response(files)
+
+    @action(detail=False, methods=('POST',))
+    def download_many_results(self, request):
+        logger.warning("Download Many Results.")
+
+        pks = request.data.get('pks')
+        if not pks:
+            return Response({"error": "`pks` field is required"}, status=400)
+
+        if not isinstance(pks, list):
+            return Response({"error": "`pks` must be a list"}, status=400)
+        
+        submissions = Submission.objects.filter(pk__in=pks).select_related(
+            "owner",
+            "phase",
+            "data"
+        )
+
+        if len(list(submissions))  != len(pks):
+            return Response({"error": "One or more submission IDs are invalid"}, status=404)
+
+        self.check_submission_permissions(request,submissions) 
+
+        files = []
+        serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
+
+
+        for sub in submissions:
+            file_path = sub.data.data_file.name.split('/')[-1]
+            complete_name = f"res_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            result_url = serializer.get_scoring_result(sub)
+            #detailed results is already in the results zip file 
+            # detailed_result_url = serializer.get_scoring_result(sub)
+            files.append({"name": complete_name, "url": result_url})
         
         return Response(files)
     

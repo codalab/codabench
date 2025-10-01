@@ -17,7 +17,10 @@
             </a>
 
             <select class="ui dropdown" ref="submission_handling_operation">
-            <option value="download">Download selected submissions</option>
+            <option value="download">Download selected <b>submissions</b></option>
+            <option value="download_results">Download <b>results</b> of selected submissions</option>
+            <option value="download_prediction">Download <b>prediction</b> of selected submissions</option>
+            <!-- <option value="download">Download Score of selected submissions</option> -->
             <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
             </select>
@@ -574,95 +577,9 @@
                 .modal('show')
             CODALAB.events.trigger('submission_clicked')
         }
-        
 
-        // self.bulk_download = function () {
-        //     const statusBox = document.getElementById('downloadStatus');
-        //     const progressEl = document.getElementById('downloadProgress');
-        //     const textEl = document.getElementById('progressText');
-
-        //     statusBox.style.display = "flex";
-        //     // statusBox.style.display = "inline";
-
+        self.bulk_download = function(files_type) {
             
-        //     progressEl.style.display="flex";
-        //     progressEl.value = 0;
-        //     textEl.textContent = "Preparing download...";
-
-        //     console.log("Files returned by server:", files);
-
-
-        //     CODALAB.api.download_many_submissions(self.checked_submissions)
-        //     .done( async function(files) {
-        //     // .done( function(files) {
-        //         console.log("Files returned by server:", files);
-
-        //         const zip = new JSZip();
-        //         const total = files.length;
-        //         let completed = 0;
-        //         const failed = [];
-
-        //         const fetchFiles = files.map(async file => {
-        //         try {
-        //             const response = await fetch(file.url);
-
-        //             if (!response.ok) {
-        //             throw new Error(`HTTP ${response.status}`);
-        //             }
-
-        //             const blob = await response.blob();
-
-        //             zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
-        //         } catch (err) {
-        //             console.error(`Failed to fetch ${file.name}:`, err);
-        //             failed.push(file.name);
-        //         } finally {
-        //             // Update progress regardless of success/failure
-        //             completed++;
-        //             const percent = Math.floor((completed / total) * 100);
-        //             progressEl.value = percent;
-        //             textEl.textContent = `${completed} / ${total} files (${percent}%)`;
-        //         }
-        //         });
-
-        //         Promise.allSettled(fetchFiles).then(() => {
-        //         // If some files failed, include them as failed.txt inside the zip
-        //         if (failed.length > 0) {
-        //             const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
-        //             zip.file("failed.txt", failedContent);
-        //         }
-                
-
-        //         textEl.textContent = "Generating bundle";
-        //         progressEl.style.display = "none";
-
-        //         zip.generateAsync({ type: "blob" }).then(blob => {
-        //             const link = document.createElement("a");
-        //             link.href = URL.createObjectURL(blob);
-        //             link.download = "bulk_submissions.zip";
-        //             document.body.appendChild(link);
-        //             link.click();
-        //             document.body.removeChild(link);
-
-        //             if (failed.length > 0) {
-        //             textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
-        //             } else {
-        //             textEl.textContent = "Download ready!";
-        //             }
-
-        //             setTimeout(() => {
-        //             statusBox.style.display = "none";
-        //             }, 5000);
-        //         });
-        //         });
-        //     })
-        //     .fail(function(err) {
-        //         console.error("Error downloading submissions:", err);
-        //         textEl.textContent = "Error downloading!";
-        //     });
-        // };
-
-        self.bulk_download = function () {
             const statusBox = document.getElementById('downloadStatus');
             const progressEl = document.getElementById('downloadProgress');
             const textEl = document.getElementById('progressText');
@@ -672,8 +589,30 @@
             progressEl.value = 0;
             textEl.textContent = "Preparing download...";
 
-            // Kick the API request
-            const req = CODALAB.api.download_many_submissions(self.checked_submissions);
+            let req ; 
+            switch (files_type) {
+                case "submissions":
+                    // self.bulk_download("download")
+                    req = CODALAB.api.download_many_submissions(self.checked_submissions);
+
+                    break;
+                case "results":
+                    console.log("download_results")
+                    req = CODALAB.api.download_many_submissions_results(self.checked_submissions);
+
+                    // self.bulk_download_results("download_results")
+                    break;
+                case "predictions":
+                    console.log("download_prediction")
+                    req = CODALAB.api.download_many_submissions_prediction(self.checked_submissions);
+                    // self.bulk_download_prediction("download_prediction")
+                    break;
+                default:
+                    console.error("Default switch case in bulk function")
+                    return; 
+            }
+
+            // const req = CODALAB.api.download_many_submissions(self.checked_submissions);
 
             // Common error handler
             const handleError = (err) => {
@@ -767,7 +706,7 @@
                 const blob = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(blob);
-                link.download = "bulk_submissions.zip";
+                link.download = "bulk_" +files_type +".zip";
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -807,12 +746,18 @@
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
                     case "delete":
-                        // console.log("delete")
                         self.delete_selected_submissions()
                         break;
                     case "download":
-                        // console.log("download")
-                        self.bulk_download()
+                        self.bulk_download("submissions")
+                        break;
+                    case "download_results":
+                        console.log("download_results")
+                        self.bulk_download("results")
+                        break;
+                    case "download_prediction":
+                        console.log("download_prediction")
+                        self.bulk_download("predictions")
                         break;
                     case "rerun":
                         // console.log("rerun")
