@@ -372,7 +372,7 @@ class SubmissionViewSet(ModelViewSet):
         return Response({})
 
 
-#todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
+    #Todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
         pks = request.data.get('pks')
@@ -409,7 +409,6 @@ class SubmissionViewSet(ModelViewSet):
     
     @action(detail=False, methods=('POST',))
     def download_many_prediction(self, request):
-        logger.warning("Download Many Preds.")
 
         pks = request.data.get('pks')
         if not pks:
@@ -442,7 +441,6 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=False, methods=('POST',))
     def download_many_results(self, request):
-        logger.warning("Download Many Results.")
 
         pks = request.data.get('pks')
         if not pks:

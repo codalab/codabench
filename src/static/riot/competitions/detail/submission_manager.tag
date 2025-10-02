@@ -592,27 +592,18 @@
             let req ; 
             switch (files_type) {
                 case "submissions":
-                    // self.bulk_download("download")
                     req = CODALAB.api.download_many_submissions(self.checked_submissions);
-
                     break;
                 case "results":
-                    console.log("download_results")
                     req = CODALAB.api.download_many_submissions_results(self.checked_submissions);
-
-                    // self.bulk_download_results("download_results")
                     break;
                 case "predictions":
-                    console.log("download_prediction")
                     req = CODALAB.api.download_many_submissions_prediction(self.checked_submissions);
-                    // self.bulk_download_prediction("download_prediction")
                     break;
                 default:
                     console.error("Default switch case in bulk function")
                     return; 
             }
-
-            // const req = CODALAB.api.download_many_submissions(self.checked_submissions);
 
             // Common error handler
             const handleError = (err) => {
@@ -621,18 +612,15 @@
                 setTimeout(() => { statusBox.style.display = "none"; }, 5000);
             };
 
-            // Success handler (async because we await inside)
             const handleSuccess = async (resp) => {
                 // Normalize response -> files array
                 let files = resp;
                 if (resp && typeof resp === 'object' && !Array.isArray(resp)) {
-                // common shapes: { files: [...] } or { data: [...] } or direct array
                 if (Array.isArray(resp.files)) files = resp.files;
                 else if (Array.isArray(resp.data)) files = resp.data;
                 else if (Array.isArray(resp.results)) files = resp.results;
                 else if (Array.isArray(resp)) files = resp;
                 else {
-                    // if jQuery passes multiple args (data, textStatus, jqXHR), pick the first arg
                     if (arguments && arguments[0] && Array.isArray(arguments[0])) files = arguments[0];
                     else {
                     console.warn("Unexpected response shape from download_many_submissions:", resp);
@@ -647,7 +635,7 @@
                 return;
                 }
 
-                console.log("Files returned by server:", files);
+                // console.log("Files returned by server:", files);
 
                 const zip = new JSZip();
                 const total = files.length;
@@ -752,15 +740,12 @@
                         self.bulk_download("submissions")
                         break;
                     case "download_results":
-                        console.log("download_results")
                         self.bulk_download("results")
                         break;
                     case "download_prediction":
-                        console.log("download_prediction")
                         self.bulk_download("predictions")
                         break;
                     case "rerun":
-                        // console.log("rerun")
                         self.rerun_selected_submissions()
                         break
                     default:
