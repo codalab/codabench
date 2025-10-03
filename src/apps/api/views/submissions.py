@@ -432,11 +432,12 @@ class SubmissionViewSet(ModelViewSet):
         serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
 
         for sub in submissions:
+            if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED
+                continue
             file_path = sub.data.data_file.name.split('/')[-1]
             detailed_name = f"pred_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
             prediction_url = serializer.get_prediction_result(sub)
             files.append({"name": detailed_name, "url": prediction_url})
-        
         return Response(files)
 
     @action(detail=False, methods=('POST',))
@@ -465,10 +466,12 @@ class SubmissionViewSet(ModelViewSet):
 
 
         for sub in submissions:
+            if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED
+                continue
             file_path = sub.data.data_file.name.split('/')[-1]
             complete_name = f"res_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
             result_url = serializer.get_scoring_result(sub)
-            #detailed results is already in the results zip file 
+            #detailed results is already in the results zip file but For very large detailed results it could be helpfull to remove it. 
             # detailed_result_url = serializer.get_scoring_result(sub)
             files.append({"name": complete_name, "url": result_url})
         
