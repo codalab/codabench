@@ -20,10 +20,6 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
-from urllib.request import urlopen
-from contextlib import closing
-from urllib.error import ContentTooShortError
-
 from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase

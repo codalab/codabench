@@ -15,11 +15,10 @@ from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
-from django.http import StreamingHttpResponse
 
 from profiles.models import Organization, Membership
 from tasks.models import Task
-from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer,SubmissionDetailSerializer
+from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
@@ -404,7 +403,7 @@ class SubmissionViewSet(ModelViewSet):
             url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
             # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
             files.append({"name": short_name, "url": url})
-        
+
         return Response(files)
     
     @action(detail=False, methods=('POST',))
