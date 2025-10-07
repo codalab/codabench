@@ -29,6 +29,13 @@ sudo mkdir /codabench/data
 sudo chown -R $(id -u):$(id -g) /codabench
 ```
 
+You should also run the following command if you don't want the container to be shutdown when you log out of the user:
+```bash
+sudo loginctl enable-linger *username*
+```
+Make sure to use the username of the user running the podman container.
+
+
 ## For GPU compute worker VM
 
 You need to install nvidia packages supporting Podman and nvidia drivers:
