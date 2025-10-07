@@ -1,9 +1,11 @@
 Here is the specification for compute worker installation by using Podman. 
-## Requirements for host machine
+## Requirements for the host machine
 
 We need to install Podman on the VM. We use Debian based OS, like Ubuntu. Ubuntu is recommended, because it has better Nvidia driver support. 
 
 `sudo apt install podman `
+
+After installing Podman, you will need to launch the service associated to it with `systemctl --user enable --now podman`
 
 Then, configure where Podman will download the images: Podman will use Dockerhub by adding this line into `/etc/containers/registries.conf `:
 
@@ -19,12 +21,13 @@ BROKER_USE_SSL=True
 CONTAINER_ENGINE_EXECUTABLE=podman
 ```
 
-**Create user for running Podman container**
-```bash
-useradd worker
-```
+You will also need to create the `codabench` folder defined in the `.env` file, as well as change its permissions to the user that is running the compute worker.
 
-!!! note "In order to use podman later to launch the computer worker, you need to have logged out completely first from whatever user you were using and log in as "worker". If you fail to do so, your environment will likely store environment variables tied to the original user and launching podman will not work."
+```bash title="In your terminal"
+sudo mkdir /codabench
+sudo mkdir /codabench/data
+sudo chown -R $(id -u):$(id -g) /codabench
+```
 
 ## For GPU compute worker VM
 
@@ -103,6 +106,10 @@ podman run --rm -it \
 ```
 The result should show as same as the command `nvidia-smi` above.
 
+You will also need to add this line in your `.env` file:
+```bash
+USE_GPU=True
+```
 
 ## Compute worker installation 
 
@@ -112,14 +119,17 @@ Run the compute worker container :
 
 ```bash
 podman run -d \
-    --env-file .env \
-    --name compute_worker \
-    --security-opt="label=disable" \
-    --device /dev/fuse --user worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/codabench_worker_podman:0.1
+ --volume /run/user/$(id -u)/podman/podman.sock:/run/user/1000/podman/podman.sock:U \
+ --env-file .env \
+ --name compute_worker \
+ --security-opt="label=disable" \
+ --userns host \
+ --restart unless-stopped \
+ --log-opt max-size=50m \
+ --log-opt max-file=3 \
+ --cap-drop all \
+ --volume /codabench:/codabench:U,z \
+ codalab/codabench_worker_podman:latest 
 ```
 
 ### For GPU container
@@ -129,12 +139,17 @@ Run the GPU compute worker container
 ```bash
 podman run -d \
     --env-file .env \
-    --privileged \
+    --device nvidia.com/gpu=all \
     --name gpu_compute_worker \
-    --device /dev/fuse --user worker \
+    --device /dev/fuse \
     --security-opt="label=disable" \
     --restart unless-stopped \
     --log-opt max-size=50m \
     --log-opt max-file=3 \
-    codalab/codabench_worker_podman_gpu:0.2
+    --hostname ${HOSTNAME} \
+    --userns host \
+    --volume /home/codalab/worker/codabench:/codabench:z,U \
+    --cap-drop=all \
+    --volume /run/user/$(id -u)/podman/podman.sock:/run/user/1000/podman/podman.sock:U \
+    codalab/codabench_worker_podman_gpu:latest
 ```

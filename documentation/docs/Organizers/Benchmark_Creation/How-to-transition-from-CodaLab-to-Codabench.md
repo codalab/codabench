@@ -8,7 +8,7 @@
 
 - Live logs during submission processes
 - Storage quotas 
-- [Computation servers management](https://github.com/codalab/codabench/wiki/Server-status-page) for all users. 
+- [Computation servers management](../Running_a_benchmark/Server-status-page.md) for all users. 
 
 It also emphasizes on benchmarking, allowing dataset submissions and multiple leaderboard rows per user. Finally, future project development and maintenance will be focused on Codabench.
 
@@ -56,5 +56,5 @@ If you don’t have any previous competition, and want to learn how to create on
 
 ## Concluding remarks
 
-Codabench, the new version of the competition and benchmark platform CodaLab, was launched on August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Wiki](https://github.com/codalab/codabench/wiki/).
+Codabench, the new version of the competition and benchmark platform CodaLab, was launched on August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Wiki](https://wiki.codabench.org).
 
