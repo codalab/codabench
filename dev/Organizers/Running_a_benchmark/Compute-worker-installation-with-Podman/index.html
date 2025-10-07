@@ -29,7 +29,7 @@
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox">
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#requirements-for-host-machine">
+<a class="md-skip" href="#requirements-for-the-host-machine">
           Skip to content
         </a>
 </div>
@@ -337,7 +337,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench%3F/">
+<a class="md-nav__link" href="../../Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench/">
 <span class="md-ellipsis">
     How to Transition from Codalab to Codabench?
     
@@ -528,9 +528,9 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#requirements-for-host-machine">
+<a class="md-nav__link" href="#requirements-for-the-host-machine">
 <span class="md-ellipsis">
-      Requirements for host machine
+      Requirements for the host machine
     </span>
 </a>
 </li>
@@ -601,7 +601,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../Developers_and_Administrators/Codabench-Installation/">
 <span class="md-ellipsis">
-    Codabench Basic Installtion Guide
+    Codabench Basic Installation Guide
     
   </span>
 </a>
@@ -894,9 +894,9 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#requirements-for-host-machine">
+<a class="md-nav__link" href="#requirements-for-the-host-machine">
 <span class="md-ellipsis">
-      Requirements for host machine
+      Requirements for the host machine
     </span>
 </a>
 </li>
@@ -939,17 +939,18 @@
 </div>
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
-<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/documentation/docs/Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md" rel="edit" title="Edit this page">
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/edit/develop/documentation/docs/Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md" rel="edit" title="Edit this page">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
 </a>
-<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/documentation/docs/Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md" title="View source of this page">
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/raw/develop/documentation/docs/Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md" title="View source of this page">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
 </a>
 <h1>Compute Worker Management with Podman</h1>
 <p>Here is the specification for compute worker installation by using Podman. </p>
-<h2 id="requirements-for-host-machine">Requirements for host machine<a class="headerlink" href="#requirements-for-host-machine" title="Permanent link">¶</a></h2>
+<h2 id="requirements-for-the-host-machine">Requirements for the host machine<a class="headerlink" href="#requirements-for-the-host-machine" title="Permanent link">¶</a></h2>
 <p>We need to install Podman on the VM. We use Debian based OS, like Ubuntu. Ubuntu is recommended, because it has better Nvidia driver support. </p>
 <p><code>sudo apt install podman</code></p>
+<p>After installing Podman, you will need to launch the service associated to it with <code>systemctl --user enable --now podman</code></p>
 <p>Then, configure where Podman will download the images: Podman will use Dockerhub by adding this line into <code>/etc/containers/registries.conf</code>:</p>
 <p><code>unqualified-search-registries = ["docker.io"]</code></p>
 <p>Create the <code>.env</code> file in order to add the compute worker into a queue (here, the default queue is used. If you use a particular queue, then, fill in your BROKER_URL generated when creating this particular queue) : </p>
@@ -959,12 +960,11 @@
 </span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
 </span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">podman</span>
 </span></code></pre></div>
-<p><strong>Create user for running Podman container</strong>
-</p><div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>useradd<span class="w"> </span>worker
-</span></code></pre></div><p></p>
-<div class="admonition note">
-<p class="admonition-title">In order to use podman later to launch the computer worker, you need to have logged out completely first from whatever user you were using and log in as "worker". If you fail to do so, your environment will likely store environment variables tied to the original user and launching podman will not work.</p>
-</div>
+<p>You will also need to create the <code>codabench</code> folder defined in the <code>.env</code> file, as well as change its permissions to the user that is running the compute worker.</p>
+<div class="language-bash highlight"><span class="filename">In your terminal</span><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench
+</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench/data
+</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>sudo<span class="w"> </span>chown<span class="w"> </span>-R<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>:<span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span>/codabench
+</span></code></pre></div>
 <h2 id="for-gpu-compute-worker-vm">For GPU compute worker VM<a class="headerlink" href="#for-gpu-compute-worker-vm" title="Permanent link">¶</a></h2>
 <p>You need to install nvidia packages supporting Podman and nvidia drivers:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="nv">distribution</span><span class="o">=</span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="p">;</span><span class="nb">echo</span><span class="w"> </span><span class="nv">$ID$VERSION_ID</span><span class="k">)</span><span class="w"> </span><span class="se">\</span>
@@ -1024,31 +1024,42 @@
 </span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="w"> </span>nvidia/cuda:11.6.2-base-ubuntu20.04<span class="w"> </span>nvidia-smi
 </span></code></pre></div>
 The result should show as same as the command <code>nvidia-smi</code> above.<p></p>
+<p>You will also need to add this line in your <code>.env</code> file:
+</p><div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="nv">USE_GPU</span><span class="o">=</span>True
+</span></code></pre></div><p></p>
 <h2 id="compute-worker-installation">Compute worker installation<a class="headerlink" href="#compute-worker-installation" title="Permanent link">¶</a></h2>
 <h3 id="for-cpu-container">For CPU container<a class="headerlink" href="#for-cpu-container" title="Permanent link">¶</a></h3>
 <p>Run the compute worker container : </p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="w">    </span>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="w">    </span>--name<span class="w"> </span>compute_worker<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="w">    </span>--security-opt<span class="o">=</span><span class="s2">"label=disable"</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="w">    </span>--device<span class="w"> </span>/dev/fuse<span class="w"> </span>--user<span class="w"> </span>worker<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="w">    </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a><span class="w">    </span>codalab/codabench_worker_podman:0.1
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="w"> </span>--volume<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/podman/podman.sock:/run/user/1000/podman/podman.sock:U<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-3"><a href="#__codelineno-8-3" id="__codelineno-8-3" name="__codelineno-8-3"></a><span class="w"> </span>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-4"><a href="#__codelineno-8-4" id="__codelineno-8-4" name="__codelineno-8-4"></a><span class="w"> </span>--name<span class="w"> </span>compute_worker<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-5"><a href="#__codelineno-8-5" id="__codelineno-8-5" name="__codelineno-8-5"></a><span class="w"> </span>--security-opt<span class="o">=</span><span class="s2">"label=disable"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-6"><a href="#__codelineno-8-6" id="__codelineno-8-6" name="__codelineno-8-6"></a><span class="w"> </span>--userns<span class="w"> </span>host<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-7"><a href="#__codelineno-8-7" id="__codelineno-8-7" name="__codelineno-8-7"></a><span class="w"> </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-8"><a href="#__codelineno-8-8" id="__codelineno-8-8" name="__codelineno-8-8"></a><span class="w"> </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-9"><a href="#__codelineno-8-9" id="__codelineno-8-9" name="__codelineno-8-9"></a><span class="w"> </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-10"><a href="#__codelineno-8-10" id="__codelineno-8-10" name="__codelineno-8-10"></a><span class="w"> </span>--cap-drop<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-11"><a href="#__codelineno-8-11" id="__codelineno-8-11" name="__codelineno-8-11"></a><span class="w"> </span>--volume<span class="w"> </span>/codabench:/codabench:U,z<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-12"><a href="#__codelineno-8-12" id="__codelineno-8-12" name="__codelineno-8-12"></a><span class="w"> </span>codalab/codabench_worker_podman:latest<span class="w"> </span>
 </span></code></pre></div>
 <h3 id="for-gpu-container">For GPU container<a class="headerlink" href="#for-gpu-container" title="Permanent link">¶</a></h3>
 <p>Run the GPU compute worker container</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="w">    </span>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-3"><a href="#__codelineno-8-3" id="__codelineno-8-3" name="__codelineno-8-3"></a><span class="w">    </span>--privileged<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-4"><a href="#__codelineno-8-4" id="__codelineno-8-4" name="__codelineno-8-4"></a><span class="w">    </span>--name<span class="w"> </span>gpu_compute_worker<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-5"><a href="#__codelineno-8-5" id="__codelineno-8-5" name="__codelineno-8-5"></a><span class="w">    </span>--device<span class="w"> </span>/dev/fuse<span class="w"> </span>--user<span class="w"> </span>worker<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-6"><a href="#__codelineno-8-6" id="__codelineno-8-6" name="__codelineno-8-6"></a><span class="w">    </span>--security-opt<span class="o">=</span><span class="s2">"label=disable"</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-7"><a href="#__codelineno-8-7" id="__codelineno-8-7" name="__codelineno-8-7"></a><span class="w">    </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-8"><a href="#__codelineno-8-8" id="__codelineno-8-8" name="__codelineno-8-8"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-9"><a href="#__codelineno-8-9" id="__codelineno-8-9" name="__codelineno-8-9"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-10"><a href="#__codelineno-8-10" id="__codelineno-8-10" name="__codelineno-8-10"></a><span class="w">    </span>codalab/codabench_worker_podman_gpu:0.2
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a>podman<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="w">    </span>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="w">    </span>--device<span class="w"> </span>nvidia.com/gpu<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-4"><a href="#__codelineno-9-4" id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="w">    </span>--name<span class="w"> </span>gpu_compute_worker<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-5"><a href="#__codelineno-9-5" id="__codelineno-9-5" name="__codelineno-9-5"></a><span class="w">    </span>--device<span class="w"> </span>/dev/fuse<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-6"><a href="#__codelineno-9-6" id="__codelineno-9-6" name="__codelineno-9-6"></a><span class="w">    </span>--security-opt<span class="o">=</span><span class="s2">"label=disable"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-7"><a href="#__codelineno-9-7" id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="w">    </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-8"><a href="#__codelineno-9-8" id="__codelineno-9-8" name="__codelineno-9-8"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-9"><a href="#__codelineno-9-9" id="__codelineno-9-9" name="__codelineno-9-9"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-10"><a href="#__codelineno-9-10" id="__codelineno-9-10" name="__codelineno-9-10"></a><span class="w">    </span>--hostname<span class="w"> </span><span class="si">${</span><span class="nv">HOSTNAME</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-11"><a href="#__codelineno-9-11" id="__codelineno-9-11" name="__codelineno-9-11"></a><span class="w">    </span>--userns<span class="w"> </span>host<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-12"><a href="#__codelineno-9-12" id="__codelineno-9-12" name="__codelineno-9-12"></a><span class="w">    </span>--volume<span class="w"> </span>/home/codalab/worker/codabench:/codabench:z,U<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-13"><a href="#__codelineno-9-13" id="__codelineno-9-13" name="__codelineno-9-13"></a><span class="w">    </span>--cap-drop<span class="o">=</span>all<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-14"><a href="#__codelineno-9-14" id="__codelineno-9-14" name="__codelineno-9-14"></a><span class="w">    </span>--volume<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/podman/podman.sock:/run/user/1000/podman/podman.sock:U<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-15"><a href="#__codelineno-9-15" id="__codelineno-9-15" name="__codelineno-9-15"></a><span class="w">    </span>codalab/codabench_worker_podman_gpu:latest
 </span></code></pre></div>
 </article>
 </div>
