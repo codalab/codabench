@@ -4,8 +4,7 @@ from rest_framework.response import Response
 from datasets.models import Data
 from tasks.models import Task
 from competitions.models import Submission
-import logging
-logger = logging.getLogger()
+from loguru import logger
 
 
 @api_view(['GET'])

@@ -18,7 +18,7 @@ import os
 import datetime
 import coreapi
 import pytz
-import logging
+from loguru import logger
 
 
 User = get_user_model()
@@ -307,7 +307,6 @@ def get_orphan_files(request):
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    logger = logging.getLogger(__name__)
 
     # Find most recent file
     most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
@@ -344,7 +343,7 @@ def get_most_recent_storage_inconsistency_log_file():
     try:
         log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
     except FileNotFoundError:
-        logger.info(f"Folder '{log_folder}' does not exist.")
+        logger.error(f"Folder '{log_folder}' does not exist.")
         return None
 
     most_recent_log_file = None

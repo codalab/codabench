@@ -11,8 +11,7 @@ from django.utils.timezone import now
 
 from utils.storage import BundleStorage
 
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 @deconstructible

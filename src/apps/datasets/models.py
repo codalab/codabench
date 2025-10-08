@@ -1,6 +1,5 @@
 import uuid
 import botocore
-import logging
 
 import botocore.exceptions
 from django.conf import settings
@@ -17,7 +16,8 @@ from utils.storage import BundleStorage
 from competitions.models import Competition
 
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Data(ChaHubSaveMixin, models.Model):

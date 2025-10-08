@@ -1,5 +1,4 @@
 import json
-import logging
 import time
 
 from asgiref.sync import sync_to_async
@@ -12,8 +11,9 @@ from competitions.models import Submission
 from utils.data import make_url_sassy
 
 
-logger = logging.getLogger(__name__)
 
+import logging
+logger = logging.getLogger(__name__)
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
     #
@@ -89,7 +89,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
             await self.accept()
             logger.debug(f"WebSocket connected for user {self.scope['user'].pk}")
         except RuntimeError as e:
-            logger.warning(f"WebSocket accept failed: {e}")
+            logger.error(f"WebSocket accept failed: {e}")
             return  # prevent group_add
 
         await self.channel_layer.group_add(f"submission_listening_{self.scope['user'].pk}", self.channel_name)
@@ -106,7 +106,7 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
         try:
             await self.channel_layer.group_discard(f"submission_listening_{self.scope['user'].pk}", self.channel_name)
         except Exception as e:
-            logger.warning(f"Error during group_discard: {e}")
+            logger.error(f"Error during group_discard: {e}")
 
     def group_send(self, text, submission_id, full_text=False):
         return self.channel_layer.group_send(f"submission_listening_{self.scope['user'].pk}", {
@@ -150,4 +150,4 @@ class SubmissionOutputConsumer(AsyncWebsocketConsumer):
             await self.send(json.dumps(data))
             logger.debug(f"FRONTEND_MARKER: Successfully sent message to frontend for submission {event['submission_id']}")
         except Exception as e:
-            logger.warning(f"Failed to send WebSocket message: {e}")
+            logger.error(f"Failed to send WebSocket message: {e}")

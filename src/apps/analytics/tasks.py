@@ -1,6 +1,5 @@
 import os
 import time
-import logging
 import json
 from celery_config import app
 from datetime import datetime, timezone, timedelta
@@ -30,7 +29,7 @@ from profiles.models import User
 
 from utils.data import pretty_bytes
 
-logger = logging.getLogger()
+from loguru import logger
 
 
 @app.task(queue="site-worker", soft_time_limit=60 * 60 * 24)  # 24 hours
@@ -614,7 +613,7 @@ def get_most_recent_storage_inconsistency_log_file(logger):
     try:
         log_files = [f for f in os.listdir(log_folder) if os.path.isfile(os.path.join(log_folder, f))]
     except FileNotFoundError:
-        logger.info(f"Folder '{log_folder}' does not exist.")
+        logger.error(f"Folder '{log_folder}' does not exist.")
         return None
 
     most_recent_log_file = None

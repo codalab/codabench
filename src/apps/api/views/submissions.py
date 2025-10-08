@@ -1,6 +1,6 @@
 import json
 import uuid
-import logging
+from loguru import logger
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -25,7 +25,6 @@ from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 
 
-logger = logging.getLogger()
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -90,7 +89,7 @@ class SubmissionViewSet(ModelViewSet):
                         submission_detail.data_file.save(submission_detail.data_file.name, ContentFile(modified_content.encode("utf-8")))
 
                     except SubmissionDetails.DoesNotExist:
-                        logger.warning("SubmissionDetails object not found.")
+                        logger.error("SubmissionDetails object not found.")
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
