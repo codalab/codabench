@@ -11,8 +11,8 @@ from django.utils.timezone import now
 
 from utils.storage import BundleStorage
 
-from loguru import logger
-
+import logging
+logger = logging.getLogger()
 
 @deconstructible
 class PathWrapper(object):

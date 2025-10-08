@@ -6,8 +6,8 @@ from django.db import models
 
 from chahub.tasks import send_to_chahub, delete_from_chahub
 
-from loguru import logger
-
+import logging
+logger = logging.getLogger()
 
 class ChaHubModelManager(models.Manager):
     def get_queryset(self):

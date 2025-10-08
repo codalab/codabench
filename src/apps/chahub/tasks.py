@@ -1,5 +1,4 @@
 import json
-from loguru import logger
 
 import requests
 from django.utils import timezone
@@ -8,7 +7,8 @@ from celery_config import app
 from django.apps import apps
 from django.conf import settings
 from apps.chahub.utils import ChahubException
-
+import logging
+logger = logging.getLogger()
 
 def _send(endpoint, data):
     url = f"{settings.CHAHUB_API_URL}{endpoint}"

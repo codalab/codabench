@@ -3,7 +3,8 @@ from django.conf import settings
 import requests
 import json
 
-from loguru import logger
+import logging
+logger = logging.getLogger()
 
 
 class ChahubException(Exception):

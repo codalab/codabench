@@ -1,7 +1,5 @@
 import os
 import logging
-import sys
-import inspect
 
 from gunicorn.app.base import BaseApplication
 from gunicorn.glogging import Logger

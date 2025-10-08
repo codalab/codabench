@@ -18,7 +18,8 @@ import os
 import datetime
 import coreapi
 import pytz
-from loguru import logger
+import logging
+logger = logging.getLogger()
 
 
 User = get_user_model()

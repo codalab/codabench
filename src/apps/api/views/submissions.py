@@ -1,6 +1,5 @@
 import json
 import uuid
-from loguru import logger
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,7 +22,8 @@ from api.serializers.submissions import SubmissionCreationSerializer, Submission
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
-
+import logging
+logger = logging.getLogger()
 
 
 

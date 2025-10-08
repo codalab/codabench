@@ -4,7 +4,8 @@ import shutil
 
 from dateutil import parser
 from django.utils import timezone
-from loguru import logger
+import logging
+logger = logging.getLogger()
 
 
 
