@@ -1,4 +1,3 @@
-import logging
 import os
 import uuid
 from datetime import timedelta
@@ -13,6 +12,7 @@ from utils.storage import BundleStorage
 
 import logging
 logger = logging.getLogger()
+
 
 @deconstructible
 class PathWrapper(object):

@@ -5,7 +5,10 @@ import os
 
 from loguru import logger
 
+# -----------------------------------------------------------------------------
 # This file will allow us to replace the Django default logger with loguru
+# -----------------------------------------------------------------------------
+
 
 class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
@@ -28,12 +31,13 @@ class InterceptHandler(logging.Handler):
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
-def configure_logging(log_level=os.environ.get("LOG_LEVEL", "INFO"),serialized=os.environ.get("SERIALIZED", "false")):
+
+def configure_logging(log_level=os.environ.get("LOG_LEVEL", "INFO"), serialized=os.environ.get("SERIALIZED", "false")):
     # We can change the level per module here. uvicorn.protolcs is set to warning, otherwise we would get logs that Caddy is already getting
     # You can get the name of modules you want to add from the logs
     if log_level.upper() == "INFO":
         moduleLogLevel = "WARNING"
-    else :
+    else:
         moduleLogLevel = log_level
 
     level_per_module = {

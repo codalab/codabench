@@ -305,14 +305,17 @@ CORS_ORIGIN_ALLOW_ALL = True
 # =============================================================================
 # Logging
 # =============================================================================
-LOGGING_CONFIG=None
+LOGGING_CONFIG = None
+
+
 # This makes Celery not override the default logger that is configured for the project
 @signals.setup_logging.connect
 def setup_celery_logging(**kwargs):
     pass
 
+
 # This will configure the logger with Loguru, allowing us to chose between log levels (DEBUG INFO etc) and if the logs are serialized or not (JSON format)
-configure_logging(os.environ.get("LOG_LEVEL", "INFO"),os.environ.get("SERIALIZED", 'false'))
+configure_logging(os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", 'false'))
 
 # =============================================================================
 # Channels

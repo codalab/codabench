@@ -26,7 +26,6 @@ import logging
 logger = logging.getLogger()
 
 
-
 class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []

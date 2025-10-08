@@ -308,7 +308,6 @@ def get_orphan_files(request):
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-
     # Find most recent file
     most_recent_log_file = get_most_recent_storage_inconsistency_log_file()
     if not most_recent_log_file:

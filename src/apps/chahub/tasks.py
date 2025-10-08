@@ -10,6 +10,7 @@ from apps.chahub.utils import ChahubException
 import logging
 logger = logging.getLogger()
 
+
 def _send(endpoint, data):
     url = f"{settings.CHAHUB_API_URL}{endpoint}"
     headers = {

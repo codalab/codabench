@@ -10,10 +10,9 @@ from django_redis import get_redis_connection
 from competitions.models import Submission
 from utils.data import make_url_sassy
 
-
-
 import logging
 logger = logging.getLogger(__name__)
+
 
 class SubmissionIOConsumer(AsyncWebsocketConsumer):
     #

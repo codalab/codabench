@@ -12,6 +12,7 @@ app = asgi.application
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 WORKERS = int(os.environ.get("GUNICORN_WORKERS", "2"))
 
+
 class StubbedGunicornLogger(Logger):
     def setup(self, cfg):
         handler = logging.NullHandler()
@@ -62,7 +63,7 @@ if __name__ == "__main__":
             seen.add(name.split(".")[0])
             logging.getLogger(name).handlers = [intercept_handler]
 
-    logs_loguru.configure_logging(LOG_LEVEL.upper(),os.environ.get("SERIALIZED", "false"))
+    logs_loguru.configure_logging(LOG_LEVEL.upper(), os.environ.get("SERIALIZED", "false"))
 
     options = {
         "bind": [':8000', ':80'],
@@ -71,7 +72,7 @@ if __name__ == "__main__":
         "errorlog": "-",
         "worker_class": "uvicorn.workers.UvicornWorker",
         "logger_class": StubbedGunicornLogger,
-        "capture_output" : 'true'
+        "capture_output": 'true'
     }
 
     StandaloneApplication(app, options).run()

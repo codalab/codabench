@@ -9,6 +9,7 @@ from chahub.tasks import send_to_chahub, delete_from_chahub
 import logging
 logger = logging.getLogger()
 
+
 class ChaHubModelManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(deleted=False)
