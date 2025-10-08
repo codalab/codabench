@@ -5,7 +5,7 @@ from datasets.models import Data
 from tasks.models import Task
 from competitions.models import Submission
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])

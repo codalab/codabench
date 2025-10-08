@@ -30,7 +30,7 @@ from profiles.models import User
 from utils.data import pretty_bytes
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 @app.task(queue="site-worker", soft_time_limit=60 * 60 * 24)  # 24 hours

@@ -5,7 +5,7 @@ import shutil
 from dateutil import parser
 from django.utils import timezone
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class CompetitionUnpackingException(Exception):

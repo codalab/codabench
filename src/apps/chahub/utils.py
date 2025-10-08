@@ -4,7 +4,7 @@ import requests
 import json
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class ChahubException(Exception):

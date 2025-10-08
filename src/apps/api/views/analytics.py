@@ -19,7 +19,7 @@ import datetime
 import coreapi
 import pytz
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 User = get_user_model()

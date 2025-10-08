@@ -8,7 +8,7 @@ from django.apps import apps
 from django.conf import settings
 from apps.chahub.utils import ChahubException
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def _send(endpoint, data):

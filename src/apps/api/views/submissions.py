@@ -23,7 +23,7 @@ from competitions.models import Submission, SubmissionDetails, Phase, Competitio
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class SubmissionViewSet(ModelViewSet):

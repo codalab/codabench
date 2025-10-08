@@ -7,7 +7,7 @@ from django.db import models
 from chahub.tasks import send_to_chahub, delete_from_chahub
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class ChaHubModelManager(models.Manager):
