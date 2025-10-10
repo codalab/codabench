@@ -30,6 +30,8 @@ import sys
 sys.path.append('/app/src/settings/')
 
 from celery import signals
+import logging
+logger = logging.getLogger(__name__)
 from logs_loguru import configure_logging
 
 # -----------------------------------------------
