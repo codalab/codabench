@@ -2,8 +2,10 @@ import os
 import sys
 from datetime import timedelta
 from celery.schedules import crontab
-
+from celery import signals
 import dj_database_url
+from .logs_loguru import configure_logging
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Also add ../../apps to python path
@@ -303,29 +305,17 @@ CORS_ORIGIN_ALLOW_ALL = True
 # =============================================================================
 # Logging
 # =============================================================================
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-        },
-        'django': {
-            'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-        },
-        'channels': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    },
-}
+LOGGING_CONFIG = None
+
+
+# This makes Celery not override the default logger that is configured for the project
+@signals.setup_logging.connect
+def setup_celery_logging(**kwargs):
+    pass
+
+
+# This will configure the logger with Loguru, allowing us to chose between log levels (DEBUG INFO etc) and if the logs are serialized or not (JSON format)
+configure_logging(os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", 'false'))
 
 # =============================================================================
 # Channels

@@ -1,12 +1,11 @@
 import datetime
-import logging
 import os
 import shutil
 
 from dateutil import parser
 from django.utils import timezone
-
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 class CompetitionUnpackingException(Exception):

@@ -69,6 +69,7 @@ requests = "2.32.2"
 drf-extra-fields = "3.0.2"
 drf-yasg2 = "^1.19.4"
 swagger-spec-validator = "^3.0.4"
+loguru = "^0.7.3"
 
 [build-system]
 requires = ["poetry-core"]

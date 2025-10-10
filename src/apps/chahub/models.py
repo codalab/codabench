@@ -1,12 +1,12 @@
 import hashlib
 import json
-import logging
 
 from django.conf import settings
 from django.db import models
 
 from chahub.tasks import send_to_chahub, delete_from_chahub
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -130,7 +130,7 @@ class ChaHubSaveMixin(models.Model):
                     send_to_chahub.apply_async((self.app_label, self.pk, data, data_hash))
             elif self.chahub_needs_retry:
                 # This is NOT valid but also marked as need retry, unmark need retry until this is valid again
-                logger.info('ChaHub :: This is invalid but marked for retry. Clearing retry until valid again.')
+                logger.warning('ChaHub :: This is invalid but marked for retry. Clearing retry until valid again.')
                 self.chahub_needs_retry = False
                 super().save()
 

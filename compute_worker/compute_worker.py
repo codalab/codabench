@@ -2,7 +2,6 @@ import asyncio
 import glob
 import hashlib
 import json
-import logging
 import os
 import shutil
 import signal
@@ -26,12 +25,21 @@ from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
-logger = logging.getLogger()
+# This is only needed for the pytests to pass
+import sys
+sys.path.append('/app/src/settings/')
 
+from celery import signals
+import logging
+logger = logging.getLogger(__name__)
+from logs_loguru import configure_logging
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
 # -----------------------------------------------
+@signals.setup_logging.connect
+def setup_celery_logging(**kwargs):
+    pass
 # Init celery + rabbit queue definitions
 app = Celery()
 app.config_from_object('celery_config')  # grabs celery_config.py
@@ -40,7 +48,10 @@ app.conf.task_queues = [
     Queue('compute-worker', Exchange('compute-worker'), routing_key='compute-worker', queue_arguments={'x-max-priority': 10}),
 ]
 
-
+# -----------------------------------------------
+# Logging
+# -----------------------------------------------
+configure_logging(os.environ.get("LOG_LEVEL", "INFO"),os.environ.get("SERIALIZED", 'false'))
 # -----------------------------------------------
 # Directories
 # -----------------------------------------------
@@ -97,7 +108,6 @@ class DockerImagePullException(Exception):
 
 class ExecutionTimeLimitExceeded(Exception):
     pass
-
 
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
@@ -337,7 +347,7 @@ class Run:
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
-            logger.info(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
+            logger.error(f"Submission patch failed with status = {resp.status_code}, and response = \n{resp.content}")
             raise SubmissionException("Failure updating submission data.")
 
     def _update_status(self, status, extra_information=None):
@@ -370,7 +380,7 @@ class Run:
                 retries += 1
                 if retries >= max_retries:
                     error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub. {pull_error}"
-                    logger.info(error_message)
+                    logger.error(error_message)
                     # Prepare data to be sent to submissions api
                     docker_pull_fail_data = {
                         "type": "Docker_Image_Pull_Fail",
@@ -383,7 +393,7 @@ class Run:
                     asyncio.run(self._send_data_through_socket(error_message))
                     raise DockerImagePullException(f"Pull for {image_name} failed!")
                 else:
-                    logger.info("Failed. Retrying in 5 seconds...")
+                    logger.warning("Failed. Retrying in 5 seconds...")
                     time.sleep(5)  # Wait 5 seconds before retrying
 
     async def _send_data_through_socket(self, error_message):
@@ -413,7 +423,7 @@ class Run:
 
         except websocket_errors:
             # handle websocket errors
-            logger.info(f"Error sending failed through websocket")
+            logger.error(f"Error sending failed through websocket")
             try:
                 await websocket.close()
             except Exception as e:
@@ -467,7 +477,7 @@ class Run:
                 if retries >= max_retries:
                     raise  # Re-raise the last caught BadZipFile exception
                 else:
-                    logger.info("Failed. Retrying in 60 seconds...")
+                    logger.warning("Failed. Retrying in 60 seconds...")
                     time.sleep(60)  # Wait 60 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
@@ -544,7 +554,7 @@ class Run:
                     except asyncio.TimeoutError:
                         continue
             except websocket_errors:
-                logger.debug("\n\nWebsocket error (line 538)\n\n")
+                logger.error("\n\nWebsocket error (line 538)\n\n")
                 try:
                     # do we need to await websocket.close() on the old socket? before making a new one probably not?
                     await websocket.close()
@@ -557,7 +567,7 @@ class Run:
                 tries = 0
                 while tries < 3 and not websocket.open:
                     try:
-                        logger.debug(f"\n\nAttempting to reconnect in 2 seconds (attempt {tries+1}/3)")
+                        logger.warning(f"\n\nAttempting to reconnect in 2 seconds (attempt {tries+1}/3)")
                         websocket = await websockets.connect(websocket_url)
                         logger.debug(f"\n\nSuccessfully reconnected to {websocket_url}")
                     except websocket_errors:
@@ -606,7 +616,7 @@ class Run:
         """
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
-            logger.info(f"{program_dir} not found, no program to execute")
+            logger.error(f"{program_dir} not found, no program to execute")
 
             # Communicate that the program is closing
             self.completed_program_counter += 1
@@ -619,7 +629,7 @@ class Run:
         else:
             # Display a warning in logs when there is no metadata file in submission/program dir
             if kind == "program":
-                logger.info(
+                logger.warning(
                     "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
                 return
@@ -636,12 +646,13 @@ class Run:
                 else:
                     command = None
             except yaml.YAMLError as e:
+                logger.error("Error parsing YAML file: ", e)
                 print("Error parsing YAML file: ", e)
                 command = None
             if not command and kind == "ingestion":
                 raise SubmissionException("Program directory missing 'command' in metadata")
             elif not command:
-                logger.info(
+                logger.warning(
                     f"Warning: {program_dir} has no command in metadata, continuing anyway "
                     f"(may be meant to be consumed by an ingestion program)"
                 )
@@ -852,7 +863,7 @@ class Run:
             loop.run_until_complete(gathered_tasks)
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
-            logger.info(error_message)
+            logger.error(error_message)
             # Prepare data to be sent to submissions api
             execution_time_limit_exceeded_data = {
                 "type": "Execution_Time_Limit_Exceeded",
@@ -873,14 +884,14 @@ class Run:
                     elapsed_time = self.execution_time_limit
                 return_code = logs["proc"].returncode
                 if return_code is None:
-                    logger.info('No return code from Process. Killing it')
+                    logger.warning('No return code from Process. Killing it')
                     if kind == 'ingestion':
                         program_to_kill = self.ingestion_container_name
                     else:
                         program_to_kill = self.program_container_name
                     # Try and stop the program. If stop does not succeed
                     kill_code = subprocess.call([CONTAINER_ENGINE_EXECUTABLE, 'stop', str(program_to_kill)])
-                    logger.info(f'Kill process returned {kill_code}')
+                    logger.warning(f'Kill process returned {kill_code}')
                 if kind == 'program':
                     self.program_exit_code = return_code
                     self.program_elapsed_time = elapsed_time
@@ -966,7 +977,7 @@ class Run:
 
     def clean_up(self):
         if os.environ.get("CODALAB_IGNORE_CLEANUP_STEP"):
-            logger.info(f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}")
+            logger.warning(f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}")
             return
 
         logger.info(f"Destroying submission temp dir: {self.root_dir}")

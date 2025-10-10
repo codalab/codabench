@@ -1,4 +1,3 @@
-import logging
 import os
 import uuid
 from datetime import timedelta
@@ -11,7 +10,7 @@ from django.utils.timezone import now
 
 from utils.storage import BundleStorage
 
-
+import logging
 logger = logging.getLogger(__name__)
 
 

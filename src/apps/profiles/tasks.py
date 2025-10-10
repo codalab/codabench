@@ -1,5 +1,4 @@
 import time
-import logging
 from datetime import timedelta
 from django.utils.timezone import now
 from celery_config import app
@@ -7,7 +6,8 @@ from django.contrib.auth import get_user_model
 from profiles.models import DeletedUser
 from competitions.models import Competition, Submission
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 @app.task(queue="site-worker")

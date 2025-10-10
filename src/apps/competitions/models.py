@@ -1,4 +1,3 @@
-import logging
 import uuid
 import os
 import io
@@ -24,7 +23,8 @@ from PIL import Image
 
 from tasks.models import Task
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Competition(ChaHubSaveMixin, models.Model):
@@ -436,9 +436,9 @@ class Phase(ChaHubSaveMixin, models.Model):
                 self.competition.apply_phase_migration(current_phase, next_phase)
 
         except next_phase.DoesNotExist:
-            logger.info(f"This competition is missing the next phase to migrate to.")
+            logger.error(f"This competition is missing the next phase to migrate to.")
         except current_phase.DoesNotExist:
-            logger.info(f"This competition is missing the previous phase to migrate from.")
+            logger.error(f"This competition is missing the previous phase to migrate from.")
 
 
 class PhaseTaskInstance(models.Model):
