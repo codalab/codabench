@@ -25,8 +25,10 @@ from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
+# This is only needed for the pytests to pass
 import sys
-sys.path.append('../src/settings')
+sys.path.append('/app/src/settings/')
+
 print(sys.path)
 from loguru import logger
 from celery import signals
