@@ -25,7 +25,7 @@ services:
   django:
     build: .
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: bash -c "python manage.py collectstatic --noinput && cd /app/src &&  ls && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"
+    command: bash -c "python manage.py collectstatic --noinput && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env

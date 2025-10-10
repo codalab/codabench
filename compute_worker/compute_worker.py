@@ -29,7 +29,6 @@ from urllib3 import Retry
 import sys
 sys.path.append('/app/src/settings/')
 
-print(sys.path)
 from loguru import logger
 from celery import signals
 
