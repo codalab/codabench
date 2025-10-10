@@ -25,7 +25,9 @@ from celery import Celery, task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
-
+import sys
+sys.path.append('../src/settings')
+print(sys.path)
 from loguru import logger
 from celery import signals
 
