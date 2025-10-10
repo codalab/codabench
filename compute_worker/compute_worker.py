@@ -32,7 +32,9 @@ sys.path.append('/app/src/settings/')
 from celery import signals
 import logging
 logger = logging.getLogger(__name__)
-from logs_loguru import configure_logging
+from logs_loguru import configure_logging,colorize_run_args
+import json
+
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
@@ -115,7 +117,7 @@ class ExecutionTimeLimitExceeded(Exception):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
-    logger.info(f"Received run arguments: {run_args}")
+    logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
 
     try:

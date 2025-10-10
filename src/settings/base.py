@@ -310,7 +310,6 @@ def setup_celery_logging(**kwargs):
 
 # This will configure the logger with Loguru, allowing us to chose between log levels (DEBUG INFO etc) and if the logs are serialized or not (JSON format)
 configure_logging(os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", 'false'))
-
 # =============================================================================
 # Channels
 # =============================================================================
