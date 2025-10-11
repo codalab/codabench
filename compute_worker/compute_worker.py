@@ -1129,12 +1129,16 @@ class Run:
             self._run_program_directory(ingestion_program_dir, kind="ingestion"),
             self.watch_detailed_results(),
             loop=loop,
+            return_exceptions=True,
         )
 
+        task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
             loop.run_until_complete(gathered_tasks)
+            # keep what gather returned so we can detect async errors later
+            task_results = list(gathered_tasks.result() or [])
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
             logger.error(error_message)
@@ -1210,6 +1214,18 @@ class Run:
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
         signal.alarm(0)
+
+        # Failure "gate" BEFORE changing status
+        # An async task error?
+        had_async_exc = any(isinstance(r, BaseException) for r in task_results)
+        # Non-zero exit from either container counts as failure for this phase
+        program_rc = getattr(self, "program_exit_code", None)
+        ingestion_rc = getattr(self, "ingestion_program_exit_code", None)
+        failed_rc = any(rc not in (0, None) for rc in (program_rc, ingestion_rc))
+        if had_async_exc or failed_rc:
+            self._update_status(STATUS_FAILED, extra_information=f"program_rc={program_rc}, ingestion_rc={ingestion_rc}")
+            # Raise so upstream marks failed immediately
+            raise SubmissionException("Child task failed or non-zero return code")
 
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
