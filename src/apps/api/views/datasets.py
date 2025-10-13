@@ -144,17 +144,13 @@ class DataViewSet(ModelViewSet):
         return Response(context, status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
-        # TODO: Confirm this has a test
-        instance = self.get_object()
-
-        error = self.check_delete_permissions(request, instance)
-
+        dataset = self.get_object()
+        error = self.check_delete_permissions(request, dataset)
         if error:
             return Response(
                 {'error': error},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=('POST',))
