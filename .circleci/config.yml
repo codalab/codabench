@@ -23,8 +23,8 @@ jobs:
           background: true
 
       - run: 
-        name: "Setup: Copy environment variables"
-        command: cp .env_circleci .env
+          name: "Setup: Copy environment variables"
+          command: cp .env_circleci .env
 
 
       - run:
@@ -40,17 +40,17 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
       - run: 
-        name: "Lint: Check code style with flake8"
-        command: docker-compose exec django flake8 src/
+          name: "Lint: Check code style with flake8"
+          command: docker-compose exec django flake8 src/
 
 
       - run: 
-        name: "Docker: Pull required images"
-        # not available without "not e2e" tests as they pull ahead of time
-        command: |
-          docker pull codalab/codalab-legacy:py37 
-          docker pull codalab/codalab-legacy:py3 
-          docker pull vergilgxw/autotable:v2 
+          name: "Docker: Pull required images"
+          # not available without "not e2e" tests as they pull ahead of time
+          command: |
+            docker pull codalab/codalab-legacy:py37 
+            docker pull codalab/codalab-legacy:py3 
+            docker pull vergilgxw/autotable:v2 
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
