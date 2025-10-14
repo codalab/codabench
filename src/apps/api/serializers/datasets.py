@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
-from datasets.models import Data, DataGroup
+from datasets.models import Data
 from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 
 
@@ -222,14 +222,3 @@ class DataDetailSerializer(serializers.ModelSerializer):
 
     def get_owner_display_name(self, instance):
         return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
-
-
-class DataGroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataGroup
-        fields = (
-            'created_by',
-            'created_when',
-            'name',
-            'datas',
-        )

@@ -142,10 +142,3 @@ class Data(ChaHubSaveMixin, models.Model):
             'is_public': self.is_public,
             'download_url': f'http{"s" if ssl else ""}://{site}{self.get_download_url()}'
         })
-
-
-class DataGroup(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_when = models.DateTimeField(default=now)
-    name = models.CharField(max_length=255)
-    datas = models.ManyToManyField(Data, related_name="groups")
