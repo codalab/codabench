@@ -25,6 +25,7 @@ COPY ./compute_worker/poetry.lock ./
 RUN poetry config virtualenvs.prefer-active-python true && poetry install
 
 ADD compute_worker .
+COPY ./src/settings/logs_loguru.py /usr/bin
 
 CMD celery -A compute_worker worker \
     -l info \

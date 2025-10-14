@@ -28,7 +28,7 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=4></th>
+            <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
@@ -37,35 +37,10 @@
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            
         </tr>
         </thead>
-        <!--  Show when particpant is not registered  -->
-        <tbody if="{participant_status === null}">
-            <tr class="center aligned ui yellow message">
-                <td colspan="100%">
-                    <em>You are not a participant of this competition. Please register in My Submissions tab to view the leaderboard.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is pending  -->
-        <tbody if="{participant_status === 'pending'}">
-            <tr class="center aligned ui yellow message">
-                <td colspan="100%">
-                    <em>Your request to participate in this competition is waiting for an approval from the competition organizer.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is denied  -->
-        <tbody if="{participant_status === 'denied'}">
-            <tr class="center aligned ui red message">
-                <td colspan="100%">
-                    <em>Your request to participate in this competition is denied. Please contact the competition organizer for more details.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is approved  -->
-        <tbody if="{participant_status === 'approved'}">
+        <!--  Always show leaderboard  -->
+        <tbody>
         <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>
@@ -254,10 +229,10 @@
             color #8c8c8c
         .index-column
             min-width 55px
-        .leaderboard-title
-            position absolute
-            left 50%
-            transform translate(-50%, 50%)
+        .leaderboard-title 
+            position: absolute
+            left: 50%
+            transform: translate(-50%, -50%)
         .ui.table > thead > tr.task-row > th
             background-color: #e8f6ff !important
         .eye-icon-link

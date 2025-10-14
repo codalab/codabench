@@ -1,5 +1,4 @@
 import json
-import logging
 
 import requests
 from django.utils import timezone
@@ -8,7 +7,7 @@ from celery_config import app
 from django.apps import apps
 from django.conf import settings
 from apps.chahub.utils import ChahubException
-
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -90,7 +89,7 @@ def delete_from_chahub(app_label, pk):
     else:
         status = getattr(resp, 'status_code', 'N/A')
         body = getattr(resp, 'content', 'N/A')
-        logger.info(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
+        logger.error(f"ChaHub :: Error sending to chahub, status={status}, body={body}")
         obj.chahub_needs_retry = True
         obj.save(send=False)
 
@@ -105,7 +104,7 @@ def batch_send_to_chahub(model, limit=None, retry_only=False):
     endpoint = model.get_chahub_endpoint()
     data = [obj.get_chahub_data() for obj in qs if obj.get_chahub_is_valid()]
     if not data:
-        logger.info(f'Nothing to send to Chahub at {endpoint}')
+        logger.warning(f'Nothing to send to Chahub at {endpoint}')
         return
     try:
         logger.info(f"Sending all data to Chahub at {endpoint}")
@@ -114,7 +113,7 @@ def batch_send_to_chahub(model, limit=None, retry_only=False):
         if resp.status_code != 201:
             logger.warning(f'ChaHub Response Content: {resp.content}')
     except ChahubException:
-        logger.info("There was a problem reaching Chahub. Retry again later")
+        logger.warning("There was a problem reaching Chahub. Retry again later")
 
 
 def chahub_is_up():
@@ -128,11 +127,11 @@ def chahub_is_up():
             logger.info("ChaHub is online")
             return True
         else:
-            logger.info("Bad Status from ChaHub")
+            logger.warning("Bad Status from ChaHub")
             return False
     except requests.exceptions.RequestException:
         # This base exception works for HTTP errors, Connection errors, etc.
-        logger.info("Request Exception trying to access ChaHub")
+        logger.error("Request Exception trying to access ChaHub")
         return False
 
 
