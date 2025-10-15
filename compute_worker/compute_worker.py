@@ -632,6 +632,9 @@ class Run:
                 logger.warning(
                     "Program directory missing metadata, assuming it's going to be handled by ingestion"
                 )
+                # Copy submission files into prediction output
+                # This is useful for results submissions but wrongly uses storage
+                shutil.copytree(program_dir, self.output_dir)
                 return
             else:
                 raise SubmissionException("Program directory missing 'metadata.yaml/metadata'")
