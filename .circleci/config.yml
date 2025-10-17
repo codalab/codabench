@@ -69,7 +69,7 @@ jobs:
             docker compose -f docker-compose.selenium.yml down
             docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
-            PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npx playwright test
+            cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npx playwright test
           no_output_timeout: 60m
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
