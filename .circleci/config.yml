@@ -42,6 +42,7 @@ jobs:
           command: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
 
       - run:
