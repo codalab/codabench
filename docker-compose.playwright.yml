@@ -1,0 +1,39 @@
+services:
+  playwright:
+      network_mode: host
+      init: true
+      stdin_open: true
+      tty: true
+      working_dir: /home/pwuser
+      user: pwuser
+      image: mcr.microsoft.com/playwright:v1.56.0-noble
+      command: /bin/sh -c "npx -y playwright@1.56.0 run-server --port 3000 --host
+          0.0.0.0"
+  compute_worker:
+    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+    working_dir: /app
+    deploy:
+      mode: replicated
+      replicas: 2
+    build:
+      context: .
+      dockerfile: Dockerfile.compute_worker
+    depends_on:
+      - django
+      - rabbit
+    volumes:
+      - ./compute_worker:/app
+      - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
+      # Actual connection back to docker parent to run things
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
+    environment:
+      - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
+      # Make the worker leave behind the submission so we can examine it
+      - CODALAB_IGNORE_CLEANUP_STEP=1
+      - COLUMNS=100
+    tty: true
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"

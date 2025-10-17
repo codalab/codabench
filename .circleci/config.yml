@@ -22,43 +22,53 @@ jobs:
           #  x11vnc -forever -nopw
           background: true
 
-      - run: 
+      - run:
           name: "Setup: Copy environment variables"
           command: cp .env_circleci .env
-
 
       - run:
           name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
           command: |
             sudo mkdir -p var/minio/public
             sudo mkdir -p var/minio/private
-
+      - run:
+          name: "Setup: Prepare the playwright environment"
+          command: |
+            cd tests
+            npm install
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
-      - run: 
+      - run:
           name: "Lint: Check code style with flake8"
           command: docker-compose exec django flake8 src/
 
-
-      - run: 
+      - run:
           name: "Docker: Pull required images"
           # not available without "not e2e" tests as they pull ahead of time
           command: |
             docker pull codalab/codalab-legacy:py37 
             docker pull codalab/codalab-legacy:py3 
-            docker pull vergilgxw/autotable:v2 
+            docker pull vergilgxw/autotable:v2
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
 
+      # - run:
+      #     name: "Tests: Run end-to-end (E2E) tests"
+      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+      #     no_output_timeout: 60m
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+          command: |
+            docker compose -f docker-compose.selenium.yml down
+            docker compose -f docker-compose.yml -f docker-compose.playwright.yml up -d
+            docker compose exec django python ./manage.py createsuperuser --no-input
+            PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npx playwright test
           no_output_timeout: 60m
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
@@ -66,7 +76,6 @@ jobs:
       #     name: e2e tests - competitions
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
-
 
       - store_artifacts:
           path: artifacts/
