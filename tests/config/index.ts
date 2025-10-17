@@ -3,7 +3,7 @@ import path from 'path';
 import { Client } from 'pg'
 
 // Build the path to the .env file
-const envFilePath = path.resolve(process.cwd(), `config/.env`);
+const envFilePath = path.resolve(process.cwd(), `config/.env.playwright`);
 dotenv.config({ path: envFilePath });
 
 // Export the database configuration
