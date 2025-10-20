@@ -10,8 +10,8 @@ jobs:
         run: cp .env_circleci .env
       - name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
         run: | 
-         sudo mkdir -p var/minio/public
-         sudo mkdir -p var/minio/private
+         mkdir -p var/minio/public
+         mkdir -p var/minio/private
       
       - name: "Setup: Prepare the playwright environment"
         run: |
