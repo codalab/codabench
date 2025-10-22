@@ -25,11 +25,14 @@ jobs:
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
       - name: "Lint: Check code style with flake8"
         run: docker compose exec django flake8 src/
-
+      - name: "Docker: Pull required images"
+        run: |
+            docker pull codalab/codalab-legacy:py37
+            docker pull codalab/codalab-legacy:py3
       - name: "Tests: Run unit/integration tests (excluding e2e)"
         run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
       - name: "Tests: Run end-to-end (E2E) tests"
-        run: cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npx playwright test
+        run: cd tests && npx playwright test
       - name: Cleanup
         run: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml down --rmi all
