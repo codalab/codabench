@@ -17,6 +17,7 @@ jobs:
         run: |
             cd tests
             npm install
+            npx playwright install --with-deps
       - name: "Docker: Build containers and collect static files"
         run: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
