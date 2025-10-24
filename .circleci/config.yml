@@ -36,7 +36,6 @@ jobs:
           command: |
             cd tests
             yarn install
-            yarn playwright install --with-deps
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
