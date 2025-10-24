@@ -27,7 +27,7 @@ export default defineConfig({
   use: {
     viewport: { width: 1500, height: 1000 },
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost',
+    baseURL: 'http://django:8000',
     // Capture screenshot after each test failure.
     screenshot: 'only-on-failure',
 
