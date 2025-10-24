@@ -38,7 +38,7 @@ jobs:
   unit_tests:
     name: Unit test with Selenium
     runs-on: self-hosted
-    needs: [build]
+    needs: [linter,build]
     steps:
       - name: "Tests: Run unit/integration tests (excluding e2e)"
         run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
@@ -47,7 +47,7 @@ jobs:
   e2e:
     name: End to End tests with Playwright
     runs-on: self-hosted
-    needs: [build]
+    needs: [linter,build]
     steps:
       - name: "Tests: Run end-to-end (E2E) tests"
         run: cd tests && yarn playwright test

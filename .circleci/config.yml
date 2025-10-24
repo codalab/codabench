@@ -1,10 +1,12 @@
 version: 2
-
-jobs:
-  test:
+executors:
+  main_executor:
     machine:
       image: ubuntu-2204:2024.01.2
     resource_class: large
+jobs:
+  build:
+    executor: main_executor
     steps:
       - checkout
       - run:
@@ -36,6 +38,7 @@ jobs:
           command: |
             cd tests
             yarn install
+          background: true
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
@@ -45,21 +48,32 @@ jobs:
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
 
       - run:
-          name: "Lint: Check code style with flake8"
-          command: docker-compose exec django flake8 src/
-
-      - run:
           name: "Docker: Pull required images"
           # not available without "not e2e" tests as they pull ahead of time
           command: |
             docker pull codalab/codalab-legacy:py37 
             docker pull codalab/codalab-legacy:py3 
             docker pull vergilgxw/autotable:v2
-
+          background: true
+  lint:
+    executor: main_executor
+    steps:
+      - run:
+          name: "Lint: Check code style with flake8"
+          command: docker-compose exec django flake8 src/
+      - store_artifacts:
+          path: artifacts/
+  unit_tests:
+    executor: main_executor
+    steps:
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
-
+      - store_artifacts:
+          path: artifacts/
+  e2e_tests:
+    executor: main_executor
+    steps:
       # - run:
       #     name: "Tests: Run end-to-end (E2E) tests"
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
@@ -68,19 +82,26 @@ jobs:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
             cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ yarn playwright test
-          no_output_timeout: 60m
-
+          no_output_timeout: 10m
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
       # - run:
       #     name: e2e tests - competitions
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
 
-      - store_artifacts:
-          path: artifacts/
-
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - test
+      - build
+      - linter:
+          requires:
+            - build
+      - unit_tests:
+          requires:
+            - build
+            - linter
+      - e2e_tests:
+          requires:
+            - build
+            - linter
