@@ -55,7 +55,7 @@ jobs:
             docker pull codalab/codalab-legacy:py3 
             docker pull vergilgxw/autotable:v2
           background: true
-  lint:
+  linter:
     executor: main_executor
     steps:
       - run:
