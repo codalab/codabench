@@ -3,10 +3,10 @@ executors:
   main_executor:
     machine:
       image: ubuntu-2204:2024.01.2
-    resource_class: large
 jobs:
   build:
     executor: main_executor
+    resource_class: large
     steps:
       - checkout
       - run:
@@ -57,6 +57,7 @@ jobs:
           background: true
   linter:
     executor: main_executor
+    resource_class: large
     steps:
       - run:
           name: "Lint: Check code style with flake8"
@@ -65,6 +66,7 @@ jobs:
           path: artifacts/
   unit_tests:
     executor: main_executor
+    resource_class: large
     steps:
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
@@ -73,6 +75,7 @@ jobs:
           path: artifacts/
   e2e_tests:
     executor: main_executor
+    resource_class: large
     steps:
       # - run:
       #     name: "Tests: Run end-to-end (E2E) tests"
