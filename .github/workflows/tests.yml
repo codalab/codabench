@@ -16,8 +16,8 @@ jobs:
       - name: "Setup: Prepare the playwright environment"
         run: |
             cd tests
-            npm install
-            npx playwright install --with-deps
+            yarn install
+            yarn playwright install --with-deps
       - name: "Docker: Build containers and collect static files"
         run: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
