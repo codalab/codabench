@@ -7,7 +7,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-
       - run:
           # NOTE: To connect to this, use an SSH tunnel in front, like so..
           #
@@ -36,7 +35,8 @@ jobs:
           name: "Setup: Prepare the playwright environment"
           command: |
             cd tests
-            npm install
+            yarn install
+            yarn playwright install --with-deps
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
@@ -68,7 +68,7 @@ jobs:
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
-            cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npx playwright test
+            cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ yarn playwright test
           no_output_timeout: 60m
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
