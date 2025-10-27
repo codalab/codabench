@@ -16,6 +16,9 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # =============================================================================
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
+CSRF_TRUSTED_ORIGINS = [os.environ.get("DOMAIN_NAME", "*")]
+CSRF_ALLOWED_ORIGINS = [os.environ.get("DOMAIN_NAME", "*")]
+CORS_ORIGINS_WHITELIST = [os.environ.get("DOMAIN_NAME", "*"),os.environ.get("AWS_S3_ENDPOINT_URL", "*")]
 
 SITE_ID = 1
 
@@ -26,6 +29,7 @@ SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
 
 
 THIRD_PARTY_APPS = (
+    'daphne', # Must come before django.contrib.staticfiles
     'django_su',  # Must come before django.contrib.admin
     'ajax_select',  # For django_su
 
