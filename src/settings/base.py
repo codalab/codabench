@@ -16,9 +16,11 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # =============================================================================
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
-CSRF_TRUSTED_ORIGINS = ["https://"+os.environ.get("DOMAIN_NAME").split(':')[0], "http://"+os.environ.get("DOMAIN_NAME").split(':')[0], os.environ.get("DOMAIN_NAME")]
-CSRF_ALLOWED_ORIGINS = ["https://"+os.environ.get("DOMAIN_NAME").split(':')[0], "http://"+os.environ.get("DOMAIN_NAME").split(':')[0], os.environ.get("DOMAIN_NAME")]
-CORS_ORIGINS_WHITELIST = ["https://"+os.environ.get("DOMAIN_NAME").split(':')[0], "http://"+os.environ.get("DOMAIN_NAME").split(':')[0], os.environ.get("DOMAIN_NAME"), os.environ.get("AWS_S3_ENDPOINT_URL", "*")]
+csrf_https_domain = "https://"+os.environ.get("DOMAIN_NAME").split(':')[0]
+csrf_http_domain  = "http://"+os.environ.get("DOMAIN_NAME").split(':')[0]
+
+CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
 
 SITE_ID = 1
 
