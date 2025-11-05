@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+spec:
+  replicas: {{ .Values.django.replicas }}
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+        - name: django
+          image: "{{ .Values.django.image.repository }}:{{ .Values.django.image.tag }}"
+          imagePullPolicy: {{ .Values.django.image.pullPolicy }}
+          command:
+            - bash
+            - -c
+            - >
+              python manage.py collectstatic --noinput &&
+              cd {{ .Values.django.workingDir }} &&
+              watchmedo auto-restart -p '*.py' --recursive --
+              gunicorn asgi:application -w {{ .Values.django.gunicorn.workers }} -k uvicorn.workers.UvicornWorker -b :{{ .Values.django.port }} --capture-output --log-level {{ .Values.django.gunicorn.logLevel }}
+          env:
+          {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+          {{- end }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.db.username }}:{{ .Values.db.password }}@{{ .Values.db.host }}:{{ .Values.db.port }}/{{ .Values.db.name }}"
+          volumeMounts:
+            - name: app-state
+              mountPath: /app/app-state
+      volumes:
+        - name: app-state
+          persistentVolumeClaim:
+            claimName: {{ .Values.appState.pvcName }}
