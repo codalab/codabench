@@ -1,0 +1,186 @@
+istio:
+  enableVirtualService: false 
+  spec:
+    gateways:
+      - <namespace>/<gateway-name>   # e.g. kubeflow/kubeflow-gateway
+    hosts:
+      - '*'                          # Adjust if you want a specific hostname
+    http:
+      - match:
+          - uri:
+              exact: /<your-path-prefix>
+        redirect:
+          uri: /<your-path-prefix>/
+        route:
+          - destination:
+              host: django
+              port:
+                number: 8000
+      - match:
+          - uri:
+              prefix: /<your-path-prefix>
+        route:
+          - destination:
+              host: django
+              port:
+                number: 8000
+
+django:
+  image:
+    repository: <django-image-repository>
+    pullPolicy: Always
+    tag: <django-image-tag>
+  replicas: 1
+  port: 8000
+  workingDir: /app/src
+  gunicorn:
+    workers: 2
+    logLevel: info
+
+flower:
+  image:
+    repository: <flower-image-repository>
+    tag: <flower-image-tag>
+    pullPolicy: Always
+  replicas: 1
+  service:
+    port: 5555
+
+compute_worker:
+  image:
+    repository: <compute-worker-image-repository>
+    tag: <compute-worker-image-tag>
+    pullPolicy: Always
+  podCreationRetries:
+    numberOfRetries: 30
+    sleepTimeBetweenRetries: 10
+  submissionPods:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+  resources:
+    requests:
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  volumes:
+    pvcName: <shared-job-pvc-name>
+  brokers:
+    - name: "default"
+      gpu:
+        enabled: false
+
+redis:
+  image:
+    registry: <image-registry>
+    repository: kubeflow/bitnamilegacy/redis
+    tag: 7.2.5-debian-12-r0
+    pullPolicy: Always
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: false
+      storageClass: <storage-class>
+      size: 1Gi 
+    service:
+      ports:
+        redis: 6379
+
+rabbitmq:
+  image:
+    registry: <image-registry>
+    repository: kubeflow/bitnamilegacy/rabbitmq
+    tag: 3.13.7-debian-12-r2
+    pullPolicy: Always
+  auth:
+    username: rabbit-username
+    password: rabbit-password-you-should-change
+  service:
+    ports:
+      amqp: 5672
+  persistence:
+    enabled: true
+    storageClass: <storage-class>
+    size: 1Gi 
+  extraEnvVars:
+    - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+      value: "-rabbit consumer_timeout 100000000"
+
+siteWorker:
+  image:
+    repository: <django-image-repository>
+    tag: <django-image-tag>
+    pullPolicy: Always
+  replicas: 1
+  workingDir: /app/src
+  concurrency: 2
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+  volumes:
+    pvcName: <app-state-pvc-name>
+
+global:
+  defaultStorageClass: <storage-class>
+
+sharedJob:
+  storageClass: <storage-class>
+  pvcName: <shared-job-pvc-name>
+  storage: 1Gi
+
+appState:
+  storageClass: <storage-class>
+  pvcName: <app-state-pvc-name>
+  storage: 1Gi
+
+db:
+  host: <database-host>
+  name: <database-name>
+  username: <database-username>
+  password: <database-password>
+  port: <database-port>
+
+env:
+  SECRET_KEY: <your-django-secret-key>
+
+  DJANGO_SETTINGS_MODULE: settings.develop
+  ALLOWED_HOSTS: <allowed-hosts>
+  SUBMISSIONS_API_URL: http://django:8000/challenges/api
+  MAX_EXECUTION_TIME_LIMIT: "600"
+
+  DOMAIN_NAME: <domain-name>
+
+  TLS_EMAIL: <your@email.com>
+
+  RABBITMQ_HOST: <rabbitmq-hostname>
+  RABBITMQ_DEFAULT_USER: <rabbit-username>
+  RABBITMQ_DEFAULT_PASS: <rabbit-password>
+  RABBITMQ_MANAGEMENT_PORT: "15672"
+  RABBITMQ_PORT: "5672"
+
+  FLOWER_PUBLIC_PORT: "5555"
+  FLOWER_BASIC_AUTH: <user:password>
+
+  SELENIUM_HOSTNAME: <selenium-hostname>
+
+  RERUN_SUBMISSION_LIMIT: "30"
+
+  ENABLE_SIGN_UP: "False"
+  ENABLE_SIGN_IN: "False"
+
+  STORAGE_TYPE: s3
+  AWS_ACCESS_KEY_ID: <aws-access-key>
+  AWS_SECRET_ACCESS_KEY: <aws-secret-key>
+  AWS_STORAGE_BUCKET_NAME: <aws-bucket-name>
+  AWS_STORAGE_PRIVATE_BUCKET_NAME: <aws-private-bucket-name>
+  AWS_S3_ENDPOINT_URL: <s3-endpoint-url>
+  AWS_QUERYSTRING_AUTH: "False"
+
+  REDIS_URL: redis://<redis-host>:6379
+
+  ingressClassName: <ingress-class>              # e.g. nginx or traefik
