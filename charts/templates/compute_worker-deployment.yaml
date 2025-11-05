@@ -1,0 +1,73 @@
+{{- range .Values.compute_worker.brokers }}
+{{- $isDefault := eq .name "default" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}
+  labels:
+    app: compute-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compute-worker
+  template:
+    metadata:
+      labels:
+        app: compute-worker
+    spec:
+      serviceAccountName: compute-worker-sa
+      containers:
+        - name: compute-worker
+          image: "{{ $.Values.compute_worker.image.repository }}:{{ $.Values.compute_worker.image.tag }}"
+          imagePullPolicy: {{ $.Values.compute_worker.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - bash
+            - -c
+            - >
+              watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}@%n
+          workingDir: /app
+          env:
+            - name: USE_GPU
+              value: '{{ .gpu.enabled }}'
+            - name: RESOURCE_LIMITS
+              value: '{{ toJson .gpu.resourceLimits }}'
+            - name: NODE_SELECTOR
+              value: '{{ toJson .gpu.nodeSelector }}'
+            - name: NUMBER_OF_POD_CREATION_RETRIES
+              value: '{{ $.Values.compute_worker.podCreationRetries.numberOfRetries }}'
+            - name: SLEEP_TIME_BETWEEN_RETRIES
+              value: '{{ $.Values.compute_worker.podCreationRetries.sleepTimeBetweenRetries }}'
+            - name: USERID
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.runAsUser }}'
+            - name: GROUPID
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.runAsGroup }}'
+            - name: FSGROUP
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.fsGroup }}'
+            - name: COMPUTE_WORKER_LABELS
+              value: '{{ toJson $.Values.compute_worker.submissionPods.metadata.labels }}'
+            - name: BROKER_URL
+              value: "{{ if .url }}{{ .url }}{{ else }}pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS }}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//{{ end }}"
+            - name: CODALAB_IGNORE_CLEANUP_STEP
+              value: "1"
+            {{- range $key, $value := $.Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          resources:
+            {{- toYaml $.Values.compute_worker.resources | nindent 12 }}
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: codabench-storage
+              mountPath: /codabench
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+        - name: codabench-storage
+          persistentVolumeClaim:
+            claimName: {{ $.Values.compute_worker.volumes.pvcName }}
+{{- end }}
