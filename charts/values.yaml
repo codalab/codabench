@@ -25,6 +25,20 @@ istio:
               port:
                 number: 8000
 
+ingress:
+  spec:
+    ingressClassName: <ingress-class>              # e.g. nginx or traefik
+    rules:
+    - http:
+        paths:
+        - path: /<your-path-prefix>
+          pathType: Prefix
+          backend:
+            service:
+              name: django
+              port:
+                number: 8000
+
 django:
   image:
     repository: <django-image-repository>
@@ -182,5 +196,3 @@ env:
   AWS_QUERYSTRING_AUTH: "False"
 
   REDIS_URL: redis://<redis-host>:6379
-
-  ingressClassName: <ingress-class>              # e.g. nginx or traefik
