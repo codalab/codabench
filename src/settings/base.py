@@ -384,7 +384,7 @@ if STORAGE_IS_S3:
                 "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
                 "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
                 "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
-                "use_ssl": os.environ.get('S3_USE_SIGV4'),
+                "use_ssl": os.environ.get('S3_USE_SIGV4', 'true').lower() == 'true',
                 "querystring_auth": os.environ.get('AWS_QUERYSTRING_AUTH'),
                 "default_acl": os.environ.get('AWS_DEFAULT_ACL'),
             },
