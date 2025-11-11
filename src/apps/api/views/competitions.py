@@ -739,12 +739,12 @@ class PhaseViewSet(ModelViewSet):
                 # Codabemch public queue
                 if comp.queue is None:
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `{settings.CONTACT_EMAIL}` to request a rerun."
 
                 # Other queue where user is not owner and not organizer
                 elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `{settings.CONTACT_EMAIL}` to request a rerun."
 
                 # User can rerun submissions where he is owner or organizer
                 else:

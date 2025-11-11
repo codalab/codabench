@@ -5,6 +5,7 @@ from django.db.models import Q
 from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
+from django.conf import settings
 from django.shortcuts import render
 from utils.data import pretty_bytes
 
@@ -20,6 +21,7 @@ class HomeView(TemplateView):
 
         news_posts = NewsPost.objects.all().order_by('-id')
         context['news_posts'] = news_posts
+        context['CONTACT_EMAIL'] = settings.CONTACT_EMAIL
 
         return context
 
