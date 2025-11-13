@@ -1,7 +1,7 @@
 site_name: Codabench Wiki
 repo_url: https://github.com/codalab/codabench
 copyright: Apache-2.0
-edit_uri: documentation/docs
+edit_uri: edit/develop/documentation/docs
 
 theme:
   name: material
@@ -113,7 +113,7 @@ nav:
       - Benchmark Creation:
           - Getting Started Tutorial: Organizers/Benchmark_Creation/Getting-started-with-Codabench.md
           - Advanced Tutorial: Organizers/Benchmark_Creation/Advanced-Tutorial.md
-          - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench?.md
+          - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
           - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation:-Form.md
           - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation:-Bundle.md
@@ -136,7 +136,7 @@ nav:
           - Compute Worker Management with Podman: Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md
           - Server Status: Organizers/Running_a_benchmark/Server-status-page.md
   - Developers and Administrators:
-      - Codabench Basic Installtion Guide: Developers_and_Administrators/Codabench-Installation.md
+      - Codabench Basic Installation Guide: Developers_and_Administrators/Codabench-Installation.md
       - How to Deploy a Server: Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md
       - Administrative Procedures: Developers_and_Administrators/Administrator-procedures.md
       - Codabench Docker Architecture: Developers_and_Administrators/Codabench-Architecture.md

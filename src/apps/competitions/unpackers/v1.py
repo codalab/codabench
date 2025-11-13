@@ -4,7 +4,7 @@ import datetime
 from competitions.unpackers.base_unpacker import BaseUnpacker
 from competitions.unpackers.utils import CompetitionUnpackingException, get_datetime
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class V15Unpacker(BaseUnpacker):

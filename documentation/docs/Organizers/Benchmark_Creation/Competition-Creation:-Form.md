@@ -43,7 +43,7 @@ By clicking `Add phase`, you should be presented with a modal for phase creation
 - Name: The name of your phase
 - Start: The start day of your phase
 - End: The end day of your phase
-- Tasks: Here you can assign one or multiple task objects to your phase. Tasks are problems that the submission should be solving. For more information, see the explanation on competition structure [here](https://github.com/codalab/codabench/wiki/Competition-Bundle-Structure#what-is-a-competition): If you don't have any tasks created yet, click the green button at the bottom of the new phase modal titled `Manage Tasks/Datasets`
+- Tasks: Here you can assign one or multiple task objects to your phase. Tasks are problems that the submission should be solving. For more information, see the explanation on competition structure [here](Competition-Bundle-Structure.md#what-is-a-competition): If you don't have any tasks created yet, click the green button at the bottom of the new phase modal titled `Manage Tasks/Datasets`
 - Description: The description of your phase
 
 *Advanced*

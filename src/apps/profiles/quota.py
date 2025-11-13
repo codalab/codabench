@@ -1,7 +1,7 @@
 import logging
 from .models import User
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def reset_all_users_quota_to_gb():

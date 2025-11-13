@@ -1,6 +1,5 @@
 import json
 import uuid
-import logging
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,9 +22,8 @@ from api.serializers.submissions import SubmissionCreationSerializer, Submission
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
-
-
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -90,7 +88,7 @@ class SubmissionViewSet(ModelViewSet):
                         submission_detail.data_file.save(submission_detail.data_file.name, ContentFile(modified_content.encode("utf-8")))
 
                     except SubmissionDetails.DoesNotExist:
-                        logger.warning("SubmissionDetails object not found.")
+                        logger.error("SubmissionDetails object not found.")
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
@@ -117,7 +115,28 @@ class SubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
-                return Submission.objects.none()
+                # Show leaderboard submissions to unauthenticated users
+                return (
+                    qs.filter(
+                        leaderboard__isnull=False,
+                        is_soft_deleted=False,
+                        status=Submission.FINISHED,
+                    )
+                    .select_related(
+                        'phase',
+                        'phase__competition',
+                        'participant',
+                        'participant__user',
+                        'owner',
+                        'data',
+                    )
+                    .prefetch_related(
+                        'children',
+                        'scores',
+                        'scores__column',
+                        'task',
+                    )
+                )
 
             # Check if admin is requesting to see soft-deleted submissions
             show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
