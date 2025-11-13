@@ -4,30 +4,28 @@ FROM --platform=linux/amd64 fedora:42
 ENV PYTHONUNBUFFERED 1
 
 # Install Docker
-RUN dnf -y install dnf-plugins-core && \
-    dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo && \
+RUN curl -4L https://download.docker.com/linux/fedora/docker-ce.repo \
+        -o /etc/yum.repos.d/docker-ce.repo && \
     dnf -y update && \
     dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
-    dnf install -y python3.9 && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*
 
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.8.3
-# Poetry location so future commands (below) work
-ENV PATH $PATH:/root/.local/bin
-# Want poetry to use system python of docker container
-RUN poetry config virtualenvs.create false
-RUN poetry config virtualenvs.in-project false
-COPY ./compute_worker/pyproject.toml ./
-COPY ./compute_worker/poetry.lock ./
-# To use python3.9 instead of system python
-RUN poetry config virtualenvs.prefer-active-python true && poetry install
+ENV PATH "/root/.local/bin:${PATH}"
+# Copy compute worker files to /app
+COPY ./compute_worker/pyproject.toml /app/
+COPY ./compute_worker/uv.lock /app/
+COPY ./compute_worker/celery_config.py /app/
+COPY ./compute_worker/compute_worker.py /app/
+COPY ./src/settings/logs_loguru.py /app
 
-ADD compute_worker .
-COPY ./src/settings/logs_loguru.py /usr/bin
+WORKDIR /app
 
-CMD celery -A compute_worker worker \
+RUN uv sync --frozen
+CMD uv run celery -A compute_worker worker \
     -l info \
     -Q compute-worker \
     -n compute-worker@%n \
