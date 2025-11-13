@@ -22,7 +22,7 @@ import requests
 import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
-from celery import Celery, task, utils
+from celery import Celery, shared_task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
@@ -103,7 +103,7 @@ class ExecutionTimeLimitExceeded(Exception):
 # The main compute worker entrypoint, this is how a job is ran at the highest
 # level.
 # -----------------------------------------------------------------------------
-@task(name="compute_worker_run")
+@shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
     logger.info(f"Received run arguments: {run_args}")
     run = Run(run_args)
