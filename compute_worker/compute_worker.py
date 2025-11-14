@@ -44,7 +44,6 @@ import json
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
-CONTAINER_ENGINE_EXECUTABLE="docker"
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
     client = docker.APIClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix://var/run/docker.sock"), version="auto")
 elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
