@@ -16,8 +16,12 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
+import docker
+import podman
+from rich.progress import Progress
 
 import requests
+
 import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
@@ -35,6 +39,31 @@ logger = logging.getLogger(__name__)
 from logs_loguru import configure_logging,colorize_run_args
 import json
 
+
+
+# -----------------------------------------------
+# Initialize Docker or Podman depending on .env
+# -----------------------------------------------
+CONTAINER_ENGINE_EXECUTABLE="docker"
+if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+    client = docker.APIClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix://var/run/docker.sock"), version="auto")
+elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
+    client = podman.PodmanClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix://run/user/1000/podman/podman.sock"))
+
+tasks = {}
+def show_progress(line, progress):
+    if line['status'] == 'Downloading':
+        id = f'[red][Download {line["id"]}]'
+    elif line['status'] == 'Extracting':
+        id = f'[green][Extract  {line["id"]}]'
+    else:
+        logger.info(line)
+        return
+
+    if id not in tasks.keys():
+        tasks[id] = progress.add_task(f"{id}", total=line['progressDetail']['total'])
+    else:
+        progress.update(tasks[id], completed=line['progressDetail']['current'])
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
@@ -87,17 +116,6 @@ AVAILABLE_STATUSES = (
     STATUS_FINISHED,
     STATUS_FAILED,
 )
-
-
-# -----------------------------------------------
-# Container Engine
-# -----------------------------------------------
-# Setup the container engine that we are using
-if os.environ.get("CONTAINER_ENGINE_EXECUTABLE"):
-    CONTAINER_ENGINE_EXECUTABLE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE")
-else:
-    CONTAINER_ENGINE_EXECUTABLE = "docker"
-
 
 # -----------------------------------------------
 # Exceptions
@@ -374,26 +392,27 @@ class Run:
         retries, max_retries = (0, 3)
         while retries < max_retries:
             try:
-                cmd = [CONTAINER_ENGINE_EXECUTABLE, 'pull', image_name]
-                container_engine_pull = check_output(cmd)
-                logger.info("Pull complete for image: {0} with output of {1}".format(image_name, container_engine_pull))
-                break  # Break if the loop is successful
-            except CalledProcessError as pull_error:
+                #client.images.pull(image_name)
+                with Progress() as progress:
+                    resp = client.pull(image_name, stream=True, decode=True)
+                    for line in resp: 
+                        show_progress(line, progress)
+                    break  # Break if the loop is successful
+            except docker.errors.APIError as pull_error:
                 retries += 1
                 if retries >= max_retries:
-                    error_message = f"Pull for image: {image_name} returned a non-zero exit code! Check if the docker image exists on docker hub. {pull_error}"
-                    logger.error(error_message)
+                    logger.error(pull_error)
                     # Prepare data to be sent to submissions api
                     docker_pull_fail_data = {
                         "type": "Docker_Image_Pull_Fail",
-                        "error_message": error_message,
+                        "error_message": pull_error,
                         "is_scoring": self.is_scoring
                     }
                     # Send data to be written to ingestion logs
                     self._update_submission(docker_pull_fail_data)
                     # Send error through web socket to the frontend
-                    asyncio.run(self._send_data_through_socket(error_message))
-                    raise DockerImagePullException(f"Pull for {image_name} failed!")
+                    asyncio.run(self._send_data_through_socket(str(pull_error)))
+                    raise DockerImagePullException(f"Pull for {image_name} failed! Check the logs for more information")
                 else:
                     logger.warning("Failed. Retrying in 5 seconds...")
                     time.sleep(5)  # Wait 5 seconds before retrying
@@ -484,7 +503,7 @@ class Run:
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
-    async def _run_container_engine_cmd(self, engine_cmd, kind):
+    async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
 
@@ -492,101 +511,59 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
+        logs_unifed = [None, None]
+
         start = time.time()
-        proc = await asyncio.create_subprocess_exec(
-            *engine_cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        # Stream the logs of competition container
+        # TODO Still need to stream the logs back to the Codabench Instance
+        try:
+            client.start(container=container.get('Id'))
+            containerLogs = client.logs(container, follow=True, stream=True)
+            for log in containerLogs:
+                logger.info(log)
+        except docker.errors.NotFound as e:
+            logger.error(e)
+        except docker.errors.APIError as e:
+            logger.error(e)
+        except:
+            logger.error("There was an error while streaming the logs")
+
+        # Get the return code of the competition container once done
+        try:
+            # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
+            logs_unifed = client.attach(container, logs=True, demux=True)
+            returnCode = client.wait(container)
+            logger.info("Exited with status code : "+str(returnCode['StatusCode']))
+        except requests.exceptions.ReadTimeout as e:
+            logger.error(e)
+            returnCode = {"StatusCode": e}
+        except docker.errors.APIError as e:
+            logger.error(e)
+            returnCode = {"StatusCode": e}
 
         self.logs[kind] = {
-            "proc": proc,
+            "returncode": returnCode['StatusCode'],
             "start": start,
             "end": None,
             "stdout": {
-                "data": b'',
-                "stream": proc.stdout,
+                "data": logs_unifed[0],
+                "stream": logs_unifed[0],
                 "continue": True,
                 "location": self.stdout if kind == 'program' else self.ingestion_stdout
             },
             "stderr": {
-                "data": b'',
-                "stream": proc.stderr,
+                "data": logs_unifed[1],
+                "stream": logs_unifed[1],
                 "continue": True,
                 "location": self.stderr if kind == 'program' else self.ingestion_stderr
             },
         }
 
-        # Start websocket, it will reconnect in the stdout/stderr listener loop below
-        # This ensures each task has its own independent WebSocket connection
-        websocket_url = f"{self.websocket_url}?kind={kind}"
-        logger.debug(f"WORKER_MARKER: Connecting to {websocket_url}")
-        websocket = await websockets.connect(websocket_url)
-        # websocket = await websockets.connect(self.websocket_url) # old BB
-        websocket_errors = (socket.gaierror, websockets.WebSocketException, websockets.ConnectionClosedError, ConnectionRefusedError)
-
-        # Function to read a line, if the line is larger than the buffer size we will
-        # return the buffer so we can continue reading until we get a newline, rather
-        # than getting a LimitOverrunError
-        async def _readline_or_chunk(stream):
-            try:
-                return await stream.readuntil(b"\n")
-            except asyncio.exceptions.IncompleteReadError as e:
-                # Just return what has been read so far
-                return e.partial
-            except asyncio.exceptions.LimitOverrunError as e:
-                # If we get a LimitOverrunError, we will return the buffer so we can continue reading
-                return await stream.read(e.consumed)
-
-        while any(v["continue"] for k, v in self.logs[kind].items() if k in ['stdout', 'stderr']):
-            try:
-                logs = [self.logs[kind][key] for key in ('stdout', 'stderr')]
-                for value in logs:
-                    try:
-                        out = await asyncio.wait_for(_readline_or_chunk(value["stream"]), timeout=0.1)
-                        if out:
-                            value["data"] += out
-                            print("WS: " + str(out))
-                            await websocket.send(json.dumps({
-                                "kind": kind,
-                                "message": out.decode()
-                            }))
-                        else:
-                            value["continue"] = False
-                    except asyncio.TimeoutError:
-                        continue
-            except websocket_errors:
-                logger.error("\n\nWebsocket error (line 538)\n\n")
-                try:
-                    # do we need to await websocket.close() on the old socket? before making a new one probably not?
-                    await websocket.close()
-                except Exception as e:
-                    logger.error(e)
-                    # TODO: catch proper exceptions here..! What can go wrong failing to close?
-                    pass
-
-                # try to reconnect a few times
-                tries = 0
-                while tries < 3 and not websocket.open:
-                    try:
-                        logger.warning(f"\n\nAttempting to reconnect in 2 seconds (attempt {tries+1}/3)")
-                        websocket = await websockets.connect(websocket_url)
-                        logger.debug(f"\n\nSuccessfully reconnected to {websocket_url}")
-                    except websocket_errors:
-                        logger.error(f"\n\nReconnection attempt {tries+1} failed: {websocket_errors}")
-                        await asyncio.sleep(2)
-                        tries += 1
-
         self.logs[kind]["end"] = time.time()
-
-        logger.debug(f"Process exited with {proc.returncode}")
-        logger.debug(f"Disconnecting from websocket {websocket_url}")
 
         # Communicate that the program is closing
         self.completed_program_counter += 1
 
-        logger.debug(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
-        await websocket.close()
 
     def _get_host_path(self, *paths):
         """Turns an absolute path inside our container, into what the path
@@ -662,39 +639,22 @@ class Run:
                     f"(may be meant to be consumed by an ingestion program)"
                 )
                 return
+        volumes_host = [self._get_host_path(program_dir), self._get_host_path(self.output_dir), self.data_dir]
+        volumes_config = {
+            volumes_host[0]: {
+                'bind': '/app/program',
+                'mode': 'z',
+            },
+            volumes_host[1]: {
+                'bind': '/app/output',
+                'mode': 'z',
+            },
+            volumes_host[2]: {
+                'bind': '/app/data',
+                'mode': 'ro',
+            }
+        }
 
-        engine_cmd = [
-            CONTAINER_ENGINE_EXECUTABLE,
-            'run',
-            # Remove it after run
-            '--rm',
-            f'--name={self.ingestion_container_name if kind == "ingestion" else self.program_container_name}',
-
-            # Don't allow subprocesses to raise privileges
-            '--security-opt=no-new-privileges',
-
-            # Set the volumes: ro for Read Only,  z to allow multiple containers to access the volume (useful for podman)
-            '-v', f'{self._get_host_path(program_dir)}:/app/program:z',
-            '-v', f'{self._get_host_path(self.output_dir)}:/app/output:z',
-            '-v', f'{self.data_dir}:/app/data:ro',
-
-            # Start in the right directory
-            '-w', '/app/program',
-            
-            # Set the user namespace mode for the container
-            '--userns', 'host',
-            # Drop all capabilities
-            '--cap-drop', 'all', 
-            # Don't buffer python output, so we don't lose any
-            '-e', 'PYTHONUNBUFFERED=1',
-        ]
-
-        # GPU or not
-        if os.environ.get("USE_GPU") and CONTAINER_ENGINE_EXECUTABLE=='docker':
-            engine_cmd.extend(['--gpus', 'all'])
-        # For podman specifically
-        if os.environ.get("USE_GPU") and CONTAINER_ENGINE_EXECUTABLE=='podman':
-            engine_cmd.extend(['--device', 'nvidia.com/gpu=all'])
 
         if kind == 'ingestion':
             # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
@@ -703,22 +663,42 @@ class Run:
                 ingested_program_location = "input/res"
             else:
                 ingested_program_location = "program"
-
-            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, ingested_program_location)}:/app/ingested_program']
-
-        if self.input_data:
-            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, "input_data")}:/app/input_data']
+            volumes_host.extend([self._get_host_path(self.root_dir, ingested_program_location)])
+            tempvolumeConfig = {
+                volumes_host[-1]: {
+                    'bind': '/app/ingested_program',
+                }
+            }
+            volumes_config.update(tempvolumeConfig)
 
         if self.is_scoring:
             # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
             # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
-            engine_cmd += ['-v', f'{self._get_host_path(self.root_dir, "shared")}:/app/shared']
+            volumes_host.extend([self._get_host_path(self.root_dir, "shared")])
+            tempvolumeConfig = {
+                volumes_host[-1]: {
+                    'bind': '/app/shared',
+                }
+            }
+            volumes_config.update(tempvolumeConfig)
 
             # Input from submission (or submission + ingestion combo)
-            engine_cmd += ['-v', f'{self._get_host_path(self.input_dir)}:/app/input']
+            volumes_host.extend([self._get_host_path(self.input_dir)])
+            tempvolumeConfig = {
+                volumes_host[-1]: {
+                    'bind': '/app/input',
+                }
+            }
+            volumes_config.update(tempvolumeConfig)
 
-        # Set the image name (i.e. "codalab/codalab-legacy:py37") for the container
-        engine_cmd += [self.container_image]
+        if self.input_data:
+            volumes_host.extend([self._get_host_path(self.root_dir, "input_data")])
+            tempvolumeConfig = {
+                volumes_host[-1]: {
+                    'bind': '/app/input_data',
+                }
+            }
+            volumes_config.update(tempvolumeConfig)
 
         # Handle Legacy competitions by replacing anything in the run command
         command = replace_legacy_metadata_command(
@@ -728,13 +708,20 @@ class Run:
             ingestion_only_during_scoring=self.ingestion_only_during_scoring
         )
 
-        # Append the actual program to run
-        engine_cmd += command.split(' ')
 
-        logger.info(f"Running program = {' '.join(engine_cmd)}")
+        cap_drop_list = ['AUDIT_WRITE', 'CHOWN', 'DAC_OVERRIDE', 'FOWNER', 'FSETID', 'KILL', 'MKNOD', 'NET_BIND_SERVICE', 'NET_RAW', 'SETFCAP', 'SETGID', 'SETPCAP', 'SETUID', 'SYS_CHROOT']
+        if os.environ.get("USE_GPU"):
+            logger.info("Running the container with GPU capabilities")
+            host_config = client.create_host_config(auto_remove=True, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"], device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])])
+        else:
+            host_config = client.create_host_config(auto_remove=True, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"])
+
+        logger.info("Running container with command " +command)
+        container_name = self.ingestion_container_name if kind == "ingestion" else self.program_container_name
+        container = client.create_container(self.container_image, name=container_name, host_config=host_config, detach=False, volumes=volumes_host,command=command, working_dir='/app/program', environment=["PYTHONUNBUFFERED=1"])
 
         # This runs the container engine command and asynchronously passes data back via websocket
-        return await self._run_container_engine_cmd(engine_cmd, kind=kind)
+        return await self._run_container_engine_cmd(container, kind=kind)
 
     def _put_dir(self, url, directory):
         """ Zip the directory and send it to the given URL using _put_file.
@@ -887,24 +874,26 @@ class Run:
                     elapsed_time = logs["end"] - logs["start"]
                 else:
                     elapsed_time = self.execution_time_limit
-                return_code = logs["proc"].returncode
+                return_code = logs["returncode"]
                 if return_code is None:
                     logger.warning('No return code from Process. Killing it')
                     if kind == 'ingestion':
-                        program_to_kill = self.ingestion_container_name
+                        container_to_kill = self.ingestion_container_name
                     else:
-                        program_to_kill = self.program_container_name
-                    # Try and stop the program. If stop does not succeed
-                    kill_code = subprocess.call([CONTAINER_ENGINE_EXECUTABLE, 'stop', str(program_to_kill)])
-                    logger.warning(f'Kill process returned {kill_code}')
+                        container_to_kill = self.program_container_name
+                    try:
+                        client.kill(container_to_kill)
+                    except docker.errors.APIError as e:
+                        logger.error(e)
+                    except:
+                        logger.error("There was a problem killing "+str(container_to_kill))
                 if kind == 'program':
                     self.program_exit_code = return_code
                     self.program_elapsed_time = elapsed_time
                 elif kind == 'ingestion':
                     self.ingestion_program_exit_code = return_code
                     self.ingestion_elapsed_time = elapsed_time
-
-                logger.info(f'[exited with {logs["proc"].returncode}]')
+                logger.info(f'[exited with {logs["returncode"]}]')
                 for key, value in logs.items():
                     if key not in ['stdout', 'stderr']:
                         continue
