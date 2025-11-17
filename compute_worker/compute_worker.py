@@ -40,7 +40,6 @@ from logs_loguru import configure_logging,colorize_run_args
 import json
 
 
-
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
@@ -391,16 +390,18 @@ class Run:
         retries, max_retries = (0, 3)
         while retries < max_retries:
             try:
-                #client.images.pull(image_name)
                 with Progress() as progress:
-                    resp = client.pull(image_name, stream=True, decode=True)
+                    if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
+                        resp = client.pull(image_name, stream=True, decode=True)
+                    elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
+                        resp = client.images.pull(image_name, stream=True, decode=True)
                     for line in resp: 
                         show_progress(line, progress)
                     break  # Break if the loop is successful
-            except docker.errors.APIError as pull_error:
+            except (docker.errors.APIError, podman.errors.APIError) as pull_error:
                 retries += 1
                 if retries >= max_retries:
-                    logger.error(pull_error)
+                    logger.error("There was a problem pulling the image : " +str(pull_error))
                     # Prepare data to be sent to submissions api
                     docker_pull_fail_data = {
                         "type": "Docker_Image_Pull_Fail",
@@ -510,33 +511,66 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
+        # Creating this and setting 2 values to None in case there is not enough time for the worker to get logs, otherwise we will have errors later on
         logs_unifed = [None, None]
+        # Create a websocket to send the logs in real time to the codabench isntance
+        websocket_url = f"{self.websocket_url}?kind={kind}"
+        websocket = await websockets.connect(websocket_url)
+        logger.debug("Connecting to" +websocket_url)
 
         start = time.time()
-        # Stream the logs of competition container
-        # TODO Still need to stream the logs back to the Codabench Instance
+
+        # Stream the logs of competition container while also sending them to the codabench instance
         try:
-            client.start(container=container.get('Id'))
-            containerLogs = client.logs(container, follow=True, stream=True)
-            for log in containerLogs:
-                logger.info(log)
-        except docker.errors.NotFound as e:
+            if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
+                client.start(container=container.get('Id'))
+                conatinerLogsDemux = client.attach(container, demux=True, stream=True, logs=True)
+            elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
+                client.containers.start(container)
+                conatinerLogsDemux = client.containers.attach(container, stream=True, demux=True)
+            # If we enter the for loop after the container exited, the program will get stuck
+            if client.inspect_container(container)['State']['Status'].lower() == 'running':
+                for log in conatinerLogsDemux:
+                    if str(log[0]) != 'None':
+                        logger.info(log[0].decode())
+                        try:
+                            await websocket.send(json.dumps({
+                                    "kind": kind,
+                                    "message": log[0].decode()
+                                }))
+                        except Exception as e:
+                            logger.error(e)
+                            await websocket.close()
+                    elif str(log[1]) != 'None':
+                        logger.error(log[1].decode())
+                        try:
+                            await websocket.send(json.dumps({
+                                    "kind": kind,
+                                    "message": log[1].decode()
+                                }))
+                        except Exception as e:
+                            logger.error(e)
+                            await websocket.close()
+
+        except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
-        except docker.errors.APIError as e:
-            logger.error(e)
-        except:
-            logger.error("There was an error while streaming the logs")
+        except Exception as e:
+            logger.exception(e)
 
         # Get the return code of the competition container once done
         try:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
-            logs_unifed = client.attach(container, logs=True, demux=True)
-            returnCode = client.wait(container)
+            if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
+                logs_unifed = client.attach(container, logs=True, demux=True)
+                returnCode = client.wait(container)
+                client.remove_container(container, force=True)
+
+            elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
+                logs_unifed = client.containers.attach(container, logs=True, demux=True)
+
             logger.info("Exited with status code : "+str(returnCode['StatusCode']))
-        except requests.exceptions.ReadTimeout as e:
-            logger.error(e)
-            returnCode = {"StatusCode": e}
-        except docker.errors.APIError as e:
+
+        except (requests.exceptions.ReadTimeout, docker.errors.APIError, Exception) as e:
             logger.error(e)
             returnCode = {"StatusCode": e}
 
@@ -562,6 +596,9 @@ class Run:
 
         # Communicate that the program is closing
         self.completed_program_counter += 1
+
+        logger.debug(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
+        await websocket.close()
 
 
     def _get_host_path(self, *paths):
@@ -709,11 +746,12 @@ class Run:
 
 
         cap_drop_list = ['AUDIT_WRITE', 'CHOWN', 'DAC_OVERRIDE', 'FOWNER', 'FSETID', 'KILL', 'MKNOD', 'NET_BIND_SERVICE', 'NET_RAW', 'SETFCAP', 'SETGID', 'SETPCAP', 'SETUID', 'SYS_CHROOT']
-        if os.environ.get("USE_GPU"):
+        # Configure whether or not we use the GPU. Also setting auto_remove to False because
+        if os.environ.get("USE_GPU", "false").lower() == 'true':
             logger.info("Running the container with GPU capabilities")
-            host_config = client.create_host_config(auto_remove=True, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"], device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])])
+            host_config = client.create_host_config(auto_remove=False, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"], device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])])
         else:
-            host_config = client.create_host_config(auto_remove=True, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"])
+            host_config = client.create_host_config(auto_remove=False, cap_drop=cap_drop_list, binds=volumes_config, userns_mode='host', security_opt=["no-new-privileges"])
 
         logger.info("Running container with command " +command)
         container_name = self.ingestion_container_name if kind == "ingestion" else self.program_container_name
