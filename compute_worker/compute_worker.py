@@ -393,10 +393,12 @@ class Run:
                 with Progress() as progress:
                     if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
                         resp = client.pull(image_name, stream=True, decode=True)
+                        for line in resp:
+                            show_progress(line, progress)
                     elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
-                        resp = client.images.pull(image_name, stream=True, decode=True)
-                    for line in resp: 
-                        show_progress(line, progress)
+                        logger.info("podman pulling image")
+                        resp = client.images.pull(repository=image_name,tag="latest", progress_bar=True)
+
                     break  # Break if the loop is successful
             except (docker.errors.APIError, podman.errors.APIError) as pull_error:
                 retries += 1
@@ -524,13 +526,13 @@ class Run:
         try:
             if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
                 client.start(container=container.get('Id'))
-                conatinerLogsDemux = client.attach(container, demux=True, stream=True, logs=True)
+                containerLogsDemux = client.attach(container, demux=True, stream=True, logs=True)
             elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
                 client.containers.start(container)
-                conatinerLogsDemux = client.containers.attach(container, stream=True, demux=True)
+                containerLogsDemux = client.containers.attach(container, stream=True, demux=True)
             # If we enter the for loop after the container exited, the program will get stuck
             if client.inspect_container(container)['State']['Status'].lower() == 'running':
-                for log in conatinerLogsDemux:
+                for log in containerLogsDemux:
                     if str(log[0]) != 'None':
                         logger.info(log[0].decode())
                         try:
