@@ -17,9 +17,7 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 import docker
-import podman
 from rich.progress import Progress
-
 import requests
 
 import websockets
@@ -44,9 +42,9 @@ import json
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
-    client = docker.APIClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix://var/run/docker.sock"), version="auto")
+    client = docker.APIClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix:///var/run/docker.sock"), version="auto")
 elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
-    client = podman.PodmanClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix://run/user/1000/podman/podman.sock"))
+    client = docker.APIClient(base_url=os.environ.get("CONTAINER_SOCKET", "unix:///run/user/1000/podman/podman.sock"), version="auto")
 
 tasks = {}
 def show_progress(line, progress):
@@ -55,13 +53,15 @@ def show_progress(line, progress):
     elif line['status'] == 'Extracting':
         id = f'[green][Extract  {line["id"]}]'
     else:
-        logger.info(line)
+        # skip other statuses
         return
 
     if id not in tasks.keys():
         tasks[id] = progress.add_task(f"{id}", total=line['progressDetail']['total'])
     else:
         progress.update(tasks[id], completed=line['progressDetail']['current'])
+
+
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
@@ -391,16 +391,12 @@ class Run:
         while retries < max_retries:
             try:
                 with Progress() as progress:
-                    if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
-                        resp = client.pull(image_name, stream=True, decode=True)
-                        for line in resp:
-                            show_progress(line, progress)
-                    elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
-                        logger.info("podman pulling image")
-                        resp = client.images.pull(repository=image_name,tag="latest", progress_bar=True)
+                    resp = client.pull(image_name, stream=True, decode=True)
+                    for line in resp:
+                        show_progress(line, progress)
 
                     break  # Break if the loop is successful
-            except (docker.errors.APIError, podman.errors.APIError) as pull_error:
+            except (docker.errors.APIError, Exception) as pull_error:
                 retries += 1
                 if retries >= max_retries:
                     logger.error("There was a problem pulling the image : " +str(pull_error))
@@ -514,7 +510,7 @@ class Run:
         :return:
         """
         # Creating this and setting 2 values to None in case there is not enough time for the worker to get logs, otherwise we will have errors later on
-        logs_unifed = [None, None]
+        logs_Unified = [None, None]
         # Create a websocket to send the logs in real time to the codabench isntance
         websocket_url = f"{self.websocket_url}?kind={kind}"
         websocket = await websockets.connect(websocket_url)
@@ -524,15 +520,12 @@ class Run:
 
         # Stream the logs of competition container while also sending them to the codabench instance
         try:
-            if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
-                client.start(container=container.get('Id'))
-                containerLogsDemux = client.attach(container, demux=True, stream=True, logs=True)
-            elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
-                client.containers.start(container)
-                containerLogsDemux = client.containers.attach(container, stream=True, demux=True)
+
+            client.start(container=container.get('Id'))
+            container_LogsDemux = client.attach(container, demux=True, stream=True, logs=True)
             # If we enter the for loop after the container exited, the program will get stuck
             if client.inspect_container(container)['State']['Status'].lower() == 'running':
-                for log in containerLogsDemux:
+                for log in container_LogsDemux:
                     if str(log[0]) != 'None':
                         logger.info(log[0].decode())
                         try:
@@ -562,33 +555,29 @@ class Run:
         # Get the return code of the competition container once done
         try:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
-            if os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'docker':
-                logs_unifed = client.attach(container, logs=True, demux=True)
-                returnCode = client.wait(container)
-                client.remove_container(container, force=True)
+            logs_Unified = client.attach(container, logs=True, demux=True)
+            return_Code = client.wait(container)
+            client.remove_container(container, force=True)
 
-            elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == 'podman':
-                logs_unifed = client.containers.attach(container, logs=True, demux=True)
-
-            logger.info("Exited with status code : "+str(returnCode['StatusCode']))
+            logger.info("Exited with status code : "+str(return_Code['StatusCode']))
 
         except (requests.exceptions.ReadTimeout, docker.errors.APIError, Exception) as e:
             logger.error(e)
-            returnCode = {"StatusCode": e}
+            return_Code = {"StatusCode": e}
 
         self.logs[kind] = {
-            "returncode": returnCode['StatusCode'],
+            "returncode": return_Code['StatusCode'],
             "start": start,
             "end": None,
             "stdout": {
-                "data": logs_unifed[0],
-                "stream": logs_unifed[0],
+                "data": logs_Unified[0],
+                "stream": logs_Unified[0],
                 "continue": True,
                 "location": self.stdout if kind == 'program' else self.ingestion_stdout
             },
             "stderr": {
-                "data": logs_unifed[1],
-                "stream": logs_unifed[1],
+                "data": logs_Unified[1],
+                "stream": logs_Unified[1],
                 "continue": True,
                 "location": self.stderr if kind == 'program' else self.ingestion_stderr
             },
