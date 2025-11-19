@@ -48,19 +48,45 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
 
 tasks = {}
 def show_progress(line, progress):
-    if line['status'] == 'Downloading':
-        id = f'[red][Download {line["id"]}]'
+    if 'Status: Image is up to date' in line['status']:
+        logger.info(line['status'])
+
+    completed = False
+    if line['status'] == 'Download complete':
+        description = f'[blue][Download complete, waiting for extraction  {line["id"]}]'
+        completed = True
+    elif line['status'] == 'Downloading':
+        description = f'[bold][Downloading {line["id"]}]'
+    elif line['status'] == 'Pull complete':
+        description = f'[green][Extraction complete  {line["id"]}]'
+        completed = True
     elif line['status'] == 'Extracting':
-        id = f'[green][Extract  {line["id"]}]'
+            description = f'[blue][Extracting  {line["id"]}]'
+
+
     else:
-        # skip other statuses
+        # skip other statuses, but show extraction progress
         return
 
-    if id not in tasks.keys():
-        tasks[id] = progress.add_task(f"{id}", total=line['progressDetail']['total'])
+    task_id = line["id"]
+    if task_id not in tasks.keys():
+        if completed:
+            # some layers are really small that they download immediately without showing
+            # anything as Downloading in the stream.
+            # For that case, show a completed progress bar
+            tasks[task_id] = progress.add_task(description, total=100, completed=100)
+        else:
+            tasks[task_id] = progress.add_task(
+                description, total=line['progressDetail']['total']
+            )
     else:
-        progress.update(tasks[id], completed=line['progressDetail']['current'])
-
+        if completed:
+            # due to the stream, the Download complete output can happen before the Downloading
+            # bar outputs the 100%. So when we detect that the download is in fact complete,
+            # update the progress bar to show 100%
+            progress.update(tasks[task_id], description=description, total=100, completed=100)
+        else:
+            progress.update(tasks[task_id], completed=line['progressDetail']['current'], total=line['progressDetail']['total'])
 
 
 # -----------------------------------------------
@@ -394,8 +420,8 @@ class Run:
                     resp = client.pull(image_name, stream=True, decode=True)
                     for line in resp:
                         show_progress(line, progress)
-
                     break  # Break if the loop is successful
+
             except (docker.errors.APIError, Exception) as pull_error:
                 retries += 1
                 if retries >= max_retries:
@@ -513,18 +539,21 @@ class Run:
         logs_Unified = [None, None]
         # Create a websocket to send the logs in real time to the codabench isntance
         websocket_url = f"{self.websocket_url}?kind={kind}"
-        websocket = await websockets.connect(websocket_url)
         logger.debug("Connecting to" +websocket_url)
+        websocket = await websockets.connect(websocket_url)
 
         start = time.time()
 
         # Stream the logs of competition container while also sending them to the codabench instance
         try:
-
+            logger.debug("Starting container"+container.get('Id'))
             client.start(container=container.get('Id'))
+            logger.debug("Attaching to started container to get the logs :" +container.get('Id'))
             container_LogsDemux = client.attach(container, demux=True, stream=True, logs=True)
+
             # If we enter the for loop after the container exited, the program will get stuck
             if client.inspect_container(container)['State']['Status'].lower() == 'running':
+                logger.debug("Show the logs and stream them to codabench"+container.get('Id'))
                 for log in container_LogsDemux:
                     if str(log[0]) != 'None':
                         logger.info(log[0].decode())
@@ -535,7 +564,7 @@ class Run:
                                 }))
                         except Exception as e:
                             logger.error(e)
-                            await websocket.close()
+
                     elif str(log[1]) != 'None':
                         logger.error(log[1].decode())
                         try:
@@ -545,7 +574,6 @@ class Run:
                                 }))
                         except Exception as e:
                             logger.error(e)
-                            await websocket.close()
 
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
@@ -557,6 +585,8 @@ class Run:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
             logs_Unified = client.attach(container, logs=True, demux=True)
             return_Code = client.wait(container)
+            logger.debug(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
+            await websocket.close()
             client.remove_container(container, force=True)
 
             logger.info("Exited with status code : "+str(return_Code['StatusCode']))
@@ -587,9 +617,6 @@ class Run:
 
         # Communicate that the program is closing
         self.completed_program_counter += 1
-
-        logger.debug(f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}")
-        await websocket.close()
 
 
     def _get_host_path(self, *paths):
