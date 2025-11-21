@@ -18,7 +18,7 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
           docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
           docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
-          docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
+          #docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
       - name: "Docker: Pull required images"
         run: |
           docker pull codalab/codalab-legacy:py37
