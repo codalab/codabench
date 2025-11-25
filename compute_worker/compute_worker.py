@@ -55,6 +55,8 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
     )
 
 tasks = {}
+
+
 def show_progress(line, progress):
     if "Status: Image is up to date" in line["status"]:
         logger.info(line["status"])
@@ -376,7 +378,7 @@ class Run:
                 logger.info(time.time() - start)
                 if time.time() - start > expiration_seconds:
                     timeout_error_message = (
-                        f"WARNING: Detailed results not written before the execution."
+                        "WARNING: Detailed results not written before the execution."
                     )
                     logger.warning(timeout_error_message)
             await asyncio.sleep(5)
@@ -533,16 +535,16 @@ class Run:
 
         except websocket_errors:
             # handle websocket errors
-            logger.error(f"Error sending failed through websocket")
+            logger.error("Error sending failed through websocket")
             try:
                 await websocket.close()
             except Exception as e:
                 logger.error(e)
         else:
             # no error in websocket message sending
-            logger.info(f"Error sent successfully through websocket")
+            logger.info("Error sent successfully through websocket")
 
-        logger.info(f"Disconnecting from websocket {websocket_url}")
+        logger.info("Disconnecting from websocket {websocket_url}")
 
         # close websocket
         await websocket.close()
@@ -604,16 +606,21 @@ class Run:
         :param kind: either 'ingestion' or 'program'
         :return:
         """
+
         # Creating this and setting 2 values to None in case there is not enough time for the worker to get logs, otherwise we will have errors later on
         logs_Unified = [None, None]
 
-        # Create a websocket to send the logs in real time to the codabench isntance
+        # Create a websocket to send the logs in real time to the codabench instance
+        # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
         try:
             websocket_url = f"{self.websocket_url}?kind={kind}"
-            logger.debug("Connecting to" + websocket_url)
-            websocket = await websockets.connect(websocket_url)
+            logger.debug("Connecting to " + websocket_url + "for container " + str(container.get("Id")))
+            websocket = await asyncio.wait_for(websockets.connect(websocket_url), timeout=5.0)
+            logger.debug("connected to " + str(websocket_url) + "for container " + str(container.get("Id")))
         except Exception as e:
-            logger.error("There was an error trying to connect to the websocket on the codabench instance")
+            logger.error(
+                "There was an error trying to connect to the websocket on the codabench instance"
+            )
             logger.exception(e)
 
         start = time.time()
@@ -659,7 +666,9 @@ class Run:
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
         except Exception as e:
-            logger.info("test")
+            logger.error(
+                "There was an error while starting the container and getting the logs"
+            )
             logger.exception(e)
 
         # Get the return code of the competition container once done
@@ -673,8 +682,7 @@ class Run:
             await websocket.close()
             client.remove_container(container, force=True)
 
-            logger.debug("Container " + container.get("Id"))
-            logger.debug("Exited with status code : " + str(return_Code["StatusCode"]))
+            logger.debug("Container " + container.get("Id") + "exited with status code : " + str(return_Code["StatusCode"]))
 
         except (
             requests.exceptions.ReadTimeout,
@@ -716,7 +724,7 @@ class Run:
         path = os.path.join(*paths)
 
         # pull front of path, which points to the location inside the container
-        path = path[len(BASE_DIR):]
+        path = path[len(BASE_DIR) :]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
@@ -913,9 +921,12 @@ class Run:
             working_dir="/app/program",
             environment=["PYTHONUNBUFFERED=1"],
         )
-
+        logger.debug("Created container : " + str(container))
         # This runs the container engine command and asynchronously passes data back via websocket
-        return await self._run_container_engine_cmd(container, kind=kind)
+        try:
+            return await self._run_container_engine_cmd(container, kind=kind)
+        except Exception as e:
+            logger.exception(e)
 
     def _put_dir(self, url, directory):
         """Zip the directory and send it to the given URL using _put_file."""
@@ -1064,23 +1075,22 @@ class Run:
             }
             # Some cleanup
             for kind, logs in self.logs.items():
-                logger.info(self.ingestion_container_name)
-                logger.info(self.program_container_name)
-                if kind == "ingestion":
-                    container_to_kill = self.ingestion_container_name
-                else:
-                    container_to_kill = self.program_container_name
-                try:
-                    logger.debug("Trying to kill and remove container " + str(container_to_kill))
-                    client.kill(str(container_to_kill))
-                    client.remove_container(str(container_to_kill), force=True)
-                except docker.errors.APIError as e:
-                    logger.error(e)
-                except Exception as e:
-                    logger.error(
-                        "There was a problem killing " + str(container_to_kill)
-                    )
-                    logger.exception(e)
+                containers_to_kill = []
+                containers_to_kill.append(self.ingestion_container_name)
+                containers_to_kill.append(self.program_container_name)
+                logger.debug(
+                    "Trying to kill and remove container " + str(containers_to_kill)
+                )
+                for container in containers_to_kill:
+                    try:
+                        client.remove_container(str(container), force=True)
+                    except docker.errors.APIError as e:
+                        logger.error(e)
+                    except Exception as e:
+                        logger.error(
+                            "There was a problem killing " + str(containers_to_kill)
+                        )
+                        logger.exception(e)
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
             # Send error through web socket to the frontend
@@ -1097,17 +1107,17 @@ class Run:
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
                     if kind == "ingestion":
-                        container_to_kill = self.ingestion_container_name
+                        containers_to_kill = self.ingestion_container_name
                     else:
-                        container_to_kill = self.program_container_name
+                        containers_to_kill = self.program_container_name
                     try:
-                        client.kill(container_to_kill)
-                        client.remove_container(container_to_kill, force=True)
+                        client.kill(containers_to_kill)
+                        client.remove_container(containers_to_kill, force=True)
                     except docker.errors.APIError as e:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(container_to_kill)
+                            "There was a problem killing " + str(containers_to_kill)
                         )
                         logger.exception(e)
                 if kind == "program":
