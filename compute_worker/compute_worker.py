@@ -892,7 +892,7 @@ class Run:
         else:
             security_options = ["label=disable"]
         # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
-        device_id = [os.environg.get("GPU_DEVICE", "nvidia.com/gpu=all")]
+        device_id = [os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")]
         if os.environ.get("USE_GPU", "false").lower() == "true":
             logger.info("Running the container with GPU capabilities")
             host_config = client.create_host_config(
