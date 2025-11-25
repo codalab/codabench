@@ -4,10 +4,7 @@ FROM --platform=linux/amd64 fedora:42
 ENV PYTHONUNBUFFERED 1
 
 # Install Docker
-RUN dnf -y install dnf-plugins-core && \
-    dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo && \
-    dnf -y update && \
-    dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+RUN dnf -y update && \
     dnf install -y python3.9 && \
     dnf clean all && \
     rm -rf /var/cache /var/log/dnf* /var/log/yum.*

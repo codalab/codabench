@@ -58,51 +58,54 @@ tasks = {}
 
 
 def show_progress(line, progress):
-    if "Status: Image is up to date" in line["status"]:
-        logger.info(line["status"])
+    try:
+        if "Status: Image is up to date" in line["status"]:
+            logger.info(line["status"])
 
-    completed = False
-    if line["status"] == "Download complete":
-        description = f"[blue][Download complete, waiting for extraction  {line['id']}]"
-        completed = True
-    elif line["status"] == "Downloading":
-        description = f"[bold][Downloading {line['id']}]"
-    elif line["status"] == "Pull complete":
-        description = f"[green][Extraction complete  {line['id']}]"
-        completed = True
-    elif line["status"] == "Extracting":
-        description = f"[blue][Extracting  {line['id']}]"
+        completed = False
+        if line["status"] == "Download complete":
+            description = f"[blue][Download complete, waiting for extraction  {line['id']}]"
+            completed = True
+        elif line["status"] == "Downloading":
+            description = f"[bold][Downloading {line['id']}]"
+        elif line["status"] == "Pull complete":
+            description = f"[green][Extraction complete  {line['id']}]"
+            completed = True
+        elif line["status"] == "Extracting":
+            description = f"[blue][Extracting  {line['id']}]"
 
-    else:
-        # skip other statuses, but show extraction progress
-        return
-
-    task_id = line["id"]
-    if task_id not in tasks.keys():
-        if completed:
-            # some layers are really small that they download immediately without showing
-            # anything as Downloading in the stream.
-            # For that case, show a completed progress bar
-            tasks[task_id] = progress.add_task(description, total=100, completed=100)
         else:
-            tasks[task_id] = progress.add_task(
-                description, total=line["progressDetail"]["total"]
-            )
-    else:
-        if completed:
-            # due to the stream, the Download complete output can happen before the Downloading
-            # bar outputs the 100%. So when we detect that the download is in fact complete,
-            # update the progress bar to show 100%
-            progress.update(
-                tasks[task_id], description=description, total=100, completed=100
-            )
-        else:
-            progress.update(
-                tasks[task_id],
-                completed=line["progressDetail"]["current"],
-                total=line["progressDetail"]["total"],
-            )
+            # skip other statuses, but show extraction progress
+            return
 
+        task_id = line["id"]
+        if task_id not in tasks.keys():
+            if completed:
+                # some layers are really small that they download immediately without showing
+                # anything as Downloading in the stream.
+                # For that case, show a completed progress bar
+                tasks[task_id] = progress.add_task(description, total=100, completed=100)
+            else:
+                tasks[task_id] = progress.add_task(
+                    description, total=line["progressDetail"]["total"]
+                )
+        else:
+            if completed:
+                # due to the stream, the Download complete output can happen before the Downloading
+                # bar outputs the 100%. So when we detect that the download is in fact complete,
+                # update the progress bar to show 100%
+                progress.update(
+                    tasks[task_id], description=description, total=100, completed=100
+                )
+            else:
+                progress.update(
+                    tasks[task_id],
+                    completed=line["progressDetail"]["current"],
+                    total=line["progressDetail"]["total"],
+                )
+    except Exception as e:
+        logger.error("There was an error showing the progress bar")
+        logger.exception(e)
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
@@ -884,6 +887,12 @@ class Run:
             "SYS_CHROOT",
         ]
         # Configure whether or not we use the GPU. Also setting auto_remove to False because
+        if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+            security_options = ["no-new-privileges"]
+        else:
+            security_options = ["label=disable"]
+        # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
+        device_id = [os.environg.get("GPU_DEVICE", "nvidia.com/gpu=all")]
         if os.environ.get("USE_GPU", "false").lower() == "true":
             logger.info("Running the container with GPU capabilities")
             host_config = client.create_host_config(
@@ -891,9 +900,12 @@ class Run:
                 cap_drop=cap_drop_list,
                 binds=volumes_config,
                 userns_mode="host",
-                security_opt=["no-new-privileges"],
+                security_opt=security_options,
                 device_requests=[
-                    docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])
+                    {
+                        "Driver": "cdi",
+                        "DeviceIDs": device_id,
+                    },
                 ],
             )
         else:
@@ -902,7 +914,7 @@ class Run:
                 cap_drop=cap_drop_list,
                 binds=volumes_config,
                 userns_mode="host",
-                security_opt=["no-new-privileges"],
+                security_opt=security_options,
             )
 
         logger.info("Running container with command " + command)
