@@ -22,7 +22,7 @@ jobs:
             cd playwrightPython
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync
-            $HOME/.local/bin/uv run playwright install --with-deps
+            $HOME/.local/bin/uv run playwright install
       - run:
           name: "Docker: Build containers and collect static files"
           command: |

@@ -18,7 +18,7 @@ jobs:
             cd playwrightPython
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync
-            $HOME/.local/bin/uv run playwright install --with-deps
+            $HOME/.local/bin/uv run playwright install
       - name: "Docker: Build containers and collect static files"
         run: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
