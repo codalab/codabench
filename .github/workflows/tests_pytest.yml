@@ -3,7 +3,8 @@ on: [push]
 jobs:
   build:
     name: Build necessary services
-    runs-on: self-hosted
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
