@@ -42,7 +42,7 @@ jobs:
           command: |
             docker pull codalab/codalab-legacy:py37 
             docker pull codalab/codalab-legacy:py3
-            vergilgxw/autotable:v2
+            docker pull vergilgxw/autotable:v2
 
       # TODO: Putting E2E tests earlier to make playwright testing faster. Will remove after the PR is merged
       - run:
