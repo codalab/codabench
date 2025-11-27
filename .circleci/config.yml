@@ -1,31 +1,12 @@
 version: 2
-executors:
-  main_executor:
-    machine:
-      image: ubuntu-2204:2024.01.2
-    resource_class: large
+
 jobs:
-  build:
+  test:
     machine:
       image: ubuntu-2204:2024.01.2
     resource_class: large
     steps:
       - checkout
-      - run:
-          # NOTE: To connect to this, use an SSH tunnel in front, like so..
-          #
-          #     In one terminal:
-          #         $ ssh -p PORT ubuntu@CIRCLE_IP_ADDRESS -L 5900:localhost:5900
-          #
-          #     In another terminal:
-          #         $ open vnc://0.0.0.0:5900
-          name: "Setup: Enable VNC access"
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y x11vnc
-          #  x11vnc -forever -nopw
-          background: true
-
       - run:
           name: "Setup: Copy environment variables"
           command: cp .env_circleci .env
@@ -33,55 +14,38 @@ jobs:
       - run:
           name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
           command: |
-            sudo mkdir -p var/minio/public
-            sudo mkdir -p var/minio/private
+            mkdir -p var/minio/public
+            mkdir -p var/minio/private
       - run:
           name: "Setup: Prepare the playwright environment"
           command: |
-            cd tests
-            yarn install
-          background: true
+            cd playwrightPython
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            $HOME/.local/bin/uv sync
+            $HOME/.local/bin/uv run playwright install --with-deps
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
+
+      - run:
+          name: "Lint: Check code style with flake8"
+          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django flake8 src/
 
       - run:
           name: "Docker: Pull required images"
           # not available without "not e2e" tests as they pull ahead of time
           command: |
             docker pull codalab/codalab-legacy:py37 
-            docker pull codalab/codalab-legacy:py3 
-            docker pull vergilgxw/autotable:v2
-          background: true
-  linter:
-    machine:
-      image: ubuntu-2204:2024.01.2
-    resource_class: large
-    steps:
-      - run:
-          name: "Lint: Check code style with flake8"
-          command: docker-compose exec django flake8 src/
-      - store_artifacts:
-          path: artifacts/
-  unit_tests:
-    machine:
-      image: ubuntu-2204:2024.01.2
-    resource_class: large
-    steps:
+            docker pull codalab/codalab-legacy:py3
+
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
-      - store_artifacts:
-          path: artifacts/
-  e2e_tests:
-    machine:
-      image: ubuntu-2204:2024.01.2
-    resource_class: large
-    steps:
+
       # - run:
       #     name: "Tests: Run end-to-end (E2E) tests"
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
@@ -89,27 +53,20 @@ jobs:
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
-            cd tests && PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ yarn playwright test
-          no_output_timeout: 10m
+            cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_submission.py
+          no_output_timeout: 30m
+
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
       # - run:
       #     name: e2e tests - competitions
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
 
+      - store_artifacts:
+          path: artifacts/
+
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
-      - linter:
-          requires:
-            - build
-      - unit_tests:
-          requires:
-            - build
-            - linter
-      - e2e_tests:
-          requires:
-            - build
-            - linter
+      - test

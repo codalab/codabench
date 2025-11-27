@@ -35,7 +35,7 @@ jobs:
     needs: [build]
     steps:
       - name: "Lint: Check code style with flake8"
-        run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml django flake8 src/
+        run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django flake8 src/
   unit_tests:
     name: Unit test with Selenium
     runs-on: self-hosted
