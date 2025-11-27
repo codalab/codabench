@@ -42,6 +42,7 @@ jobs:
           command: |
             docker pull codalab/codalab-legacy:py37 
             docker pull codalab/codalab-legacy:py3
+            vergilgxw/autotable:v2
 
       # TODO: Putting E2E tests earlier to make playwright testing faster. Will remove after the PR is merged
       - run:
@@ -49,6 +50,12 @@ jobs:
           command: |
             cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
           no_output_timeout: 30m
+      - run:
+          name: "Get compute worker and site worker logs"
+          command: |
+            mkdir dockerLogs
+            docker compose logs site_worker > dockerLogs/ite_worker.log
+            docker compose logs compute_worker > dockerLogs/compute_worker.log
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
@@ -74,7 +81,7 @@ jobs:
       - store_artifacts:
           path: playwrightPython/test-results
       - store_artifacts:
-          path: artifacts/
+          path: dockerLogs/
 
 workflows:
   version: 2
