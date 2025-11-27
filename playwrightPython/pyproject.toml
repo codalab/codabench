@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "loguru>=0.7.3",
-    "psycopg>=3.2.13",
+    "psycopg[binary]>=3.2.13",
     "pytest>=8.4.2",
     "pytest-playwright>=0.7.1",
     "pytest-xdist>=3.8.0",

@@ -20,6 +20,7 @@ jobs:
           name: "Setup: Prepare the playwright environment"
           command: |
             cd playwrightPython
+            apt update && apt upgrade -y
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync
             $HOME/.local/bin/uv run playwright install
