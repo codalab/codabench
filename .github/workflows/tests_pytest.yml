@@ -21,7 +21,7 @@ jobs:
             $HOME/.local/bin/uv run playwright install --with-deps
       - name: "Docker: Build containers and collect static files"
         run: |
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
@@ -35,7 +35,7 @@ jobs:
     needs: [build]
     steps:
       - name: "Lint: Check code style with flake8"
-        run: docker compose exec django flake8 src/
+        run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml django flake8 src/
   unit_tests:
     name: Unit test with Selenium
     runs-on: self-hosted
@@ -58,5 +58,5 @@ jobs:
     steps:
       - name: Cleanup
         run: |
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml down --rmi all
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml down --rmi all
             rm -rf ${{ github.workspace }}/* 
