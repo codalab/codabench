@@ -36,7 +36,7 @@ jobs:
     needs: [build]
     steps:
       - name: "Lint: Check code style with flake8"
-        run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django flake8 src/
+        run: docker compose exec django flake8 src/
   unit_tests:
     name: Unit test with Selenium
     runs-on: self-hosted
@@ -50,7 +50,7 @@ jobs:
     needs: [linter,build]
     steps:
       - name: "Tests: Run end-to-end (E2E) tests"
-        run: cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_submission.py
+        run: cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
   cleanup:
     name: Cleanup
     runs-on: self-hosted

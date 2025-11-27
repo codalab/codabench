@@ -2,10 +2,16 @@ import psycopg
 import toml
 from loguru import logger
 from playwright.sync_api import expect, Page
+import random
+
+
+def randomNumber():
+    return str(random.randint(0, 1000))
+
 
 data = toml.load("config/config.toml")
-test_user = data["test_user"]["username"]
-test_password = data["test_user"]["password"]
+test_user = data["test_user"]["username"] + randomNumber()
+test_password = data["test_user"]["password"] + randomNumber()
 test_email = test_user + "@email.com"
 test_failed_user = data["test_failed_user"]["username"]
 db_host = data["database"]["host"]
@@ -55,8 +61,8 @@ def test_account_creation(page: Page):
             # Execute a command: this creates a new table
             cur.execute("SELECT username FROM profiles_user;")
             for row in cur:
-                logger.debug(row)
-                if row[0] in test_user:
+                logger.debug(row[0])
+                if row[0] == test_user:
                     assert row[0] == test_user
                     found = "true"
                     break

@@ -43,6 +43,13 @@ jobs:
             docker pull codalab/codalab-legacy:py37 
             docker pull codalab/codalab-legacy:py3
 
+      # TODO: Putting E2E tests earlier to make playwright testing faster. Will remove after the PR is merged
+      - run:
+          name: "Tests: Run end-to-end (E2E) tests"
+          command: |
+            cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
+          no_output_timeout: 30m
+
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
@@ -51,18 +58,21 @@ jobs:
       #     name: "Tests: Run end-to-end (E2E) tests"
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
       #     no_output_timeout: 60m
-      - run:
-          name: "Tests: Run end-to-end (E2E) tests"
-          command: |
-            cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_submission.py
-          no_output_timeout: 30m
+
+      # TODO: uncomment this block just before the playwright PR is merged
+      #- run:
+      #    name: "Tests: Run end-to-end (E2E) tests"
+      #    command: |
+      #      cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
+      #    no_output_timeout: 30m
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
       # - run:
       #     name: e2e tests - competitions
       #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
-
+      - store_artifacts:
+          path: playwrightPython/test-results
       - store_artifacts:
           path: artifacts/
 

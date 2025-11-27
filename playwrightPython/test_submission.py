@@ -22,6 +22,7 @@ def wait_for_finished(page, time_out):
 
 
 def test_submission_basic(page: Page) -> None:
+    page.set_default_timeout(300000)
     page.goto("http://localhost/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
@@ -124,7 +125,7 @@ def test_submission_v18(page: Page) -> None:
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competitions/competition_18.zip`")
+    file_chooser.set_files("test_files/competitions/competition_18.zip")
     page.get_by_role("link", name="View").click()
     page.get_by_text("My Submissions").click()
     with page.expect_file_chooser() as fc_info:
