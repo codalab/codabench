@@ -17,8 +17,8 @@ jobs:
         run: |
             cd playwrightPython
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            uv sync
-            uv run playwright install --with-deps
+            $HOME/.local/bin/uv sync
+            $HOME/.local/bin/uv run playwright install --with-deps
       - name: "Docker: Build containers and collect static files"
         run: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml -f docker-compose.playwright.yml up -d
@@ -49,7 +49,7 @@ jobs:
     needs: [linter,build]
     steps:
       - name: "Tests: Run end-to-end (E2E) tests"
-        run: cd playwrightPython && uv run pytest test_auth.py test_account_creation.py test_submission.py
+        run: cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_submission.py
   cleanup:
     name: Cleanup
     runs-on: self-hosted
