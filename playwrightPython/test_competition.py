@@ -17,7 +17,7 @@ def browser_context_args(browser_context_args):
 
 
 def test_competition_upload(page: Page):
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -28,7 +28,7 @@ def test_competition_upload(page: Page):
 
 
 def task_creation(page):
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_text("codabench Admin management").click()
     page.get_by_role("link", name=" Resources").click()
     page.get_by_text("Datasets and programs").first.click()
@@ -59,7 +59,7 @@ def task_creation(page):
 
 def test_manual_competition_creation(page: Page):
     task_creation(page)
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Create").click()
     page.get_by_role("textbox").nth(1).click()

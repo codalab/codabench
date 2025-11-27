@@ -9,7 +9,7 @@ data = toml.load("config/config.toml")
 def test_auth(browser: Browser) -> None:
     context = browser.new_context()
     page = context.new_page()
-    page.goto("http://localhost/")
+    page.goto("http://localhost:8000")
     page.get_by_role("link", name="Login").click()
     page.get_by_role("textbox", name="username or email").click()
     page.get_by_role("textbox", name="username or email").fill(data["default_user"]["username"])

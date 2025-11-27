@@ -23,7 +23,7 @@ def wait_for_finished(page, time_out):
 
 def test_submission_basic(page: Page) -> None:
     page.set_default_timeout(300000)
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -47,7 +47,7 @@ def test_submission_basic(page: Page) -> None:
     
 
 def test_submission_irisV15_code(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -71,7 +71,7 @@ def test_submission_irisV15_code(page: Page) -> None:
 
 
 def test_submission_irisV15_result(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -95,7 +95,7 @@ def test_submission_irisV15_result(page: Page) -> None:
 
 
 def test_submission_v15(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -119,7 +119,7 @@ def test_submission_v15(page: Page) -> None:
 
 
 def test_submission_v18(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -143,7 +143,7 @@ def test_submission_v18(page: Page) -> None:
 
 
 def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:
@@ -171,7 +171,7 @@ def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
 
 
 def test_submission_v2_multiTask(page: Page) -> None:
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
     with page.expect_file_chooser() as fc_info:

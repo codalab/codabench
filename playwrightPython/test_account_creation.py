@@ -21,7 +21,7 @@ db_password = data["database"]["password"]
 
 
 def test_FailedAccountCreationUsername(page: Page):
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name="Sign-up").click()
     page.get_by_role("textbox", name="username").click()
     page.get_by_role("textbox", name="username").fill(test_failed_user)
@@ -37,7 +37,7 @@ def test_FailedAccountCreationUsername(page: Page):
 
 
 def test_account_creation(page: Page):
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name="Sign-up").click()
     page.get_by_role("textbox", name="username").click()
     page.get_by_role("textbox", name="username").fill(test_user)
@@ -87,7 +87,7 @@ def activate_account():
 
 def test_loginIntoActivatedAccount(page: Page):
     activate_account()
-    page.goto("http://localhost/")
+    page.goto("/")
     page.get_by_role("link", name="Login").click()
     page.get_by_role("textbox", name="username or email").click()
     page.get_by_role("textbox", name="username or email").fill(test_user)
