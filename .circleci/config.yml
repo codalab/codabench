@@ -35,8 +35,7 @@ jobs:
           name: "Get compute worker and site worker logs"
           command: |
             mkdir dockerLogs
-            docker compose logs -f site_worker > dockerLogs/ite_worker.log
-            docker compose logs -f compute_worker > dockerLogs/compute_worker.log
+            docker compose logs -f site_worker compute_worker > dockerLogs/workers.log
           background: true
       - run:
           name: "Lint: Check code style with flake8"
