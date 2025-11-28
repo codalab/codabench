@@ -16,8 +16,3 @@ password="testPassword"
 
 [test_failed_user]
 username="test.name"
-
-[browsers]
-firefox="true"
-chromium="true"
-webkit="true"

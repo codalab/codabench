@@ -8,6 +8,21 @@ jobs:
     steps:
       - checkout
       - run:
+          # NOTE: To connect to this, use an SSH tunnel in front, like so..
+          #
+          #     In one terminal:
+          #         $ ssh -p PORT ubuntu@CIRCLE_IP_ADDRESS -L 5900:localhost:5900
+          #
+          #     In another terminal:
+          #         $ open vnc://0.0.0.0:5900
+          name: "Setup: Enable VNC access"
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y x11vnc
+          #  x11vnc -forever -nopw
+          background: true
+
+      - run:
           name: "Setup: Copy environment variables"
           command: cp .env_circleci .env
 
@@ -16,6 +31,7 @@ jobs:
           command: |
             mkdir -p var/minio/public
             mkdir -p var/minio/private
+
       - run:
           name: "Setup: Prepare the playwright environment"
           command: |
@@ -24,6 +40,7 @@ jobs:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync
             $HOME/.local/bin/uv run playwright install
+
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
@@ -31,12 +48,14 @@ jobs:
             docker compose exec django python manage.py collectstatic --noinput
             docker compose exec django python manage.py migrate
             docker compose exec django python ./manage.py createsuperuser --no-input
+
       - run:
           name: "Get compute worker and site worker logs"
           command: |
             mkdir dockerLogs
             docker compose logs -f site_worker compute_worker > dockerLogs/workers.log
           background: true
+
       - run:
           name: "Lint: Check code style with flake8"
           command: docker compose exec django flake8 src/
@@ -53,6 +72,7 @@ jobs:
           name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose exec django py.test src/ -m "not e2e"
 
+      # We give the name of the test files manually because we need test_auth.py to be run before the others for state.json file to be created
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
@@ -61,9 +81,9 @@ jobs:
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
       # - run:
-      #     name: e2e tests - competitions
-      #     command: docker compose exec django py.test src/tests/functional/test_competitions.py -m e2e
-      #     no_output_timeout: 60m
+      #     name: "Tests: Run end-to-end (E2E) tests"
+      #     command: cd tests && $HOME/.local/bin/uv run pytest test_auth.py test_competition.py
+      #     no_output_timeout: 30m
       - store_artifacts:
           path: tests/test-results
       - store_artifacts:
