@@ -31,7 +31,13 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
             docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
-
+      - run:
+          name: "Get compute worker and site worker logs"
+          command: |
+            mkdir dockerLogs
+            docker compose logs -f site_worker > dockerLogs/ite_worker.log
+            docker compose logs -f compute_worker > dockerLogs/compute_worker.log
+          background: true
       - run:
           name: "Lint: Check code style with flake8"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django flake8 src/
@@ -50,12 +56,6 @@ jobs:
           command: |
             cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
           no_output_timeout: 30m
-      - run:
-          name: "Get compute worker and site worker logs"
-          command: |
-            mkdir dockerLogs
-            docker compose logs site_worker > dockerLogs/ite_worker.log
-            docker compose logs compute_worker > dockerLogs/compute_worker.log
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
