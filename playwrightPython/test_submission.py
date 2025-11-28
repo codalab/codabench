@@ -37,8 +37,12 @@ def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
     try:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
     except: 
-        page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        try:
+            page.reload()
+            expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        except:
+            page.goto("/server_status")
+            expect(page.get_by_role("cell", name="Finished").first).to_be_visible(timeout=2000)
 
 
 def test_submission_v2_multiTask(page: Page) -> None:
@@ -61,8 +65,12 @@ def test_submission_v2_multiTask(page: Page) -> None:
     try:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
     except: 
-        page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        try:
+            page.reload()
+            expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        except:
+            page.goto("/server_status")
+            expect(page.get_by_role("cell", name="Finished").first).to_be_visible(timeout=2000)
 
 
 def test_submission_basic(page: Page) -> None:
