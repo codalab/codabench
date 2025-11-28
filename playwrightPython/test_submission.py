@@ -13,14 +13,6 @@ def browser_context_args(browser_context_args):
     return browser_context_args
 
 
-def wait_for_finished(page, time_out):
-    try:
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=time_out)
-        return True
-    except:
-        return False
-
-
 def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
@@ -41,13 +33,12 @@ def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 10000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
+    except: 
         page.reload()
-        count += 1
-    page.reload()
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_v2_multiTask(page: Page) -> None:
@@ -66,17 +57,15 @@ def test_submission_v2_multiTask(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 10000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
+    except: 
         page.reload()
-        count += 1
-    page.reload()
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_basic(page: Page) -> None:
-    page.set_default_timeout(300000)
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
@@ -92,12 +81,12 @@ def test_submission_basic(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+    except: 
         page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_irisV15_code(page: Page) -> None:
@@ -116,12 +105,12 @@ def test_submission_irisV15_code(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission_15_iris_code.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+    except: 
         page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_irisV15_result(page: Page) -> None:
@@ -140,12 +129,12 @@ def test_submission_irisV15_result(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission_15_iris_result.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+    except: 
         page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_v15(page: Page) -> None:
@@ -164,12 +153,12 @@ def test_submission_v15(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission_15.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+    except: 
         page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
 def test_submission_v18(page: Page) -> None:
@@ -188,9 +177,9 @@ def test_submission_v18(page: Page) -> None:
     file_chooser.set_files("test_files/submissions/submission_18.zip")
     expect(page.locator('.ui.indicating')).to_be_visible()
     expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    try:
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+    except: 
         page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
