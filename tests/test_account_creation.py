@@ -51,7 +51,6 @@ def test_account_creation(page: Page):
     page.get_by_role("button", name="Sign Up").click()
     expect(page.get_by_text(f"Dear {test_user}, please go to")).to_be_visible()
 
-
     found = "false"
     with psycopg.connect(f"dbname={db_name} user={db_user} host={db_host} password={db_password}") as conn:
 

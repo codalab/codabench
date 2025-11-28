@@ -8,7 +8,6 @@ data = toml.load("config/config.toml")
 # This allows us to autologin with a cookie in all tests instead of having to login each time
 @pytest.fixture(scope="session")
 def browser_context_args(browser_context_args):
-    """  """
     browser_context_args.update(storage_state="config/state.json",)
     return browser_context_args
 
