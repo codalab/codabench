@@ -40,6 +40,14 @@ jobs:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync
             $HOME/.local/bin/uv run playwright install
+      - run:
+          name: "Docker: Pull required images"
+          # not available without "not e2e" tests as they pull ahead of time
+          command: |
+            docker pull codalab/codalab-legacy:py37
+            docker pull codalab/codalab-legacy:py3
+            docker pull vergilgxw/autotable:v2
+          background: true
 
       - run:
           name: "Docker: Build containers and collect static files"
@@ -59,14 +67,6 @@ jobs:
       - run:
           name: "Lint: Check code style with flake8"
           command: docker compose exec django flake8 src/
-
-      - run:
-          name: "Docker: Pull required images"
-          # not available without "not e2e" tests as they pull ahead of time
-          command: |
-            docker pull codalab/codalab-legacy:py37 
-            docker pull codalab/codalab-legacy:py3
-            docker pull vergilgxw/autotable:v2
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
