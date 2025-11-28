@@ -27,10 +27,10 @@ jobs:
       - run:
           name: "Docker: Build containers and collect static files"
           command: |
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
-            docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
-            docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
+            docker compose up -d
+            docker compose exec django python manage.py collectstatic --noinput
+            docker compose exec django python manage.py migrate
+            docker compose exec django python ./manage.py createsuperuser --no-input
       - run:
           name: "Get compute worker and site worker logs"
           command: |
@@ -39,7 +39,7 @@ jobs:
           background: true
       - run:
           name: "Lint: Check code style with flake8"
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django flake8 src/
+          command: docker compose exec django flake8 src/
 
       - run:
           name: "Docker: Pull required images"
@@ -58,11 +58,11 @@ jobs:
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
-          command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
+          command: docker compose exec django py.test src/ -m "not e2e"
 
       # - run:
       #     name: "Tests: Run end-to-end (E2E) tests"
-      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
+      #     command: docker compose exec django py.test src/tests/functional/ -m e2e
       #     no_output_timeout: 60m
 
       # TODO: uncomment this block just before the playwright PR is merged
@@ -75,7 +75,7 @@ jobs:
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)
       # - run:
       #     name: e2e tests - competitions
-      #     command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/test_competitions.py -m e2e
+      #     command: docker compose exec django py.test src/tests/functional/test_competitions.py -m e2e
       #     no_output_timeout: 60m
       - store_artifacts:
           path: playwrightPython/test-results
