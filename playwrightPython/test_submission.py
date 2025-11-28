@@ -21,6 +21,58 @@ def wait_for_finished(page, time_out):
         return False
 
 
+def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
+    page.goto("/")
+    page.get_by_role("link", name=" Benchmarks/Competitions").click()
+    page.get_by_role("link", name=" Upload").click()
+    with page.expect_file_chooser() as fc_info:
+        page.get_by_role("button", name="").click()
+    file_chooser = fc_info.value
+    file_chooser.set_files("test_files/competitions/competition_v2_multi_task_fact_sheet.zip")
+    page.get_by_role("link", name="View").click()
+    page.get_by_text("My Submissions").click()
+    page.locator("input[name=\"text\"]").click()
+    page.locator("input[name=\"text\"]").fill("test")
+    page.locator("input[name=\"text_required\"]").click()
+    page.locator("input[name=\"text_required\"]").fill("test")
+    with page.expect_file_chooser() as fc_info:
+        page.get_by_role("button", name="").click()
+    file_chooser = fc_info.value
+    file_chooser.set_files("test_files/submissions/submission.zip")
+    expect(page.locator('.ui.indicating')).to_be_visible()
+    expect(page.locator('.ui.indicating')).not_to_be_visible()
+    # Reload the page until the finished status is visible or the count is reached
+    count = 0
+    while not wait_for_finished(page, 10000) and count < 5:
+        page.reload()
+        count += 1
+    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+
+
+def test_submission_v2_multiTask(page: Page) -> None:
+    page.goto("/")
+    page.get_by_role("link", name=" Benchmarks/Competitions").click()
+    page.get_by_role("link", name=" Upload").click()
+    with page.expect_file_chooser() as fc_info:
+        page.get_by_role("button", name="").click()
+    file_chooser = fc_info.value
+    file_chooser.set_files("test_files/competitions/competition_v2_multi_task.zip")
+    page.get_by_role("link", name="View").click()
+    page.get_by_text("My Submissions").click()
+    with page.expect_file_chooser() as fc_info:
+        page.get_by_role("button", name="").click()
+    file_chooser = fc_info.value
+    file_chooser.set_files("test_files/submissions/submission.zip")
+    expect(page.locator('.ui.indicating')).to_be_visible()
+    expect(page.locator('.ui.indicating')).not_to_be_visible()
+    # Reload the page until the finished status is visible or the count is reached
+    count = 0
+    while not wait_for_finished(page, 10000) and count < 5:
+        page.reload()
+        count += 1
+    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
+
+
 def test_submission_basic(page: Page) -> None:
     page.set_default_timeout(300000)
     page.goto("/")
@@ -44,7 +96,7 @@ def test_submission_basic(page: Page) -> None:
         page.reload()
         count += 1
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
-    
+
 
 def test_submission_irisV15_code(page: Page) -> None:
     page.goto("/")
@@ -137,58 +189,6 @@ def test_submission_v18(page: Page) -> None:
     # Reload the page until the finished status is visible or the count is reached
     count = 0
     while not wait_for_finished(page, 5000) and count < 5:
-        page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
-
-
-def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
-    page.goto("/")
-    page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
-    with page.expect_file_chooser() as fc_info:
-        page.get_by_role("button", name="").click()
-    file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competitions/competition_v2_multi_task_fact_sheet.zip")
-    page.get_by_role("link", name="View").click()
-    page.get_by_text("My Submissions").click()
-    page.locator("input[name=\"text\"]").click()
-    page.locator("input[name=\"text\"]").fill("test")
-    page.locator("input[name=\"text_required\"]").click()
-    page.locator("input[name=\"text_required\"]").fill("test")
-    with page.expect_file_chooser() as fc_info:
-        page.get_by_role("button", name="").click()
-    file_chooser = fc_info.value
-    file_chooser.set_files("test_files/submissions/submission.zip")
-    expect(page.locator('.ui.indicating')).to_be_visible()
-    expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 10000) and count < 5:
-        page.reload()
-        count += 1
-    expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
-
-
-def test_submission_v2_multiTask(page: Page) -> None:
-    page.goto("/")
-    page.get_by_role("link", name=" Benchmarks/Competitions").click()
-    page.get_by_role("link", name=" Upload").click()
-    with page.expect_file_chooser() as fc_info:
-        page.get_by_role("button", name="").click()
-    file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competitions/competition_v2_multi_task.zip")
-    page.get_by_role("link", name="View").click()
-    page.get_by_text("My Submissions").click()
-    with page.expect_file_chooser() as fc_info:
-        page.get_by_role("button", name="").click()
-    file_chooser = fc_info.value
-    file_chooser.set_files("test_files/submissions/submission.zip")
-    expect(page.locator('.ui.indicating')).to_be_visible()
-    expect(page.locator('.ui.indicating')).not_to_be_visible()
-    # Reload the page until the finished status is visible or the count is reached
-    count = 0
-    while not wait_for_finished(page, 10000) and count < 5:
         page.reload()
         count += 1
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
