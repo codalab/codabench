@@ -46,6 +46,7 @@ def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
     while not wait_for_finished(page, 10000) and count < 5:
         page.reload()
         count += 1
+    page.reload()
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
 
 
@@ -70,6 +71,7 @@ def test_submission_v2_multiTask(page: Page) -> None:
     while not wait_for_finished(page, 10000) and count < 5:
         page.reload()
         count += 1
+    page.reload()
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
 
 
