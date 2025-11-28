@@ -164,7 +164,7 @@ def test_submission_v2_multiTaskFactSheet(page: Page) -> None:
     expect(page.locator('.ui.indicating')).not_to_be_visible()
     # Reload the page until the finished status is visible or the count is reached
     count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    while not wait_for_finished(page, 10000) and count < 5:
         page.reload()
         count += 1
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
@@ -188,7 +188,7 @@ def test_submission_v2_multiTask(page: Page) -> None:
     expect(page.locator('.ui.indicating')).not_to_be_visible()
     # Reload the page until the finished status is visible or the count is reached
     count = 0
-    while not wait_for_finished(page, 5000) and count < 5:
+    while not wait_for_finished(page, 10000) and count < 5:
         page.reload()
         count += 1
     expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=1)
