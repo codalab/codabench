@@ -42,7 +42,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
 
 
-@pytest.mark.skip(reason="Fails in the CI for some reason")
+@pytest.mark.skip(reason="Works locally but fails in the CI for some reason")
 def test_v2_multiTask(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
