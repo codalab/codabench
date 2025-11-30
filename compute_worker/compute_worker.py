@@ -64,7 +64,9 @@ def show_progress(line, progress):
 
         completed = False
         if line["status"] == "Download complete":
-            description = f"[blue][Download complete, waiting for extraction  {line['id']}]"
+            description = (
+                f"[blue][Download complete, waiting for extraction  {line['id']}]"
+            )
             completed = True
         elif line["status"] == "Downloading":
             description = f"[bold][Downloading {line['id']}]"
@@ -84,7 +86,9 @@ def show_progress(line, progress):
                 # some layers are really small that they download immediately without showing
                 # anything as Downloading in the stream.
                 # For that case, show a completed progress bar
-                tasks[task_id] = progress.add_task(description, total=100, completed=100)
+                tasks[task_id] = progress.add_task(
+                    description, total=100, completed=100
+                )
             else:
                 tasks[task_id] = progress.add_task(
                     description, total=line["progressDetail"]["total"]
@@ -105,7 +109,8 @@ def show_progress(line, progress):
                 )
     except Exception as e:
         logger.error("There was an error showing the progress bar")
-        logger.exception(e)
+        logger.error(e)
+
 
 # -----------------------------------------------
 # Celery + Rabbit MQ
@@ -617,9 +622,21 @@ class Run:
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
         try:
             websocket_url = f"{self.websocket_url}?kind={kind}"
-            logger.debug("Connecting to " + websocket_url + "for container " + str(container.get("Id")))
-            websocket = await asyncio.wait_for(websockets.connect(websocket_url), timeout=5.0)
-            logger.debug("connected to " + str(websocket_url) + "for container " + str(container.get("Id")))
+            logger.debug(
+                "Connecting to "
+                + websocket_url
+                + "for container "
+                + str(container.get("Id"))
+            )
+            websocket = await asyncio.wait_for(
+                websockets.connect(websocket_url), timeout=5.0
+            )
+            logger.debug(
+                "connected to "
+                + str(websocket_url)
+                + "for container "
+                + str(container.get("Id"))
+            )
         except Exception as e:
             logger.error(
                 "There was an error trying to connect to the websocket on the codabench instance"
@@ -685,7 +702,12 @@ class Run:
             await websocket.close()
             client.remove_container(container, force=True)
 
-            logger.debug("Container " + container.get("Id") + "exited with status code : " + str(return_Code["StatusCode"]))
+            logger.debug(
+                "Container "
+                + container.get("Id")
+                + "exited with status code : "
+                + str(return_Code["StatusCode"])
+            )
 
         except (
             requests.exceptions.ReadTimeout,
@@ -748,7 +770,7 @@ class Run:
         """
         # If the directory doesn't even exist, move on
         if not os.path.exists(program_dir):
-            logger.error(f"{program_dir} not found, no program to execute")
+            logger.warning(f"{program_dir} not found, no program to execute")
 
             # Communicate that the program is closing
             self.completed_program_counter += 1

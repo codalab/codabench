@@ -140,14 +140,17 @@ podman run -d \
 ```
 
 ### For GPU container
+!!! warning
+    To launch a Podman compatible GPU worker, you will need to have podman version 5.4.2 minimum
 
-Run the GPU compute worker container
+
+Run the GPU compute worker container (don't forget the `USE_GPU=true` in the `.env`)
 
 ```bash
 podman run -d \
     --env-file .env \
     --device nvidia.com/gpu=all \
-    --name gpu_compute_worker \
+    --name compute_worker_gpu \
     --device /dev/fuse \
     --security-opt="label=disable" \
     --restart unless-stopped \
@@ -155,7 +158,7 @@ podman run -d \
     --log-opt max-file=3 \
     --hostname ${HOSTNAME} \
     --userns host \
-    --volume /home/codalab/worker/codabench:/codabench:z,U \
+    --volume /codabench:/codabench:z,U \
     --cap-drop=all \
     --volume /run/user/$(id -u)/podman/podman.sock:/run/user/1000/podman/podman.sock:U \
     codalab/codabench_worker_podman_gpu:latest
