@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 fedora:42
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
 
-# Install Docker
+# Install Python 
 RUN dnf -y update && \
     dnf install -y python3.9 && \
     dnf clean all && \
