@@ -84,7 +84,10 @@ class BestModeStrategy(BaseModeStrategy):
         primary_col = leaderboard.columns.get(index=leaderboard.primary_index)
         ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
 
-        submissions = Submission.objects.filter(phase=phase, owner=owner) \
+        submissions = Submission.objects.filter(phase=phase,
+                                                owner=owner,
+                                                is_soft_deleted=False,
+                                                status=Submission.FINISHED) \
             .select_related('owner').prefetch_related('scores') \
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
 
