@@ -31,7 +31,7 @@ This Code of Conduct applies to all interactions related to this project, includ
 
 ## 5. Reporting Issues
 
-If you witness or experience any behavior that violates this Code of Conduct, please report it to **info@codalab.org**. All reports will be reviewed and handled confidentially.
+If you witness or experience any behavior that violates this Code of Conduct, please report it to **info@codabench.org**. All reports will be reviewed and handled confidentially.
 
 ## 6. Enforcement
 
@@ -49,7 +49,7 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 ---
 
 ### Questions?
-If you have any questions or concerns, please reach out to **info@codalab.org**.
+If you have any questions or concerns, please reach out to **info@codabench.org**.
 
 
 
