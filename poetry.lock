@@ -2612,6 +2612,17 @@ files = [
 ]
 
 [[package]]
+name = "rich"
+version = "0.1.0"
+description = "Rich Console"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "rich-0.1.0-py3-none-any.whl", hash = "sha256:c254bca3b5fd84e820756b61c8ed4f7d5b23a70e0438bdf6fa12fb9ec814f965"},
+    {file = "rich-0.1.0.tar.gz", hash = "sha256:9081fa1b579fac4df57d96a3843286acbbbc76697dfafaebe662bece6d9a6e50"},
+]
+
+[[package]]
 name = "rpds-py"
 version = "0.27.1"
 description = "Python bindings to Rust's persistent data structures (rpds)"
@@ -3460,9 +3471,15 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 lock-version = "2.0"
 python-versions = "3.9.20"
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "674c359c2a2797ee0a112e0a38f98a55a7558404906d27d39e9a6d56bd1fd883"
 ||||||| parent of 7b599bbc (update documentation, remove useless files, add docker in pyproject for pytests)
 content-hash = "347ce2833f20dc87ee1b4bc722de0b57e5292a3e7cefe700356e14577188d593"
 =======
 content-hash = "e0190c70fb9d45ec23caaec0baac647a107498af806b3777f3f8f74f96e816a4"
 >>>>>>> 7b599bbc (update documentation, remove useless files, add docker in pyproject for pytests)
+||||||| parent of 4bfe001f (try to fix pytest errors)
+content-hash = "e0190c70fb9d45ec23caaec0baac647a107498af806b3777f3f8f74f96e816a4"
+=======
+content-hash = "1efa3650b7167cce184c27c09d3c3c996b07db69ca447255e4010f41fe6bdaf1"
+>>>>>>> 4bfe001f (try to fix pytest errors)

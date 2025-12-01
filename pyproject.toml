@@ -70,6 +70,7 @@ drf-yasg2 = "^1.19.4"
 swagger-spec-validator = "^3.0.4"
 loguru = "^0.7.3"
 docker = "<6"
+rich = "<13"
 
 [build-system]
 requires = ["poetry-core"]
