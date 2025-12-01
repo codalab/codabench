@@ -47,7 +47,7 @@ Make sure to use the username of the user running the podman container.
 You will need to install the `nvidia-container-toolkit` package by following the instructions on this [link](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html)
 
 
-If you have multiple Nvidia GPUs, you can uncomment `#GPU_DEVICE=nvidia.com/gpu=all` and put the name of the GPU you want the compute worker to use. You can get the name by launching the following the command :
+If you have multiple Nvidia GPUs, you can uncomment `#GPU_DEVICE=nvidia.com/gpu=all` and put the name of the GPU you want the compute worker to use. You can get the name by launching the following command :
 ```bash
 nvidia-ctk cdi list
 ```
