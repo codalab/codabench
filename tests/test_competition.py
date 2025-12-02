@@ -11,8 +11,10 @@ titleNum = random.randint(0, 1000)
 # This allows us to autologin with a cookie in all tests instead of having to login each time
 @pytest.fixture(scope="session")
 def browser_context_args(browser_context_args):
-    """  """
-    browser_context_args.update(storage_state="config/state.json",)
+    """ """
+    browser_context_args.update(
+        storage_state="config/state.json",
+    )
     return browser_context_args
 
 
@@ -34,7 +36,9 @@ def task_creation(page):
     page.get_by_text("Datasets and programs").first.click()
     page.get_by_role("button", name=" Add Dataset/Program").click()
     page.get_by_role("textbox", name="Name").click()
-    page.get_by_role("textbox", name="Name").fill(str(titleNum) + "Playwright Scoring Program")
+    page.get_by_role("textbox", name="Name").fill(
+        str(titleNum) + "Playwright Scoring Program"
+    )
     page.get_by_role("textbox", name="Description").click()
     page.get_by_role("textbox", name="Description").fill("Test Dataset Description")
     page.locator(".ui.form > div > .ui").click()
@@ -47,13 +51,17 @@ def task_creation(page):
     page.get_by_text("Tasks", exact=True).click()
     page.get_by_text("Create Task").first.click()
     page.get_by_role("textbox", name="Name", exact=True).click()
-    page.get_by_role("textbox", name="Name", exact=True).fill(str(titleNum) + "Playwright Task")
+    page.get_by_role("textbox", name="Name", exact=True).fill(
+        str(titleNum) + "Playwright Task"
+    )
     page.get_by_role("textbox", name="Description").click()
     page.get_by_role("textbox", name="Description").fill("Test Descirption Task")
     page.get_by_text("Datasets and programs").nth(3).click()
     page.locator("#scoring_program").click()
     page.locator("#scoring_program").fill("test")
-    page.locator("a").filter(has_text=str(titleNum) + "Playwright Scoring Program").click()
+    page.locator("a").filter(
+        has_text=str(titleNum) + "Playwright Scoring Program"
+    ).click()
     page.get_by_text("Create", exact=True).click()
 
 
@@ -73,60 +81,74 @@ def test_manual_competition_creation(page: Page):
     page.get_by_role("textbox", name="Example: $1000 for the top").click()
     page.get_by_role("textbox", name="Example: $1000 for the top").fill("1000€")
     page.get_by_role("textbox", name="Example: email@example.com").click()
-    page.get_by_role("textbox", name="Example: email@example.com").fill("organizer@email.com")
+    page.get_by_role("textbox", name="Example: email@example.com").fill(
+        "organizer@email.com"
+    )
     page.get_by_text("Auto-run submissions").click()
     page.get_by_text("Enable Competition Forum").click()
     page.get_by_text("Make Programs Available").click()
     page.get_by_text("Make Input Data Available").click()
     page.get_by_role("textbox", name="Example: codalab/codalab-").click()
-    page.get_by_role("textbox", name="Example: codalab/codalab-").fill("codalab/codalab-legacy:py37")
+    page.get_by_role("textbox", name="Example: codalab/codalab-").fill(
+        "codalab/codalab-legacy:py37"
+    )
     page.get_by_text("Participation").click()
     page.locator("pre").nth(3).click()
-    page.get_by_role("application").filter(has_text="|||xxxxxxxxxx 101:").get_by_role("textbox").fill("Test Terms")
-    page.locator("input[name=\"registration_auto_approve\"]").check()
+    page.get_by_role("application").filter(has_text="|||xxxxxxxxxx 101:").get_by_role(
+        "textbox"
+    ).fill("Test Terms")
+    page.locator('input[name="registration_auto_approve"]').check()
     page.locator("a").filter(has_text="Pages").click()
     page.get_by_role("button", name=" Add page").click()
     page.get_by_role("textbox").nth(1).fill("Test Title")
-    page.locator("div:nth-child(2) > .EasyMDEContainer > .CodeMirror > .CodeMirror-scroll").click()
+    page.locator(
+        "div:nth-child(2) > .EasyMDEContainer > .CodeMirror > .CodeMirror-scroll"
+    ).click()
     page.get_by_role("application").get_by_role("textbox").fill("Test Content")
     page.get_by_text("Save").nth(1).click()
     page.locator("a").filter(has_text="Phases").click()
     page.get_by_role("button", name=" Add phase").click()
-    page.locator("input[name=\"name\"]").click()
-    page.locator("input[name=\"name\"]").fill(str(titleNum) + "Playwright Task")
-    page.locator("input[name=\"start_date\"]").click()
+    page.locator('input[name="name"]').click()
+    page.locator('input[name="name"]').fill(str(titleNum) + "Playwright Task")
+    page.locator('input[name="start_date"]').click()
     page.get_by_role("cell", name="12").click()
-    page.locator("input[name=\"start_time\"]").click()
+    page.locator('input[name="start_time"]').click()
     page.get_by_role("cell", name="10:").click()
     page.get_by_role("cell", name=":00").click()
-    page.locator("input[name=\"end_date\"]").click()
-    page.locator("input[name=\"end_date\"]").fill("")
-    page.locator("div:nth-child(7) > .EasyMDEContainer > .CodeMirror > .CodeMirror-scroll").click()
-    page.locator(".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea").fill("This is a phase Test")
+    page.locator('input[name="end_date"]').click()
+    page.locator('input[name="end_date"]').fill("")
+    page.locator(
+        "div:nth-child(7) > .EasyMDEContainer > .CodeMirror > .CodeMirror-scroll"
+    ).click()
+    page.locator(
+        ".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea"
+    ).fill("This is a phase Test")
     page.locator(".ui.search.selection.dropdown.multiple").first.click()
-    page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(str(titleNum) + "Playwright Task")
+    page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(
+        str(titleNum) + "Playwright Task"
+    )
     page.get_by_text(str(titleNum) + "Playwright Task").nth(1).click()
     page.locator(".title > .dropdown").click()
-    page.locator("input[name=\"execution_time_limit\"]").click()
-    page.locator("input[name=\"execution_time_limit\"]").fill("100")
-    page.locator("input[name=\"max_submissions_per_day\"]").click()
-    page.locator("input[name=\"max_submissions_per_day\"]").fill("2")
-    page.locator("input[name=\"max_submissions_per_person\"]").click()
-    page.locator("input[name=\"max_submissions_per_person\"]").fill("3")
+    page.locator('input[name="execution_time_limit"]').click()
+    page.locator('input[name="execution_time_limit"]').fill("100")
+    page.locator('input[name="max_submissions_per_day"]').click()
+    page.locator('input[name="max_submissions_per_day"]').fill("2")
+    page.locator('input[name="max_submissions_per_person"]').click()
+    page.locator('input[name="max_submissions_per_person"]').fill("3")
     page.get_by_text("Save").nth(3).click()
     page.get_by_text("Leaderboard", exact=True).click()
     page.get_by_role("button", name=" Add leaderboard").click()
-    page.locator("input[name=\"title\"]").click()
-    page.locator("input[name=\"title\"]").fill("Test title Leaderboard")
-    page.locator("input[name=\"key\"]").click()
-    page.locator("input[name=\"key\"]").fill("Test Key")
+    page.locator('input[name="title"]').click()
+    page.locator('input[name="title"]').fill("Test title Leaderboard")
+    page.locator('input[name="key"]').click()
+    page.locator('input[name="key"]').fill("Test Key")
     page.locator(".ui.plus").click()
-    page.locator("input[name=\"column_key_0\"]").click()
-    page.locator("input[name=\"column_key_0\"]").fill("Test Key")
-    page.locator("input[name=\"key\"]").click()
-    page.locator("input[name=\"key\"]").press("ControlOrMeta+a")
-    page.locator("input[name=\"key\"]").fill("Key")
-    page.locator("input[name=\"column_key_0\"]").click()
+    page.locator('input[name="column_key_0"]').click()
+    page.locator('input[name="column_key_0"]').fill("Test Key")
+    page.locator('input[name="key"]').click()
+    page.locator('input[name="key"]').press("ControlOrMeta+a")
+    page.locator('input[name="key"]').fill("Key")
+    page.locator('input[name="column_key_0"]').click()
     page.get_by_text("Save").nth(4).click()
     page.get_by_role("button", name="Save").click()
     expect(page.get_by_text("Test Content")).to_be_visible()

@@ -33,7 +33,9 @@ def test_FailedAccountCreationUsername(page: Page):
     page.get_by_role("textbox", name="confirm password").fill(test_password)
     page.get_by_role("checkbox", name="I accept the terms and").check()
     page.get_by_role("button", name="Sign Up").click()
-    expect(page.get_by_text("Username can only contain lowercase letters,")).to_be_visible()
+    expect(
+        page.get_by_text("Username can only contain lowercase letters,")
+    ).to_be_visible()
 
 
 def test_account_creation(page: Page):
@@ -52,11 +54,11 @@ def test_account_creation(page: Page):
     expect(page.get_by_text(f"Dear {test_user}, please go to")).to_be_visible()
 
     found = "false"
-    with psycopg.connect(f"dbname={db_name} user={db_user} host={db_host} password={db_password}") as conn:
-
+    with psycopg.connect(
+        f"dbname={db_name} user={db_user} host={db_host} password={db_password}"
+    ) as conn:
         # Open a cursor to perform database operations
         with conn.cursor() as cur:
-
             # Execute a command: this creates a new table
             cur.execute("SELECT username FROM profiles_user;")
             for row in cur:
@@ -70,14 +72,18 @@ def test_account_creation(page: Page):
 
 
 def activate_account():
-    with psycopg.connect(f"dbname={db_name} user={db_user} host={db_host} password={db_password}") as conn:
-
+    with psycopg.connect(
+        f"dbname={db_name} user={db_user} host={db_host} password={db_password}"
+    ) as conn:
         # Open a cursor to perform database operations
         with conn.cursor() as cur:
-
             # Execute a command: this creates a new table
-            cur.execute(f"UPDATE profiles_user SET is_active = 't' WHERE username = '{test_user}';")
-            cur.execute(f"SELECT is_active FROM profiles_user WHERE username = '{test_user}';")
+            cur.execute(
+                f"UPDATE profiles_user SET is_active = 't' WHERE username = '{test_user}';"
+            )
+            cur.execute(
+                f"SELECT is_active FROM profiles_user WHERE username = '{test_user}';"
+            )
             for row in cur:
                 logger.debug(str(row))
                 if str(row) not in "(True,)":

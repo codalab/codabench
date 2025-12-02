@@ -12,7 +12,9 @@ def test_auth(browser: Browser) -> None:
     page.goto("http://localhost:8000")
     page.get_by_role("link", name="Login").click()
     page.get_by_role("textbox", name="username or email").click()
-    page.get_by_role("textbox", name="username or email").fill(data["default_user"]["username"])
+    page.get_by_role("textbox", name="username or email").fill(
+        data["default_user"]["username"]
+    )
     page.get_by_role("textbox", name="password").click()
     page.get_by_role("textbox", name="password").fill(data["default_user"]["password"])
     page.get_by_role("button", name="Log In").click()
