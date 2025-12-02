@@ -1,6 +1,13 @@
 from playwright.sync_api import expect, Page
 import toml
 import pytest
+import re
+import os
+
+if os.environ.get("CI", "false").lower() == "true":
+    ci = True
+else:
+    ci = False
 
 data = toml.load("config/config.toml")
 
@@ -11,9 +18,9 @@ def browser_context_args(browser_context_args):
     browser_context_args.update(storage_state="config/state.json",)
     return browser_context_args
 
-# TODO Add submission to leaderboard and see if it gets added
 
-@pytest.mark.skip(reason="Works locally but fails in the CI for some reason")
+# Skip this test if in the CI
+@pytest.mark.skipif(ci, reason="Works locally but fails in the CI for some reason")
 def test_v2_multiTaskFactSheet(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
@@ -40,9 +47,31 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    # The ID on the leaderboard can be one of the children instead of the parent so we try them all
+    found = False
+    for count in range(0, 4):
+        try:
+            submission_ID_str = int(submission_Id[0]) + count
+            expect(page.get_by_role("cell", name=str(submission_ID_str))).to_be_visible()
+            found = True
+            break
+        except:
+            pass
+    if not found:
+        assert 0, "Submission not found in the leaderboard"
 
 
-@pytest.mark.skip(reason="Works locally but fails in the CI for some reason")
+# Skip this test if in the CI
+@pytest.mark.skipif(ci, reason="Works locally but fails in the CI for some reason")
 def test_v2_multiTask(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
@@ -65,6 +94,27 @@ def test_v2_multiTask(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    # The ID on the leaderboard can be one of the children instead of the parent so we try them all
+    found = False
+    for count in range(0, 4):
+        try:
+            submission_ID_str = int(submission_Id[0]) + count
+            expect(page.get_by_role("cell", name=str(submission_ID_str))).to_be_visible()
+            found = True
+            break
+        except:
+            pass
+    if not found:
+        assert 0, "Submission not found in the leaderboard"
 
 
 def test_basic(page: Page) -> None:
@@ -89,6 +139,16 @@ def test_basic(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
 
 
 def test_irisV15_code(page: Page) -> None:
@@ -113,6 +173,16 @@ def test_irisV15_code(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
 
 
 def test_irisV15_result(page: Page) -> None:
@@ -137,6 +207,16 @@ def test_irisV15_result(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
 
 
 def test_v15(page: Page) -> None:
@@ -161,6 +241,16 @@ def test_v15(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
 def test_v18(page: Page) -> None:
@@ -185,3 +275,13 @@ def test_v18(page: Page) -> None:
     except:
         page.reload()
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+    # Add to leaderboard and see if shows
+    text = page.locator('.submission_row').first.inner_text()
+    submission_Id = text.split(None, 1)
+    try:
+        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+    except:
+        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+    expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
