@@ -61,7 +61,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
     for count in range(0, 4):
         try:
             submission_ID_str = int(submission_Id[0]) + count
-            expect(page.get_by_role("cell", name=str(submission_ID_str))).to_be_visible()
+            expect(page.get_by_role("cell", name=str(submission_ID_str), exact=True)).to_be_visible()
             found = True
             break
         except:
@@ -108,7 +108,7 @@ def test_v2_multiTask(page: Page) -> None:
     for count in range(0, 4):
         try:
             submission_ID_str = int(submission_Id[0]) + count
-            expect(page.get_by_role("cell", name=str(submission_ID_str))).to_be_visible()
+            expect(page.get_by_role("cell", name=str(submission_ID_str), exact=True)).to_be_visible()
             found = True
             break
         except:
@@ -148,7 +148,7 @@ def test_basic(page: Page) -> None:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
     expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
 def test_irisV15_code(page: Page) -> None:
@@ -182,7 +182,7 @@ def test_irisV15_code(page: Page) -> None:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
     expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
 def test_irisV15_result(page: Page) -> None:
@@ -216,7 +216,7 @@ def test_irisV15_result(page: Page) -> None:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
     expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
 def test_v15(page: Page) -> None:
@@ -284,4 +284,4 @@ def test_v18(page: Page) -> None:
         page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
     page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
     expect(page.locator("#leaderboardTable").get_by_role("link", name=data["default_user"]["username"])).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0])).to_be_visible()
+    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
