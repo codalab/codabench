@@ -1,8 +1,9 @@
 # To run the tests locally
-Install uv : https://docs.astral.sh/uv/getting-started/installation/
+Install uv : [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
 Run the following commands: 
 ```bash
+cd tests
 uv sync
 uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
 ```
