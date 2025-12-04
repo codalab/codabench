@@ -4,7 +4,7 @@ Install uv : [https://docs.astral.sh/uv/getting-started/installation/](https://d
 Run the following commands: 
 ```bash
 cd tests
-uv sync
+uv sync --frozen
 uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
 ```
 

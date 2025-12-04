@@ -38,7 +38,7 @@ jobs:
             cd tests
             apt update && apt upgrade -y
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            $HOME/.local/bin/uv sync
+            $HOME/.local/bin/uv sync --frozen
             $HOME/.local/bin/uv run playwright install
       - run:
           name: "Docker: Pull required images"
