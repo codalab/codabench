@@ -16,6 +16,7 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
 import docker
 from rich.progress import Progress
+from rich.pretty import pprint
 import requests
 
 import websockets
@@ -38,6 +39,7 @@ from logs_loguru import configure_logging,colorize_run_args
 import json
 
 
+
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
@@ -54,6 +56,10 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
         version="auto",
     )
 
+
+# -----------------------------------------------
+# Show Progress bar on downloading images
+# -----------------------------------------------
 tasks = {}
 
 
@@ -956,6 +962,8 @@ class Run:
             environment=["PYTHONUNBUFFERED=1"],
         )
         logger.debug("Created container : " + str(container))
+        logger.info("Volume configuration of the container: ")
+        pprint(volumes_config)
         # This runs the container engine command and asynchronously passes data back via websocket
         try:
             return await self._run_container_engine_cmd(container, kind=kind)

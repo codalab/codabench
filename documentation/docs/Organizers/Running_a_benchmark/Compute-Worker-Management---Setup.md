@@ -208,9 +208,13 @@ The folder `$HOST_DIRECTORY/data`, usually `/codabench/data`, is shared between 
 ![](_attachments/4259c2e5-d119-4ca2-8fc8-b69196f1528c_17534367097493236.jpg)
 
 
+!!! warning 
+    Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.  
+       - `root` for Docker rootfull  
+       - `codalab` for Podman and Docker rootless if you created a user name codalab to launch podman and docker rootless from
+
 
 !!! tip "If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further."
-
 ---
 
 ## Building compute worker
