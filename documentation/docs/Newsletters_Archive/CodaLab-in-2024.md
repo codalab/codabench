@@ -52,7 +52,7 @@ Keep in touch and give us feedback on your experience on Codabench !
 Reminder on our communication tools:
 
 - Join our [google forum](https://groups.google.com/g/codalab-competitions) to emphasize your competitions and events
-- Contact us for any question: info@codalab.org
+- Contact us for any question: info@codabench.org
 - Write an issue on [github](https://github.com/codalab/codabench) about interesting suggestions
 
 Please cite one of these papers when working with our platforms:

@@ -13,7 +13,7 @@ from rest_framework.permissions import AllowAny
 
 from api.pagination import BasicPagination, LargePagination
 from api.serializers import datasets as serializers
-from datasets.models import Data, DataGroup
+from datasets.models import Data
 from competitions.models import CompetitionCreationTaskStatus
 from utils.data import make_url_sassy, pretty_bytes, gb_to_bytes
 
@@ -253,12 +253,6 @@ class DataViewSet(ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-
-class DataGroupViewSet(ModelViewSet):
-    queryset = DataGroup.objects.all()
-    serializer_class = serializers.DataGroupSerializer
-    # TODO: Anyone can delete these?
 
 
 @api_view(['PUT'])

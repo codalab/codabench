@@ -24,7 +24,7 @@ from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
-from datasets.models import Data, DataGroup
+from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
 from utils.email import codalab_send_mail
@@ -136,7 +136,6 @@ def send_user_deletion_notice_to_admin(user):
     competitions_participation = Competition.objects.filter(participants__user=user)
     submissions = user.submission.all()
     data = Data.objects.filter(created_by=user)
-    data_groups = DataGroup.objects.filter(created_by=user)
     tasks = Task.objects.filter(created_by=user)
     queues = user.queues.all()
     posts = Post.objects.filter(posted_by=user)
@@ -150,7 +149,6 @@ def send_user_deletion_notice_to_admin(user):
         'competitions_participation': competitions_participation,
         'submissions': submissions,
         'data': data,
-        'data_groups': data_groups,
         'tasks': tasks,
         'queues': queues,
         'posts': posts,
@@ -370,7 +368,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     # subject_template_name = ''  # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = ''  # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
-    from_email = "info@codalab.org"
+    from_email = settings.SERVER_EMAIL
 
 
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):

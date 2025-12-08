@@ -15,39 +15,49 @@ jobs:
           #
           #     In another terminal:
           #         $ open vnc://0.0.0.0:5900
-          name: Download and start X for VNC viewing
+          name: "Setup: Enable VNC access"
           command: |
             sudo apt-get update
             sudo apt-get install -y x11vnc
           #  x11vnc -forever -nopw
           background: true
 
-      - run: cp .env_circleci .env
+      - run: 
+          name: "Setup: Copy environment variables"
+          command: cp .env_circleci .env
 
 
       - run:
-          name: Making gross directories for minio, cannot be made by docker for some reason
+          name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
           command: |
             sudo mkdir -p var/minio/public
             sudo mkdir -p var/minio/private
 
       - run:
-          name: Build containers and collect static
+          name: "Docker: Build containers and collect static files"
           command: |
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
             docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
 
-      - run: docker-compose exec django flake8 src/
-      - run: docker pull codalab/codalab-legacy:py37 # not available without "not e2e" tests as they pull ahead of time
-      - run: docker pull codalab/codalab-legacy:py3 # not available without "not e2e" tests as they pull ahead of time
-      - run: docker pull vergilgxw/autotable:v2 # not available without "not e2e" tests as they pull ahead of time
+      - run: 
+          name: "Lint: Check code style with flake8"
+          command: docker-compose exec django flake8 src/
+
+
+      - run: 
+          name: "Docker: Pull required images"
+          # not available without "not e2e" tests as they pull ahead of time
+          command: |
+            docker pull codalab/codalab-legacy:py37 
+            docker pull codalab/codalab-legacy:py3 
+            docker pull vergilgxw/autotable:v2 
 
       - run:
-          name: pytest
+          name: "Tests: Run unit/integration tests (excluding e2e)"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
 
       - run:
-          name: e2e tests
+          name: "Tests: Run end-to-end (E2E) tests"
           command: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/tests/functional/ -m e2e
           no_output_timeout: 60m
 
