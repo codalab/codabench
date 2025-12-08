@@ -107,6 +107,9 @@ class User(ChaHubSaveMixin, AbstractBaseUser, PermissionsMixin):
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
+    # Ban
+    is_banned = models.BooleanField(default=False)
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.username, allow_unicode=True)
         super().save(*args, **kwargs)
