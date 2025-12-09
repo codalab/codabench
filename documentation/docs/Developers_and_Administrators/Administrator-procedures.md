@@ -118,6 +118,15 @@ Select it, select the `Delete selected users` action and click on `Go`:
 ![](_attachments/c0fdd7ff-0c46-4bae-b9e2-7d4e0b774ec2_17534366434447145.jpg)
 
 
+#### Ban/Unban a user
+
+Go to `Users` in the `django admin`:
+
+![Django Admin Users](_attachments/users-django-admin.png)
+
+Search for user using the search bar, or use the filter on the right side. Click on the username of the user to open user details, scroll down to find `Is Banned`. Check/uncheck this option to toggle the banned status.
+
+
 
 ## RabbitMQ Management
 The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: `http://<your_codalab_instance>:15672/`. The username/password is your RabbitMQ `.env` settings for username and password. The port is hard-set in `docker-compose.yml` to 15672, but you can always change this if needed. For more information, see:
