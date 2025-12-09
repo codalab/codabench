@@ -29,9 +29,8 @@ class BlockBannedUsersMiddlewareTests(TestCase):
         )
 
     def test_banned_user_sees_banned_page(self):
-        """Banned user should see banned.html page"""
+        """Banned user visiting a normal page should see banned.html"""
         self.client.login(username="banneduser", password="password123")
-
         response = self.client.get(reverse("pages:home"))
 
         self.assertEqual(response.status_code, 403)
@@ -41,8 +40,27 @@ class BlockBannedUsersMiddlewareTests(TestCase):
     def test_normal_user_can_access_page(self):
         """Normal user should access pages normally"""
         self.client.login(username="normaluser", password="password123")
-
         response = self.client.get(reverse("pages:home"))
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "You are banned")
+
+    def test_banned_user_api_request_returns_json(self):
+        """Banned user hitting API should get JSON error, not HTML page"""
+        self.client.login(username="banneduser", password="password123")
+        response = self.client.get(reverse("user_quota"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertJSONEqual(
+            response.content,
+            {"error": "You are banned from using Codabench"}
+        )
+
+    def test_normal_user_api_access(self):
+        """Normal user should get valid API response"""
+        self.client.login(username="normaluser", password="password123")
+        response = self.client.get(reverse("user_quota"))
+
+        self.assertNotEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
