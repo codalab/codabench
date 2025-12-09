@@ -862,6 +862,15 @@
     </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#banunban-a-user">
+<span class="md-ellipsis">
+      
+        Ban/Unban a user
+      
+    </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -1532,6 +1541,15 @@
     </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#banunban-a-user">
+<span class="md-ellipsis">
+      
+        Ban/Unban a user
+      
+    </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -1772,6 +1790,10 @@ You can create and edit objects using the interface. Write the announcement and 
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="" src="../_attachments/47b45c3e-13ed-4870-a83d-a25338aeaa39_17534366434936385.jpg"></a></p>
 <p>Select it, select the <code>Delete selected users</code> action and click on <code>Go</code>:</p>
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="" src="../_attachments/c0fdd7ff-0c46-4bae-b9e2-7d4e0b774ec2_17534366434447145.jpg"></a></p>
+<h4 id="banunban-a-user">Ban/Unban a user<a class="headerlink" href="#banunban-a-user" title="Permanent link">¶</a></h4>
+<p>Go to <code>Users</code> in the <code>django admin</code>:</p>
+<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="Django Admin Users" src="../_attachments/users-django-admin.png"></a></p>
+<p>Search for user using the search bar, or use the filter on the right side. Click on the username of the user to open user details, scroll down to find <code>Is Banned</code>. Check/uncheck this option to toggle the banned status.</p>
 <h2 id="rabbitmq-management">RabbitMQ Management<a class="headerlink" href="#rabbitmq-management" title="Permanent link">¶</a></h2>
 <p>The RabbitMQ management tool allows you to see the status of various queues, virtual hosts, and jobs. By default, you can access it at: <code>http://&lt;your_codalab_instance&gt;:15672/</code>. The username/password is your RabbitMQ <code>.env</code> settings for username and password. The port is hard-set in <code>docker-compose.yml</code> to 15672, but you can always change this if needed. For more information, see:
 https://www.rabbitmq.com/management.html</p>
