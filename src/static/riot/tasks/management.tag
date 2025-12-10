@@ -85,7 +85,7 @@
         </tr>
         </tfoot>
     </table>
-    
+
     <!--  Task Detail Modal  -->
     <div class="ui modal" ref="detail_modal">
         <div class="header">
@@ -179,10 +179,10 @@
 
             <form class="ui form coda-animated {error: errors}" ref="upload_form">
                 <p>
-                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="https://github.com/codalab/codabench/wiki/Resource-Management#upload-a-task" target="_blank">here</a>.
-                
+                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="http://docs.codabench.org/latest/Organizers/Running_a_benchmark/Resource-Management/#upload-a-task" target="_blank">here</a>.
+
                 </p>
-                
+
                 <input-file name="data_file" ref="data_file"
                             accept=".zip"></input-file>
             </form>
@@ -470,7 +470,7 @@
         /*---------------------------------------------------------------------
          Modal Methods
         ---------------------------------------------------------------------*/
-        
+
         self.show_upload_task_modal = () => {
             self.reset_upload_task_input()
             $(self.refs.upload_task_modal).modal('show')
@@ -511,7 +511,7 @@
         self.check_upload_task_form = () => {
 
             var data_file = self.refs.data_file.refs.file_input.value
-            
+
             if(data_file === undefined || !data_file.endsWith('.zip')) {
                 toastr.warning("Please select a .zip file to upload")
                 self.reset_upload_task_input()
@@ -546,7 +546,7 @@
                         self.page = 1 // set current page to 1
                         self.update_tasks({page: self.page}) // on new task creation, go to first page i.e. page=1
                     }, 500)
-                    
+
                 })
                 .catch(function (error) {
                     toastr.error("Task upload failed: " + error.responseJSON.error)
@@ -673,25 +673,25 @@
                 toastr.error('Scoring program is required in a task!')
                 return
             }
-            
+
             // replace property names in the data object
             data.name = data.edit_name;
             data.description = data.edit_description;
 
             // If ingestion program is not removed, add the new ingestion program from form_datasets to data
             if(data.edit_ingestion_program != ""){
-                data.ingestion_program = self.form_datasets.ingestion_program 
+                data.ingestion_program = self.form_datasets.ingestion_program
             }
             // If input data is not removed, add the new input data from form_datasets to data
             if(data.edit_input_data != ""){
-                data.input_data = self.form_datasets.input_data 
+                data.input_data = self.form_datasets.input_data
             }
             // If reference data is not removed, add the new reference data from form_datasets to data
             if(data.edit_reference_data != ""){
-                data.reference_data = self.form_datasets.reference_data 
+                data.reference_data = self.form_datasets.reference_data
             }
             // add the new scoring from form_datasets to data
-            data.scoring_program = self.form_datasets.scoring_program 
+            data.scoring_program = self.form_datasets.scoring_program
 
             // delete the old property names
             delete data.edit_name
@@ -700,7 +700,7 @@
             delete data.edit_scoring_program
             delete data.edit_input_data
             delete data.edit_reference_data
-            
+
             task_id = self.selected_task.id
             CODALAB.api.update_task(task_id, data)
                 .done((response) => {

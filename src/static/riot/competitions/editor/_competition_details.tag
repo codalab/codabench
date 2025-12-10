@@ -137,7 +137,7 @@
             <label>
                 Files Available
                 <sup>
-                    <a href="https://github.com/codalab/codabench/wiki/Yaml-Structure"
+                    <a href="http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Yaml-Structure/"
                        target="_blank"
                        data-tooltip="What's this?">
                         <i class="grey question circle icon"></i>
@@ -243,7 +243,7 @@
             </sup>
         </div>
 
-        
+
     </div>
 
     <script>
