@@ -8,7 +8,7 @@
                         <a class="item" data-tab="participating">Benchmarks I'm In</a>
                         <div class="right menu">
                             <div class="item">
-                                <help_button href="http://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-Management-%26-List/"></help_button>
+                                <help_button href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-Management-%26-List/"></help_button>
                             </div>
                         </div>
                     </div>

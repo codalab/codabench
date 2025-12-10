@@ -99,7 +99,7 @@
                 <!--  Show back button when updating only  -->
                 <a if="{opts.competition_id}" class="ui secondary basic button" href="{URLS.COMPETITION_DETAIL(opts.competition_id)}">Back To Competition</a>
                 <!--  Show help when creating only  -->
-                <help_button if="{!opts.competition_id}" href="http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Creation%3A-Form/"></help_button>
+                <help_button if="{!opts.competition_id}" href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Creation%3A-Form/"></help_button>
             </div>
         </div>
     </div>

@@ -5,7 +5,7 @@ This page focuses on how to create a dataset contest via bundle and make submiss
 The brief process can be summarized in the following diagram![](../../_attachments/0_17528513120435548.png)
 
 There are two main parts:
-- the contest organizer creates the dataset competition by uploading a bundle (For more information on how to create a contest via bundle, and the definition of bundle, you can refer to this link [Competition-Creation:-Bundle](http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Creation%3A-Bundle/))
+- the contest organizer creates the dataset competition by uploading a bundle (For more information on how to create a contest via bundle, and the definition of bundle, you can refer to this link [Competition-Creation:-Bundle](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Creation%3A-Bundle/))
 
 - Competition participant submission dataset
 

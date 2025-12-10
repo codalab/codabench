@@ -179,7 +179,7 @@
 
             <form class="ui form coda-animated {error: errors}" ref="upload_form">
                 <p>
-                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="http://docs.codabench.org/latest/Organizers/Running_a_benchmark/Resource-Management/#upload-a-task" target="_blank">here</a>.
+                Upload a zip of your task here to create a new task. For assistance check the documentation <a href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Resource-Management/#upload-a-task" target="_blank">here</a>.
 
                 </p>
 

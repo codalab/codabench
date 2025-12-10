@@ -1,4 +1,4 @@
-This page is relatively simple. It's where you submit a completed competition bundle to Codabench, in order for it to be processed into a competition instance. For more information on competition bundles, see this link here: [Competition Bundle Structure](http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/).
+This page is relatively simple. It's where you submit a completed competition bundle to Codabench, in order for it to be processed into a competition instance. For more information on competition bundles, see this link here: [Competition Bundle Structure](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/).
 
 ![image](../../_attachments/71213494-82863c80-2268-11ea-8efc-27c51795a23e_17528513091588552.png)
 

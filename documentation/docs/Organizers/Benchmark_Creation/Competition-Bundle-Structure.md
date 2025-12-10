@@ -76,7 +76,7 @@ leaderboard:
 
 ## Competition YAML
 The `competition.yaml` file is the most important file in the bundle. It's what Codabench looks for to figure out the structure and layout of your competition, along with additional details. For more information on setting up a `competition.yaml` see the wiki page here:
-[Competition YAML](http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Yaml-Structure/)
+[Competition YAML](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Yaml-Structure/)
 
 
 ## Data Types And Their Role:

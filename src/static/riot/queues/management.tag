@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="item">
-            <help_button href="http://docs.codabench.org/latest/Organizers/Running_a_benchmark/Queue-Management/"
+            <help_button href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Queue-Management/"
                          tooltip_position="right center">
             </help_button>
         </div>
