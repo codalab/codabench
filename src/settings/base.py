@@ -49,12 +49,11 @@ THIRD_PARTY_APPS = (
     'redis',
 )
 OUR_APPS = (
-    'chahub',
+    'profiles',
     'analytics',
     'competitions',
     'datasets',
     'pages',
-    'profiles',
     'leaderboards',
     'tasks',
     'commands',
@@ -121,7 +120,6 @@ LOGOUT_REDIRECT_URL = '/'
 # =============================================================================
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
-    'utils.oauth_backends.ChahubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
     'django_su.backends.SuBackend',
     'profiles.backends.EmailAuthenticationBackend',
@@ -136,18 +134,12 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.load_extra_data',
     # 'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
-    'profiles.pipeline.user_details',
 )
 
 # Github
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
 SOCIAL_AUTH_GITHUB_SCOPE = ['user']
-
-# Codalab Example settings
-SOCIAL_AUTH_CHAHUB_BASE_URL = os.environ.get('SOCIAL_AUTH_CHAHUB_BASE_URL', 'asdfasdfasfd')
-SOCIAL_AUTH_CHAHUB_KEY = os.environ.get('SOCIAL_AUTH_CHAHUB_KEY', 'asdfasdfasfd')
-SOCIAL_AUTH_CHAHUB_SECRET = os.environ.get('SOCIAL_AUTH_CHAHUB_SECRET', 'asdfasdfasfdasdfasdf')
 
 # Generic
 SOCIAL_AUTH_STRATEGY = 'social_django.strategy.DjangoStrategy'
@@ -459,13 +451,6 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
-
-# =============================================================================
-# Chahub
-# =============================================================================
-CHAHUB_API_URL = os.environ.get('CHAHUB_API_URL')
-CHAHUB_API_KEY = os.environ.get('CHAHUB_API_KEY')
-CHAHUB_PRODUCER_ID = os.environ.get('CHAHUB_PRODUCER_ID')
 
 
 # Django-Su (User impersonation)
