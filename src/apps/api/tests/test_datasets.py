@@ -3,7 +3,14 @@ from faker import Factory
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from datasets.models import Data
-from factories import UserFactory, DataFactory
+from factories import (
+    UserFactory,
+    DataFactory,
+    CompetitionFactory,
+    PhaseFactory,
+    TaskFactory,
+    SubmissionFactory
+)
 from utils.data import pretty_bytes, gb_to_bytes
 from unittest.mock import patch
 
@@ -306,3 +313,87 @@ class DatasetCreateTests(APITestCase):
             'file_size': 1234,
         })
         self.assertEqual(resp.status_code, 403)
+
+
+class DatasetDeleteTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username='user', password='user')
+        self.other_user = UserFactory(username='other', password='other')
+        self.client.login(username='user', password='user')
+
+        self.dataset1 = DataFactory(created_by=self.user, name='dataset1')
+        self.dataset2 = DataFactory(created_by=self.user, name='dataset2')
+        self.other_dataset = DataFactory(created_by=self.other_user, name='other_dataset')
+
+    def test_delete_own_dataset_success(self):
+        """User can delete their own dataset."""
+        url = reverse("data-detail", args=[self.dataset1.pk])
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Data.objects.filter(pk=self.dataset1.pk).exists())
+
+    def test_cannot_delete_others_dataset(self):
+        """User cannot delete someone else’s dataset."""
+        url = reverse("data-detail", args=[self.other_dataset.pk])
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, 404)
+        self.assertTrue(Data.objects.filter(pk=self.other_dataset.pk).exists())
+
+    def test_cannot_delete_dataset_in_use(self):
+        """If dataset is in use by a competition, it cannot be deleted."""
+        # Set up in use dataset
+        in_use_dataset = DataFactory(type=Data.INPUT_DATA, created_by=self.user, name="in_use_dataset")
+        task = TaskFactory(input_data=in_use_dataset)
+        phase = PhaseFactory()
+        phase.tasks.add(task)
+        competition = CompetitionFactory(created_by=self.user)
+        competition.phases.set([phase])
+
+        url = reverse("data-detail", args=[in_use_dataset.pk])
+        resp = self.client.delete(url)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data["error"], "Cannot delete dataset: dataset is in use")
+        self.assertTrue(Data.objects.filter(pk=in_use_dataset.pk).exists())
+
+    def test_bulk_delete_success(self):
+        """Multiple datasets deleted successfully."""
+        ids = [self.dataset1.pk, self.dataset2.pk]
+        resp = self.client.post(reverse("data-delete-many"), ids, format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["detail"], "Datasets deleted successfully")
+        self.assertFalse(Data.objects.filter(pk__in=ids).exists())
+
+    def test_bulk_delete_with_errors(self):
+        """Bulk delete should fail entirely if one dataset is not deletable."""
+        # include one dataset from another user
+        ids = [self.dataset1.pk, self.other_dataset.pk]
+        resp = self.client.post(reverse("data-delete-many"), ids, format="json")
+
+        # Since one dataset is not deletable, expect a 400 response
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("other_dataset", resp.data)
+        self.assertEqual(resp.data["other_dataset"], "Cannot delete a dataset that is not yours")
+
+        # None should be deleted since the operation failed
+        self.assertTrue(Data.objects.filter(pk=self.dataset1.pk).exists())
+        self.assertTrue(Data.objects.filter(pk=self.other_dataset.pk).exists())
+
+    def test_cannot_delete_dataset_associated_with_a_submission_in_competition(self):
+        """If a dataset is a submission linked to a competition phase, it cannot be deleted."""
+        # Setup a submission dataset
+        phase = PhaseFactory()
+        competition = CompetitionFactory(created_by=self.user)
+        competition.phases.set([phase])
+        submission_dataset = DataFactory(type=Data.SUBMISSION, created_by=self.user, name="submission_dataset")
+        SubmissionFactory(owner=self.user, phase=phase, data=submission_dataset)
+
+        url = reverse("data-detail", args=[submission_dataset.pk])
+        resp = self.client.delete(url)
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.data["error"],
+            "Cannot delete submission: submission belongs to an existing competition. Please visit the competition and delete your submission from there."
+        )
+        self.assertTrue(Data.objects.filter(pk=submission_dataset.pk).exists())
