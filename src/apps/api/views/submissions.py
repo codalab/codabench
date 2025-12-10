@@ -198,11 +198,25 @@ class SubmissionViewSet(ModelViewSet):
         return super(SubmissionViewSet, self).create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        """
+        - If user is neither owner nor admin, user cannot delete the submission
+        - If a user is not admin and is owner of a submission and submission is on the leaderboard, user cannot delete the submission
+        - In rest of the cases i.e. user is admin/super user or user is owner of the submisison and submission is not on the leaderboard, user can delete the submisison
+        """
         submission = self.get_object()
 
-        if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied("Cannot interact with submission you did not make")
+        is_owner = request.user == submission.owner
+        is_super_user_or_competition_admin = self.has_admin_permission(request.user, submission)
 
+        # If user is neither owner nor super user/admin return permission denied
+        if not is_owner and not is_super_user_or_competition_admin:
+            raise PermissionDenied("You do not have permission to delete this submission!")
+
+        # If user is not admin, is owner and submission is on the leaderboard return permission denied
+        if not is_super_user_or_competition_admin and is_owner and submission.leaderboard:
+            raise PermissionDenied("You cannot delete a leaderboard submission!")
+
+        # Otherwise, delete the submission
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
