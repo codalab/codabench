@@ -347,7 +347,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
        We have to use app:view_name syntax in templates like " {% url 'accounts:password_reset_confirm'%} "
        Therefore we need to tell this view to find the right success_url with that syntax or django won't be
        able to find the view.
-    3. from_email: We want to set the from_email to info@codalab.org - may eventually put in .env file.
+    3. from_email: We want to use SERVER_EMAIL already set in the .env
     #  The other commented sections are the defaults for other attributes in auth_views.PasswordResetView.
        They are in here in case someone wants to customize in the future. All attributes show up in the order
        shown in the docs.

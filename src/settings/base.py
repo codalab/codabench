@@ -452,6 +452,7 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 
+CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'info@codabench.org')
 
 # Django-Su (User impersonation)
 SU_LOGIN_CALLBACK = 'profiles.admin.su_login_callback'
