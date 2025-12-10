@@ -29,7 +29,7 @@ You can click on a dataset/program and make it public or private. This is useful
 ![](_attachments/99ec6090-86bd-4425-8f12-46115e09409d_1753436708048147.jpg)
 
 
-For a general breakdown of the roles of different types of datasets, see this link: [Competition Bundle Structure: Data types and their role](https://github.com/codalab/competitions-v2/wiki/Competition-Bundle-Structure#data-types-and-their-role).
+For a general breakdown of the roles of different types of datasets, see this link: [Competition Bundle Structure: Data types and their role](http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Bundle-Structure/#data-types-and-their-role).
 
 
 

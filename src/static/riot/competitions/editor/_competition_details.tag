@@ -163,7 +163,7 @@
                 <input type="checkbox" ref="detailed_results" onchange="{form_updated}">
             </div>
             <sup>
-                <a href="https://github.com/codalab/competitions-v2/wiki/Detailed-Results-and-Visualizations"
+                <a href="http://docs.codabench.org/latest/Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations/"
                    target="_blank"
                    data-tooltip="What's this?">
                     <i class="grey question circle icon"></i>

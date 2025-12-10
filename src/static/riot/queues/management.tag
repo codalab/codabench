@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="item">
-            <help_button href="https://github.com/codalab/competitions-v2/wiki/Queue-Management"
+            <help_button href="http://docs.codabench.org/latest/Organizers/Running_a_benchmark/Queue-Management/"
                          tooltip_position="right center">
             </help_button>
         </div>
@@ -134,7 +134,7 @@
         <div class="content">
             <h4>Broker URL:</h4>
             <span>{selected_queue.broker_url}</span>
-            
+
             <h4>Vhost:</h4>
             <span>{selected_queue.vhost}</span>
 
@@ -142,11 +142,11 @@
             <h4 if="{ _.get(selected_queue, 'competitions.length', 0) }">Competitions using this queue:</h4>
             <ul if="{ _.get(selected_queue, 'competitions.length', 0) }">
                 <li each="{ comp in selected_queue.competitions }">
-                
+
                 <a class="link-no-deco" target="_blank" href="../competitions/{ comp.id }">{comp.title}</a>
                 </li>
             </ul>
- 
+
         </div>
         <div class="actions">
             <div class="ui cancel button" onclick="{ close_broker_modal }">Close</div>
