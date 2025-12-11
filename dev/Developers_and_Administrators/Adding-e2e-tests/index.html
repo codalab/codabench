@@ -1,11 +1,11 @@
 <!DOCTYPE html><html class="no-js" lang="en"><head>
 <meta charset="utf-8">
 <meta content="width=device-width,initial-scale=1" name="viewport">
-<link href="../../Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes/" rel="prev">
-<link href="../../Contribute/" rel="next">
+<link href="../Robot-submissions/" rel="prev">
+<link href="../Running-tests/" rel="next">
 <link href="../../assets/images/favicon.png" rel="icon">
 <meta content="mkdocs-1.6.1, mkdocs-material-9.7.0" name="generator">
-<title>2024 - Codabench Docs</title>
+<title>Adding Tests - Codabench Docs</title>
 <link href="../../assets/stylesheets/main.618322db.min.css" rel="stylesheet">
 <link href="../../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet">
 
@@ -29,7 +29,7 @@
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox">
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#codalab-in-2024">
+<a class="md-skip" href="#to-run-the-tests-locally">
           Skip to content
         </a>
 </div>
@@ -55,7 +55,7 @@
 <div class="md-header__topic" data-md-component="header-topic">
 <span class="md-ellipsis">
             
-              2024
+              Adding Tests
             
           </span>
 </div>
@@ -165,8 +165,8 @@
 
         </a>
 </li>
-<li class="md-tabs__item">
-<a class="md-tabs__link" href="../../Developers_and_Administrators/Codabench-Installation/">
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href="../Codabench-Installation/">
           
   
   
@@ -176,8 +176,8 @@
 
         </a>
 </li>
-<li class="md-tabs__item md-tabs__item--active">
-<a class="md-tabs__link" href="./">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../Newsletters_Archive/CodaLab-in-2024/">
           
   
   
@@ -664,9 +664,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--nested">
-<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox">
-<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_4" type="checkbox">
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
 <span class="md-ellipsis">
     
   
@@ -677,7 +677,7 @@
   </span>
 <span class="md-nav__icon md-icon"></span>
 </label>
-<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<nav aria-expanded="true" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
 <label class="md-nav__title" for="__nav_4">
 <span class="md-nav__icon md-icon"></span>
             
@@ -688,7 +688,7 @@
           </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Codabench-Installation/">
+<a class="md-nav__link" href="../Codabench-Installation/">
 <span class="md-ellipsis">
     
   
@@ -700,7 +700,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/How-to-deploy-Codabench-on-your-server/">
+<a class="md-nav__link" href="../How-to-deploy-Codabench-on-your-server/">
 <span class="md-ellipsis">
     
   
@@ -712,7 +712,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Administrator-procedures/">
+<a class="md-nav__link" href="../Administrator-procedures/">
 <span class="md-ellipsis">
     
   
@@ -724,7 +724,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Codabench-Architecture/">
+<a class="md-nav__link" href="../Codabench-Architecture/">
 <span class="md-ellipsis">
     
   
@@ -736,7 +736,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Submission-Docker-Container-Layout/">
+<a class="md-nav__link" href="../Submission-Docker-Container-Layout/">
 <span class="md-ellipsis">
     
   
@@ -748,7 +748,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Creating-and-Restoring-from-Backup/">
+<a class="md-nav__link" href="../Creating-and-Restoring-from-Backup/">
 <span class="md-ellipsis">
     
   
@@ -760,7 +760,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Submission-Process-Overview/">
+<a class="md-nav__link" href="../Submission-Process-Overview/">
 <span class="md-ellipsis">
     
   
@@ -772,7 +772,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Robot-submissions/">
+<a class="md-nav__link" href="../Robot-submissions/">
 <span class="md-ellipsis">
     
   
@@ -783,8 +783,9 @@
   </span>
 </a>
 </li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Adding-e2e-tests/">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox">
+<a class="md-nav__link md-nav__link--active" href="./">
 <span class="md-ellipsis">
     
   
@@ -796,7 +797,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Running-tests/">
+<a class="md-nav__link" href="../Running-tests/">
 <span class="md-ellipsis">
     
   
@@ -808,7 +809,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Automating-with-Selenium/">
+<a class="md-nav__link" href="../Automating-with-Selenium/">
 <span class="md-ellipsis">
     
   
@@ -820,7 +821,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Manual-validation/">
+<a class="md-nav__link" href="../Manual-validation/">
 <span class="md-ellipsis">
     
   
@@ -832,7 +833,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Validation-and-deployment-of-pull-requests/">
+<a class="md-nav__link" href="../Validation-and-deployment-of-pull-requests/">
 <span class="md-ellipsis">
     
   
@@ -846,7 +847,7 @@
 <li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4_14" type="checkbox">
 <div class="md-nav__link md-nav__container">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/">
+<a class="md-nav__link" href="../Upgrading_Codabench/">
 <span class="md-ellipsis">
     
   
@@ -871,7 +872,7 @@
           </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Upgrade-RabbitMQ/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Upgrade-RabbitMQ/">
 <span class="md-ellipsis">
     
   
@@ -883,7 +884,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Create-new-logos-for-each-competition/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Create-new-logos-for-each-competition/">
 <span class="md-ellipsis">
     
   
@@ -895,7 +896,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Worker-Docker-Image-manual-update/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Worker-Docker-Image-manual-update/">
 <span class="md-ellipsis">
     
   
@@ -907,7 +908,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Add-line-into-.env-for-default-queue-worker-duration/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Add-line-into-.env-for-default-queue-worker-duration/">
 <span class="md-ellipsis">
     
   
@@ -919,7 +920,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Uncomment-a-line-in-your-.env-file/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Uncomment-a-line-in-your-.env-file/">
 <span class="md-ellipsis">
     
   
@@ -931,7 +932,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Rebuilding-all-docker-images/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Rebuilding-all-docker-images/">
 <span class="md-ellipsis">
     
   
@@ -943,7 +944,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder/">
 <span class="md-ellipsis">
     
   
@@ -955,7 +956,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Submissions-and-Participants-Counts/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Submissions-and-Participants-Counts/">
 <span class="md-ellipsis">
     
   
@@ -967,7 +968,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Homepage-counters/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Homepage-counters/">
 <span class="md-ellipsis">
     
   
@@ -979,7 +980,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/User-removal/">
+<a class="md-nav__link" href="../Upgrading_Codabench/User-removal/">
 <span class="md-ellipsis">
     
   
@@ -991,7 +992,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes/">
+<a class="md-nav__link" href="../Upgrading_Codabench/Database-size-fixes/">
 <span class="md-ellipsis">
     
   
@@ -1008,9 +1009,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" id="__nav_5" type="checkbox">
-<label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5" type="checkbox">
+<label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
 <span class="md-ellipsis">
     
   
@@ -1021,7 +1022,7 @@
   </span>
 <span class="md-nav__icon md-icon"></span>
 </label>
-<nav aria-expanded="true" aria-labelledby="__nav_5_label" class="md-nav" data-md-level="1">
+<nav aria-expanded="false" aria-labelledby="__nav_5_label" class="md-nav" data-md-level="1">
 <label class="md-nav__title" for="__nav_5">
 <span class="md-nav__icon md-icon"></span>
             
@@ -1031,20 +1032,8 @@
 
           </label>
 <ul class="md-nav__list" data-md-scrollfix="">
-<li class="md-nav__item md-nav__item--active">
-<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox">
-<label class="md-nav__link md-nav__link--active" for="__toc">
-<span class="md-ellipsis">
-    
-  
-    2024
-  
-
-    
-  </span>
-<span class="md-nav__icon md-icon"></span>
-</label>
-<a class="md-nav__link md-nav__link--active" href="./">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../Newsletters_Archive/CodaLab-in-2024/">
 <span class="md-ellipsis">
     
   
@@ -1054,90 +1043,6 @@
     
   </span>
 </a>
-<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#codalab-in-2024">
-<span class="md-ellipsis">
-      
-        CodaLab in 2024
-      
-    </span>
-</a>
-<nav aria-label="CodaLab in 2024" class="md-nav">
-<ul class="md-nav__list">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#a-year-of-breakthroughs-and-new-horizons-with-codabench">
-<span class="md-ellipsis">
-      
-        A Year of Breakthroughs and New Horizons with Codabench
-      
-    </span>
-</a>
-</li>
-</ul>
-</nav>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#unprecedented-engagement">
-<span class="md-ellipsis">
-      
-        Unprecedented engagement
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#introducing-codabench">
-<span class="md-ellipsis">
-      
-        Introducing Codabench
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#spotlight-on-competitions">
-<span class="md-ellipsis">
-      
-        Spotlight on competitions
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#what-about-the-future">
-<span class="md-ellipsis">
-      
-        What about the future?
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#community">
-<span class="md-ellipsis">
-      
-        Community
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#last-words">
-<span class="md-ellipsis">
-      
-        Last words
-      
-    </span>
-</a>
-</li>
-</ul>
-</nav>
 </li>
 </ul>
 </nav>
@@ -1217,167 +1122,68 @@
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#codalab-in-2024">
-<span class="md-ellipsis">
-      
-        CodaLab in 2024
-      
-    </span>
-</a>
-<nav aria-label="CodaLab in 2024" class="md-nav">
-<ul class="md-nav__list">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#a-year-of-breakthroughs-and-new-horizons-with-codabench">
-<span class="md-ellipsis">
-      
-        A Year of Breakthroughs and New Horizons with Codabench
-      
-    </span>
-</a>
-</li>
-</ul>
-</nav>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#unprecedented-engagement">
-<span class="md-ellipsis">
-      
-        Unprecedented engagement
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#introducing-codabench">
-<span class="md-ellipsis">
-      
-        Introducing Codabench
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#spotlight-on-competitions">
-<span class="md-ellipsis">
-      
-        Spotlight on competitions
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#what-about-the-future">
-<span class="md-ellipsis">
-      
-        What about the future?
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#community">
-<span class="md-ellipsis">
-      
-        Community
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#last-words">
-<span class="md-ellipsis">
-      
-        Last words
-      
-    </span>
-</a>
-</li>
-</ul>
 </nav>
 </div>
 </div>
 </div>
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
-<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/edit/develop/documentation/docs/Newsletters_Archive/CodaLab-in-2024.md" rel="edit" title="Edit this page">
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/edit/develop/documentation/docs/Developers_and_Administrators/Adding-e2e-tests.md" rel="edit" title="Edit this page">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"></path></svg>
 </a>
-<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/raw/develop/documentation/docs/Newsletters_Archive/CodaLab-in-2024.md" title="View source of this page">
+<a class="md-content__button md-icon" href="https://github.com/codalab/codabench/raw/develop/documentation/docs/Developers_and_Administrators/Adding-e2e-tests.md" title="View source of this page">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
 </a>
-<h1>2024</h1>
-<h2 id="codalab-in-2024">CodaLab in 2024<a class="headerlink" href="#codalab-in-2024" title="Permanent link">¶</a></h2>
-<h3 id="a-year-of-breakthroughs-and-new-horizons-with-codabench">A Year of Breakthroughs and New Horizons with Codabench<a class="headerlink" href="#a-year-of-breakthroughs-and-new-horizons-with-codabench" title="Permanent link">¶</a></h3>
-<p>Welcome to the first edition of CodaLab’s newsletter! This year has been full of novelty, success, and scientific progress. The platform is breaking records of participation and number of organized competitions, and <a href="https://codabench.org/">Codabench</a>, the new version of <a href="https://codalab.lisn.fr/">CodaLab</a>, had a very promising launch. Let’s dive into more details.</p>
-<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image_2025_01_30T15_23_35_261Z" src="../../_attachments/991c18dc-3baa-4d69-b157-6a5561e6798d_17528513106457524.jpg"></a></p>
-<h2 id="unprecedented-engagement">Unprecedented engagement<a class="headerlink" href="#unprecedented-engagement" title="Permanent link">¶</a></h2>
-<p>In October, Codabench has registered its <strong>10,000th user</strong>! From about 100 daily submissions in January, it is now <strong>more than 500 daily submissions</strong> that are handled on the servers. In 2024, more than 20,000 new users have registered on CodaLab, whereas more than 12,000 on Codabench.</p>
-<p><strong>249 public competitions</strong> have been created on CodaLab, whereas <strong>193 on Codabench: +15%</strong> of total competitions of both platforms compared to 2023. CodaLab continues to handle a large number of submissions, as many past competitions remain active even after they have officially ended: <strong>240,000 submissions on CodaLab</strong> whereas <strong>83,000 on Codabench</strong>.</p>
-<p>Contributors community is very active with <strong>143 pull requests</strong> this year. Since the platform is still relatively new, the primary focus has been on bug fixes, security and performance enhancements, and administrative features, accounting for approximately two-thirds of the pull requests. Nevertheless, we are keen on improving the experience for both participants and organizers. We have set a versioning and a release-notes follow-up to give more visibility to the platform evolution and maturity.</p>
-<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="pie-chart" src="../../_attachments/2b41574f-9597-47c0-b492-cf427eba7eff_17528513107025487.jpg"></a></p>
-<h2 id="introducing-codabench">Introducing Codabench<a class="headerlink" href="#introducing-codabench" title="Permanent link">¶</a></h2>
-<p><a href="https://codabench.org/">Codabench</a>, the modernized version of <a href="https://codalab.lisn.fr/">CodaLab</a>, was released in summer 2023, and <a href="https://www.canal-u.tv/chaines/jcad/codalab-competitions-and-codabench-open-source-platforms-to-organize-scientific">presented at JCAD days</a> in November 2024! Codabench platform software is now concentrating all development effort of the community. In addition to CodaLab features, it offers improved performance, live logs, more transparency, data-centric benchmarks and more!</p>
-<p>We warmly encourage you to use <a href="https://codabench.org/">codabench.org</a> for all your new competitions and benchmarks. Note that CodaLab bundles are compatible with Codabench, easing the transition, as explained in the following docs page: <a href="../../Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench/">How to transition from CodaLab to Codabench</a></p>
-<p>CodaLab and Codabench are hosted on servers located at <a href="https://www.universite-paris-saclay.fr/">Paris-Saclay university</a>, maintained by <a href="http://lisn.upsaclay.fr/">LISN lab</a>.</p>
-<h2 id="spotlight-on-competitions">Spotlight on competitions<a class="headerlink" href="#spotlight-on-competitions" title="Permanent link">¶</a></h2>
-<p>The most popular competition this year, featuring <strong>520 participants</strong>, was the SemEval task <a href="https://www.codabench.org/competitions/3863">Bridging the Gap in Text-Based Emotion Detection</a>. The task of this competition focused on identifying the emotion that most people would associate with a speaker based on a given sentence or short text snippet.</p>
-<p>The competition with the highest reward, a <strong>prize pool of $100,000</strong>, was the <a href="https://www.codabench.org/competitions/2325/">Global Artificial Intelligence Championships</a>, track Maths 2024, a pioneering contest that aimed to advance the development of artificial intelligence tools for solving advanced mathematical problems across multiple levels of difficulty (<a href="https://www.agiodyssey.org/pdf/GAIC_2024_Report.pdf">full report here</a>).</p>
-<p>Codabench featured interesting <strong>NeurIPS 2024 challenges</strong>:</p>
-<ul>
-<li>The <a href="https://llm-pc.github.io/">LLM Privacy Challenge</a>, where participants were divided into two teams: <a href="https://www.codabench.org/competitions/3283/">Red Team</a> and <a href="https://www.codabench.org/competitions/3288/">Blue Team</a>, each one aiming at developing attack and defense approaches for data privacy in LLMs.</li>
-<li><a href="https://www.codabench.org/competitions/2977/">Fair Universe - Higgs Uncertainy Challenge</a>, exploring uncertainty-aware AI techniques for High Energy Physics (HEP).</li>
-<li>The <a href="https://www.codabench.org/competitions/3888/">Concordia Challenge</a>, focusing on improving the cooperative intelligence of AI systems: promise-keeping, negotiation, reciprocity, reputation, partner choice, compromise, and sanctioning.</li>
-<li>The <a href="https://www.codabench.org/competitions/3857/">Erasing the Invisible Challenge</a>, where the task is to remove invisible watermarks from images, while preserving the overall image quality.</li>
-<li>Codabench also hosted the <a href="https://www.codabench.org/competitions/2338/">NeurIPS 2024 Checklist Assistant</a>, a self-service tool for the NeurIPS 2024 checklist. This verification assistant helps authors confirm their papers’ compliance and submit improved versions based on the Assistant’s feedback. For more details check out the <a href="https://blog.neurips.cc/2024/05/07/soliciting-participants-for-the-neurips-2024-checklist-assistant-study/">blog post</a> and the <a href="https://blog.neurips.cc/2024/12/10/results-of-the-neurips-2024-experiment-on-the-usefulness-of-llms-as-an-author-checklist-assistant-for-scientific-papers/">experiment results</a>.</li>
-</ul>
-<p>Last but not least, Codabench featured several competitions in the fields of medicine and biology, such as the <a href="https://www.codabench.org/competitions/3025/">Dental CBCT Scans</a>, <a href="https://www.codabench.org/competitions/3024/">Panoramic X-ray Images</a>, <a href="https://www.codabench.org/competitions/3764/">Butterfly Hybrid Detection</a>, and <a href="https://www.codabench.org/competitions/2852/">Monitoring Age-related Macular Degeneration Progression In Optical Coherence Tomography</a>.</p>
-<p>We’d like to thank the whole community for these exceptional scientific contributions. You can explore more challenges in the <a href="https://www.codabench.org/competitions/public/?page=1">public listing</a>.</p>
-<h2 id="what-about-the-future">What about the future?<a class="headerlink" href="#what-about-the-future" title="Permanent link">¶</a></h2>
-<p>We always develop new features to serve the state-of-the art of Machine Learning science. We plan to invest effort in <strong>handling medical data</strong>, improving <strong>federated learning</strong> use-cases, and allowing <strong>human-in-the loop</strong> feedback for better AI experience.</p>
-<p>The <strong>platform interface will also be improved</strong> for better visibility and facilitated re-use of datasets, tasks or solutions generated through it.</p>
-<p>Keep in touch and give us feedback on your experience on Codabench !</p>
-<h2 id="community">Community<a class="headerlink" href="#community" title="Permanent link">¶</a></h2>
-<p>Reminder on our communication tools:</p>
-<ul>
-<li>Join our <a href="https://groups.google.com/g/codalab-competitions">google forum</a> to emphasize your competitions and events</li>
-<li>Contact us for any question: info@codabench.org</li>
-<li>Write an issue on <a href="https://github.com/codalab/codabench">github</a> about interesting suggestions</li>
-</ul>
-<p>Please cite one of these papers when working with our platforms:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>@article{codabench,
-</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>   title = {Codabench: Flexible, easy-to-use, and reproducible meta-benchmark platform},
-</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>   author = {Zhen Xu and Sergio Escalera and Adrien Pavão and Magali Richard and
-</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>               Wei-Wei Tu and Quanming Yao and Huan Zhao and Isabelle Guyon},
-</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>   journal = {Patterns},
-</span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>   volume = {3},
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>   number = {7},
-</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>   pages = {100543},
-</span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>   year = {2022},
-</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a>   issn = {2666-3899},
-</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a>   doi = {https://doi.org/10.1016/j.patter.2022.100543},
-</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a>   url = {https://www.sciencedirect.com/science/article/pii/S2666389922001465}
-</span><span id="__span-0-13"><a href="#__codelineno-0-13" id="__codelineno-0-13" name="__codelineno-0-13"></a>}
-</span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>@article{codalab_competitions_JMLR,
-</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a> author  = {Adrien Pavao and Isabelle Guyon and Anne-Catherine Letournel and Dinh-Tuan Tran and Xavier Baro and Hugo Jair Escalante and Sergio Escalera and Tyler Thomas and Zhen Xu},
-</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a> title   = {CodaLab Competitions: An Open Source Platform to Organize Scientific Challenges},
-</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a> journal = {Journal of Machine Learning Research},
-</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a> year    = {2023},
-</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a> volume  = {24},
-</span><span id="__span-1-7"><a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a> number  = {198},
-</span><span id="__span-1-8"><a href="#__codelineno-1-8" id="__codelineno-1-8" name="__codelineno-1-8"></a> pages   = {1--6},
-</span><span id="__span-1-9"><a href="#__codelineno-1-9" id="__codelineno-1-9" name="__codelineno-1-9"></a> url     = {http://jmlr.org/papers/v24/21-1436.html}
-</span><span id="__span-1-10"><a href="#__codelineno-1-10" id="__codelineno-1-10" name="__codelineno-1-10"></a>}
-</span></code></pre></div>
-<h2 id="last-words">Last words<a class="headerlink" href="#last-words" title="Permanent link">¶</a></h2>
-<p>Thank you for reading the first edition of our newsletter. We look forward to sharing more exciting updates, competitions, and breakthroughs with you soon. Until then, keep exploring, keep competing, and stay inspired!</p>
-<p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="partners" src="../_attachments/96bbc3a0-cb9b-479a-85c8-ba795c59d6f4_1753436671847627.jpg"></a></p>
+<h1 id="to-run-the-tests-locally">To run the tests locally<a class="headerlink" href="#to-run-the-tests-locally" title="Permanent link">¶</a></h1>
+<p>Install uv : <a href="https://docs.astral.sh/uv/getting-started/installation/">https://docs.astral.sh/uv/getting-started/installation/</a></p>
+<p>Run the following commands: 
+</p><div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>tests
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>uv<span class="w"> </span>run<span class="w"> </span>playwright<span class="w"> </span>install
+</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">DJANGO_SUPERUSER_PASSWORD</span><span class="o">=</span>codabench<span class="w"> </span>django<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser<span class="w"> </span>--username<span class="w"> </span>codabench<span class="w"> </span>--email<span class="w"> </span>codabench@test.mail<span class="w"> </span>--no-input
+</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>test_auth.py<span class="w"> </span>test_account_creation.py<span class="w"> </span>test_competition.py<span class="w"> </span>test_submission.py
+</span></code></pre></div><p></p>
+<h1 id="adding-tests">Adding Tests<a class="headerlink" href="#adding-tests" title="Permanent link">¶</a></h1>
+<p>First, read the <a href="https://playwright.dev/python/docs/writing-tests">documentation</a> on Playwright if you haven't used the tool before.
+Since we are using pytest, you should also try to get more familiar with it by reading some of its <a href="https://docs.pytest.org/en/stable/getting-started.html">documentation</a>.</p>
+<p>Once you are done, you can start adding tests. Playwright allows us to generate code with the following command :
+</p><div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>uv<span class="w"> </span>run<span class="w"> </span>playwright<span class="w"> </span>codegen<span class="w"> </span>-o<span class="w"> </span>test.py
+</span></code></pre></div><p></p>
+<p>This will open two windows:
+- A window containing the generated code
+- A browser that is used by playwright to generate the code. Every action you take there will generate new lines of the code.</p>
+<p>Once you are done, close the browser and open the file that playwright created containing the code it generated. Make sure to test it to make it sure it works.</p>
+<p>Since we are passing custom commands to pytest, we need to remove some of the generated lines. Spawning a new browser and/or context will make them not take into the commands we have added in the <code>pytest.ini</code> file :
+</p><div class="language-python highlight"><span class="filename">Original file created by codegen</span><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.sync_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Playwright</span><span class="p">,</span> <span class="n">sync_playwright</span><span class="p">,</span> <span class="n">expect</span>
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">playwright</span><span class="p">:</span> <span class="n">Playwright</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a>    <span class="n">browser</span> <span class="o">=</span> <span class="n">playwright</span><span class="o">.</span><span class="n">chromium</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">headless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">browser</span><span class="o">.</span><span class="n">new_context</span><span class="p">()</span>
+</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a>    <span class="n">page</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">new_page</span><span class="p">()</span>
+</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a>    <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"http://localhost/"</span><span class="p">)</span>
+</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a>    <span class="n">page</span><span class="o">.</span><span class="n">get_by_text</span><span class="p">(</span><span class="s2">"Benchmarks/Competitions Datasets Login Sign-up"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</span><span id="__span-2-10"><a href="#__codelineno-2-10" id="__codelineno-2-10" name="__codelineno-2-10"></a>    <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"link"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Login"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</span><span id="__span-2-11"><a href="#__codelineno-2-11" id="__codelineno-2-11" name="__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a href="#__codelineno-2-12" id="__codelineno-2-12" name="__codelineno-2-12"></a>    <span class="n">page</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span id="__span-2-13"><a href="#__codelineno-2-13" id="__codelineno-2-13" name="__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a href="#__codelineno-2-14" id="__codelineno-2-14" name="__codelineno-2-14"></a>    <span class="c1"># ---------------------</span>
+</span><span id="__span-2-15"><a href="#__codelineno-2-15" id="__codelineno-2-15" name="__codelineno-2-15"></a>    <span class="n">context</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span id="__span-2-16"><a href="#__codelineno-2-16" id="__codelineno-2-16" name="__codelineno-2-16"></a>    <span class="n">browser</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span id="__span-2-17"><a href="#__codelineno-2-17" id="__codelineno-2-17" name="__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a href="#__codelineno-2-18" id="__codelineno-2-18" name="__codelineno-2-18"></a>
+</span><span id="__span-2-19"><a href="#__codelineno-2-19" id="__codelineno-2-19" name="__codelineno-2-19"></a><span class="k">with</span> <span class="n">sync_playwright</span><span class="p">()</span> <span class="k">as</span> <span class="n">playwright</span><span class="p">:</span>
+</span><span id="__span-2-20"><a href="#__codelineno-2-20" id="__codelineno-2-20" name="__codelineno-2-20"></a>    <span class="n">run</span><span class="p">(</span><span class="n">playwright</span><span class="p">)</span>
+</span></code></pre></div><p></p>
+<p>The previous file becomes :
+</p><div class="language-python highlight"><span class="filename">Modified file</span><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">playwright.sync_api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Page</span><span class="p">,</span> <span class="n">expect</span>
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="n">Page</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a>    <span class="n">page</span><span class="o">.</span><span class="n">goto</span><span class="p">(</span><span class="s2">"http://localhost/"</span><span class="p">)</span>
+</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a>    <span class="n">page</span><span class="o">.</span><span class="n">get_by_text</span><span class="p">(</span><span class="s2">"Benchmarks/Competitions Datasets Login Sign-up"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a>    <span class="n">page</span><span class="o">.</span><span class="n">get_by_role</span><span class="p">(</span><span class="s2">"link"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"Login"</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+</span></code></pre></div><p></p>
 </article>
 </div>
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
@@ -1389,7 +1195,7 @@
 </main>
 <footer class="md-footer">
 <nav aria-label="Footer" class="md-footer__inner md-grid">
-<a aria-label="Previous: Database size fix (version &lt; 1.18.0)" class="md-footer__link md-footer__link--prev" href="../../Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes/">
+<a aria-label="Previous: Robot Submissions" class="md-footer__link md-footer__link--prev" href="../Robot-submissions/">
 <div class="md-footer__button md-icon">
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
 </div>
@@ -1398,17 +1204,17 @@
                 Previous
               </span>
 <div class="md-ellipsis">
-                Database size fix (version &lt; 1.18.0)
+                Robot Submissions
               </div>
 </div>
 </a>
-<a aria-label="Next: Index" class="md-footer__link md-footer__link--next" href="../../Contribute/">
+<a aria-label="Next: Running Tests" class="md-footer__link md-footer__link--next" href="../Running-tests/">
 <div class="md-footer__title">
 <span class="md-footer__direction">
                 Next
               </span>
 <div class="md-ellipsis">
-                Index
+                Running Tests
               </div>
 </div>
 <div class="md-footer__button md-icon">
