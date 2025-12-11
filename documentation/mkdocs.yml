@@ -1,4 +1,4 @@
-site_name: Codabench Wiki
+site_name: Codabench Docs
 repo_url: https://github.com/codalab/codabench
 copyright: Apache-2.0
 edit_uri: edit/develop/documentation/docs
@@ -69,8 +69,8 @@ plugins:
       download_link: header
       author: Codabench Team
       copyright: Apache-2.0
-      cover_subtitle: Codabench Wiki PDF
-      output_path: codabench-wiki.pdf
+      cover_subtitle: Codabench Docs PDF
+      output_path: codabench-docs.pdf
       toc_level: 3
 
   # Version docs (with git)

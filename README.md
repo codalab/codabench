@@ -9,7 +9,7 @@ To see Codabench in action, visit [codabench.org](https://www.codabench.org/).
 
 ## Documentation
 
-- [Codabench Wiki](https://docs.codabench.org)
+- [Codabench Docs](https://docs.codabench.org)
 
 
 ## Quick installation (for Linux)
