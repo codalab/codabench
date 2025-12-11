@@ -144,6 +144,7 @@ nav:
       - Backups - Automating Creation and Restoring: Developers_and_Administrators/Creating-and-Restoring-from-Backup.md
       - Submission Process Overview: Developers_and_Administrators/Submission-Process-Overview.md
       - Robot Submissions: Developers_and_Administrators/Robot-submissions.md
+      - Adding Tests: Developers_and_Administrators/Adding-e2e-tests.md
       - Running Tests: Developers_and_Administrators/Running-tests.md
       - Automation: Developers_and_Administrators/Automating-with-Selenium.md
       - Manual Validation: Developers_and_Administrators/Manual-validation.md
