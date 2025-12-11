@@ -8,7 +8,7 @@
         <div class="item" data-tab="bundles">Competition Bundles</div>
         <div class="right menu">
             <div class="item">
-                <help_button href="https://github.com/codalab/competitions-v2/wiki/Task-&-Dataset-Management"
+                <help_button href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Resource-Management/"
                              tooltip_position="left center">
                 </help_button>
             </div>
