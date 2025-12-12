@@ -1,6 +1,11 @@
 from django.test import TestCase
-#from compute_worker.compute_worker import replace_legacy_metadata_command
+# from compute_worker.compute_worker import replace_legacy_metadata_command
 import pytest
+
+
+def replace_legacy_metadata_command():
+    pass
+
 
 @pytest.mark.skip()
 class LegacyConverterCommandTests(TestCase):
