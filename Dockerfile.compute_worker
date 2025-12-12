@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 fedora:42
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED 1
 
-# Install Python 
+# Install Python
 RUN dnf -y update && \
     dnf install -y python3.9 && \
     dnf clean all && \
@@ -23,7 +23,7 @@ RUN poetry config virtualenvs.prefer-active-python true && poetry install
 
 ADD compute_worker .
 COPY ./src/settings/logs_loguru.py /usr/bin
-
+RUN curl -sSL https://install.python-poetry.org | python3.9 - --uninstall
 CMD celery -A compute_worker worker \
     -l info \
     -Q compute-worker \
