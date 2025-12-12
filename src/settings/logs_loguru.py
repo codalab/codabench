@@ -31,7 +31,9 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
 
 
 # Helps colorize json logs
@@ -48,30 +50,104 @@ def colorize_run_args(json_str):
 
     lineskip = "\n"
     # Colorize json
-    json_str = re.sub(r'("detailed_results_url": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("docker_image": ")(.*?)(",)', rf'\1{cyan}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("execution_time_limit":)(.*?)(,)', rf'\1{magenta}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("id":)(.*?)(,)', rf'\1{magenta}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("ingestion_only_during_scoring": )(.*?)(,)', rf'\1{green}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("is_scoring": )(.*?)(,)', rf'\1{green}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("prediction_result": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("program_data": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("reference_data": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("scoring_ingestion_stderr": ")(.*?)(")', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("scoring_ingestion_stdout": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("scoring_result": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("scoring_stderr": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("scoring_stdout": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("secret": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("submissions_api_url": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("user_pk":)(.*?)(,)', rf'\1{magenta}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("ingestion_only_during_scoring": ")(.*?)(,)', rf'\1{green}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("prediction_ingestion_stderr": ")(.*?)(")', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("ingestion_program": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("input_data": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("prediction_stdout": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("prediction_stderr": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
-    json_str = re.sub(r'("prediction_ingestion_stdout": ")(.*?)(",)', rf'\1{yellow}\2{reset}\3{lineskip}', json_str)
+    json_str = re.sub(
+        r'("detailed_results_url": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("docker_image": ")(.*?)(",)', rf"\1{cyan}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("execution_time_limit":)(.*?)(,)',
+        rf"\1{magenta}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("id":)(.*?)(,)', rf"\1{magenta}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("ingestion_only_during_scoring": )(.*?)(,)',
+        rf"\1{green}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("is_scoring": )(.*?)(,)', rf"\1{green}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("prediction_result": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("program_data": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("reference_data": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("scoring_ingestion_stderr": ")(.*?)(")',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("scoring_ingestion_stdout": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("scoring_result": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("scoring_stderr": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("scoring_stdout": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("secret": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("submissions_api_url": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("user_pk":)(.*?)(,)', rf"\1{magenta}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("ingestion_only_during_scoring": ")(.*?)(,)',
+        rf"\1{green}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("prediction_ingestion_stderr": ")(.*?)(")',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("ingestion_program": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("input_data": ")(.*?)(",)', rf"\1{yellow}\2{reset}\3{lineskip}", json_str
+    )
+    json_str = re.sub(
+        r'("prediction_stdout": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("prediction_stderr": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
+    json_str = re.sub(
+        r'("prediction_ingestion_stdout": ")(.*?)(",)',
+        rf"\1{yellow}\2{reset}\3{lineskip}",
+        json_str,
+    )
 
     return json_str
 
@@ -83,15 +159,15 @@ def colorize_json_string(json_str):
     """
     # Define color codes
     reset = "\033[0m"
-    green = "\033[32m"      # For timestamp and success level
-    cyan = "\033[34m"       # For DEBUG level and paths
-    white = "\033[0m"      # For INFO level
-    yellow = "\033[33m"     # For WARNING level
-    red = "\033[31m"        # For ERROR level
-    white_on_red = "\033[37;41m"    # For CRITICAL level
+    green = "\033[32m"  # For timestamp and success level
+    cyan = "\033[34m"  # For DEBUG level and paths
+    white = "\033[0m"  # For INFO level
+    yellow = "\033[33m"  # For WARNING level
+    red = "\033[31m"  # For ERROR level
+    white_on_red = "\033[37;41m"  # For CRITICAL level
 
     # Find and colorize the timestamp
-    json_str = re.sub(r'("time": ")([^"]+)(")', rf'\1{green}\2{reset}\3', json_str)
+    json_str = re.sub(r'("time": ")([^"]+)(")', rf"\1{green}\2{reset}\3", json_str)
 
     # Extract the level before colorizing to determine message color
     level_match = re.search(r'"level": "([^"]+)"', json_str)
@@ -113,22 +189,30 @@ def colorize_json_string(json_str):
             level_color = white_on_red
 
     # Find and colorize the log level
-    json_str = re.sub(r'("level": ")DEBUG(")', rf'\1{cyan}DEBUG{reset}\2', json_str)
-    json_str = re.sub(r'("level": ")INFO(")', rf'\1{white}INFO{reset}\2', json_str)
-    json_str = re.sub(r'("level": ")WARNING(")', rf'\1{yellow}WARNING{reset}\2', json_str)
-    json_str = re.sub(r'("level": ")ERROR(")', rf'\1{red}ERROR{reset}\2', json_str)
-    json_str = re.sub(r'("level": ")SUCCESS(")', rf'\1{green}SUCCESS{reset}\2', json_str)
-    json_str = re.sub(r'("level": ")CRITICAL(")', rf'\1{white_on_red}CRITICAL{reset}\2', json_str)
+    json_str = re.sub(r'("level": ")DEBUG(")', rf"\1{cyan}DEBUG{reset}\2", json_str)
+    json_str = re.sub(r'("level": ")INFO(")', rf"\1{white}INFO{reset}\2", json_str)
+    json_str = re.sub(
+        r'("level": ")WARNING(")', rf"\1{yellow}WARNING{reset}\2", json_str
+    )
+    json_str = re.sub(r'("level": ")ERROR(")', rf"\1{red}ERROR{reset}\2", json_str)
+    json_str = re.sub(
+        r'("level": ")SUCCESS(")', rf"\1{green}SUCCESS{reset}\2", json_str
+    )
+    json_str = re.sub(
+        r'("level": ")CRITICAL(")', rf"\1{white_on_red}CRITICAL{reset}\2", json_str
+    )
 
     # Find and colorize the message using the level color
-    json_str = re.sub(r'("message": ")(.*?)(")', rf'\1{level_color}\2{reset}\3', json_str)
+    json_str = re.sub(
+        r'("message": ")(.*?)(")', rf"\1{level_color}\2{reset}\3", json_str
+    )
 
     # Find and colorize the path
-    json_str = re.sub(r'("path": ")(.*?)(")', rf'\1{cyan}\2{reset}\3', json_str)
+    json_str = re.sub(r'("path": ")(.*?)(")', rf"\1{cyan}\2{reset}\3", json_str)
 
     # Find and colorize exceptions
-    json_str = re.sub(r'("type": ")(.*?)(")', rf'\1{red}\2{reset}\3', json_str)
-    json_str = re.sub(r'("value": ")(.*?)(")', rf'\1{red}\2{reset}\3', json_str)
+    json_str = re.sub(r'("type": ")(.*?)(")', rf"\1{red}\2{reset}\3", json_str)
+    json_str = re.sub(r'("value": ")(.*?)(")', rf"\1{red}\2{reset}\3", json_str)
 
     return json_str
 
@@ -139,25 +223,9 @@ def serialize(record):
     timestamp = record["time"].isoformat(" ", "seconds")
 
     # Extract file path, module, function and line info
-    file_path = record["file"].path
     module_name = record["name"]
     function_name = record["function"]
     line_number = record["line"]
-
-    # Special handling for Jupyter notebooks
-    if module_name.isdigit() or "ipython-input" in str(file_path).lower():
-        # Check if we're in a Jupyter notebook
-        try:
-            # Try to get the notebook name if possible
-            import IPython
-            notebook_path = IPython.get_ipython().kernel.session.config.get('IPKernelApp', {}).get('connection_file', '')
-            if notebook_path:
-                notebook_name = os.path.basename(notebook_path).split('.', 1)[0]
-                module_name = f"jupyter.{notebook_name}"
-            else:
-                module_name = "__main__"
-        except (ImportError, AttributeError):
-            module_name = "__main__"  # Fallback name for Jupyter environments
 
     path_info = f"{module_name}:{function_name}:{line_number}"
 
@@ -214,7 +282,10 @@ def serialize(record):
     return "{extra[serialized]}\n"
 
 
-def configure_logging(log_level=os.environ.get("LOG_LEVEL", "INFO"), serialized=os.environ.get("SERIALIZED", "false")):
+def configure_logging(
+    log_level=os.environ.get("LOG_LEVEL", "INFO"),
+    serialized=os.environ.get("SERIALIZED", "false"),
+):
     # We can change the level per module here. uvicorn.protolcs is set to warning, otherwise we would get logs that Caddy is already getting
     # You can get the name of modules you want to add from the logs
     if log_level.upper() == "INFO":
@@ -224,15 +295,24 @@ def configure_logging(log_level=os.environ.get("LOG_LEVEL", "INFO"), serialized=
 
     level_per_module = {
         "": log_level.upper(),
-        "uvicorn.protocols.http": moduleLogLevel.upper()
+        "uvicorn.protocols.http": moduleLogLevel.upper(),
     }
 
     # Remove default logger configuration then configure logger
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-    if serialized.lower() == 'true':
+    if serialized.lower() == "true":
         logger.remove()
         # logger.add(sys.stderr, format="{time:MMMM D, YYYY > HH:mm:ss!UTC} | {level} | {message}", serialize=True, filter=level_per_module)
-        logger.add(sys.stderr, colorize=True, serialize=False, backtrace=True, diagnose=True, level=log_level.upper(), format=serialize, filter=level_per_module)
+        logger.add(
+            sys.stderr,
+            colorize=True,
+            serialize=False,
+            backtrace=True,
+            diagnose=True,
+            level=log_level.upper(),
+            format=serialize,
+            filter=level_per_module,
+        )
     else:
         logger.remove()
         logger.add(sys.stderr, colorize=True, filter=level_per_module)
