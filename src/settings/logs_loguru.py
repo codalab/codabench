@@ -50,6 +50,10 @@ def colorize_run_args(json_str):
 
     lineskip = "\n"
     # Colorize json
+    # Yellow by default
+    # Magenta for numbers
+    # Cyan for docker images
+    # Green for True/False
     json_str = re.sub(
         r'("detailed_results_url": ")(.*?)(",)',
         rf"\1{yellow}\2{reset}\3{lineskip}",
