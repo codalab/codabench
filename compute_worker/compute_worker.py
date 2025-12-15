@@ -43,6 +43,18 @@ import json
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
+if os.environ.get("USE_GPU", "false").lower() == "true":
+    logger.info(
+        "Using "
+        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
+        + "with GPU capabilites : "
+        + os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")
+    )
+else:
+    logger.info(
+        "Using " + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
+    )
+
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
     client = docker.APIClient(
         base_url=os.environ.get("CONTAINER_SOCKET", "unix:///var/run/docker.sock"),
