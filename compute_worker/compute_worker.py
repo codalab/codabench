@@ -423,14 +423,19 @@ class Run:
         )
         websocket_url = f"{self.websocket_url}?kind=detailed_results"
         logger.info(f"Connecting to {websocket_url} for detailed results")
-        async with websockets.connect(websocket_url) as websocket:
-            await websocket.send(
-                json.dumps(
-                    {
-                        "kind": "detailed_result_update",
-                    }
+        try:
+            async with asyncio.wait_for(
+                websockets.connect(websocket_url), timeout=5.0
+            ) as websocket:
+                await websocket.send(
+                    json.dumps(
+                        {
+                            "kind": "detailed_result_update",
+                        }
+                    )
                 )
-            )
+        except Exception as e:
+            logger.exception(e)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -531,7 +536,9 @@ class Run:
         logger.info(f"Connecting to {websocket_url} to send docker image pull error")
 
         # connect to web socket
-        websocket = await websockets.connect(websocket_url)
+        websocket = await asyncio.wait_for(
+            websockets.connect(websocket_url), timeout=5.0
+        )
 
         # define websocket errors
         websocket_errors = (
