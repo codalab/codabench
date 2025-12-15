@@ -558,7 +558,7 @@ class Run:
             # no error in websocket message sending
             logger.info("Error sent successfully through websocket")
 
-        logger.info("Disconnecting from websocket {websocket_url}")
+        logger.info(f"Disconnecting from websocket {websocket_url}")
 
         # close websocket
         await websocket.close()
