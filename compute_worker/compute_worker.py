@@ -436,16 +436,16 @@ class Run:
         websocket_url = f"{self.websocket_url}?kind=detailed_results"
         logger.info(f"Connecting to {websocket_url} for detailed results")
         try:
-            async with asyncio.wait_for(
+            websocket = await asyncio.wait_for(
                 websockets.connect(websocket_url), timeout=5.0
-            ) as websocket:
-                await websocket.send(
-                    json.dumps(
-                        {
-                            "kind": "detailed_result_update",
-                        }
-                    )
+            )
+            await websocket.send(
+                json.dumps(
+                    {
+                        "kind": "detailed_result_update",
+                    }
                 )
+            )
         except Exception as e:
             logger.exception(e)
 
