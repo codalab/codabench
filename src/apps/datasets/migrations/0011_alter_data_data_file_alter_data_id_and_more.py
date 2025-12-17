@@ -6,10 +6,9 @@ import utils.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("datasets", "0010_auto_20250218_1100"),
-    ]
+            ("datasets", "0010_auto_20250218_1100"),
+        ]
 
     operations = [
         migrations.AlterField(
@@ -24,13 +23,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="data",
-            name="id",
-            field=models.BigAutoField(
-                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-            ),
-        ),
-        migrations.AlterField(
-            model_name="datagroup",
             name="id",
             field=models.BigAutoField(
                 auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
