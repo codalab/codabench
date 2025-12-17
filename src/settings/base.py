@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # =============================================================================
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
-csrf_https_domain = "https://"+os.environ.get("DOMAIN_NAME").split(':')[0]
-csrf_http_domain  = "http://"+os.environ.get("DOMAIN_NAME").split(':')[0]
+csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
+csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 
 CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
 CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
@@ -31,7 +31,7 @@ SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
 
 
 THIRD_PARTY_APPS = (
-    'daphne', # Must come before django.contrib.staticfiles
+    'daphne',  # Must come before django.contrib.staticfiles
     'django_su',  # Must come before django.contrib.admin
     'ajax_select',  # For django_su
 
