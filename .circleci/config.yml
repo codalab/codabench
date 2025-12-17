@@ -70,7 +70,7 @@ jobs:
 
       - run:
           name: "Tests: Run unit/integration tests (excluding e2e)"
-          command: docker compose exec django py.test src/ -m "not e2e"
+          command: docker compose exec django pytest
 
       # We give the name of the test files manually because we need test_auth.py to be run before the others for state.json file to be created
       # CI="true" to skip some tests that fail in the CI for now
