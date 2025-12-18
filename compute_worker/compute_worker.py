@@ -35,10 +35,16 @@ from celery import signals
 import logging
 
 logger = logging.getLogger(__name__)
-from logs_loguru import configure_logging,colorize_run_args
+from logs_loguru import configure_logging, colorize_run_args
 import json
 
 
+# -----------------------------------------------
+# Logging
+# -----------------------------------------------
+configure_logging(
+    os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", "false")
+)
 
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
@@ -52,7 +58,9 @@ if os.environ.get("USE_GPU", "false").lower() == "true":
     )
 else:
     logger.info(
-        "Using " + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
+        "Using "
+        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
+        + " without GPU capabilities"
     )
 
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
@@ -150,13 +158,6 @@ app.conf.task_queues = [
         queue_arguments={"x-max-priority": 10},
     ),
 ]
-
-# -----------------------------------------------
-# Logging
-# -----------------------------------------------
-configure_logging(
-    os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", "false")
-)
 # -----------------------------------------------
 # Directories
 # -----------------------------------------------
@@ -447,7 +448,9 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -510,7 +513,7 @@ class Run:
                     resp = client.pull(image_name, stream=True, decode=True)
                     for line in resp:
                         show_progress(line, progress)
-                    break  # Break if the loop is successful
+                    break  # Break if the loop is successful to exit "with Progress() as progress"
 
             except (docker.errors.APIError, Exception) as pull_error:
                 retries += 1
@@ -665,8 +668,10 @@ class Run:
         except Exception as e:
             logger.error(
                 "There was an error trying to connect to the websocket on the codabench instance"
+                + e
             )
-            logger.exception(e)
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
 
         start = time.time()
 
@@ -713,8 +718,10 @@ class Run:
         except Exception as e:
             logger.error(
                 "There was an error while starting the container and getting the logs"
+                + e
             )
-            logger.exception(e)
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
 
         # Get the return code of the competition container once done
         try:
@@ -987,7 +994,9 @@ class Run:
         try:
             return await self._run_container_engine_cmd(container, kind=kind)
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
 
     def _put_dir(self, url, directory):
         """Zip the directory and send it to the given URL using _put_file."""
@@ -1149,9 +1158,10 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill)
+                            "There was a problem killing " + str(containers_to_kill) + e
                         )
-                        logger.exception(e)
+                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                            logger.exception(e)
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
             # Send error through web socket to the frontend
@@ -1178,9 +1188,10 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill)
+                            "There was a problem killing " + str(containers_to_kill) + e
                         )
-                        logger.exception(e)
+                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                            logger.exception(e)
                 if kind == "program":
                     self.program_exit_code = return_code
                     self.program_elapsed_time = elapsed_time
