@@ -31,7 +31,6 @@ SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
 
 
 THIRD_PARTY_APPS = (
-    'daphne', # Must come before django.contrib.staticfiles
     'django_su',  # Must come before django.contrib.admin
     'ajax_select',  # For django_su
 
