@@ -25,4 +25,4 @@ ADD compute_worker .
 COPY ./src/settings/logs_loguru.py /usr/bin
 RUN curl -sSL https://install.python-poetry.org | python3.9 - --uninstall
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@n --concurrency=1"]
+CMD ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@$HOSTNAME --concurrency=1"]
