@@ -304,10 +304,10 @@ def alarm_handler(signum, frame):
 
 # -----------------------------------------------
 # Class Run
-# Respnosible for running a submission inside a docker container
+# Responsible for running a submission inside a docker/podman container
 # -----------------------------------------------
 class Run:
-    """A "Run" in Codalab is composed of some program, some data to work with, and some signed URLs to upload results
+    """A "Run" in Codabench is composed of some program, some data to work with, and some signed URLs to upload results
     to. There is also a secret key to do special commands for just this submission.
 
     Some example API's you can hit using this secret key are:
