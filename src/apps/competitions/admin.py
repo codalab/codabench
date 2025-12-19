@@ -21,7 +21,7 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         in the right sidebar.
         """
         return [
-            ("privateSmall", _("Submissions >= 25 and Participants >= 10")),
+            ("privateSmall", _("Submissions >= 10 and Participants >= 5")),
         ]
 
     def queryset(self, request, queryset):
@@ -30,7 +30,7 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
         provided in the query string and retrievable via
         `self.value()`.
         """
-        # Only show private competitions with >= 25 submissions and >=10 participants
+        # Only show private competitions with >= 10 submissions and >=5 participants
         if self.value() == "privateSmall":
             return queryset.filter(
                 published=False,
@@ -42,6 +42,7 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
 class CompetitionAdmin(admin.ModelAdmin):
     search_fields = ['title', 'docker_image', 'created_by__username']
     list_display = ['id', 'title', 'created_by', 'is_featured']
+    list_display_links = ['id', 'title']
     list_filter = ['is_featured', privateCompetitionsFilter]
 
 
