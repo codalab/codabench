@@ -162,7 +162,7 @@ app.conf.task_queues = [
 # Directories
 # -----------------------------------------------
 # Setup base directories used by all submissions
-# note: we need to pass this directory to docker-compose so it knows where to store things!
+# note: we need to pass this directory to docker/podman so it knows where to store things!
 HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
 BASE_DIR = "/codabench/"  # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")

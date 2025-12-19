@@ -14,6 +14,8 @@ jobs:
     name: Build Docker Images
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
       - name: Build Image
         run: docker build -t codalab/competitions-v2-compute-worker:${{ github.ref_name }} -f Dockerfile.compute_worker .
 
