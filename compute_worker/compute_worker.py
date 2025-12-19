@@ -436,6 +436,7 @@ class Run:
         )
         websocket_url = f"{self.websocket_url}?kind=detailed_results"
         logger.info(f"Connecting to {websocket_url} for detailed results")
+        # Wrap this with a Try ... Except otherwise a failure here will make the submission get stuck on Running 
         try:
             websocket = await asyncio.wait_for(
                 websockets.connect(websocket_url), timeout=5.0
