@@ -16,13 +16,19 @@ ENV PATH=$PATH:/root/.local/bin
 # Want poetry to use system python of docker container
 RUN poetry config virtualenvs.create false
 RUN poetry config virtualenvs.in-project false
+
+
 COPY ./compute_worker/pyproject.toml ./
 COPY ./compute_worker/poetry.lock ./
 # To use python3.9 instead of system python
+
 RUN poetry config virtualenvs.prefer-active-python true && poetry install
 
 ADD compute_worker .
 COPY ./src/settings/logs_loguru.py /usr/bin
+
+# Uninstall Poetry since we don't need it anymore and it can introduce CVEs
 RUN curl -sSL https://install.python-poetry.org | python3.9 - --uninstall
+
 ENTRYPOINT ["/bin/bash", "-c"]
 CMD ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@$HOSTNAME --concurrency=1"]
