@@ -13,8 +13,23 @@ def DeactivateAccount(modeladmin, request, queryset):
 
 
 class DataExpansion(admin.ModelAdmin):
-    list_display = ["name", "description", "created_by", "type", "is_public", "is_verified", "file_size"]
-    search_fields = ["created_by__username", "name", "type", "description", "file_name", "file_size"]
+    list_display = [
+        "name",
+        "description",
+        "created_by",
+        "type",
+        "is_public",
+        "is_verified",
+        "file_size",
+    ]
+    search_fields = [
+        "created_by__username",
+        "name",
+        "type",
+        "description",
+        "file_name",
+        "file_size",
+    ]
     list_filter = ["is_public", "is_verified"]
     actions = [DeactivateAccount]
 
