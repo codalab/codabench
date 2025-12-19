@@ -67,7 +67,7 @@ def export_as_json(modeladmin, request, queryset):
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
 
-class CompetitionAdmin(admin.ModelAdmin):
+class CompetitionExpansion(admin.ModelAdmin):
     search_fields = ["title", "docker_image", "created_by__username"]
     list_display = ["id", "title", "created_by", "is_featured"]
     list_display_links = ["id", "title"]
@@ -75,7 +75,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_filter = ["is_featured", privateCompetitionsFilter]
 
 
-admin.site.register(models.Competition, CompetitionAdmin)
+admin.site.register(models.Competition, CompetitionExpansion)
 admin.site.register(models.CompetitionCreationTaskStatus)
 admin.site.register(models.CompetitionParticipant)
 admin.site.register(models.Page)

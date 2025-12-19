@@ -1,5 +1,43 @@
 from django.contrib import admin
 from queues import models
+import json
+import csv
+from django.http import HttpResponse
+from profiles.models import User
 
 
-admin.site.register(models.Queue)
+# This will export the email of all the selected competition creators, removing duplications and banned users
+def export_as_csv(modeladmin, request, queryset):
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="email_username_list.csv"'},
+    )
+    writer = csv.writer(response)
+    writer.writerow(["Username", "Email", "Queue_Name"])
+    email_list = {}
+    for obj in queryset:
+        user = User.objects.get(id=obj.owner_id)
+        if not user.is_banned and user.email not in email_list.values():
+            email_list.update({user.username: user.email})
+            writer.writerow([user.username, user.email, obj.name])
+    return response
+
+
+# This will export the email of all the selected competition creators, removing duplications and banned users
+def export_as_json(modeladmin, request, queryset):
+    email_list = {}
+    for obj in queryset:
+        user = User.objects.get(id=obj.owner_id)
+        if not user.is_banned and user.email not in email_list.values():
+            email_list.update({user.username: user.email})
+    return HttpResponse(json.dumps(email_list), content_type="application/json")
+
+
+class QueueExpansion(admin.ModelAdmin):
+    list_display = ["name", "owner", "is_public"]
+    list_filter = ["is_public"]
+    search_fields = ["name", "owner__username"]
+    actions = [export_as_csv, export_as_json]
+
+
+admin.site.register(models.Queue, QueueExpansion)
