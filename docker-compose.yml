@@ -114,13 +114,13 @@ services:
     image: postgres:18-alpine
     env_file: .env
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/18/docker
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     ports:
       - 5432:5432
     volumes:
-      - ./var/postgres:/var/lib/postgresql/data:delegated
+      - ./var/postgres:/var/lib/postgresql/18/:delegated
       - ./backups:/app/backups
       - ./my-postgres.conf:/etc/postgresql/postgresql.conf
     restart: unless-stopped
