@@ -807,15 +807,18 @@
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
                     case "delete":
-                        // console.log("delete")
                         self.delete_selected_submissions()
                         break;
                     case "download":
-                        // console.log("download")
-                        self.bulk_download()
+                        self.bulk_download("submissions")
+                        break;
+                    case "download_results":
+                        self.bulk_download("results")
+                        break;
+                    case "download_prediction":
+                        self.bulk_download("predictions")
                         break;
                     case "rerun":
-                        // console.log("rerun")
                         self.rerun_selected_submissions()
                         break
                     default:

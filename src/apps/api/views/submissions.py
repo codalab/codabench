@@ -218,6 +218,28 @@ class SubmissionViewSet(ModelViewSet):
         # Otherwise, delete the submission
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+    def check_submission_permissions(self,request,submissions):
+        # Check permissions
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to download submissions")
+        # Allow admins
+        if request.user.is_superuser or request.user.is_staff:
+            allowed = True
+        else:
+            # Build one Q object for "owner OR organizer"
+            organiser_q = (
+                Q(phase__competition__created_by=request.user) |
+                Q(phase__competition__collaborators=request.user)
+            )
+            # Submissions that violate the rule
+            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
+            allowed = not disallowed.exists()
+        if not allowed:
+            raise PermissionDenied(
+                "You do not have permission to download one or more of the requested submissions"
+            )
 
     @action(detail=True, methods=('DELETE',))
     def soft_delete(self, request, pk):
@@ -391,6 +413,17 @@ class SubmissionViewSet(ModelViewSet):
         if not isinstance(pks, list):
             return Response({"error": "`pks` must be a list"}, status=400)
 
+    #Todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
+    @action(detail=False, methods=('POST',))
+    def download_many(self, request):
+        pks = request.data.get('pks')
+        if not pks:
+            return Response({"error": "`pks` field is required"}, status=400)
+
+        # pks is already parsed as a list if JSON was sent properly
+        if not isinstance(pks, list):
+            return Response({"error": "`pks` must be a list"}, status=400)
+        
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
@@ -434,6 +467,18 @@ class SubmissionViewSet(ModelViewSet):
 
         return Response(files)
 
+        for sub in submissions:
+            if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED
+                continue
+            file_path = sub.data.data_file.name.split('/')[-1]
+            complete_name = f"res_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            result_url = serializer.get_scoring_result(sub)
+            #detailed results is already in the results zip file but For very large detailed results it could be helpfull to remove it. 
+            # detailed_result_url = serializer.get_scoring_result(sub)
+            files.append({"name": complete_name, "url": result_url})
+        
+        return Response(files)
+    
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
