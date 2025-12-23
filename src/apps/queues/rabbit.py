@@ -1,11 +1,11 @@
-import logging
 import uuid
 
 from django.conf import settings
 from pyrabbit2.api import Client
 from pyrabbit2.http import HTTPError, NetworkError
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 def _get_rabbit_connection():

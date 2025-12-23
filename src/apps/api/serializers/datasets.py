@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from api.mixins import DefaultUserCreateMixin
-from datasets.models import Data, DataGroup
+from datasets.models import Data
 from competitions.models import CompetitionCreationTaskStatus, CompetitionDump
 
 
@@ -27,6 +27,7 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
             'was_created_by_competition',
             'competition',
             'file_name',
+            'license'
 
         )
         read_only_fields = (
@@ -60,6 +61,28 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         instance = super().create(validated_data)
         instance.request_sassy_file_name = request_sassy_file_name
         return instance
+
+
+class DatasetSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Data
+        fields = (
+            'id',
+            'type',
+            'name',
+            'description',
+            'file_size',
+            'license',
+            'downloads',
+            'is_verified',
+            'created_when',
+            'created_by',
+        )
+
+    def get_created_by(self, obj):
+        return obj.created_by.username
 
 
 class DataSimpleSerializer(serializers.ModelSerializer):
@@ -200,14 +223,3 @@ class DataDetailSerializer(serializers.ModelSerializer):
 
     def get_owner_display_name(self, instance):
         return instance.created_by.display_name if instance.created_by.display_name else instance.created_by.username
-
-
-class DataGroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataGroup
-        fields = (
-            'created_by',
-            'created_when',
-            'name',
-            'datas',
-        )

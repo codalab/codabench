@@ -2,14 +2,11 @@
 # Without "end to end" tests
 $ docker compose exec django py.test -m "not e2e"
 
-# "End to end tests" (a shell script to launch a selenium docker container)
-$ ./run_selenium_tests.sh
-
-# If you are on Mac OSX it is easy to watch these tests, no need to install
-# anything just do:
-$ open vnc://0.0.0.0:5900
-
-# And login with password "secret"
+# Playwright tests (make sure to install uv first: https://docs.astral.sh/uv/getting-started/installation/) 
+uv sync --frozen
+uv run playwright install
+docker compose exec -e DJANGO_SUPERUSER_PASSWORD=codabench django python manage.py createsuperuser --username codabench --email codabench@test.mail --no-input
+uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
 ```
 
 ## CircleCI
@@ -17,7 +14,7 @@ $ open vnc://0.0.0.0:5900
 To simulate the tests run by CircleCI locally, run the following command:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
+docker compose -f docker-compose.yml exec django py.test src/ -m "not e2e"
 ```
 
 ## Example competitions

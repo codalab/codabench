@@ -10,7 +10,7 @@
             <a if="{ competition.forum_enabled }" class="item" href="{URLS.FORUM(competition.forum)}">Forum</a>
             <div class="right menu">
                 <div class="item">
-                    <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Detail-Page"
+                    <help_button href="https://docs.codabench.org/latest/Organizers/Running_a_benchmark/Competition-Detail-Page/"
                                  tooltip_position="left center"></help_button>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                             <div class="ui" id="page_term">
                             </div>
                         </div>
-                        
+
                         <!--  Files page  -->
                         <div class="ui tab {active: _.get(competition.pages, 'length') === 0}" data-tab="files">
                             <div class="ui" id="files">
@@ -173,15 +173,7 @@
                 <loader></loader>
             </div>
             <!-- Tab Content !-->
-            <div class="row" if="{!CODALAB.state.user.logged_in}">
-                <div class="column">
-                    <div class="ui yellow message">
-                        <a href="{URLS.LOGIN}?next={location.pathname}">Log In</a> or
-                        <a href="{URLS.SIGNUP}" target="_blank">Sign Up</a> to view this competition results.
-                    </div>
-                </div>
-            </div>
-            <div if="{CODALAB.state.user.logged_in}" show="{!loading}">
+            <div show="{!loading}">
                 <div class="ui button-container inline">
                     <div class="ui button {active: selected_phase_index == phase.id}"
                          each="{ phase in competition.phases }"
@@ -210,7 +202,7 @@
                               is_admin="{competition.admin}">
                     </leaderboards>
                 </div>
-            </div>           
+            </div>
         </div>
     </div>
 
@@ -275,7 +267,7 @@
 
                 })
                 // Need code for public_data and starting_kit at phase level
-                if(self.competition.participant_status === 'approved'){    
+                if(self.competition.participant_status === 'approved'){
                     _.forEach(phase.tasks, task => {
                         _.forEach(task.solutions, solution => {
                             soln = {
@@ -318,8 +310,8 @@
             })
             // loop over competition phases to mark if phase has started or ended
             self.competition.phases.forEach(function (phase, index) {
-                
-                phase_ended = false 
+
+                phase_ended = false
                 phase_started = false
 
                 // check if phase has started
@@ -351,20 +343,20 @@
             })
 
             self.competition.is_admin = CODALAB.state.user.has_competition_admin_privileges(competition)
-            
+
             // Find current phase and set selected phase index to its id
             self.selected_phase_index = _.get(_.find(self.competition.phases, {'status': 'Current'}), 'id')
 
-            // If no Current phase in this competition 
+            // If no Current phase in this competition
             // Find Final phase and set selected phase index to its id
             if (self.selected_phase_index == null) {
                 self.selected_phase_index = _.get(_.find(self.competition.phases, {is_final_phase: true}), 'id')
             }
 
-            // If no Final phase in this competition 
+            // If no Final phase in this competition
             // Find the last phase and set selected phase index to its id
             if (self.selected_phase_index == null) {
-                self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id; 
+                self.selected_phase_index = self.competition.phases[self.competition.phases.length - 1].id;
             }
 
             self.phase_selected(_.find(self.competition.phases, {id: self.selected_phase_index}))
@@ -383,7 +375,7 @@
                 rendered_content.forEach(node => {
                     $(`#page_${index}`)[0].appendChild(node.cloneNode(true)); // Append each node
                 });
-                
+
             })
             if(self.competition_has_no_terms_page()){
                 const rendered_content = renderMarkdownWithLatex(self.competition.terms)

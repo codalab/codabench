@@ -24,7 +24,6 @@
         <li>Competitions participation: {{ competitions_participation|length }}</li>
         <li>Submissions: {{ submissions|length }}</li>
         <li>Data: {{ data|length }}</li>
-        <li>DataGroups: {{ data_groups|length }}</li>
         <li>Tasks: {{ tasks|length }}</li>
         <li>Queues: {{ queues|length }}</li>
         <li>Posts: {{ posts|length }}</li>
@@ -80,13 +79,6 @@
         <li>
             {{ d }}
         </li>
-        {% endfor %}
-    </ul>
-
-    <h4>DataGroups created by the user</h4>
-    <ul>
-        {% for data_group in data_groups.all %}
-            <li>{{ data_group }}</li>
         {% endfor %}
     </ul>
 

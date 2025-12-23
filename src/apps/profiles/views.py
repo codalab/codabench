@@ -24,7 +24,7 @@ from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
 from .tokens import account_activation_token, account_deletion_token
 from competitions.models import Competition
-from datasets.models import Data, DataGroup
+from datasets.models import Data
 from tasks.models import Task
 from forums.models import Post
 from utils.email import codalab_send_mail
@@ -33,8 +33,6 @@ from utils.email import codalab_send_mail
 class LoginView(auth_views.LoginView):
     def get_context_data(self, *args, **kwargs):
         context = super(LoginView, self).get_context_data(*args, **kwargs)
-        # "http://localhost:8888/profiles/signup?next=http://localhost/social/login/chahub"
-        context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(settings.SOCIAL_AUTH_CHAHUB_BASE_URL, settings.SITE_DOMAIN)
         return context
 
 
@@ -96,7 +94,7 @@ def activateEmail(request, user, to_email):
     mail_subject = 'Activate your user account.'
     message = render_to_string('profiles/emails/template_activate_account.html', {
         'username': user.username,
-        'domain': get_current_site(request).domain,
+        'domain': settings.DOMAIN_NAME,
         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
         'token': account_activation_token.make_token(user),
         'protocol': 'https' if request.is_secure() else 'http'
@@ -136,7 +134,6 @@ def send_user_deletion_notice_to_admin(user):
     competitions_participation = Competition.objects.filter(participants__user=user)
     submissions = user.submission.all()
     data = Data.objects.filter(created_by=user)
-    data_groups = DataGroup.objects.filter(created_by=user)
     tasks = Task.objects.filter(created_by=user)
     queues = user.queues.all()
     posts = Post.objects.filter(posted_by=user)
@@ -150,7 +147,6 @@ def send_user_deletion_notice_to_admin(user):
         'competitions_participation': competitions_participation,
         'submissions': submissions,
         'data': data,
-        'data_groups': data_groups,
         'tasks': tasks,
         'queues': queues,
         'posts': posts,
@@ -201,10 +197,6 @@ def sign_up(request):
         return redirect('accounts:login')
 
     context = {}
-    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
-        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
-        settings.SITE_DOMAIN
-    )
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -268,10 +260,6 @@ def log_in(request):
     next = request.GET.get('next', None)
 
     context = {}
-    context['chahub_signup_url'] = "{}/profiles/signup?next={}/social/login/chahub".format(
-        settings.SOCIAL_AUTH_CHAHUB_BASE_URL,
-        settings.SITE_DOMAIN
-    )
     if request.method == 'POST':
         form = LoginForm(request.POST)
 
@@ -359,7 +347,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
        We have to use app:view_name syntax in templates like " {% url 'accounts:password_reset_confirm'%} "
        Therefore we need to tell this view to find the right success_url with that syntax or django won't be
        able to find the view.
-    3. from_email: We want to set the from_email to info@codalab.org - may eventually put in .env file.
+    3. from_email: We want to use SERVER_EMAIL already set in the .env
     #  The other commented sections are the defaults for other attributes in auth_views.PasswordResetView.
        They are in here in case someone wants to customize in the future. All attributes show up in the order
        shown in the docs.
@@ -370,7 +358,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     # subject_template_name = ''  # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = ''  # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
-    from_email = "info@codalab.org"
+    from_email = settings.SERVER_EMAIL
 
 
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):

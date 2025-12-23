@@ -1,6 +1,6 @@
 [Codabench](https://codabench.org) is an upgraded version of the [CodaLab Competitions](https://codalab.lisn.fr/) platform, allowing you to create either **competitions** or **benchmarks**. A benchmark is essentially an **ever-lasting competition** with **multiple tasks**, for which a participant can make **multiple entries** in the result table.
 
-This getting started tutorial shows a **simple example** of how to create a competition. Advanced users should check [fancier examples](https://github.com/codalab/competition-examples/tree/master/codabench) and [the full documentation](https://github.com/codalab/codabench/wiki). If you simply wish to participate in a benchmark or competition, go to [Participating in a benchmark](../../Participants/User_Participating-in-a-Competition.md).
+This getting started tutorial shows a **simple example** of how to create a competition. Advanced users should check [fancier examples](https://github.com/codalab/competition-examples/tree/master/codabench) and [the full documentation](https://docs.codabench.org). If you simply wish to participate in a benchmark or competition, go to [Participating in a benchmark](../../Participants/User_Participating-in-a-Competition.md).
 
 ## Getting ready
 

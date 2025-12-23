@@ -1,6 +1,5 @@
 import json
 import uuid
-import logging
 
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -22,9 +21,8 @@ from api.serializers.submissions import SubmissionCreationSerializer, Submission
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
-
-
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
 class SubmissionViewSet(ModelViewSet):
@@ -89,7 +87,7 @@ class SubmissionViewSet(ModelViewSet):
                         submission_detail.data_file.save(submission_detail.data_file.name, ContentFile(modified_content.encode("utf-8")))
 
                     except SubmissionDetails.DoesNotExist:
-                        logger.warning("SubmissionDetails object not found.")
+                        logger.error("SubmissionDetails object not found.")
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
@@ -116,7 +114,28 @@ class SubmissionViewSet(ModelViewSet):
         qs = super().get_queryset()
         if self.request.method == 'GET':
             if not self.request.user.is_authenticated:
-                return Submission.objects.none()
+                # Show leaderboard submissions to unauthenticated users
+                return (
+                    qs.filter(
+                        leaderboard__isnull=False,
+                        is_soft_deleted=False,
+                        status=Submission.FINISHED,
+                    )
+                    .select_related(
+                        'phase',
+                        'phase__competition',
+                        'participant',
+                        'participant__user',
+                        'owner',
+                        'data',
+                    )
+                    .prefetch_related(
+                        'children',
+                        'scores',
+                        'scores__column',
+                        'task',
+                    )
+                )
 
             # Check if admin is requesting to see soft-deleted submissions
             show_is_soft_deleted = self.request.query_params.get('show_is_soft_deleted', 'false').lower() == 'true'
@@ -178,11 +197,25 @@ class SubmissionViewSet(ModelViewSet):
         return super(SubmissionViewSet, self).create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        """
+        - If user is neither owner nor admin, user cannot delete the submission
+        - If a user is not admin and is owner of a submission and submission is on the leaderboard, user cannot delete the submission
+        - In rest of the cases i.e. user is admin/super user or user is owner of the submisison and submission is not on the leaderboard, user can delete the submisison
+        """
         submission = self.get_object()
 
-        if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
-            raise PermissionDenied("Cannot interact with submission you did not make")
+        is_owner = request.user == submission.owner
+        is_super_user_or_competition_admin = self.has_admin_permission(request.user, submission)
 
+        # If user is neither owner nor super user/admin return permission denied
+        if not is_owner and not is_super_user_or_competition_admin:
+            raise PermissionDenied("You do not have permission to delete this submission!")
+
+        # If user is not admin, is owner and submission is on the leaderboard return permission denied
+        if not is_super_user_or_competition_admin and is_owner and submission.leaderboard:
+            raise PermissionDenied("You cannot delete a leaderboard submission!")
+
+        # Otherwise, delete the submission
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
     
@@ -370,6 +403,15 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
+    @action(detail=False, methods=('POST',))
+    def download_many(self, request):
+        pks = request.data.get('pks')
+        if not pks:
+            return Response({"error": "`pks` field is required"}, status=400)
+
+        # pks is already parsed as a list if JSON was sent properly
+        if not isinstance(pks, list):
+            return Response({"error": "`pks` must be a list"}, status=400)
 
     #Todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
     @action(detail=False, methods=('POST',))
@@ -389,80 +431,41 @@ class SubmissionViewSet(ModelViewSet):
             "data"
         )
 
-        if len(list(submissions))  != len(pks):
+        if len(list(submissions)) != len(pks):
             return Response({"error": "One or more submission IDs are invalid"}, status=404)
 
-        self.check_submission_permissions(request,submissions) 
+        # Nicolas Homberg : should create a function for this ?
+        # Check permissions
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to download submissions")
+        # Allow admins
+        if request.user.is_superuser or request.user.is_staff:
+            allowed = True
+        else:
+            # Build one Q object for "owner OR organizer"
+            organiser_q = (
+                Q(phase__competition__created_by=request.user) |
+                Q(phase__competition__collaborators=request.user)
+            )
+            # Submissions that violate the rule
+            disallowed = submissions.exclude(Q(owner=request.user) | organiser_q)
+            allowed = not disallowed.exists()
+        if not allowed:
+            raise PermissionDenied(
+                "You do not have permission to download one or more of the requested submissions"
+            )
 
         files = []
 
         for sub in submissions:
             file_path = sub.data.data_file.name.split('/')[-1]
-            short_name = f"sub_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
+            short_name = f"{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
             # url = sub.data.data_file.url
             url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).data['data_file']
             # url = SubmissionFilesSerializer(sub, context=self.get_serializer_context()).data['data_file']
             files.append({"name": short_name, "url": url})
 
         return Response(files)
-    
-    @action(detail=False, methods=('POST',))
-    def download_many_prediction(self, request):
-
-        pks = request.data.get('pks')
-        if not pks:
-            return Response({"error": "`pks` field is required"}, status=400)
-
-        if not isinstance(pks, list):
-            return Response({"error": "`pks` must be a list"}, status=400)
-        
-        submissions = Submission.objects.filter(pk__in=pks).select_related(
-            "owner",
-            "phase",
-            "data"
-        )
-
-        if len(list(submissions))  != len(pks):
-            return Response({"error": "One or more submission IDs are invalid"}, status=404)
-
-        self.check_submission_permissions(request,submissions) 
-
-        files = []
-        serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
-
-        for sub in submissions:
-            if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED
-                continue
-            file_path = sub.data.data_file.name.split('/')[-1]
-            detailed_name = f"pred_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
-            prediction_url = serializer.get_prediction_result(sub)
-            files.append({"name": detailed_name, "url": prediction_url})
-        return Response(files)
-
-    @action(detail=False, methods=('POST',))
-    def download_many_results(self, request):
-
-        pks = request.data.get('pks')
-        if not pks:
-            return Response({"error": "`pks` field is required"}, status=400)
-
-        if not isinstance(pks, list):
-            return Response({"error": "`pks` must be a list"}, status=400)
-        
-        submissions = Submission.objects.filter(pk__in=pks).select_related(
-            "owner",
-            "phase",
-            "data"
-        )
-
-        if len(list(submissions))  != len(pks):
-            return Response({"error": "One or more submission IDs are invalid"}, status=404)
-
-        self.check_submission_permissions(request,submissions) 
-
-        files = []
-        serializer = SubmissionFilesSerializer(context=self.get_serializer_context())
-
 
         for sub in submissions:
             if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED

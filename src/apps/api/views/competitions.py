@@ -227,8 +227,19 @@ class CompetitionViewSet(ModelViewSet):
             leaderboard.is_valid()
             leaderboard.save()
             leaderboard_id = leaderboard["id"].value
+
+            # Set leaderboard id, starting kit and public data for phases
             for phase in data['phases']:
                 phase['leaderboard'] = leaderboard_id
+
+                try:
+                    phase['public_data'] = Data.objects.filter(key=phase['public_data']['value'])[0].id
+                except TypeError:
+                    phase['public_data'] = None
+                try:
+                    phase['starting_kit'] = Data.objects.filter(key=phase['starting_kit']['value'])[0].id
+                except TypeError:
+                    phase['starting_kit'] = None
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -728,12 +739,12 @@ class PhaseViewSet(ModelViewSet):
                 # Codabemch public queue
                 if comp.queue is None:
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on Codabench public queue! Contact us on `{settings.CONTACT_EMAIL}` to request a rerun."
 
                 # Other queue where user is not owner and not organizer
                 elif request.user != comp.queue.owner and request.user not in comp.queue.organizers.all():
                     can_re_run_submissions = False
-                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `info@codalab.org` to request a rerun."
+                    error_message = f"You cannot rerun more than {settings.RERUN_SUBMISSION_LIMIT} submissions on a queue which is not yours! Contact us on `{settings.CONTACT_EMAIL}` to request a rerun."
 
                 # User can rerun submissions where he is owner or organizer
                 else:
@@ -754,7 +765,7 @@ class PhaseViewSet(ModelViewSet):
             raise PermissionDenied(error_message)
 
     @swagger_auto_schema(responses={200: PhaseResultsSerializer})
-    @action(detail=True, methods=['GET'])
+    @action(detail=True, methods=['GET'], permission_classes=[AllowAny])
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         if phase.competition.fact_sheet:

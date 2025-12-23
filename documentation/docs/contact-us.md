@@ -2,4 +2,4 @@
 - If you wish to get in touch with the community, you can use the [Google Groups](https://groups.google.com/g/codalab-competitions).
 - In case of emergency
 
-[Send us an email :e-mail:](mailto:info@codalab.org){ .md-button .md-button--primary}
+[Send us an email :e-mail:](mailto:info@codabench.org){ .md-button .md-button--primary}

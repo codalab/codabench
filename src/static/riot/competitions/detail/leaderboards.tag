@@ -37,35 +37,10 @@
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
-            
         </tr>
         </thead>
-        <!--  Show when particpant is not registered  -->
-        <tbody if="{participant_status === null}">
-            <tr class="center aligned ui yellow message">
-                <td colspan="100%">
-                    <em>You are not a participant of this competition. Please register in My Submissions tab to view the leaderboard.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is pending  -->
-        <tbody if="{participant_status === 'pending'}">
-            <tr class="center aligned ui yellow message">
-                <td colspan="100%">
-                    <em>Your request to participate in this competition is waiting for an approval from the competition organizer.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is denied  -->
-        <tbody if="{participant_status === 'denied'}">
-            <tr class="center aligned ui red message">
-                <td colspan="100%">
-                    <em>Your request to participate in this competition is denied. Please contact the competition organizer for more details.</em>
-                </td>
-            </tr>
-        </tbody>
-        <!--  Show when particpant registration is approved  -->
-        <tbody if="{participant_status === 'approved'}">
+        <!--  Always show leaderboard  -->
+        <tbody>
         <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
                 <em>No submissions have been added to this leaderboard yet!</em>

@@ -4,7 +4,7 @@
             <div class="ui segment">
                 <div class="flex-header">
                     <h1 class="ui header">Benchmark upload</h1>
-                    <help_button href="https://github.com/codalab/competitions-v2/wiki/Competition-Creation:-Bundle"
+                    <help_button href="https://docs.codabench.org/latest/Organizers/Benchmark_Creation/Competition-Creation%3A-Bundle/"
                                  tooltip="More information on bundle creation">
                     </help_button>
                 </div>

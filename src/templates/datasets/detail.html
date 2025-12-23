@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+    <!-- JSON LD Script for Dataset Search -->
+    <script type="application/ld+json">
+    {
+        "@context": {
+            "@language": "en",
+            "@vocab": "https://schema.org/",
+            "croissant": "https://mlcommons.org/croissant/1.0"
+        },
+        "conformsTo": "http://mlcommons.org/croissant/1.0",
+        "@type": "Dataset",
+        "name": "{{ object.name|escape }}",
+        "description": "{{ object.description|escape }}",
+        "url": "{{ request.build_absolute_uri }}",
+        "creator": {
+            "@type": "Person",
+            "name": "{{ object.created_by|escape }}"
+        },
+        "datePublished": "{{ object.created_when }}",
+        "license": {
+            "@type": "CreativeWork",
+            "name": "{{ object.license|escape }}"
+        },
+        "citation": "-",
+        "version": 1.0
+    }
+    </script>
+{% endblock %}
+
+
+{% block content %}
+    <dataset-detail 
+        id='{{ object.id }}'
+        name='{{ object.name }}'
+        description='{{ object.description }}'
+        license='{{ object.license }}'
+        is_verified='{{ object.is_verified }}'
+        created_when='{{ object.created_when }}'
+        created_by='{{ object.created_by }}'
+        file_size='{{ object.file_size }}'
+        downloads='{{ object.downloads }}'
+        
+    ></dataset-detail>
+{% endblock %}

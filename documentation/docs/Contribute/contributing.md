@@ -6,7 +6,7 @@
 
 ## Setting up a local instance of Codabench
 
-- Follow the tutorial in codabench [wiki](../Developers_and_Administrators/Codabench-Installation.md). According to your hosting OS, you might have to tune your environment file a bit. Try without enabling the SSL protocol (doing so, you don't need a domain name for the server). Try using the embedded Minio storage solution instead of a private cloud storage.
+- Follow the tutorial in codabench [Docs](../Developers_and_Administrators/Codabench-Installation.md). According to your hosting OS, you might have to tune your environment file a bit. Try without enabling the SSL protocol (doing so, you don't need a domain name for the server). Try using the embedded Minio storage solution instead of a private cloud storage.
 - If needed, you can also look into [How to deploy Codabench on your server](../Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md)
 
 ### Using your local instance

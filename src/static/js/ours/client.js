@@ -134,20 +134,6 @@ CODALAB.api = {
             { pks: pks }   // body is JSON by convention
         );
     },
-    download_many_submissions_prediction: function (pks) {
-        return CODALAB.api.request(
-            'POST',
-            URLS.API + "submissions/download_many_prediction/",
-            { pks: pks }   // body is JSON by convention
-        );
-    },
-    download_many_submissions_results: function (pks) {
-        return CODALAB.api.request(
-            'POST',
-            URLS.API + "submissions/download_many_results/",
-            { pks: pks }   // body is JSON by convention
-        );
-    },
         
     /*---------------------------------------------------------------------
          Leaderboards
@@ -181,6 +167,9 @@ CODALAB.api = {
     },
     delete_datasets: function(pk_list) {
         return CODALAB.api.request('POST', `${URLS.API}datasets/delete_many/`, pk_list)
+    },
+    get_public_datasets: function (query) {
+        return CODALAB.api.request('GET', URLS.API + "datasets/public/", query)
     },
     /**
      * Creates a dataset

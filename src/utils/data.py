@@ -1,4 +1,3 @@
-import logging
 import os
 import uuid
 from datetime import timedelta
@@ -11,7 +10,7 @@ from django.utils.timezone import now
 
 from utils.storage import BundleStorage
 
-
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -121,16 +120,16 @@ def put_blob(url, file_path):
     )
 
 
-def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False):
+def pretty_bytes(bytes, decimal_places=1, suffix="B", binary=False, return_0_for_invalid=False):
 
     # Ensure bytes is a valid number
     try:
         bytes = float(bytes)
     except (ValueError, TypeError):
-        return ""  # Return empty string for invalid inputs
+        return 0 if return_0_for_invalid else ""  # Return 0 or empty string for invalid inputs
 
     if bytes < 0:
-        return ""  # Return empty string for negative values
+        return 0 if return_0_for_invalid else ""  # Return 0 or empty string for invalid inputs
 
     factor = 1024.0 if binary else 1000.0
     units = ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi'] if binary else ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z']

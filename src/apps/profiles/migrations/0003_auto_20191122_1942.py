@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterModelManagers(
             name='user',
             managers=[
-                ('objects', profiles.models.ChaHubUserManager()),
+                ('objects', profiles.models.CodabenchUserManager()),
             ],
         ),
         migrations.AddField(

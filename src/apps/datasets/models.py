@@ -1,26 +1,24 @@
 import uuid
 import botocore
-import logging
 
 import botocore.exceptions
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils.timezone import now
 from decimal import Decimal
 
-from chahub.models import ChaHubSaveMixin
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from competitions.models import Competition
 
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 
-class Data(ChaHubSaveMixin, models.Model):
+class Data(models.Model):
     """Data models are unqiue based on name + created_by. If no name is given, then there is no uniqueness to enforce"""
 
     # It's useful to have these defaults map to the YAML names for these, like `scoring_program`
@@ -68,6 +66,10 @@ class Data(ChaHubSaveMixin, models.Model):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, null=True, related_name='submission')
     file_name = models.CharField(max_length=64, default="")
 
+    is_verified = models.BooleanField(default=False)
+    downloads = models.PositiveIntegerField(default=0)
+    license = models.CharField(max_length=128, null=True, blank=True)
+
     def get_download_url(self):
         return reverse('datasets:download', kwargs={'key': self.key})
 
@@ -109,39 +111,3 @@ class Data(ChaHubSaveMixin, models.Model):
 
     def __str__(self):
         return f'{self.name}({self.id})'
-
-    @staticmethod
-    def get_chahub_endpoint():
-        return "datasets/"
-
-    def get_chahub_is_valid(self):
-        if not self.was_created_by_competition:
-            return self.upload_completed_successfully
-        else:
-            return True
-
-    def get_whitelist(self):
-        return ['remote_id', 'is_public']
-
-    def get_chahub_data(self):
-        ssl = settings.SECURE_SSL_REDIRECT
-        site = Site.objects.get_current().domain
-        return self.clean_private_data({
-            'creator_id': self.created_by.id,
-            'remote_id': self.pk,
-            'created_by': str(self.created_by.username),
-            'created_when': self.created_when.isoformat(),
-            'name': self.name,
-            'type': self.type,
-            'description': self.description,
-            'key': str(self.key),
-            'is_public': self.is_public,
-            'download_url': f'http{"s" if ssl else ""}://{site}{self.get_download_url()}'
-        })
-
-
-class DataGroup(models.Model):
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_when = models.DateTimeField(default=now)
-    name = models.CharField(max_length=255)
-    datas = models.ManyToManyField(Data, related_name="groups")

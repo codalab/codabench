@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import re
 import traceback
@@ -32,7 +31,8 @@ from datasets.models import Data
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
-logger = logging.getLogger()
+import logging
+logger = logging.getLogger(__name__)
 
 COMPETITION_FIELDS = [
     "title",
@@ -420,8 +420,6 @@ def unpack_competition(status_pk):
             status.status = CompetitionCreationTaskStatus.FINISHED
             status.resulting_competition = competition
             status.save()
-            # call again, to make sure phases get sent to chahub
-            competition.save()
             logger.info("Competition saved!")
             status.dataset.name += f" - {competition.title}"
             status.dataset.save()
@@ -667,7 +665,7 @@ def create_competition_dump(competition_pk, keys_instead_of_files=False):
         )
         logger.info(f"Finished creating competition dump: {temp_comp_dump.pk} for competition: {comp.pk}")
     except ObjectDoesNotExist:
-        logger.info("Could not find competition with pk {} to create a competition dump".format(competition_pk))
+        logger.error("Could not find competition with pk {} to create a competition dump".format(competition_pk))
 
 
 @app.task(queue='site-worker', soft_time_limit=60 * 5)
@@ -754,7 +752,7 @@ def batch_send_email(comp_id, content):
     try:
         competition = Competition.objects.prefetch_related('participants__user').get(id=comp_id)
     except Competition.DoesNotExist:
-        logger.info(f'Not sending emails because competition with id {comp_id} could not be found')
+        logger.error(f'Not sending emails because competition with id {comp_id} could not be found')
         return
 
     codalab_send_markdown_email(
