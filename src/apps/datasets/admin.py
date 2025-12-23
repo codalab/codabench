@@ -13,7 +13,9 @@ def DeactivateAccount(modeladmin, request, queryset):
 
 
 class DataExpansion(admin.ModelAdmin):
+    raw_id_fields = ["created_by", "competition"]
     list_display = [
+        "id",
         "name",
         "description",
         "created_by",
@@ -23,6 +25,7 @@ class DataExpansion(admin.ModelAdmin):
         "file_size",
     ]
     search_fields = [
+        "id",
         "created_by__username",
         "name",
         "type",

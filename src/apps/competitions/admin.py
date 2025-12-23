@@ -44,16 +44,34 @@ class privateCompetitionsFilter(admin.SimpleListFilter):
 def export_as_csv(modeladmin, request, queryset):
     response = HttpResponse(
         content_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="email_username_list.csv"'},
+        headers={
+            "Content-Disposition": 'attachment; filename="email_username_list.csv"'
+        },
     )
     writer = csv.writer(response)
-    writer.writerow(["Username", "Email", "Competition title", "Participants Count", "Submissions Count"])
+    writer.writerow(
+        [
+            "Username",
+            "Email",
+            "Competition title",
+            "Participants Count",
+            "Submissions Count",
+        ]
+    )
     email_list = {}
     for obj in queryset:
         user = User.objects.get(id=obj.created_by_id)
         if not user.is_banned and user.email not in email_list.values():
             email_list.update({user.username: user.email})
-            writer.writerow([user.username, user.email, obj.title, obj.participants_count, obj.submissions_count])
+            writer.writerow(
+                [
+                    user.username,
+                    user.email,
+                    obj.title,
+                    obj.participants_count,
+                    obj.submissions_count,
+                ]
+            )
     return response
 
 
@@ -72,12 +90,68 @@ class CompetitionExpansion(admin.ModelAdmin):
     list_display = ["id", "title", "created_by", "is_featured"]
     list_display_links = ["id", "title"]
     actions = [export_as_json, export_as_csv]
+    raw_id_fields = ["created_by", "collaborators"]
     list_filter = ["is_featured", privateCompetitionsFilter]
 
 
+class SubmissionExpansion(admin.ModelAdmin):
+    # Raw Id Fields changes the field from displaying everything in a drop down menu into an id fields, which makes the page loads much faster (removes huge SELECT from the database)
+    raw_id_fields = [
+        "organization",
+        "owner",
+        "phase",
+        "data",
+        "task",
+        "leaderboard",
+        "participant",
+        "queue",
+        "created_by_migration",
+        "parent",
+        "scores",
+    ]
+    search_fields = ["owner__username"]
+    list_display = [
+        "id",
+        "owner",
+        "task",
+        "is_public",
+        "has_children",
+        "is_soft_deleted",
+    ]
+    list_filter = ["is_public", "has_children", "is_soft_deleted"]
+
+
+class CompetitionCreationTaskStatusExpansion(admin.ModelAdmin):
+    raw_id_fields = ["dataset", "created_by", "resulting_competition"]
+    list_display = ["id", "created_by", "resulting_competition", "status"]
+    search_fields = ["id", "created_by__username"]
+    list_filter = ["status"]
+
+
+class CompetitionParticipantExpansion(admin.ModelAdmin):
+    raw_id_fields = ["user", "competition"]
+    list_display = ["id", "user", "competition", "status"]
+    list_filter = ["status"]
+    search_fields = ["user__username", "competition"]
+
+
+class PageExpansion(admin.ModelAdmin):
+    raw_id_fields = ["competition"]
+    list_display = ["id", "competition"]
+    search_fields = ["competition", "content"]
+
+
+class PhaseExpansion(admin.ModelAdmin):
+    raw_id_fields = ["competition", "leaderboard", "public_data", "starting_kit"]
+    list_display = ["id", "competition", "name"]
+    search_fields = ["id", "competition", "name"]
+
+
 admin.site.register(models.Competition, CompetitionExpansion)
-admin.site.register(models.CompetitionCreationTaskStatus)
-admin.site.register(models.CompetitionParticipant)
-admin.site.register(models.Page)
-admin.site.register(models.Phase)
-admin.site.register(models.Submission)
+admin.site.register(
+    models.CompetitionCreationTaskStatus, CompetitionCreationTaskStatusExpansion
+)
+admin.site.register(models.CompetitionParticipant, CompetitionParticipantExpansion)
+admin.site.register(models.Page, PageExpansion)
+admin.site.register(models.Phase, PhaseExpansion)
+admin.site.register(models.Submission, SubmissionExpansion)
