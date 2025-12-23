@@ -1,6 +1,7 @@
 from django.contrib import admin
 from profiles.models import User
 from . import models
+from django.template.defaultfilters import filesizeformat
 
 
 @admin.action(description="Deactivate Account and Delete Item")
@@ -22,7 +23,7 @@ class DataExpansion(admin.ModelAdmin):
         "type",
         "is_public",
         "is_verified",
-        "file_size",
+        "filesize_human",
     ]
     search_fields = [
         "id",
@@ -34,6 +35,14 @@ class DataExpansion(admin.ModelAdmin):
         "file_size",
     ]
     list_filter = ["is_public", "is_verified"]
+
+    # Convert the file size from bytes to KB,MB,GB etc to make it more readable in the list_display
+    @admin.display(description="File size", ordering="file_size")
+    def filesize_human(self, obj):
+        if not obj.file_size:
+            return "-"
+        return filesizeformat(obj.file_size)
+
     actions = [DeactivateAccount]
 
 
