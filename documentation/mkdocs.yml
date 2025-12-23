@@ -115,8 +115,8 @@ nav:
           - Advanced Tutorial: Organizers/Benchmark_Creation/Advanced-Tutorial.md
           - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
-          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation:-Form.md
-          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation:-Bundle.md
+          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation-Form.md
+          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation-Bundle.md
           - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
           - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
