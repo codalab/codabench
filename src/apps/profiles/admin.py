@@ -44,7 +44,7 @@ class UserExpansion(admin.ModelAdmin):
             },
         ),
         (
-            "Advanced Options",
+            "Extra Information",
             {
                 "classes": ["collapse"],
                 "fields": [

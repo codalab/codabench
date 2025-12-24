@@ -36,9 +36,18 @@ class ThreadExpansion(admin.ModelAdmin):
 
 class PostExpansion(admin.ModelAdmin):
     raw_id_fields = ["thread", "posted_by"]
-    list_display = ["id", "content", "posted_by"]
+    list_display = ["id", "content_limited", "posted_by"]
     search_fields = ["content", "posted_by__username"]
     actions = [DeactivateAccountPost]
+
+    @admin.display(description="Content", ordering="content")
+    def content_limited(self, obj):
+        if not obj.content:
+            return "-"
+        if len(obj.content) > 500:
+            return obj.content[:500] + "(...)"
+        else:
+            return obj.content[:500]
 
 
 admin.site.register(models.Forum, ForumsExpansion)

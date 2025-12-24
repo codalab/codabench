@@ -18,7 +18,7 @@ class DataExpansion(admin.ModelAdmin):
     list_display = [
         "id",
         "name",
-        "description",
+        "description_limited",
         "created_by",
         "type",
         "is_public",
@@ -35,6 +35,15 @@ class DataExpansion(admin.ModelAdmin):
         "file_size",
     ]
     list_filter = ["is_public", "is_verified"]
+
+    @admin.display(description="Description", ordering="description")
+    def description_limited(self, obj):
+        if not obj.description:
+            return "-"
+        if len(obj.description) > 500:
+            return obj.description[:500] + "(...)"
+        else:
+            return obj.description[:500]
 
     # Convert the file size from bytes to KB,MB,GB etc to make it more readable in the list_display
     @admin.display(description="File size", ordering="file_size")

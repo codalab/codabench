@@ -38,6 +38,7 @@ def export_as_json(modeladmin, request, queryset):
 class QueueExpansion(admin.ModelAdmin):
     raw_id_fields = ["owner", "organizers"]
     list_display = ["id", "name", "owner", "is_public"]
+    list_display_links = ["id", "name"]
     list_filter = ["is_public"]
     search_fields = ["name", "owner__username", "organizers__username"]
     actions = [export_as_csv, export_as_json]
