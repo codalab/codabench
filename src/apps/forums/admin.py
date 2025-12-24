@@ -24,20 +24,20 @@ def DeactivateAccountPost(modeladmin, request, queryset):
 class ForumsExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition"]
     list_display = ["id", "competition"]
-    search_fields = ["competition"]
+    search_fields = ["id", "competition"]
 
 
 class ThreadExpansion(admin.ModelAdmin):
     raw_id_fields = ["forum", "started_by"]
     list_display = ["id", "title", "started_by"]
-    search_fields = ["title", "started_by__username"]
+    search_fields = ["id", "title", "started_by__username"]
     actions = [DeactivateAccountThread]
 
 
 class PostExpansion(admin.ModelAdmin):
     raw_id_fields = ["thread", "posted_by"]
     list_display = ["id", "content_limited", "posted_by"]
-    search_fields = ["content", "posted_by__username"]
+    search_fields = ["id", "content", "posted_by__username"]
     actions = [DeactivateAccountPost]
 
     @admin.display(description="Content", ordering="content")

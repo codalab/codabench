@@ -7,37 +7,46 @@ from profiles.models import User
 from . import models
 
 
-class privateCompetitionsFilter(admin.SimpleListFilter):
-    # Human-readable title which will be displayed in the
-    # right admin sidebar just above the filter options.
-    title = _("Private non-test")
-
-    # Parameter for the filter that will be used in the URL query.
-    parameter_name = "private"
+# General class used to make custom filter
+class InputFilter(admin.SimpleListFilter):
+    template = "admin/input_filter.html"
 
     def lookups(self, request, model_admin):
-        """
-        Returns a list of tuples. The first element in each
-        tuple is the coded value for the option that will
-        appear in the URL query. The second element is the
-        human-readable name for the option that will appear
-        in the right sidebar.
-        """
-        return [
-            ("privateSmall", _("Submissions >= 10 and Participants >= 5")),
-        ]
+        # Dummy, required to show the filter.
+        return ((),)
+
+    def choices(self, changelist):
+        # Grab only the "all" option.
+        all_choice = next(super().choices(changelist))
+        all_choice["query_parts"] = (
+            (k, v)
+            for k, v in changelist.get_filters_params().items()
+            if k != self.parameter_name
+        )
+        yield all_choice
+
+
+class SubmissionsCountFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Submissions Count")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "submissions_count_gte"
 
     def queryset(self, request, queryset):
-        """
-        Returns the filtered queryset based on the value
-        provided in the query string and retrievable via
-        `self.value()`.
-        """
-        # Only show private competitions with >= 10 submissions and >=5 participants
-        if self.value() == "privateSmall":
-            return queryset.filter(
-                published=False, submissions_count__gte=10, participants_count__gte=5
-            )
+        if self.value() is not None:
+            value = self.value()
+            return queryset.filter(submissions_count__gte=value)
+
+
+class ParticipantsCountFilter(InputFilter):
+    title = _("Participants Count")
+    parameter_name = "participants_count_gte"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            return queryset.filter(participants_count__gte=value)
 
 
 # This will export the email of all the selected competition creators, removing duplications and banned users
@@ -85,13 +94,35 @@ def export_as_json(modeladmin, request, queryset):
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
 
+class QueueFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Queue (default for Default Queue)")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "queue"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            if value.lower() == "default":
+                return queryset.filter(queue__name__isnull=True)
+            else:
+                return queryset.filter(queue__name=value)
+
+
 class CompetitionExpansion(admin.ModelAdmin):
-    search_fields = ["title", "docker_image", "created_by__username"]
-    list_display = ["id", "title", "created_by", "is_featured"]
+    search_fields = ["id", "title", "docker_image", "created_by__username"]
+    list_display = ["id", "title", "created_by", "published", "is_featured"]
     list_display_links = ["id", "title"]
     actions = [export_as_json, export_as_csv]
     raw_id_fields = ["created_by", "collaborators", "queue"]
-    list_filter = ["is_featured", privateCompetitionsFilter]
+    list_filter = [
+        "published",
+        "is_featured",
+        ParticipantsCountFilter,
+        SubmissionsCountFilter,
+        QueueFilter,
+    ]
     fieldsets = [
         (
             None,
@@ -136,6 +167,35 @@ class CompetitionExpansion(admin.ModelAdmin):
     ]
 
 
+class CompetitionOrganizerFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Competition Organizer")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "organizer"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            return queryset.filter(phase__competition__created_by__username=value)
+
+
+class SubmissionQueueFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Queue (default for Default Queue)")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "queue"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            if value.lower() == "default":
+                return queryset.filter(phase__competition__queue__name__isnull=True)
+            else:
+                return queryset.filter(phase__competition__queue__name=value)
+
+
 class SubmissionExpansion(admin.ModelAdmin):
     # Raw Id Fields changes the field from displaying everything in a drop down menu into an id fields, which makes the page loads much faster (removes huge SELECT from the database)
     raw_id_fields = [
@@ -151,16 +211,24 @@ class SubmissionExpansion(admin.ModelAdmin):
         "parent",
         "scores",
     ]
-    search_fields = ["owner__username"]
+    search_fields = ["id", "owner__username", "phase__competition__title", "task__name"]
     list_display = [
         "id",
         "owner",
         "task",
+        "status",
         "is_public",
         "has_children",
         "is_soft_deleted",
     ]
-    list_filter = ["is_public", "has_children", "is_soft_deleted"]
+    list_filter = [
+        "is_public",
+        "has_children",
+        "is_soft_deleted",
+        "status",
+        CompetitionOrganizerFilter,
+        SubmissionQueueFilter,
+    ]
     fieldsets = [
         (
             None,
@@ -232,13 +300,13 @@ class CompetitionParticipantExpansion(admin.ModelAdmin):
     raw_id_fields = ["user", "competition"]
     list_display = ["id", "user", "competition", "status"]
     list_filter = ["status"]
-    search_fields = ["user__username", "competition"]
+    search_fields = ["id", "user__username", "competition"]
 
 
 class PageExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition"]
     list_display = ["id", "competition"]
-    search_fields = ["competition", "content"]
+    search_fields = ["id", "competition", "content"]
 
 
 class PhaseExpansion(admin.ModelAdmin):

@@ -1,15 +1,54 @@
 from django.contrib import admin
-
 from .models import User, DeletedUser, Organization, Membership
+from django.utils.translation import gettext_lazy as _
+
+
+# General class used to make custom filter
+class InputFilter(admin.SimpleListFilter):
+    template = "admin/input_filter.html"
+
+    def lookups(self, request, model_admin):
+        # Dummy, required to show the filter.
+        return ((),)
+
+    def choices(self, changelist):
+        # Grab only the "all" option.
+        all_choice = next(super().choices(changelist))
+        all_choice["query_parts"] = (
+            (k, v)
+            for k, v in changelist.get_filters_params().items()
+            if k != self.parameter_name
+        )
+        yield all_choice
+
+
+class QuotaFilter(InputFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _("Quota")
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = "quota_gte"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            value = self.value()
+            return queryset.filter(quota__gte=value)
 
 
 class UserExpansion(admin.ModelAdmin):
     # The following two lines are needed for Django-su:
     change_form_template = "admin/auth/user/change_form.html"
     change_list_template = "admin/auth/user/change_list.html"
-    search_fields = ["username", "email", "id"]
-    list_filter = ["is_staff", "is_superuser", "is_deleted", "is_bot", "is_banned"]
-    list_display = ["id", "username", "email", "is_staff", "is_superuser", "is_banned"]
+    search_fields = ["id", "username", "email"]
+    list_filter = [
+        "is_staff",
+        "is_superuser",
+        "is_deleted",
+        "is_bot",
+        "is_banned",
+        QuotaFilter,
+    ]
+    list_display = ["id", "username", "email", "quota", "is_staff", "is_superuser", "is_banned"]
     list_display_links = ["id", "username"]
     raw_id_fields = ["oidc_organization", "groups"]
     fieldsets = [
@@ -93,7 +132,7 @@ class UserExpansion(admin.ModelAdmin):
 
 class DeletedUserExpansion(admin.ModelAdmin):
     list_display = ("user_id", "username", "email", "deleted_at")
-    search_fields = ("username", "email")
+    search_fields = ("id", "username", "email")
     list_filter = ("deleted_at",)
 
 
