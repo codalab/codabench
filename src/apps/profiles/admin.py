@@ -10,7 +10,85 @@ class UserExpansion(admin.ModelAdmin):
     search_fields = ["username", "email", "id"]
     list_filter = ["is_staff", "is_superuser", "is_deleted", "is_bot", "is_banned"]
     list_display = ["id", "username", "email", "is_staff", "is_superuser", "is_banned"]
+    list_display_links = ["id", "username"]
     raw_id_fields = ["oidc_organization", "groups"]
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": [
+                    ("username", "slug", "email"),
+                    "password",
+                    "groups",
+                    "user_permissions",
+                    "date_joined",
+                    "last_login",
+                    "quota",
+                ]
+            },
+        ),
+        (
+            "Checkboxes",
+            {
+                "fields": [
+                    ("is_active", "is_bot"),
+                    (
+                        "organizer_direct_message_updates",
+                        "allow_forum_notifications",
+                        "allow_organization_invite_emails",
+                    ),
+                    ("is_superuser", "is_staff"),
+                    "is_deleted",
+                    "is_banned",
+                ]
+            },
+        ),
+        (
+            "Advanced Options",
+            {
+                "classes": ["collapse"],
+                "fields": [
+                    "display_name",
+                    "first_name",
+                    "last_name",
+                    "title",
+                    "location",
+                    "biography",
+                    "personal_url",
+                    "linkedin_url",
+                    "twitter_url",
+                    "github_url",
+                    "github_uid",
+                    "avatar_url",
+                    "url",
+                    "html_url",
+                    "name",
+                    "company",
+                    "bio",
+                    "github_info",
+                ],
+            },
+        ),
+        (
+            "OIDC",
+            {
+                "classes": ["collapse"],
+                "fields": ["is_created_using_oidc", "oidc_organization"],
+            },
+        ),
+        (
+            "RabbitMQ",
+            {
+                "classes": ["collapse"],
+                "fields": [
+                    "rabbitmq_queue_limit",
+                    "rabbitmq_username",
+                    "rabbitmq_password",
+                ],
+            },
+        ),
+        ("Files", {"classes": ["collapse"], "fields": ["photo"]}),
+    ]
 
 
 class DeletedUserExpansion(admin.ModelAdmin):

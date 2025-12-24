@@ -90,8 +90,50 @@ class CompetitionExpansion(admin.ModelAdmin):
     list_display = ["id", "title", "created_by", "is_featured"]
     list_display_links = ["id", "title"]
     actions = [export_as_json, export_as_csv]
-    raw_id_fields = ["created_by", "collaborators"]
+    raw_id_fields = ["created_by", "collaborators", "queue"]
     list_filter = ["is_featured", privateCompetitionsFilter]
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": [
+                    ("title", "docker_image", "competition_type"),
+                    "secret_key",
+                    "terms",
+                    "description",
+                    "fact_sheet",
+                    "contact_email",
+                    "reward",
+                    "report",
+                    "submissions_count",
+                    "participants_count",
+                    "created_when",
+                ]
+            },
+        ),
+        ("Raw ID Fields", {"fields": ["created_by", "collaborators", "queue"]}),
+        (
+            "Checkboxes",
+            {
+                "fields": [
+                    "published",
+                    "registration_auto_approve",
+                    "is_migrating",
+                    "enable_detailed_results",
+                    "show_detailed_results_in_submission_panel",
+                    "show_detailed_results_in_leaderboard",
+                    "make_programs_available",
+                    "make_input_data_available",
+                    "allow_robot_submissions",
+                    "auto_run_submissions",
+                    "can_participants_make_submissions_public",
+                    "is_featured",
+                    "forum_enabled",
+                ]
+            },
+        ),
+        ("Files", {"fields": ["logo", "logo_icon"]}),
+    ]
 
 
 class SubmissionExpansion(admin.ModelAdmin):
@@ -119,6 +161,64 @@ class SubmissionExpansion(admin.ModelAdmin):
         "is_soft_deleted",
     ]
     list_filter = ["is_public", "has_children", "is_soft_deleted"]
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": [
+                    ("status", "ingestion_worker_hostname", "scoring_worker_hostname"),
+                    "status_details",
+                    "description",
+                    "prediction_result_file_size",
+                    "scoring_result_file_size",
+                    "detailed_result_file_size",
+                    "md5",
+                    "secret",
+                    "celery_task_id",
+                    "name",
+                    "fact_sheet_answers",
+                    "created_when",
+                    "started_when",
+                    "soft_deleted_when",
+                ],
+            },
+        ),
+        (
+            "Raw ID Fields",
+            {
+                "fields": [
+                    "owner",
+                    "organization",
+                    "phase",
+                    "data",
+                    "task",
+                    "leaderboard",
+                    "participant",
+                    "queue",
+                    "created_by_migration",
+                    "scores",
+                    "parent",
+                ],
+            },
+        ),
+        (
+            "Checkboxes",
+            {
+                "fields": [
+                    "appear_on_leaderboards",
+                    "is_public",
+                    "is_specific_task_re_run",
+                    "is_migrated",
+                    "has_children",
+                    "is_soft_deleted",
+                ],
+            },
+        ),
+        (
+            "Files",
+            {"fields": ["prediction_result", "scoring_result", "detailed_result"]},
+        ),
+    ]
 
 
 class CompetitionCreationTaskStatusExpansion(admin.ModelAdmin):
@@ -145,6 +245,39 @@ class PhaseExpansion(admin.ModelAdmin):
     raw_id_fields = ["competition", "leaderboard", "public_data", "starting_kit"]
     list_display = ["id", "competition", "name"]
     search_fields = ["id", "competition", "name"]
+    fieldsets = [
+        (
+            None,
+            {
+                "fields": [
+                    ("name", "status", "execution_time_limit"),
+                    ("max_submissions_per_day", "max_submissions_per_person"),
+                    "index",
+                    "description",
+                    "start",
+                    "end",
+                ]
+            },
+        ),
+        (
+            "Raw ID Fields",
+            {"fields": ["competition", "leaderboard", "public_data", "starting_kit"]},
+        ),
+        (
+            "Checkboxes",
+            {
+                "fields": [
+                    "is_final_phase",
+                    "auto_migrate_to_this_phase",
+                    "has_been_migrated",
+                    "hide_output",
+                    "hide_prediction_output",
+                    "hide_score_output",
+                    "has_max_submissions",
+                ]
+            },
+        ),
+    ]
 
 
 admin.site.register(models.Competition, CompetitionExpansion)
