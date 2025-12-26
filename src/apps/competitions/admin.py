@@ -29,7 +29,7 @@ class InputFilter(admin.SimpleListFilter):
 class SubmissionsCountFilter(InputFilter):
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
-    title = _("Submissions Count")
+    title = _("≥ Submissions Count (Greater than or Equal to)")
     # Parameter for the filter that will be used in the URL query.
     parameter_name = "submissions_count_gte"
 
@@ -40,7 +40,7 @@ class SubmissionsCountFilter(InputFilter):
 
 
 class ParticipantsCountFilter(InputFilter):
-    title = _("Participants Count")
+    title = _("≥ Participants Count (Greater Than or Equal to)")
     parameter_name = "participants_count_gte"
 
     def queryset(self, request, queryset):
@@ -50,7 +50,8 @@ class ParticipantsCountFilter(InputFilter):
 
 
 # This will export the email of all the selected competition creators, removing duplications and banned users
-def export_as_csv(modeladmin, request, queryset):
+@admin.display(description="Export as CSV")
+def CompetitionExport_as_csv(modeladmin, request, queryset):
     response = HttpResponse(
         content_type="text/csv",
         headers={
@@ -84,8 +85,24 @@ def export_as_csv(modeladmin, request, queryset):
     return response
 
 
+@admin.display(description="Export as CSV")
+def SubmissionsExport_as_csv(modeladmin, request, queryset):
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="submissions.csv"'
+        },
+    )
+    writer = csv.writer(response)
+    writer.writerow(["ID", "Owner", "Status", "Task", "PhaseQueue"])
+    for obj in queryset:
+        writer.writerow([obj.id, obj.owner, obj.status, obj.task, obj.phase, obj.queue])
+    return response
+
+
 # This will export the email of all the selected competition creators, removing duplications and banned users
-def export_as_json(modeladmin, request, queryset):
+@admin.display(description="Export as JSON")
+def CompetitionExport_as_json(modeladmin, request, queryset):
     email_list = {}
     for obj in queryset:
         user = User.objects.get(id=obj.created_by_id)
@@ -114,7 +131,7 @@ class CompetitionExpansion(admin.ModelAdmin):
     search_fields = ["id", "title", "docker_image", "created_by__username"]
     list_display = ["id", "title", "created_by", "published", "is_featured"]
     list_display_links = ["id", "title"]
-    actions = [export_as_json, export_as_csv]
+    actions = [CompetitionExport_as_json, CompetitionExport_as_csv]
     raw_id_fields = ["created_by", "collaborators", "queue"]
     list_filter = [
         "published",
@@ -180,22 +197,6 @@ class CompetitionOrganizerFilter(InputFilter):
             return queryset.filter(phase__competition__created_by__username=value)
 
 
-class SubmissionQueueFilter(InputFilter):
-    # Human-readable title which will be displayed in the
-    # right admin sidebar just above the filter options.
-    title = _("Queue (default for Default Queue)")
-    # Parameter for the filter that will be used in the URL query.
-    parameter_name = "queue"
-
-    def queryset(self, request, queryset):
-        if self.value() is not None:
-            value = self.value()
-            if value.lower() == "default":
-                return queryset.filter(phase__competition__queue__name__isnull=True)
-            else:
-                return queryset.filter(phase__competition__queue__name=value)
-
-
 class SubmissionExpansion(admin.ModelAdmin):
     # Raw Id Fields changes the field from displaying everything in a drop down menu into an id fields, which makes the page loads much faster (removes huge SELECT from the database)
     raw_id_fields = [
@@ -212,6 +213,7 @@ class SubmissionExpansion(admin.ModelAdmin):
         "scores",
     ]
     search_fields = ["id", "owner__username", "phase__competition__title", "task__name"]
+    actions = [SubmissionsExport_as_csv]
     list_display = [
         "id",
         "owner",
@@ -227,7 +229,7 @@ class SubmissionExpansion(admin.ModelAdmin):
         "is_soft_deleted",
         "status",
         CompetitionOrganizerFilter,
-        SubmissionQueueFilter,
+        QueueFilter,
     ]
     fieldsets = [
         (
