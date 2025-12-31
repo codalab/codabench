@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import User, DeletedUser, Organization, Membership
 from django.utils.translation import gettext_lazy as _
+import json
+import csv
+from django.http import HttpResponse
 
 
 # General class used to make custom filter
@@ -35,6 +38,35 @@ class QuotaFilter(InputFilter):
             return queryset.filter(quota__gte=value)
 
 
+@admin.display(description="Export as CSV")
+def export_as_csv(modeladmin, request, queryset):
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="submissions.csv"'},
+    )
+    writer = csv.writer(response)
+    writer.writerow(["ID", "Username", "Active", "Date_Joined"])
+    for obj in queryset:
+        writer.writerow(
+            [
+                obj.id,
+                obj.username,
+                obj.is_active,
+                obj.date_joined,
+            ]
+        )
+    return response
+
+
+# This will export the email of all the selected competition creators, removing duplications and banned users
+@admin.display(description="Export as JSON")
+def export_as_json(modeladmin, request, queryset):
+    email_list = {}
+    for obj in queryset:
+        email_list.update({obj.username: obj.email})
+    return HttpResponse(json.dumps(email_list), content_type="application/json")
+
+
 class UserExpansion(admin.ModelAdmin):
     # The following two lines are needed for Django-su:
     change_form_template = "admin/auth/user/change_form.html"
@@ -48,9 +80,18 @@ class UserExpansion(admin.ModelAdmin):
         "is_banned",
         QuotaFilter,
     ]
-    list_display = ["id", "username", "email", "quota", "is_staff", "is_superuser", "is_banned"]
+    list_display = [
+        "id",
+        "username",
+        "email",
+        "quota",
+        "is_staff",
+        "is_superuser",
+        "is_banned",
+    ]
     list_display_links = ["id", "username"]
     raw_id_fields = ["oidc_organization", "groups"]
+    actions = [export_as_csv, export_as_json]
     fieldsets = [
         (
             None,
