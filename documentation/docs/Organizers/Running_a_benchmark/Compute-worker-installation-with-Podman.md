@@ -18,7 +18,7 @@ unqualified-search-registries = ["docker.io"]
 Create the `.env` file in order to add the compute worker into a queue (here, the default queue is used. If you use a particular queue, then, fill in your BROKER_URL generated when creating this particular queue) : 
 
 ```ini title=".env"
-BROKER_URL=pyamqp://<login>:<password>@codabench-test.lri.fr:5672 
+BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
 HOST_DIRECTORY=/codabench
 # If SSL isn't enabled, then comment or remove the following line
 BROKER_USE_SSL=True
@@ -59,8 +59,8 @@ USE_GPU=True
 
 
 ## Compute worker installation 
-
-### For CPU container 
+!!! note
+    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
 
 Run the compute worker container : 
 
@@ -77,28 +77,10 @@ podman run -d \
  --hostname ${HOSTNAME} \
  --cap-drop all \
  --volume /codabench:/codabench:U,z \
- codalab/codabench_worker_podman:latest 
+ codalab/competitions-v2-compute-worker:latest 
 ```
 
-### For GPU container
 !!! warning
     To launch a Podman compatible GPU worker, you will need to have podman version 5.4.2 minimum
-
-
-Run the GPU compute worker container (don't forget the `USE_GPU=true` in the `.env`)
-
-```bash
-podman run -d \
- --volume /run/user/$(id -u)/podman/podman.sock:/run/user/1000/podman/podman.sock:U \
- --env-file .env \
- --name compute_worker_gpu \
- --security-opt="label=disable" \
- --userns host \
- --restart unless-stopped \
- --log-opt max-size=50m \
- --log-opt max-file=3 \
- --hostname ${HOSTNAME} \
- --cap-drop=all \
- --volume /codabench:/codabench:z,U \
- codalab/codabench_worker_podman_gpu:latest
-```
+    
+    Don't forget the `USE_GPU=true` in the `.env` if you want to use a GPU runner

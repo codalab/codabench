@@ -35,17 +35,17 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags
 
 
 ## Start CPU worker
+You will get your Broker URL from the instance. More information about Queues [here](Queue-Management.md)
+
 
 Make a file `.env` and put this in it:
 ```ini title=".env"
-# Queue URL
-BROKER_URL=<desired broker URL>
-
-# Location to store submissions/cache -- absolute path!
+BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
 HOST_DIRECTORY=/codabench
-
 # If SSL isn't enabled, then comment or remove the following line
 BROKER_USE_SSL=True
+#USE_GPU=True
+#GPU_DEVICE=nvidia.com/gpu=all
 ```
 
 !!! note
@@ -76,6 +76,8 @@ services:
 !!! note 
     `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
 
+!!! note
+    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
@@ -99,8 +101,10 @@ docker run \
 
 
 ## Start GPU worker
-
 Make a `.env` file, as explained in CPU worker instructions.
+
+!!! warning
+    Don't forget the `USE_GPU=true` in the `.env` if you want to use a GPU runner
 
 Then, install the NVIDIA toolkit:
 [Nvidia toolkit installation instructions](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html)
@@ -110,7 +114,7 @@ Once you install and configure the NVIDIA container toolkit, you can create a `d
 # Codabench GPU worker (NVIDIA)
 services:
     worker:
-        image: codalab/competitions-v2-compute-worker:gpu1.3
+        image: codalab/competitions-v2-compute-worker:latest
         container_name: compute_worker
         volumes:
             - /codabench:/codabench
@@ -123,19 +127,12 @@ services:
             options:
                 max-size: 50m
                 max-file: 3
-        runtime: nvidia
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - driver: nvidia
-                          count: all
-                          capabilities:
-                              - gpu
 ```
 !!! note 
     `hostname: ${HOSTNAME}` allows you to set the hostname of the compute worker container, which will then be shown in the [server status](Server-status-page.md) page on Codabench. This can be set to anything you want, by setting the `HOSTNAME` environment variable on the machine hosting the Compute Worker, then uncommenting the line the `docker-compose.yml` before launching the compute worker.
 
+!!! note
+    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
 
 You can then launch the worker by running this command in the terminal where the `docker-compose.yml` file is located:
 ```bash
