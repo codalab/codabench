@@ -139,7 +139,7 @@ def test_v2_multiTask(page: Page) -> None:
     ).to_be_visible()
     # The ID on the leaderboard can be one of the children instead of the parent so we try them all
     found = False
-    for count in range(0, 4):
+    for count in range(0, 5):
         try:
             submission_ID_str = int(submission_Id[0]) + count
             logger.info("Looked for ID : " + str(submission_ID_str))
@@ -199,7 +199,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
     ).to_be_visible()
     # The ID on the leaderboard can be one of the children instead of the parent so we try them all
     found = False
-    for count in range(0, 4):
+    for count in range(0, 5):
         try:
             submission_ID_str = int(submission_Id[0]) + count
             logger.debug("Looked for ID : " + str(submission_ID_str))
