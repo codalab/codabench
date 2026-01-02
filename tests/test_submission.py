@@ -101,7 +101,7 @@ def test_v18(page: Page):
 
 
 # Skip this test if in the CI
-@pytest.mark.skipif(ci, reason="Works locally but fails in the CI for some reason")
+@pytest.mark.skipif(ci, reason="Works locally but fails in the CI because of CELERY_TASK_ALWAYS_EAGER = True")
 def test_v2_multiTask(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
@@ -155,7 +155,7 @@ def test_v2_multiTask(page: Page) -> None:
 
 
 # Skip this test if in the CI
-@pytest.mark.skipif(ci, reason="Works locally but fails in the CI for some reason")
+@pytest.mark.skipif(ci, reason="Works locally but fails in the CI because of CELERY_TASK_ALWAYS_EAGER = True"")
 def test_v2_multiTaskFactSheet(page: Page) -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()

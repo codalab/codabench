@@ -77,7 +77,7 @@ jobs:
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
-            cd tests && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
+            cd tests && CI=True $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
           no_output_timeout: 30m
 
       # Example to run specific set of tests (for debugging individual tests from a batch of tests)

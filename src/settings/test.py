@@ -3,6 +3,8 @@ from settings.base import *  # noqa: F401,F403
 
 DEBUG = True
 
+CELERY_TASK_ALWAYS_EAGER = True
+
 # Don't use whitenoise -- so we don't get exceptions for missing files
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
