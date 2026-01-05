@@ -156,7 +156,7 @@ These workflows launches when one of the following conditions are met :
 - A change in the `Dockerfile.compute_worker` file
 - A change of any file within the `compute_worker/` directory
 
-The tag is decided by tree different criterias :
+The tag is decided by three different criterias :
 
 - Changes on the `develop` branch creates a tag with the `test` tag
 - Changes on the `master` branch creates a tag with the release tag (ex: `v1.22`)
