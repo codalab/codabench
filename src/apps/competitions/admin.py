@@ -89,12 +89,10 @@ def CompetitionExport_as_csv(modeladmin, request, queryset):
 def SubmissionsExport_as_csv(modeladmin, request, queryset):
     response = HttpResponse(
         content_type="text/csv",
-        headers={
-            "Content-Disposition": 'attachment; filename="submissions.csv"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="submissions.csv"'},
     )
     writer = csv.writer(response)
-    writer.writerow(["ID", "Owner", "Status", "Task", "PhaseQueue"])
+    writer.writerow(["ID", "Owner", "Status", "Task", "Phase", "Queue"])
     for obj in queryset:
         writer.writerow([obj.id, obj.owner, obj.status, obj.task, obj.phase, obj.queue])
     return response
