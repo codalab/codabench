@@ -60,7 +60,7 @@ USE_GPU=True
 
 ## Compute worker installation 
 !!! note
-    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU
+    Starting from `codalab/competitions-v2-compute-worker:v1.22` the images are now unifed for Podman and Docker CPU/GPU and has been renamed to `codalab/codabench-compute-worker:latest`
 
 Run the compute worker container : 
 
@@ -77,7 +77,7 @@ podman run -d \
  --hostname ${HOSTNAME} \
  --cap-drop all \
  --volume /codabench:/codabench:U,z \
- codalab/competitions-v2-compute-worker:latest 
+ codalab/codabench-compute-worker:latest
 ```
 
 !!! warning

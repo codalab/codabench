@@ -58,7 +58,7 @@ Create a `docker-compose.yml` file and paste the following content in it:
 # Codabench Worker
 services:
     worker:
-        image: codalab/competitions-v2-compute-worker:latest
+        image: codalab/codabench-compute-worker:latest
         container_name: compute_worker
         volumes:
             - /codabench:/codabench
@@ -114,7 +114,7 @@ Once you install and configure the NVIDIA container toolkit, you can create a `d
 # Codabench GPU worker (NVIDIA)
 services:
     worker:
-        image: codalab/competitions-v2-compute-worker:latest
+        image: codalab/codabench-compute-worker:latest
         container_name: compute_worker
         volumes:
             - /codabench:/codabench
@@ -314,5 +314,5 @@ docker run \                                                 # or docker compose
     --restart unless-stopped \
     --log-opt max-size=50m \
     --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:latest            # or other relevant docker image
+    codalab/codabench-compute-worker:latest            # or other relevant docker image
 ```
