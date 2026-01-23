@@ -436,10 +436,10 @@ class Run:
         )
         websocket_url = f"{self.websocket_url}?kind=detailed_results"
         logger.info(f"Connecting to {websocket_url} for detailed results")
-        # Wrap this with a Try ... Except otherwise a failure here will make the submission get stuck on Running 
+        # Wrap this with a Try ... Except otherwise a failure here will make the submission get stuck on Running
         try:
             websocket = await asyncio.wait_for(
-                websockets.connect(websocket_url), timeout=5.0
+                websockets.connect(websocket_url), timeout=30.0
             )
             await websocket.send(
                 json.dumps(
@@ -449,7 +449,7 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error(e)
+            logger.error("This error might result in a Execution Time Exceeded error" + e)
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
 
@@ -553,7 +553,7 @@ class Run:
 
         # connect to web socket
         websocket = await asyncio.wait_for(
-            websockets.connect(websocket_url), timeout=5.0
+            websockets.connect(websocket_url), timeout=10.0
         )
 
         # define websocket errors
@@ -658,7 +658,7 @@ class Run:
                 + str(container.get("Id"))
             )
             websocket = await asyncio.wait_for(
-                websockets.connect(websocket_url), timeout=5.0
+                websockets.connect(websocket_url), timeout=10.0
             )
             logger.debug(
                 "connected to "
