@@ -1,29 +1,5 @@
 istio:
   enableVirtualService: false 
-  spec:
-    gateways:
-      - <namespace>/<gateway-name>   # e.g. kubeflow/kubeflow-gateway
-    hosts:
-      - '*'                          # Adjust if you want a specific hostname
-    http:
-      - match:
-          - uri:
-              exact: /<your-path-prefix>
-        redirect:
-          uri: /<your-path-prefix>/
-        route:
-          - destination:
-              host: django
-              port:
-                number: 8000
-      - match:
-          - uri:
-              prefix: /<your-path-prefix>
-        route:
-          - destination:
-              host: django
-              port:
-                number: 8000
 
 ingress:
   spec:
