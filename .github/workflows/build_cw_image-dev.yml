@@ -14,11 +14,11 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v5
       - name: Build Image
-        run: docker build -t codalab/competitions-v2-compute-worker:test -f Dockerfile.compute_worker .
+        run: docker build -t codalab/codabench-compute-worker:test -f Dockerfile.compute_worker .
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push image with test tag
-        run: docker push codalab/competitions-v2-compute-worker:test
+        run: docker push codalab/codabench-compute-worker:test
