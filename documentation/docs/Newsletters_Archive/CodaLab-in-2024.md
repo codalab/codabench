@@ -19,7 +19,7 @@ Contributors community is very active with **143 pull requests** this year. Sinc
 ## Introducing Codabench
 [Codabench](https://codabench.org/), the modernized version of [CodaLab](https://codalab.lisn.fr/), was released in summer 2023, and [presented at JCAD days](https://www.canal-u.tv/chaines/jcad/codalab-competitions-and-codabench-open-source-platforms-to-organize-scientific) in November 2024! Codabench platform software is now concentrating all development effort of the community. In addition to CodaLab features, it offers improved performance, live logs, more transparency, data-centric benchmarks and more!
 
-We warmly encourage you to use [codabench.org](https://codabench.org/) for all your new competitions and benchmarks. Note that CodaLab bundles are compatible with Codabench, easing the transition, as explained in the following Wiki page: [How to transition from CodaLab to Codabench](../Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md)
+We warmly encourage you to use [codabench.org](https://codabench.org/) for all your new competitions and benchmarks. Note that CodaLab bundles are compatible with Codabench, easing the transition, as explained in the following docs page: [How to transition from CodaLab to Codabench](../Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md)
 
 CodaLab and Codabench are hosted on servers located at [Paris-Saclay university](https://www.universite-paris-saclay.fr/), maintained by [LISN lab](http://lisn.upsaclay.fr/).
 

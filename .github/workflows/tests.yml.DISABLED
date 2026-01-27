@@ -1,0 +1,63 @@
+name: build_and_test
+on: [push]
+jobs:
+  build:
+    name: Build necessary services
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+      - name: "Setup: Copy environment variables"
+        run: cp .env_circleci .env
+      - name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
+        run: | 
+         mkdir -p var/minio/public
+         mkdir -p var/minio/private
+      - name: "Setup: Prepare the playwright environment"
+        run: |
+            cd playwrightPython
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            $HOME/.local/bin/uv sync
+            $HOME/.local/bin/uv run playwright install
+      - name: "Docker: Build containers and collect static files"
+        run: |
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml up -d
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py collectstatic --noinput
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django python manage.py migrate
+            docker compose -f docker-compose.yml exec django python ./manage.py createsuperuser --no-input
+      - name: "Docker: Pull required images"
+        run: |
+            docker pull codalab/codalab-legacy:py37
+            docker pull codalab/codalab-legacy:py3
+  linter:
+    name: Flake8 linter
+    runs-on: self-hosted
+    needs: [build]
+    steps:
+      - name: "Lint: Check code style with flake8"
+        run: docker compose exec django flake8 src/
+  unit_tests:
+    name: Unit test with Selenium
+    runs-on: self-hosted
+    needs: [linter,build]
+    steps:
+      - name: "Tests: Run unit/integration tests (excluding e2e)"
+        run: docker compose -f docker-compose.yml -f docker-compose.selenium.yml exec django py.test src/ -m "not e2e"
+  e2e:
+    name: End to End tests with Playwright
+    runs-on: self-hosted
+    needs: [linter,build]
+    steps:
+      - name: "Tests: Run end-to-end (E2E) tests"
+        run: cd playwrightPython && $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
+  cleanup:
+    name: Cleanup
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [unit_tests,e2e,linter]
+    steps:
+      - name: Cleanup
+        run: |
+            docker compose -f docker-compose.yml -f docker-compose.selenium.yml down --rmi all
+            rm -rf ${{ github.workspace }}/* 

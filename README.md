@@ -9,7 +9,7 @@ To see Codabench in action, visit [codabench.org](https://www.codabench.org/).
 
 ## Documentation
 
-- [Codabench Wiki](https://github.com/codalab/codabench/wiki)
+- [Codabench Docs](https://docs.codabench.org)
 
 
 ## Quick installation (for Linux)
@@ -30,7 +30,7 @@ You can now login as username "admin" with password "admin" at http://localhost/
 
 If you ever need to reset the database, use the script `./reset_db.sh`
 
-For more information about installation, checkout [Codabench Basic Installation Guide](https://github.com/codalab/codabench/wiki/Codabench-Installation) and [How to Deploy Server](https://github.com/codalab/codabench/wiki/How-to-deploy-Codabench-on-your-server).
+For more information about installation, checkout [Codabench Basic Installation Guide](https://docs.codabench.org/latest/Developers_and_Administrators/Codabench-Installation/) and [How to Deploy Server](https://docs.codabench.org/latest/Developers_and_Administrators/How-to-deploy-Codabench-on-your-server/).
 
 
 ## License

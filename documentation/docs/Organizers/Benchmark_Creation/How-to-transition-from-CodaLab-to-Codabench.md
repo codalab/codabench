@@ -56,5 +56,5 @@ If you don’t have any previous competition, and want to learn how to create on
 
 ## Concluding remarks
 
-Codabench, the new version of the competition and benchmark platform CodaLab, was launched on August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Wiki](https://wiki.codabench.org).
+Codabench, the new version of the competition and benchmark platform CodaLab, was launched on August 2023 and is already receiving great attention. For users accustomed to CodaLab, the transition to Codabench is quick and easy. Indeed, competition bundles are back-compatible, and all that is required is to create an account on Codabench. To go further, you can refer to [Codabench’s Docs](https://docs.codabench.org).
 

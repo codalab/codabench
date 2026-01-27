@@ -1,4 +1,4 @@
-site_name: Codabench Wiki
+site_name: Codabench Docs
 repo_url: https://github.com/codalab/codabench
 copyright: Apache-2.0
 edit_uri: edit/develop/documentation/docs
@@ -69,8 +69,8 @@ plugins:
       download_link: header
       author: Codabench Team
       copyright: Apache-2.0
-      cover_subtitle: Codabench Wiki PDF
-      output_path: codabench-wiki.pdf
+      cover_subtitle: Codabench Docs PDF
+      output_path: codabench-docs.pdf
       toc_level: 3
 
   # Version docs (with git)
@@ -115,8 +115,8 @@ nav:
           - Advanced Tutorial: Organizers/Benchmark_Creation/Advanced-Tutorial.md
           - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
-          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation:-Form.md
-          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation:-Bundle.md
+          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation-Form.md
+          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation-Bundle.md
           - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
           - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
@@ -144,6 +144,7 @@ nav:
       - Backups - Automating Creation and Restoring: Developers_and_Administrators/Creating-and-Restoring-from-Backup.md
       - Submission Process Overview: Developers_and_Administrators/Submission-Process-Overview.md
       - Robot Submissions: Developers_and_Administrators/Robot-submissions.md
+      - Adding Tests: Developers_and_Administrators/Adding-e2e-tests.md
       - Running Tests: Developers_and_Administrators/Running-tests.md
       - Automation: Developers_and_Administrators/Automating-with-Selenium.md
       - Manual Validation: Developers_and_Administrators/Manual-validation.md

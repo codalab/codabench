@@ -381,7 +381,7 @@
             delete metadata.data_file  // dont send this with metadata
 
             if (metadata.is_public === 'on') {
-                var public_confirm = confirm("Creating a public submission means this will be sent to Chahub and publicly available on the internet. Are you sure you wish to continue?")
+                var public_confirm = confirm("You are creating a public submission. Are you sure you wish to continue?")
                 if (!public_confirm) {
                     return
                 }

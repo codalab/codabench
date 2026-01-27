@@ -1,8 +1,0 @@
-FROM codalab/codabench_worker_podman:latest
-
-# Include deps
-RUN dnf -y config-manager addrepo --from-repofile=https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo && \
-    dnf -y update && \
-    dnf -y install nvidia-container-runtime nvidia-container-toolkit --exclude container-selinux && \
-    dnf clean all && \
-    rm -rf /var/cache /var/log/dnf* /var/log/yum.*
