@@ -995,10 +995,10 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#todo">
+<a class="md-nav__link" href="#dockerhub-cleanup">
 <span class="md-ellipsis">
       
-        TODO
+        Dockerhub Cleanup
       
     </span>
 </a>
@@ -1424,10 +1424,10 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#todo">
+<a class="md-nav__link" href="#dockerhub-cleanup">
 <span class="md-ellipsis">
       
-        TODO
+        Dockerhub Cleanup
       
     </span>
 </a>
@@ -1448,9 +1448,11 @@
 <h1>Validation and deplyement of pull requests</h1>
 <h2 id="1-local-testing-and-validation-of-the-changes">1. Local testing and validation of the changes<a class="headerlink" href="#1-local-testing-and-validation-of-the-changes" title="Permanent link">¶</a></h2>
 <h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">¶</a></h3>
-<p>Required:
-- "Maintain" role on the repository
-- A working local installation</p>
+<p>Required:</p>
+<ul>
+<li>"Maintain" role on the repository</li>
+<li>A working local installation</li>
+</ul>
 <p>Pull the changes, checkout the branch you are testing and deploy your local instance:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
 </span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>git<span class="w"> </span>pull
@@ -1550,10 +1552,22 @@ Github will automatically generate releases based on the new commits compared to
 <p>You can then change the text format however you like, as well as add things like Manual Intervention if there are any.</p>
 <p>When you are done, you publish the release.</p>
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="image" src="../../_attachments/000c3096-13b4-4d25-a8e1-efcba0fb75fd_17528513114340215.jpg"></a></p>
-<h2 id="todo">TODO<a class="headerlink" href="#todo" title="Permanent link">¶</a></h2>
-<p>Add a note about:</p>
+<h2 id="dockerhub-cleanup">Dockerhub Cleanup<a class="headerlink" href="#dockerhub-cleanup" title="Permanent link">¶</a></h2>
+<p>One of the workflows of this repository creates a docker image and uploads it automatically to Dockerhub with the tag of the branch that launched the workflow.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you fork the repository, you will need to link a Dockerhub account by adding the username and a docker token in the repository variables. We use <a href="https://github.com/docker/login-action?tab=readme-ov-file#docker-hub">this Github Action</a> to automatically login with these variables.</p>
+</div>
+<p>These workflows launches when one of the following conditions are met :</p>
 <ul>
-<li>Merging the github action PR to update the release tag</li>
+<li>A change in the <code>Dockerfile.compute_worker</code> file</li>
+<li>A change of any file within the <code>compute_worker/</code> directory</li>
+</ul>
+<p>The tag is decided by three different criterias :</p>
+<ul>
+<li>Changes on the <code>develop</code> branch creates a tag with the <code>test</code> tag</li>
+<li>Changes on the <code>master</code> branch creates a tag with the release tag (ex: <code>v1.22</code>)</li>
+<li>Changes on any other branches will create a tag with the branch name as the tag.</li>
 </ul>
 </article>
 </div>

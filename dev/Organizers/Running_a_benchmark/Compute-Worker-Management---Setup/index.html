@@ -1436,15 +1436,14 @@
 <p>That will pull the latest image for the v2 worker. For specific versions, see the docker hub page at:
 https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 <h2 id="start-cpu-worker">Start CPU worker<a class="headerlink" href="#start-cpu-worker" title="Permanent link">¶</a></h2>
+<p>You will get your Broker URL from the instance. More information about Queues <a href="../Queue-Management/">here</a></p>
 <p>Make a file <code>.env</code> and put this in it:
-</p><div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="c1"># Queue URL</span>
-</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">&lt;desired broker URL&gt;</span>
-</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="c1"># Location to store submissions/cache -- absolute path!</span>
-</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
-</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
-</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
+</p><div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="c1">#USE_GPU=True</span>
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
 </span></code></pre></div><p></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1461,7 +1460,7 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 </p><div class="language-yaml highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="c1"># Codabench Worker</span>
 </span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="nt">services</span><span class="p">:</span>
 </span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="w">    </span><span class="nt">worker</span><span class="p">:</span>
-</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/competitions-v2-compute-worker:latest</span>
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/codabench-compute-worker:latest</span>
 </span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a><span class="w">        </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compute_worker</span>
 </span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a><span class="w">        </span><span class="nt">volumes</span><span class="p">:</span>
 </span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/codabench:/codabench</span>
@@ -1478,6 +1477,10 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><code>hostname: ${HOSTNAME}</code> allows you to set the hostname of the compute worker container, which will then be shown in the <a href="../Server-status-page/">server status</a> page on Codabench. This can be set to anything you want, by setting the <code>HOSTNAME</code> environment variable on the machine hosting the Compute Worker, then uncommenting the line the <code>docker-compose.yml</code> before launching the compute worker.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Starting from <code>codalab/competitions-v2-compute-worker:v1.22</code> the images are now unifed for Podman and Docker CPU/GPU</p>
 </div>
 <p>You can then launch the worker by running this command in the terminal where the <code>docker-compose.yml</code> file is located:
 </p><div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
@@ -1497,13 +1500,17 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 </span></code></pre></div><p></p>
 <h2 id="start-gpu-worker">Start GPU worker<a class="headerlink" href="#start-gpu-worker" title="Permanent link">¶</a></h2>
 <p>Make a <code>.env</code> file, as explained in CPU worker instructions.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Don't forget the <code>USE_GPU=true</code> in the <code>.env</code> if you want to use a GPU runner</p>
+</div>
 <p>Then, install the NVIDIA toolkit:
 <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html">Nvidia toolkit installation instructions</a></p>
 <p>Once you install and configure the NVIDIA container toolkit, you can create a <code>docker-compose.yml</code> file with the following content:
 </p><div class="language-yaml highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="c1"># Codabench GPU worker (NVIDIA)</span>
 </span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="nt">services</span><span class="p">:</span>
 </span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="w">    </span><span class="nt">worker</span><span class="p">:</span>
-</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/competitions-v2-compute-worker:gpu1.3</span>
+</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/codabench-compute-worker:latest</span>
 </span><span id="__span-6-5"><a href="#__codelineno-6-5" id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="w">        </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compute_worker</span>
 </span><span id="__span-6-6"><a href="#__codelineno-6-6" id="__codelineno-6-6" name="__codelineno-6-6"></a><span class="w">        </span><span class="nt">volumes</span><span class="p">:</span>
 </span><span id="__span-6-7"><a href="#__codelineno-6-7" id="__codelineno-6-7" name="__codelineno-6-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/codabench:/codabench</span>
@@ -1516,19 +1523,14 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 </span><span id="__span-6-14"><a href="#__codelineno-6-14" id="__codelineno-6-14" name="__codelineno-6-14"></a><span class="w">            </span><span class="nt">options</span><span class="p">:</span>
 </span><span id="__span-6-15"><a href="#__codelineno-6-15" id="__codelineno-6-15" name="__codelineno-6-15"></a><span class="w">                </span><span class="nt">max-size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50m</span>
 </span><span id="__span-6-16"><a href="#__codelineno-6-16" id="__codelineno-6-16" name="__codelineno-6-16"></a><span class="w">                </span><span class="nt">max-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-</span><span id="__span-6-17"><a href="#__codelineno-6-17" id="__codelineno-6-17" name="__codelineno-6-17"></a><span class="w">        </span><span class="nt">runtime</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nvidia</span>
-</span><span id="__span-6-18"><a href="#__codelineno-6-18" id="__codelineno-6-18" name="__codelineno-6-18"></a><span class="w">        </span><span class="nt">deploy</span><span class="p">:</span>
-</span><span id="__span-6-19"><a href="#__codelineno-6-19" id="__codelineno-6-19" name="__codelineno-6-19"></a><span class="w">            </span><span class="nt">resources</span><span class="p">:</span>
-</span><span id="__span-6-20"><a href="#__codelineno-6-20" id="__codelineno-6-20" name="__codelineno-6-20"></a><span class="w">                </span><span class="nt">reservations</span><span class="p">:</span>
-</span><span id="__span-6-21"><a href="#__codelineno-6-21" id="__codelineno-6-21" name="__codelineno-6-21"></a><span class="w">                    </span><span class="nt">devices</span><span class="p">:</span>
-</span><span id="__span-6-22"><a href="#__codelineno-6-22" id="__codelineno-6-22" name="__codelineno-6-22"></a><span class="w">                        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">driver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nvidia</span>
-</span><span id="__span-6-23"><a href="#__codelineno-6-23" id="__codelineno-6-23" name="__codelineno-6-23"></a><span class="w">                          </span><span class="nt">count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
-</span><span id="__span-6-24"><a href="#__codelineno-6-24" id="__codelineno-6-24" name="__codelineno-6-24"></a><span class="w">                          </span><span class="nt">capabilities</span><span class="p">:</span>
-</span><span id="__span-6-25"><a href="#__codelineno-6-25" id="__codelineno-6-25" name="__codelineno-6-25"></a><span class="w">                              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpu</span>
 </span></code></pre></div><p></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><code>hostname: ${HOSTNAME}</code> allows you to set the hostname of the compute worker container, which will then be shown in the <a href="../Server-status-page/">server status</a> page on Codabench. This can be set to anything you want, by setting the <code>HOSTNAME</code> environment variable on the machine hosting the Compute Worker, then uncommenting the line the <code>docker-compose.yml</code> before launching the compute worker.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Starting from <code>codalab/competitions-v2-compute-worker:v1.22</code> the images are now unifed for Podman and Docker CPU/GPU</p>
 </div>
 <p>You can then launch the worker by running this command in the terminal where the <code>docker-compose.yml</code> file is located:
 </p><div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
@@ -1578,6 +1580,12 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 <p class="admonition-title">If you have several workers in your queue, remember to have the data accessible for each one.</p>
 </div>
 <p><a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="" src="../_attachments/4259c2e5-d119-4ca2-8fc8-b69196f1528c_17534367097493236.jpg"></a></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Make sure to make the owner of the folder(s) and file(s) the same as the one launching the compute worker.<br>
+   - <code>root</code> for Docker rootfull<br>
+   - <code>codalab</code> for Podman and Docker rootless if you created a user name codalab to launch podman and docker rootless from</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">If you simply wish to set up some compute workers to increase the computing power of your benchmark, you don't need to scroll this page any further.</p>
 </div>
@@ -1651,7 +1659,7 @@ one with GPU style workers (<code>is_gpu</code> and the GPU <code>docker_image</
 </span><span id="__span-21-10"><a href="#__codelineno-21-10" id="__codelineno-21-10" name="__codelineno-21-10"></a><span class="w">    </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-21-11"><a href="#__codelineno-21-11" id="__codelineno-21-11" name="__codelineno-21-11"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-21-12"><a href="#__codelineno-21-12" id="__codelineno-21-12" name="__codelineno-21-12"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-13"><a href="#__codelineno-21-13" id="__codelineno-21-13" name="__codelineno-21-13"></a><span class="w">    </span>codalab/competitions-v2-compute-worker:latest<span class="w">            </span><span class="c1"># or other relevant docker image</span>
+</span><span id="__span-21-13"><a href="#__codelineno-21-13" id="__codelineno-21-13" name="__codelineno-21-13"></a><span class="w">    </span>codalab/codabench-compute-worker:latest<span class="w">            </span><span class="c1"># or other relevant docker image</span>
 </span></code></pre></div>
 </article>
 </div>
