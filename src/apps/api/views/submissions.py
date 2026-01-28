@@ -263,6 +263,8 @@ class SubmissionViewSet(ModelViewSet):
         # The CSV renderer will only include these fields in context["header"]
         # Human names for the fields
         context["labels"] = {
+            'id': 'Submission ID',
+            'filename': 'File Name',
             'owner': 'Owner',
             'created_when': 'Created When',
             'status': 'Status',
