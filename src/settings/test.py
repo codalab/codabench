@@ -20,7 +20,4 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: False
 }
-
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
-
 IS_TESTING = True
