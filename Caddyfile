@@ -2,13 +2,7 @@
   # HTTPS Options
   tls {$TLS_EMAIL}
 
-  # Test HTTPS setup
-  # tls {$TLS_EMAIL} {
-  #   ca https://acme-staging-v02.api.letsencrypt.org/directory
-  # }
-
-
-  # Removing some headers for improved security:
+  # Removing some headers for improved security
   header -Server
 
   @noRedirect {
@@ -27,7 +21,7 @@
     }
   }
 
-  # Serves static files, should be the same as `STATIC_ROOT` setting:
+  # Serves static files, should be the same as `STATIC_ROOT` setting
   root * /var/www/django
   file_server
 

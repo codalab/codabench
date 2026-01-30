@@ -153,7 +153,7 @@ One of the workflows of this repository creates a docker image and uploads it au
 
 These workflows launches when one of the following conditions are met :
 
-- A change in the `Dockerfile.compute_worker` file
+- A change in the `Containerfile.compute_worker` file
 - A change of any file within the `compute_worker/` directory
 
 The tag is decided by three different criterias :

@@ -148,7 +148,7 @@ nav:
       - Running Tests: Developers_and_Administrators/Running-tests.md
       - Automation: Developers_and_Administrators/Automating-with-Selenium.md
       - Manual Validation: Developers_and_Administrators/Manual-validation.md
-      - Validation and deplyement of pull requests: Developers_and_Administrators/Validation-and-deployment-of-pull-requests.md
+      - Validation and deployment of pull requests: Developers_and_Administrators/Validation-and-deployment-of-pull-requests.md
       - Upgrading Codabench:
           - Developers_and_Administrators/Upgrading_Codabench/index.md
           - Upgrade RabbitMQ (version < 1.0.0): Developers_and_Administrators/Upgrading_Codabench/Upgrade-RabbitMQ.md

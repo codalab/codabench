@@ -1,0 +1,22 @@
+FROM --platform=linux/amd64 fedora:43
+
+# This makes output not buffer and return immediately, nice for seeing results in stdout
+ENV PYTHONUNBUFFERED=1
+
+COPY compute_worker/pyproject.toml ./
+COPY compute_worker/uv.lock ./
+COPY compute_worker/celery_config.py ./
+COPY compute_worker/compute_worker.py ./
+
+
+# Install UV and add paths to PATH for uv and the future .venv created by uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH=$PATH:/root/.local/bin
+ENV PATH=$PATH:/.venv/bin
+
+
+# Install dependencies
+RUN uv sync --frozen
+COPY src/settings/logs_loguru.py /.venv/bin
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@$HOSTNAME --concurrency=1"]

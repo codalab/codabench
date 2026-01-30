@@ -1,0 +1,19 @@
+FROM fedora:43
+
+ENV PYTHONUNBUFFERED=1
+
+# Install UV and add paths to PATH for uv and the future .venv created by uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH=$PATH:/root/.local/bin
+ENV PATH=$PATH:/.venv/bin
+
+
+COPY pyproject.toml ./
+COPY uv.lock ./
+
+# Install dependencies
+RUN uv sync --frozen
+
+
+WORKDIR /app
+ENTRYPOINT ["/bin/bash", "-c"]
