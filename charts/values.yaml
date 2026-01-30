@@ -61,6 +61,21 @@ compute_worker:
       gpu:
         enabled: false
 
+siteWorker:
+  image:
+    repository: <django-image-repository>
+    tag: <django-image-tag>
+    pullPolicy: Always
+  replicas: 1
+  workingDir: /app/src
+  concurrency: 2
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    fsGroup: 0
+  volumes:
+    pvcName: <app-state-pvc-name>
+
 redis:
   image:
     registry: <image-registry>
@@ -100,21 +115,6 @@ rabbitmq:
     - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
       value: "-rabbit consumer_timeout 100000000"
 
-siteWorker:
-  image:
-    repository: <django-image-repository>
-    tag: <django-image-tag>
-    pullPolicy: Always
-  replicas: 1
-  workingDir: /app/src
-  concurrency: 2
-  securityContext:
-    runAsUser: 0
-    runAsGroup: 0
-    fsGroup: 0
-  volumes:
-    pvcName: <app-state-pvc-name>
-
 global:
   defaultStorageClass: <storage-class>
 
@@ -140,7 +140,7 @@ env:
 
   DJANGO_SETTINGS_MODULE: settings.develop
   ALLOWED_HOSTS: <allowed-hosts>
-  SUBMISSIONS_API_URL: http://django:8000/challenges/api
+  SUBMISSIONS_API_URL: http://django:8000/api
   MAX_EXECUTION_TIME_LIMIT: "600"
 
   DOMAIN_NAME: <domain-name>
