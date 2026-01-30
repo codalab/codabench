@@ -1,4 +1,4 @@
-name: build_CW_docker_image_branch
+name: build_CW_docker_image_master
 on:
   push:
     tags:
