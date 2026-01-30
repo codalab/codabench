@@ -53,8 +53,6 @@ jobs:
           name: "Docker: Build containers and collect static files"
           command: |
             docker compose up -d
-            docker compose exec django python manage.py collectstatic --noinput
-            docker compose exec django python manage.py migrate
             docker compose exec django python ./manage.py createsuperuser --no-input
 
       - run:
