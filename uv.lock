@@ -407,7 +407,6 @@ dependencies = [
     { name = "django-debug-toolbar" },
     { name = "django-enforce-host" },
     { name = "django-extensions" },
-    { name = "django-extra-fields" },
     { name = "django-filter" },
     { name = "django-oauth-toolkit" },
     { name = "django-querycount" },
@@ -472,7 +471,6 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = "==3.2" },
     { name = "django-enforce-host", specifier = "==1.0.1" },
     { name = "django-extensions", specifier = "==2.2.6" },
-    { name = "django-extra-fields", specifier = "==0.9" },
     { name = "django-filter", specifier = "==2.4.0" },
     { name = "django-oauth-toolkit", specifier = "==1.2.0" },
     { name = "django-querycount", specifier = "==0.7.0" },
@@ -482,7 +480,7 @@ requires-dist = [
     { name = "djangorestframework", specifier = "==3.12.0" },
     { name = "djangorestframework-csv", specifier = "==3.0.1" },
     { name = "drf-extensions", specifier = "==0.4.0" },
-    { name = "drf-extra-fields", specifier = "==3.0.2" },
+    { name = "drf-extra-fields", specifier = "==3.7.0" },
     { name = "drf-writable-nested", specifier = "==0.6.2" },
     { name = "drf-yasg2", specifier = ">=1.19.4,<2" },
     { name = "factory-boy", specifier = "==2.11.1" },
@@ -730,12 +728,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-extra-fields"
-version = "0.9"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dc/c1/02be9a7d238c77e757d9f22fe115c141e363e50e47a5488356cb29b72d0e/django-extra-fields-0.9.tar.gz", hash = "sha256:a182e6316fee50726a4cc92224234c08cfdef5499f7bf47727918e3d1a10d0e5", size = 10832, upload-time = "2016-12-29T17:52:09.898Z" }
-
-[[package]]
 name = "django-filter"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -850,13 +842,17 @@ wheels = [
 
 [[package]]
 name = "drf-extra-fields"
-version = "3.0.2"
+version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "djangorestframework" },
+    { name = "filetype" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/89/4e/1cc6f827e3d7c3ab65598fabb2aae322612bedca7c0be559f96aa0428221/drf-extra-fields-3.0.2.tar.gz", hash = "sha256:835a95a83dedb4806c13f65f2ea7df2482d4ec821ba2bf80cc8007376a71b6d1", size = 18362, upload-time = "2020-09-22T13:25:21.795Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/1d/311a0f359546c2de7b5251b2b802a02e6513a89be3e4280c98ae2edfbdd9/drf-extra-fields-3.7.0.tar.gz", hash = "sha256:d7e58b8f60432233328b8a64831e50ea5d05932d3cb63ade8fe66c0d3d21ac5b", size = 25355, upload-time = "2023-08-08T18:16:34.947Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/9d/30ec8fff60178a954b9fb3dff06aef0fb26ffeab8a102f8ce37b024e2a61/drf_extra_fields-3.7.0-py3-none-any.whl", hash = "sha256:3f3b1a6ec0eea02c9cabd62fe10e1673e1e42c5daa27fa9d4cea758c52c5cc30", size = 17764, upload-time = "2023-08-08T18:16:32.868Z" },
+]
 
 [[package]]
 name = "drf-writable-nested"
@@ -917,6 +913,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/da/1336008d39e5d4076dddb4e0f3a52ada41429274bf558a3cc28030d324a3/faker-37.8.0.tar.gz", hash = "sha256:090bb5abbec2b30949a95ce1ba6b20d1d0ed222883d63483a0d4be4a970d6fb8", size = 1912113, upload-time = "2025-09-15T20:24:13.592Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/11/02ebebb09ff2104b690457cb7bc6ed700c9e0ce88cf581486bb0a5d3c88b/faker-37.8.0-py3-none-any.whl", hash = "sha256:b08233118824423b5fc239f7dd51f145e7018082b4164f8da6a9994e1f1ae793", size = 1953940, upload-time = "2025-09-15T20:24:11.482Z" },
+]
+
+[[package]]
+name = "filetype"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/29/745f7d30d47fe0f251d3ad3dc2978a23141917661998763bebb6da007eb1/filetype-1.2.0.tar.gz", hash = "sha256:66b56cd6474bf41d8c54660347d37afcc3f7d1970648de365c102ef77548aadb", size = 998020, upload-time = "2022-11-02T17:34:04.141Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/79/1b8fa1bb3568781e84c9200f951c735f3f157429f44be0495da55894d620/filetype-1.2.0-py2.py3-none-any.whl", hash = "sha256:7ce71b6880181241cf7ac8697a2f1eb6a8bd9b429f7ad6d27b8db9ba5f1c2d25", size = 19970, upload-time = "2022-11-02T17:34:01.425Z" },
 ]
 
 [[package]]
