@@ -75,6 +75,7 @@ jobs:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
             docker compose exec django python ./manage.py createsuperuser --no-input
+            docker compose exec django python ./manage.py collectstatic --no-input
             cd tests && CI=True $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
           no_output_timeout: 30m
 
