@@ -53,7 +53,6 @@ jobs:
           name: "Docker: Build containers and collect static files"
           command: |
             docker compose up -d
-            docker compose exec django python ./manage.py createsuperuser --no-input
 
       - run:
           name: "Get compute worker, site worker and django logs"
@@ -75,6 +74,7 @@ jobs:
       - run:
           name: "Tests: Run end-to-end (E2E) tests"
           command: |
+            docker compose exec django python ./manage.py createsuperuser --no-input
             cd tests && CI=True $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
           no_output_timeout: 30m
 
