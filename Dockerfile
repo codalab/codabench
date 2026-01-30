@@ -28,7 +28,6 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 RUN poetry install
-RUN pip install kubernetes
 
 COPY . /app
 
