@@ -19,17 +19,9 @@ jobs:
       - name: "Setup: Prepare the playwright environment"
         run: |
             cd tests
-            apt update && apt upgrade -y
             curl -LsSf https://astral.sh/uv/install.sh | sh
             $HOME/.local/bin/uv sync --frozen
             $HOME/.local/bin/uv run playwright install
-      # Pull some images needed for e2e testing, otherwise the tests fail
-      - name: "Docker: Pull required images"
-        run: |
-            docker pull codalab/codalab-legacy:py37 &
-            docker pull codalab/codalab-legacy:py3 &
-            docker pull vergilgxw/autotable:v2 &
-
       - name: "Docker: Build containers"
         run: |
             docker compose up -d
@@ -83,7 +75,7 @@ jobs:
     name: Cleanup
     runs-on: self-hosted
     if: ${{ always() }}
-    needs: [unit_tests,e2e,linter]
+    needs: [unit_tests,e2e,linter,artifacts]
     steps:
       - name: Cleanup
         run: |
