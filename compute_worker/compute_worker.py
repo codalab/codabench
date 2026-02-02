@@ -26,6 +26,8 @@ from celery import Celery, shared_task, utils
 from kombu import Queue, Exchange
 from urllib3 import Retry
 
+from kubernetes import client, config
+
 # This is only needed for the pytests to pass
 import sys
 
@@ -38,6 +40,19 @@ logger = logging.getLogger(__name__)
 from logs_loguru import configure_logging, colorize_run_args
 import json
 
+# -----------------------------------------------
+# Load CW parameters
+# -----------------------------------------------
+NUMBER_OF_POD_CREATION_RETRIES = int(os.environ.get("NUMBER_OF_POD_CREATION_RETRIES", 30))
+SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 10))
+
+USERID = int(os.environ.get("USERID"))
+GROUPID = int(os.environ.get("GROUPID"))
+FSGROUP = int(os.environ.get("FSGROUP"))
+HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
+BASE_DIR = "/codabench/"  # base directory inside the container
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
 # -----------------------------------------------
 # Logging
