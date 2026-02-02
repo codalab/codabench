@@ -3,7 +3,7 @@ on: [push]
 jobs:
   build:
     name: Build necessary services
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Check out repository code
         uses: actions/checkout@v5
@@ -40,21 +40,21 @@ jobs:
             docker compose logs -f site_worker compute_worker django > dockerLogs/django_workers.log &
   linter:
     name: Flake8 linter
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build]
     steps:
       - name: "Lint: Check code style with flake8"
         run: docker compose exec django flake8 src/ 
   unit_tests:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [linter,build]
     steps:
       - name: "Tests: Run unit/integration tests (excluding e2e)"
         run: docker compose exec django py.test src/ -m "not e2e"
   e2e:
     name: End to End tests with Playwright
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [linter,build]
     steps:
       - name: "Tests: Run end-to-end (E2E) tests"
@@ -64,7 +64,7 @@ jobs:
             cd tests && CI=True $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
   artifacts:
       name: "Store Artifacts"
-      runs-on: ubuntu-latest
+      runs-on: self-hosted
       needs: [linter,build,unit_tests,e2e]
       steps:
         - name: "Docker logs"
@@ -79,3 +79,13 @@ jobs:
             name: "Playwright results (on-failure)"
             path: |
               tests/test-results
+  cleanup:
+    name: Cleanup
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [unit_tests,e2e,linter]
+    steps:
+      - name: Cleanup
+        run: |
+            docker compose down --rmi all
+            rm -rf ${{ github.workspace }}/* 
