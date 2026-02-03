@@ -364,3 +364,4 @@ class CustomGroup(Group):
 
     def __str__(self):
         return self.name
+        

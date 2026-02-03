@@ -116,8 +116,19 @@ COLUMN_FIELDS = [
 ]
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
+import sys
+import os
 
 def _send_to_compute_worker(submission, is_scoring):
+    print("CONTAINER CHECK PID=", os.getpid(), flush=True)
+    sys.stderr.write("STDERR TEST\n")
+    sys.stderr.flush()
+
+    print("STDOUT TEST", flush=True)
+
+    logger.error("LOGGER ERROR TEST")
+
+    logger.warning("ZZZZ _send_to_compute_worker called")
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
@@ -200,6 +211,49 @@ def _send_to_compute_worker(submission, is_scoring):
     # Pad timelimit so worker has time to cleanup
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
+
+    print("DJANGO VIEW REACHED", flush=True)
+    logger.warning("test Avant try")
+
+
+    try:
+        competition = submission.phase.competition
+
+        user_group_ids = list(submission.owner.groups.values_list("id", flat=True))
+        logger.debug("User %s groups ids: %s", submission.owner.pk, user_group_ids)
+
+        comp_user_groups_qs = (
+            competition.participant_groups
+            .select_related("queue")
+            .filter(id__in=user_group_ids)
+        )
+
+        group = comp_user_groups_qs.filter(queue__isnull=False).first() or comp_user_groups_qs.first()
+
+        if group:
+            logger.info(
+                "Submission %s candidate group(s) in competition %s: chosen group=%s queue=%s",
+                submission.pk,
+                competition.pk,
+                group.pk,
+                getattr(group.queue, "name", None),
+            )
+
+            if group.queue:
+                run_args["queue"] = group.queue.name
+                competition.queue = group.queue
+        else:
+            logger.debug(
+                "Submission %s owner %s: no intersection between user's groups %s and competition %s participant_groups",
+                submission.pk,
+                submission.owner.pk,
+                user_group_ids,
+                competition.pk,
+            )
+
+    except Exception:
+        logger.exception("Error while resolving competition/group for submission %s", submission.pk)
+
 
     if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
         submission.queue_name = submission.phase.competition.queue.name or ''
