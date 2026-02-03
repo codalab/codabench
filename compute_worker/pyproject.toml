@@ -1,22 +1,21 @@
-[tool.poetry]
+[project]
+authors = [
+    {name = "codalab"},
+]
+requires-python = "==3.9.20"
+dependencies = [
+    "celery==5.2.2",
+    "requests>=2.32.4,<3",
+    "watchdog==2.1.1",
+    "argh==0.26.2",
+    "websockets==9.1",
+    "aiofiles==0.4.0",
+    "pyyaml==6.0.1",
+    "loguru>=0.7.3,<0.8",
+    "docker>=7.1.0,<8",
+    "rich>=14.2.0,<15",
+]
+
 name = "compute-worker"
 version = "0.1.0"
 description = ""
-authors = ["codalab"]
-
-[tool.poetry.dependencies]
-python = "^3.9"
-celery = "5.2.2"
-requests = "^2.32.4"
-watchdog = "2.1.1"
-argh = "0.26.2"
-websockets = "9.1"
-aiofiles = "0.4.0"
-pyyaml = "6.0.1"
-loguru = "^0.7.3"
-docker = "^7.1.0"
-rich = "^14.2.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
