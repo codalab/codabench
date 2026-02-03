@@ -673,6 +673,211 @@ class Run:
         except json.JSONDecodeError:
             return {}
 
+    async def _create_submission_job(self, kind):
+        """Create a Kubernetes Job for running submission code"""
+        batch_v1 = client.BatchV1Api()
+
+        # Convert the root_dir path to be relative to the PVC mount point
+        relative_root = os.path.relpath(self.root_dir, BASE_DIR)
+        
+        # Build volume mounts based on what directories exist and the kind of job
+        volume_mounts = []
+        
+        # Always mount the shared storage
+        volume_mounts.append(
+            client.V1VolumeMount(
+                name="shared-storage",
+                mount_path="/codabench",
+                sub_path=""
+            )
+        )
+        
+        # Program directory - mount different directories based on job kind
+        if kind == 'ingestion':
+            # For ingestion jobs, mount the ingestion_program directory to /app/program
+            ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
+            if os.path.exists(ingestion_program_dir):
+                program_subpath = os.path.join(relative_root, "ingestion_program")
+                volume_mounts.append(
+                    client.V1VolumeMount(
+                        name="shared-storage",
+                        mount_path="/app/program",
+                        sub_path=program_subpath
+                    )
+                )
+        else:
+            # For program jobs, mount the program directory to /app/program
+            program_dir = os.path.join(self.root_dir, "program")
+            if os.path.exists(program_dir):
+                program_subpath = os.path.join(relative_root, "program")
+                volume_mounts.append(
+                    client.V1VolumeMount(
+                        name="shared-storage",
+                        mount_path="/app/program",
+                        sub_path=program_subpath
+                    )
+                )
+        
+        # Output directory (always needed)
+        output_subpath = os.path.join(relative_root, "output")
+        volume_mounts.append(
+            client.V1VolumeMount(
+                name="shared-storage",
+                mount_path="/app/output",
+                sub_path=output_subpath
+            )
+        )
+        
+        # Data directory (read-only)
+        volume_mounts.append(
+            client.V1VolumeMount(
+                name="shared-storage",
+                mount_path="/app/data",
+                sub_path="data",
+                read_only=True
+            )
+        )
+        
+        # Additional mounts based on job type
+        if kind == 'ingestion':
+            # For ingestion jobs, mount the program to be ingested
+            if self.ingestion_only_during_scoring and self.is_scoring:
+                ingested_program_subpath = os.path.join(relative_root, "input/res")
+            else:
+                ingested_program_subpath = os.path.join(relative_root, "program")
+                
+            volume_mounts.append(
+                client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path="/app/ingested_program",
+                    sub_path=ingested_program_subpath
+                )
+            )
+        
+        # Input data (if exists)
+        if self.input_data:
+            input_data_subpath = os.path.join(relative_root, "input_data")
+            volume_mounts.append(
+                client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path="/app/input_data",
+                    sub_path=input_data_subpath
+                )
+            )
+        
+        # Scoring-specific mounts
+        if self.is_scoring:
+            # Shared directory
+            shared_subpath = os.path.join(relative_root, "shared")
+            volume_mounts.append(
+                client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path="/app/shared",
+                    sub_path=shared_subpath
+                )
+            )
+            
+            # Input from submission
+            input_subpath = os.path.join(relative_root, "input")
+            volume_mounts.append(
+                client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path="/app/input",
+                    sub_path=input_subpath
+                )
+            )
+
+        # Environment variables
+        env_vars = [
+            client.V1EnvVar(name="PYTHONUNBUFFERED", value="1")
+        ]
+        
+        # Add GPU support if enabled
+        resources, node_selector = None, None
+        if USE_GPU:
+            resources = client.V1ResourceRequirements(
+                limits=self._get_variables_from_env("RESOURCE_LIMITS")
+            )
+            node_selector = self._get_variables_from_env("NODE_SELECTOR")
+
+        job_manifest = client.V1Job(
+            metadata=client.V1ObjectMeta(
+                generate_name=f"{kind}-",
+                labels={"submission_id": str(self.submission_id)}
+            ),
+            spec=client.V1JobSpec(
+                ttl_seconds_after_finished=300,
+                backoff_limit=0,
+                template=client.V1PodTemplateSpec(
+                    metadata=client.V1ObjectMeta(
+                        labels=self._get_variables_from_env("COMPUTE_WORKER_LABELS")
+                    ),
+                    spec=client.V1PodSpec(
+                        restart_policy="Never",
+                        node_selector=node_selector, 
+                        security_context=client.V1PodSecurityContext(
+                            fs_group=FSGROUP
+                        ),
+                        volumes=[
+                            client.V1Volume(
+                                name="shared-storage",
+                                persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
+                                    claim_name="shared-job-pvc"
+                                )
+                            )
+                        ],
+                        containers=[
+                            client.V1Container(
+                                name="runner",
+                                image=self.container_image,
+                                command=["sh", "-c", "sleep infinity"],
+                                working_dir="/app/program",
+                                env=env_vars,
+                                volume_mounts=volume_mounts,
+                                resources=resources,
+                                security_context=client.V1SecurityContext(
+                                    allow_privilege_escalation=False,
+                                    run_as_non_root=False,
+                                    run_as_user=USERID,
+                                    run_as_group=GROUPID,
+                                    capabilities=client.V1Capabilities(drop=["ALL"])
+                                )
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+
+        try:
+            job = batch_v1.create_namespaced_job(namespace="codabench", body=job_manifest)
+            job_name = job.metadata.name
+            logger.info(f"Created Kubernetes job: {job_name}")
+
+            core_v1 = client.CoreV1Api()
+            pod_name = None
+            for _ in range(NUMBER_OF_POD_CREATION_RETRIES):
+                pods = core_v1.list_namespaced_pod(
+                    namespace="codabench",
+                    label_selector=f"job-name={job_name}"
+                )
+                if pods.items:
+                    pod = pods.items[0]
+                    phase = pod.status.phase
+                    logger.info(f"Pod {pod.metadata.name} status = {phase}")
+                    if phase == "Running":
+                        pod_name = pod.metadata.name
+                        break
+                time.sleep(SLEEP_TIME_BETWEEN_RETRIES)
+
+            if not pod_name:
+                raise SubmissionException(f"Pod for job {job_name} did not start in time")
+
+            return pod_name
+        except Exception as e:
+            logger.error(f"Failed to create Kubernetes job: {e}")
+            raise SubmissionException(f"Failed to create Kubernetes job: {e}")
+
     async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
