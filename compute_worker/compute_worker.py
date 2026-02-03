@@ -90,6 +90,13 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
         ),
         version="auto",
     )
+elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "kubernetes":
+    try:
+        config.load_incluster_config()
+        logger.info("Kubernetes client successfully configured")
+    except Exception as e:
+        logger.error(f"Kubernetes client configuration failed: {e}")
+        logger.error(e)
 
 
 # -----------------------------------------------
