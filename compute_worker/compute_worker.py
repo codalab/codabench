@@ -55,12 +55,16 @@ if os.environ.get("USE_GPU", "false").lower() == "true":
         + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
         + "with GPU capabilites : "
         + os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")
+        + " network_disabled for the competition container is set to "
+        + os.environ.get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False")
     )
 else:
     logger.info(
         "Using "
         + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
-        + " without GPU capabilities"
+        + " without GPU capabilities. "
+        + "network_disabled for the competition container is set to "
+        + os.environ.get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False")
     )
 
 if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
@@ -1009,8 +1013,8 @@ class Run:
         )
         # Disable or not the competition container access to Internet (False by default)
         container_network_status = os.environ.get(
-            "COMPETITION_CONTAINER_NETWORK_DISABLED", "False"
-        ).title()
+            "COMPETITION_CONTAINER_NETWORK_DISABLED", ""
+        )
 
         # HTTP and HTTPS proxy for the competition container if needed
         competition_container_proxy_http = os.environ.get(
@@ -1039,7 +1043,7 @@ class Run:
                 competition_container_proxy_http,
                 competition_container_proxy_https,
             ],
-            network_disabled=container_network_status,
+            network_disabled=container_network_status.lower() in ["true"],
         )
         logger.debug("Created container : " + str(container))
         logger.info("Volume configuration of the container: ")
