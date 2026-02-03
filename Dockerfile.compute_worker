@@ -3,6 +3,8 @@ FROM --platform=linux/amd64 fedora:43
 # This makes output not buffer and return immediately, nice for seeing results in stdout
 ENV PYTHONUNBUFFERED=1
 
+WORKDIR /app
+
 # Install Python
 RUN dnf -y update && \
     dnf install -y python3.9 && \
