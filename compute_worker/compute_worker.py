@@ -1437,6 +1437,20 @@ class Run:
             ingestion_only_during_scoring=self.ingestion_only_during_scoring,
         )
 
+        if CONTAINER_ENGINE == "kubernetes":
+            try:
+                return await self._run_container_engine_cmd_kubernetes(
+                    kind=kind,
+                    command=command,
+                    volumes_config=volumes_config,
+                    program_dir=program_dir
+                )
+            except Exception as e:
+                logger.error(e)
+                if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                    logger.exception(e)
+                raise
+    
         cap_drop_list = [
             "AUDIT_WRITE",
             "CHOWN",
@@ -1667,7 +1681,10 @@ class Run:
                 )
                 for container in containers_to_kill:
                     try:
-                        client.remove_container(str(container), force=True)
+                        if CONTAINER_ENGINE == "kubernetes":
+                            pass
+                        else:
+                            client.remove_container(str(container), force=True)
                     except docker.errors.APIError as e:
                         logger.error(e)
                     except Exception as e:
@@ -1696,8 +1713,9 @@ class Run:
                     else:
                         containers_to_kill = self.program_container_name
                     try:
-                        client.kill(containers_to_kill)
-                        client.remove_container(containers_to_kill, force=True)
+                        if CONTAINER_ENGINE != "kubernetes":
+                            client.kill(containers_to_kill)
+                            client.remove_container(containers_to_kill, force=True)
                     except docker.errors.APIError as e:
                         logger.error(e)
                     except Exception as e:
