@@ -661,6 +661,13 @@ class Run:
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
+    def _get_variables_from_env(self, variable_name):
+        labels_str = os.getenv(variable_name, "{}")
+        try:
+            return json.loads(labels_str)
+        except json.JSONDecodeError:
+            return {}
+
     async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
