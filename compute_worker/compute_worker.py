@@ -878,6 +878,99 @@ class Run:
             logger.error(f"Failed to create Kubernetes job: {e}")
             raise SubmissionException(f"Failed to create Kubernetes job: {e}")
 
+    async def _create_submission_pod(self, kind, command, volumes_config, program_dir):
+        """Create a minimal Kubernetes Pod for submission execution
+        
+        Args:
+            kind: 'program' or 'ingestion'
+            command: The shell command to execute
+            volumes_config: Dict mapping host paths to container mount configs
+            program_dir: Path to the program directory
+        
+        Returns:
+            pod_name: Name of the created pod
+        """
+        core_v1 = client.CoreV1Api()
+        
+        # Build volume mounts from Docker-style volumes_config
+        volume_mounts = []
+        for host_path, config in volumes_config.items():
+            # Extract the bind path and read_only status
+            mount_path = config['bind']
+            read_only = config.get('mode') == 'ro'
+            
+            # Calculate subpath relative to the PVC root
+            relative_path = os.path.relpath(host_path, HOST_DIRECTORY)
+            
+            volume_mounts.append(
+                client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path=mount_path,
+                    sub_path=relative_path,
+                    read_only=read_only
+                )
+            )
+        
+        # Define pod spec
+        pod = client.V1Pod(
+            metadata=client.V1ObjectMeta(
+                generate_name=f"codabench-{kind}-",
+                namespace="codabench",
+                labels={
+                    "app": "codabench",
+                    "submission_id": str(self.submission_id),
+                    "kind": kind
+                }
+            ),
+            spec=client.V1PodSpec(
+                restart_policy="Never",
+                containers=[
+                    client.V1Container(
+                        name="runner",
+                        image=self.container_image,
+                        command=["sh", "-c", command],
+                        working_dir="/app/program",
+                        env=[
+                            client.V1EnvVar(name="PYTHONUNBUFFERED", value="1")
+                        ],
+                        volume_mounts=volume_mounts,
+                        resources=client.V1ResourceRequirements(
+                            limits={"memory": "0Gi", "cpu": "2"},
+                            requests={"memory": "0Gi", "cpu": "1"}
+                        )
+                    )
+                ],
+                volumes=[
+                    client.V1Volume(
+                        name="shared-storage",
+                        persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
+                            claim_name="shared-job-pvc"
+                        )
+                    )
+                ],
+                security_context=client.V1PodSecurityContext(
+                    run_as_user=USERID,
+                    run_as_group=GROUPID,
+                    fs_group=FSGROUP
+                )
+            )
+        )
+        
+        if USE_GPU:
+            gpu_resource = os.environ.get("GPU_DEVICE", "nvidia.com/gpu")
+            gpu_count = 1
+            pod.spec.containers[0].resources = client.V1ResourceRequirements(
+                limits={gpu_resource: gpu_count}
+            )
+
+        created_pod = core_v1.create_namespaced_pod(
+            namespace="codabench",
+            body=pod
+        )
+        
+        logger.info(f"Created pod {created_pod.metadata.name} for {kind}")
+        return created_pod.metadata.name
+
     async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
