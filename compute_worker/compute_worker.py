@@ -1036,6 +1036,17 @@ class Run:
 
         return path
 
+    async def _cleanup_pod_after_exec(self, pod_name):
+        """Force delete the pod after command execution"""
+        delete_cmd = ["kubectl", "delete", "pod", pod_name, "-n", "codabench", "--force", "--grace-period=0"]
+        try:
+            proc = await asyncio.create_subprocess_exec(*delete_cmd)
+            await proc.wait()
+            logger.info(f"Deleted pod: {pod_name}")
+        except Exception as e:
+            logger.error(f"Failed to delete pod {pod_name}: {e}")
+
+
     async def _run_program_directory(self, program_dir, kind):
         """
         Function responsible for running program directory
