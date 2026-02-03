@@ -46,7 +46,7 @@ def str_to_bool(value):
 # -----------------------------------------------
 # Load CW parameters
 # -----------------------------------------------
-USE_GPU = str_to_bool(os.environ.get("USE_GPU", True))
+USE_GPU = str_to_bool(os.environ.get("USE_GPU", "false"))
 
 NUMBER_OF_POD_CREATION_RETRIES = int(os.environ.get("NUMBER_OF_POD_CREATION_RETRIES", 30))
 SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 10))
@@ -72,7 +72,7 @@ configure_logging(
 
 CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower()
 
-if os.environ.get("USE_GPU", "false").lower() == "true":
+if USE_GPU:
     logger.info(
         "Using "
         + CONTAINER_ENGINE.upper()
@@ -986,7 +986,7 @@ class Run:
             security_options = ["label=disable"]
         # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
         device_id = [os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")]
-        if os.environ.get("USE_GPU", "false").lower() == "true":
+        if USE_GPU:
             logger.info("Running the container with GPU capabilities")
             host_config = client.create_host_config(
                 auto_remove=False,
