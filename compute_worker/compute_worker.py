@@ -62,42 +62,46 @@ configure_logging(
 )
 
 # -----------------------------------------------
-# Initialize Docker or Podman depending on .env
+# Initialize Docker, Podman, or Kubernetes depending on configuration
 # -----------------------------------------------
+
+CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower()
+
 if os.environ.get("USE_GPU", "false").lower() == "true":
     logger.info(
         "Using "
-        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
-        + "with GPU capabilites : "
+        + CONTAINER_ENGINE.upper()
+        + " with GPU capabilities : "
         + os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")
     )
 else:
     logger.info(
         "Using "
-        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
+        + CONTAINER_ENGINE.upper()
         + " without GPU capabilities"
     )
 
-if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+if CONTAINER_ENGINE == "docker":
     client = docker.APIClient(
         base_url=os.environ.get("CONTAINER_SOCKET", "unix:///var/run/docker.sock"),
         version="auto",
     )
-elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
+elif CONTAINER_ENGINE == "podman":
     client = docker.APIClient(
         base_url=os.environ.get(
             "CONTAINER_SOCKET", "unix:///run/user/1000/podman/podman.sock"
         ),
         version="auto",
     )
-elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "kubernetes":
+elif CONTAINER_ENGINE == "kubernetes":
     try:
         config.load_incluster_config()
         logger.info("Kubernetes client successfully configured")
     except Exception as e:
         logger.error(f"Kubernetes client configuration failed: {e}")
         logger.error(e)
-
+else:
+    logger.error(f"Unknown container engine: {CONTAINER_ENGINE}")
 
 # -----------------------------------------------
 # Show Progress bar on downloading images
@@ -964,7 +968,7 @@ class Run:
             "SYS_CHROOT",
         ]
         # Configure whether or not we use the GPU. Also setting auto_remove to False because
-        if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+        if CONTAINER_ENGINE == "docker":
             security_options = ["no-new-privileges"]
         else:
             security_options = ["label=disable"]
