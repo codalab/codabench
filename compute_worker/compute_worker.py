@@ -1361,7 +1361,8 @@ class Run:
 
         # Before the run starts we want to download images, they may take a while to download
         # and to do this during the run would subtract from the participants time.
-        self._get_container_image(self.container_image)
+        if CONTAINER_ENGINE != "kubernetes":
+            self._get_container_image(self.container_image)
 
     def start(self):
         hostname = utils.nodenames.gethostname()
