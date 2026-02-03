@@ -971,6 +971,171 @@ class Run:
         logger.info(f"Created pod {created_pod.metadata.name} for {kind}")
         return created_pod.metadata.name
 
+    async def _run_container_engine_cmd_kubernetes(self, kind, command, volumes_config, program_dir):
+        """Execute a submission using Kubernetes Pods
+        
+        This method mirrors the Docker execution path but uses K8s API.
+        
+        Args:
+            kind: 'program' or 'ingestion'
+            command: Shell command to execute
+            volumes_config: Docker-style volume configuration dict
+            program_dir: Path to program directory
+        
+        Returns:
+            None (updates self.logs[kind])
+        """
+        core_v1 = client.CoreV1Api()
+        start = time.time()
+        
+        # Create websocket connection for streaming logs to frontend
+        websocket = None
+        try:
+            websocket_url = f"{self.websocket_url}?kind={kind}"
+            logger.debug(f"Connecting to {websocket_url}")
+            websocket = await asyncio.wait_for(
+                websockets.connect(websocket_url), timeout=10.0
+            )
+            logger.debug(f"Connected to {websocket_url}")
+        except Exception as e:
+            logger.error(f"Failed to connect to websocket: {e}")
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
+        
+        # Create pod
+        pod_name = await self._create_submission_pod(kind, command, volumes_config, program_dir)
+        
+        # Wait for pod to start or complete
+        logger.info(f"Waiting for pod {pod_name} to start...")
+        max_wait = 300  # 5 minutes timeout for pod to start
+        wait_interval = 0.5
+        elapsed = 0
+        
+        while elapsed < max_wait:
+            try:
+                pod = core_v1.read_namespaced_pod(pod_name, "codabench")
+                phase = pod.status.phase
+                
+                if phase in ("Running", "Succeeded", "Failed"):
+                    logger.info(f"Pod {pod_name} is {phase}")
+                    break
+                
+                # Check for image pull errors
+                if pod.status.container_statuses:
+                    waiting_state = pod.status.container_statuses[0].state.waiting
+                    if waiting_state and waiting_state.reason in ("ImagePullBackOff", "ErrImagePull"):
+                        error_msg = f"Image pull failed: {waiting_state.message}"
+                        logger.error(error_msg)
+                        raise DockerImagePullException(error_msg)
+                
+            except Exception as e:
+                logger.error(f"Error checking pod status: {e}")
+                break
+            
+            await asyncio.sleep(wait_interval)
+            elapsed += wait_interval
+        
+        if elapsed >= max_wait:
+            raise SubmissionException(f"Pod {pod_name} did not start within {max_wait} seconds")
+        
+        # Stream logs in real-time
+        stdout = b""
+        stderr = b""
+        
+        try:
+            logger.info(f"Streaming logs from pod {pod_name}...")
+            log_stream = core_v1.read_namespaced_pod_log(
+                name=pod_name,
+                namespace="codabench",
+                follow=True,
+                _preload_content=False,
+                timestamps=False
+            )
+            
+            # Stream logs line by line
+            for line in log_stream:
+                stdout += line
+                decoded_line = line.decode(errors='ignore')
+                logger.info(decoded_line.rstrip())
+                
+                # Send to websocket
+                if websocket:
+                    try:
+                        await websocket.send(
+                            json.dumps({"kind": kind, "message": decoded_line})
+                        )
+                    except Exception as e:
+                        logger.error(f"Error sending log to websocket: {e}")
+            
+        except Exception as e:
+            logger.error(f"Error streaming logs: {e}")
+            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                logger.exception(e)
+        
+        # Get final pod status and exit code
+        try:
+            pod = core_v1.read_namespaced_pod(pod_name, "codabench")
+            
+            return_code = None
+            if pod.status.container_statuses:
+                terminated = pod.status.container_statuses[0].state.terminated
+                if terminated:
+                    return_code = terminated.exit_code
+                    if terminated.reason:
+                        logger.info(f"Pod terminated with reason: {terminated.reason}")
+            
+            if return_code is None:
+                logger.warning("Could not determine exit code, defaulting to 1")
+                return_code = 1
+            
+            logger.info(f"Pod {pod_name} exited with code {return_code}")
+            
+        except Exception as e:
+            logger.error(f"Error getting pod exit code: {e}")
+            return_code = 1
+        
+        # Close websocket
+        if websocket:
+            try:
+                logger.debug(f"Disconnecting from websocket")
+                await websocket.close()
+            except Exception as e:
+                logger.error(f"Error closing websocket: {e}")
+        
+        # Clean up pod
+        try:
+            core_v1.delete_namespaced_pod(
+                name=pod_name,
+                namespace="codabench",
+                grace_period_seconds=0
+            )
+            logger.info(f"Deleted pod {pod_name}")
+        except Exception as e:
+            logger.error(f"Error deleting pod: {e}")
+        
+        # Populate logs structure (matches Docker format exactly)
+        self.logs[kind] = {
+            "returncode": return_code,
+            "start": start,
+            "end": time.time(),
+            "stdout": {
+                "data": stdout,
+                "stream": stdout,
+                "continue": True,
+                "location": self.stdout if kind == "program" else self.ingestion_stdout,
+            },
+            "stderr": {
+                "data": stderr,
+                "stream": stderr,
+                "continue": True,
+                "location": self.stderr if kind == "program" else self.ingestion_stderr,
+            },
+        }
+        
+        # Signal completion
+        self.completed_program_counter += 1
+        logger.info(f"Completed {kind} execution")
+
     async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
