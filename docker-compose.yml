@@ -27,6 +27,7 @@ services:
     command: bash -c "python manage.py collectstatic --noinput && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - PYTHONUNBUFFERED=1
     env_file: .env
     volumes:
       - .:/app:delegated
