@@ -40,9 +40,14 @@ logger = logging.getLogger(__name__)
 from logs_loguru import configure_logging, colorize_run_args
 import json
 
+def str_to_bool(value):
+    return str(value).lower() in ("1", "true", "yes", "y", "on")
+
 # -----------------------------------------------
 # Load CW parameters
 # -----------------------------------------------
+USE_GPU = str_to_bool(os.environ.get("USE_GPU", True))
+
 NUMBER_OF_POD_CREATION_RETRIES = int(os.environ.get("NUMBER_OF_POD_CREATION_RETRIES", 30))
 SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 10))
 
