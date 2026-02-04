@@ -1,4 +1,4 @@
-# About CodaLab
+# About CodaLab and Codabench
 
 CodaLab is an open-source platform that provides an ecosystem for conducting computational research in a more efficient, reproducible, and collaborative manner.
 

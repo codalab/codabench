@@ -17,6 +17,6 @@ You may also create inverted benchmarks in which the role of datasets and algori
 !!! tip "Use the top bar or the search functionality to navigate the docs!"
 
 ## Useful links
-[Governance Document](https://github.com/codalab/codabench/blob/master/GOVERNANCE.md)  
-[Privacy and Terms of Use](https://github.com/codalab/codabench/blob/master/PRIVACY.md)  
-[About](https://github.com/codalab/codabench/blob/master/ABOUT.md)
+[Governance Document](https://github.com/codalab/codabench/blob/master/documentation/GOVERNANCE.md)  
+[Privacy and Terms of Use](https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md)  
+[About](https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md)

@@ -2,7 +2,7 @@
 
 # General Data Protection Regulation - EU GDPR Policy
 
-Codalab competitions ("us", "we", or "our") operates the public instance of Codalab competitions, including  `https://codalab.lisn.fr/`, `https://competitions.codalab.org/` and `https://codabench.org` (the Codalab competition websites); this document only applies to these sites, not to other instances.
+CodaLab ("us", "we", or "our") operates the public instance of Codalab Competitions, including  `https://codalab.lisn.fr/`, `https://competitions.codalab.org/` and Codabench `https://codabench.org` (the Codalab Competition and Codabench websites); this document only applies to these sites, not to other instances.
 
 **Privacy Policy:**
 The information collected on the registration form is recorded in a filing system by the University Paris-Saclay, LISN laboratory, Campus Universitaire Bât 650-660 - 1 rue Raimond Castaing - 91190 Gif-sur-Yvette, FRANCE. The information that Codalab Competitions obtains about a User on its websites is used for non-commercial or political purposes, exclusively for the use of the platform. The only personal data necessary for the operation of the platform are the email and the associated pseudonym. First and last names can be provided but can be deleted by the users themselves on their settings page. We may use your User information to contact you with newsletters and updates about new features of the Codalab Competitions sites. Organizers have the option to contact registered users for their competition via email. 

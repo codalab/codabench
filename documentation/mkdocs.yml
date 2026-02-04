@@ -98,11 +98,11 @@ extra:
     alias: true
   footer_links:
     - text: "Governance Document"
-      href: "https://github.com/codalab/codabench/blob/master/GOVERNANCE.md"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/GOVERNANCE.md"
     - text: "Privacy Policy"
-      href: "https://github.com/codalab/codabench/blob/master/PRIVACY.md"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md"
     - text: "About"
-      href: "https://github.com/codalab/codabench/blob/master/ABOUT.md"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md"
 
 nav:
   - Home: index.md
