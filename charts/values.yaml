@@ -43,8 +43,8 @@ compute_worker:
     pullPolicy: Always
   container_engine_executable: "kubernetes"
   podCreationRetries:
-    numberOfRetries: 30
-    sleepTimeBetweenRetries: 10
+    totalTimeToWaitForPod: 300
+    sleepTimeBetweenRetries: 0.5
   submissionPods:
     securityContext:
       runAsUser: 1000
