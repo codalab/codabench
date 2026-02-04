@@ -29,6 +29,8 @@ spec:
               watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}@%n
           workingDir: /app
           env:
+            - name: CONTAINER_ENGINE_EXECUTABLE
+              value: '{{ $.Values.compute_worker.container_engine_executable }}'
             - name: USE_GPU
               value: '{{ .gpu.enabled }}'
             - name: RESOURCE_LIMITS

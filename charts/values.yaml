@@ -41,6 +41,7 @@ compute_worker:
     repository: <compute-worker-image-repository>
     tag: <compute-worker-image-tag>
     pullPolicy: Always
+  container_engine_executable: "kubernetes"
   podCreationRetries:
     numberOfRetries: 30
     sleepTimeBetweenRetries: 10
