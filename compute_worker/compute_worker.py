@@ -135,7 +135,7 @@ def show_progress(line, progress):
                 )
     except Exception as e:
         logger.error(f"There was an error showing the progress bar: {type(e)}")
-        logger.error(e)
+        logger.exception(e)
 
 
 # -----------------------------------------------
