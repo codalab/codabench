@@ -41,7 +41,9 @@ by
 
 ```ini
 AWS_S3_ENDPOINT_URL=http://docker.for.mac.localhost:9000/
+WORKER_BUNDLE_URL_REWRITE=http://docker.for.mac.localhost:9000|http://minio:9000
 ```
+
 !!! note "If needed, some troubleshooting of this step is provided at [the end of this page](#troubleshooting-storage-endpoint-url) or [in this page](How-to-deploy-Codabench-on-your-server.md#frequently-asked-questions-faqs)"
 
 ## Start the service
