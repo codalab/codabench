@@ -759,15 +759,6 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#worker-management">
-<span class="md-ellipsis">
-      
-        Worker management
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
 <a class="md-nav__link" href="#update-docker-image">
 <span class="md-ellipsis">
       
@@ -1379,15 +1370,6 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#worker-management">
-<span class="md-ellipsis">
-      
-        Worker management
-      
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
 <a class="md-nav__link" href="#update-docker-image">
 <span class="md-ellipsis">
       
@@ -1593,73 +1575,23 @@ https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags</p>
 <h2 id="building-compute-worker">Building compute worker<a class="headerlink" href="#building-compute-worker" title="Permanent link">¶</a></h2>
 <p>This is helpful only if you want to build the compute worker image. It is not needed if you simply want to set up compute workers to run submissions.</p>
 <p>To build the normal image:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>codalab/competitions-v2-compute-worker:latest<span class="w"> </span>-f<span class="w"> </span>Dockerfile.compute_worker<span class="w"> </span>.
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>codalab/codabench-compute-worker:latest<span class="w"> </span>-f<span class="w"> </span>packaging/container/Containerfile.compute_worker<span class="w"> </span>.
 </span></code></pre></div>
-<p>To build the GPU version:
-</p><div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a href="#__codelineno-14-1" id="__codelineno-14-1" name="__codelineno-14-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>codalab/competitions-v2-compute-worker:gpu<span class="w"> </span>-f<span class="w"> </span>Dockerfile.compute_worker_gpu<span class="w"> </span>.
-</span></code></pre></div><p></p>
 <p>To update the image (add tag <code>:latest</code>, <code>:gpu</code> or else if needed)</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a href="#__codelineno-15-1" id="__codelineno-15-1" name="__codelineno-15-1"></a>docker<span class="w"> </span>push<span class="w"> </span>codalab/competitions-v2-compute-worker
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a href="#__codelineno-14-1" id="__codelineno-14-1" name="__codelineno-14-1"></a>docker<span class="w"> </span>push<span class="w"> </span>codalab/codabench-compute-worker
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes.</p>
 </div>
-<h2 id="worker-management">Worker management<a class="headerlink" href="#worker-management" title="Permanent link">¶</a></h2>
-<p>Outside of docker containers install <a href="http://fabfile.org/">Fabric</a> like so:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a href="#__codelineno-16-1" id="__codelineno-16-1" name="__codelineno-16-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fab-classic<span class="o">==</span><span class="m">1</span>.17.0
-</span></code></pre></div>
-<p>Create a <code>server_config.yaml</code> in the root of this repository using:
-</p><div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a href="#__codelineno-17-1" id="__codelineno-17-1" name="__codelineno-17-1"></a>cp server_config_sample.yaml server_config.yaml
-</span></code></pre></div><p></p>
-<p>Below is an example <code>server_config.yaml</code> that defines 2 roles <code>comp-gpu</code> and <code>comp-cpu</code>,
-one with GPU style workers (<code>is_gpu</code> and the GPU <code>docker_image</code>) and one with CPU style workers</p>
-<div class="language-yaml highlight"><span class="filename">server_config.yaml</span><pre><span></span><code><span id="__span-18-1"><a href="#__codelineno-18-1" id="__codelineno-18-1" name="__codelineno-18-1"></a><span class="nt">comp-gpu</span><span class="p">:</span>
-</span><span id="__span-18-2"><a href="#__codelineno-18-2" id="__codelineno-18-2" name="__codelineno-18-2"></a><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span>
-</span><span id="__span-18-3"><a href="#__codelineno-18-3" id="__codelineno-18-3" name="__codelineno-18-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu@12.34.56.78</span>
-</span><span id="__span-18-4"><a href="#__codelineno-18-4" id="__codelineno-18-4" name="__codelineno-18-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu@12.34.56.79</span>
-</span><span id="__span-18-5"><a href="#__codelineno-18-5" id="__codelineno-18-5" name="__codelineno-18-5"></a><span class="w">  </span><span class="nt">broker_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pyamqp://user:pass@host:port/vhost-gpu</span>
-</span><span id="__span-18-6"><a href="#__codelineno-18-6" id="__codelineno-18-6" name="__codelineno-18-6"></a><span class="w">  </span><span class="nt">is_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="__span-18-7"><a href="#__codelineno-18-7" id="__codelineno-18-7" name="__codelineno-18-7"></a><span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/competitions-v2-compute-worker:gpu</span>
-</span><span id="__span-18-8"><a href="#__codelineno-18-8" id="__codelineno-18-8" name="__codelineno-18-8"></a>
-</span><span id="__span-18-9"><a href="#__codelineno-18-9" id="__codelineno-18-9" name="__codelineno-18-9"></a><span class="nt">comp-cpu</span><span class="p">:</span>
-</span><span id="__span-18-10"><a href="#__codelineno-18-10" id="__codelineno-18-10" name="__codelineno-18-10"></a><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span>
-</span><span id="__span-18-11"><a href="#__codelineno-18-11" id="__codelineno-18-11" name="__codelineno-18-11"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu@12.34.56.80</span>
-</span><span id="__span-18-12"><a href="#__codelineno-18-12" id="__codelineno-18-12" name="__codelineno-18-12"></a><span class="w">  </span><span class="nt">broker_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pyamqp://user:pass@host:port/vhost-cpu</span>
-</span><span id="__span-18-13"><a href="#__codelineno-18-13" id="__codelineno-18-13" name="__codelineno-18-13"></a><span class="w">  </span><span class="nt">is_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</span><span id="__span-18-14"><a href="#__codelineno-18-14" id="__codelineno-18-14" name="__codelineno-18-14"></a><span class="w">  </span><span class="nt">docker_image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codalab/competitions-v2-compute-worker:latest</span>
-</span></code></pre></div>
-<p>You can of course create your own <code>docker_image</code> and specify it here.</p>
-<p>You can execute commands against a role:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a href="#__codelineno-19-1" id="__codelineno-19-1" name="__codelineno-19-1"></a>fab<span class="w"> </span>-R<span class="w"> </span>comp-gpu<span class="w"> </span>status
-</span><span id="__span-19-2"><a href="#__codelineno-19-2" id="__codelineno-19-2" name="__codelineno-19-2"></a>..
-</span><span id="__span-19-3"><a href="#__codelineno-19-3" id="__codelineno-19-3" name="__codelineno-19-3"></a><span class="o">[</span>ubuntu@12.34.56.78<span class="o">]</span><span class="w"> </span>out:<span class="w"> </span>CONTAINER<span class="w"> </span>ID<span class="w">        </span>IMAGE<span class="w">                                           </span>COMMAND<span class="w">                  </span>CREATED<span class="w">             </span>STATUS<span class="w">              </span>PORTS<span class="w">               </span>NAMES
-</span><span id="__span-19-4"><a href="#__codelineno-19-4" id="__codelineno-19-4" name="__codelineno-19-4"></a><span class="o">[</span>ubuntu@12.34.56.78<span class="o">]</span><span class="w"> </span>out:<span class="w"> </span>1d318268bee1<span class="w">        </span>codalab/competitions-v2-compute-worker:gpu<span class="w">   </span><span class="s2">"/bin/sh -c 'celery …"</span><span class="w">   </span><span class="m">2</span><span class="w"> </span>hours<span class="w"> </span>ago<span class="w">         </span>Up<span class="w"> </span><span class="m">2</span><span class="w"> </span>hours<span class="w">                              </span>hardcore_greider
-</span><span id="__span-19-5"><a href="#__codelineno-19-5" id="__codelineno-19-5" name="__codelineno-19-5"></a>..
-</span><span id="__span-19-6"><a href="#__codelineno-19-6" id="__codelineno-19-6" name="__codelineno-19-6"></a>
-</span><span id="__span-19-7"><a href="#__codelineno-19-7" id="__codelineno-19-7" name="__codelineno-19-7"></a>fab<span class="w"> </span>-R<span class="w"> </span>comp-gpu<span class="w"> </span>update
-</span><span id="__span-19-8"><a href="#__codelineno-19-8" id="__codelineno-19-8" name="__codelineno-19-8"></a>..
-</span><span id="__span-19-9"><a href="#__codelineno-19-9" id="__codelineno-19-9" name="__codelineno-19-9"></a><span class="o">(</span>updates<span class="w"> </span>workers<span class="o">)</span>
-</span></code></pre></div>
-<p>See available commands with <code>fab -l</code></p>
 <h2 id="update-docker-image">Update docker image<a class="headerlink" href="#update-docker-image" title="Permanent link">¶</a></h2>
 <p>If the compute worker docker image was updated, you can reflect the changes using the following commands.</p>
 <p>Check no job is running:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-20-1"><a href="#__codelineno-20-1" id="__codelineno-20-1" name="__codelineno-20-1"></a>docker<span class="w"> </span>ps
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-15-1"><a href="#__codelineno-15-1" id="__codelineno-15-1" name="__codelineno-15-1"></a>docker<span class="w"> </span>ps
 </span></code></pre></div>
 <p>Update the worker:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-21-1"><a href="#__codelineno-21-1" id="__codelineno-21-1" name="__codelineno-21-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>compute_worker
-</span><span id="__span-21-2"><a href="#__codelineno-21-2" id="__codelineno-21-2" name="__codelineno-21-2"></a>docker<span class="w"> </span>rm<span class="w"> </span>compute_worker
-</span><span id="__span-21-3"><a href="#__codelineno-21-3" id="__codelineno-21-3" name="__codelineno-21-3"></a>docker<span class="w"> </span>pull<span class="w"> </span>codalab/competitions-v2-compute-worker:latest<span class="w">    </span><span class="c1"># or other relevant docker image</span>
-</span><span id="__span-21-4"><a href="#__codelineno-21-4" id="__codelineno-21-4" name="__codelineno-21-4"></a>docker<span class="w"> </span>run<span class="w"> </span><span class="se">\ </span><span class="w">                                                </span><span class="c1"># or docker compose up -d</span>
-</span><span id="__span-21-5"><a href="#__codelineno-21-5" id="__codelineno-21-5" name="__codelineno-21-5"></a><span class="w">    </span>-v<span class="w"> </span>/codabench:/codabench<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-6"><a href="#__codelineno-21-6" id="__codelineno-21-6" name="__codelineno-21-6"></a><span class="w">    </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-7"><a href="#__codelineno-21-7" id="__codelineno-21-7" name="__codelineno-21-7"></a><span class="w">    </span>-d<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-8"><a href="#__codelineno-21-8" id="__codelineno-21-8" name="__codelineno-21-8"></a><span class="w">    </span>--env-file<span class="w"> </span>.env<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-9"><a href="#__codelineno-21-9" id="__codelineno-21-9" name="__codelineno-21-9"></a><span class="w">    </span>--name<span class="w"> </span>compute_worker<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-10"><a href="#__codelineno-21-10" id="__codelineno-21-10" name="__codelineno-21-10"></a><span class="w">    </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-11"><a href="#__codelineno-21-11" id="__codelineno-21-11" name="__codelineno-21-11"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-size<span class="o">=</span>50m<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-12"><a href="#__codelineno-21-12" id="__codelineno-21-12" name="__codelineno-21-12"></a><span class="w">    </span>--log-opt<span class="w"> </span>max-file<span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-13"><a href="#__codelineno-21-13" id="__codelineno-21-13" name="__codelineno-21-13"></a><span class="w">    </span>codalab/codabench-compute-worker:latest<span class="w">            </span><span class="c1"># or other relevant docker image</span>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-16-1"><a href="#__codelineno-16-1" id="__codelineno-16-1" name="__codelineno-16-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>down
+</span><span id="__span-16-2"><a href="#__codelineno-16-2" id="__codelineno-16-2" name="__codelineno-16-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>pull
+</span><span id="__span-16-3"><a href="#__codelineno-16-3" id="__codelineno-16-3" name="__codelineno-16-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 </article>
 </div>
