@@ -15,15 +15,15 @@ The purpose of CodaLab is to provide an open-source platform to support and acce
 **Role:** A Framework Contributor is anyone who submits a patch to the project that adheres to the mission statement. At first, the patches should be small, but can grow once Committers express confidence in the quality of the Framework Contributor’s patches.
 For non-trivial patches (over 50 lines of code): Before a Framework Contributor’s first patch is put into the repository they must sign a Contributor License Agreement (CLA). We use the standard GitHub CLA, see https://cla.github.com/agreement.
 
-**How to join:** Submit a patch as a pull request to https://github.com/codalab/codalab. Patches must adhere to the conventions found at http://www.python.org/dev/peps/pep-0008/. All patches must be accompanied by unit tests before being accepted.
+**How to join:** Submit a patch as a pull request to https://github.com/codalab/codabench. Patches must adhere to the conventions found at http://www.python.org/dev/peps/pep-0008/. All patches must be accompanied by unit tests before being accepted.
 
 ### Committers
 **Role:** Committers decide on whether patches from Framework Contributors are entered into the main code repository. Committers use lazy consensus (see below) to decide on whether to commit a patch from a Framework Contributor. If the discussion does not move towards a consensus a decision will be made by a majority of (voting) core team members.
 
-**How to join:** You should be a Contributor (Framework or Content) and be nominated to the core team as a committer. Nominations should be sent to info@codalab.org. You may nominate yourself.
+**How to join:** You should be a Contributor (Framework or Content) and be nominated to the core team as a committer. Nominations should be sent to info@codabench.org. You may nominate yourself.
 
 ### Content Contributors 
-**Role:** The main value of CodaLab comes from having the user-contributed content (the algorithms and datasets) on http://www.codalab.org, which can be edited in a Wikipedia style and used by anyone. The Content Contributors’ goal is to make the content organized and maximally useful.
+**Role:** The main value of Codabench comes from having the user-contributed content (the algorithms and datasets) on http://www.codalab.org, which can be edited in a Wikipedia style and used by anyone. The Content Contributors’ goal is to make the content organized and maximally useful.
 
 **How to join:** Contribute a handful of high-quality general modules or add documents/tutorials to http://www.codalab.org.
 

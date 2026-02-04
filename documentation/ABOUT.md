@@ -74,4 +74,6 @@ Benjamin Aaron Bearce, Pujun Bhatnagar, Feng Bin, Justin Carden, Richard Caruana
 
 [List of Github contributors](https://github.com/codalab/codalab-competitions/graphs/contributors)
 
+[List of Github contributors](https://github.com/codalab/codabench/graphs/contributors)
+
 ![](https://github.com/codalab/codalab-competitions/wiki/images/logo_collage.png)
