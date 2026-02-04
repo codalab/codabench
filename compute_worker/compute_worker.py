@@ -80,10 +80,7 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
 # -----------------------------------------------
 # Show Progress bar on downloading images
 # -----------------------------------------------
-tasks = {}
-
-
-def show_progress(line, progress):
+def show_progress(line, progress, tasks):
     try:
         if "Status: Image is up to date" in line["status"]:
             logger.info(line["status"])
@@ -508,6 +505,7 @@ class Run:
         self._update_submission(data)
 
     def _get_container_image(self, image_name):
+        tasks = {}
         logger.info("Running pull for image: {}".format(image_name))
         retries, max_retries = (0, 3)
         while retries < max_retries:
@@ -515,7 +513,7 @@ class Run:
                 with Progress() as progress:
                     resp = client.pull(image_name, stream=True, decode=True)
                     for line in resp:
-                        show_progress(line, progress)
+                        show_progress(line, progress, tasks)
                     break  # Break if the loop is successful to exit "with Progress() as progress"
 
             except (docker.errors.APIError, Exception) as pull_error:
