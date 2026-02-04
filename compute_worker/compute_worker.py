@@ -730,8 +730,7 @@ class Run:
             logger.error(e)
         except Exception as e:
             logger.error(
-                "There was an error while starting the container and getting the logs"
-                + e
+                f"There was an error while starting the container and getting the logs {type(e)}."
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
@@ -1172,7 +1171,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            "There was a problem killing " + str(containers_to_kill) + str(e)
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
@@ -1202,7 +1201,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            "There was a problem killing " + str(containers_to_kill) + str(e)
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
