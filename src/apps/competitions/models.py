@@ -59,7 +59,7 @@ class Competition(models.Model):
         CustomGroup,
         blank=True,
         related_name='competitions',
-        verbose_name="Groupes de participants",
+        verbose_name="group of participants",
         help_text="Competition owner being able to create groups of users."
     )
 

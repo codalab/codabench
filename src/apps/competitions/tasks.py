@@ -116,19 +116,9 @@ COLUMN_FIELDS = [
 ]
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
-import sys
-import os
-
 def _send_to_compute_worker(submission, is_scoring):
-    print("CONTAINER CHECK PID=", os.getpid(), flush=True)
-    sys.stderr.write("STDERR TEST\n")
-    sys.stderr.flush()
+    logger.info("Site Worker ==> STARTING")
 
-    print("STDOUT TEST", flush=True)
-
-    logger.error("LOGGER ERROR TEST")
-
-    logger.warning("ZZZZ _send_to_compute_worker called")
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
@@ -212,10 +202,6 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    print("DJANGO VIEW REACHED", flush=True)
-    logger.warning("test Avant try")
-
-
     try:
         competition = submission.phase.competition
 
@@ -242,6 +228,8 @@ def _send_to_compute_worker(submission, is_scoring):
             if group.queue:
                 run_args["queue"] = group.queue.name
                 competition.queue = group.queue
+                logger.info(f"Group Found = {group.name}")
+
         else:
             logger.debug(
                 "Submission %s owner %s: no intersection between user's groups %s and competition %s participant_groups",
