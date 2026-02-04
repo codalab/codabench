@@ -20,6 +20,7 @@ from rich.pretty import pprint
 import requests
 
 import websockets
+from websockets.legacy.exceptions import InvalidStatusCode
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, shared_task, utils
@@ -666,6 +667,12 @@ class Run:
                 + "for container "
                 + str(container.get("Id"))
             )
+        except InvalidStatusCode as e:
+            logger.error(
+                f"There was an error trying to connect to the websocket on the codabench instance: {type(e)}"
+            )
+            logger.exception(e)
+            websocket = None
         except Exception as e:
             logger.error(
                 f"There was an error trying to connect to the websocket on the codabench instance: {type(e)}"
@@ -697,21 +704,27 @@ class Run:
                 for log in container_LogsDemux:
                     if str(log[0]) != "None":
                         logger.info(log[0].decode())
-                        try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[0].decode()})
-                            )
-                        except Exception as e:
-                            logger.error(e)
+                        if websocket is not None:
+                            try:
+                                await websocket.send(
+                                    json.dumps(
+                                        {"kind": kind, "message": log[0].decode()}
+                                    )
+                                )
+                            except Exception as e:
+                                logger.error(e)
 
                     elif str(log[1]) != "None":
                         logger.error(log[1].decode())
-                        try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[1].decode()})
-                            )
-                        except Exception as e:
-                            logger.error(e)
+                        if websocket is not None:
+                            try:
+                                await websocket.send(
+                                    json.dumps(
+                                        {"kind": kind, "message": log[1].decode()}
+                                    )
+                                )
+                            except Exception as e:
+                                logger.error(e)
 
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
@@ -731,7 +744,8 @@ class Run:
             logger.debug(
                 f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
             )
-            await websocket.close()
+            if websocket is not None:
+                await websocket.close()
             client.remove_container(container, force=True)
 
             logger.debug(
