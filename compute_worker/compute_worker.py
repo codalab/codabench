@@ -448,7 +448,7 @@ class Run:
             )
         except Exception as e:
             logger.error(
-                "This error might result in a Execution Time Exceeded error" + e
+                f"This error might result in a Execution Time Exceeded error: {type(e)}"
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
