@@ -16,6 +16,7 @@ pyyaml = "6.0.1"
 loguru = "^0.7.3"
 docker = "^7.1.0"
 rich = "^14.2.0"
+kubernetes = "35.0.0"
 
 [build-system]
 requires = ["poetry-core"]
