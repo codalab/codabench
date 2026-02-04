@@ -48,16 +48,12 @@ def str_to_bool(value):
 # -----------------------------------------------
 USE_GPU = str_to_bool(os.environ.get("USE_GPU", "false"))
 
-NUMBER_OF_POD_CREATION_RETRIES = int(os.environ.get("NUMBER_OF_POD_CREATION_RETRIES", 30))
-SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 10))
+TOTAL_TIME_TO_WAIT_FOR_POD = float(os.environ.get("TOTAL_TIME_TO_WAIT_FOR_POD", 300))
+SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 0.5))
 
 USERID = int(os.environ.get("USERID"))
 GROUPID = int(os.environ.get("GROUPID"))
 FSGROUP = int(os.environ.get("FSGROUP"))
-HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
-BASE_DIR = "/codabench/"  # base directory inside the container
-CACHE_DIR = os.path.join(BASE_DIR, "cache")
-MAX_CACHE_DIR_SIZE_GB = float(os.environ.get('MAX_CACHE_DIR_SIZE_GB', 10))
 
 # -----------------------------------------------
 # Logging
@@ -802,11 +798,9 @@ class Run:
         
         # Wait for pod to start or complete
         logger.info(f"Waiting for pod {pod_name} to start...")
-        max_wait = 300  # 5 minutes timeout for pod to start
-        wait_interval = 0.5
         elapsed = 0
         
-        while elapsed < max_wait:
+        while elapsed < TOTAL_TIME_TO_WAIT_FOR_POD:
             try:
                 pod = core_v1.read_namespaced_pod(pod_name, "codabench")
                 phase = pod.status.phase
@@ -827,11 +821,11 @@ class Run:
                 logger.error(f"Error checking pod status: {e}")
                 break
             
-            await asyncio.sleep(wait_interval)
-            elapsed += wait_interval
+            await asyncio.sleep(SLEEP_TIME_BETWEEN_RETRIES)
+            elapsed += SLEEP_TIME_BETWEEN_RETRIES
         
-        if elapsed >= max_wait:
-            raise SubmissionException(f"Pod {pod_name} did not start within {max_wait} seconds")
+        if elapsed >= TOTAL_TIME_TO_WAIT_FOR_POD:
+            raise SubmissionException(f"Pod {pod_name} did not start within {TOTAL_TIME_TO_WAIT_FOR_POD} seconds")
         
         # Stream logs in real-time
         stdout = b""
