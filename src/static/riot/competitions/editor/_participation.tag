@@ -153,7 +153,6 @@
     self.editing_group = null
     self._scheduledUpdate = false
 
-    // init semantic UI elements + setup multi-select behaviour
     const initUI = () => {
       try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
       try { $('.ui.dropdown', self.root).dropdown() } catch(e) {}
@@ -220,7 +219,6 @@
       self.markdown_editor = create_easyMDE(self.refs.terms)
       self.markdown_editor_whitelist = create_easyMDE(self.refs.whitelist_emails, false, false, '200px')
 
-      // Si un event competition_loaded est arrivé avant le mount, l'appliquer maintenant
       try {
         if (self._pending_competition && self._pending_competition.terms) {
           try {
@@ -408,7 +406,6 @@
       try { $(self.refs.group_modal).modal('hide') } catch(e) { self.refs.group_modal.style.display = 'none' }
     }
 
-    // submit create / update group (Form POST instead of JSON)
     self.submit_group = () => {
       const name = (self.refs.group_name && self.refs.group_name.value || '').trim()
       if (!name) {
@@ -446,7 +443,6 @@
       let url = '/competitions/' + pk + '/groups/create/'
       if (self.editing_group && self.editing_group.id) url = '/competitions/' + pk + '/groups/' + self.editing_group.id + '/update/'
 
-      // Build FormData (classic Django POST format)
       const form = new FormData()
       form.append('name', name)
       if (queue_id) form.append('queue_id', queue_id)
@@ -500,14 +496,12 @@
       })
     }
 
-    // delete group (POST form-style)
     self.delete_group = (group) => {
       if (!confirm('Supprimer le groupe "' + group.name + '" ?')) return
       const pk = compPk()
       if (!pk) return
       const url = '/competitions/' + pk + '/groups/' + group.id + '/delete/'
 
-      // Use an empty FormData (server only expects POST; no body required but consistent)
       const form = new FormData()
       form.append('dummy', '1')
 
@@ -522,7 +516,6 @@
         if (!resp.ok) throw resp
         return resp.json()
       }).then(data => {
-        // remove from UI
         self.available_groups = self.available_groups.filter(x => x.id !== group.id)
         self.selected_group_ids = self.selected_group_ids.filter(x => x !== group.id)
 
@@ -544,7 +537,6 @@
           }
         } catch(e){ console.warn('setting checkboxes failed', e) }
 
-        // Si l'éditeur est prêt, appliquer tout de suite, sinon stocker en attente pour mount
         try {
           if (self.markdown_editor && self.markdown_editor.codemirror && typeof self.markdown_editor.codemirror.refresh === 'function') {
             try {
@@ -558,9 +550,9 @@
             } catch(e){ console.warn('apply competition_loaded to editors failed', e) }
             return
           }
-        } catch(e){ /* ignore */ }
+        } catch(e){
+        }
 
-        // stocker la compétition pour l'appliquer lorsque mount aura créé les éditeurs
         self._pending_competition = competition
     })
 
