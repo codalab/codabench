@@ -134,7 +134,7 @@ def show_progress(line, progress):
                     total=line["progressDetail"]["total"],
                 )
     except Exception as e:
-        logger.error("There was an error showing the progress bar")
+        logger.error(f"There was an error showing the progress bar: {type(e)}")
         logger.error(e)
 
 
@@ -449,7 +449,9 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error("This error might result in a Execution Time Exceeded error" + e)
+            logger.error(
+                "This error might result in a Execution Time Exceeded error" + e
+            )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
 
@@ -668,8 +670,7 @@ class Run:
             )
         except Exception as e:
             logger.error(
-                "There was an error trying to connect to the websocket on the codabench instance"
-                + e
+                f"There was an error trying to connect to the websocket on the codabench instance: {type(e)}"
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
