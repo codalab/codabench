@@ -10,9 +10,6 @@ metadata:
   name: compute-worker-role
   namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: ["batch"]
-    resources: ["jobs"]
-    verbs: ["create", "get", "list", "watch", "delete"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["create", "get", "list", "watch", "delete"]
