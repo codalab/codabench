@@ -20,7 +20,7 @@ from rich.pretty import pprint
 import requests
 
 import websockets
-from websockets.legacy.exceptions import InvalidStatusCode
+from websockets.exceptions import InvalidStatusCode
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, shared_task, utils
