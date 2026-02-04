@@ -911,19 +911,27 @@ class Run:
                 )
             )
         
+        # Add GPU support if enabled
+        resources, node_selector = None, None
+        if USE_GPU:
+            resources = client.V1ResourceRequirements(
+                limits=self._get_variables_from_env("RESOURCE_LIMITS")
+            )
+            node_selector = self._get_variables_from_env("NODE_SELECTOR")
+        
         # Define pod spec
         pod = client.V1Pod(
             metadata=client.V1ObjectMeta(
                 generate_name=f"codabench-{kind}-",
                 namespace="codabench",
-                labels={
-                    "app": "codabench",
-                    "submission_id": str(self.submission_id),
-                    "kind": kind
-                }
+                labels=self._get_variables_from_env("COMPUTE_WORKER_LABELS")
             ),
             spec=client.V1PodSpec(
                 restart_policy="Never",
+                node_selector=node_selector,
+                security_context=client.V1PodSecurityContext(
+                    fs_group=FSGROUP
+                ),
                 containers=[
                     client.V1Container(
                         name="runner",
@@ -934,9 +942,13 @@ class Run:
                             client.V1EnvVar(name="PYTHONUNBUFFERED", value="1")
                         ],
                         volume_mounts=volume_mounts,
-                        resources=client.V1ResourceRequirements(
-                            limits={"memory": "0Gi", "cpu": "2"},
-                            requests={"memory": "0Gi", "cpu": "1"}
+                        resources=resources,
+                        security_context=client.V1SecurityContext(
+                            allow_privilege_escalation=False,
+                            run_as_non_root=True,
+                            run_as_user=USERID,
+                            run_as_group=GROUPID,
+                            capabilities=client.V1Capabilities(drop=["ALL"])
                         )
                     )
                 ],
@@ -947,21 +959,9 @@ class Run:
                             claim_name="shared-job-pvc"
                         )
                     )
-                ],
-                security_context=client.V1PodSecurityContext(
-                    run_as_user=USERID,
-                    run_as_group=GROUPID,
-                    fs_group=FSGROUP
-                )
+                ]
             )
         )
-        
-        if USE_GPU:
-            gpu_resource = os.environ.get("GPU_DEVICE", "nvidia.com/gpu")
-            gpu_count = 1
-            pod.spec.containers[0].resources = client.V1ResourceRequirements(
-                limits={gpu_resource: gpu_count}
-            )
 
         created_pod = core_v1.create_namespaced_pod(
             namespace="codabench",
