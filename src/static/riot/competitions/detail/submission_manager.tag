@@ -1,29 +1,36 @@
 <submission-manager class="submission-manager">
-    <div if="{ opts.admin }" class="admin-buttons">
-        <div class="ui dropdown button" ref="rerun_button">
+    <div if="{ opts.admin }" class="admin-buttons" style="display: flex; align-items: center; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="ui dropdown button" ref="rerun_button">
             <i class="icon redo"></i>
             <div class="text">Rerun all submissions per phase</div>
             <div class="menu">
                 <div class="header">Select a phase</div>
-                <div class="parent-modal item" each="{phase in opts.competition.phases}"
-                    onclick="{rerun_phase.bind(this, phase)}">
-                    { phase.name }
+                <div class="parent-modal item" each="{phase in opts.competition.phases}" onclick="{rerun_phase.bind(this, phase)}">
+                { phase.name }
                 </div>
             </div>
-        </div>
-        <a class="ui button" href="{csv_link}">
-            <i class="icon download"></i>Download as CSV
-        </a>
+            </div>
 
-        <select class=" ui dropdown floated right " ref="submission_handling_operation">
-            <option value="delete"> Delete selected submissions</option>
+            <a class="ui button" href="{csv_link}">
+            <i class="icon download"></i>Download as CSV
+            </a>
+
+            <select class="ui dropdown" ref="submission_handling_operation">
             <option value="download">Download selected submissions</option>
+            <option value="delete">Delete selected submissions</option>
             <option value="rerun">Rerun selected submissions</option>
-        </select>
-        <button type="button" class="ui button right" disabled="{checked_submissions.length === 0}"
-            onclick="{submission_handling.bind(this)}">
+            </select>
+
+            <button type="button" class="ui button" disabled="{checked_submissions.length === 0}" onclick="{submission_handling.bind(this)}">
             Apply
-        </button>
+            </button>
+        </div>
+        <div id="downloadStatus" style="display:none; display: flex; flex-direction: column; align-items: flex-start;">
+            <progress id="downloadProgress" value="0" max="100"  style="display:none; width: 150px;"></progress>
+            <div id="progressText" style="margin-top: 4px;"></div>
+            <!-- -->
+        </div>
     </div>
     <div class="ui icon input">
         <input type="text" placeholder="Search..." ref="search" onkeyup="{ filter }">
@@ -568,15 +575,158 @@
             CODALAB.events.trigger('submission_clicked')
         }
 
-
         self.bulk_download = function () {
-            CODALAB.api.download_many_submissions(self.checked_submissions)
-            .catch(function (error) {
-                console.error('Error:', error);
-            });
-        }
+            const statusBox = document.getElementById('downloadStatus');
+            const progressEl = document.getElementById('downloadProgress');
+            const textEl = document.getElementById('progressText');
 
+            statusBox.style.display = "flex";
+            progressEl.style.display = "flex";
+            progressEl.value = 0;
+            textEl.textContent = "Preparing download...";
 
+            // Kick the API request
+            const req = CODALAB.api.download_many_submissions(self.checked_submissions);
+
+            // Common error handler
+            const handleError = (err) => {
+                console.error("Error downloading submissions:", err);
+                textEl.textContent = "Error downloading!";
+                setTimeout(() => { statusBox.style.display = "none"; }, 5000);
+            };
+
+            // Success handler (async because we await inside)
+            const handleSuccess = async (resp) => {
+
+                // If wrapper returns a fetch Response object
+                if (resp && typeof resp.json === "function" && typeof resp.text === "function") {
+                    try { resp = await resp.json(); } catch (e) { /* fallthrough */ }
+                }
+
+                // If JSON came back as a string, parse it
+                if (typeof resp === "string") {
+                    try {
+                    resp = JSON.parse(resp);
+                    } catch (e) {
+                    console.warn("download_many_submissions returned non-JSON string:", resp);
+                    resp = [];
+                    }
+                }
+
+                // Normalize response -> files array
+                let files = resp;
+                if (resp && typeof resp === 'object' && !Array.isArray(resp)) {
+                // common shapes: { files: [...] } or { data: [...] } or direct array
+                if (Array.isArray(resp.files)) files = resp.files;
+                else if (Array.isArray(resp.data)) files = resp.data;
+                else if (Array.isArray(resp.results)) files = resp.results;
+                else if (Array.isArray(resp)) files = resp;
+                else {
+                    // if jQuery passes multiple args (data, textStatus, jqXHR), pick the first arg
+                    if (arguments && arguments[0] && Array.isArray(arguments[0])) files = arguments[0];
+                    else {
+                    console.warn("Unexpected response shape from download_many_submissions:", resp);
+                    files = [];
+                    }
+                }
+                }
+
+                if (!Array.isArray(files) || files.length === 0) {
+                textEl.textContent = "No files to download";
+                setTimeout(() => { statusBox.style.display = "none"; }, 3000);
+                return;
+                }
+
+                console.log("Files returned by server:", files);
+
+                const zip = new JSZip();
+                const total = files.length;
+                let completed = 0;
+                const failed = [];
+
+                const limit = 5;
+                const queue = files.slice(); // clone
+                const running = [];
+
+                // worker to fetch one file
+                async function worker(file) {
+                try {
+                    const response = await fetch(file.url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const blob = await response.blob();
+                    zip.file(file.name.replace(/[:/\\]/g, "_"), blob);
+                } catch (err) {
+                    console.error(`Failed to fetch ${file.name}:`, err);
+                    failed.push(`${file.name} (${err.message || 'fetch error'})`);
+                } finally {
+                    completed++;
+                    const percent = Math.floor((completed / total) * 100);
+                    progressEl.value = percent;
+                    textEl.textContent = `${completed} / ${total} files (${percent}%)`;
+                }
+                }
+
+                // run queue with limited concurrency
+                while (queue.length > 0) {
+                    while (running.length < limit && queue.length > 0) {
+                        const file = queue.shift();
+                        const p = worker(file).then(() => {
+                        // remove finished promise from running
+                        const idx = running.indexOf(p);
+                        if (idx !== -1) running.splice(idx, 1);
+                        });
+                        running.push(p);
+                    }
+                    // Wait for at least one running promise to finish
+                    if (running.length > 0) {
+                        await Promise.race(running);
+                    }
+                }
+                await Promise.all(running);
+
+                // Add failed.txt if necessary
+                if (failed.length > 0) {
+                const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
+                zip.file("failed.txt", failedContent);
+                }
+
+                textEl.textContent = "Generating bundle";
+                progressEl.style.display = "none";
+
+                const blob = await zip.generateAsync({ type: "blob" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "bulk_submissions.zip";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                if (failed.length > 0) {
+                textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
+                } else {
+                textEl.textContent = "Download ready!";
+                }
+
+                setTimeout(() => { statusBox.style.display = "none"; }, 5000);
+            };
+
+            // Support both jQuery jqXHR (.done/.fail) and native Promise (.then/.catch)
+            if (req && typeof req.done === "function") {
+                // jQuery-style
+                req.done(function() { 
+                // jQuery passes (data, textStatus, jqXHR)
+                // forward only the first argument to our handler
+                const args = Array.from(arguments);
+                handleSuccess(args[0]);
+                }).fail(handleError);
+            } else if (req && typeof req.then === "function") {
+                // native Promise
+                req.then(handleSuccess).catch(handleError);
+            } else {
+                console.error("download_many_submissions returned non-promise/non-jqXHR:", req);
+                handleError(new Error("Invalid request return type"));
+            }
+        };
 
         self.submission_handling = function () {
             // console.log(self.checked_submissions)
@@ -586,15 +736,18 @@
                 var submission_operation = self.refs.submission_handling_operation.value
                 switch (submission_operation) {
                     case "delete":
-                        // console.log("delete")
                         self.delete_selected_submissions()
                         break;
                     case "download":
-                        // console.log("download")
-                        self.bulk_download()
+                        self.bulk_download("submissions")
+                        break;
+                    case "download_results":
+                        self.bulk_download("results")
+                        break;
+                    case "download_prediction":
+                        self.bulk_download("predictions")
                         break;
                     case "rerun":
-                        // console.log("rerun")
                         self.rerun_selected_submissions()
                         break
                     default:
