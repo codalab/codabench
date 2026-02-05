@@ -48,6 +48,7 @@ def str_to_bool(value):
 # -----------------------------------------------
 USE_GPU = str_to_bool(os.environ.get("USE_GPU", "false"))
 
+SHARED_JOB_PVC = os.environ.get("SHARED_JOB_PVC", "shared-job-pvc")
 CURRENT_NAMESPACE = os.environ.get("CURRENT_NAMESPACE", "default")
 TOTAL_TIME_TO_WAIT_FOR_POD = float(os.environ.get("TOTAL_TIME_TO_WAIT_FOR_POD", 300))
 SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 0.5))
@@ -748,7 +749,7 @@ class Run:
                     client.V1Volume(
                         name="shared-storage",
                         persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                            claim_name="shared-job-pvc"
+                            claim_name=SHARED_JOB_PVC
                         )
                     )
                 ]
