@@ -44,10 +44,10 @@
 
     <!-- Participant Groups -->
     <div class="field">
-      <label>Groupes</label>
+      <label>Groups</label>
       <div style="margin-bottom:8px;">
         <button type="button" class="ui tiny primary button" onclick="{ open_create_group }">
-          <i class="plus icon"></i> Créer un groupe
+          <i class="plus icon"></i> Create group
         </button>
       </div>
 
@@ -55,13 +55,7 @@
         <div class="card" each="{ group in available_groups }">
           <div class="content">
             <div class="header">
-              <div class="ui checkbox">
-                <input type="checkbox"
-                      value="{ group.id }"
-                      checked="{ selected_group_ids.indexOf(group.id) !== -1 }"
-                      onchange="{ toggle_group.bind(this, group.id) }">
-                <label>{ group.name }</label>
-              </div>
+              <label>{ group.name }</label>
             </div>
 
             <div class="meta group-meta" style="margin-top:0.4em;">
@@ -96,30 +90,30 @@
     <!-- CREATE / EDIT GROUP MODAL -->
   <div ref="group_modal" class="ui small modal" style="display:none;">
     <i class="close icon" onclick="{ close_group_modal }"></i>
-    <div class="header">{ editing_group ? 'Modifier le groupe' : 'Créer un groupe' }</div>
+    <div class="header">{ editing_group ? 'Modify group' : 'create group' }</div>
     <div class="content">
       <div class="ui form">
         <div class="field">
-          <label>Nom</label>
+          <label>name</label>
           <input type="text" ref="group_name">
         </div>
 
         <div class="field">
-          <label>Queue (optionnelle)</label>
+          <label>Queue (optional)</label>
           <select ref="group_queue" class="ui dropdown">
-            <option value="">Aucune</option>
+            <option value="">None</option>
             <option each="{ q in available_queues }" value="{ q.id }">{ q.name }</option>
           </select>
         </div>
 
         <div class="field">
-          <label>Membres (sélectionner)</label>
+          <label>Select group members</label>
 
           <div style="display:flex; gap:.5rem; margin-bottom:.5rem; align-items:center;">
             <button type="button" class="ui mini button" onclick="{ select_all_users }">Select all</button>
             <button type="button" class="ui mini basic button" onclick="{ clear_user_selection }">Clear</button>
             <div class="ui right floated meta" style="margin-left:auto;">
-              <span class="ui tiny basic label">Sélectionnées: <span ref="selected_count">0</span></span>
+              <span class="ui tiny basic label">Selected: <span ref="selected_count">0</span></span>
             </div>
           </div>
 
@@ -128,7 +122,7 @@
           </select>
 
           <div class="ui segment" style="margin-top:.5rem;">
-            <small class="muted">Tapez pour chercher des utilisateurs, sélectionnez plusieurs éléments.</small>
+            <small class="muted">You can search and select multiple participants</small>
           </div>
         </div>
 
@@ -137,8 +131,8 @@
     </div>
 
     <div class="actions">
-      <div class="ui cancel button" onclick="{ close_group_modal }">Annuler</div>
-      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Modifier' : 'Créer' }</div>
+      <div class="ui cancel button" onclick="{ close_group_modal }">Cancel</div>
+      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Edit' : 'Create' }</div>
     </div>
   </div>
 
@@ -211,10 +205,16 @@
     }
 
     self.on('mount', () => {
+      let participants = parseJsonScriptElement('available-participants')
+      if (!participants || !participants.length) {
+        participants = parseJsonScriptElement('available-users')
+      }
+
       self.available_groups = parseJsonScriptElement('available-groups') || []
       self.selected_group_ids = parseJsonScriptElement('selected-group-ids') || []
       self.available_queues = parseJsonScriptElement('available-queues') || []
-      self.available_users = parseJsonScriptElement('available-users') || []
+      self.available_users = participants || []
+
 
       self.markdown_editor = create_easyMDE(self.refs.terms)
       self.markdown_editor_whitelist = create_easyMDE(self.refs.whitelist_emails, false, false, '200px')
@@ -344,15 +344,16 @@
     }
 
     const membersToIds = (membersArr) => {
+      // membersArr can contain ids, usernames or emails; return matching ids as strings
       if (!membersArr || !membersArr.length) return []
-      const idsids = []
+      const ids = []
       const users = self.available_users || []
       membersArr.forEach(m => {
         const byId = users.find(u => String(u.id) === String(m))
         if (byId) { ids.push(String(byId.id)); return }
-        const byUsername = users.find(u => u.username === m)
+        const byUsername = users.find(u => String(u.username) === String(m))
         if (byUsername) { ids.push(String(byUsername.id)); return }
-        const byEmail = users.find(u => u.email === m)
+        const byEmail = users.find(u => String(u.email) === String(m))
         if (byEmail) { ids.push(String(byEmail.id)); return }
       })
       return ids
@@ -411,7 +412,7 @@
       if (!name) {
         if (self.refs.group_modal_error) {
           self.refs.group_modal_error.style.display = 'block'
-          self.refs.group_modal_error.textContent = 'Le nom du groupe est requis.'
+          self.refs.group_modal_error.textContent = 'Group name is required'
         }
         return
       }
@@ -435,7 +436,7 @@
       if (!pk) {
         if (self.refs.group_modal_error) {
           self.refs.group_modal_error.style.display = 'block'
-          self.refs.group_modal_error.textContent = "Impossible de trouver l'ID de la compétition."
+          self.refs.group_modal_error.textContent = "Competition id not found."
         }
         return
       }
@@ -481,7 +482,7 @@
           self.close_group_modal()
           self.scheduleUpdate && self.scheduleUpdate()
         } else {
-          const err = (data && data.error) ? data.error : 'Erreur création/modification'
+          const err = (data && data.error) ? data.error : 'Error creation/modification'
           if (self.refs.group_modal_error) {
             self.refs.group_modal_error.style.display = 'block'
             self.refs.group_modal_error.textContent = err
@@ -491,13 +492,13 @@
         console.error('group create/update error', err)
         if (self.refs.group_modal_error) {
           self.refs.group_modal_error.style.display = 'block'
-          self.refs.group_modal_error.textContent = 'Erreur réseau lors de la création/modification du groupe.'
+          self.refs.group_modal_error.textContent = 'Error on group cretion/modification.'
         }
       })
     }
 
     self.delete_group = (group) => {
-      if (!confirm('Supprimer le groupe "' + group.name + '" ?')) return
+      if (!confirm('Delete group "' + group.name + '" ?')) return
       const pk = compPk()
       if (!pk) return
       const url = '/competitions/' + pk + '/groups/' + group.id + '/delete/'
@@ -525,35 +526,35 @@
         self.scheduleUpdate && self.scheduleUpdate()
       }).catch(err => {
         console.error('delete group error', err)
-        alert('Erreur lors de la suppression du groupe.')
+        alert('Erreur delete group.')
       })
     }
 
     CODALAB.events.on('competition_loaded', function (competition) {
-        try {
-          if (self.refs) {
-            if (self.refs.registration_auto_approve) self.refs.registration_auto_approve.checked = competition.registration_auto_approve
-            if (self.refs.allow_robot_submissions) self.refs.allow_robot_submissions.checked = competition.allow_robot_submissions
-          }
-        } catch(e){ console.warn('setting checkboxes failed', e) }
-
-        try {
-          if (self.markdown_editor && self.markdown_editor.codemirror && typeof self.markdown_editor.codemirror.refresh === 'function') {
-            try {
-              if (typeof self.markdown_editor.value === 'function') self.markdown_editor.value(competition.terms || '')
-              if (self.markdown_editor_whitelist && typeof self.markdown_editor_whitelist.value === 'function') {
-                self.markdown_editor_whitelist.value(Array.isArray(competition.whitelist_emails) && competition.whitelist_emails.length > 0 ? competition.whitelist_emails.join('\n') : '')
-              }
-              self.markdown_editor.codemirror.refresh()
-              self.update()
-              self.form_updated()
-            } catch(e){ console.warn('apply competition_loaded to editors failed', e) }
-            return
-          }
-        } catch(e){
+      try {
+        if (self.refs) {
+          if (self.refs.registration_auto_approve) self.refs.registration_auto_approve.checked = competition.registration_auto_approve
+          if (self.refs.allow_robot_submissions) self.refs.allow_robot_submissions.checked = competition.allow_robot_submissions
         }
+      } catch(e){ console.warn('setting checkboxes failed', e) }
 
-        self._pending_competition = competition
+      try {
+        if (self.markdown_editor && self.markdown_editor.codemirror && typeof self.markdown_editor.codemirror.refresh === 'function') {
+          try {
+            if (typeof self.markdown_editor.value === 'function') self.markdown_editor.value(competition.terms || '')
+            if (self.markdown_editor_whitelist && typeof self.markdown_editor_whitelist.value === 'function') {
+              self.markdown_editor_whitelist.value(Array.isArray(competition.whitelist_emails) && competition.whitelist_emails.length > 0 ? competition.whitelist_emails.join('\n') : '')
+            }
+            self.markdown_editor.codemirror.refresh()
+            self.update()
+            self.form_updated()
+          } catch(e){ console.warn('apply competition_loaded to editors failed', e) }
+          return
+        }
+      } catch(e){
+      }
+
+      self._pending_competition = competition
     })
 
     CODALAB.events.on('update_codemirror', () => {

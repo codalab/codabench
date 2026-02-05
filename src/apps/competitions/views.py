@@ -46,12 +46,17 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
             Q(id__in=comp.participant_groups.values_list('id', flat=True))
         ).select_related('queue').prefetch_related('user_set')
 
+        participant_user_ids = list(
+            CompetitionParticipant.objects.filter(competition=comp)
+            .values_list('user_id', flat=True)
+        )
+
         ctx['available_groups_json'] = json.dumps([
             {
                 'id': g.id,
                 'name': g.name,
                 'queue': g.queue.name if g.queue else None,
-                'members': [u.username for u in g.user_set.all()],
+                'members': [u.username for u in g.user_set.filter(pk__in=participant_user_ids)],
             }
             for g in groups_qs
         ], cls=DjangoJSONEncoder)
@@ -69,14 +74,12 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
         ctx['available_users_json'] = json.dumps(
             list(
                 User.objects
-                    .filter(is_active=True)
+                    .filter(pk__in=participant_user_ids, is_active=True)
                     .values('id', 'username', 'email')
             ),
             cls=DjangoJSONEncoder
         )
-
         return ctx
-
 
     def get_object(self, *args, **kwargs):
         competition = super().get_object(*args, **kwargs)
@@ -190,6 +193,11 @@ def competition_create_group(request, pk):
     if not name:
         return HttpResponseBadRequest("Missing name")
 
+    allowed_user_ids = set(
+        CompetitionParticipant.objects.filter(competition=competition)
+        .values_list('user_id', flat=True)
+    )
+
     try:
         with transaction.atomic():
             group = CustomGroup(name=name)
@@ -201,15 +209,19 @@ def competition_create_group(request, pk):
                     group.queue = None
             group.save()
 
-            if user_ids:
-                # normalize to ints
-                try:
-                    user_ids_int = [int(u) for u in user_ids]
-                except Exception:
-                    user_ids_int = []
-                if user_ids_int:
-                    users_qs = User.objects.filter(pk__in=user_ids_int)
-                    group.user_set.set(users_qs)
+            user_ids_int = []
+            try:
+                user_ids_int = [int(u) for u in user_ids]
+            except Exception:
+                user_ids_int = []
+
+            if user_ids_int:
+                invalid = [uid for uid in user_ids_int if uid not in allowed_user_ids]
+                if invalid:
+                    raise ValueError(f"Some users are not participants of this competition: {invalid}")
+
+                users_qs = User.objects.filter(pk__in=user_ids_int)
+                group.user_set.set(users_qs)
 
             competition.participant_groups.add(group)
 
@@ -220,6 +232,8 @@ def competition_create_group(request, pk):
                 'queue': group.queue.name if group.queue else None,
                 'members': members,
             }
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
     except Exception as e:
         return HttpResponseBadRequest("Error creating group: %s" % str(e))
 
@@ -240,6 +254,9 @@ def competition_update_group(request, pk, group_id):
     if not (user.is_superuser or user == competition.created_by or user in competition.collaborators.all()):
         return HttpResponseForbidden("Not allowed")
 
+    if not competition.participant_groups.filter(pk=group.pk).exists():
+        return HttpResponseBadRequest("Group does not belong to this competition")
+
     if request.content_type == 'application/json':
         try:
             payload = json.loads(request.body.decode())
@@ -258,6 +275,11 @@ def competition_update_group(request, pk, group_id):
     if not name:
         return HttpResponseBadRequest("Missing name")
 
+    allowed_user_ids = set(
+        CompetitionParticipant.objects.filter(competition=competition)
+        .values_list('user_id', flat=True)
+    )
+
     try:
         with transaction.atomic():
             group.name = name
@@ -267,12 +289,19 @@ def competition_update_group(request, pk, group_id):
                 group.queue = None
             group.save()
 
-            # normalize user ids and set membership
             try:
                 user_ids_int = [int(u) for u in user_ids]
             except Exception:
                 user_ids_int = []
+
+            if user_ids_int:
+                invalid = [uid for uid in user_ids_int if uid not in allowed_user_ids]
+                if invalid:
+                    raise ValueError(f"Some users are not participants of this competition: {invalid}")
+
             group.user_set.set(User.objects.filter(pk__in=user_ids_int))
+    except ValueError as e:
+        return HttpResponseBadRequest(str(e))
     except Exception as e:
         return HttpResponseBadRequest("Error updating group: %s" % str(e))
 
@@ -302,6 +331,9 @@ def competition_delete_group(request, pk, group_id):
     user = request.user
     if not (user.is_superuser or user == competition.created_by or user in competition.collaborators.all()):
         return HttpResponseForbidden("Not allowed")
+
+    if not competition.participant_groups.filter(pk=group.pk).exists():
+        return HttpResponseBadRequest("Group does not belong to this competition")
 
     try:
         with transaction.atomic():
