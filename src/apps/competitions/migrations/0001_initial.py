@@ -3,9 +3,15 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import storages.backends.s3boto3
 import utils.data
 import uuid
+
+# New
+from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class _MigrationPrivateStorage(S3Boto3Storage):
+    bucket_name = 'private'
 
 
 class Migration(migrations.Migration):
@@ -109,8 +115,8 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(choices=[('None', 'None'), ('Submitting', 'Submitting'), ('Submitted', 'Submitted'), ('Preparing', 'Preparing'), ('Running', 'Running'), ('Scoring', 'Scoring'), ('Cancelled', 'Cancelled'), ('Finished', 'Finished'), ('Failed', 'Failed')], default='Submitting', max_length=128)),
                 ('status_details', models.TextField(blank=True, null=True)),
                 ('appear_on_leaderboards', models.BooleanField(default=False)),
-                ('prediction_result', models.FileField(blank=True, null=True, storage=storages.backends.s3boto3.S3Boto3Storage(bucket='private'), upload_to=utils.data.PathWrapper('prediction_result'))),
-                ('scoring_result', models.FileField(blank=True, null=True, storage=storages.backends.s3boto3.S3Boto3Storage(bucket='private'), upload_to=utils.data.PathWrapper('scoring_result'))),
+                ('prediction_result', models.FileField(blank=True, null=True, storage=_MigrationPrivateStorage(), upload_to=utils.data.PathWrapper('prediction_result'))),
+                ('scoring_result', models.FileField(blank=True, null=True, storage=_MigrationPrivateStorage(), upload_to=utils.data.PathWrapper('scoring_result'))),
                 ('secret', models.UUIDField(default=uuid.uuid4)),
                 ('task_id', models.UUIDField(blank=True, null=True)),
                 ('name', models.CharField(blank=True, default='', max_length=120, null=True)),
@@ -127,7 +133,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=50)),
-                ('data_file', models.FileField(storage=storages.backends.s3boto3.S3Boto3Storage(bucket='private'), upload_to=utils.data.PathWrapper('submission_details'))),
+                ('data_file', models.FileField(storage=_MigrationPrivateStorage(), upload_to=utils.data.PathWrapper('submission_details'))),
                 ('is_scoring', models.BooleanField(default=False)),
                 ('submission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='details', to='competitions.Submission')),
             ],

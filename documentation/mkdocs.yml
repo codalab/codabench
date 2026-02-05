@@ -98,11 +98,11 @@ extra:
     alias: true
   footer_links:
     - text: "Governance Document"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Community-Governance"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/GOVERNANCE.md"
     - text: "Privacy Policy"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Privacy"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md"
     - text: "About"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md"
 
 nav:
   - Home: index.md
@@ -115,15 +115,14 @@ nav:
           - Advanced Tutorial: Organizers/Benchmark_Creation/Advanced-Tutorial.md
           - How to Transition from Codalab to Codabench?: Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
-          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation:-Form.md
-          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation:-Bundle.md
+          - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation-Form.md
+          - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation-Bundle.md
           - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
           - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
           - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
           - Leaderboard Features: Organizers/Benchmark_Creation/Leaderboard-Functionality.md
           - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
-          - Example Cancer Benchmarks: Organizers/Benchmark_Creation/Cancer-Benchmarks.md
           - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
           - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
       - Running a Benchmarks:

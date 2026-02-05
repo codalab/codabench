@@ -80,7 +80,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=now)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    quota = models.BigIntegerField(default=settings.DEFAULT_USER_QUOTA, null=False)
+    quota = models.BigIntegerField(default=settings.DEFAULT_USER_QUOTA, null=False, help_text="Size in GB")
 
     # Fields for OIDC authentication
     is_created_using_oidc = models.BooleanField(default=False)

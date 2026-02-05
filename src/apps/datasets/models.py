@@ -57,7 +57,7 @@ class Data(models.Model):
     key = models.UUIDField(default=uuid.uuid4, blank=True, unique=True)
     is_public = models.BooleanField(default=False)
     upload_completed_successfully = models.BooleanField(default=False)
-    file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # in Bytes
+    file_size = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Size in Bytes")  # in Bytes
 
     # This is true if the Data model was created as part of unpacking a competition. Competition bundles themselves
     # are NOT marked True, since they are not created by unpacking!

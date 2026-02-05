@@ -3,6 +3,7 @@
 ### Setup
 
 Required:
+
 - "Maintain" role on the repository
 - A working local installation
 
@@ -143,9 +144,20 @@ When you are done, you publish the release.
 
 ![image](../_attachments/000c3096-13b4-4d25-a8e1-efcba0fb75fd_17528513114340215.jpg)
 
+## Dockerhub Cleanup
+One of the workflows of this repository creates a docker image and uploads it automatically to Dockerhub with the tag of the branch that launched the workflow.
 
-## TODO
+!!! note
+    If you fork the repository, you will need to link a Dockerhub account by adding the username and a docker token in the repository variables. We use [this Github Action](https://github.com/docker/login-action?tab=readme-ov-file#docker-hub) to automatically login with these variables.
 
-Add a note about:
 
-- Merging the github action PR to update the release tag
+These workflows launches when one of the following conditions are met :
+
+- A change in the `Dockerfile.compute_worker` file
+- A change of any file within the `compute_worker/` directory
+
+The tag is decided by three different criterias :
+
+- Changes on the `develop` branch creates a tag with the `test` tag
+- Changes on the `master` branch creates a tag with the release tag (ex: `v1.22`)
+- Changes on any other branches will create a tag with the branch name as the tag.

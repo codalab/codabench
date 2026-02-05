@@ -1,1 +1,0 @@
-{"Connection":{"Default":"default","Connections":{"default":{"URI":"unix:///run/user/1000/podman/podman.sock"}}},"Farm":{}}

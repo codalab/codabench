@@ -1,0 +1,27 @@
+name: build_CW_docker_image_branch
+on:
+  push:
+    # On push for every branch except develop and master since they have their own workflows
+    branches:
+      - '*'
+      - '!develop'
+      - '!master'
+    paths:
+      - Dockerfile.compute_worker
+      - compute_worker/**
+jobs:
+  build_push_image:
+    name: Build Docker Image then Push it to Docker.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+      - name: Build Image
+        run: docker build -t codalab/codabench-compute-worker:${{ github.ref_name }} -f Dockerfile.compute_worker .
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push image with branch name as tag
+        run: docker push codalab/codabench-compute-worker:${{ github.ref_name }}
