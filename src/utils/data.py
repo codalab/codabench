@@ -3,7 +3,7 @@ import uuid
 from datetime import timedelta
 
 import requests
-from azure.storage.blob import BlobPermissions
+from azure.storage.blob import BlobSasPermissions
 from django.conf import settings
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import now
@@ -91,9 +91,9 @@ def make_url_sassy(path, permission='r', duration=60 * 60 * 24 * 5, content_type
         )
     elif settings.STORAGE_IS_AZURE:
         if permission == 'r':
-            client_method = BlobPermissions.READ
+            client_method = BlobSasPermissions(read=True)
         elif permission == 'w':
-            client_method = BlobPermissions.WRITE
+            client_method = BlobSasPermissions(read=True, write=True)
 
         sas_token = BundleStorage.service.generate_blob_shared_access_signature(
             BundleStorage.azure_container,

@@ -2,9 +2,16 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import storages.backends.s3boto3
 import utils.data
 import uuid
+
+
+# New
+from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class _MigrationPrivateStorage(S3Boto3Storage):
+    bucket_name = 'private'
 
 
 class Migration(migrations.Migration):
@@ -26,7 +33,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(blank=True, max_length=255, null=True)),
                 ('type', models.CharField(choices=[('ingestion_program', 'Ingestion Program'), ('input_data', 'Input Data'), ('public_data', 'Public Data'), ('reference_data', 'Reference Data'), ('scoring_program', 'Scoring Program'), ('starting_kit', 'Starting Kit'), ('competition_bundle', 'Competition Bundle'), ('submission', 'Submission'), ('solution', 'Solution')], max_length=64)),
                 ('description', models.TextField(blank=True, null=True)),
-                ('data_file', models.FileField(blank=True, null=True, storage=storages.backends.s3boto3.S3Boto3Storage(bucket='private'), upload_to=utils.data.PathWrapper('dataset'))),
+                ('data_file', models.FileField(blank=True, null=True, storage=_MigrationPrivateStorage, upload_to=utils.data.PathWrapper('dataset'))),
                 ('key', models.UUIDField(blank=True, default=uuid.uuid4, unique=True)),
                 ('is_public', models.BooleanField(default=False)),
                 ('upload_completed_successfully', models.BooleanField(default=False)),

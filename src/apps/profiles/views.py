@@ -296,8 +296,11 @@ def log_in(request):
 
     # Fetch auth_organizations from the database
     auth_organizations = Auth_Organization.objects.all()
-    if auth_organizations:
-        context['auth_organizations'] = auth_organizations
+    context['auth_organizations'] = auth_organizations
+
+    # Always provide activation_error in context, even if None
+    if 'activation_error' not in context:
+        context['activation_error'] = None
 
     if not context.get('form'):
         context['form'] = LoginForm()
