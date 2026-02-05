@@ -123,7 +123,6 @@ nav:
           - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
           - Leaderboard Features: Organizers/Benchmark_Creation/Leaderboard-Functionality.md
           - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
-          - Example Cancer Benchmarks: Organizers/Benchmark_Creation/Cancer-Benchmarks.md
           - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
           - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
       - Running a Benchmarks:
