@@ -46,25 +46,24 @@ class ServerStatusView(TemplateView):
         # Start with an empty queryset
         qs = Submission.objects.none()
 
+        user = self.request.user
         # Only if user is authenticated
-        if self.request.user.is_authenticated:
-            # If user is not super user then:
-            # filter this user's own submissions
-            # and
-            # submissions running on queue which belongs to this user
+        if user.is_authenticated:
+            # If user is not super user then filter:
+            # - this user's own submissions
+            # - submissions running on competitions where the user is owner or collaborator
+            # - submissions running on queue where the user is owner or organizer
             # NOTE: exclude all soft-deleted submissions
-            if not self.request.user.is_superuser:
-                qs = Submission.objects.filter(
-                    Q(is_soft_deleted=False) &
-                    (
-                        Q(owner=self.request.user) |
-                        Q(phase__competition__queue__isnull=False, phase__competition__queue__owner=self.request.user)
-                    )
-                )
+            if not user.is_superuser:
+                qs = Submission.objects.filter(is_soft_deleted=False).filter(
+                    Q(owner=user) |
+                    Q(phase__competition__created_by=user) |
+                    Q(phase__competition__collaborators=user) |
+                    Q(phase__competition__queue__owner=user, phase__competition__queue__isnull=False) |
+                    Q(phase__competition__queue__organizers=user, phase__competition__queue__isnull=False)
+                ).distinct()
             else:
-                qs = Submission.objects.filter(
-                    Q(is_soft_deleted=False)
-                )
+                qs = Submission.objects.filter(is_soft_deleted=False)
 
         # Filter out child submissions i.e. submission has no parent
         if not show_child_submissions:
