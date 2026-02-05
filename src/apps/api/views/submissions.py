@@ -218,9 +218,8 @@ class SubmissionViewSet(ModelViewSet):
         # Otherwise, delete the submission
         self.perform_destroy(submission)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
 
-    def check_submission_permissions(self,request,submissions):
+    def check_submission_permissions(self, request, submissions):
         # Check permissions
         if not request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to download submissions")
@@ -405,6 +404,7 @@ class SubmissionViewSet(ModelViewSet):
             submission.re_run()
         return Response({})
 
+    # TODO: The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times
     @action(detail=False, methods=('POST',))
     def download_many(self, request):
         pks = request.data.get('pks')
@@ -415,17 +415,6 @@ class SubmissionViewSet(ModelViewSet):
         if not isinstance(pks, list):
             return Response({"error": "`pks` must be a list"}, status=400)
 
-    #Todo : The 3 functions download many should be bundled inside a genereic with the function like "get_prediction_result" as a parameter instead of the same code 3 times. 
-    @action(detail=False, methods=('POST',))
-    def download_many(self, request):
-        pks = request.data.get('pks')
-        if not pks:
-            return Response({"error": "`pks` field is required"}, status=400)
-
-        # pks is already parsed as a list if JSON was sent properly
-        if not isinstance(pks, list):
-            return Response({"error": "`pks` must be a list"}, status=400)
-        
         # Get submissions
         submissions = Submission.objects.filter(pk__in=pks).select_related(
             "owner",
@@ -470,17 +459,17 @@ class SubmissionViewSet(ModelViewSet):
         return Response(files)
 
         for sub in submissions:
-            if sub.status not in [ Submission.FINISHED]: #Submission.FAILED, Submission.CANCELLED
+            if sub.status not in [Submission.FINISHED]:  # Submission.FAILED, Submission.CANCELLED
                 continue
             file_path = sub.data.data_file.name.split('/')[-1]
             complete_name = f"res_{sub.id}_{sub.owner}_PhaseId{sub.phase.id}_{sub.data.created_when.strftime('%Y-%m-%d:%M-%S')}_{file_path}"
-            result_url = serializer.get_scoring_result(sub)
-            #detailed results is already in the results zip file but For very large detailed results it could be helpfull to remove it. 
+            result_url = SubmissionDetailSerializer(sub.data, context=self.get_serializer_context()).get_scoring_result(sub)
+            # detailed results is already in the results zip file but For very large detailed results it could be helpfull to remove it
             # detailed_result_url = serializer.get_scoring_result(sub)
             files.append({"name": complete_name, "url": result_url})
-        
+
         return Response(files)
-    
+
     @action(detail=True, methods=('GET',))
     def get_details(self, request, pk):
         submission = super().get_object()
