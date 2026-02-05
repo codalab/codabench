@@ -10,10 +10,7 @@ DEBUG = False
 # Staticfiles (whitenoise)
 # =============================================================================
 INSTALLED_APPS += ('whitenoise',)
-# Replace this:
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# With this:
 STORAGES["staticfiles"] = {
     "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
 }

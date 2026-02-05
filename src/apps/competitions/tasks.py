@@ -788,7 +788,6 @@ def manual_migration(phase_id):
 
     try:
         destination_phase = source_phase.competition.phases.get(index=source_phase.index + 1)
-        # import pdb; pdb.set_trace()
     except Phase.DoesNotExist:
         logger.error(f'Could not manually migrate phase with id: {phase_id}. The next phase could not be found.')
         return

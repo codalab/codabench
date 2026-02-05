@@ -4,7 +4,6 @@ import io
 
 import botocore.exceptions
 from django.conf import settings
-# from django.contrib.postgres.fields import JSONField # old
 from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q

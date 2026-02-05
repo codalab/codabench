@@ -35,16 +35,6 @@ router.register('queues', queues.QueueViewSet, 'queues')
 router.register('users', profiles.UserViewSet, 'users')
 router.register('organizations', profiles.OrganizationViewSet, 'organizations')
 
-# OLD drf-yasg
-# schema_view = get_schema_view(
-#     openapi.Info(
-#         title="Codabench API",
-#         default_version='v1',
-#     ),
-#     validators=['flex', 'ssv'],
-#     public=True,
-#     permission_classes=(AllowAny,),
-# )
 
 urlpatterns = [
     path('my_profile/', profiles.GetMyProfile.as_view()),
@@ -77,7 +67,6 @@ urlpatterns = [
     path('analytics/check_orphans_deletion_status/', analytics.check_orphans_deletion_status, name="check_orphans_deletion_status"),
 
     # API Docs
-    # New
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
     path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),

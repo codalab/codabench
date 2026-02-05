@@ -296,9 +296,6 @@ def log_in(request):
 
     # Fetch auth_organizations from the database
     auth_organizations = Auth_Organization.objects.all()
-    # Old - we need to always provide variables now when sending them to contexts.
-    # if auth_organizations:
-    #     context['auth_organizations'] = auth_organizations
     context['auth_organizations'] = auth_organizations
 
     # Always provide activation_error in context, even if None

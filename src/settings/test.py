@@ -7,10 +7,6 @@ CELERY_TASK_ALWAYS_EAGER = True
 
 # Don't use whitenoise -- so we don't get exceptions for missing files
 
-# Replace this:
-# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
-# With this:
 STORAGES["staticfiles"] = {
     "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
 }
