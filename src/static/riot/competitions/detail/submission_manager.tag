@@ -574,93 +574,6 @@
                 .modal('show')
             CODALAB.events.trigger('submission_clicked')
         }
-        
-
-        // self.bulk_download = function () {
-        //     const statusBox = document.getElementById('downloadStatus');
-        //     const progressEl = document.getElementById('downloadProgress');
-        //     const textEl = document.getElementById('progressText');
-
-        //     statusBox.style.display = "flex";
-        //     // statusBox.style.display = "inline";
-
-            
-        //     progressEl.style.display="flex";
-        //     progressEl.value = 0;
-        //     textEl.textContent = "Preparing download...";
-
-        //     console.log("Files returned by server:", files);
-
-
-        //     CODALAB.api.download_many_submissions(self.checked_submissions)
-        //     .done( async function(files) {
-        //     // .done( function(files) {
-        //         console.log("Files returned by server:", files);
-
-        //         const zip = new JSZip();
-        //         const total = files.length;
-        //         let completed = 0;
-        //         const failed = [];
-
-        //         const fetchFiles = files.map(async file => {
-        //         try {
-        //             const response = await fetch(file.url);
-
-        //             if (!response.ok) {
-        //             throw new Error(`HTTP ${response.status}`);
-        //             }
-
-        //             const blob = await response.blob();
-
-        //             zip.file(file.name.replace(/[:/\\]/g, '_'), blob);
-        //         } catch (err) {
-        //             console.error(`Failed to fetch ${file.name}:`, err);
-        //             failed.push(file.name);
-        //         } finally {
-        //             // Update progress regardless of success/failure
-        //             completed++;
-        //             const percent = Math.floor((completed / total) * 100);
-        //             progressEl.value = percent;
-        //             textEl.textContent = `${completed} / ${total} files (${percent}%)`;
-        //         }
-        //         });
-
-        //         Promise.allSettled(fetchFiles).then(() => {
-        //         // If some files failed, include them as failed.txt inside the zip
-        //         if (failed.length > 0) {
-        //             const failedContent = `The following submissions failed to download:\n\n${failed.join("\n")}`;
-        //             zip.file("failed.txt", failedContent);
-        //         }
-                
-
-        //         textEl.textContent = "Generating bundle";
-        //         progressEl.style.display = "none";
-
-        //         zip.generateAsync({ type: "blob" }).then(blob => {
-        //             const link = document.createElement("a");
-        //             link.href = URL.createObjectURL(blob);
-        //             link.download = "bulk_submissions.zip";
-        //             document.body.appendChild(link);
-        //             link.click();
-        //             document.body.removeChild(link);
-
-        //             if (failed.length > 0) {
-        //             textEl.textContent = `Download complete, but ${failed.length} failed (see failed.txt in the zip)`;
-        //             } else {
-        //             textEl.textContent = "Download ready!";
-        //             }
-
-        //             setTimeout(() => {
-        //             statusBox.style.display = "none";
-        //             }, 5000);
-        //         });
-        //         });
-        //     })
-        //     .fail(function(err) {
-        //         console.error("Error downloading submissions:", err);
-        //         textEl.textContent = "Error downloading!";
-        //     });
-        // };
 
         self.bulk_download = function () {
             const statusBox = document.getElementById('downloadStatus');
@@ -684,6 +597,22 @@
 
             // Success handler (async because we await inside)
             const handleSuccess = async (resp) => {
+
+                // If wrapper returns a fetch Response object
+                if (resp && typeof resp.json === "function" && typeof resp.text === "function") {
+                    try { resp = await resp.json(); } catch (e) { /* fallthrough */ }
+                }
+
+                // If JSON came back as a string, parse it
+                if (typeof resp === "string") {
+                    try {
+                    resp = JSON.parse(resp);
+                    } catch (e) {
+                    console.warn("download_many_submissions returned non-JSON string:", resp);
+                    resp = [];
+                    }
+                }
+
                 // Normalize response -> files array
                 let files = resp;
                 if (resp && typeof resp === 'object' && !Array.isArray(resp)) {
