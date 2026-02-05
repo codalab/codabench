@@ -484,10 +484,12 @@ class SubmissionViewSet(ModelViewSet):
     def get_detail_result(self, request, pk):
         submission = get_object_or_404(Submission, pk=pk)
         competition = submission.phase.competition
+
         # Helper to avoid repeating serialization/Response code
         def _allowed():
             data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
             return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
+
         # Check if competition show visualization is true
         if competition.enable_detailed_results:
             if competition.published:
