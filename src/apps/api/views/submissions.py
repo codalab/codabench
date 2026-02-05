@@ -482,37 +482,45 @@ class SubmissionViewSet(ModelViewSet):
 
     @action(detail=True, methods=('GET',))
     def get_detail_result(self, request, pk):
-        submission = Submission.objects.get(pk=pk)
+        submission = get_object_or_404(Submission, pk=pk)
+        competition = submission.phase.competition
+        # Helper to avoid repeating serialization/Response code
+        def _allowed():
+            data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
+            return Response(data.get("detailed_result"), status=status.HTTP_200_OK)
         # Check if competition show visualization is true
-        if submission.phase.competition.enable_detailed_results:
-            # get submission's competition approved participants
-            approved_participants = submission.phase.competition.participants.filter(status=CompetitionParticipant.APPROVED)
-            participant_usernames = [participant.user.username for participant in approved_participants]
-
-            # check if in this competition
-            # user is collaborator
-            # or
-            # user is approved participant
-            # or
-            # user is creator
-            # or
-            # user is super user
-            if request.user in submission.phase.competition.collaborators.all() or\
-                    request.user.username in participant_usernames or\
-                    request.user == submission.phase.competition.created_by or\
-                    request.user.is_superuser:
-
-                data = SubmissionFilesSerializer(submission, context=self.get_serializer_context()).data
-                return Response(data["detailed_result"], status=status.HTTP_200_OK)
-
+        if competition.enable_detailed_results:
+            if competition.published:
+                # Detailed results are publicly available
+                return _allowed()
             else:
-                return Response({
-                    "error_msg": "You do not have permission to see the detailed result. Participate in this competition to view result."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                # Competition is private
+                user = request.user
+                if not user.is_authenticated:
+                    return Response(
+                        {"error_msg": "You do not have permission to see the detailed result. Participate in this competition to view result."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                # Give access if user is collaborator, approved participant,
+                # competition creator or super user
+                is_collaborator = competition.collaborators.filter(pk=user.pk).exists()
+                is_creator = (user == competition.created_by)
+                is_superuser = user.is_superuser
+                is_approved_participant = CompetitionParticipant.objects.filter(
+                    competition=competition,
+                    user=user,
+                    status=CompetitionParticipant.APPROVED,
+                ).exists()
+                if is_collaborator or is_approved_participant or is_creator or is_superuser:
+                    # Allow access
+                    return _allowed()
+            return Response(
+                {"error_msg": "You do not have permission to see the detailed result."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         else:
-            return Response({
-                "error_msg": "Detailed results are disable for this competition!"},
+            return Response(
+                {"error_msg": "Detailed results are disabled for this competition!"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
