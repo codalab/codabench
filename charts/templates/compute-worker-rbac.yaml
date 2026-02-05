@@ -14,8 +14,8 @@ rules:
     resources: ["pods"]
     verbs: ["create", "get", "list", "watch", "delete"]
   - apiGroups: [""]
-    resources: ["pods/exec", "pods/log"]
-    verbs: ["create", "get", "list"]
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
