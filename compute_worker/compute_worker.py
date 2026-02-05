@@ -48,6 +48,7 @@ def str_to_bool(value):
 # -----------------------------------------------
 USE_GPU = str_to_bool(os.environ.get("USE_GPU", "false"))
 
+CURRENT_NAMESPACE = os.environ.get("CURRENT_NAMESPACE", "default")
 TOTAL_TIME_TO_WAIT_FOR_POD = float(os.environ.get("TOTAL_TIME_TO_WAIT_FOR_POD", 300))
 SLEEP_TIME_BETWEEN_RETRIES = float(os.environ.get("SLEEP_TIME_BETWEEN_RETRIES", 0.5))
 
@@ -714,7 +715,7 @@ class Run:
         pod = client.V1Pod(
             metadata=client.V1ObjectMeta(
                 generate_name=f"codabench-{kind}-",
-                namespace="codabench",
+                namespace=CURRENT_NAMESPACE,
                 labels=self._get_variables_from_env("COMPUTE_WORKER_LABELS")
             ),
             spec=client.V1PodSpec(
@@ -755,7 +756,7 @@ class Run:
         )
 
         created_pod = core_v1.create_namespaced_pod(
-            namespace="codabench",
+            namespace=CURRENT_NAMESPACE,
             body=pod
         )
         
@@ -802,7 +803,7 @@ class Run:
         
         while elapsed < TOTAL_TIME_TO_WAIT_FOR_POD:
             try:
-                pod = core_v1.read_namespaced_pod(pod_name, "codabench")
+                pod = core_v1.read_namespaced_pod(pod_name, CURRENT_NAMESPACE)
                 phase = pod.status.phase
                 
                 if phase in ("Running", "Succeeded", "Failed"):
@@ -835,7 +836,7 @@ class Run:
             logger.info(f"Streaming logs from pod {pod_name}...")
             log_stream = core_v1.read_namespaced_pod_log(
                 name=pod_name,
-                namespace="codabench",
+                namespace=CURRENT_NAMESPACE,
                 follow=True,
                 _preload_content=False,
                 timestamps=False
@@ -863,7 +864,7 @@ class Run:
         
         # Get final pod status and exit code
         try:
-            pod = core_v1.read_namespaced_pod(pod_name, "codabench")
+            pod = core_v1.read_namespaced_pod(pod_name, CURRENT_NAMESPACE)
             
             return_code = None
             if pod.status.container_statuses:
@@ -895,7 +896,7 @@ class Run:
         try:
             core_v1.delete_namespaced_pod(
                 name=pod_name,
-                namespace="codabench",
+                namespace=CURRENT_NAMESPACE,
                 grace_period_seconds=0
             )
             logger.info(f"Deleted pod {pod_name}")
