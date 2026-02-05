@@ -59,8 +59,8 @@ class ServerStatusView(TemplateView):
                     Q(owner=user) |
                     Q(phase__competition__created_by=user) |
                     Q(phase__competition__collaborators=user) |
-                    Q(phase__competition__queue__owner=user, phase__competition__queue__isnull=False) |
-                    Q(phase__competition__queue__organizers=user, phase__competition__queue__isnull=False)
+                    Q(queue__owner=user, queue__isnull=False) |
+                    Q(queue__organizers=user, queue__isnull=False)
                 ).distinct()
             else:
                 qs = Submission.objects.filter(is_soft_deleted=False)
