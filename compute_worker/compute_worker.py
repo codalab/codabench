@@ -1218,27 +1218,17 @@ class Run:
                 logger.info("Program finished")
         signal.alarm(0)
 
-        # Failure "gate" BEFORE changing status
-        def is_real_async_failure(r):
-            # gather returns either normal values or exception instances when return_exceptions=True
-            return isinstance(r, BaseException) and not isinstance(r, asyncio.CancelledError)
-        had_async_exc = any(is_real_async_failure(r) for r in task_results)
-        program_rc = getattr(self, "program_exit_code", None)
-        ingestion_rc = getattr(self, "ingestion_program_exit_code", None)
-        failed_rc = any(rc not in (0, None) for rc in (program_rc, ingestion_rc))
-        if had_async_exc or failed_rc:
-            self._update_status(
-                STATUS_FAILED,
-                extra_information=f"program_rc={program_rc}, ingestion_rc={ingestion_rc}, async={task_results}",
-            )
-            # Raise so upstream marks failed immediately
-            raise SubmissionException("Child task failed or non-zero return code")
-
-        logger.info(
-            "PROGRAM STATUS: is_scoring=%s program_rc=%r ingestion_rc=%r task_results=%r",
-            self.is_scoring, program_rc, ingestion_rc, task_results
-        )
         if self.is_scoring:
+            # Check if scoring program failed
+            program_results, _, _ = task_results
+            # Gather returns either normal values or exception instances when return_exceptions=True
+            had_async_exc = isinstance(program_results, BaseException) and not isinstance(program_results, asyncio.CancelledError)
+            program_rc = getattr(self, "program_exit_code", None)
+            failed_rc = program_rc not in (0, None)
+            if had_async_exc or failed_rc:
+                self._update_status(STATUS_FAILED, extra_information=f"program_rc={program_rc}, async={task_results}")
+                # Raise so upstream marks failed immediately
+                raise SubmissionException("Child task failed or non-zero return code")
             self._update_status(STATUS_FINISHED)
         else:
             self._update_status(STATUS_SCORING)
