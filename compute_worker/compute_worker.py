@@ -713,12 +713,15 @@ class Run:
             )
             node_selector = self._get_variables_from_env("NODE_SELECTOR")
         
+        labels = self._get_variables_from_env("COMPUTE_WORKER_LABELS")
+        labels["submission_id"] = str(self.submission_id)
+        
         # Define pod spec
         pod = client.V1Pod(
             metadata=client.V1ObjectMeta(
                 generate_name=f"codabench-{kind}-",
                 namespace=CURRENT_NAMESPACE,
-                labels=self._get_variables_from_env("COMPUTE_WORKER_LABELS")
+                labels=labels
             ),
             spec=client.V1PodSpec(
                 restart_policy="Never",
