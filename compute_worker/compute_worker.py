@@ -449,7 +449,7 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error("This error might result in a Execution Time Exceeded error" + e)
+            logger.error(f"This error might result in a Execution Time Exceeded error: {e}")
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
 
@@ -668,8 +668,7 @@ class Run:
             )
         except Exception as e:
             logger.error(
-                "There was an error trying to connect to the websocket on the codabench instance"
-                + e
+                f"There was an error trying to connect to the websocket on the codabench instance: {e}"
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
@@ -718,8 +717,7 @@ class Run:
             logger.error(e)
         except Exception as e:
             logger.error(
-                "There was an error while starting the container and getting the logs"
-                + e
+                f"There was an error while starting the container and getting the logs: {e}"
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
@@ -1136,9 +1134,9 @@ class Run:
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
-            loop.run_until_complete(gathered_tasks)
+            # run tasks
             # keep what gather returned so we can detect async errors later
-            task_results = list(gathered_tasks.result() or [])
+            task_results = loop.run_until_complete(gathered_tasks) or []
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
             logger.error(error_message)
@@ -1163,7 +1161,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            f"There was a problem killing {containers_to_kill}: {e}"
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
@@ -1193,7 +1191,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            f"There was a problem killing {containers_to_kill}: {e}"
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
@@ -1216,14 +1214,18 @@ class Run:
         signal.alarm(0)
 
         # Failure "gate" BEFORE changing status
-        # An async task error?
-        had_async_exc = any(isinstance(r, BaseException) for r in task_results)
-        # Non-zero exit from either container counts as failure for this phase
+        def is_real_async_failure(r):
+            # gather returns either normal values or exception instances when return_exceptions=True
+            return isinstance(r, BaseException) and not isinstance(r, asyncio.CancelledError)
+        had_async_exc = any(is_real_async_failure(r) for r in task_results)
         program_rc = getattr(self, "program_exit_code", None)
         ingestion_rc = getattr(self, "ingestion_program_exit_code", None)
         failed_rc = any(rc not in (0, None) for rc in (program_rc, ingestion_rc))
         if had_async_exc or failed_rc:
-            self._update_status(STATUS_FAILED, extra_information=f"program_rc={program_rc}, ingestion_rc={ingestion_rc}")
+            self._update_status(
+                STATUS_FAILED,
+                extra_information=f"program_rc={program_rc}, ingestion_rc={ingestion_rc}, async={task_results}",
+            )
             # Raise so upstream marks failed immediately
             raise SubmissionException("Child task failed or non-zero return code")
 
