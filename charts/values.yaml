@@ -57,6 +57,7 @@ compute_worker:
       memory: 512Mi
   volumes:
     pvcName: <shared-job-pvc-name>
+  codalabIgnoreCleanupStep: "0"
   brokers:
     - name: "default"
       gpu:

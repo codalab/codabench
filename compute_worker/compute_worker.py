@@ -47,6 +47,7 @@ def str_to_bool(value):
 # Load CW parameters
 # -----------------------------------------------
 USE_GPU = str_to_bool(os.environ.get("USE_GPU", "false"))
+CODALAB_IGNORE_CLEANUP_STEP = str_to_bool(os.environ.get("CODALAB_IGNORE_CLEANUP_STEP", False))
 
 SHARED_JOB_PVC = os.environ.get("SHARED_JOB_PVC", "shared-job-pvc")
 CURRENT_NAMESPACE = os.environ.get("CURRENT_NAMESPACE", "default")
@@ -1594,7 +1595,7 @@ class Run:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
-        if os.environ.get("CODALAB_IGNORE_CLEANUP_STEP"):
+        if CODALAB_IGNORE_CLEANUP_STEP:
             logger.warning(
                 f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"
             )

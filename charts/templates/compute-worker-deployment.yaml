@@ -58,7 +58,7 @@ spec:
             - name: BROKER_URL
               value: "{{ if .url }}{{ .url }}{{ else }}pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS }}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//{{ end }}"
             - name: CODALAB_IGNORE_CLEANUP_STEP
-              value: "1"
+              value: '{{ $.Values.compute_worker.codalabIgnoreCleanupStep }}'
             {{- range $key, $value := $.Values.env }}
             - name: {{ $key }}
               value: "{{ $value }}"
