@@ -746,7 +746,7 @@ class Run:
             Exception,
         ) as e:
             logger.error(e)
-            return_Code = {"StatusCode": e}
+            return_Code = {"StatusCode": 1}
 
         self.logs[kind] = {
             "returncode": return_Code["StatusCode"],
@@ -1177,7 +1177,12 @@ class Run:
                     elapsed_time = logs["end"] - logs["start"]
                 else:
                     elapsed_time = self.execution_time_limit
-                return_code = logs["returncode"]
+                # Normalize the return_code
+                return_code = (
+                    logs["returncode"]
+                    if logs["returncode"] is None or isinstance(logs["returncode"], int)
+                    else 1
+                )
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
                     if kind == "ingestion":
@@ -1229,6 +1234,10 @@ class Run:
             # Raise so upstream marks failed immediately
             raise SubmissionException("Child task failed or non-zero return code")
 
+        logger.info(
+            "PROGRAM STATUS: is_scoring=%s program_rc=%r ingestion_rc=%r task_results=%r",
+            self.is_scoring, program_rc, ingestion_rc, task_results
+        )
         if self.is_scoring:
             self._update_status(STATUS_FINISHED)
         else:
