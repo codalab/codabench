@@ -71,6 +71,7 @@ swagger-spec-validator = "^3.0.4"
 loguru = "^0.7.3"
 setuptools = "80.9.0"
 uvloop = "0.21.0"
+kubernetes = "^35.0.0"
 
 [build-system]
 requires = ["poetry-core"]
