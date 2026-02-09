@@ -23,7 +23,7 @@ celery = "4.4.7"
 gunicorn = "22.0.0"
 urllib3 = ">=1.21.1,<1.25"
 uvicorn = {version = "0.13.3", extras = ["standard"]}
-pyyaml = "5.3.1"
+pyyaml = "5.4.1"
 watchdog = "2.1.1"
 argh = "0.26.2"
 python-dateutil = "2.7.3"
