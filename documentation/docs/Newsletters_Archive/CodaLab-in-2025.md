@@ -5,10 +5,7 @@
 
 Beyond the symbolic handover, the year was marked by strong community engagement, growing activity on Codabench, and steady progress on the software itself. This newsletter offers a snapshot of that journey: key numbers, standout competitions, and the latest advances shaping the platform.
 
-![image_2025_01_30T15_23_35_261Z](_attachments/header_2025.png)
-
-
-
+![image_header](_attachments/header_2025.png)
 
 ## Bye bye, CodaLab!
 
@@ -18,20 +15,15 @@ Today, Codabench is where the community's energy and development efforts are ful
 
 If you haven't made the transition yet as an organizer, good news: CodaLab bundles are fully compatible with Codabench, making the move straightforward. The process is documented step by step here: [How to transition from CodaLab to Codabench](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench/)
 
-
-
 ##  Some statistics
 
 Codabench continued to grow strongly throughout the year, reaching **432 public competitions** and welcoming **12,358 new users**. Daily activity also increased steadily, from around 500 submissions per day in January to **over 1,000 daily submissions by December**, reflecting sustained community engagement.
 
 CodaLab, while entering its sunset phase, still saw **100 public competitions** created and **14,854 new users** over the year. Submission activity peaked in March (around 850 submissions per day), before gradually declining to fewer than 200 daily submissions in December, as usage progressively shifted toward Codabench.
 
-
-
 ##  Spotlight on competitions
 
 The most popular competition this year, featuring **1220 participants**, was the NeurIPS 2025 competition [EEG Foundation Challenge](https://www.codabench.org/competitions/9975/). This competition aims to advance the field of electroencephalogram (EEG) decoding by addressing two critical challenges, (1) Cross-Task Transfer Learning: Developing models that can effectively transfer knowledge from any cognitive EEG tasks to active task and (2) Subject Invariant Representation for creating robust representations that generalize across different subjects while predicting clinical factors.
-
 
 Notable competitions:
 - [NeurIPS 2025 Weak Lensing Uncertainty Challenge](https://www.codabench.org/competitions/8934/), exploring uncertainty-aware and out-of-distribution detection AI techniques for Weak Gravitational Lensing Cosmology.
@@ -49,9 +41,6 @@ Notable competitions:
 - TreeAI4Species Competition: [Semantic Segmentation](https://www.codabench.org/competitions/9168/) and [Object detection](https://www.codabench.org/competitions/8485/), studying algorithms for identifying tree species from high-resolution aerial imagery.
 
 A huge thank you to everyone in the community for these **outstanding scientific contributions** accros a wide variety of fields. You can discover many more challenges in the [public compettion listing](https://www.codabench.org/competitions/public/?page=1).
-
-
-
 
 ## Novelty in the software
 
@@ -74,7 +63,6 @@ Many new features, bug fixes, and back-end changes were made. We present some of
 - Unified and lighter compute worker image, making it more stable
 - Make compute worker its own repository, which means it can be more easily used for other projects if needed
 - Django Admin upgrades to make it easier to manage the website as a site admin
-
 
 ## Community
 
@@ -119,11 +107,8 @@ Please cite one of these papers when working with our platforms:
 }
 ```
 
-
 ## Closing words
 
 Thank you for reading the our newsletter. We're not done yet! More projects, more challenges, and more science ahead. Our open platform is becoming a powerful actor for building reliable and innovative AI benchmarks. See you on Codabench.
 
 ![partners](_attachments/96bbc3a0-cb9b-479a-85c8-ba795c59d6f4_1753436671847627.jpg)
-
-
