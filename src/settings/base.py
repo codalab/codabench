@@ -16,19 +16,11 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # =============================================================================
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
-csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
-csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
-
-CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
-CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
 
 SITE_ID = 1
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
-
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
-
 
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
@@ -53,7 +45,7 @@ THIRD_PARTY_APPS = (
     'django_filters',
     'storages',
     'channels',
-    'drf_spectacular',
+    'drf_yasg2',
     'redis',
 )
 OUR_APPS = (
@@ -122,9 +114,6 @@ USE_TZ = True
 SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-
-# Django 4.x AutoField setting
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # =============================================================================
@@ -294,24 +283,8 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_RENDERER_CLASSES': (
         "rest_framework.renderers.JSONRenderer",
-        "api.renderers.CustomBrowsableAPIRenderer"),
-    # Add this line for drf-spectacular
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+        "api.renderers.CustomBrowsableAPIRenderer")
 }
-
-# =============================================================================
-# drf-spectacular (API Documentation)
-# =============================================================================
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Codabench API',
-    'DESCRIPTION': 'API documentation for Codabench platform',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # Use static schema serving for better performance
-    'COMPONENT_SPLIT_REQUEST': True,
-    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
-}
-
 # OAuth Toolkit
 OAUTH2_PROVIDER = {
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
@@ -401,9 +374,10 @@ SUBMISSIONS_API_URL = os.environ.get('SUBMISSIONS_API_URL', "http://django/api")
 MAX_EXECUTION_TIME_LIMIT = os.environ.get('MAX_EXECUTION_TIME_LIMIT', "600")  # time limit of the default queue
 
 # =============================================================================
-# Storage (Updated for Django 4.x)
+# Storage
 # =============================================================================
 STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 's3').lower()
+DEFAULT_FILE_STORAGE = None  # defined based on STORAGE_TYPE selection
 
 TEMP_SUBMISSION_STORAGE = os.environ.get('TEMP_SUBMISSION_STORAGE', '/codalab_tmp')
 
@@ -415,77 +389,14 @@ STORAGE_IS_S3 = STORAGE_TYPE == 's3' or STORAGE_TYPE == 'minio'
 STORAGE_IS_GCS = STORAGE_TYPE == 'gcs'
 STORAGE_IS_AZURE = STORAGE_TYPE == 'azure'
 
-# Django 4.x STORAGES configuration
 if STORAGE_IS_S3:
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-            "OPTIONS": {
-                "bucket_name": os.environ.get('AWS_STORAGE_BUCKET_NAME'),
-                "access_key": os.environ.get('AWS_ACCESS_KEY_ID'),
-                "secret_key": os.environ.get('AWS_SECRET_ACCESS_KEY'),
-                "endpoint_url": os.environ.get('AWS_S3_ENDPOINT_URL'),
-                "use_ssl": os.environ.get('S3_USE_SIGV4', 'true').lower() == 'true',
-                "querystring_auth": os.environ.get('AWS_QUERYSTRING_AUTH'),
-                "default_acl": os.environ.get('AWS_DEFAULT_ACL'),
-            },
-        },
-        "bundle": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-            "OPTIONS": {
-                "bucket_name": os.environ.get("AWS_STORAGE_PRIVATE_BUCKET_NAME"),
-                "access_key": os.environ.get("AWS_ACCESS_KEY_ID"),
-                "secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY"),
-                "endpoint_url": os.environ.get("AWS_S3_ENDPOINT_URL"),
-                "use_ssl": os.environ.get("S3_USE_SIGV4", "true").lower() == "true",
-                "querystring_auth": os.environ.get("AWS_QUERYSTRING_AUTH", "true").lower() == "true",
-                "default_acl": os.environ.get("AWS_DEFAULT_ACL", "private"),
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 elif STORAGE_IS_GCS:
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
-            "OPTIONS": {
-                "bucket_name": os.environ.get('GS_BUCKET_NAME'),
-                "project_id": os.environ.get('GS_PROJECT_ID'),  # You may need to add this env var
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 elif STORAGE_IS_AZURE:
-    STORAGES = {
-        "default": {
-            "BACKEND": "utils.storage.CodalabAzureStorage",
-            "OPTIONS": {
-                "account_name": os.environ.get("AZURE_ACCOUNT_NAME"),
-                "account_key": os.environ.get("AZURE_ACCOUNT_KEY"),
-                "azure_container": os.environ.get("AZURE_CONTAINER"),
-            },
-        },
-        "bundle": {
-            "BACKEND": "utils.storage.CodalabAzureStorage",
-            "OPTIONS": {
-                "account_name": os.environ.get("BUNDLE_AZURE_ACCOUNT_NAME", os.environ.get("AZURE_ACCOUNT_NAME")),
-                "account_key": os.environ.get("BUNDLE_AZURE_ACCOUNT_KEY", os.environ.get("AZURE_ACCOUNT_KEY")),
-                "azure_container": os.environ.get("BUNDLE_AZURE_CONTAINER"),
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "utils.storage.CodalabAzureStorage"
 else:
     raise NotImplementedError("Must use STORAGE_TYPE of 's3', 'minio', 'gcs', or 'azure'")
-
-# Backward compatibility (some code might still reference this)
-# DEFAULT_FILE_STORAGE = STORAGES["default"]["BACKEND"] # Not supported in Django 4.x
 
 # Helpers to verify storage configuration
 if STORAGE_IS_GCS:
@@ -580,6 +491,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Codabench <noreply@codabench.org>')
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
 
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'info@codabench.org')
