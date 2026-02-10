@@ -213,17 +213,73 @@ This is helpful only if you want to build the compute worker image. It is not ne
 To build the normal image:
 
 ```bash
-docker build -t codalab/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
+docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
+```
+
+To build the GPU version:
+```bash
+docker build -t codalab/competitions-v2-compute-worker:gpu -f Dockerfile.compute_worker_gpu .
 ```
 
 To update the image (add tag `:latest`, `:gpu` or else if needed)
 
 ```bash
-docker push codalab/codabench-compute-worker
+docker push codalab/competitions-v2-compute-worker
 ```
 
 !!! note "If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes."
 
+
+## Worker management
+
+Outside of docker containers install [Fabric](http://fabfile.org/) like so:
+
+```bash
+pip install fab-classic==1.17.0
+```
+
+Create a `server_config.yaml` in the root of this repository using:
+```
+cp server_config_sample.yaml server_config.yaml
+```
+
+Below is an example `server_config.yaml` that defines 2 roles `comp-gpu` and `comp-cpu`,
+one with GPU style workers (`is_gpu` and the GPU `docker_image`) and one with CPU style workers
+
+```yaml title="server_config.yaml"
+comp-gpu:
+  hosts:
+    - ubuntu@12.34.56.78
+    - ubuntu@12.34.56.79
+  broker_url: pyamqp://user:pass@host:port/vhost-gpu
+  is_gpu: true
+  docker_image: codalab/competitions-v2-compute-worker:gpu
+
+comp-cpu:
+  hosts:
+    - ubuntu@12.34.56.80
+  broker_url: pyamqp://user:pass@host:port/vhost-cpu
+  is_gpu: false
+  docker_image: codalab/competitions-v2-compute-worker:latest
+```
+
+You can of course create your own `docker_image` and specify it here.
+
+You can execute commands against a role:
+
+```bash
+fab -R comp-gpu status
+..
+[ubuntu@12.34.56.78] out: CONTAINER ID        IMAGE                                           COMMAND                  CREATED             STATUS              PORTS               NAMES
+[ubuntu@12.34.56.78] out: 1d318268bee1        codalab/competitions-v2-compute-worker:gpu   "/bin/sh -c 'celery …"   2 hours ago         Up 2 hours                              hardcore_greider
+..
+
+fab -R comp-gpu update
+..
+(updates workers)
+```
+
+See available commands with `fab -l`
 
 ## Update docker image
 
