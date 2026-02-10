@@ -24,6 +24,8 @@ from tasks.models import Task
 import logging
 logger = logging.getLogger(__name__)
 
+CURRENT_NAMESPACE = os.environ.get("CURRENT_NAMESPACE", "default")
+CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower()
 
 class Competition(models.Model):
     COMPETITION = "competition"
@@ -674,20 +676,21 @@ class Submission(models.Model):
 
             celery_app.control.revoke(self.celery_task_id, terminate=True)
             
-            try:
-                from kubernetes import client, config
-                config.load_incluster_config()
-                core_v1 = client.CoreV1Api()
+            if CONTAINER_ENGINE == "kubernetes":
+                try:
+                    from kubernetes import client, config
+                    config.load_incluster_config()
+                    core_v1 = client.CoreV1Api()
 
-                core_v1.delete_collection_namespaced_pod(
-                    namespace="codabench",
-                    label_selector=f"submission_id={self.id}",
-                    body=client.V1DeleteOptions(propagation_policy="Foreground")
-                )
-                
-                logger.info(f"Cleaned up Kubernetes resources for submission {self.id}")
-            except Exception as e:
-                logger.warning(f"Could not clean up K8s resources for submission {self.id}: {e}")
+                    core_v1.delete_collection_namespaced_pod(
+                        namespace=CURRENT_NAMESPACE,
+                        label_selector=f"submission_id={self.id}",
+                        body=client.V1DeleteOptions(propagation_policy="Foreground")
+                    )
+                    
+                    logger.info(f"Cleaned up Kubernetes resources for submission {self.id}")
+                except Exception as e:
+                    logger.warning(f"Could not clean up K8s resources for submission {self.id}: {e}")
             
             self.status = status
             self.save()
