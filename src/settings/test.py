@@ -6,10 +6,8 @@ DEBUG = True
 CELERY_TASK_ALWAYS_EAGER = True
 
 # Don't use whitenoise -- so we don't get exceptions for missing files
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
-STORAGES["staticfiles"] = {
-    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-}
 # NOTE! We cannot use in memory databases at the moment with Channels. If we remove channels,
 # we can turn this back on:
 #     # Use in memory database
@@ -22,4 +20,7 @@ STORAGES["staticfiles"] = {
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: False
 }
+
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+
 IS_TESTING = True
