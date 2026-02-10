@@ -109,7 +109,6 @@ class PhaseMigrationTests(APITestCase):
 
     def test_manual_migration_makes_submissions_from_one_phase_in_another(self):
         self.client.login(username='creator', password='creator')
-
         # make 5 submissions in phase 1
         for _ in range(5):
             SubmissionFactory(owner=self.creator, phase=self.phase_1, status=Submission.FINISHED, leaderboard=self.leaderboard)
@@ -123,6 +122,7 @@ class PhaseMigrationTests(APITestCase):
             assert resp.status_code == 200
             assert run_submission_mock.call_count == 5
 
+        self.phase_2.refresh_from_db()
         # check phase 2 has the 5 submissions
         assert self.phase_1.submissions.count() == 5
         assert self.phase_2.submissions.count() == 5
