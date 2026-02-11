@@ -6,6 +6,7 @@ import uuid
 from django.core.files import File
 from django.test import RequestFactory
 from django.utils import timezone
+from django.db import transaction
 
 from api.serializers.competitions import CompetitionSerializer
 from api.serializers.leaderboards import LeaderboardSerializer
@@ -14,6 +15,7 @@ from competitions.models import Phase
 from datasets.models import Data
 from queues.models import Queue
 from tasks.models import Task, Solution
+from profiles.models import CustomGroup
 from utils.storage import md5
 from .utils import CompetitionUnpackingException, zip_if_directory
 
@@ -27,6 +29,7 @@ class BaseUnpacker:
         self.created_tasks = []
         self.created_solutions = []
         self.created_datasets = []
+        self.created_groups = [] 
 
         # We'll make a fake request to pass to DRF serializers for request.user context
         self.fake_request = RequestFactory()
@@ -198,12 +201,132 @@ class BaseUnpacker:
         raise NotImplementedError
 
     def _unpack_image(self):
+        
         try:
             image_name = self.competition_yaml['image']
         except KeyError:
             raise CompetitionUnpackingException('An image for this competition could not be found in the yaml')
 
         self.competition['logo'] = self._read_image(image_name)
+
+    def _unpack_groups(self):
+        """
+        Parse groups from YAML.
+        Expected format:
+        groups:
+        - name: "Group A"
+          queue: "Queue Name"  # optional
+        """
+        raw = self.competition_yaml.get('groups')
+
+        if not raw:
+            self.competition['participant_groups_raw'] = []
+            return
+
+        parsed = []
+
+        for g in raw:
+            name = (g.get('name') or '').strip()
+
+            if not name:
+                raise CompetitionUnpackingException(
+                    'Each group must have a non-empty "name" field.'
+                )
+
+            parsed.append({
+                'name': name,
+                'queue_field': g.get('queue')
+            })
+
+        self.competition['participant_groups_raw'] = parsed
+
+
+
+    def _save_groups(self, competition):
+        """
+        Create CustomGroup objects and attach them to competition.
+        If group already exists, it is reused.
+        """
+
+        groups_raw = self.competition.get('participant_groups_raw') or []
+
+        if not groups_raw:
+            return
+
+        import uuid
+
+        with transaction.atomic():
+            for grp in groups_raw:
+                name = grp['name'].strip()
+                queue_field = grp.get('queue_field')
+
+                if not name:
+                    raise CompetitionUnpackingException(
+                        "Participant group name cannot be empty."
+                    )
+                queue_obj = None
+
+                if queue_field:
+                    if isinstance(queue_field, int) or (
+                        isinstance(queue_field, str) and queue_field.isdigit()
+                    ):
+                        queue_obj = Queue.objects.filter(pk=int(queue_field)).first()
+
+                    else:
+                        try:
+                            uuid_value = uuid.UUID(str(queue_field))
+                            queue_obj = Queue.objects.filter(vhost=uuid_value).first()
+                        except ValueError:
+                            queue_obj = None
+
+                        if not queue_obj:
+                            queues = Queue.objects.filter(name=queue_field)
+
+                            if queues.count() > 1:
+                                raise CompetitionUnpackingException(
+                                    f"Multiple queues found with name '{queue_field}'. "
+                                    f"Use id or UUID instead for group '{name}'."
+                                )
+
+                            queue_obj = queues.first()
+
+                    if not queue_obj:
+                        raise CompetitionUnpackingException(
+                            f"Queue '{queue_field}' does not exist "
+                            f"for group '{name}'."
+                        )
+
+                    if not queue_obj.is_public:
+                        organizers = queue_obj.organizers.values_list(
+                            'username', flat=True
+                        )
+
+                        if (
+                            queue_obj.owner != self.creator
+                            and self.creator.username not in organizers
+                        ):
+                            raise CompetitionUnpackingException(
+                                f"You do not have access to queue '{queue_field}' "
+                                f"for group '{name}'."
+                            )
+
+                group, created = CustomGroup.objects.get_or_create(
+                    name=name,
+                    defaults={'queue': queue_obj}
+                )
+
+                if not created and queue_field:
+                    if group.queue != queue_obj:
+                        group.queue = queue_obj
+                        group.save()
+
+                if created:
+                    self.created_groups.append(group)
+
+                competition.participant_groups.add(group)
+
+
+
 
     def _unpack_queue(self):
         # Get Queue by vhost/uuid. If instance not returned, or we don't have access don't set it!
@@ -343,6 +466,11 @@ class BaseUnpacker:
     def _clean(self):
         for dataset in self.created_datasets:
             dataset.delete()
+        for group in getattr(self, 'created_groups', []):
+            try:
+                group.delete()
+            except Exception:
+                pass
         for task in self.created_tasks:
             task.delete()
         for solution in self.created_solutions:
@@ -353,7 +481,15 @@ class BaseUnpacker:
             self._save_tasks()
             self._save_solutions()
             self._save_leaderboards()
-            return self._save_competition()
+            self._unpack_groups()
+
+            # Create competition
+            competition_instance = self._save_competition()
+
+            # Create and attach groups
+            self._save_groups(competition_instance)
+
+            return competition_instance
         except Exception as e:
             self._clean()
             raise e
