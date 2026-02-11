@@ -205,6 +205,16 @@
     }
 
     self.on('mount', () => {
+
+      const form = self.root.querySelector('form')
+      if (form) {
+        form.addEventListener('submit', function(e){
+          e.preventDefault()
+          e.stopPropagation()
+          return false
+        })
+      }
+
       let participants = parseJsonScriptElement('available-participants')
       if (!participants || !participants.length) {
         participants = parseJsonScriptElement('available-users')
