@@ -1,5 +1,5 @@
-## CodaLab and Codabench newsletter
-### What happened in 2025?
+# CodaLab and Codabench newsletter
+## What happened in 2025?
 
 2025 was a year of transition — and consolidation — for our community. After 13 years of service, [CodaLab Competitions](https://codalab.lisn.fr/) was officially phased out, closing an important chapter in the history of open scientific challenges. At the same time, [Codabench](https://codabench.org/) matured into the central platform for benchmarking, concentrating both usage and development efforts.
 
@@ -7,7 +7,7 @@ Beyond the symbolic handover, the year was marked by strong community engagement
 
 ![image_header](_attachments/header_2025.png)
 
-## Bye bye, CodaLab!
+# Bye bye, CodaLab!
 
 After 13 years and millions of submissions made, [CodaLab Competitions](https://codalab.lisn.fr/) and its main servers were finally phased out at end of 2025, passing the torch to [Codabench](https://codabench.org/).
 
@@ -15,13 +15,13 @@ Today, Codabench is where the community's energy and development efforts are ful
 
 If you haven't made the transition yet as an organizer, good news: CodaLab bundles are fully compatible with Codabench, making the move straightforward. The process is documented step by step here: [How to transition from CodaLab to Codabench](https://docs.codabench.org/latest/Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench/)
 
-##  Some statistics
+#  Some statistics
 
 Codabench continued to grow strongly throughout the year, reaching **519 public competitions** and welcoming **31,608 new users**! Daily activity also increased steadily, from around 500 submissions per day in January to **over 1,000 daily submissions by December**, reflecting sustained community engagement.
 
 CodaLab, while entering its sunset phase, still saw **100 public competitions** created and **14,854 new users** over the year. Submission activity peaked in March (around 850 submissions per day), before gradually declining to fewer than 200 daily submissions in December, as usage progressively shifted toward Codabench.
 
-##  Spotlight on competitions
+#  Spotlight on competitions
 
 2025 featured many notable competitions across scientific and industrial fields. From NeurIPS and ICML to challenges in health and medical research, environmental science, industrial applications, language processing, and education, the diversity of topics continued to grow.
 
@@ -77,7 +77,7 @@ Other notable NLP benchmarks:
 
 A huge thank you to everyone in the community for these **outstanding scientific contributions** accros a wide variety of fields. You can discover **many more challenges in the [public compettion listing](https://www.codabench.org/competitions/public/?page=1)**.
 
-## Novelty in the software
+# Novelty in the software
 
 Our contributors community was very active, with **139 pull requests merged** this year.
 Many new features, bug fixes, and back-end changes were made. We present some of them below.
@@ -99,7 +99,7 @@ Many new features, bug fixes, and back-end changes were made. We present some of
 - Make compute worker its own repository, which means it can be more easily used for other projects if needed
 - Django Admin upgrades to make it easier to manage the website as a site admin
 
-## Community
+# Community
 
 Reminder on our communication tools:
 
@@ -138,7 +138,7 @@ Please cite one of these papers when working with our platforms:
 }
 ```
 
-## Closing words
+# Closing words
 
 Thank you for reading the our newsletter. We're not done yet! More projects, more challenges, and more science ahead. Our open platform is becoming a powerful actor for building reliable and innovative AI benchmarks. See you on Codabench.
 
