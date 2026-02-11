@@ -1409,7 +1409,7 @@ It also gives, as <code>args</code>:
 <h3 id="ingestion-program">Ingestion Program<a class="headerlink" href="#ingestion-program" title="Permanent link">¶</a></h3>
 <p>The ingestion program is a file that gets ran to generate the predictions from the submissions if necessary. This is usually a python script or a script in another language, but it can generally be anything.</p>
 <p>The ingestion program is also paired with a <code>metadata.yaml</code> that specifies how to run it. It should have a key <code>command</code> that is the command used to run your ingestion program. The same special directories should be available to your ingestion program. </p>
-<p>Example: Here's what an ingestion <code>metdata.yaml</code> might look like this:
+<p>Example: Here's what an ingestion <code>metadata.yaml</code> might look like this:
 </p><div class="language-yaml highlight"><span class="filename">metadata.yaml</span><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python3 /app/program/ingestion.py /app/input_data/ /app/output/ /app/program /app/ingested_program</span>
 </span></code></pre></div><p></p>
 <p>Just like the example above, this specifies we're using python to run our ingestion program. Please note that it is not necessary to pass these directories as arguments to the programs, but it can be convenient. More information about the folder layout <a href="../../../Developers_and_Administrators/Submission-Docker-Container-Layout/#submission-container">here</a>.</p>
