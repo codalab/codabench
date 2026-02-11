@@ -462,6 +462,13 @@
       }).then(data => {
         if (data && data.status === 'ok' && data.group) {
           const g = data.group
+          if (!self.editing_group) {
+            const selectedUsers = (self.available_users || [])
+              .filter(u => user_ids.includes(String(u.id)))
+              .map(u => u.username)
+              g.members = selectedUsers
+          }
+
           let found = false
           for (let i = 0; i < self.available_groups.length; i++) {
             if (self.available_groups[i].id === g.id) {
