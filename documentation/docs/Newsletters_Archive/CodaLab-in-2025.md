@@ -17,30 +17,65 @@ If you haven't made the transition yet as an organizer, good news: CodaLab bundl
 
 ##  Some statistics
 
-Codabench continued to grow strongly throughout the year, reaching **432 public competitions** and welcoming **12,358 new users**. Daily activity also increased steadily, from around 500 submissions per day in January to **over 1,000 daily submissions by December**, reflecting sustained community engagement.
+Codabench continued to grow strongly throughout the year, reaching **519 public competitions** and welcoming **31,608 new users**! Daily activity also increased steadily, from around 500 submissions per day in January to **over 1,000 daily submissions by December**, reflecting sustained community engagement.
 
 CodaLab, while entering its sunset phase, still saw **100 public competitions** created and **14,854 new users** over the year. Submission activity peaked in March (around 850 submissions per day), before gradually declining to fewer than 200 daily submissions in December, as usage progressively shifted toward Codabench.
 
 ##  Spotlight on competitions
 
-The most popular competition this year, featuring **1220 participants**, was the NeurIPS 2025 competition [EEG Foundation Challenge](https://www.codabench.org/competitions/9975/). This competition aims to advance the field of electroencephalogram (EEG) decoding by addressing two critical challenges, (1) Cross-Task Transfer Learning: Developing models that can effectively transfer knowledge from any cognitive EEG tasks to active task and (2) Subject Invariant Representation for creating robust representations that generalize across different subjects while predicting clinical factors.
+2025 featured many notable competitions across scientific and industrial fields. From NeurIPS and ICML to challenges in health and medical research, environmental science, industrial applications, language processing, and education, the diversity of topics continued to grow.
 
-Notable competitions:
+#### NeurIPS and ICML
+- [EEG Foundation Challenge](https://www.codabench.org/competitions/9975/), aiming to advance the field of electroencephalogram (EEG) decoding by addressing two critical challenges, (1) Cross-Task Transfer Learning: Developing models that can effectively transfer knowledge from any cognitive EEG tasks to active task and (2) Subject Invariant Representation for creating robust representations that generalize across different subjects while predicting clinical factors. It was the most popular competition this year, featuring **1220 participants**, was the NeurIPS 2025 competition.
 - [NeurIPS 2025 Weak Lensing Uncertainty Challenge](https://www.codabench.org/competitions/8934/), exploring uncertainty-aware and out-of-distribution detection AI techniques for Weak Gravitational Lensing Cosmology.
 - [NeurIPS 2025: Fairness in AI Face Detection Challenge](https://www.codabench.org/competitions/7166/), where the goal is to advance the development of fair and robust AI-generated face detection systems by addressing the critical challenge of fairness generalization under real-world deployment conditions.
+- [ICML 2025 AI for Math Workshop & Challenge 1 - APE-Bench I](https://www.codabench.org/competitions/8357/), designed to evaluate systems that can automate proof engineering in large-scale formal mathematics libraries.
+
+#### Health and medical research
+- [MAMA-MIA Challenge](https://www.codabench.org/competitions/7425/), studying breast cancer through magnetic resonance imaging (MRI) data, that turned into a long-term benhcmark.
+- [Universal UltraSound Image Challenge: Multi-Organ Classification and Segmentation](https://www.codabench.org/competitions/9106/), aiming at evaluating algorithms for multi-organ classification and segmentation using diverse, real-world ultrasound data collected across multiple centers and devices.
+- [NSF HDR Scientific Modeling out of distribution: Neural Forecasting](https://www.codabench.org/competitions/9806/), in which algorithms forecast the activations of a cluster of neurons given previous signals from the same cluster.
 - [The Algonauts Project 2025 Challenge](https://www.codabench.org/competitions/4313/), aiming at providing a platform where biological and artificial intelligence scientists can cooperate and compete in developing cutting-edge encoding models of neural responses to multimodal naturalistic movies that well generalize outside of their training distribution.
-- [Universal Behavioral Modeling Data Challenge](https://www.codabench.org/competitions/7230/), designed to promote a unified approach to behavior modeling.
+- [IUGC2025-validation](https://www.codabench.org/competitions/7105/), landmark detection for intrapartum ultrasound measurement, aiming at improving childbirth experiences.
+
+#### Environmental research
+- [MIT ARCLab Prize for Space AI Innovation 2025](https://www.codabench.org/competitions/5547/), where the objective is to develop cutting-edge AI algorithms for nowcasting and forecasting space weather-driven changes in atmospheric density across low earth orbit using historical space weather observations.
+- TreeAI4Species Competition: [Semantic Segmentation](https://www.codabench.org/competitions/9168/) and [Object detection](https://www.codabench.org/competitions/8485/), studying algorithms for identifying tree species from high-resolution aerial imagery.
+- [Water Scarcity](https://www.codabench.org/competitions/4335/), leveraging data science to address water scarcity issues through simulations.
+
+#### Industrial applications
 - [ICPR 2026 Competition on Low-Resolution License Plate Recognition](https://www.codabench.org/competitions/12259/), a computer vision challenge on low resolution images which gathered more than 500 participants.
 - [AssetOpsBench](https://www.codabench.org/competitions/10206/), in which participants propose agents that solve realistic industrial tasks across the full pipeline: "Sensing → Reasoning → Actuation".
-- [NSF HDR Scientific Modeling out of distribution: Neural Forecasting](https://www.codabench.org/competitions/9806/), in which algorithms forecast the activations of a cluster of neurons given previous signals from the same cluster.
-- [MIT ARCLab Prize for Space AI Innovation 2025](https://www.codabench.org/competitions/5547/), where the objective is to develop cutting-edge AI algorithms for nowcasting and forecasting space weather-driven changes in atmospheric density across low earth orbit using historical space weather observations.
-- [MAMA-MIA Challenge](https://www.codabench.org/competitions/7425/), studying breast cancer through magnetic resonance imaging (MRI) data, that turned into a long-term benhcmark. 
-- [ICML 2025 AI for Math Workshop & Challenge 1 - APE-Bench I](https://www.codabench.org/competitions/8357/), designed to evaluate systems that can automate proof engineering in large-scale formal mathematics libraries.
-- [IndoML 2025 Datathon Tack-1: Mistake Identification](https://www.codabench.org/competitions/7189/), a task focusing on mistake identification for education application.
-- [Universal UltraSound Image Challenge: Multi-Organ Classification and Segmentation](https://www.codabench.org/competitions/9106/), aiming at evaluating algorithms for multi-organ classification and segmentation using diverse, real-world ultrasound data collected across multiple centers and devices.
-- TreeAI4Species Competition: [Semantic Segmentation](https://www.codabench.org/competitions/9168/) and [Object detection](https://www.codabench.org/competitions/8485/), studying algorithms for identifying tree species from high-resolution aerial imagery.
+- [Universal Behavioral Modeling Data Challenge](https://www.codabench.org/competitions/7230/), designed to promote a unified approach to behavior modeling and data analytics.
+- [MM-CTR: Multimodal CTR Prediction Challenge at the WWW 2025 EReL@MIR Workshop](https://www.codabench.org/competitions/5372), focusing on multimodal recommandation tasks.
+- [WWW 2025: SMARTMEM Memory Failure Prediction Competition](https://www.codabench.org/competitions/3586/), where the task is to predict memory failures for data centers.
+- [Inventory Control Problem](https://www.codabench.org/competitions/9675/), with the objective of providing agents to solve the Inventory Control Problem.
+- [RoboSense - Track1](https://www.codabench.org/competitions/9285/), challenging participants to develop intelligent driving systems that can understand and act upon natural language instructions in dynamic driving environments.
 
-A huge thank you to everyone in the community for these **outstanding scientific contributions** accros a wide variety of fields. You can discover many more challenges in the [public compettion listing](https://www.codabench.org/competitions/public/?page=1).
+#### Natural Language Processing
+
+SemEval (Semantic Evaluation) is an international series of shared tasks in natural language processing that provides standardized benchmarks to evaluate and compare systems on semantic understanding challenges. More than 12 tasks (with sub-tracks) were organized on Codabench in 2025, accounting for more than 20,000 submissions.
+
+Some examples are given below:
+- SemEval-2026 Task 3 - Dimensional Aspect-Based Sentiment Analysis - [Track A](https://www.codabench.org/competitions/10918/) - [Track B](https://www.codabench.org/competitions/11139/)
+- [SemEval 2026 Task 4: Narrative Similarity](https://www.codabench.org/competitions/10273/)
+- [SemEval 2026 Task 9 - Subtask 1: Multilingual Text Classification Challenge - Polarization Detection ](https://www.codabench.org/competitions/10522/)
+- [SemEval 2025 - Task 8: DataBench, Question-Answering over Tabular Data ](https://www.codabench.org/competitions/3360/)
+- [Bridging the Gap in Text-Based Emotion Detection - SemEval 2025 Task 11](https://www.codabench.org/competitions/3863/)
+
+Other notable NLP benchmarks:
+- [Behind the Secrets of Large Language Models](https://www.codabench.org/competitions/11605/)
+- [VLSP2025 DRiLL shared task](https://www.codabench.org/competitions/9722/)
+
+
+#### Education
+- [IndoML 2025 Datathon Tack-1: Mistake Identification](https://www.codabench.org/competitions/7189/), a task focusing on mistake identification for education application.
+- [Compétition Algorithmique Avancée CS 3A INFO -- TSP-rd](https://www.codabench.org/competitions/9896/), a competition used as a training for students in computer science, receiving more than 3000 submissions.
+- [Machine Translation Challenge! CS-779](https://www.codabench.org/competitions/10523), a natural language processing student competition that received more than 4000 submissions.
+- [IACV 25 - Exercise 5](https://www.codabench.org/competitions/11709), a competition used for image analysis and computer vision classes.
+- [Tokam2D - Structure detection in fusion plasma simulations - datacamp 2025](https://www.codabench.org/competitions/11224/), physics based data science training at Université Paris-Saclay.
+
+A huge thank you to everyone in the community for these **outstanding scientific contributions** accros a wide variety of fields. You can discover **many more challenges in the [public compettion listing](https://www.codabench.org/competitions/public/?page=1)**.
 
 ## Novelty in the software
 
@@ -65,10 +100,6 @@ Many new features, bug fixes, and back-end changes were made. We present some of
 - Django Admin upgrades to make it easier to manage the website as a site admin
 
 ## Community
-
-**Save the date:** We are having the annual **Codabench Forum** at [LISN](https://www.lisn.upsaclay.fr/) on April 2, 2025 (13:30 - 16:00). It's an opportunity to meet the community and the core team, and to learn more through a series of talks.
-
----
 
 Reminder on our communication tools:
 
