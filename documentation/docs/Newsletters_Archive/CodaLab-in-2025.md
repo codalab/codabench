@@ -77,6 +77,8 @@ Other notable NLP benchmarks:
 
 A huge thank you to everyone in the community for these **outstanding scientific contributions** accros a wide variety of fields. You can discover **many more challenges in the [public compettion listing](https://www.codabench.org/competitions/public/?page=1)**.
 
+![image_break](_attachments/break_2025.png)
+
 # Novelty in the software
 
 Our contributors community was very active, with **139 pull requests merged** this year.
