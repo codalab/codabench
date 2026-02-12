@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 
 def codalab_send_mail(context_data, to_email, html_file, text_file, subject, from_email=None):
-    from_email = from_email if from_email else settings.DEFAULT_FROM_EMAIL
+    from_email = from_email if from_email else settings.SERVER_EMAIL
 
     context_data["site"] = Site.objects.get_current()
 
@@ -40,7 +40,7 @@ def sanitize(content):
 
 
 def codalab_send_markdown_email(subject, markdown_content, recipient_list, from_email=None):
-    from_email = from_email if from_email else settings.DEFAULT_FROM_EMAIL
+    from_email = from_email if from_email else settings.SERVER_EMAIL
     html_message = markdown.markdown(markdown_content)
     # message = sanitize(markdown_content)
     # html_message = sanitize(markdown.markdown(message))
