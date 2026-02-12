@@ -67,10 +67,10 @@ education, the diversity of topics continued to grow.
 - [NeurIPS 2025 Weak Lensing Uncertainty Challenge](https://www.codabench.org/competitions/8934/),
 exploring uncertainty-aware and out-of-distribution detection AI techniques for
 Weak Gravitational Lensing Cosmology.
-<!-- [NeurIPS 2025: Fairness in AI Face Detection Challenge](https://www.codabench.org/competitions/7166/),
+- [NeurIPS 2025: Fairness in AI Face Detection Challenge](https://www.codabench.org/competitions/7166/),
   where the goal is to advance the development of fair and robust AI-generated
   face detection systems by addressing the critical challenge of fairness
-  generalization under real-world deployment conditions.-->
+  generalization under real-world deployment conditions.
 - [ICML 2025 AI for Math Workshop & Challenge 1 - APE-Bench I](https://www.codabench.org/competitions/8357/),
   designed to evaluate systems that can automate proof engineering in
   large-scale formal mathematics libraries.
@@ -80,7 +80,7 @@ Weak Gravitational Lensing Cosmology.
 - [MAMA-MIA Challenge](https://www.codabench.org/competitions/7425/), studying
 breast cancer through magnetic resonance imaging (MRI) data, that turned into a
 long-term benchmark.
-<!-- [Universal UltraSound Image Challenge: Multi-Organ Classification and Segmentation](https://www.codabench.org/competitions/9106/),
+[Universal UltraSound Image Challenge: Multi-Organ Classification and Segmentation](https://www.codabench.org/competitions/9106/),
   aiming at evaluating algorithms for multi-organ classification and
   segmentation using diverse, real-world ultrasound data collected across
   multiple centers and devices. -->
@@ -119,10 +119,10 @@ outside of their training distribution.
   full pipeline: "Sensing → Reasoning → Actuation".
 - [Universal Behavioral Modeling Data Challenge](https://www.codabench.org/competitions/7230/),
 designed to promote a unified approach to behavior modeling and data analytics.
-<!-- [MM-CTR: Multimodal CTR Prediction Challenge at the WWW 2025 EReL@MIR Workshop](https://www.codabench.org/competitions/5372),
-  focusing on multimodal recommandation tasks.
 - [WWW 2025: SMARTMEM Memory Failure Prediction Competition](https://www.codabench.org/competitions/3586/),
   where the task is to predict memory failures for data centers.
+<!-- [MM-CTR: Multimodal CTR Prediction Challenge at the WWW 2025 EReL@MIR Workshop](https://www.codabench.org/competitions/5372),
+  focusing on multimodal recommandation tasks.
 - [Inventory Control Problem](https://www.codabench.org/competitions/9675/),
   with the objective of providing agents to solve the Inventory Control Problem.
 - [RoboSense - Track1](https://www.codabench.org/competitions/9285/),
@@ -138,9 +138,11 @@ and compare systems on semantic understanding challenges. More than 12 tasks
 (with sub-tracks) were organized on Codabench in 2025, accounting for more than
 20,000 submissions.
 
-Some examples are given below:
+- SemEval competitions suite: Task [1](https://www.codabench.org/competitions/9719/), [2](https://www.codabench.org/competitions/9963/), [3](https://www.codabench.org/competitions/10918/), 
+  [4](https://www.codabench.org/competitions/10273/), [5](https://www.codabench.org/competitions/10877/), [6](https://www.codabench.org/competitions/10879/),
+  [7](https://www.codabench.org/competitions/3737/), [8](https://www.codabench.org/competitions/3360/), [9](https://www.codabench.org/competitions/10522/),
+  [10](https://www.codabench.org/competitions/10749/), [11](https://www.codabench.org/competitions/3863/), [12](https://www.codabench.org/competitions/12446/)
 
-- SemEval competitions suite
 <!-- SemEval-2026 Task 3 - Dimensional Aspect-Based Sentiment Analysis -
   [Track A](https://www.codabench.org/competitions/10918/) -
   [Track B](https://www.codabench.org/competitions/11139/)
