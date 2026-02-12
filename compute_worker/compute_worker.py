@@ -861,7 +861,9 @@ class Run:
                         )
                     except Exception as e:
                         logger.error(f"Error sending log to websocket: {e}")
-            
+
+        except ExecutionTimeLimitExceeded:
+            raise 
         except Exception as e:
             logger.error(f"Error streaming logs: {e}")
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
