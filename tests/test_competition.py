@@ -111,7 +111,7 @@ def test_manual_competition_creation(page: Page):
     page.locator('input[name="name"]').click()
     page.locator('input[name="name"]').fill(str(titleNum) + "Playwright Task")
     page.locator('input[name="start_date"]').click()
-    page.get_by_role("cell", name="12").click()
+    page.get_by_role("cell", name="12").first.click()
     page.locator('input[name="start_time"]').click()
     page.get_by_role("cell", name="10:").click()
     page.get_by_role("cell", name=":00").click()
