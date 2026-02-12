@@ -98,11 +98,11 @@ extra:
     alias: true
   footer_links:
     - text: "Governance Document"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Community-Governance"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/GOVERNANCE.md"
     - text: "Privacy Policy"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Privacy"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md"
     - text: "About"
-      href: "https://github.com/codalab/codalab-competitions/wiki/Project_About_CodaLab"
+      href: "https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md"
 
 nav:
   - Home: index.md
@@ -126,8 +126,11 @@ nav:
           - Competition Examples: Organizers/Benchmark_Creation/Benchmark-Examples.md
 =======
           - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
+<<<<<<< HEAD
           - Example Cancer Benchmarks: Organizers/Benchmark_Creation/Cancer-Benchmarks.md
 >>>>>>> d7e14ebd (revert)
+=======
+>>>>>>> 13bb9be0 (Revert "revert")
           - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
           - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
       - Running a Benchmarks:

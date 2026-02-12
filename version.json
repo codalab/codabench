@@ -1,5 +1,6 @@
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   "tag_name": "v1.25",
   "release_name": "v1.25",
   "html_url": "https://github.com/codalab/codabench/releases/tag/v1.25"
@@ -15,4 +16,9 @@
   "html_url": "https://github.com/codalab/codabench/releases/tag/v1.22"
 >>>>>>> f64dd0a0 (revert)
 >>>>>>> d7e14ebd (revert)
+=======
+  "tag_name": "v1.24",
+  "release_name": "v1.24",
+  "html_url": "https://github.com/codalab/codabench/releases/tag/v1.24"
+>>>>>>> 13bb9be0 (Revert "revert")
 }
