@@ -1139,8 +1139,8 @@ class Run:
             loop = asyncio.get_running_loop()
             loop.close()
         except RuntimeError as e:
-            logger.error("Error while closing running vent loop")
-            logger.exception(e)
+            logger.error("Error while closing running event loop: No event loop.")
+            # logger.exception(e)
           
         loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
