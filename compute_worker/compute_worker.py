@@ -66,7 +66,7 @@ configure_logging(
 )
 
 # -----------------------------------------------
-# Initialize Docker, Podman, or Kubernetes depending on configuration
+# Initialize Docker, Podman or Kubernetes depending on .env or charts/values.yaml
 # -----------------------------------------------
 
 CONTAINER_ENGINE = os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower()
