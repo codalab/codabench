@@ -237,8 +237,13 @@ def competition_create_group(request, pk):
     except Exception as e:
         return HttpResponseBadRequest("Error creating group: %s" % str(e))
 
-    if request.is_ajax() or request.content_type == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if (
+        request.content_type.startswith('application/json')
+        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    ):
         return JsonResponse({'status': 'ok', 'group': group_data})
+
 
     messages.success(request, "Groupe créé")
     return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
@@ -315,8 +320,13 @@ def competition_update_group(request, pk, group_id):
         }
     }
 
-    if request.is_ajax() or request.content_type == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if (
+        request.content_type.startswith('application/json')
+        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    ):
         return JsonResponse(resp)
+
 
     messages.success(request, "Groupe modifié")
     return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
@@ -342,8 +352,13 @@ def competition_delete_group(request, pk, group_id):
     except Exception as e:
         return HttpResponseBadRequest("Error deleting group: %s" % str(e))
 
-    if request.is_ajax() or request.content_type == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if (
+        request.content_type.startswith('application/json')
+        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('accept', '')
+    ):
         return JsonResponse({'status': 'ok', 'group_id': group_id})
+
 
     messages.success(request, "Groupe supprimé")
     return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
