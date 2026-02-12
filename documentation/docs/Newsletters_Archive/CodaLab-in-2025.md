@@ -2,7 +2,7 @@
 
 ## What happened in 2025?
 
-2025 was a year of transition — and consolidation — for our community. After 13
+2025 was a year of transition and consolidation for our community. After 13
 years of service, [CodaLab Competitions](https://codalab.lisn.fr/) was
 officially phased out, closing an important chapter in the history of open
 scientific challenges. At the same time, [Codabench](https://codabench.org/)
@@ -58,11 +58,9 @@ education, the diversity of topics continued to grow.
 
 - [EEG Foundation Challenge](https://www.codabench.org/competitions/9975/),
   aiming to advance the field of electroencephalogram (EEG) decoding by
-  addressing two critical challenges, (1) Cross-Task Transfer Learning:
-  Developing models that can effectively transfer knowledge from any cognitive
-  EEG tasks to active task and (2) Subject Invariant Representation for creating
-  robust representations that generalize across different subjects while
-  predicting clinical factors. It was the most popular competition this year,
+  addressing two critical challenges, (1) models that can transfer knowledge from any cognitive
+  EEG tasks to active task and (2) creating representations that generalize across different subjects.
+  It was the most popular competition this year,
   featuring **1220 participants**, was the NeurIPS 2025 competition.
 - [NeurIPS 2025 Weak Lensing Uncertainty Challenge](https://www.codabench.org/competitions/8934/),
 exploring uncertainty-aware and out-of-distribution detection AI techniques for
@@ -172,10 +170,8 @@ more than 3000 submissions.
 - [Tokam2D - Structure detection in fusion plasma simulations - datacamp 2025](https://www.codabench.org/competitions/11224/),
   physics based data science training at Université Paris-Saclay.
 
-A huge thank you to everyone in the community for these **outstanding scientific
-contributions** accros a wide variety of fields. You can discover **many more
-challenges in the
-[public competition listing](https://www.codabench.org/competitions/public/?page=1)**.
+A huge thank you to everyone in the community for these **outstanding scientific contributions** 
+across a wide variety of fields. You can discover **many more challenges in the [public competition listing](https://www.codabench.org/competitions/public/?page=1)**.
 
 ![image_break](_attachments/break_2025.png)
 
@@ -213,12 +209,12 @@ The trend is to make the project more easy to deploy for independant hosters.
 Reminder on our communication tools:
 
 - Join our [google forum](https://groups.google.com/g/codalab-competitions) to
-  emphasize your competitions and events
+  communicate your competitions and events
 - Contact us for any question: info@codabench.org
 - Write an issue on [github](https://github.com/codalab/codabench) about
   interesting suggestions
 
-Please cite one of these papers when working with our platforms:
+Please cite this paper when working with Codabench:
 
 ```
 @article{codabench,
@@ -233,19 +229,6 @@ Please cite one of these papers when working with our platforms:
    issn = {2666-3899},
    doi = {https://doi.org/10.1016/j.patter.2022.100543},
    url = {https://www.sciencedirect.com/science/article/pii/S2666389922001465}
-}
-```
-
-```
-@article{codalab_competitions_JMLR,
- author  = {Adrien Pavao and Isabelle Guyon and Anne-Catherine Letournel and Dinh-Tuan Tran and Xavier Baro and Hugo Jair Escalante and Sergio Escalera and Tyler Thomas and Zhen Xu},
- title   = {CodaLab Competitions: An Open Source Platform to Organize Scientific Challenges},
- journal = {Journal of Machine Learning Research},
- year    = {2023},
- volume  = {24},
- number  = {198},
- pages   = {1--6},
- url     = {http://jmlr.org/papers/v24/21-1436.html}
 }
 ```
 
