@@ -1135,6 +1135,13 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
+        try:
+            loop = asyncio.get_running_loop()
+            loop.close()
+        except RuntimeError as e:
+            logger.error("Error while closing running vent loop")
+            logger.exception(e)
+          
         loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind="program"),
