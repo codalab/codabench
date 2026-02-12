@@ -1458,27 +1458,27 @@ class Run:
                 "is_scoring": self.is_scoring,
             }
             # Some cleanup
-            for kind, logs in self.logs.items():
-                containers_to_kill = []
-                containers_to_kill.append(self.ingestion_container_name)
-                containers_to_kill.append(self.program_container_name)
-                logger.debug(
-                    "Trying to kill and remove container " + str(containers_to_kill)
-                )
-                for container in containers_to_kill:
-                    try:
-                        if CONTAINER_ENGINE == "kubernetes":
-                            pass
-                        else:
+            if CONTAINER_ENGINE == "kubernetes":
+                self.delete_all_submission_pods()
+            else:
+                for kind, logs in self.logs.items():
+                    containers_to_kill = []
+                    containers_to_kill.append(self.ingestion_container_name)
+                    containers_to_kill.append(self.program_container_name)
+                    logger.debug(
+                        "Trying to kill and remove container " + str(containers_to_kill)
+                    )
+                    for container in containers_to_kill:
+                        try:
                             client.remove_container(str(container), force=True)
-                    except docker.errors.APIError as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
-                        )
-                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-                            logger.exception(e)
+                        except docker.errors.APIError as e:
+                            logger.error(e)
+                        except Exception as e:
+                            logger.error(
+                                "There was a problem killing " + str(containers_to_kill) + e
+                            )
+                            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                                logger.exception(e)
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
             # Send error through web socket to the frontend
@@ -1494,22 +1494,24 @@ class Run:
                 return_code = logs["returncode"]
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
-                    if kind == "ingestion":
-                        containers_to_kill = self.ingestion_container_name
+                    if CONTAINER_ENGINE == "kubernetes":
+                        self.delete_all_submission_pods()
                     else:
-                        containers_to_kill = self.program_container_name
-                    try:
-                        if CONTAINER_ENGINE != "kubernetes":
+                        if kind == "ingestion":
+                            containers_to_kill = self.ingestion_container_name
+                        else:
+                            containers_to_kill = self.program_container_name
+                        try:
                             client.kill(containers_to_kill)
                             client.remove_container(containers_to_kill, force=True)
-                    except docker.errors.APIError as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
-                        )
-                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-                            logger.exception(e)
+                        except docker.errors.APIError as e:
+                            logger.error(e)
+                        except Exception as e:
+                            logger.error(
+                                "There was a problem killing " + str(containers_to_kill) + e
+                            )
+                            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                                logger.exception(e)
                 if kind == "program":
                     self.program_exit_code = return_code
                     self.program_elapsed_time = elapsed_time
@@ -1608,3 +1610,15 @@ class Run:
 
         logger.info(f"Destroying submission temp dir: {self.root_dir}")
         shutil.rmtree(self.root_dir)
+    
+    def delete_all_submission_pods(self):
+        try:
+            core_v1 = client.CoreV1Api()
+            core_v1.delete_collection_namespaced_pod(
+                namespace=CURRENT_NAMESPACE,
+                label_selector=f"submission_id={self.submission_id}",
+                body=client.V1DeleteOptions(propagation_policy="Foreground")
+            )
+            logger.info(f"Cleaned up Kubernetes resources for submission {self.submission_id}")
+        except Exception as e:
+            logger.warning(f"Could not clean up K8s resources for submission {self.submission_id}: {e}")
