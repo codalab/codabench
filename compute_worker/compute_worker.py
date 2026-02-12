@@ -20,6 +20,7 @@ from rich.pretty import pprint
 import requests
 
 import websockets
+from websockets.exceptions import InvalidStatusCode
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
 from celery import Celery, shared_task, utils
@@ -80,10 +81,7 @@ elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
 # -----------------------------------------------
 # Show Progress bar on downloading images
 # -----------------------------------------------
-tasks = {}
-
-
-def show_progress(line, progress):
+def show_progress(line, progress, tasks):
     try:
         if "Status: Image is up to date" in line["status"]:
             logger.info(line["status"])
@@ -134,8 +132,8 @@ def show_progress(line, progress):
                     total=line["progressDetail"]["total"],
                 )
     except Exception as e:
-        logger.error("There was an error showing the progress bar")
-        logger.error(e)
+        logger.error(f"There was an error showing the progress bar: {type(e)}")
+        logger.exception(e)
 
 
 # -----------------------------------------------
@@ -449,7 +447,9 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error("This error might result in a Execution Time Exceeded error" + e)
+            logger.error(
+                f"This error might result in a Execution Time Exceeded error: {type(e)}"
+            )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
 
@@ -506,6 +506,7 @@ class Run:
         self._update_submission(data)
 
     def _get_container_image(self, image_name):
+        tasks = {}
         logger.info("Running pull for image: {}".format(image_name))
         retries, max_retries = (0, 3)
         while retries < max_retries:
@@ -513,7 +514,7 @@ class Run:
                 with Progress() as progress:
                     resp = client.pull(image_name, stream=True, decode=True)
                     for line in resp:
-                        show_progress(line, progress)
+                        show_progress(line, progress, tasks)
                     break  # Break if the loop is successful to exit "with Progress() as progress"
 
             except (docker.errors.APIError, Exception) as pull_error:
@@ -666,10 +667,15 @@ class Run:
                 + "for container "
                 + str(container.get("Id"))
             )
+        except InvalidStatusCode as e:
+            logger.error(
+                f"There was an error trying to connect to the websocket on the codabench instance: {type(e)}"
+            )
+            logger.exception(e)
+            websocket = None
         except Exception as e:
             logger.error(
-                "There was an error trying to connect to the websocket on the codabench instance"
-                + e
+                f"There was an error trying to connect to the websocket on the codabench instance: {type(e)}"
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
@@ -698,28 +704,33 @@ class Run:
                 for log in container_LogsDemux:
                     if str(log[0]) != "None":
                         logger.info(log[0].decode())
-                        try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[0].decode()})
-                            )
-                        except Exception as e:
-                            logger.error(e)
+                        if websocket is not None:
+                            try:
+                                await websocket.send(
+                                    json.dumps(
+                                        {"kind": kind, "message": log[0].decode()}
+                                    )
+                                )
+                            except Exception as e:
+                                logger.error(e)
 
                     elif str(log[1]) != "None":
                         logger.error(log[1].decode())
-                        try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[1].decode()})
-                            )
-                        except Exception as e:
-                            logger.error(e)
+                        if websocket is not None:
+                            try:
+                                await websocket.send(
+                                    json.dumps(
+                                        {"kind": kind, "message": log[1].decode()}
+                                    )
+                                )
+                            except Exception as e:
+                                logger.error(e)
 
         except (docker.errors.NotFound, docker.errors.APIError) as e:
             logger.error(e)
         except Exception as e:
             logger.error(
-                "There was an error while starting the container and getting the logs"
-                + e
+                f"There was an error while starting the container and getting the logs {type(e)}."
             )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
@@ -732,7 +743,8 @@ class Run:
             logger.debug(
                 f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
             )
-            await websocket.close()
+            if websocket is not None:
+                await websocket.close()
             client.remove_container(container, force=True)
 
             logger.debug(
@@ -781,15 +793,15 @@ class Run:
         # Take our list of paths and smash 'em together
         path = os.path.join(*paths)
 
+        # Create if necessary
+        os.makedirs(path, exist_ok=True)
+
         # pull front of path, which points to the location inside the container
         path = path[len(BASE_DIR) :]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
         path = os.path.join(HOST_DIRECTORY, path)
-
-        # Create if necessary
-        os.makedirs(path, exist_ok=True)
 
         return path
 
@@ -1123,6 +1135,13 @@ class Run:
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
         logger.info("Running scoring program, and then ingestion program")
+        try:
+            loop = asyncio.get_running_loop()
+            loop.close()
+        except RuntimeError as e:
+            logger.error("Error while closing running event loop: No event loop.")
+            # logger.exception(e)
+          
         loop = asyncio.new_event_loop()
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind="program"),
@@ -1159,7 +1178,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            "There was a problem killing " + str(containers_to_kill) + str(e)
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
@@ -1189,7 +1208,7 @@ class Run:
                         logger.error(e)
                     except Exception as e:
                         logger.error(
-                            "There was a problem killing " + str(containers_to_kill) + e
+                            "There was a problem killing " + str(containers_to_kill) + str(e)
                         )
                         if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                             logger.exception(e)
