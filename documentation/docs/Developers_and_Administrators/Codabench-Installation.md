@@ -21,10 +21,9 @@ On a fresh installation, you will need to use the following command to get your 
 ```bash
 cd codabench
 cp .env_sample .env
-cp my-postgres_sample.conf my-postgres.conf
 ```
 
-Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings in the `.env`. For a quick **local** setup, you should not need to edit these files. For a [public server deployment](How-to-deploy-Codabench-on-your-server.md), you will have to modify some settings.
+Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick **local** setup, you should not need to edit this file. For a [public server deployment](How-to-deploy-Codabench-on-your-server.md), you will have to modify some settings.
 
 !!! warning "It is important to change the default passwords if you intend for the instance to be public"
 

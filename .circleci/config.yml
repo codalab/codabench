@@ -24,9 +24,7 @@ jobs:
 
       - run:
           name: "Setup: Copy environment variables"
-          command: |
-            cp .env_circleci .env
-            cp my-postgres_sample.conf my-postgres.conf
+          command: cp .env_circleci .env
 
       - run:
           name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
