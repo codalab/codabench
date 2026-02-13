@@ -6,6 +6,7 @@ import csv
 from django.http import HttpResponse
 from django.contrib.auth.admin import UserAdmin
 
+
 # General class used to make custom filter
 class InputFilter(admin.SimpleListFilter):
     template = "admin/input_filter.html"
