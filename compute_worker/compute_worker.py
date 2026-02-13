@@ -1475,6 +1475,7 @@ class Run:
             raise SubmissionException(error_message)
         finally:
             self.watch = False
+            
             for kind, logs in self.logs.items():
                 if logs["end"] is not None:
                     elapsed_time = logs["end"] - logs["start"]
@@ -1483,9 +1484,8 @@ class Run:
                 return_code = logs["returncode"]
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
-                    if CONTAINER_ENGINE == "kubernetes":
-                        self.delete_all_submission_pods()
-                    else:
+
+                    if CONTAINER_ENGINE != "kubernetes":
                         if kind == "ingestion":
                             containers_to_kill = self.ingestion_container_name
                         else:
@@ -1515,8 +1515,11 @@ class Run:
                         logger.info(f"[{key}]\n{value['data']}")
                         self._put_file(value["location"], raw_data=value["data"])
 
-                # set logs of this kind to None, since we handled them already
-                logger.info("Program finished")
+            # Cleanup pods after logs are processed
+            if CONTAINER_ENGINE == "kubernetes":
+                self.delete_all_submission_pods()
+            
+            logger.info("Program finished")
         signal.alarm(0)
 
         if self.is_scoring:
