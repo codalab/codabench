@@ -899,17 +899,6 @@ class Run:
             except Exception as e:
                 logger.error(f"Error closing websocket: {e}")
         
-        # Clean up pod
-        try:
-            core_v1.delete_namespaced_pod(
-                name=pod_name,
-                namespace=CURRENT_NAMESPACE,
-                grace_period_seconds=0
-            )
-            logger.info(f"Deleted pod {pod_name}")
-        except Exception as e:
-            logger.error(f"Error deleting pod: {e}")
-        
         # Populate logs structure (matches Docker format exactly)
         self.logs[kind] = {
             "returncode": return_code,
