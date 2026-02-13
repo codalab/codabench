@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 import json
 import csv
 from django.http import HttpResponse
-
+from django.contrib.auth.admin import UserAdmin
 
 # General class used to make custom filter
 class InputFilter(admin.SimpleListFilter):
@@ -67,7 +67,7 @@ def export_as_json(modeladmin, request, queryset):
     return HttpResponse(json.dumps(email_list), content_type="application/json")
 
 
-class UserExpansion(admin.ModelAdmin):
+class UserExpansion(UserAdmin):
     # The following two lines are needed for Django-su:
     change_form_template = "admin/auth/user/change_form.html"
     change_list_template = "admin/auth/user/change_list.html"
