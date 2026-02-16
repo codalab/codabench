@@ -323,10 +323,13 @@ class Run:
     """
 
     def __init__(self, run_args):
+        self.runRelatedName = (
+            f"uPK-{run_args['user_pk']}_sID-{run_args['id']}"
+        )
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(dir=BASE_DIR)
+        self.root_dir = tempfile.mkdtemp(prefix=f'{self.runRelatedName}__', dir=BASE_DIR)
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -349,8 +352,8 @@ class Run:
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
         )
-        self.ingestion_container_name = uuid.uuid4()
-        self.program_container_name = uuid.uuid4()
+        self.ingestion_container_name = f"ingestion_{self.runRelatedName}"
+        self.program_container_name = f"scoring_{self.runRelatedName}"
         self.program_data = run_args.get("program_data")
         self.ingestion_program_data = run_args.get("ingestion_program")
         self.input_data = run_args.get("input_data")
@@ -449,10 +452,14 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error(f"This error might result in a Execution Time Exceeded error: {e}")
+            logger.error(
+                f"This error might result in a Execution Time Exceeded error: {e}"
+            )
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
-            raise SubmissionException("Could not connect to instance to update detailed result")
+            raise SubmissionException(
+                "Could not connect to instance to update detailed result"
+            )
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -1223,11 +1230,16 @@ class Run:
             # Check if scoring program failed
             program_results, _, _ = task_results
             # Gather returns either normal values or exception instances when return_exceptions=True
-            had_async_exc = isinstance(program_results, BaseException) and not isinstance(program_results, asyncio.CancelledError)
+            had_async_exc = isinstance(
+                program_results, BaseException
+            ) and not isinstance(program_results, asyncio.CancelledError)
             program_rc = getattr(self, "program_exit_code", None)
             failed_rc = program_rc not in (0, None)
             if had_async_exc or failed_rc:
-                self._update_status(STATUS_FAILED, extra_information=f"program_rc={program_rc}, async={task_results}")
+                self._update_status(
+                    STATUS_FAILED,
+                    extra_information=f"program_rc={program_rc}, async={task_results}",
+                )
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
             self._update_status(STATUS_FINISHED)
