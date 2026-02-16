@@ -452,6 +452,7 @@ class Run:
             logger.error(f"This error might result in a Execution Time Exceeded error: {e}")
             if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
                 logger.exception(e)
+            raise SubmissionException("Could not connect to instance to update detailed result")
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -628,10 +629,10 @@ class Run:
             except BadZipFile:
                 retries += 1
                 if retries >= max_retries:
-                    raise  # Re-raise the last caught BadZipFile exception
+                    raise SubmissionException("Bad or empty zip file")
                 else:
-                    logger.warning("Failed. Retrying in 60 seconds...")
-                    time.sleep(60)  # Wait 60 seconds before retrying
+                    logger.warning("Failed. Retrying in 20 seconds...")
+                    time.sleep(20)  # Wait 20 seconds before retrying
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
@@ -1064,6 +1065,15 @@ class Run:
             logger.info("Cache directory does not need to be pruned!")
 
     def prepare(self):
+        hostname = utils.nodenames.gethostname()
+        if self.is_scoring:
+            self._update_status(
+                STATUS_RUNNING, extra_information=f"scoring_hostname-{hostname}"
+            )
+        else:
+            self._update_status(
+                STATUS_RUNNING, extra_information=f"ingestion_hostname-{hostname}"
+            )
         if not self.is_scoring:
             # Only during prediction step do we want to announce "preparing"
             self._update_status(STATUS_PREPARING)
@@ -1108,15 +1118,6 @@ class Run:
         self._get_container_image(self.container_image)
 
     def start(self):
-        hostname = utils.nodenames.gethostname()
-        if self.is_scoring:
-            self._update_status(
-                STATUS_RUNNING, extra_information=f"scoring_hostname-{hostname}"
-            )
-        else:
-            self._update_status(
-                STATUS_RUNNING, extra_information=f"ingestion_hostname-{hostname}"
-            )
         program_dir = os.path.join(self.root_dir, "program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
@@ -1290,9 +1291,12 @@ class Run:
                 "Error, the output directory already contains a metadata file. This file is used "
                 "to store exitCode and other data, do not write to this file manually."
             )
-
-        with open(metadata_path, "w") as f:
-            f.write(yaml.dump(prog_status, default_flow_style=False))
+        try:
+            with open(metadata_path, "w") as f:
+                f.write(yaml.dump(prog_status, default_flow_style=False))
+        except Exception as e:
+            logger.error(e)
+            raise SubmissionException("Metadata file not found")
 
         if not self.is_scoring:
             self._put_dir(self.prediction_result, self.output_dir)
