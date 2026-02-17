@@ -37,96 +37,35 @@
         </div>
     </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
-        <div class="ui grid">
-            <div class="three wide column">
-                <div class="ui fluid vertical secondary menu">
-                    <div class="active submission-modal item" data-tab="{admin_: submission.admin}prediction">
-                        Prediction Logs
-                    </div>
-                    <div class="submission-modal item" data-tab="{admin_: submission.admin}scoring">
-                        Scoring Logs
-                    </div>
-                </div>
-            </div>
-            <div class="thirteen wide column">
-                <div class="ui active tab" data-tab="{admin_: submission.admin}prediction">
-                    <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}p_stdout">
-                            stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_stderr">
-                            stderr
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stdout">
-                            Ingestion stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stderr">
-                            Ingestion stderr
-                        </div>
-                    </div>
-
-                    <div class="ui active bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_stdout">
-                        <!--
-                        todo: something like:
-                            <pre>{ logs.prediction_stdout ? logs.prediction_stdout : "Empty Logs"}</pre>
-                            so log files don't look empty
-                        -->
-                        <pre>{ logs.prediction_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_stderr">
-                        <pre>{ logs.prediction_stderr }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_ingest_stdout">
-                        <pre>{ logs.prediction_ingestion_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_ingest_stderr">
-                        <pre>{ logs.prediction_ingestion_stderr }</pre>
-                    </div>
-                </div>
-                <div class="ui tab" data-tab="{admin_: submission.admin}scoring">
-                    <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}s_stdout">
-                            stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_stderr">
-                            stderr
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stdout">
-                            Ingestion stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stderr">
-                            Ingestion stderr
-                        </div>
-                    </div>
-
-                    <div class="ui active bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_stdout">
-                        <pre>{ logs.scoring_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_stderr">
-                        <pre>{ logs.scoring_stderr }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_ingest_stdout">
-                        <pre>{ logs.scoring_ingestion_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_ingest_stderr">
-                        <pre>{ logs.scoring_ingestion_stderr }</pre>
-                    </div>
-                </div>
-            </div>
+        <div class="ui top attached inverted pointing menu">
+        <div class="active submission-modal item" data-tab="{admin_: submission.admin}log_ing_out">
+            Ingestion output
+        </div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_ing_err">
+            Ingestion errors
+        </div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_score_out">
+            Scoring output
+        </div>
+        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_score_err">
+            Scoring errors
+        </div>
+        </div>
+        <div class="ui active bottom attached inverted segment tab log"
+            data-tab="{admin_: submission.admin}log_ing_out">
+        <pre class="{empty: isEmpty(logs.prediction_ingestion_stdout)}">{ showLog(logs.prediction_ingestion_stdout) }</pre>
+        </div>
+        <div class="ui bottom attached inverted segment tab log"
+            data-tab="{admin_: submission.admin}log_ing_err">
+        <pre class="{empty: isEmpty(logs.prediction_ingestion_stderr)}">{ showLog(logs.prediction_ingestion_stderr) }</pre>
+        </div>
+        <div class="ui bottom attached inverted segment tab log"
+            data-tab="{admin_: submission.admin}log_score_out">
+        <pre class="{empty: isEmpty(logs.scoring_stdout)}">{ showLog(logs.scoring_stdout) }</pre>
+        </div>
+        <div class="ui bottom attached inverted segment tab log"
+            data-tab="{admin_: submission.admin}log_score_err">
+        <pre class="{empty: isEmpty(logs.scoring_stderr)}">{ showLog(logs.scoring_stderr) }</pre>
         </div>
     </div>
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}fact_sheet">
@@ -147,6 +86,11 @@
         self.logs = {}
         self.leaderboards = []
         self.columns = []
+
+        // Check if logs are empty
+        self.isEmpty = (v) => v == null || (typeof v === "string" && v.trim().length === 0)
+        self.nonEmpty = (v) => !self.isEmpty(v)
+        self.showLog = (v) => self.nonEmpty(v) ? v : "No logs for this tab."
 
         self.get_score_details = function (column) {
             try {
@@ -246,10 +190,16 @@
         #downloads thead tr th, #downloads tbody tr td
             font-size 16px !important
 
-        .inverted, textarea
-            color: white
-            background: #1b1c1d
-            width: 100%
-            height: 98%
+        pre.empty 
+            opacity 0.7 
+
+        .log
+            color white
+            background #1b1c1d
+
+        .log textarea
+            width 100%
+            height 98%
+
     </style>
 </submission-modal>
