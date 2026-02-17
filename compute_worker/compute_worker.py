@@ -208,6 +208,28 @@ class ExecutionTimeLimitExceeded(Exception):
     pass
 
 
+# -----------------------------------------------
+# Local setups where public S3 URLs are not directly reachable from workers
+# -----------------------------------------------
+def rewrite_bundle_url_if_needed(url):
+    """
+    Optionally rewrite presigned bundle URLs for worker networking.
+
+    Controlled by env: WORKER_BUNDLE_URL_REWRITE=FROM|TO
+
+    Example: http://localhost:9000|http://minio:9000
+    """
+    rule = os.getenv("WORKER_BUNDLE_URL_REWRITE", "").strip()
+    if not rule or "|" not in rule:
+        return url
+    src, dst = rule.split("|", 1)
+    if url.startswith(src):
+        new_url = dst + url[len(src):]
+        logger.info(f"Rewriting bundle URL for worker: {url} -> {new_url}")
+        return new_url
+    return url
+
+
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
 # level.
@@ -616,6 +638,7 @@ class Run:
             if download_needed:
                 try:
                     # Download the bundle
+                    url = rewrite_bundle_url_if_needed(url)
                     urlretrieve(url, bundle_file)
                 except HTTPError:
                     raise SubmissionException(
@@ -1023,6 +1046,7 @@ class Run:
 
     def _put_file(self, url, file=None, raw_data=None, content_type="application/zip"):
         """Send the file in the storage."""
+        url = rewrite_bundle_url_if_needed(url)
         if file and raw_data:
             raise Exception("Cannot put both a file and raw_data")
 
