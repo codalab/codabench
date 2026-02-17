@@ -323,13 +323,13 @@ class Run:
     """
 
     def __init__(self, run_args):
-        self.runRelatedName = (
+        self.run_related_name = (
             f"uPK-{run_args['user_pk']}_sID-{run_args['id']}"
         )
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(prefix=f'{self.runRelatedName}__', dir=BASE_DIR)
+        self.root_dir = tempfile.mkdtemp(prefix=f'{self.run_related_name}__', dir=BASE_DIR)
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
@@ -352,8 +352,8 @@ class Run:
         self.stdout, self.stderr, self.ingestion_stdout, self.ingestion_stderr = (
             self._get_stdout_stderr_file_names(run_args)
         )
-        self.ingestion_container_name = f"ingestion_{self.runRelatedName}"
-        self.program_container_name = f"scoring_{self.runRelatedName}"
+        self.ingestion_container_name = f"ingestion_{self.run_related_name}"
+        self.program_container_name = f"scoring_{self.run_related_name}"
         self.program_data = run_args.get("program_data")
         self.ingestion_program_data = run_args.get("ingestion_program")
         self.input_data = run_args.get("input_data")
