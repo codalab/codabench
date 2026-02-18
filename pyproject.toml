@@ -21,7 +21,7 @@ dependencies = [
     "channels-redis==4.0.0",
     "pillow==10.3.0",
     "celery==4.4.7",
-    "gunicorn==22.0.0",
+    "gunicorn==23.0",
     "urllib3>=1.25.4,<1.27",
     "uvicorn>=0.22.0,<0.23",
     "pyyaml==5.3.1",
