@@ -40,13 +40,37 @@ You will get your Broker URL from the instance. More information about Queues [h
 
 Make a file `.env` and put this in it:
 ```ini title=".env"
+#######################################################################
+#                       Connection URL                                #
+#######################################################################
 BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
-HOST_DIRECTORY=/codabench
 # If SSL isn't enabled, then comment or remove the following line
 BROKER_USE_SSL=True
+
+#######################################################################
+#                       Temporary Storage                             #
+#######################################################################
+HOST_DIRECTORY=/codabench
+
+
+#######################################################################
+#                       Runtime                                       #
+#######################################################################
+CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
+
+#######################################################################
+#                       Network                                       #
+#######################################################################
+#COMPETITION_CONTAINER_NETWORK_DISABLED=False
+
+#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
 ```
+By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
+
+If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
