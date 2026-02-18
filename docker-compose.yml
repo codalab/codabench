@@ -22,9 +22,11 @@ services:
       - django
 
   django:
-    build: .
+    build: 
+      context: .
+      dockerfile: packaging/container/Containerfile
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command: bash -c "python manage.py collectstatic --noinput && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"
+    command: ["python manage.py collectstatic --noinput && python manage.py migrate --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     env_file: .env
@@ -95,7 +97,7 @@ services:
   builder:
     build:
       context: .
-      dockerfile: Dockerfile.builder
+      dockerfile: packaging/container/Containerfile.builder
     volumes:
       - .:/app:delegated
     restart: unless-stopped
@@ -132,7 +134,7 @@ services:
   rabbit:
     build:
       context: .
-      dockerfile: Dockerfile.rabbitmq
+      dockerfile: packaging/container/Containerfile.rabbitmq
       args:
         - WORKER_CONNECTION_TIMEOUT=${WORKER_CONNECTION_TIMEOUT}
     # setting hostname here makes data persist properly between
@@ -155,10 +157,7 @@ services:
         max-file: "5"
 
   flower:
-    # image: mher/flower
-    build:
-      context: .
-      dockerfile: Dockerfile.flower
+    image: mher/flower
     env_file: .env
     environment:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
@@ -190,10 +189,11 @@ services:
   #-----------------------------------------------
   site_worker:
     # This auto-reloads
-    command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"
+    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
     working_dir: /app/src
     build:
       context: .
+      dockerfile: packaging/container/Containerfile
     depends_on:
       - rabbit
       - db
@@ -213,11 +213,11 @@ services:
           memory: 256M
 
   compute_worker:
-    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+    command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
     working_dir: /app
     build:
       context: .
-      dockerfile: Dockerfile.compute_worker
+      dockerfile: packaging/container/Containerfile.compute_worker
     depends_on:
       - django
       - rabbit
@@ -226,13 +226,13 @@ services:
       - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
+    hostname: local_worker
     restart: unless-stopped
     env_file: .env
     environment:
       - BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
       # Make the worker leave behind the submission so we can examine it
       - CODALAB_IGNORE_CLEANUP_STEP=1
-      - COLUMNS=100
     tty: true
     logging:
       options:

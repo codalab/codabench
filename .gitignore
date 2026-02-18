@@ -24,6 +24,7 @@ src/static/generated/*
 db.sqlite3
 
 celerybeat-schedule
+celerybeat-schedule.db
 package-lock.json
 artifacts/
 
