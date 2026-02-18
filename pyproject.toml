@@ -60,7 +60,7 @@ dependencies = [
     "twisted==24.7.0",
     "ipdb==0.13",
     "jinja2==3.1.4",
-    "requests==2.32.2",
+    "requests==2.32.4",
     "drf-extra-fields>=3.5.0",
     "botocore==1.29.76",
     "s3transfer==0.6.0",
