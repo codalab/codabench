@@ -399,7 +399,6 @@ def check_orphans_deletion_status(request):
     if not request.user.is_superuser:
         raise PermissionDenied(detail="Admin only")
 
-    global delete_orphan_files_task
     state = None
     if delete_orphan_files_task:
         state = delete_orphan_files_task.state
