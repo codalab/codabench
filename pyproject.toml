@@ -59,7 +59,7 @@ dependencies = [
     "django-enforce-host==1.0.1",
     "twisted==24.7.0",
     "ipdb==0.13",
-    "jinja2==3.1.4",
+    "jinja2==3.1.6",
     "requests==2.32.2",
     "drf-extra-fields>=3.5.0",
     "botocore==1.29.76",
