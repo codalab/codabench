@@ -22,7 +22,6 @@ services:
       - django
 
   django:
-    platform: linux/arm64
     build: 
       context: .
       dockerfile: packaging/container/Containerfile
@@ -192,7 +191,6 @@ services:
     # This auto-reloads
     command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
     working_dir: /app/src
-    platform: linux/arm64
     build:
       context: .
       dockerfile: packaging/container/Containerfile
@@ -215,9 +213,8 @@ services:
           memory: 256M
 
   compute_worker:
-    command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
+    command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
     working_dir: /app
-    platform: linux/arm64
     build:
       context: .
       dockerfile: packaging/container/Containerfile.compute_worker
