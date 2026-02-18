@@ -19,7 +19,7 @@ dependencies = [
     "django-extensions>=3.2,<4",
     "channels==4.2.0",
     "channels-redis==4.0.0",
-    "pillow==10.3.0",
+    "pillow==12.1.1",
     "celery==4.4.7",
     "gunicorn==22.0.0",
     "urllib3>=1.25.4,<1.27",
