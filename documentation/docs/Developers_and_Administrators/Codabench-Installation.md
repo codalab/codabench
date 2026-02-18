@@ -116,16 +116,17 @@ If static files are not loaded correctly, adding `DEBUG=True` to the `.env` file
 
 ### For Apple CPU (M1, M2 chips)
 
-In `docker-compose.yml`, replace in the `compute_worker` service:
+Add a `docker-compose.override.yml` file with the following content:
 
-```yaml title="docker-compose.yml"
-command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
-```
-
-by
-
-```yaml title="docker-compose.yml"
-command: bash -c "celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+```yaml title="docker-compose.override.yml"
+services:
+  django:
+    platform: linux/arm64
+  site_worker:
+    platform: linux/arm64
+    command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+  compute_worker:
+    platform: linux/arm64
 ```
 
 
