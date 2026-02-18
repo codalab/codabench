@@ -68,6 +68,7 @@ dependencies = [
     "coreapi>=2.3.3,<3",
     "loguru>=0.7.3,<0.8",
     "tzdata>=2025.3",
+    "setuptools==81",
 ]
 
 [tool.uv]
