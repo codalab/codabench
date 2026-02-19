@@ -1191,13 +1191,13 @@ class Run:
             self.watch_detailed_results(),
             return_exceptions=True,
         )
-
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
             # run tasks
             # keep what gather returned so we can detect async errors later
+            loop = asyncio.get_event_loop()
             task_results = loop.run_until_complete(gathered_tasks) or []
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"

@@ -2,13 +2,13 @@
 authors = [
     {name = "codalab"},
 ]
-requires-python = "==3.9.20"
+requires-python = "==3.10.19"
 dependencies = [
     "celery==5.6.2",
     "requests>=2.32.4,<3",
     "watchdog==2.1.1",
     "argh==0.26.2",
-    "websockets==9.1",
+    "websockets==16.0.0",
     "aiofiles==0.4.0",
     "pyyaml==6.0.1",
     "loguru>=0.7.3,<0.8",
