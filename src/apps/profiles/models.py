@@ -1,7 +1,9 @@
+from queues.models import Queue
 import uuid
 
 from django.contrib.auth.models import PermissionsMixin, AbstractBaseUser, UserManager
 from django.db import models
+from django.contrib.auth.models import Group
 from django.utils.timezone import now
 from django.utils.text import slugify
 from utils.data import PathWrapper
@@ -343,3 +345,23 @@ class Membership(models.Model):
 
     class Meta:
         ordering = ["date_joined"]
+
+
+class CustomGroup(Group):
+
+    queue = models.ForeignKey(Queue,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='custom_groups',
+        verbose_name="Queue assignée au groupe",
+        help_text="Queue à utiliser pour les utilisateurs membres de ce groupe (si définie)."
+    )
+
+    class Meta:
+        verbose_name = "Group"
+        verbose_name_plural = "Groups"
+
+    def __str__(self):
+        return self.name
+        

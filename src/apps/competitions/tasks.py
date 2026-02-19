@@ -117,7 +117,9 @@ COLUMN_FIELDS = [
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
 
-def _send_to_compute_worker(submission, is_scoring):
+def _send_to_compute_worker(submission, is_scoring, target_group=None):
+    logger.info("Site Worker ==> STARTING")
+
     run_args = {
         "user_pk": submission.owner.pk,
         "submissions_api_url": settings.SUBMISSIONS_API_URL,
@@ -129,25 +131,19 @@ def _send_to_compute_worker(submission, is_scoring):
     }
 
     if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
-        submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))  # must encode here for GCS
+        submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))
         submission.save(update_fields=['detailed_result'])
     if not submission.prediction_result.name:
-        submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))
         submission.save(update_fields=['prediction_result'])
     if not submission.scoring_result.name:
-        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))  # must encode here for GCS
+        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))
         submission.save(update_fields=['scoring_result'])
 
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
 
-    # priority of scoring tasks is higher, we don't want to wait around for
-    # many submissions to be scored while we're waiting for results
-    if is_scoring:
-        # higher numbers are higher priority
-        priority = 10
-    else:
-        priority = 0
+    priority = 10 if is_scoring else 0
 
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
@@ -195,50 +191,91 @@ def _send_to_compute_worker(submission, is_scoring):
         run_args[detail_name] = create_detailed_output_file(detail_name, submission)
 
     logger.info(f"Task data for submission id = {submission.id}")
-    logger.info(run_args)
+    logger.debug(run_args)
 
     # Pad timelimit so worker has time to cleanup
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
-        submission.queue_name = submission.phase.competition.queue.name or ''
-        run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
-        submission.save()
+    # Determine routing: prefer explicitly passed target_group, else fallback to competition/group resolution
+    target_vhost = None
+    try:
+        if target_group:
+            if getattr(target_group, 'queue', None):
+                run_args['queue'] = target_group.queue.name
+                target_vhost = getattr(target_group.queue, 'vhost', None)
+            logger.info("Submission %s forced to group %s queue=%s", submission.pk,
+                        getattr(target_group, 'pk', None), run_args.get('queue'))
+        else:
+            #   Legacy behavior
+            competition = submission.phase.competition
+            user_group_ids = list(submission.owner.groups.values_list("id", flat=True))
+            logger.debug("User %s groups ids: %s", submission.owner.pk, user_group_ids)
 
-        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
-        # variable above
-        celery_app = app_or_default()
-        with celery_app.connection() as new_connection:
-            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
-            task = celery_app.send_task(
+            comp_user_groups_qs = (
+                competition.participant_groups
+                .select_related("queue")
+                .filter(id__in=user_group_ids)
+            )
+
+            group = comp_user_groups_qs.filter(queue__isnull=False).first() or comp_user_groups_qs.first()
+            if group and group.queue:
+                run_args["queue"] = group.queue.name
+                target_vhost = getattr(group.queue, "vhost", None)
+                logger.info("Submission %s chosen group=%s queue=%s", submission.pk, group.pk, group.queue.name)
+            else:
+                logger.debug("Submission %s owner %s: no matching group with queue for competition %s",
+                             submission.pk, submission.owner.pk, competition.pk)
+    except Exception:
+        logger.exception("Error while resolving competition/group for submission %s", submission.pk)
+
+    # If no group vhost, fallback to competition-level queue vhost
+    if target_vhost is None:
+        comp_queue = getattr(submission.phase.competition, 'queue', None)
+        if comp_queue:
+            run_args['queue'] = getattr(comp_queue, 'name', None)
+            target_vhost = getattr(comp_queue, 'vhost', None)
+
+    # Send the task to the compute-worker
+    task_obj = None
+    try:
+        if target_vhost:
+            celery_app = app_or_default()
+            with celery_app.connection() as new_connection:
+                new_connection.virtual_host = str(target_vhost)
+                task_obj = celery_app.send_task(
+                    'compute_worker_run',
+                    args=(run_args,),
+                    queue='compute-worker',
+                    soft_time_limit=time_limit,
+                    connection=new_connection,
+                    priority=priority,
+                )
+        else:
+            task_obj = app.send_task(
                 'compute_worker_run',
                 args=(run_args,),
                 queue='compute-worker',
                 soft_time_limit=time_limit,
-                connection=new_connection,
                 priority=priority,
             )
-    else:
-        task = app.send_task(
-            'compute_worker_run',
-            args=(run_args,),
-            queue='compute-worker',
-            soft_time_limit=time_limit,
-            priority=priority,
-        )
-    submission.celery_task_id = task.id
+    except Exception:
+        logger.exception("Failed to enqueue compute_worker_run for submission %s", submission.pk)
+        task_obj = None
+
+    if task_obj:
+        submission.celery_task_id = getattr(task_obj, 'id', None)
 
     if submission.status == Submission.SUBMITTING:
-        # Don't want to mark an already-prepared submission as "submitted" again, so
-        # only do this if we were previously "SUBMITTING"
         submission.status = Submission.SUBMITTED
 
-    submission.save()
+    try:
+        submission.save()
+    except Exception:
+        logger.exception("Failed to save submission after enqueue for submission %s", submission.pk)
 
 
 def create_detailed_output_file(detail_name, submission):
-    # Detail logs like stdout/etc.
     new_details = SubmissionDetails.objects.create(submission=submission, name=detail_name)
     new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
     return make_url_sassy(new_details.data_file.name, permission="w")
@@ -304,6 +341,65 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
 
     tasks = tasks.order_by('pk')
 
+    '''New section for group submission child '''
+    try:
+        assigned_group = None
+
+        if submission.parent is None:
+            groups_with_queue_qs = resolve_competition_groups(submission)
+            groups_with_queue = list(groups_with_queue_qs)
+
+            if len(groups_with_queue) > 1:
+                submission.has_children = True
+                submission.save()
+                send_parent_status(submission)
+
+                # If there are multiple tasks, create one child per (group, task),
+                for group in groups_with_queue:
+                    if len(tasks) > 1:
+                        for task_obj in tasks:
+                            child_sub = Submission(
+                                owner=submission.owner,
+                                phase=submission.phase,
+                                data=submission.data,
+                                participant=submission.participant,
+                                parent=submission,
+                                task=task_obj,
+                                fact_sheet_answers=submission.fact_sheet_answers
+                            )
+                            child_sub.save(ignore_submission_limit=True)
+                            send_child_id(submission, child_sub.id)
+
+                            try:
+                                _send_to_compute_worker(child_sub, is_scoring, target_group=group)
+                            except Exception:
+                                logger.exception("Failed to send child submission %s to compute worker for group %s", child_sub.pk, getattr(group, 'pk', None))
+                    else:
+                        child_sub = Submission(
+                            owner=submission.owner,
+                            phase=submission.phase,
+                            data=submission.data,
+                            participant=submission.participant,
+                            parent=submission,
+                            task=tasks[0],
+                            fact_sheet_answers=submission.fact_sheet_answers
+                        )
+                        child_sub.save(ignore_submission_limit=True)
+                        send_child_id(submission, child_sub.id)
+                        try:
+                            _send_to_compute_worker(child_sub, is_scoring, target_group=group)
+                        except Exception:
+                            logger.exception("Failed to send child submission %s to compute worker for group %s", child_sub.pk, getattr(group, 'pk', None))
+                return
+
+            if len(groups_with_queue) == 1:
+                assigned_group = groups_with_queue[0]
+
+    except Exception:
+        logger.exception("Error resolving participant groups for submission %s", submission.pk)
+    '''END BLOCK'''
+
+
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
@@ -319,19 +415,34 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 data=submission.data,
                 participant=submission.participant,
                 parent=submission,
-                task=task,
+                task=task[0],
                 fact_sheet_answers=submission.fact_sheet_answers
             )
             child_sub.save(ignore_submission_limit=True)
-            _send_to_compute_worker(child_sub, is_scoring=False)
+            _send_to_compute_worker(child_sub, is_scoring=False, target_group=assigned_group)
             send_child_id(submission, child_sub.id)
-    else:
-        # The initial submission object is the only submission
-        if not submission.task:
-            submission.task = tasks[0]
-            submission.save()
-        _send_to_compute_worker(submission, is_scoring)
+        else:
+            child_sub = Submission(
+                owner=submission.owner,
+                phase=submission.phase,
+                data=submission.data,
+                participant=submission.participant,
+                parent=submission,
+                task=tasks[0],
+                fact_sheet_answers=submission.fact_sheet_answers
+            )
+            child_sub.save(ignore_submission_limit=True)
 
+            send_child_id(submission, child_sub.id)
+
+            try:
+                _send_to_compute_worker(child_sub, is_scoring, target_group=group)
+            except Exception:
+                logger.exception(
+                    "Failed to send child submission %s to compute worker for group %s",
+                    child_sub.pk,
+                    getattr(group, 'pk', None)
+                )
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(status_pk):
@@ -780,3 +891,16 @@ def submission_status_cleanup():
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
+
+
+def resolve_competition_groups(submission):
+    competition = submission.phase.competition
+
+    user_group_ids = submission.owner.groups.values_list("id", flat=True)
+
+    return (
+        competition.participant_groups
+        .select_related("queue")
+        .filter(id__in=user_group_ids)
+        .exclude(queue__isnull=True)
+    )
