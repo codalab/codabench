@@ -29,7 +29,7 @@ dependencies = [
     "argh==0.26.2",
     "python-dateutil==2.7.3",
     "bpython>=0.21.0,<0.22",
-    "websockets>=10.4.0,<11",
+    "websockets==16.0.0",
     "aiofiles==0.4.0",
     "oyaml==0.7",
     "factory-boy==2.11.1",
