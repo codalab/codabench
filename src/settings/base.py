@@ -18,12 +18,6 @@ ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
 csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
-<<<<<<< HEAD
-=======
-
-CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
-CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
->>>>>>> 13bb9be0 (Revert "revert")
 
 if os.environ.get("EXTERNAL_DOMAIN_NAME", "") != "":
     csrf_https_external_domain = "https://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
