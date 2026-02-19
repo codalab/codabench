@@ -2,7 +2,7 @@
 authors = [
     {name = "codalab"},
 ]
-requires-python = "==3.10.19"
+requires-python = "==3.13.11"
 dependencies = [
     "celery==5.6.2",
     "requests>=2.32.4,<3",
