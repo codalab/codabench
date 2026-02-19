@@ -15,7 +15,6 @@ dependencies = [
     "django-cors-middleware==1.5.0",
     "social-auth-core>=4.1.0,<5",
     "social-auth-app-django>=5.0.0,<6",
-    "six==1.16.0",
     "django-extensions>=3.2,<4",
     "channels==4.2.0",
     "channels-redis==4.0.0",

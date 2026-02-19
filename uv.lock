@@ -109,15 +109,15 @@ wheels = [
 
 [[package]]
 name = "azure-core"
-version = "1.38.1"
+version = "1.38.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/9b/23893febea484ad8183112c9419b5eb904773adb871492b5fa8ff7b21e09/azure_core-1.38.1.tar.gz", hash = "sha256:9317db1d838e39877eb94a2240ce92fa607db68adf821817b723f0d679facbf6", size = 363323, upload-time = "2026-02-11T02:03:06.051Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/fe/5c7710bc611a4070d06ba801de9a935cc87c3d4b689c644958047bdf2cba/azure_core-1.38.2.tar.gz", hash = "sha256:67562857cb979217e48dc60980243b61ea115b77326fa93d83b729e7ff0482e7", size = 363734, upload-time = "2026-02-18T19:33:05.6Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/db/88/aaea2ad269ce70b446660371286272c1f6ba66541a7f6f635baf8b0db726/azure_core-1.38.1-py3-none-any.whl", hash = "sha256:69f08ee3d55136071b7100de5b198994fc1c5f89d2b91f2f43156d20fcf200a4", size = 217930, upload-time = "2026-02-11T02:03:07.548Z" },
+    { url = "https://files.pythonhosted.org/packages/42/23/6371a551800d3812d6019cd813acd985f9fac0fedc1290129211a73da4ae/azure_core-1.38.2-py3-none-any.whl", hash = "sha256:074806c75cf239ea284a33a66827695ef7aeddac0b4e19dda266a93e4665ead9", size = 217957, upload-time = "2026-02-18T19:33:07.696Z" },
 ]
 
 [[package]]
@@ -440,7 +440,6 @@ dependencies = [
     { name = "requests" },
     { name = "s3transfer" },
     { name = "setuptools" },
-    { name = "six" },
     { name = "social-auth-app-django" },
     { name = "social-auth-core" },
     { name = "twisted" },
@@ -510,7 +509,6 @@ requires-dist = [
     { name = "requests", specifier = "==2.32.4" },
     { name = "s3transfer", specifier = "==0.6.0" },
     { name = "setuptools", specifier = "==81" },
-    { name = "six", specifier = "==1.16.0" },
     { name = "social-auth-app-django", specifier = ">=5.0.0,<6" },
     { name = "social-auth-core", specifier = ">=4.1.0,<5" },
     { name = "twisted", specifier = "==24.7.0" },
@@ -1707,11 +1705,11 @@ wheels = [
 
 [[package]]
 name = "six"
-version = "1.16.0"
+version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926", size = 34041, upload-time = "2021-05-05T14:18:18.379Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254", size = 11053, upload-time = "2021-05-05T14:18:17.237Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]
