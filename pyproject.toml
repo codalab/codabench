@@ -19,14 +19,14 @@ dependencies = [
     "channels==4.2.0",
     "channels-redis==4.0.0",
     "pillow==12.1.1",
-    "celery==4.4.7",
+    "celery==5.6.2",
     "gunicorn==23.0",
     "urllib3==2.6.3",
     "uvicorn==0.38",
     "pyyaml==6.0.3",
     "watchdog==6.0.0",
     "argh==0.31.3",
-    "python-dateutil==2.7.3",
+    "python-dateutil==2.9.0",
     "bpython==0.26",
     "websockets==16.0.0",
     "aiofiles==25.1.0",
@@ -68,6 +68,7 @@ dependencies = [
     "loguru>=0.7.3,<0.8",
     "tzdata>=2025.3",
     "setuptools==81",
+    "pytz>=2025.2",
 ]
 
 [tool.uv]
