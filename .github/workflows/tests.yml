@@ -1,0 +1,84 @@
+name: build_and_test
+on: [push]
+jobs:
+  build:
+    name: Build necessary services
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+
+      - name: "Setup: Copy environment variables"
+        run: cp .env_circleci .env
+
+      - name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
+        run: | 
+            mkdir -p var/minio/public
+            mkdir -p var/minio/private
+
+      - name: "Setup: Prepare the playwright environment"
+        run: |
+            cd tests
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            $HOME/.local/bin/uv sync --frozen
+            $HOME/.local/bin/uv run playwright install
+      - name: "Docker: Build containers"
+        run: |
+            docker compose up -d
+
+      - name: "Get compute worker, site worker and django logs"
+        run: |
+            mkdir dockerLogs
+            docker compose logs -f site_worker compute_worker django > dockerLogs/django_workers.log &
+  linter:
+    name: Flake8 linter
+    runs-on: self-hosted
+    needs: [build]
+    steps:
+      - name: "Lint: Check code style with flake8"
+        run: docker compose exec django flake8 src/
+  unit_tests:
+    name: Unit tests
+    runs-on: self-hosted
+    needs: [linter,build]
+    steps:
+      - name: "Tests: Run unit/integration tests (excluding e2e)"
+        run: docker compose exec django py.test src/ -m "not e2e"
+  e2e:
+    name: End to End tests with Playwright
+    runs-on: self-hosted
+    needs: [linter,build]
+    steps:
+      - name: "Tests: Run end-to-end (E2E) tests"
+        run: |
+            docker compose exec django python ./manage.py createsuperuser --no-input
+            docker compose exec django python ./manage.py collectstatic --no-input
+            docker compose exec django python ./manage.py migrate --no-input
+            cd tests && CI=True $HOME/.local/bin/uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
+  artifacts:
+      name: "Store Artifacts"
+      runs-on: self-hosted
+      needs: [linter,build,unit_tests,e2e]
+      steps:
+        - name: "Docker logs"
+          uses: actions/upload-artifact@v4
+          with:
+            name: "Docker logs"
+            path: |
+              dockerLogs/
+        - name: "Playwright results (on-failure)"
+          uses: actions/upload-artifact@v4
+          with:
+            name: "Playwright results (on-failure)"
+            path: |
+              tests/test-results
+  cleanup:
+    name: Cleanup
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [unit_tests,e2e,linter,artifacts]
+    steps:
+      - name: Cleanup
+        run: |
+            docker compose down --rmi all
+            rm -rf ${{ github.workspace }}/* 

@@ -1,0 +1,20 @@
+name: scan_image_for_CVE
+on:
+  push:
+    # Every week on Monday at 00:00
+    schedule:
+     - cron: "0 0 * * 1"
+jobs:
+  build_push_image:
+    name: Build Docker Image then Push it to Docker.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: 'codalab/codabench-compute-worker:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
