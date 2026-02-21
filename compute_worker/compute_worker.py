@@ -236,6 +236,8 @@ def rewrite_bundle_url_if_needed(url):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+    # We need to convert the UUID given by celery into a byte like object otherwise things will break
+    run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
 
@@ -1154,20 +1156,20 @@ class Run:
 
         logger.info("Running scoring program, and then ingestion program")
         loop = asyncio.new_event_loop()
+
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind="program"),
             self._run_program_directory(ingestion_program_dir, kind="ingestion"),
             self.watch_detailed_results(),
-            loop=loop,
             return_exceptions=True,
         )
-
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
         try:
             # run tasks
             # keep what gather returned so we can detect async errors later
+            loop = asyncio.get_event_loop()
             task_results = loop.run_until_complete(gathered_tasks) or []
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
