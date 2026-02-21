@@ -41,7 +41,9 @@ by
 
 ```ini
 AWS_S3_ENDPOINT_URL=http://docker.for.mac.localhost:9000/
+WORKER_BUNDLE_URL_REWRITE=http://docker.for.mac.localhost:9000|http://minio:9000
 ```
+
 !!! note "If needed, some troubleshooting of this step is provided at [the end of this page](#troubleshooting-storage-endpoint-url) or [in this page](How-to-deploy-Codabench-on-your-server.md#frequently-asked-questions-faqs)"
 
 ## Start the service
@@ -114,16 +116,17 @@ If static files are not loaded correctly, adding `DEBUG=True` to the `.env` file
 
 ### For Apple CPU (M1, M2 chips)
 
-In `docker-compose.yml`, replace in the `compute_worker` service:
+Add a `docker-compose.override.yml` file with the following content:
 
-```yaml title="docker-compose.yml"
-command: bash -c "watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
-```
-
-by
-
-```yaml title="docker-compose.yml"
-command: bash -c "celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"
+```yaml title="docker-compose.override.yml"
+services:
+  django:
+    platform: linux/arm64
+  site_worker:
+    platform: linux/arm64
+    command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+  compute_worker:
+    platform: linux/arm64
 ```
 
 
