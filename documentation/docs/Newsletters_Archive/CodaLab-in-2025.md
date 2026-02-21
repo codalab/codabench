@@ -47,6 +47,8 @@ March (around 850 submissions per day), before gradually declining to fewer than
 200 daily submissions in December, as usage progressively shifted towards
 Codabench.
 
+A total of **$269,000 in prize money** was awarded to competition participants in 2025.
+
 # Spotlight on competitions
 
 2025 featured many notable competitions across scientific and industrial fields.
