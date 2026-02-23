@@ -6,11 +6,13 @@ from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import api_view, action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny
 
+from api.permissions import user_can_create_competition, is_creator_group_missing
 from api.pagination import BasicPagination, LargePagination
 from api.serializers import datasets as serializers
 from datasets.models import Data
@@ -266,6 +268,14 @@ def upload_completed(request, key):
     dataset.save()
 
     if dataset.type == Data.COMPETITION_BUNDLE:
+        if is_creator_group_missing():
+            raise PermissionDenied(
+                "Competition creation is disabled: configured COMPETITION_CREATOR_GROUP does not exist."
+            )
+
+        if not user_can_create_competition(request.user):
+            raise PermissionDenied("You do not have permission to create competitions")
+
         # Doing a local import here to avoid circular imports
         from competitions.tasks import unpack_competition
 

@@ -4,13 +4,38 @@ import csv
 from zipfile import ZipFile
 from io import StringIO, BytesIO
 from unittest import mock
+from django.contrib.auth.models import Group
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from api.permissions import user_can_create_competition
 from api.serializers.competitions import CompetitionSerializer
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
     ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
+
+
+class CompetitionCreatePermissionTests(APITestCase):
+    @override_settings(COMPETITION_CREATOR_GROUP='')
+    def test_defaults_to_legacy_behavior_when_group_setting_is_empty(self):
+        user = UserFactory()
+        assert user_can_create_competition(user) is True
+
+    @override_settings(COMPETITION_CREATOR_GROUP='competition_creators')
+    def test_denies_when_group_setting_points_to_missing_group(self):
+        user = UserFactory()
+        assert user_can_create_competition(user) is False
+
+    @override_settings(COMPETITION_CREATOR_GROUP='competition_creators')
+    def test_requires_membership_when_group_exists(self):
+        group = Group.objects.create(name='competition_creators')
+        member = UserFactory()
+        non_member = UserFactory()
+        member.groups.add(group)
+
+        assert user_can_create_competition(member) is True
+        assert user_can_create_competition(non_member) is False
 
 
 class CompetitionTests(APITestCase):

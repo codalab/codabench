@@ -1,8 +1,11 @@
 from django.urls import reverse
 from faker import Factory
+from django.contrib.auth.models import Group
+from django.test import override_settings
 from django.test import TestCase
 from rest_framework.test import APITestCase
 from datasets.models import Data
+from competitions.models import CompetitionCreationTaskStatus
 from factories import (
     UserFactory,
     DataFactory,
@@ -210,6 +213,42 @@ class DatasetDownloadTests(TestCase):
 
         # Should return 404 (access denied)
         self.assertEqual(response.status_code, 404)
+
+
+class DatasetUploadCompletedPermissionTests(APITestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.client.force_login(self.user)
+        self.dataset = DataFactory(created_by=self.user, type=Data.COMPETITION_BUNDLE)
+        self.url = f"/api/datasets/completed/{self.dataset.key}/"
+
+    @override_settings(COMPETITION_CREATOR_GROUP='competition_creators')
+    @patch("competitions.tasks.unpack_competition.apply_async")
+    def test_upload_completed_forbidden_for_non_group_member_when_group_exists(self, mock_apply_async):
+        Group.objects.create(name='competition_creators')
+
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "You do not have permission to create competitions"
+        )
+        self.assertEqual(CompetitionCreationTaskStatus.objects.count(), 0)
+        mock_apply_async.assert_not_called()
+
+    @override_settings(COMPETITION_CREATOR_GROUP='competition_creators')
+    @patch("competitions.tasks.unpack_competition.apply_async")
+    def test_upload_completed_forbidden_when_group_is_missing(self, mock_apply_async):
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "Competition creation is disabled: configured COMPETITION_CREATOR_GROUP does not exist."
+        )
+        self.assertEqual(CompetitionCreationTaskStatus.objects.count(), 0)
+        mock_apply_async.assert_not_called()
 
 
 class DatasetCreateTests(APITestCase):
