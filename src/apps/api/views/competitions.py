@@ -14,7 +14,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
@@ -33,7 +33,7 @@ from competitions.tasks import batch_send_email, manual_migration, create_compet
 from competitions.utils import get_popular_competitions, get_recent_competitions
 from leaderboards.models import Leaderboard
 from utils.data import make_url_sassy
-from api.permissions import IsOrganizerOrCollaborator
+from api.permissions import IsOrganizerOrCollaborator, IsCompetitionCreator
 from django.db import transaction
 from django.conf import settings
 
@@ -186,7 +186,7 @@ class CompetitionViewSet(ModelViewSet):
         if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsOrganizerOrCollaborator]
         elif self.action in ['create']:
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [IsCompetitionCreator]
         elif self.action in ['retrieve', 'list']:
             self.permission_classes = [AllowAny]
         return [permission() for permission in self.permission_classes]

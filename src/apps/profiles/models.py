@@ -90,6 +90,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     organizer_direct_message_updates = models.BooleanField(default=True)
     allow_forum_notifications = models.BooleanField(default=True)
     allow_organization_invite_emails = models.BooleanField(default=True)
+    can_create_competition = models.BooleanField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Leave blank to inherit the global competition creation default.",
+    )
 
     # Queues
     rabbitmq_queue_limit = models.PositiveIntegerField(default=5, blank=True)

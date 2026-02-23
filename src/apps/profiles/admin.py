@@ -76,6 +76,7 @@ class UserExpansion(UserAdmin):
     list_filter = [
         "is_staff",
         "is_superuser",
+        "can_create_competition",
         "is_deleted",
         "is_bot",
         "is_banned",
@@ -88,6 +89,7 @@ class UserExpansion(UserAdmin):
         "quota",
         "is_staff",
         "is_superuser",
+        "can_create_competition",
         "is_banned",
     ]
     list_display_links = ["id", "username"]
@@ -114,6 +116,7 @@ class UserExpansion(UserAdmin):
                 "fields": [
                     ("is_active", "is_bot"),
                     (
+                        "can_create_competition",
                         "organizer_direct_message_updates",
                         "allow_forum_notifications",
                         "allow_organization_invite_emails",
