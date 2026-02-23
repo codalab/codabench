@@ -13,10 +13,10 @@ dependencies = [
     "django>=4.2.0,<5",
     "django-oauth-toolkit==1.6.3",
     "django-cors-middleware==1.5.0",
-    "social-auth-core>=4.1.0,<5",
-    "social-auth-app-django>=5.0.0,<6",
-    "django-extensions>=3.2,<4",
-    "channels==4.2.0",
+    "social-auth-core==4.8.5",
+    "social-auth-app-django==5.4.3",
+    "django-extensions==4.1.0",
+    "channels==4.3.2",
     "channels-redis==4.0.0",
     "pillow==12.1.1",
     "celery==5.6.2",
@@ -33,7 +33,6 @@ dependencies = [
     "oyaml==1.0",
     "factory-boy==2.11.1",
     "bleach==6.3.0",
-    "django-querycount==0.7.0",
     "blessings==1.7",
     "django-su>=1.0.0,<2",
     "django-ajax-selects==2.0.0",
@@ -45,21 +44,20 @@ dependencies = [
     "azure-storage-common==2.1.0",
     "boto3==1.42.50",
     "whitenoise==6.11.0",
-    "djangorestframework>=3.13.0",
+    "djangorestframework==3.16.1",
     "djangorestframework-csv==3.0.1",
     "drf-extensions==0.4.0",
     "markdown==3.10.2",
     "pygments==2.19.2",
-    "drf-writable-nested==0.6.2",
-    "django-filter==2.4.0",
+    "drf-writable-nested==0.7.2",
     "flex==6.14.1",
     "pyrabbit2==1.0.7",
-    "django-enforce-host==1.0.1",
+    "django-enforce-host==1.1.0",
     "twisted==25.5.0",
     "ipdb==0.13.13",
     "jinja2==3.1.6",
     "requests==2.32.5",
-    "drf-extra-fields>=3.5.0",
+    "drf-extra-fields==3.7.0",
     "botocore==1.42.50",
     "s3transfer==0.16.0",
     "drf-spectacular>=0.28.0,<0.29",
@@ -69,6 +67,7 @@ dependencies = [
     "pytz>=2025.2",
     "coreapi>=2.3.3",
     "legacy-cgi>=2.6.4",
+    "django-filter==2.4.0",
 ]
 
 [tool.uv]
@@ -80,10 +79,11 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "django-querycount==0.7.0",
     "django-debug-toolbar==6.2.0",
-    "flake8>=3.8.4",
-    "pytest==7.4.4",
-    "pytest-django==4.11.1",
+    "flake8==7.3.0",
+    "pytest==9.0.2",
+    "pytest-django==4.12.0",
 ]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "settings.develop"  # Just "settings" since pytest will be running from src/
