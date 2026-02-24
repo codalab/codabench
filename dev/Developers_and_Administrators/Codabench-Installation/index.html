@@ -1506,8 +1506,9 @@
 On a fresh installation, you will need to use the following command to get your <code>.env</code> file: </p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>codabench
 </span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>cp<span class="w"> </span>.env_sample<span class="w"> </span>.env
+</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>cp<span class="w"> </span>my-postgres_sample.conf<span class="w"> </span>my-postgres.conf
 </span></code></pre></div>
-<p>Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings. For a quick <strong>local</strong> setup, you should not need to edit this file. For a <a href="../How-to-deploy-Codabench-on-your-server/">public server deployment</a>, you will have to modify some settings.</p>
+<p>Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings in the <code>.env</code>. For a quick <strong>local</strong> setup, you should not need to edit these files. For a <a href="../How-to-deploy-Codabench-on-your-server/">public server deployment</a>, you will have to modify some settings.</p>
 <div class="admonition warning">
 <p class="admonition-title">It is important to change the default passwords if you intend for the instance to be public</p>
 </div>
