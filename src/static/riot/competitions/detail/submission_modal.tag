@@ -42,7 +42,8 @@
         <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}">
             <div each="{tab in logTabs}"
                 class="submission-modal item {active: tab.fullTabId === activeLogTabId}"
-                data-tab="{tab.fullTabId}">
+                data-tab="{tab.fullTabId}"
+                onclick="{() => { activeLogTabId = tab.fullTabId }}">
                 {tab.label}
             </div>
         </div>
@@ -138,6 +139,9 @@
             }
         }
         self.update_submission_details = () => {
+            self.logs = {}
+            self.rebuildLogTabs()
+            self.update()
             CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
@@ -153,13 +157,8 @@
                                 self.logs[item.name] = content
                                 self.rebuildLogTabs()
                                 self.update()
-                                // Rebind Semantic UI tabs after DOM update
                                 setTimeout(() => {
-                                    // init tabs inside the LOGS menu
-                                    $('.ui.top.attached.menu .item').tab()
-                                    if (self.activeLogTabId) {
-                                        $('.ui.top.attached.menu .item').tab('change tab', self.activeLogTabId)
-                                    }
+                                    $(self.root).find('.ui.top.attached.menu .item').tab()
                                 }, 0)
                             })
                     })
@@ -206,7 +205,7 @@
             self.update()
             self.update_submission_details()
             let path = self.submission.admin ? 'admin_downloads' : 'downloads'
-            $('.menu .submission-modal.item').tab('change tab', path)
+            $('.ui.large.green.pointing.menu .submission-modal.item').tab('change tab', path)
         })
     </script>
 
@@ -225,7 +224,7 @@
 
         .file-download
             margin-top 25px !important
-            margin-botton 25px !important
+            margin-bottom 25px !important
 
         .graph-frame
             height 100%
