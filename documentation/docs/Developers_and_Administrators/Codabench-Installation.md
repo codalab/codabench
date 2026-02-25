@@ -125,7 +125,7 @@ services:
     platform: linux/arm64
   site_worker:
     platform: linux/arm64
-    command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
+    command: celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2
   compute_worker:
     platform: linux/arm64
 ```
