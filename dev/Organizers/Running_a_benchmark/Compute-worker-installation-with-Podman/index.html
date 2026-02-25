@@ -1225,14 +1225,36 @@
 </p><div class="language-ini highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="na">unqualified-search-registries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">["docker.io"]</span>
 </span></code></pre></div><p></p>
 <p>Create the <code>.env</code> file in order to add the compute worker into a queue (here, the default queue is used. If you use a particular queue, then, fill in your BROKER_URL generated when creating this particular queue) : </p>
-<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
-</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
-</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
-</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
-</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">podman</span>
-</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="c1">#USE_GPU=True</span>
-</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
+<div class="language-ini highlight"><span class="filename">.env</span><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="c1">#                       Connection URL                                #</span>
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="na">BROKER_URL</span><span class="o">=</span><span class="s">pyamqp://&lt;login&gt;:&lt;password&gt;@www.codabench.org:5672/</span>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="c1"># If SSL isn't enabled, then comment or remove the following line</span>
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a><span class="na">BROKER_USE_SSL</span><span class="o">=</span><span class="s">True</span>
+</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a><span class="c1">#                       Temporary Storage                             #</span>
+</span><span id="__span-2-10"><a href="#__codelineno-2-10" id="__codelineno-2-10" name="__codelineno-2-10"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-11"><a href="#__codelineno-2-11" id="__codelineno-2-11" name="__codelineno-2-11"></a><span class="na">HOST_DIRECTORY</span><span class="o">=</span><span class="s">/codabench</span>
+</span><span id="__span-2-12"><a href="#__codelineno-2-12" id="__codelineno-2-12" name="__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a href="#__codelineno-2-13" id="__codelineno-2-13" name="__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a href="#__codelineno-2-14" id="__codelineno-2-14" name="__codelineno-2-14"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-15"><a href="#__codelineno-2-15" id="__codelineno-2-15" name="__codelineno-2-15"></a><span class="c1">#                       Runtime                                       #</span>
+</span><span id="__span-2-16"><a href="#__codelineno-2-16" id="__codelineno-2-16" name="__codelineno-2-16"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-17"><a href="#__codelineno-2-17" id="__codelineno-2-17" name="__codelineno-2-17"></a><span class="na">CONTAINER_ENGINE_EXECUTABLE</span><span class="o">=</span><span class="s">podman</span>
+</span><span id="__span-2-18"><a href="#__codelineno-2-18" id="__codelineno-2-18" name="__codelineno-2-18"></a><span class="c1">#USE_GPU=True</span>
+</span><span id="__span-2-19"><a href="#__codelineno-2-19" id="__codelineno-2-19" name="__codelineno-2-19"></a><span class="c1">#GPU_DEVICE=nvidia.com/gpu=all</span>
+</span><span id="__span-2-20"><a href="#__codelineno-2-20" id="__codelineno-2-20" name="__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a href="#__codelineno-2-21" id="__codelineno-2-21" name="__codelineno-2-21"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-22"><a href="#__codelineno-2-22" id="__codelineno-2-22" name="__codelineno-2-22"></a><span class="c1">#                       Network                                       #</span>
+</span><span id="__span-2-23"><a href="#__codelineno-2-23" id="__codelineno-2-23" name="__codelineno-2-23"></a><span class="c1">#######################################################################</span>
+</span><span id="__span-2-24"><a href="#__codelineno-2-24" id="__codelineno-2-24" name="__codelineno-2-24"></a><span class="c1">#COMPETITION_CONTAINER_NETWORK_DISABLED=False</span>
+</span><span id="__span-2-25"><a href="#__codelineno-2-25" id="__codelineno-2-25" name="__codelineno-2-25"></a>
+</span><span id="__span-2-26"><a href="#__codelineno-2-26" id="__codelineno-2-26" name="__codelineno-2-26"></a><span class="c1">#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123</span>
+</span><span id="__span-2-27"><a href="#__codelineno-2-27" id="__codelineno-2-27" name="__codelineno-2-27"></a><span class="c1">#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233</span>
 </span></code></pre></div>
+<p>By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment <code>COMPETITION_CONTAINER_NETWORK_DISABLED</code> and set it to <code>True</code></p>
+<p>If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use <code>COMPETITION_CONTAINER_HTTP_PROXY</code></p>
 <p>You will also need to create the <code>codabench</code> folder defined in the <code>.env</code> file, as well as change its permissions to the user that is running the compute worker.</p>
 <div class="language-bash highlight"><span class="filename">In your terminal</span><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench
 </span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>sudo<span class="w"> </span>mkdir<span class="w"> </span>/codabench/data
