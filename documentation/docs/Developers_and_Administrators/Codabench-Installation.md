@@ -1,4 +1,4 @@
-Compared to Codalab, installing Codabench should be relatively easy since you no longer have to worry about special ways to set up SSL or storage. We include default solutions that should handle that for most basic uses.
+This guide explains how to quickly and easily install Codabench, typically for local development and test. Details about online deployment are given in [How to deploy Codabench on your server](How-to-deploy-Codabench-on-your-server.md) page.
 
 ## Pre-requisites
 
@@ -26,9 +26,9 @@ cp my-postgres_sample.conf my-postgres.conf
 
 Then edit the necessary settings inside. The most important are the database, storage, and Caddy/SSL settings in the `.env`. For a quick **local** setup, you should not need to edit these files. For a [public server deployment](How-to-deploy-Codabench-on-your-server.md), you will have to modify some settings.
 
-!!! warning "It is important to change the default passwords if you intend for the instance to be public"
+!!! warning "It is important to change the default passwords if you intend for the instance to be public."
 
-If you are using `AWS_S3_ENDPOINT_URL=http://minio:9000/` in your `.env`, edit your `/etc/hosts` file by adding this line `127.0.0.1 minio`
+If you are using `AWS_S3_ENDPOINT_URL=http://minio:9000/` in your `.env`, edit your `/etc/hosts` file by adding this line `127.0.0.1 minio`.
 
 
 #### For MacOS
@@ -78,7 +78,6 @@ You should be able to verify it is running correctly by looking at the logs with
 
 To run automated tests for your local instance, get inside the Django container with `docker compose exec django bash` then run `py.test` to start the automated tests.
 
-
 ### SSL
 To enable SSL:
 
@@ -110,22 +109,22 @@ minio_1           |    http://172.27.0.5:9000  http://127.0.0.1:9000
 ```
 3. Set `AWS_S3_ENDPOINT_URL=http://172.27.0.5:9000`in your `.env` file.
 
----
+### Static files not loading on local setup
 
 If static files are not loaded correctly, adding `DEBUG=True` to the `.env` file can help.
 
 
 ### For Apple CPU (M1, M2 chips)
 
-Add a `docker-compose.override.yml` file with the following content:
+Add a `compose.override.yml` file with the following content:
 
-```yaml title="docker-compose.override.yml"
+```yaml title="compose.override.yml"
 services:
   django:
     platform: linux/arm64
   site_worker:
     platform: linux/arm64
-    command: celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2
+    command: ["celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
   compute_worker:
     platform: linux/arm64
 ```
