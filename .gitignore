@@ -29,6 +29,7 @@ package-lock.json
 artifacts/
 
 docker-compose.override.yml
+compose.override.yml
 
 server_config.yaml
 /graphs/
