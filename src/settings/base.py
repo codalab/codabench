@@ -538,7 +538,10 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', True)
+AWS_DEFAULT_REGION = os.environ.get('AWS_DEFAULT_REGION')
+AWS_SES_REGION_NAME = os.environ.get('AWS_SES_REGION_NAME', AWS_DEFAULT_REGION)
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', 'noreply@codabench.org')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@codabench.org')
 
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'info@codabench.org')
 
