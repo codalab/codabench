@@ -81,6 +81,8 @@
         self.columns = []
 
         // Logs helpers
+        self.nonEmpty = (v) => !self.isEmpty(v)
+        self.showLog = (v) => self.nonEmpty(v) ? self.normalizeLog(v) : "No logs for this tab."
         self.normalizeLog = (v) => {
             if (v == null) return v
             if (Array.isArray(v)) return v.join('\n')
@@ -93,15 +95,6 @@
             v = self.normalizeLog(v)
             return v == null || (typeof v === "string" && v.trim().length === 0)
         }
-        self.nonEmpty = (v) => !self.isEmpty(v)
-        self.showLog = (v) => self.nonEmpty(v) ? self.normalizeLog(v) : "No logs for this tab."
-        self.getLog = (...keys) => {
-            for (const k of keys) {
-                const v = self.normalizeLog(self.logs[k])
-                if (!self.isEmpty(v)) return v
-            }
-            return null
-        }
 
         // Dynamic tabs state
         self.logTabs = []
@@ -110,26 +103,14 @@
         self.rebuildLogTabs = () => {
             const prefix = self.submission && self.submission.admin ? 'admin_' : ''
             const candidates = [
-                {
-                    key: 'log_ing_out',
-                    label: 'Ingestion output',
-                    content: self.getLog('prediction_ingestion_stdout', 'prediction_stdout')
-                },
-                {
-                    key: 'log_ing_err',
-                    label: 'Ingestion errors',
-                    content: self.getLog('prediction_ingestion_stderr', 'prediction_stderr')
-                },
-                {
-                    key: 'log_score_out',
-                    label: 'Scoring output',
-                    content: self.getLog('scoring_stdout', 'scoring_ingestion_stdout')
-                },
-                {
-                    key: 'log_score_err',
-                    label: 'Scoring errors',
-                    content: self.getLog('scoring_stderr', 'scoring_ingestion_stderr')
-                },
+            { key:'p_stdout', label:'Prediction output', content: self.logs.prediction_stdout },
+            { key:'p_stderr', label:'Prediction errors', content: self.logs.prediction_stderr },
+            { key:'p_ing_out', label:'Ingestion output', content: self.logs.prediction_ingestion_stdout },
+            { key:'p_ing_err', label:'Ingestion errors', content: self.logs.prediction_ingestion_stderr },
+            { key:'s_stdout', label:'Scoring output', content: self.logs.scoring_stdout },
+            { key:'s_stderr', label:'Scoring errors', content: self.logs.scoring_stderr },
+            { key:'s_ing_out', label:'Scoring ingestion output', content: self.logs.scoring_ingestion_stdout },
+            { key:'s_ing_err', label:'Scoring ingestion errors', content: self.logs.scoring_ingestion_stderr },
             ]
 
             // Keep only non empty tabs
