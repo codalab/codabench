@@ -80,11 +80,6 @@
         self.leaderboards = []
         self.columns = []
 
-        // OLD helpers - Check if logs are empty
-        //self.isEmpty = (v) => v == null || (typeof v === "string" && v.trim().length === 0)
-        //self.nonEmpty = (v) => !self.isEmpty(v)
-        //self.showLog = (v) => self.nonEmpty(v) ? v : "No logs for this tab."
-
         // Logs helpers
         self.normalizeLog = (v) => {
             if (v == null) return v
