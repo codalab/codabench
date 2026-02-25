@@ -1012,7 +1012,7 @@ class Run:
             else self.program_container_name
         )
         # Disable or not the competition container access to Internet (False by default)
-        container_network_status = os.environ.get(
+        container_network_disabled = os.environ.get(
             "COMPETITION_CONTAINER_NETWORK_DISABLED", ""
         )
 
@@ -1030,6 +1030,7 @@ class Run:
         competition_container_proxy_https = (
             "https_proxy=" + competition_container_proxy_https
         )
+
         container = client.create_container(
             self.container_image,
             name=container_name,
@@ -1043,7 +1044,7 @@ class Run:
                 competition_container_proxy_http,
                 competition_container_proxy_https,
             ],
-            network_disabled=container_network_status.lower() in ["true"],
+            network_disabled=container_network_disabled.lower() in ["true"],
         )
         logger.debug("Created container : " + str(container))
         logger.info("Volume configuration of the container: ")
