@@ -6,6 +6,7 @@
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}fact_sheet">FACT SHEET ANSWERS</div>
     </div>
+    <!-- Downloads -->
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
@@ -36,50 +37,42 @@
             </div>
         </div>
     </div>
+    <!-- Logs -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
-        <div class="ui top attached inverted pointing menu">
-        <div class="active submission-modal item" data-tab="{admin_: submission.admin}log_ing_out">
-            Ingestion output
+        <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}">
+            <div each="{tab in logTabs}"
+                class="submission-modal item {active: tab.fullTabId === activeLogTabId}"
+                data-tab="{tab.fullTabId}">
+                {tab.label}
+            </div>
         </div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_ing_err">
-            Ingestion errors
+        <!-- If no logs -->
+        <div class="ui bottom attached inverted segment tab log active" if="{logTabs.length === 0}">
+            <pre class="empty">No logs available for this submission.</pre>
         </div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_score_out">
-            Scoring output
-        </div>
-        <div class="submission-modal item" data-tab="{admin_: submission.admin}log_score_err">
-            Scoring errors
-        </div>
-        </div>
-        <div class="ui active bottom attached inverted segment tab log"
-            data-tab="{admin_: submission.admin}log_ing_out">
-        <pre class="{empty: isEmpty(logs.prediction_ingestion_stdout)}">{ showLog(logs.prediction_ingestion_stdout) }</pre>
-        </div>
-        <div class="ui bottom attached inverted segment tab log"
-            data-tab="{admin_: submission.admin}log_ing_err">
-        <pre class="{empty: isEmpty(logs.prediction_ingestion_stderr)}">{ showLog(logs.prediction_ingestion_stderr) }</pre>
-        </div>
-        <div class="ui bottom attached inverted segment tab log"
-            data-tab="{admin_: submission.admin}log_score_out">
-        <pre class="{empty: isEmpty(logs.scoring_stdout)}">{ showLog(logs.scoring_stdout) }</pre>
-        </div>
-        <div class="ui bottom attached inverted segment tab log"
-            data-tab="{admin_: submission.admin}log_score_err">
-        <pre class="{empty: isEmpty(logs.scoring_stderr)}">{ showLog(logs.scoring_stderr) }</pre>
+        <!-- Dynamic tabs -->
+        <div each="{tab in logTabs}"
+            class="ui bottom attached inverted segment tab log {active: tab.fullTabId === activeLogTabId}"
+            data-tab="{tab.fullTabId}">
+            <pre class="{empty: isEmpty(tab.content)}">{ showLog(tab.content) }</pre>
         </div>
     </div>
+    <!-- Fact sheet -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}fact_sheet">
         <div class="ui inverted segment log">
             <textarea name="fact-sheet" id="fact_sheet" ref="fact_sheet_text_area">{ JSON.stringify(fact_sheet_answers, null, 2) }</textarea>
         </div>
         <div class="ui button green" onclick="{update_fact_sheet.bind(this)}">Save</div>
     </div>
+    <!-- Visualization -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
         <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
+    <!-- Admin -->
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>
     </div>
+
     <script>
         var self = this
         self.submission = {}
@@ -87,10 +80,76 @@
         self.leaderboards = []
         self.columns = []
 
-        // Check if logs are empty
-        self.isEmpty = (v) => v == null || (typeof v === "string" && v.trim().length === 0)
+        // OLD helpers - Check if logs are empty
+        //self.isEmpty = (v) => v == null || (typeof v === "string" && v.trim().length === 0)
+        //self.nonEmpty = (v) => !self.isEmpty(v)
+        //self.showLog = (v) => self.nonEmpty(v) ? v : "No logs for this tab."
+
+        // Logs helpers
+        self.normalizeLog = (v) => {
+            if (v == null) return v
+            if (Array.isArray(v)) return v.join('\n')
+            if (typeof v === "object") {
+                try { return JSON.stringify(v, null, 2) } catch { return String(v) }
+            }
+            return String(v)
+        }
+        self.isEmpty = (v) => {
+            v = self.normalizeLog(v)
+            return v == null || (typeof v === "string" && v.trim().length === 0)
+        }
         self.nonEmpty = (v) => !self.isEmpty(v)
-        self.showLog = (v) => self.nonEmpty(v) ? v : "No logs for this tab."
+        self.showLog = (v) => self.nonEmpty(v) ? self.normalizeLog(v) : "No logs for this tab."
+        self.getLog = (...keys) => {
+            for (const k of keys) {
+                const v = self.normalizeLog(self.logs[k])
+                if (!self.isEmpty(v)) return v
+            }
+            return null
+        }
+
+        // Dynamic tabs state
+        self.logTabs = []
+        self.activeLogTabId = null
+
+        self.rebuildLogTabs = () => {
+            const prefix = self.submission && self.submission.admin ? 'admin_' : ''
+            const candidates = [
+                {
+                    key: 'log_ing_out',
+                    label: 'Ingestion output',
+                    content: self.getLog('prediction_ingestion_stdout', 'prediction_stdout')
+                },
+                {
+                    key: 'log_ing_err',
+                    label: 'Ingestion errors',
+                    content: self.getLog('prediction_ingestion_stderr', 'prediction_stderr')
+                },
+                {
+                    key: 'log_score_out',
+                    label: 'Scoring output',
+                    content: self.getLog('scoring_stdout', 'scoring_ingestion_stdout')
+                },
+                {
+                    key: 'log_score_err',
+                    label: 'Scoring errors',
+                    content: self.getLog('scoring_stderr', 'scoring_ingestion_stderr')
+                },
+            ]
+
+            // Keep only non empty tabs
+            self.logTabs = candidates
+                .filter(t => !self.isEmpty(t.content))
+                .map(t => ({
+                    ...t,
+                    fullTabId: `${prefix}${t.key}`
+                }))
+            // Select a valid tab as active
+            const stillValid = self.logTabs.find(t => t.fullTabId === self.activeLogTabId)
+            if (!stillValid) {
+                self.activeLogTabId = self.logTabs.length ? self.logTabs[0].fullTabId : null
+            }
+        }
 
         self.get_score_details = function (column) {
             try {
@@ -116,9 +175,20 @@
                         $.get(item.data_file)
                             .done(function (content) {
                                 self.logs[item.name] = content
+                                self.rebuildLogTabs()
                                 self.update()
+                                // Rebind Semantic UI tabs after DOM update
+                                setTimeout(() => {
+                                    // init tabs inside the LOGS menu
+                                    $('.ui.top.attached.menu .item').tab()
+                                    if (self.activeLogTabId) {
+                                        $('.ui.top.attached.menu .item').tab('change tab', self.activeLogTabId)
+                                    }
+                                }, 0)
                             })
                     })
+                    self.rebuildLogTabs()
+                    self.update()
                     if (self.submission.admin) {
                         _.forEach(data.leaderboards, (leaderboard) => {
                             _.map(leaderboard.columns, (column) => {
