@@ -1044,7 +1044,7 @@ class Run:
                 competition_container_proxy_http,
                 competition_container_proxy_https,
             ],
-            network_disabled=container_network_disabled.lower() in ["true"],
+            network_disabled=container_network_disabled.lower() == "true",
         )
         logger.debug("Created container : " + str(container))
         logger.info("Volume configuration of the container: ")
