@@ -40,10 +40,9 @@
     <!-- Logs -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
         <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}">
-            <div each="{tab in logTabs}"
-                class="submission-modal item {active: tab.fullTabId === activeLogTabId}"
-                data-tab="{tab.fullTabId}"
-                onclick="{() => { activeLogTabId = tab.fullTabId }}">
+            <div each="{tab, i in logTabs}"
+                class="submission-modal item {active: i === 0}"
+                data-tab="{tab.fullTabId}">
                 {tab.label}
             </div>
         </div>
@@ -52,10 +51,10 @@
             <pre class="empty">No logs available for this submission.</pre>
         </div>
         <!-- Dynamic tabs -->
-        <div each="{tab in logTabs}"
-            class="ui bottom attached inverted segment tab log {active: tab.fullTabId === activeLogTabId}"
+        <div each="{tab, i in logTabs}"
+            class="ui bottom attached inverted segment tab log {active: i === 0}"
             data-tab="{tab.fullTabId}">
-            <pre class="{empty: isEmpty(tab.content)}">{ showLog(tab.content) }</pre>
+            <pre class="{empty: is_empty(tab.content)}">{ show_log(tab.content) }</pre>
         </div>
     </div>
     <!-- Fact sheet -->
@@ -82,8 +81,8 @@
         self.columns = []
 
         // Logs helpers
-        self.nonEmpty = (v) => !self.isEmpty(v)
-        self.showLog = (v) => self.nonEmpty(v) ? self.normalizeLog(v) : "No logs for this tab."
+        self.non_empty = (v) => !self.is_empty(v)
+        self.show_log = (v) => self.non_empty(v) ? self.normalizeLog(v) : "No logs for this tab."
         self.normalizeLog = (v) => {
             if (v == null) return v
             if (Array.isArray(v)) return v.join('\n')
@@ -92,16 +91,15 @@
             }
             return String(v)
         }
-        self.isEmpty = (v) => {
+        self.is_empty = (v) => {
             v = self.normalizeLog(v)
             return v == null || (typeof v === "string" && v.trim().length === 0)
         }
 
         // Dynamic tabs state
         self.logTabs = []
-        self.activeLogTabId = null
 
-        self.rebuildLogTabs = () => {
+        self.rebuild_log_tabs = () => {
             const prefix = self.submission && self.submission.admin ? 'admin_' : ''
             const candidates = [
             { key:'p_stdout', label:'Prediction output', content: self.logs.prediction_stdout },
@@ -116,16 +114,11 @@
 
             // Keep only non empty tabs
             self.logTabs = candidates
-                .filter(t => !self.isEmpty(t.content))
+                .filter(t => !self.is_empty(t.content))
                 .map(t => ({
                     ...t,
                     fullTabId: `${prefix}${t.key}`
                 }))
-            // Select a valid tab as active
-            const stillValid = self.logTabs.find(t => t.fullTabId === self.activeLogTabId)
-            if (!stillValid) {
-                self.activeLogTabId = self.logTabs.length ? self.logTabs[0].fullTabId : null
-            }
         }
 
         self.get_score_details = function (column) {
@@ -140,7 +133,7 @@
         }
         self.update_submission_details = () => {
             self.logs = {}
-            self.rebuildLogTabs()
+            self.rebuild_log_tabs()
             self.update()
             CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
@@ -151,19 +144,25 @@
                     self.detailed_result = data.detailed_result
                     self.fact_sheet_answers = data.fact_sheet_answers
 
-                    _.forEach(data.logs, (item) => {
-                        $.get(item.data_file)
-                            .done(function (content) {
-                                self.logs[item.name] = content
-                                self.rebuildLogTabs()
-                                self.update()
-                                setTimeout(() => {
-                                    //$(self.root).find('.ui.top.attached.menu .item').tab()
-                                    $('.ui.top.attached.menu .item').tab()
-                                }, 0)
-                            })
+                    const requests = data.logs.map(item =>
+                    $.get(item.data_file)
+                        .done(content => { self.logs[item.name] = content })
+                        .fail(() => { self.logs[item.name] = "" })
+                    )
+                    // When all log files are done loading:
+                    $.when.apply($, requests).always(() => {
+                    self.rebuild_log_tabs()
+                    self.update()
+                    setTimeout(() => {
+                        const $items = $(self.root).find('.ui.top.attached.menu .item')
+                        $items.tab()
+                        // pick the first tab deterministically
+                        if (self.logTabs.length) {
+                        $items.tab('change tab', self.logTabs[0].fullTabId)
+                        }
+                    }, 0)
                     })
-                    self.rebuildLogTabs()
+                    self.rebuild_log_tabs()
                     self.update()
                     if (self.submission.admin) {
                         _.forEach(data.leaderboards, (leaderboard) => {
