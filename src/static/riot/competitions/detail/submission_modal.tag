@@ -158,7 +158,8 @@
                                 self.rebuildLogTabs()
                                 self.update()
                                 setTimeout(() => {
-                                    $(self.root).find('.ui.top.attached.menu .item').tab()
+                                    //$(self.root).find('.ui.top.attached.menu .item').tab()
+                                    $('.ui.top.attached.menu .item').tab()
                                 }, 0)
                             })
                     })
@@ -202,6 +203,11 @@
 
         CODALAB.events.on('submission_clicked', () => {
             self.submission = opts.submission
+            // reset per-submission state
+            self.logs = {}
+            self.logTabs = []
+            self.activeLogTabId = null
+            // update
             self.update()
             self.update_submission_details()
             let path = self.submission.admin ? 'admin_downloads' : 'downloads'
