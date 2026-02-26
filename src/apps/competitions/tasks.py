@@ -131,6 +131,7 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         "is_scoring": is_scoring,
     }
 
+<<<<<<< HEAD
     if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
         submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))
         submission.save(update_fields=['detailed_result'])
@@ -141,9 +142,45 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))
         submission.save(update_fields=['scoring_result'])
 
+=======
+    if submission.phase.competition.enable_detailed_results and not getattr(submission.detailed_result, "name", None):
+        logger.info("Creating empty detailed_result for submission %s", submission.pk)
+        submission.detailed_result.save("detailed_results.html", ContentFile(b""))
+        submission.save(update_fields=["detailed_result"])
+
+    if not getattr(submission.prediction_result, "name", None):
+        logger.info("Creating empty prediction_result for submission %s", submission.pk)
+        submission.prediction_result.save("prediction_result.zip", ContentFile(b""))
+        submission.save(update_fields=["prediction_result"])
+
+    if not getattr(submission.scoring_result, "name", None):
+        logger.info("Creating empty scoring_result for submission %s", submission.pk)
+        submission.scoring_result.save("scoring_result.zip", ContentFile(b""))
+        submission.save(update_fields=["scoring_result"])
+
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
 
+<<<<<<< HEAD
+=======
+    if task is None:
+        fallback_task = submission.phase.tasks.first()
+        if fallback_task is not None:
+            logger.warning(
+                "Submission %s has no task set. Falling back to first task of phase: task=%s",
+                submission.pk,
+                fallback_task.pk,
+            )
+            task = fallback_task
+        else:
+            logger.warning(
+                "Submission %s has no task and phase %s has no tasks. Proceeding with minimal payload.",
+                submission.pk,
+                submission.phase.pk,
+            )
+
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     priority = 10 if is_scoring else 0
 
     if not is_scoring:
@@ -167,9 +204,25 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
             permission='w'
         )
 
+<<<<<<< HEAD
     if task.ingestion_program:
         if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
             run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+=======
+    if task is not None:
+        try:
+            if getattr(task, "ingestion_program", None):
+                if (
+                    (getattr(task, "ingestion_only_during_scoring", False) and is_scoring)
+                    or (not getattr(task, "ingestion_only_during_scoring", False) and not is_scoring)
+                ):
+                    ingestion_path = getattr(task.ingestion_program, "data_file", None)
+                    if ingestion_path:
+                        run_args["ingestion_program"] = make_url_sassy(ingestion_path.name)
+                        logger.debug("Added ingestion_program=%s", run_args["ingestion_program"])
+                    else:
+                        logger.debug("Task %s ingestion_program exists but no data_file", task.pk)
+>>>>>>> e0c39abf (feature ok, needs to be tested)
 
     if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
         run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
@@ -177,10 +230,33 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     if is_scoring and task.reference_data:
         run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
 
+<<<<<<< HEAD
     run_args['ingestion_only_during_scoring'] = task.ingestion_only_during_scoring
 
     run_args['program_data'] = make_url_sassy(
         path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
+=======
+    run_args["ingestion_only_during_scoring"] = getattr(task, "ingestion_only_during_scoring", False)
+
+    program_data_path = None
+    if not is_scoring:
+        if getattr(submission.data, "data_file", None):
+            program_data_path = submission.data.data_file.name
+    else:
+        if task is not None and getattr(task, "scoring_program", None) and getattr(task.scoring_program, "data_file", None):
+            program_data_path = task.scoring_program.data_file.name
+
+    if program_data_path:
+        run_args["program_data"] = make_url_sassy(path=program_data_path)
+        logger.debug("Added program_data=%s", run_args["program_data"])
+    else:
+        logger.debug("No program_data path available for submission %s (is_scoring=%s)", submission.pk, is_scoring)
+
+    detail_names = (
+        SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
+        if not is_scoring
+        else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     )
 
     if not is_scoring:
@@ -194,11 +270,18 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     logger.info(f"Task data for submission id = {submission.id}")
     logger.debug(run_args)
 
+<<<<<<< HEAD
     # Pad timelimit so worker has time to cleanup
     time_padding = 60 * 20  # 20 minutes
+=======
+    time_padding = 60 * 20
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     time_limit = submission.phase.execution_time_limit + time_padding
 
+<<<<<<< HEAD
     # Determine routing: prefer explicitly passed target_group, else fallback to competition/group resolution
+=======
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     target_vhost = None
     try:
         if target_group:
@@ -230,14 +313,20 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     except Exception:
         logger.exception("Error while resolving competition/group for submission %s", submission.pk)
 
+<<<<<<< HEAD
     # If no group vhost, fallback to competition-level queue vhost
+=======
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     if target_vhost is None:
         comp_queue = getattr(submission.phase.competition, 'queue', None)
         if comp_queue:
             run_args['queue'] = getattr(comp_queue, 'name', None)
             target_vhost = getattr(comp_queue, 'vhost', None)
 
+<<<<<<< HEAD
     # Send the task to the compute-worker
+=======
+>>>>>>> e0c39abf (feature ok, needs to be tested)
     task_obj = None
     try:
         if target_vhost:

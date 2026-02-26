@@ -813,15 +813,6 @@ class PhaseViewSet(ModelViewSet):
 
             serialized_submissions = list(query.get('submissions', []))
 
-            for s in serialized_submissions:
-                logger.error(
-                    f"SUBMISSION {s.get('id')} task={s.get('task')} parent={s.get('parent')} scores={s.get('scores')}"
-                )
-
-            logger.error(f"RAW QUERY KEYS: {query.keys()}")
-            logger.error(f"RAW SUBMISSIONS COUNT: {len(query.get('submissions', []))}")
-            logger.error(f"RAW FIRST SUBMISSION: {query.get('submissions', [])[:1]}")
-
             logger.warning("===== LEADERBOARD DEBUG START =====")
             logger.warning(f"Phase ID: {getattr(phase, 'id', None)}")
             logger.warning(f"Number of serialized submissions: {len(serialized_submissions)}")
@@ -840,10 +831,6 @@ class PhaseViewSet(ModelViewSet):
             columns = [col for col in query.get('columns', []) or []]
             logger.debug(f"Columns loaded: {[c.get('key') for c in columns]}")
 
-            logger.error("COLUMNS DEBUG:")
-            for c in columns:
-                logger.error(f"Column key={c.get('key')} index={c.get('index')}")
-
             group_order = []
             try:
                 part_groups = getattr(phase.competition, "participant_groups", None)
@@ -857,32 +844,30 @@ class PhaseViewSet(ModelViewSet):
                             group_order = []
             except Exception:
                 logger.exception("Error reading competition.participant_groups; ignoring.")
-
             logger.debug(f"Initial group_order from competition: {group_order}")
+
+            tasks_in_query = query.get('tasks') or []
+            logger.debug(f"Tasks in query count: {len(tasks_in_query)}")
 
             child_parent_group = defaultdict(dict)
             children_by_parent = defaultdict(list)
             seen_groups = set()
-
             for s in serialized_submissions:
                 if not s.get('parent'):
                     continue
                 parent_id = s['parent']
-
                 gid_raw = None
                 org = s.get('organization')
                 if isinstance(org, dict):
                     gid_raw = org.get('name')
                 elif isinstance(org, str) and org:
                     gid_raw = org
-
                 if not gid_raw:
                     sd = s.get('status_details')
                     if isinstance(sd, dict):
                         gid_raw = sd.get('group') or sd.get('group_name') or sd.get('name')
                     elif sd:
                         gid_raw = str(sd)
-
                 if not gid_raw:
                     owner = s.get('owner')
                     if isinstance(owner, dict) and owner.get('username'):
@@ -897,10 +882,8 @@ class PhaseViewSet(ModelViewSet):
                 if group_order:
                     low_raw = (gid_raw or "").lower()
                     group_order_lower = [g.lower() for g in group_order]
-
                     if low_raw in group_order_lower:
                         matched = group_order[group_order_lower.index(low_raw)]
-
                     if not matched:
                         for g in group_order:
                             if low_raw and low_raw in (g or "").lower():
@@ -909,7 +892,6 @@ class PhaseViewSet(ModelViewSet):
                             if (g or "").lower() and (g or "").lower() in low_raw:
                                 matched = g
                                 break
-
                     if not matched:
                         digits = re.findall(r'\d+', gid_raw or "")
                         if digits:
@@ -920,7 +902,6 @@ class PhaseViewSet(ModelViewSet):
                                         break
                                 if matched:
                                     break
-
                     if matched:
                         gid_final = matched
                         logger.info(f"Child {s.get('id')} gid_raw='{gid_raw}' matched to canonical group '{gid_final}'")
@@ -933,8 +914,15 @@ class PhaseViewSet(ModelViewSet):
                 logger.debug(f"Mapped child {s.get('id')} -> parent {parent_id} as group key '{gid_final}' (raw='{gid_raw}')")
 
             if not group_order and seen_groups:
-                group_order = sorted(list(seen_groups))
-                logger.info(f"Fallback group_order from seen_groups: {group_order}")
+                if len(seen_groups) > 1:
+                    group_order = sorted(list(seen_groups))
+                    logger.info(f"Fallback group_order from seen_groups (multiple keys): {group_order}")
+                else:
+                    if len(tasks_in_query) > 1:
+                        logger.info("Detected multi-task phase and only one seen_group -> skip using seen_groups as groups (treat as multi-task legacy).")
+                    else:
+                        group_order = sorted(list(seen_groups))
+                        logger.info(f"Fallback group_order from seen_groups (single key, single-task): {group_order}")
 
             if group_order:
                 response['groups'] = [{'name': g, 'colCount': len(columns)} for g in group_order]
@@ -944,65 +932,46 @@ class PhaseViewSet(ModelViewSet):
 
             submissions_keys = {}
             submission_detailed_results = {}
-            row_parent_map = {} 
+            row_parent_map = {}
 
-            for submission in serialized_submissions:
-                submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
-                submission_detailed_results.setdefault(submission_key, []).append({
-                    'task': submission.get('task'),
-                    'id': submission.get('id')
-                })
+            is_multi_task = (not group_order) and (len(tasks_in_query) > 1)
+            logger.debug(f"is_multi_task={is_multi_task} (group_order present? {bool(group_order)} tasks_count={len(tasks_in_query)})")
 
-                if submission_key not in submissions_keys:
-                    submissions_keys[submission_key] = len(response['submissions'])
-                    response['submissions'].append({
-                        'id': submission.get('id'),
-                        'owner': submission.get('display_name') or submission.get('owner'),
-                        'scores': [],
-                        'detailed_results': [],
-                        'fact_sheet_answers': submission.get('fact_sheet_answers'),
-                        'slug_url': submission.get('slug_url'),
-                        'organization': submission.get('organization'),
-                        'created_when': submission.get('created_when')
-                    })
-                    row_parent_map[submission_key] = submission.get('parent') if submission.get('parent') else submission.get('id')
+            if group_order:
+                parent_ids = set()
 
-            parent_candidates = set()
-            for s in serialized_submissions:
-                if s.get('parent'):
-                    parent_candidates.add(s.get('parent'))
-                else:
-                    parent_candidates.add(s.get('id'))
+                for s in serialized_submissions:
+                    if s.get('parent'):
+                        parent_ids.add(s.get('parent'))
+                    else:
+                        parent_ids.add(s.get('id'))
 
-            for parent_id in parent_candidates:
-                parent_entry = next((x for x in serialized_submissions if x.get('id') == parent_id and not x.get('parent')), None)
-                if parent_entry:
-                    parent_owner = parent_entry.get('owner')
-                else:
-                    first_child = children_by_parent.get(parent_id, [None])[0]
-                    parent_owner = first_child.get('owner') if first_child else f'unknown-{parent_id}'
+                for parent_id in parent_ids:
+                    parent_entry = next(
+                        (x for x in serialized_submissions if x.get('id') == parent_id and not x.get('parent')),
+                        None
+                    )
 
-                submission_key = f"{parent_owner}{parent_id}"
-                if submission_key not in submissions_keys:
-                    logger.info(f"Creating synthetic parent row for parent_id={parent_id} submission_key='{submission_key}'")
-                    submissions_keys[submission_key] = len(response['submissions'])
                     if parent_entry:
-                        row_owner = parent_entry.get('display_name') or parent_entry.get('owner')
+                        owner = parent_entry.get('display_name') or parent_entry.get('owner')
                         slug = parent_entry.get('slug_url')
                         org = parent_entry.get('organization')
                         created = parent_entry.get('created_when')
                         fact_sheet = parent_entry.get('fact_sheet_answers')
                     else:
                         child = children_by_parent.get(parent_id, [None])[0]
-                        row_owner = (child.get('display_name') or child.get('owner')) if child else parent_owner
+                        owner = (child.get('display_name') or child.get('owner')) if child else "unknown"
                         slug = child.get('slug_url') if child else None
                         org = child.get('organization') if child else None
                         created = child.get('created_when') if child else None
                         fact_sheet = child.get('fact_sheet_answers') if child else {}
 
+                    submission_key = str(parent_id)
+                    submissions_keys[submission_key] = len(response['submissions'])
+
                     response['submissions'].append({
                         'id': parent_id,
-                        'owner': row_owner,
+                        'owner': owner,
                         'scores': [],
                         'detailed_results': [],
                         'fact_sheet_answers': fact_sheet,
@@ -1010,7 +979,80 @@ class PhaseViewSet(ModelViewSet):
                         'organization': org,
                         'created_when': created
                     })
+
                     row_parent_map[submission_key] = parent_id
+
+            else:
+                for submission in serialized_submissions:
+                    if is_multi_task:
+                        submission_key = f"{submission.get('owner')}"
+                    else:
+                        submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
+
+                    submission_detailed_results.setdefault(submission_key, []).append({
+                        'task': submission.get('task'),
+                        'id': submission.get('id')
+                    })
+
+                    if submission_key not in submissions_keys:
+                        submissions_keys[submission_key] = len(response['submissions'])
+                        response['submissions'].append({
+                            'id': submission.get('id'),
+                            'owner': submission.get('display_name') or submission.get('owner'),
+                            'scores': [],
+                            'detailed_results': [],
+                            'fact_sheet_answers': submission.get('fact_sheet_answers'),
+                            'slug_url': submission.get('slug_url'),
+                            'organization': submission.get('organization'),
+                            'created_when': submission.get('created_when')
+                        })
+                        row_parent_map[submission_key] = submission.get('parent') if submission.get('parent') else submission.get('id')
+
+            if not group_order and not is_multi_task:
+                parent_candidates = set()
+                for s in serialized_submissions:
+                    if s.get('parent'):
+                        parent_candidates.add(s.get('parent'))
+                    else:
+                        parent_candidates.add(s.get('id'))
+
+                for parent_id in parent_candidates:
+                    parent_entry = next((x for x in serialized_submissions if x.get('id') == parent_id and not x.get('parent')), None)
+                    if parent_entry:
+                        parent_owner = parent_entry.get('owner')
+                    else:
+                        first_child = children_by_parent.get(parent_id, [None])[0]
+                        parent_owner = first_child.get('owner') if first_child else f'unknown-{parent_id}'
+
+                    submission_key = f"{parent_owner}{parent_id}"
+                    if submission_key not in submissions_keys:
+                        logger.info(f"Creating synthetic parent row for parent_id={parent_id} submission_key='{submission_key}'")
+                        submissions_keys[submission_key] = len(response['submissions'])
+                        if parent_entry:
+                            row_owner = parent_entry.get('display_name') or parent_entry.get('owner')
+                            slug = parent_entry.get('slug_url')
+                            org = parent_entry.get('organization')
+                            created = parent_entry.get('created_when')
+                            fact_sheet = parent_entry.get('fact_sheet_answers')
+                        else:
+                            child = children_by_parent.get(parent_id, [None])[0]
+                            row_owner = (child.get('display_name') or child.get('owner')) if child else parent_owner
+                            slug = child.get('slug_url') if child else None
+                            org = child.get('organization') if child else None
+                            created = child.get('created_when') if child else None
+                            fact_sheet = child.get('fact_sheet_answers') if child else {}
+
+                        response['submissions'].append({
+                            'id': parent_id,
+                            'owner': row_owner,
+                            'scores': [],
+                            'detailed_results': [],
+                            'fact_sheet_answers': fact_sheet,
+                            'slug_url': slug,
+                            'organization': org,
+                            'created_when': created
+                        })
+                        row_parent_map[submission_key] = parent_id
 
             for k, v in submissions_keys.items():
                 response['submissions'][v]['detailed_results'] = submission_detailed_results.get(k, [])
@@ -1040,7 +1082,6 @@ class PhaseViewSet(ModelViewSet):
                     columns_by_index[int(idx)] = col
 
             task_fallback_id = None
-            tasks_in_query = query.get('tasks') or []
             if tasks_in_query:
                 try:
                     task_fallback_id = tasks_in_query[0].get('id')
@@ -1050,7 +1091,10 @@ class PhaseViewSet(ModelViewSet):
             if not group_order:
                 logger.debug("Filling scores in legacy (no groups) mode.")
                 for submission in serialized_submissions:
-                    submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
+                    if is_multi_task:
+                        submission_key = f"{submission.get('owner')}"
+                    else:
+                        submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
                     row_idx = submissions_keys.get(submission_key)
                     if row_idx is None:
                         continue
@@ -1096,9 +1140,12 @@ class PhaseViewSet(ModelViewSet):
                             for col in columns:
                                 found = None
                                 for s_score in child.get('scores', []) or []:
-                                    if s_score.get('index') == col.get('index'):
-                                        found = s_score
-                                        break
+                                    try:
+                                        if int(s_score.get('index')) == int(col.get('index')):
+                                            found = s_score
+                                            break
+                                    except Exception:
+                                        continue
                                 if found:
                                     precision = col.get('precision') if col.get('precision') is not None else 2
                                     try:
@@ -1186,7 +1233,7 @@ class PhaseViewSet(ModelViewSet):
             logger.exception("Unhandled exception in get_leaderboard.")
             return Response({"detail": "Internal server error building leaderboard."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
+        
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
