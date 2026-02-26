@@ -26,17 +26,32 @@
                 </div>
             </th>
         </tr>
+
         <tr class="task-row">
             <th>Task:</th>
             <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
+
+        <!-- group row: one header per group, each spans number of base columns (colCount) -->
+        <tr if="{ groups && groups.length > 0 }" class="group-row">
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th each="{ group in groups }" colspan="{ group.colCount }" class="center aligned">{ group.name }</th>
+        </tr>
+
+        <!-- metric row: one header cell per actual column (these come from filtered_columns) -->
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
             <th>Date</th>
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
+        </tr>
+
+
         </tr>
         </thead>
         <!--  Always show leaderboard  -->
@@ -153,6 +168,7 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+                    self.groups = responseData.groups || []        // <-- important
                     self.columns = []
                     // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
@@ -171,25 +187,18 @@
                         self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
-
                         for(column of task.columns){
+                            // note: server already sets column.task_id and column.key to include group suffix
                             column.task_id = task.id
                             self.columns.push(column)
                         }
-                        // -1 id is used for fact sheet answers
-                        if(self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1){
-                            self.columns.push({
-                              task_id: task.id,
-                              title: "Detailed Results"
-                            })
-                            task.colWidth += 1
-                        }
                     }
+                    // filtered_columns is computed by filter_columns() from self.columns
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
                     self.update()
                 })
-        }
+            }
 
         self.get_detailed_result_submisison_id = function(column, submisison){
             for (index in submisison.detailed_results) {
