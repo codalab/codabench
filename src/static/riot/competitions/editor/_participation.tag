@@ -88,53 +88,64 @@
   </form>
 
     <!-- CREATE / EDIT GROUP MODAL -->
-  <div ref="group_modal" class="ui small modal" style="display:none;">
-    <i class="close icon" onclick="{ close_group_modal }"></i>
-    <div class="header">{ editing_group ? 'Modify group' : 'create group' }</div>
-    <div class="content">
-      <div class="ui form">
-        <div class="field">
-          <label>name</label>
-          <input type="text" ref="group_name">
-        </div>
+  <!-- CREATE / EDIT GROUP MODAL -->
+<div ref="group_modal" class="ui small modal" style="display:none;">
+  <i class="close icon" onclick="{ close_group_modal }"></i>
+  <div class="header">{ editing_group ? 'Modify group' : 'Create group' }</div>
+  <div class="content">
+    <div class="ui form">
 
-        <div class="field">
-          <label>Queue (optional)</label>
-          <select ref="group_queue" class="ui dropdown">
-            <option value="">None</option>
-            <option each="{ q in available_queues }" value="{ q.id }">{ q.name }</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Select group members</label>
-
-          <div style="display:flex; gap:.5rem; margin-bottom:.5rem; align-items:center;">
-            <button type="button" class="ui mini button" onclick="{ select_all_users }">Select all</button>
-            <button type="button" class="ui mini basic button" onclick="{ clear_user_selection }">Clear</button>
-            <div class="ui right floated meta" style="margin-left:auto;">
-              <span class="ui tiny basic label">Selected: <span ref="selected_count">0</span></span>
-            </div>
-          </div>
-
-          <select ref="group_user_select" multiple class="ui fluid multiple search selection dropdown" style="width:100%;">
-            <option each="{ u in available_users }" value="{ u.id }">{ u.username } &lt;{ u.email }&gt;</option>
-          </select>
-
-          <div class="ui segment" style="margin-top:.5rem;">
-            <small class="muted">You can search and select multiple participants</small>
-          </div>
-        </div>
-
-        <div class="ui error message" ref="group_modal_error" style="display:none;"></div>
+      <!-- NEW: select an existing group to edit / switch to create -->
+      <div class="field">
+        <label>Select existing group (or choose 'Create new')</label>
+        <select ref="choose_existing_group" class="ui fluid search dropdown">
+          <option value="">-- Create new group --</option>
+          <option each="{ g in available_groups }" value="{ g.id }">{ g.name }</option>
+        </select>
       </div>
-    </div>
 
-    <div class="actions">
-      <div class="ui cancel button" onclick="{ close_group_modal }">Cancel</div>
-      <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Edit' : 'Create' }</div>
+      <div class="field">
+        <label>name</label>
+        <input type="text" ref="group_name">
+      </div>
+
+      <div class="field">
+        <label>Queue (optional)</label>
+        <select ref="group_queue" class="ui dropdown">
+          <option value="">None</option>
+          <option each="{ q in available_queues }" value="{ q.id }">{ q.name }</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Select group members</label>
+
+        <div style="display:flex; gap:.5rem; margin-bottom:.5rem; align-items:center;">
+          <button type="button" class="ui mini button" onclick="{ select_all_users }">Select all</button>
+          <button type="button" class="ui mini basic button" onclick="{ clear_user_selection }">Clear</button>
+          <div class="ui right floated meta" style="margin-left:auto;">
+            <span class="ui tiny basic label">Selected: <span ref="selected_count">0</span></span>
+          </div>
+        </div>
+
+        <select ref="group_user_select" multiple class="ui fluid multiple search selection dropdown" style="width:100%;">
+          <option each="{ u in available_users }" value="{ u.id }">{ u.username } &lt;{ u.email }&gt;</option>
+        </select>
+
+        <div class="ui segment" style="margin-top:.5rem;">
+          <small class="muted">You can search and select multiple participants</small>
+        </div>
+      </div>
+
+      <div class="ui error message" ref="group_modal_error" style="display:none;"></div>
     </div>
   </div>
+
+  <div class="actions">
+    <div class="ui cancel button" onclick="{ close_group_modal }">Cancel</div>
+    <div class="ui primary button" onclick="{ submit_group }">{ editing_group ? 'Edit' : 'Create' }</div>
+  </div>
+</div>
 
   <script>
     let self = this
@@ -146,6 +157,11 @@
     self.available_users = []
     self.editing_group = null
     self._scheduledUpdate = false
+    const getGroupById = (id) => {
+      if (!id) return null
+      const strId = String(id)
+      return (self.available_groups || []).find(g => String(g.id) === strId) || null
+    }
 
     const initUI = () => {
       try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
@@ -167,6 +183,30 @@
         }
       } catch(e) {}
     }
+
+    try {
+      if (self.refs && self.refs.choose_existing_group) {
+        $(self.refs.choose_existing_group).dropdown({
+          fullTextSearch: true,
+          onChange: (value) => {
+            if (!value || value === '') {
+              self.editing_group = null
+              try { self.refs.group_name.value = '' } catch(e){}
+              try { $(self.refs.group_queue).dropdown('clear') } catch(e){}
+              try { $(self.refs.group_user_select).dropdown('clear') } catch(e){}
+              try { self.refs.selected_count.textContent = '0' } catch(e){}
+              try { self.refs.group_modal_error.style.display = 'none' } catch(e){}
+            } else {
+              const g = getGroupById(value)
+              if (g) {
+                self.open_edit_group(g)
+              }
+            }
+          }
+        })
+      }
+    } catch(e){}
+
 
     const compPk = () => {
       try {
@@ -338,13 +378,13 @@
     self.isValidEmail = function (email) {
       // Regular expression pattern to match a valid email address
       const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
-
       // Test the email against the pattern and return the result (boolean)
       return emailPattern.test(email)
     }
 
     self.open_create_group = () => {
       self.editing_group = null
+      try { $(self.refs.choose_existing_group).dropdown('clear') } catch(e){}
       try { self.refs.group_name.value = '' } catch(e){}
       try { $(self.refs.group_queue).dropdown('clear') } catch(e){}
       try { $(self.refs.group_user_select).dropdown('clear') } catch(e){}
@@ -354,7 +394,6 @@
     }
 
     const membersToIds = (membersArr) => {
-      // membersArr can contain ids, usernames or emails; return matching ids as strings
       if (!membersArr || !membersArr.length) return []
       const ids = []
       const users = self.available_users || []
@@ -371,6 +410,8 @@
 
     self.open_edit_group = (group) => {
       self.editing_group = group
+      try { $(self.refs.choose_existing_group).dropdown('set selected', String(group.id)) } catch(e){}
+
       try { self.refs.group_name.value = group.name || '' } catch(e){}
       try {
         let queueId = null
