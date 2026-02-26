@@ -118,10 +118,13 @@ MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600)) 
 
 def _send_to_compute_worker(submission, is_scoring, target_group=None):
     logger.info(
-        "Site Worker ==> STARTING submission_id=%s is_scoring=%s target_group=%s",
+        "Site Worker ==> STARTING submission_id=%s is_scoring=%s "
+        "target_group_param=%s submission.queue=%s parent=%s",
         submission.pk,
         is_scoring,
         getattr(target_group, "pk", None),
+        getattr(getattr(submission, "queue", None), "name", None),
+        getattr(submission.parent, "pk", None) if submission.parent else None,
     )
 
     run_args = {
@@ -281,6 +284,12 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
             if getattr(target_group, "queue", None):
                 run_args["queue"] = target_group.queue.name
                 target_vhost = getattr(target_group.queue, "vhost", None)
+                try:
+                    submission.queue = target_group.queue
+                    submission.save(update_fields=["queue"])
+                    logger.debug("Persisted submission.queue=%s for submission %s", getattr(target_group.queue, "name", None), submission.pk)
+                except Exception:
+                    logger.exception("Failed to persist submission.queue for submission %s", submission.pk)
             logger.info(
                 "Submission %s forced to group %s queue=%s vhost=%s",
                 submission.pk,
@@ -289,44 +298,92 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                 target_vhost,
             )
         else:
-            competition = submission.phase.competition
-            user_group_ids = list(
-                submission.owner.groups.values_list("id", flat=True)
-            )
-            logger.debug(
-                "User %s group ids for competition %s: %s",
-                submission.owner.pk,
-                competition.pk,
-                user_group_ids,
-            )
+            persisted_queue = None
+            try:
+                persisted_queue = getattr(submission, "queue", None)
+            except Exception:
+                persisted_queue = None
 
-            comp_user_groups_qs = (
-                competition.participant_groups
-                .filter(id__in=user_group_ids)
-                .select_related("queue")
-            )
-
-            group = (
-                comp_user_groups_qs.filter(queue__isnull=False).first()
-                or comp_user_groups_qs.first()
-            )
-
-            if group and getattr(group, "queue", None):
-                run_args["queue"] = group.queue.name
-                target_vhost = getattr(group.queue, "vhost", None)
-                logger.info(
-                    "Submission %s resolved group=%s queue=%s vhost=%s",
-                    submission.pk,
-                    group.pk,
-                    group.queue.name,
-                    target_vhost,
-                )
+            if persisted_queue:
+                try:
+                    run_args["queue"] = persisted_queue.name
+                    target_vhost = getattr(persisted_queue, "vhost", None)
+                    logger.info(
+                        "Submission %s resolved queue=%s vhost=%s (by persisted submission.queue)",
+                        submission.pk,
+                        run_args.get("queue"),
+                        target_vhost,
+                    )
+                except Exception:
+                    logger.exception("Error reading persisted submission.queue for submission %s", submission.pk)
             else:
+                competition = submission.phase.competition
+                user_group_ids = list(submission.owner.groups.values_list("id", flat=True))
                 logger.debug(
-                    "Submission %s: no matching group with queue for competition %s",
-                    submission.pk,
+                    "User %s group ids for competition %s: %s",
+                    submission.owner.pk,
                     competition.pk,
+                    user_group_ids,
                 )
+
+                comp_user_groups_qs = (
+                    competition.participant_groups
+                    .filter(id__in=user_group_ids)
+                    .select_related("queue")
+                )
+
+                group = (
+                    comp_user_groups_qs.filter(queue__isnull=False).first()
+                    or comp_user_groups_qs.first()
+                )
+
+                if group and getattr(group, "queue", None):
+                    run_args["queue"] = group.queue.name
+                    target_vhost = getattr(group.queue, "vhost", None)
+                    logger.info(
+                        "Submission %s resolved group=%s queue=%s vhost=%s (by owner membership)",
+                        submission.pk,
+                        group.pk,
+                        group.queue.name,
+                        target_vhost,
+                    )
+                else:
+                    logger.debug(
+                        "Submission %s: no matching group with queue for competition %s via owner membership",
+                        submission.pk,
+                        competition.pk,
+                    )
+
+                    if submission.parent:
+                        try:
+                            sibling = (
+                                Submission.objects
+                                .filter(parent=submission.parent)
+                                .exclude(pk=submission.pk)
+                                .filter(queue__isnull=False)
+                                .select_related("queue")
+                                .first()
+                            )
+                            if sibling and getattr(sibling, "queue", None):
+                                run_args["queue"] = sibling.queue.name
+                                target_vhost = getattr(sibling.queue, "vhost", None)
+                                # optionally persist to current child for future
+                                try:
+                                    submission.queue = sibling.queue
+                                    submission.save(update_fields=["queue"])
+                                    logger.debug("Persisted submission.queue from sibling=%s to submission=%s", sibling.pk, submission.pk)
+                                except Exception:
+                                    logger.exception("Failed to persist submission.queue (from sibling) for submission %s", submission.pk)
+
+                                logger.info(
+                                    "Submission %s resolved queue=%s vhost=%s (by sibling child %s)",
+                                    submission.pk,
+                                    run_args.get("queue"),
+                                    target_vhost,
+                                    sibling.pk,
+                                )
+                        except Exception:
+                            logger.exception("Error while trying to resolve queue from sibling for submission %s", submission.pk)
     except Exception:
         logger.exception(
             "Error while resolving routing for submission %s", submission.pk
