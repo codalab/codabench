@@ -60,6 +60,7 @@ class Competition(models.Model):
         blank=True,
         related_name='competitions',
         verbose_name="group of participants",
+        on_delete=models.CASCADE,
         help_text="Competition owner being able to create groups of users."
     )
 
