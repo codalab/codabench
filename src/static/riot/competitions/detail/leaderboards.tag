@@ -33,8 +33,7 @@
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
 
-        <!-- group row: one header per group, each spans number of base columns (colCount) -->
-        <tr if="{ groups && groups.length > 0 }" class="group-row">
+        <tr if="{ groups && groups.length > 0 && selected_leaderboard.groups_from_competition }" class="group-row">
             <th></th>
             <th></th>
             <th></th>
