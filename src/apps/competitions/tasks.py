@@ -135,7 +135,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     }
     logger.debug("Initial run_args: %s", run_args)
 
-    # Ensure files exist (same as legacy)
     if submission.phase.competition.enable_detailed_results and not getattr(submission.detailed_result, "name", None):
         logger.info("Creating empty detailed_result for submission %s", submission.pk)
         submission.detailed_result.save("detailed_results.html", ContentFile(b""))
@@ -151,12 +150,10 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         submission.scoring_result.save("scoring_result.zip", ContentFile(b""))
         submission.save(update_fields=["scoring_result"])
 
-    # Reload from DB to ensure fresh relations
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
     logger.debug("Reloaded submission %s from DB; task=%s", submission.pk, getattr(task, "pk", None))
 
-    # fallback if submission.task is None (safe fallback to phase first task)
     if task is None:
         fallback_task = submission.phase.tasks.first()
         if fallback_task is not None:
@@ -173,11 +170,9 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                 submission.phase.pk,
             )
 
-    # priority as before
     priority = 10 if is_scoring else 0
     logger.debug("Computed task priority=%s", priority)
 
-    # prediction / scoring urls (only create sassy urls if target path exists)
     if not is_scoring:
         if getattr(submission.prediction_result, "name", None):
             run_args["prediction_result"] = make_url_sassy(
@@ -212,7 +207,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
             run_args.get("scoring_result"),
         )
 
-    # Now handle optional task-related assets only if `task` is not None
     if task is not None:
         try:
             if getattr(task, "ingestion_program", None):
@@ -243,10 +237,8 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     else:
         logger.debug("No task available for submission %s: skipping ingestion/input/reference attachments", submission.pk)
 
-    # safe ingestion_only_during_scoring flag (fallback False)
     run_args["ingestion_only_during_scoring"] = getattr(task, "ingestion_only_during_scoring", False)
 
-    # program_data selection (only add if we have a real path)
     program_data_path = None
     if not is_scoring:
         if getattr(submission.data, "data_file", None):
@@ -261,7 +253,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     else:
         logger.debug("No program_data path available for submission %s (is_scoring=%s)", submission.pk, is_scoring)
 
-    # detailed outputs names
     detail_names = (
         SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
         if not is_scoring
@@ -275,7 +266,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
     logger.info("Final task payload ready for submission %s", submission.pk)
     logger.debug("run_args=%s", run_args)
 
-    # time limits
     time_padding = 60 * 20
     time_limit = submission.phase.execution_time_limit + time_padding
     logger.debug(
@@ -285,7 +275,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         time_padding,
     )
 
-    # routing / queue resolution (target_group or competition/user groups)
     target_vhost = None
     try:
         if target_group:
@@ -343,7 +332,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
             "Error while resolving routing for submission %s", submission.pk
         )
 
-    # fallback to competition queue if none found
     if target_vhost is None:
         comp_queue = getattr(submission.phase.competition, "queue", None)
         if comp_queue:
@@ -356,7 +344,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                 submission.pk,
             )
 
-    # enqueue task (respect vhost if provided)
     task_obj = None
     try:
         if target_vhost:
