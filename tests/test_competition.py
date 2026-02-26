@@ -97,7 +97,7 @@ def test_manual_competition_creation(page: Page):
     page.get_by_role("application").filter(has_text="|||xxxxxxxxxx 101:").get_by_role(
         "textbox"
     ).fill("Test Terms")
-    page.locator('input[name="registration_auto_approve"]').check()
+    page.get_by_text("Auto approve registration").click()
     page.locator("a").filter(has_text="Pages").click()
     page.get_by_role("button", name=" Add page").click()
     page.get_by_role("textbox").nth(1).fill("Test Title")
@@ -123,8 +123,8 @@ def test_manual_competition_creation(page: Page):
     page.locator(
         ".CodeMirror.cm-s-easymde.CodeMirror-wrap.CodeMirror-focused > div > textarea"
     ).fill("This is a phase Test")
-    page.locator(".ui.search.selection.dropdown.multiple").first.click()
-    page.locator(".ui.search.selection.dropdown.multiple > .search").first.fill(
+    page.locator("#tasks_select_container > .ui").click()
+    page.locator("#tasks_select_container > .ui > .search").fill(
         str(titleNum) + "Playwright Task"
     )
     page.get_by_text(str(titleNum) + "Playwright Task").nth(1).click()
