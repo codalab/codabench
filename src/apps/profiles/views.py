@@ -19,6 +19,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
+from api.serializers.competitions import CompetitionSerializerSimple
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
@@ -67,7 +68,19 @@ class UserDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        user = self.get_object()
+        user_data = UserSerializer(user).data
+        # Fetch competitions organized by this user
+        organized_qs = (
+            Competition.objects
+            .filter(created_by=user, published=True)
+            .order_by("-created_when")
+        )
+        # Serialize into the same shape your public-list cards expect
+        user_data["competitions_organized"] = CompetitionSerializerSimple(
+            organized_qs, many=True, context={"request": self.request}
+        ).data
+        context["serialized_user"] = json.dumps(user_data).replace("</", "<\\/")
         return context
 
 
