@@ -63,10 +63,8 @@ dependencies = [
     "drf-spectacular>=0.28.0,<0.29",
     "loguru>=0.7.3,<0.8",
     "tzdata>=2025.3",
-    "setuptools==81",
+    "setuptools==82.0.0",
     "pytz>=2025.2",
-    "coreapi>=2.3.3",
-    "legacy-cgi>=2.6.4",
     "django-filter==25.1",
 ]
 

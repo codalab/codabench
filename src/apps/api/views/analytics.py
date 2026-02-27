@@ -16,7 +16,6 @@ from apps.analytics.tasks import delete_orphan_files as delete_orphan_files_asyn
 
 import os
 import datetime
-import coreapi
 import pytz
 import logging
 logger = logging.getLogger(__name__)
@@ -24,42 +23,6 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 delete_orphan_files_task = None
-
-
-class SimpleFilterBackend(BaseFilterBackend):
-    def get_schema_fields(self, view):
-        fields = [
-            coreapi.Field(
-                name='start_date',
-                location='query',
-                required=True,
-                type='string',
-                description='Beginning of query interval (inclusive) (YYYY-MM-DD format string)'
-            ),
-            coreapi.Field(
-                name='end_date',
-                location='query',
-                required=True,
-                type='string',
-                description='End of query interval (exclusive) (YYYY-MM-DD format string)'
-            ),
-            coreapi.Field(
-                name='time_unit',
-                location='query',
-                required=True,
-                type='string',
-                description='Unit of time (choose 1 of month, week, or day)'
-            ),
-            coreapi.Field(
-                name='format',
-                location='query',
-                required=False,
-                type='string',
-                description='If csv data is desired set format=csv, otherwise do not set.'
-            ),
-        ]
-
-        return fields
 
 
 def merge_dicts(d1, d2):
@@ -111,7 +74,7 @@ class AnalyticsView(APIView):
         Return the total number of users joined, competitions created, published competitions created, and submissions made within a given time interval. Also returns the number of comps, users, and subs created within the time range for each time unit.
     """
 
-    filter_backends = (SimpleFilterBackend,)
+    filter_backends = (BaseFilterBackend,)
     renderer_classes = (JSONRenderer, AnalyticsRenderer,)
 
     def get(self, request):
