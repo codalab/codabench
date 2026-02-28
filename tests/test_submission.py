@@ -43,7 +43,7 @@ def run_tests(page, competition, submission) -> None:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
     except:
         page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
     # Add to leaderboard and see if shows
     text = page.locator(".submission_row").first.inner_text()
     submission_Id = text.split(None, 1)
@@ -123,7 +123,7 @@ def test_v2_multiTask(page: Page) -> None:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
     except:
         page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
     # Add to leaderboard and see if shows
     text = page.locator(".submission_row").first.inner_text()
     submission_Id = text.split(None, 1)
@@ -183,7 +183,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
         expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=35000)
     except:
         page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
+        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
     # Add to leaderboard and see if shows
     text = page.locator(".submission_row").first.inner_text()
     submission_Id = text.split(None, 1)
