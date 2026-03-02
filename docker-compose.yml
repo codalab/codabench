@@ -2,24 +2,37 @@ services:
   #----------------------------------------------------------------------------------------------------
   #   Web Services
   #----------------------------------------------------------------------------------------------------
-  caddy:
-    image: caddy:2.11.1
+  nginx:
+    image: nginx:latest
     env_file: .env
     environment:
-      - ACME_AGREE=true
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    command: ["nginx", "-g", "daemon off;"]
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
       - ./src/staticfiles:/var/www/django/static
-      - ./caddy_data:/data
-      - ./caddy_config:/config
-      - ./var/log/caddy:/var/log/
       - ./maintenance_mode/:/srv
+      - ./certsNginx:/var/cache/nginx/acme-letsencrypt
+      - ./nginx/:/etc/nginx/templates/
+      - ./var/log/nginx/:/var/log/nginx
     restart: unless-stopped
     ports:
       - 80:80
       - 443:443
+      - 8000:8000
+      - 5432:5432
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+      - ${RABBITMQ_PORT}:5672
+      - ${MINIO_PORT}:9000
+      - ${FLOWER_PUBLIC_PORT:-5555}:5555
     depends_on:
       - django
+      - minio
+      - rabbit
+      - site_worker
+      - db
+    networks:
+      - frontend
+      - backend
 
   django:
     container_name: django
@@ -39,7 +52,7 @@ services:
       - ./var/logs:/app/logs
     restart: unless-stopped
     ports:
-      - 8000:8000
+      - 8000
     depends_on:
       - db
       - rabbit
@@ -50,6 +63,8 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+    networks:
+      - backend
 
 
   #----------------------------------------------------------------------------------------------------
@@ -62,12 +77,14 @@ services:
       - ./var/minio:/export
     restart: unless-stopped
     ports:
-      - $MINIO_PORT:9000
+      - 9000
     env_file: .env
     healthcheck:
       test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
       interval: 5s
       retries: 5
+    networks:
+      - backend
   createbuckets:
     image: minio/mc:RELEASE.2025-07-21T05-28-08Z
     depends_on:
@@ -92,6 +109,8 @@ services:
       fi;
       exit 0;
       "
+    networks:
+      - backend
 
   #----------------------------------------------------------------------------------------------------
   #   Local development helper, rebuilds RiotJS/Stylus on change
@@ -109,7 +128,6 @@ services:
         max-size: "20m"
         max-file: "5"
 
-
   #----------------------------------------------------------------------------------------------------
   #   Database Service
   #
@@ -125,7 +143,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     ports:
-      - 5432:5432
+      - 5432
     volumes:
       - ./var/postgres:/var/lib/postgresql/18/:delegated
       - ./backups:/app/backups
@@ -135,6 +153,8 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+    networks:
+      - backend
 
   #----------------------------------------------------------------------------------------------------
   #   Rabbitmq & Flower monitoring tool
@@ -150,13 +170,9 @@ services:
     # containers being destroyed..!
     hostname: rabbit
     env_file: .env
-    environment:
-      - http_proxy=${RABBITMQ_HTTP_PROXY}
-      - https_proxy=${RABBITMQ_HTTPS_PROXY}
-      - no_proxy=${RABBITMQ_NO_PROXY}
     ports:
-      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
-      - ${RABBITMQ_PORT}:5672
+      - 15672
+      - 5672
     volumes:
       - ./var/rabbit:/var/lib/rabbitmq
     restart: unless-stopped
@@ -164,6 +180,8 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+    networks:
+      - backend
 
   flower:
     container_name: flower
@@ -173,13 +191,15 @@ services:
       - CELERY_BROKER_URL=pyamqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
     restart: unless-stopped
     ports:
-      - ${FLOWER_PUBLIC_PORT:-5555}:5555
+      - 5555
     depends_on:
       - rabbit
     logging:
         options:
             max-size: "20m"
             max-file: "5"
+    networks:
+      - backend
 
   #----------------------------------------------------------------------------------------------------
   #   Redis
@@ -188,12 +208,14 @@ services:
     container_name: redis
     image: redis
     ports:
-      - 6379:6379
+      - 6379
     restart: unless-stopped
     logging:
       options:
         max-size: "20m"
         max-file: "5"
+    networks:
+      - backend
 
   #----------------------------------------------------------------------------------------------------
   #   Celery Service
@@ -221,6 +243,8 @@ services:
           # Limit memory substantially here so we see any problems that may
           # appear on Heroku ahead of time
           memory: 256M
+    networks:
+      - backend
 
   compute_worker:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
@@ -249,3 +273,10 @@ services:
       options:
         max-size: "20m"
         max-file: "5"
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:
+    internal: true

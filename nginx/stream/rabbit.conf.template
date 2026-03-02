@@ -1,0 +1,4 @@
+server {
+    listen ${RABBITMQ_PORT};
+    proxy_pass rabbit:5672;
+}
