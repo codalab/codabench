@@ -1,0 +1,33 @@
+limit_req_zone $binary_remote_addr zone=scraperlimit:10m rate=${RATE_LIMIT}r/s;
+
+# Block bad bots
+map $http_user_agent $bad_bot {
+    default 0;
+    ~*(?i)(JikeSpider) 1;
+    ~*(?i)(proximic) 1;
+    ~*(?i)(Sosospider) 1;
+    ~*(?i)(Baiduspider) 1;
+    ~*(?i)(Twitterbot) 1;
+    ~*(?i)(SemrushBot) 1;
+    ~*(?i)(^AIBOT) 1;
+    ~*(?i)(^BunnySlippers) 1;
+    ~*(?i)(^Cegbfeieh) 1;
+    ~*(?i)(^CheeseBot) 1;
+}
+
+# Block scrappers
+map $http_user_agent $scraper {
+    default 0;
+    ~*(?i)(Google-Extended) 1;
+    ~*(?i)(Applebot-Extended) 1;
+    ~*(?i)(anthropic-ai) 1;
+    ~*(?i)(ClaudeBot) 1;
+    ~*(?i)(Claude-Web) 1;
+    ~*(?i)(GPTBot) 1;
+    ~*(?i)(Omgili) 1;
+    ~*(?i)(FacebookBot) 1;
+    ~*(?i)(node-fetch) 1;
+    ~*(?i)(Timpibot) 1;
+    # If you don't provide a User-Agent, you can go away
+    ~*(^-$) 1;
+}

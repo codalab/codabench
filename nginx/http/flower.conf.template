@@ -1,0 +1,7 @@
+server { 
+    listen ${FLOWER_PUBLIC_PORT};
+    location / {
+        proxy_pass http://flower:5555;
+    }
+    
+}
