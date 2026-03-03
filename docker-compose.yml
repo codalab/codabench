@@ -11,7 +11,7 @@ services:
     volumes:
       - ./src/staticfiles:/var/www/django/static
       - ./maintenance_mode/:/srv
-      - ./certsNginx:/var/cache/nginx/acme-letsencrypt
+      - ./nginx/certs/:/var/cache/nginx/acme-letsencrypt
       - ./nginx/:/etc/nginx/templates/
       - ./var/log/nginx/:/var/log/nginx
     restart: unless-stopped
@@ -282,4 +282,4 @@ services:
 networks:
   frontend:
   backend:
-    #internal: true
+    internal: true

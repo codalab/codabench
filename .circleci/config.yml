@@ -89,6 +89,8 @@ jobs:
           path: tests/test-results
       - store_artifacts:
           path: dockerLogs/
+      - store_artifacts:
+          path: var/log/
 
 workflows:
   version: 2

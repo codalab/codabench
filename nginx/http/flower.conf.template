@@ -3,5 +3,4 @@ server {
     location / {
         proxy_pass http://flower:5555;
     }
-    
 }
