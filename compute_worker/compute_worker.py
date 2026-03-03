@@ -509,11 +509,7 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error(
-                f"This error might result in a Execution Time Exceeded error: {e}"
-            )
-            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-                logger.exception(e)
+            logger.exception(e)
             return
 
     def _get_stdout_stderr_file_names(self, run_args):
