@@ -31,6 +31,7 @@ jobs:
       - run:
           name: "Setup: Create directories for MinIO (cannot be made by docker for some reason)"
           command: |
+            sudo echo "127.0.0.1 minio" >> /etc/hosts
             mkdir -p var/minio/public
             mkdir -p var/minio/private
 
