@@ -72,13 +72,16 @@ services:
   #----------------------------------------------------------------------------------------------------
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    command: server /export
+    command: server /export --console-address ":9001"
     volumes:
       - ./var/minio:/export
     restart: unless-stopped
     ports:
       - 9000
+      - 9001
     env_file: .env
+    environment:
+      MINIO_BROWSER_REDIRECT_URL: "http://localhost/console"
     healthcheck:
       test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
       interval: 5s
@@ -279,4 +282,4 @@ services:
 networks:
   frontend:
   backend:
-    internal: true
+    #internal: true
