@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.db import transaction
 from django.contrib import messages
 
-
+from django.core.exceptions import PermissionDenied
 from profiles.models import CustomGroup, User
 from queues.models import Queue
 
@@ -336,29 +336,37 @@ def competition_update_group(request, pk, group_id):
 @require_POST
 def competition_delete_group(request, pk, group_id):
     competition = get_object_or_404(Competition, pk=pk)
-    group = get_object_or_404(CustomGroup, pk=group_id)
 
     user = request.user
-    if not (user.is_superuser or user == competition.created_by or user in competition.collaborators.all()):
-        return HttpResponseForbidden("Not allowed")
+    if not (
+        user.is_superuser
+        or user == competition.created_by
+        or user in competition.collaborators.all()
+    ):
+        raise PermissionDenied("Not allowed")
 
-    if not competition.participant_groups.filter(pk=group.pk).exists():
-        return HttpResponseBadRequest("Group does not belong to this competition")
+    group = get_object_or_404(
+        CustomGroup,
+        pk=group_id,
+        competitions=competition
+    )
 
     try:
         with transaction.atomic():
             competition.participant_groups.remove(group)
             group.delete()
+
     except Exception as e:
-        return HttpResponseBadRequest("Error deleting group: %s" % str(e))
+        return HttpResponseBadRequest(f"Error deleting group: {str(e)}")
 
     if (
-        request.content_type.startswith('application/json')
-        or request.headers.get('x-requested-with') == 'XMLHttpRequest'
-        or 'application/json' in request.headers.get('accept', '')
+        request.content_type.startswith("application/json")
+        or request.headers.get("x-requested-with") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("accept", "")
     ):
-        return JsonResponse({'status': 'ok', 'group_id': group_id})
-
+        return JsonResponse({"status": "ok", "group_id": group_id})
 
     messages.success(request, "Groupe supprimé")
-    return HttpResponseRedirect(reverse('competitions:edit', kwargs={'pk': competition.pk}))
+    return HttpResponseRedirect(
+        reverse("competitions:edit", kwargs={"pk": competition.pk})
+    )
