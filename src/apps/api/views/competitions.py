@@ -610,7 +610,7 @@ class CompetitionViewSet(ModelViewSet):
 
         # Filter by organizing (created_by or collaborator)
         if organizing:
-            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user))
+            qs = qs.filter(Q(created_by=request.user) | Q(collaborators=request.user)).distinct()
 
         # Apply ordering
         if ordering == "recent":
