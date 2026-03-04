@@ -147,7 +147,8 @@ def show_progress(line, progress):
                     total=total,
                 )
     except Exception as e:
-        logger.exception("There was an error showing the progress bar")
+        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+            logger.exception("There was an error showing the progress bar")
 
 
 # -----------------------------------------------
