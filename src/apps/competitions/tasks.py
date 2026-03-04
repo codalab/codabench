@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
+from django.db import transaction
 from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
@@ -141,14 +142,6 @@ def _send_to_compute_worker(submission, is_scoring):
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
 
-    # priority of scoring tasks is higher, we don't want to wait around for
-    # many submissions to be scored while we're waiting for results
-    if is_scoring:
-        # higher numbers are higher priority
-        priority = 10
-    else:
-        priority = 0
-
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
@@ -201,40 +194,45 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
-        submission.queue_name = submission.phase.competition.queue.name or ''
-        run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
-        submission.save()
+    def _enqueue_after_commit():
+        # priority of scoring tasks is higher, we don't want to wait around for
+        # many submissions to be scored while we're waiting for results
+        priority = 10 if is_scoring else 0
 
-        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
-        # variable above
-        celery_app = app_or_default()
-        with celery_app.connection() as new_connection:
-            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
-            task = celery_app.send_task(
+        if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
+            submission.queue_name = submission.phase.competition.queue.name or ''
+            run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
+            submission.save(update_fields=["queue_name"])
+            celery_app = app_or_default()
+            with celery_app.connection() as new_connection:
+                new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
+                task = celery_app.send_task(
+                    'compute_worker_run',
+                    args=(run_args,),
+                    queue='compute-worker',
+                    soft_time_limit=time_limit,
+                    connection=new_connection,
+                    priority=priority,
+                )
+        else:
+            task = app.send_task(
                 'compute_worker_run',
                 args=(run_args,),
                 queue='compute-worker',
                 soft_time_limit=time_limit,
-                connection=new_connection,
                 priority=priority,
             )
-    else:
-        task = app.send_task(
-            'compute_worker_run',
-            args=(run_args,),
-            queue='compute-worker',
-            soft_time_limit=time_limit,
-            priority=priority,
-        )
-    submission.celery_task_id = task.id
 
-    if submission.status == Submission.SUBMITTING:
-        # Don't want to mark an already-prepared submission as "submitted" again, so
-        # only do this if we were previously "SUBMITTING"
-        submission.status = Submission.SUBMITTED
+        submission.celery_task_id = task.id
 
-    submission.save()
+        if submission.status == Submission.SUBMITTING:
+            # Don't want to mark an already-prepared submission as "submitted" again, so
+            # only do this if we were previously "SUBMITTING"
+            submission.status = Submission.SUBMITTED
+
+        submission.save(update_fields=["celery_task_id", "status"])
+
+    transaction.on_commit(_enqueue_after_commit)
 
 
 def create_detailed_output_file(detail_name, submission):
