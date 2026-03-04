@@ -194,15 +194,21 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
+    if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
+        submission.queue_name = submission.phase.competition.queue.name or ''
+        run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
+        submission.save(update_fields=["queue_name"])
+    if submission.status == Submission.SUBMITTING:
+        # Don't want to mark an already-prepared submission as "submitted" again, so
+        # only do this if we were previously "SUBMITTING"
+        submission.status = Submission.SUBMITTED
+        submission.save(update_fields=["status"])
+
     def _enqueue_after_commit():
         # priority of scoring tasks is higher, we don't want to wait around for
         # many submissions to be scored while we're waiting for results
         priority = 10 if is_scoring else 0
-
-        if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
-            submission.queue_name = submission.phase.competition.queue.name or ''
-            run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
-            submission.save(update_fields=["queue_name"])
+        if submission.phase.competition.queue:
             celery_app = app_or_default()
             with celery_app.connection() as new_connection:
                 new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
@@ -222,15 +228,8 @@ def _send_to_compute_worker(submission, is_scoring):
                 soft_time_limit=time_limit,
                 priority=priority,
             )
-
         submission.celery_task_id = task.id
-
-        if submission.status == Submission.SUBMITTING:
-            # Don't want to mark an already-prepared submission as "submitted" again, so
-            # only do this if we were previously "SUBMITTING"
-            submission.status = Submission.SUBMITTED
-
-        submission.save(update_fields=["celery_task_id", "status"])
+        submission.save(update_fields=["celery_task_id"])
 
     transaction.on_commit(_enqueue_after_commit)
 
