@@ -26,14 +26,9 @@ services:
       context: .
       dockerfile: packaging/container/Containerfile
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
-    command:
-        - bash
-        - -c
-        - "cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"
-
+    command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
     environment:
       - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-      # NOTE: Do not modify "DJANGO_SECRET_KEY", it is created automatically.
     env_file: .env
     volumes:
       - .:/app:delegated
