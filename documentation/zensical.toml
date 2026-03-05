@@ -1,0 +1,159 @@
+[project]
+site_name = "Codabench Docs"
+repo_url = "https://github.com/codalab/codabench"
+copyright = "Creative Commons Attribution-ShareAlike 4.0 License"
+edit_uri = "edit/develop/documentation/docs"
+nav = [
+    {"Home" = "index.md"},
+    {"Participants" = [
+        {"Participating in a Competition" = "Participants/User_Participating-in-a-Competition.md"},
+        {"List of Current Benchmarks and Competitions" = "https://www.codabench.org/competitions/public/?page=1"}
+    ]},
+    {"Organizers" = [
+        {"Benchmark Creation" = [
+            {"Getting Started Tutorial" = "Organizers/Benchmark_Creation/Getting-started-with-Codabench.md"},
+            {"Advanced Tutorial" = "Organizers/Benchmark_Creation/Advanced-Tutorial.md"},
+            {"How to Transition from Codalab to Codabench?" = "Organizers/Benchmark_Creation/How-to-transition-from-CodaLab-to-Codabench.md"},
+            {"Competition Creation" = "Organizers/Benchmark_Creation/Competition-Creation.md"},
+            {"Competition Creation Form" = "Organizers/Benchmark_Creation/Competition-Creation-Form.md"},
+            {"Competition Creation Bundle" = "Organizers/Benchmark_Creation/Competition-Creation-Bundle.md"},
+            {"Competition YAML Structure" = "Organizers/Benchmark_Creation/Competition-Bundle-Structure.md"},
+            {"YAML Structure" = "Organizers/Benchmark_Creation/Yaml-Structure.md"},
+            {"Competition Docker Image" = "Organizers/Benchmark_Creation/Competition-docker-image.md"},
+            {"Dataset Competition Creation and participate instruction" = "Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md"},
+            {"Leaderboard Features" = "Organizers/Benchmark_Creation/Leaderboard-Functionality.md"},
+            {"Competition Examples" = "https://github.com/codalab/competition-examples/tree/master/codabench"},
+            {"Public Tasks and Tasks Sharing" = "Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md"},
+            {"Detailed Results and Visualization" = "Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md"},
+        ]},
+        {"Running a Benchmarks" = [
+            {"Benchmark Management & List Page" = "Organizers/Running_a_benchmark/Competition-Management-&-List.md"},
+            {"Benchmark Detail Page"= "Organizers/Running_a_benchmark/Competition-Detail-Page.md"},
+            {"Ressource Management Submissions, Datasets/Programs, Tasks and Competition Bundles" = "Organizers/Running_a_benchmark/Resource-Management.md"},
+            {"Update programs or data" = "Organizers/Running_a_benchmark/Update-programs-or-data.md"}, 
+            {"Queue Management" = "Organizers/Running_a_benchmark/Queue-Management.md"},
+            {"Compute Worker Management & Setup" = "Organizers/Running_a_benchmark/Compute-Worker-Management---Setup.md"},
+            {"Compute Worker Management with Podman" = "Organizers/Running_a_benchmark/Compute-worker-installation-with-Podman.md"},
+            {"Server Status" = "Organizers/Running_a_benchmark/Server-status-page.md"}
+        ]}
+    ]},
+    {"Developers and Administrators" = [
+        {"Codabench Basic Installation Guide" = "Developers_and_Administrators/Codabench-Installation.md"},
+        {"How to Deploy a Server" = "Developers_and_Administrators/How-to-deploy-Codabench-on-your-server.md"},
+        {"Administrative Procedures" = "Developers_and_Administrators/Administrator-procedures.md"},
+        {"Codabench Docker Architecture" = "Developers_and_Administrators/Codabench-Architecture.md"},
+        {"Submission Docker Container Layout" = "Developers_and_Administrators/Submission-Docker-Container-Layout.md"},
+        {"Backups - Automating Creation and Restoring" = "Developers_and_Administrators/Creating-and-Restoring-from-Backup.md"},
+        {"Submission Process Overview" = "Developers_and_Administrators/Submission-Process-Overview.md"},
+        {"Robot Submissions" = "Developers_and_Administrators/Robot-submissions.md"},
+        {"Adding Tests" = "Developers_and_Administrators/Adding-e2e-tests.md"},
+        {"Running Tests" = "Developers_and_Administrators/Running-tests.md"},
+        {"Automation" = "Developers_and_Administrators/Automating-with-Selenium.md"},
+        {"Manual Validation" = "Developers_and_Administrators/Manual-validation.md"},
+        {"Validation and deployement of pull requests" = "Developers_and_Administrators/Validation-and-deployment-of-pull-requests.md"},
+        {" Upgrading Codabench" = [
+            "Developers_and_Administrators/Upgrading_Codabench/index.md",
+            {"Upgrade RabbitMQ (version < 1.0.0)" = "Developers_and_Administrators/Upgrading_Codabench/Upgrade-RabbitMQ.md"},
+            {"Create new logos for each competitions (version < 1.4.1)" = "Developers_and_Administrators/Upgrading_Codabench/Create-new-logos-for-each-competition.md"},
+            {"Worker docker image manual update (version < 1.3.1)" = "Developers_and_Administrators/Upgrading_Codabench/Worker-Docker-Image-manual-update.md"},
+            {"Add line in .env file for default worker queue duration (version < 1.7.0)" = "Developers_and_Administrators/Upgrading_Codabench/Add-line-into-.env-for-default-queue-worker-duration.md"},
+            {"Uncomment a line in your .env file (version < 1.8.0)" = "Developers_and_Administrators/Upgrading_Codabench/Uncomment-a-line-in-your-.env-file.md"},
+            {"Rebuilding all docker images (version < 1.9.2)" = "Developers_and_Administrators/Upgrading_Codabench/Rebuilding-all-docker-images.md"},
+            {"Move the latest storage_inconsistency files from the logs folder to var/logs (version < 1.12.0)" = "Developers_and_Administrators/Upgrading_Codabench/Move-the-last-storage_inconsistency-files-from--logs-folder-to--var-logs--folder.md"},
+            {"Submissions and Participants count (version < 1.14.0)" = "Developers_and_Administrators/Upgrading_Codabench/Submissions-and-Participants-Counts.md"},
+            {"Homepage Counters (version < 1.15.0)" = "Developers_and_Administrators/Upgrading_Codabench/Homepage-counters.md"},
+            {"User Removal (version < 1.17.0)" = "Developers_and_Administrators/Upgrading_Codabench/User-removal.md"},
+            {"Database size fix (version < 1.18.0)" = "Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes.md"}
+        ]}
+        ]},
+        {"Newsletters Archive" = [
+            {"2024" = "Newsletters_Archive/CodaLab-in-2024.md"},
+            {"2025" = "Newsletters_Archive/CodaLab-in-2025.md"}
+        ]},
+        {"FAQ" = "Project_CodaBench_FAQ.md"},
+        {"Contact Us" = "contact-us.md"}
+]
+
+
+[project.theme]
+variant = "modern"
+custom_dir = "overrides"
+features = [
+    "content.code.copy",
+    "navigation.tabs",
+    "navigation.tabs.sticky",
+    "search.share",
+    "navigation.footer",
+    "navigation.top",
+    "content.action.edit",
+    "content.action.view",
+    "navigation.expand",
+    "navigation.instant",
+    "navigation.instant.progress",
+]
+
+# Palette toggle for automatic mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+# Mardown extensions
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.snippets]
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.pymdownx.emoji]
+[project.markdown_extensions.tables]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+[project.markdown_extensions.pymdownx.tabbed.slugify]
+object = "pymdownx.slugs.slugify"
+kwds = { case = "lower" }
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.tilde]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.pymdownx.blocks.caption]
+[project.markdown_extensions.zensical.extensions.preview]
+configurations = [
+    { targets.include = [
+        "customization.md",
+        "setup/extensions/*"
+    ]}
+]
+
+# Extras
+[project.extra]
+footer_links = [
+  {"text" = "Governance Document"},
+  {"href" = "https://github.com/codalab/codabench/blob/master/documentation/GOVERNANCE.md"},
+  {"text" = "Privacy Policy"},
+  {"href" = "https://github.com/codalab/codabench/blob/master/documentation/PRIVACY.md"},
+  {"text" = "About"},
+  {"href" = "https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md"}
+]
