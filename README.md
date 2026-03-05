@@ -20,6 +20,7 @@ If you wish to configure your own instance of Codabench platform, here are the i
 
 ```
 $ cp .env_sample .env
+$ cp my-postgres_sample.conf my-postgres.conf
 $ docker compose up -d
 $ docker compose exec django ./manage.py migrate
 $ docker compose exec django ./manage.py generate_data
