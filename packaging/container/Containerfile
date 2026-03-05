@@ -17,4 +17,10 @@ RUN uv sync --all-extras --frozen
 
 
 WORKDIR /app
-ENTRYPOINT ["/bin/bash", "-c"]
+ENTRYPOINT ["/bin/bash", "-c", "\
+if [ -z \"$DJANGO_SECRET_KEY\" ]; then \
+export DJANGO_SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'); \
+echo \"Generated DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY\"; \
+fi; \
+exec \"$@\" \
+", "--"]
