@@ -3,16 +3,16 @@ services:
   #   Web Services
   #----------------------------------------------------------------------------------------------------
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     env_file: .env
     environment:
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
     command: ["nginx", "-g", "daemon off;"]
     volumes:
-      - ./src/staticfiles:/var/www/django/static
-      - ./maintenance_mode/:/srv
+      - ./src/staticfiles:/var/www/django/static:ro
+      - ./maintenance_mode/:/srv:ro
+      - ./nginx/:/etc/nginx/templates/:ro
       - ./nginx/certs/:/var/cache/nginx/acme-letsencrypt
-      - ./nginx/:/etc/nginx/templates/
       - ./var/log/nginx/:/var/log/nginx
     restart: unless-stopped
     ports:
@@ -22,14 +22,8 @@ services:
       - 5432:5432
       - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
       - ${RABBITMQ_PORT}:5672
-      - ${MINIO_PORT}:9000
+      - ${MINIO_PORT:-9000}:9000
       - ${FLOWER_PUBLIC_PORT:-5555}:5555
-    depends_on:
-      - django
-      - minio
-      - rabbit
-      - site_worker
-      - db
     networks:
       - frontend
       - backend
@@ -65,6 +59,7 @@ services:
         max-file: "5"
     networks:
       - backend
+      - frontend
 
 
   #----------------------------------------------------------------------------------------------------
@@ -81,7 +76,7 @@ services:
       - 9001
     env_file: .env
     environment:
-      MINIO_BROWSER_REDIRECT_URL: "http://localhost/console"
+      MINIO_BROWSER_REDIRECT_URL: "http://${DOMAIN_NAME}/console"
     healthcheck:
       test: ["CMD", "curl", "-I", "http://minio:9000/minio/health/live"]
       interval: 5s
@@ -150,7 +145,7 @@ services:
     volumes:
       - ./var/postgres:/var/lib/postgresql/18/:delegated
       - ./backups:/app/backups
-      - ./my-postgres.conf:/etc/postgresql/postgresql.conf
+      - ./my-postgres.conf:/etc/postgresql/postgresql.conf:ro
     restart: unless-stopped
     logging:
       options:
@@ -260,7 +255,7 @@ services:
       - django
       - rabbit
     volumes:
-      - ./compute_worker:/app
+      - ./compute_worker:/app:ro
       - ${HOST_DIRECTORY:-/tmp/codabench}:/codabench
       # Actual connection back to docker parent to run things
       - /var/run/docker.sock:/var/run/docker.sock
@@ -278,6 +273,7 @@ services:
         max-file: "5"
     networks:
       - backend
+      - frontend
 
 networks:
   frontend:
