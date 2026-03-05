@@ -15,12 +15,8 @@ COPY uv.lock ./
 # Install dependencies
 RUN uv sync --all-extras --frozen
 
-
 WORKDIR /app
-ENTRYPOINT ["/bin/bash", "-c", "\
-if [ -z \"$DJANGO_SECRET_KEY\" ]; then \
-export DJANGO_SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'); \
-echo \"Generated DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY\"; \
-fi; \
-exec \"$@\" \
-", "--"]
+# Copier l'entrypoint
+COPY packaging/container/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
