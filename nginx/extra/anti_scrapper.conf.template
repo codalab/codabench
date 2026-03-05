@@ -2,11 +2,6 @@
 limit_req_status 429;
 limit_req zone=scraperlimit burst=25 nodelay;
 
-location /robots.txt {
-    autoindex off;
-    alias /etc/nginx/templates/robots.txt;
-}
-
 # Deny access to bots
 # Block user agents that tend to be scrapers and badly behaved bots
 if ($bad_bot = 1) {
