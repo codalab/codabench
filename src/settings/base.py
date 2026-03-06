@@ -161,6 +161,7 @@ SOCIAL_AUTH_ADMIN_USER_SEARCH_FIELDS = ['username', 'first_name', 'email']
 # User Models
 AUTH_USER_MODEL = 'profiles.User'
 SOCIAL_AUTH_USER_MODEL = 'profiles.User'
+COMPETITION_CREATOR_GROUP = os.environ.get('COMPETITION_CREATOR_GROUP', '').strip()
 
 # =============================================================================
 # Debugging
