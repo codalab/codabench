@@ -117,7 +117,7 @@ nav:
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
           - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation-Form.md
           - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation-Bundle.md
-          - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
+          - Competition Bundle Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
           - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
           - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
