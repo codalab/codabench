@@ -31,7 +31,6 @@ dependencies = [
     "aiofiles==25.1.0",
     "oyaml==1.0",
     "factory-boy==3.3.3",
-    "bleach==6.3.0",
     "blessings==1.7",
     "django-su>=1.0.0,<2",
     "django-ajax-selects==3.0.3",
@@ -66,6 +65,7 @@ dependencies = [
     "pytz>=2025.2",
     "django-filter==25.1",
     "django-cors-headers==4.9.0",
+    "nh3==0.3.3",
 ]
 
 [tool.uv]
