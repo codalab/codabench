@@ -122,7 +122,7 @@ nav:
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
           - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
           - Leaderboard Features: Organizers/Benchmark_Creation/Leaderboard-Functionality.md
-          - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
+          - Competition Examples: Organizers/Benchmark_Creation/Benchmark-Examples.md
           - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
           - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
       - Running a Benchmarks:
