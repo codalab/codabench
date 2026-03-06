@@ -1,4 +1,4 @@
-import bleach
+import nh3
 import markdown
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -32,7 +32,7 @@ def sanitize(content):
         'h6',
     ]
     attrs = {'img': ['src']}
-    return bleach.clean(
+    return nh3.clean(
         content,
         tags=tags,
         attributes=attrs
