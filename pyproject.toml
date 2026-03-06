@@ -36,7 +36,7 @@ dependencies = [
     "django-ajax-selects==3.0.3",
     "dj-database-url==0.4.2",
     "psycopg2-binary>=2.9.9,<3",
-    "django-redis==4.12.1",
+    "django-redis==6.0.0",
     "django-storages[azure]>=1.14.6,<2",
     "azure-storage-blob>=12,<13",
     "azure-storage-common==2.1.0",
