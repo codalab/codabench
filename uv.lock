@@ -394,7 +394,7 @@ dependencies = [
     { name = "dj-database-url" },
     { name = "django" },
     { name = "django-ajax-selects" },
-    { name = "django-cors-middleware" },
+    { name = "django-cors-headers" },
     { name = "django-enforce-host" },
     { name = "django-extensions" },
     { name = "django-filter" },
@@ -462,8 +462,8 @@ requires-dist = [
     { name = "channels-redis", specifier = "==4.0.0" },
     { name = "dj-database-url", specifier = "==0.4.2" },
     { name = "django", specifier = "==5.2.12" },
-    { name = "django-ajax-selects", specifier = "==2.0.0" },
-    { name = "django-cors-middleware", specifier = "==1.5.0" },
+    { name = "django-ajax-selects", specifier = "==3.0.3" },
+    { name = "django-cors-headers", specifier = "==4.9.0" },
     { name = "django-enforce-host", specifier = "==1.1.0" },
     { name = "django-extensions", specifier = "==4.1.0" },
     { name = "django-filter", specifier = "==25.1" },
@@ -473,11 +473,11 @@ requires-dist = [
     { name = "django-su", specifier = ">=1.0.0,<2" },
     { name = "djangorestframework", specifier = "==3.16.1" },
     { name = "djangorestframework-csv", specifier = "==3.0.1" },
-    { name = "drf-extensions", specifier = "==0.4.0" },
+    { name = "drf-extensions", specifier = "==0.8.0" },
     { name = "drf-extra-fields", specifier = "==3.7.0" },
     { name = "drf-spectacular", specifier = ">=0.28.0,<0.29" },
     { name = "drf-writable-nested", specifier = "==0.7.2" },
-    { name = "factory-boy", specifier = "==2.11.1" },
+    { name = "factory-boy", specifier = "==3.3.3" },
     { name = "flex", specifier = "==6.14.1" },
     { name = "gunicorn", specifier = "==23.0" },
     { name = "ipdb", specifier = "==0.13.13" },
@@ -650,17 +650,27 @@ wheels = [
 
 [[package]]
 name = "django-ajax-selects"
-version = "2.0.0"
+version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a4/0e/d3199bb8bf2b4e86e68ed7fc79813113a20fd93e6bab67a339963d0b8018/django-ajax-selects-2.0.0.tar.gz", hash = "sha256:f87325b25cae6e9e53b1290356e8d0e17587de57d3d19682ab3912b6bde68cb5", size = 39025, upload-time = "2020-10-04T12:42:51.814Z" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/30/4a/bab3a28e94912f744d53624c2d9e192c73a6ae0fd8741edacd6d46ee09b5/django_ajax_selects-3.0.3.tar.gz", hash = "sha256:650071c78c333139059e00a41e9aeff21234e026f2076965429594f5c5327f35", size = 426986, upload-time = "2024-09-14T12:29:34.783Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/c4/f3fdc8d629912040dbe2744e1fa97cdb529b868d1e9c29e40b4dc3fd998c/django_ajax_selects-3.0.3-py3-none-any.whl", hash = "sha256:10c618dd3bbb2ca78b9d4625b1f64a225c00a6ad4bc13fbe87ad33f12a204e1b", size = 442976, upload-time = "2024-09-14T12:29:32.93Z" },
+]
 
 [[package]]
-name = "django-cors-middleware"
-version = "1.5.0"
+name = "django-cors-headers"
+version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/21/b9/1dea04e58f3e0b0d3c14499c27527464ef1e4e5e4e164c621927226f5ef5/django-cors-middleware-1.5.0.tar.gz", hash = "sha256:856dbe4d7aae65844ccc68acb49c6da7dbf7cbacaf5bcf37019f4c0c60b3be84", size = 8914, upload-time = "2019-12-09T19:42:02.961Z" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/21/39/55822b15b7ec87410f34cd16ce04065ff390e50f9e29f31d6d116fc80456/django_cors_headers-4.9.0.tar.gz", hash = "sha256:fe5d7cb59fdc2c8c646ce84b727ac2bca8912a247e6e68e1fb507372178e59e8", size = 21458, upload-time = "2025-09-18T10:40:52.326Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/3c/22c2f99afb6b5645c2bac806568b1c750b14a083fe65a75cdbca1d40afb1/django_cors_middleware-1.5.0-py3-none-any.whl", hash = "sha256:5bbdea85e22909d596e26f6e0dbc174d5521429fa3943ae02a2c6c48e76c88c7", size = 9195, upload-time = "2019-12-09T19:42:01.105Z" },
+    { url = "https://files.pythonhosted.org/packages/30/d8/19ed1e47badf477d17fb177c1c19b5a21da0fd2d9f093f23be3fb86c5fab/django_cors_headers-4.9.0-py3-none-any.whl", hash = "sha256:15c7f20727f90044dcee2216a9fd7303741a864865f0c3657e28b7056f61b449", size = 12809, upload-time = "2025-09-18T10:40:50.843Z" },
 ]
 
 [[package]]
@@ -796,14 +806,16 @@ wheels = [
 
 [[package]]
 name = "drf-extensions"
-version = "0.4.0"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "django" },
     { name = "djangorestframework" },
+    { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/48/c0/e0dbf7f671a3d899418e47ef7e4c0d3b9c671dd0fa882d89c0ab464ee5bb/drf-extensions-0.4.0.tar.gz", hash = "sha256:11223bc2e173233f4a108456df6433edebc895f65be0dcaa2a76f082fa3b91c3", size = 164609, upload-time = "2018-09-11T04:39:00.412Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/77/5a/57e3cc6f2bb4e1e84ad85eed0a12ddf22d5217b6b87c39e611d10e677a63/drf_extensions-0.8.0.tar.gz", hash = "sha256:c3f27bca74a2def53e8454a5c7b327595195df51e121743120b2f51ef5a52aaa", size = 173718, upload-time = "2025-04-10T07:50:05.139Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/2f/3088a685eb9e892005238cb08034a1d5bcfedc746d5505569b5bde35fd70/drf_extensions-0.4.0-py2.py3-none-any.whl", hash = "sha256:6638ced63fabfefaa18b81e288a9f459234825ca734ab8dc9942d788b6ee7af4", size = 21032, upload-time = "2018-09-11T04:47:32.538Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/c1/b9721c9239b465c0ceac32b33e732c08f6ea0afd8156700e417416a47733/drf_extensions-0.8.0-py2.py3-none-any.whl", hash = "sha256:ab7bd854c9061c27ab55233b66d758001e5c2d81aaa9d117cbbe1c9ea49c77ab", size = 21589, upload-time = "2025-04-10T07:50:02.573Z" },
 ]
 
 [[package]]
@@ -856,14 +868,14 @@ wheels = [
 
 [[package]]
 name = "factory-boy"
-version = "2.11.1"
+version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "faker" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/b4/649fc4bfd0daf308b5cd10bfa51c50bfa4c4c79e091ed301aca69ef6780e/factory_boy-2.11.1.tar.gz", hash = "sha256:6f25cc4761ac109efd503f096e2ad99421b1159f01a29dbb917359dcd68e08ca", size = 43254, upload-time = "2018-05-05T15:05:42.587Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/98/75cacae9945f67cfe323829fc2ac451f64517a8a330b572a06a323997065/factory_boy-3.3.3.tar.gz", hash = "sha256:866862d226128dfac7f2b4160287e899daf54f2612778327dd03d0e2cb1e3d03", size = 164146, upload-time = "2025-02-03T09:49:04.433Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/6c/b2ac85b3f0b48ac968af3741c4f020bf272ab9dabbd1643e9c719441099a/factory_boy-2.11.1-py2.py3-none-any.whl", hash = "sha256:d552cb872b310ae78bd7429bf318e42e1e903b1a109e899a523293dfa762ea4f", size = 36795, upload-time = "2018-05-05T15:05:40.728Z" },
+    { url = "https://files.pythonhosted.org/packages/27/8d/2bc5f5546ff2ccb3f7de06742853483ab75bf74f36a92254702f8baecc79/factory_boy-3.3.3-py2.py3-none-any.whl", hash = "sha256:1c39e3289f7e667c4285433f305f8d506efc2fe9c73aaea4151ebd5cdea394fc", size = 37036, upload-time = "2025-02-03T09:49:01.659Z" },
 ]
 
 [[package]]
