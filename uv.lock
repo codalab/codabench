@@ -455,7 +455,7 @@ requires-dist = [
     { name = "django-extensions", specifier = "==4.1.0" },
     { name = "django-filter", specifier = "==25.1" },
     { name = "django-oauth-toolkit", specifier = "==1.6.3" },
-    { name = "django-redis", specifier = "==4.12.1" },
+    { name = "django-redis", specifier = "==6.0.0" },
     { name = "django-storages", extras = ["azure"], specifier = ">=1.14.6,<2" },
     { name = "django-su", specifier = ">=1.0.0,<2" },
     { name = "djangorestframework", specifier = "==3.16.1" },
@@ -730,15 +730,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/37/92/3adda1e9cafeb9823
 
 [[package]]
 name = "django-redis"
-version = "4.12.1"
+version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "redis" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/3d/b2518821dee8ca518c27cfa1b67e29e21f0b23f9783ecdc2e1cc0f3516a8/django-redis-4.12.1.tar.gz", hash = "sha256:306589c7021e6468b2656edc89f62b8ba67e8d5a1c8877e2688042263daa7a63", size = 23350, upload-time = "2020-05-27T11:38:55.638Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/53/dbcfa1e528e0d6c39947092625b2c89274b5d88f14d357cee53c4d6dbbd4/django_redis-6.0.0.tar.gz", hash = "sha256:2d9cb12a20424a4c4dde082c6122f486628bae2d9c2bee4c0126a4de7fda00dd", size = 56904, upload-time = "2025-06-17T18:15:46.376Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/4c/9044b873ef1cc136b8057453ea1d75ba1c9f24f6e88c7bbf2c3d083e0caf/django_redis-4.12.1-py3-none-any.whl", hash = "sha256:1133b26b75baa3664164c3f44b9d5d133d1b8de45d94d79f38d1adc5b1d502e5", size = 19676, upload-time = "2020-05-27T11:38:54.109Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/79/055dfcc508cfe9f439d9f453741188d633efa9eab90fc78a67b0ab50b137/django_redis-6.0.0-py3-none-any.whl", hash = "sha256:20bf0063a8abee567eb5f77f375143c32810c8700c0674ced34737f8de4e36c0", size = 33687, upload-time = "2025-06-17T18:15:34.165Z" },
 ]
 
 [[package]]
