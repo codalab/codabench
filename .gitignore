@@ -24,10 +24,12 @@ src/static/generated/*
 db.sqlite3
 
 celerybeat-schedule
+celerybeat-schedule.db
 package-lock.json
 artifacts/
 
 docker-compose.override.yml
+compose.override.yml
 
 server_config.yaml
 /graphs/
@@ -40,3 +42,5 @@ caddy_config/
 caddy_data/
 
 home_page_counters.json
+my-postgres.conf
+tests/config/state.json

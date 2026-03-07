@@ -15,7 +15,7 @@ def send_mail(context=None, from_email=None, html_file=None, text_file=None, sub
     :param subject: Email's subject.
     :param to_email: Recipient's email.
     """
-    from_email = from_email if from_email else settings.DEFAULT_FROM_EMAIL
+    from_email = from_email if from_email else settings.SERVER_EMAIL
 
     context["site"] = Site.objects.get_current()
 

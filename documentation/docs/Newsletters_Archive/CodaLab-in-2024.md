@@ -1,9 +1,9 @@
-## CodaLab in 2024 
+## CodaLab in 2024
 ### A Year of Breakthroughs and New Horizons with Codabench
 
 Welcome to the first edition of CodaLab’s newsletter! This year has been full of novelty, success, and scientific progress. The platform is breaking records of participation and number of organized competitions, and [Codabench](https://codabench.org/), the new version of [CodaLab](https://codalab.lisn.fr/), had a very promising launch. Let’s dive into more details.
 
-![image_2025_01_30T15_23_35_261Z](../_attachments/991c18dc-3baa-4d69-b157-6a5561e6798d_17528513106457524.jpg)
+![image_2025_01_30T15_23_35_261Z](_attachments/991c18dc-3baa-4d69-b157-6a5561e6798d_17528513106457524.jpg)
 
 
 ##  Unprecedented engagement
@@ -13,7 +13,7 @@ In October, Codabench has registered its **10,000th user**! From about 100 daily
 
 Contributors community is very active with **143 pull requests** this year. Since the platform is still relatively new, the primary focus has been on bug fixes, security and performance enhancements, and administrative features, accounting for approximately two-thirds of the pull requests. Nevertheless, we are keen on improving the experience for both participants and organizers. We have set a versioning and a release-notes follow-up to give more visibility to the platform evolution and maturity.
 
-![pie-chart](../_attachments/2b41574f-9597-47c0-b492-cf427eba7eff_17528513107025487.jpg)
+![pie-chart](_attachments/2b41574f-9597-47c0-b492-cf427eba7eff_17528513107025487.jpg)
 
 
 ## Introducing Codabench

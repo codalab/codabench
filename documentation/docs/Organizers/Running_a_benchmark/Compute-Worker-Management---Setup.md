@@ -40,13 +40,37 @@ You will get your Broker URL from the instance. More information about Queues [h
 
 Make a file `.env` and put this in it:
 ```ini title=".env"
+#######################################################################
+#                       Connection URL                                #
+#######################################################################
 BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
-HOST_DIRECTORY=/codabench
 # If SSL isn't enabled, then comment or remove the following line
 BROKER_USE_SSL=True
+
+#######################################################################
+#                       Temporary Storage                             #
+#######################################################################
+HOST_DIRECTORY=/codabench
+
+
+#######################################################################
+#                       Runtime                                       #
+#######################################################################
+CONTAINER_ENGINE_EXECUTABLE=docker
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
+
+#######################################################################
+#                       Network                                       #
+#######################################################################
+#COMPETITION_CONTAINER_NETWORK_DISABLED=False
+
+#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
 ```
+By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
+
+If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
 
 !!! note
     - The broker URL is a unique identifier of the job queue that the worker should listen to. To create a queue or obtain the broker URL of an existing queue, you can refer to [Queue Management](Queue-Management.md) docs page.
@@ -221,73 +245,17 @@ This is helpful only if you want to build the compute worker image. It is not ne
 To build the normal image:
 
 ```bash
-docker build -t codalab/competitions-v2-compute-worker:latest -f Dockerfile.compute_worker .
-```
-
-To build the GPU version:
-```bash
-docker build -t codalab/competitions-v2-compute-worker:gpu -f Dockerfile.compute_worker_gpu .
+docker build -t codalab/codabench-compute-worker:latest -f packaging/container/Containerfile.compute_worker .
 ```
 
 To update the image (add tag `:latest`, `:gpu` or else if needed)
 
 ```bash
-docker push codalab/competitions-v2-compute-worker
+docker push codalab/codabench-compute-worker
 ```
 
 !!! note "If you have running compute workers, you'll need to pull again the image and to restart the workers to take into account the changes."
 
-
-## Worker management
-
-Outside of docker containers install [Fabric](http://fabfile.org/) like so:
-
-```bash
-pip install fab-classic==1.17.0
-```
-
-Create a `server_config.yaml` in the root of this repository using:
-```
-cp server_config_sample.yaml server_config.yaml
-```
-
-Below is an example `server_config.yaml` that defines 2 roles `comp-gpu` and `comp-cpu`,
-one with GPU style workers (`is_gpu` and the GPU `docker_image`) and one with CPU style workers
-
-```yaml title="server_config.yaml"
-comp-gpu:
-  hosts:
-    - ubuntu@12.34.56.78
-    - ubuntu@12.34.56.79
-  broker_url: pyamqp://user:pass@host:port/vhost-gpu
-  is_gpu: true
-  docker_image: codalab/competitions-v2-compute-worker:gpu
-
-comp-cpu:
-  hosts:
-    - ubuntu@12.34.56.80
-  broker_url: pyamqp://user:pass@host:port/vhost-cpu
-  is_gpu: false
-  docker_image: codalab/competitions-v2-compute-worker:latest
-```
-
-You can of course create your own `docker_image` and specify it here.
-
-You can execute commands against a role:
-
-```bash
-fab -R comp-gpu status
-..
-[ubuntu@12.34.56.78] out: CONTAINER ID        IMAGE                                           COMMAND                  CREATED             STATUS              PORTS               NAMES
-[ubuntu@12.34.56.78] out: 1d318268bee1        codalab/competitions-v2-compute-worker:gpu   "/bin/sh -c 'celery …"   2 hours ago         Up 2 hours                              hardcore_greider
-..
-
-fab -R comp-gpu update
-..
-(updates workers)
-```
-
-See available commands with `fab -l`
 
 ## Update docker image
 
@@ -302,17 +270,7 @@ docker ps
 Update the worker:
 
 ```sh
-docker stop compute_worker
-docker rm compute_worker
-docker pull codalab/competitions-v2-compute-worker:latest    # or other relevant docker image
-docker run \                                                 # or docker compose up -d
-    -v /codabench:/codabench \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -d \
-    --env-file .env \
-    --name compute_worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/codabench-compute-worker:latest            # or other relevant docker image
+docker compose down
+docker compose pull
+docker compose up -d
 ```

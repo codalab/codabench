@@ -117,7 +117,7 @@ The ingestion program is a file that gets ran to generate the predictions from t
 
 The ingestion program is also paired with a `metadata.yaml` that specifies how to run it. It should have a key `command` that is the command used to run your ingestion program. The same special directories should be available to your ingestion program. 
 
-Example: Here's what an ingestion `metdata.yaml` might look like this:
+Example: Here's what an ingestion `metadata.yaml` might look like this:
 ```yaml title="metadata.yaml"
 command: python3 /app/program/ingestion.py /app/input_data/ /app/output/ /app/program /app/ingested_program
 ```
