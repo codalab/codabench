@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.viewsets import ModelViewSet
@@ -20,6 +21,7 @@ from profiles.models import Organization, Membership
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
+from competitions.tasks import parse_model_card
 from leaderboards.strategies import put_on_leaderboard_by_submission_rule
 from leaderboards.models import SubmissionScore, Column, Leaderboard
 import logging
@@ -92,7 +94,7 @@ class SubmissionViewSet(ModelViewSet):
 
             not_bot_user = self.request.user.is_authenticated and not self.request.user.is_bot
 
-            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission']:
+            if self.action in ['update_fact_sheet', 'run_submission', 're_run_submission', 'upload_model_card']:
                 # get_queryset will stop us from re-running something we're not supposed to
                 pass
             elif not self.request.user.is_authenticated or not_bot_user:
@@ -247,6 +249,65 @@ class SubmissionViewSet(ModelViewSet):
         # soft delete submission and return success response
         submission.soft_delete()
         return Response({'message': 'Submission deleted successfully'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=('POST',), parser_classes=(MultiPartParser, FormParser))
+    def upload_model_card(self, request, pk):
+        submission = self.get_object()
+
+        if request.user != submission.owner and not self.has_admin_permission(request.user, submission):
+            raise PermissionDenied("You do not have permission to upload a model card for this submission")
+
+        model_card_file = request.FILES.get("model_card")
+        if not model_card_file:
+            return Response({"error": "`model_card` file is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not model_card_file.name.lower().endswith(".pdf"):
+            return Response({"error": "Model card must be a PDF file."}, status=status.HTTP_400_BAD_REQUEST)
+
+        submission.model_card.save(model_card_file.name, model_card_file, save=False)
+        submission.model_card_status = Submission.MODEL_CARD_PENDING
+        submission.model_card_json = None
+        submission.model_card_error = None
+        submission.save(update_fields=['model_card', 'model_card_file_size', 'model_card_status', 'model_card_json', 'model_card_error'])
+
+        parse_model_card.delay(submission.pk)
+
+        return Response({"status": submission.model_card_status}, status=status.HTTP_202_ACCEPTED)
+
+    @action(detail=True, methods=('GET',), permission_classes=(AllowAny,))
+    def model_card(self, request, pk):
+        submission = get_object_or_404(
+            Submission.objects.select_related('phase__competition', 'owner'),
+            pk=pk,
+            is_soft_deleted=False,
+        )
+
+        is_owner_or_admin = request.user.is_authenticated and (
+            request.user == submission.owner or self.has_admin_permission(request.user, submission)
+        )
+        is_public_model_card = (
+            submission.phase.competition.model_card_visibility == submission.phase.competition.MODEL_CARD_PUBLIC
+            and submission.status == Submission.FINISHED
+            and submission.on_leaderboard
+        )
+
+        if not is_owner_or_admin and not is_public_model_card:
+            raise PermissionDenied("You do not have permission to access this model card")
+
+        if not submission.model_card:
+            return Response({
+                "status": Submission.MODEL_CARD_NONE,
+                "url": None,
+                "json": None,
+                "error": None,
+            })
+
+        return Response({
+            "status": submission.model_card_status,
+            "url": submission.get_model_card_url(),
+            "json": submission.model_card_json,
+            "error": submission.model_card_error,
+        })
 
     @action(detail=False, methods=('DELETE',))
     def delete_many(self, request, *args, **kwargs):

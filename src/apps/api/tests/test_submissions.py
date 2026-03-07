@@ -2,6 +2,8 @@ import random
 from unittest import mock
 
 from django.urls import reverse
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
@@ -283,6 +285,84 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 403
 
+
+
+    def test_owner_can_upload_model_card_and_queue_parser(self):
+        url = reverse('submission-upload-model-card', args=(self.existing_submission.pk,))
+        self.client.force_login(self.participant)
+
+        model_card_file = SimpleUploadedFile(
+            'model_card.pdf',
+            b'%PDF-1.4\n% mock model card',
+            content_type='application/pdf',
+        )
+
+        with mock.patch('competitions.tasks.parse_model_card.delay') as parse_delay:
+            resp = self.client.post(url, {'model_card': model_card_file}, format='multipart')
+
+        assert resp.status_code == 202
+        assert resp.data['status'] == Submission.MODEL_CARD_PENDING
+
+        self.existing_submission.refresh_from_db()
+        assert self.existing_submission.model_card_status == Submission.MODEL_CARD_PENDING
+        assert self.existing_submission.model_card
+        parse_delay.assert_called_once_with(self.existing_submission.pk)
+
+    def test_non_owner_cannot_upload_model_card(self):
+        url = reverse('submission-upload-model-card', args=(self.existing_submission.pk,))
+        self.client.force_login(self.other_user)
+
+        model_card_file = SimpleUploadedFile(
+            'model_card.pdf',
+            b'%PDF-1.4\n% mock model card',
+            content_type='application/pdf',
+        )
+
+        resp = self.client.post(url, {'model_card': model_card_file}, format='multipart')
+        assert resp.status_code == 403
+
+    def test_private_model_card_requires_owner_or_admin(self):
+        self.comp.model_card_visibility = self.comp.MODEL_CARD_PRIVATE
+        self.comp.save(update_fields=['model_card_visibility'])
+
+        self.existing_submission.model_card.save('private_card.pdf', ContentFile(b'%PDF-1.4 private card'), save=False)
+        self.existing_submission.model_card_status = Submission.MODEL_CARD_PARSED
+        self.existing_submission.model_card_json = {'raw_text': 'private'}
+        self.existing_submission.save(update_fields=['model_card', 'model_card_file_size', 'model_card_status', 'model_card_json'])
+
+        url = reverse('submission-model-card', args=(self.existing_submission.pk,))
+
+        with mock.patch('competitions.models.Submission.get_model_card_url', return_value='https://example.com/private.pdf'):
+            self.client.force_login(self.other_user)
+            resp = self.client.get(url)
+            assert resp.status_code == 403
+
+            self.client.force_login(self.participant)
+            resp = self.client.get(url)
+            assert resp.status_code == 200
+            assert resp.data['status'] == Submission.MODEL_CARD_PARSED
+            assert resp.data['json'] == {'raw_text': 'private'}
+
+    def test_public_model_card_is_visible_to_anonymous_for_public_submission(self):
+        self.comp.model_card_visibility = self.comp.MODEL_CARD_PUBLIC
+        self.comp.save(update_fields=['model_card_visibility'])
+
+        self.existing_submission.status = Submission.FINISHED
+        self.existing_submission.leaderboard = self.leaderboard
+        self.existing_submission.model_card.save('public_card.pdf', ContentFile(b'%PDF-1.4 public card'), save=False)
+        self.existing_submission.model_card_status = Submission.MODEL_CARD_PARSED
+        self.existing_submission.model_card_json = {'raw_text': 'public'}
+        self.existing_submission.save(update_fields=['status', 'leaderboard', 'model_card', 'model_card_file_size', 'model_card_status', 'model_card_json'])
+
+        url = reverse('submission-model-card', args=(self.existing_submission.pk,))
+
+        self.client.logout()
+        with mock.patch('competitions.models.Submission.get_model_card_url', return_value='https://example.com/public.pdf'):
+            resp = self.client.get(url)
+
+        assert resp.status_code == 200
+        assert resp.data['status'] == Submission.MODEL_CARD_PARSED
+        assert resp.data['url'] == 'https://example.com/public.pdf'
 
 class SubmissionUpdateTest(APITestCase):
     def setUp(self):

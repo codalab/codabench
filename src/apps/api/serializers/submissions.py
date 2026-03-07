@@ -29,6 +29,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     created_when = serializers.DateTimeField()
     auto_run = serializers.SerializerMethodField(read_only=True)
     can_make_submissions_public = serializers.SerializerMethodField(read_only=True)
+    model_card_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Submission
@@ -56,6 +57,8 @@ class SubmissionSerializer(serializers.ModelSerializer):
             'task',
             'auto_run',
             'can_make_submissions_public',
+            'model_card_status',
+            'model_card_url',
             'is_soft_deleted',
         )
         read_only_fields = (
@@ -81,6 +84,14 @@ class SubmissionSerializer(serializers.ModelSerializer):
         # returns this submission's competition can_participants_make_submissions_public Flag
         return instance.phase.competition.can_participants_make_submissions_public
 
+    def get_model_card_url(self, instance):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        if instance.can_user_view_model_card(user):
+            return instance.get_model_card_url()
+
+        return None
 
 class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
     """Used for creation _and_ status updates..."""
@@ -238,6 +249,10 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
     scoring_result = serializers.SerializerMethodField()
     detailed_result = serializers.SerializerMethodField()
     leaderboards = serializers.SerializerMethodField()
+    model_card = serializers.SerializerMethodField()
+    model_card_status = serializers.SerializerMethodField()
+    model_card_json = serializers.SerializerMethodField()
+    model_card_error = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
@@ -248,6 +263,10 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             'detailed_result',
             'scoring_result',
             'leaderboards',
+            'model_card',
+            'model_card_status',
+            'model_card_json',
+            'model_card_error',
             'fact_sheet_answers',
         )
 
@@ -280,3 +299,25 @@ class SubmissionFilesSerializer(serializers.ModelSerializer):
             return None
         boards = list(set([score.column.leaderboard for score in instance.scores.all().select_related('column__leaderboard')]))
         return [leaderboards.LeaderboardSerializer(lb).data for lb in boards]
+
+    def _can_view_model_card(self, instance):
+        request = self.context.get('request')
+        user = request.user if request else None
+        return instance.can_user_view_model_card(user)
+
+    def get_model_card(self, instance):
+        if self._can_view_model_card(instance):
+            return instance.get_model_card_url()
+
+    def get_model_card_status(self, instance):
+        if self._can_view_model_card(instance):
+            return instance.model_card_status
+        return Submission.MODEL_CARD_NONE
+
+    def get_model_card_json(self, instance):
+        if self._can_view_model_card(instance):
+            return instance.model_card_json
+
+    def get_model_card_error(self, instance):
+        if self._can_view_model_card(instance):
+            return instance.model_card_error

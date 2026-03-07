@@ -272,7 +272,8 @@ class CompetitionSerializer(DefaultUserCreateMixin, WritableNestedModelSerialize
             'contact_email',
             'report',
             'whitelist_emails',
-            'forum_enabled'
+            'forum_enabled',
+            'model_card_visibility'
         )
 
     def validate_phases(self, phases):
@@ -417,7 +418,8 @@ class CompetitionDetailSerializer(serializers.ModelSerializer):
             'contact_email',
             'report',
             'whitelist_emails',
-            'forum_enabled'
+            'forum_enabled',
+            'model_card_visibility'
         )
 
     def get_leaderboards(self, instance):
@@ -543,4 +545,4 @@ class PhaseResultsSerializer(serializers.Serializer):
     title = serializers.CharField()
     id = serializers.IntegerField()
     tasks = PhaseResultsTaskSerializer(many=True, read_only=True)
-    submissions = PhaseResultsSubmissionSerializer(many=True)
+    submissions = PhaseResultsSubmissionSerializer(many=True)`r`n

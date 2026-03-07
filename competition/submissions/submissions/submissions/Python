@@ -1,0 +1,18 @@
+def extract_pdf_to_json(pdf_path):
+
+    data = {
+        "model_name": "",
+        "description": "",
+        "intended_use": "",
+        "limitations": "",
+    }
+
+    with pdfplumber.open(pdf_path) as pdf:
+        text = ""
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+
+    # naive example parsing
+    data["raw_text"] = text
+
+    return data
