@@ -1226,10 +1226,12 @@ class Run:
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
+
         try:
             # run tasks
             # keep what gather returned so we can detect async errors later
             task_results = loop.run_until_complete(gathered_tasks) or []
+
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
             logger.error(error_message)
@@ -1263,7 +1265,10 @@ class Run:
             # Send error through web socket to the frontend
             asyncio.run(self._send_data_through_socket(error_message))
             raise SubmissionException(error_message)
+
         finally:
+            signal.alarm(0)
+            asyncio.set_event_loop(None)
             loop.close()
             self.watch = False
             for kind, logs in self.logs.items():
@@ -1332,6 +1337,7 @@ class Run:
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
             self._update_status(STATUS_FINISHED)
+
         else:
             self._update_status(STATUS_SCORING)
 
