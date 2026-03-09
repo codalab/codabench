@@ -433,7 +433,7 @@
 <span class="md-ellipsis">
     
   
-    Competition YAML Structure
+    Competition Bundle Structure
   
 
     
@@ -500,13 +500,44 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#building-an-image">
+<a class="md-nav__link" href="#custom-image-based-on-codalab-image">
 <span class="md-ellipsis">
       
-        Building an image
+        Custom image based on CodaLab image
       
     </span>
 </a>
+<nav aria-label="Custom image based on CodaLab image" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#preliminary-steps">
+<span class="md-ellipsis">
+      
+        Preliminary steps
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#method-1-update-the-image-from-a-container">
+<span class="md-ellipsis">
+      
+        Method 1: update the image from a container
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#method-2-update-the-dockerfile-and-re-build">
+<span class="md-ellipsis">
+      
+        Method 2: update the Dockerfile and re-build
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -536,7 +567,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="https://github.com/codalab/competition-examples/tree/master/codabench">
+<a class="md-nav__link" href="../Benchmark-Examples/">
 <span class="md-ellipsis">
     
   
@@ -1037,6 +1068,66 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Hide-output/">
+<span class="md-ellipsis">
+    
+  
+    Hide Output update (version &lt; 1.19.0)
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Django-3/">
+<span class="md-ellipsis">
+    
+  
+    Django 3 Upgrades (version &lt; 1.20.0)
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Minio-image/">
+<span class="md-ellipsis">
+    
+  
+    Minio Image Upgrade (version &lt; 1.21.0)
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Docker-py/">
+<span class="md-ellipsis">
+    
+  
+    Docker-Py (version &lt; 1.22.0)
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../Developers_and_Administrators/Upgrading_Codabench/Django-4/">
+<span class="md-ellipsis">
+    
+  
+    Django 4 Upgrades (version &lt; 1.23.0)
+  
+
+    
+  </span>
+</a>
+</li>
 </ul>
 </nav>
 </li>
@@ -1192,13 +1283,44 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#building-an-image">
+<a class="md-nav__link" href="#custom-image-based-on-codalab-image">
 <span class="md-ellipsis">
       
-        Building an image
+        Custom image based on CodaLab image
       
     </span>
 </a>
+<nav aria-label="Custom image based on CodaLab image" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#preliminary-steps">
+<span class="md-ellipsis">
+      
+        Preliminary steps
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#method-1-update-the-image-from-a-container">
+<span class="md-ellipsis">
+      
+        Method 1: update the image from a container
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#method-2-update-the-dockerfile-and-re-build">
+<span class="md-ellipsis">
+      
+        Method 2: update the Dockerfile and re-build
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -1217,7 +1339,7 @@
 <p>The competition docker image defines the docker environment in which the submissions of the competitions or benchmarks are run. Each competition can have a different docker environment, referred by its <a href="https://hub.docker.com/">DockerHub</a> name and tag.</p>
 <h2 id="default-competition-docker-image">Default competition docker image<a class="headerlink" href="#default-competition-docker-image" title="Permanent link">¶</a></h2>
 <p>The default competition docker image is <code>codalab/codalab-legacy:py37</code>. 
-More information here: https://github.com/codalab/codalab-dockers</p>
+More information and base images are available here: https://github.com/codalab/codalab-dockers</p>
 <h2 id="set-up-another-image">Set up another image<a class="headerlink" href="#set-up-another-image" title="Permanent link">¶</a></h2>
 <p>You can select another docker image:</p>
 <ul>
@@ -1225,24 +1347,43 @@ More information here: https://github.com/codalab/codalab-dockers</p>
 <li>In the editor field "Competition Docker image" as shown in the following screenshot:
 <a class="glightbox" data-desc-position="bottom" data-height="auto" data-type="image" data-width="auto"><img alt="" src="../_attachments/b8124291-92ea-4d1d-b743-00fd7a35c313_17534366792118.jpg"></a></li>
 </ul>
-<h2 id="building-an-image">Building an image<a class="headerlink" href="#building-an-image" title="Permanent link">¶</a></h2>
 <p>If the default image does not suit your needs (missing libraries, etc.), you can either:</p>
 <ul>
-<li>Select an existing image from DockerHub</li>
+<li>Select any existing image from DockerHub</li>
 <li>Create your own image from scratch</li>
-<li>Create a custom image based on the Codalab image. (more information below)</li>
+<li>Create a custom image based on the CodaLab image (more information below)</li>
 </ul>
+<h2 id="custom-image-based-on-codalab-image">Custom image based on CodaLab image<a class="headerlink" href="#custom-image-based-on-codalab-image" title="Permanent link">¶</a></h2>
 <p>If you wish to create a custom image based on the Codalab image, you can follow the steps below:</p>
-<p>1) Install Docker<br>
-2) Sign up to DockerHub<br>
-3) <code>docker run -itd -u root codalab/codalab-legacy:py39 /bin/bash</code><br>
-4) Use <code>docker ps</code> to find running container id<br>
-5) Now run <code>docker  exec -it -u root &lt;CONTAINER ID&gt; bash</code><br>
-6) Install anything you want at the docker container shell (<code>apt-get install</code>, <code>pip install</code>, etc.)<br>
-7) Exit the shell with <code>exit</code><br>
-8) <code>docker commit &lt;CONTAINER ID&gt; username/image:tag</code><br>
-9) <code>docker login</code><br>
-10) <code>docker push username/image:tag</code> </p>
+<h4 id="preliminary-steps">Preliminary steps<a class="headerlink" href="#preliminary-steps" title="Permanent link">¶</a></h4>
+<p>1) Install Docker
+2) Sign up to <a href="https://hub.docker.com/">DockerHub</a> </p>
+<h4 id="method-1-update-the-image-from-a-container">Method 1: update the image from a container<a class="headerlink" href="#method-1-update-the-image-from-a-container" title="Permanent link">¶</a></h4>
+<p>1) Start a container using the base image:
+</p><div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-itd<span class="w"> </span>-u<span class="w"> </span>root<span class="w"> </span>codalab/codalab-legacy:py39<span class="w"> </span>/bin/bash
+</span></code></pre></div>
+2) Identify the running container ID using <code>docker ps</code>
+3) Enter inside the container:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>docker<span class="w">  </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>-u<span class="w"> </span>root<span class="w"> </span>&lt;CONTAINER<span class="w"> </span>ID&gt;<span class="w"> </span>bash
+</span></code></pre></div>
+4) Install anything you want at the docker container shell (<code>apt-get install</code>, <code>pip install</code>, etc.)<br>
+5) Exit the shell with <code>exit</code><br>
+6) Push the new version to your DockerHub account:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>docker<span class="w"> </span>commit<span class="w"> </span>&lt;CONTAINER<span class="w"> </span>ID&gt;<span class="w"> </span>username/image:tag
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>docker<span class="w"> </span>login
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>docker<span class="w"> </span>push<span class="w"> </span>username/image:tag
+</span></code></pre></div><p></p>
+<h4 id="method-2-update-the-dockerfile-and-re-build">Method 2: update the Dockerfile and re-build<a class="headerlink" href="#method-2-update-the-dockerfile-and-re-build" title="Permanent link">¶</a></h4>
+<p>1) Download the Dockerfile of the base image:
+https://github.com/codalab/codalab-dockers/blob/master/legacy-py39/Dockerfile</p>
+<p>2) Edit the file to include any library or program you need</p>
+<p>3) Build the image
+</p><div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>username/image:tag<span class="w"> </span>.
+</span></code></pre></div><p></p>
+<p>4) Push it to your DockerHub account</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a>docker<span class="w"> </span>login
+</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a>docker<span class="w"> </span>push<span class="w"> </span>username/image:tag
+</span></code></pre></div>
 </article>
 </div>
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
