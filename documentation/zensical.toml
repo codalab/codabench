@@ -63,7 +63,12 @@ nav = [
             {"Submissions and Participants count (version < 1.14.0)" = "Developers_and_Administrators/Upgrading_Codabench/Submissions-and-Participants-Counts.md"},
             {"Homepage Counters (version < 1.15.0)" = "Developers_and_Administrators/Upgrading_Codabench/Homepage-counters.md"},
             {"User Removal (version < 1.17.0)" = "Developers_and_Administrators/Upgrading_Codabench/User-removal.md"},
-            {"Database size fix (version < 1.18.0)" = "Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes.md"}
+            {"Database size fix (version < 1.18.0)" = "Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes.md"},
+            {"Hide Output update (version < 1.19.0)" = "Developers_and_Administrators/Upgrading_Codabench/Hide-output.md"},
+            {"Django 3 Upgrades (version < 1.20.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-3.md"},
+            {"Minio Image Upgrade (version < 1.21.0)" = "Developers_and_Administrators/Upgrading_Codabench/Minio-image.md"},
+            {"Docker-Py (version < 1.22.0)" = "Developers_and_Administrators/Upgrading_Codabench/Docker-py.md"},
+            {"Django 4 Upgrades (version < 1.23.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-4.md"}
         ]}
         ]},
         {"Newsletters Archive" = [
