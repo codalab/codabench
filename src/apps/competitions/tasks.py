@@ -377,7 +377,7 @@ def unpack_competition(status_pk):
                 raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
                                                     "to make sure it is in the root directory.")
             with open(yaml_path) as f:
-                competition_yaml = yaml.load(f.read())
+                competition_yaml = yaml.safe_load(f.read())
 
             yaml_version = str(competition_yaml.get('version', '1'))
 

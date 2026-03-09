@@ -3,7 +3,7 @@ services:
   #   Web Services
   #----------------------------------------------------------------------------------------------------
   caddy:
-    image: caddy:2.10.0
+    image: caddy:2.11.1
     env_file: .env
     environment:
       - ACME_AGREE=true
@@ -22,9 +22,11 @@ services:
       - django
 
   django:
+    container_name: django
     build: 
       context: .
       dockerfile: packaging/container/Containerfile
+    image: django_site-worker
     # NOTE: We use watchmedo to reload gunicorn nicely, Uvicorn + Gunicorn reloads don't work well
     command: ["python manage.py migrate --no-input && python manage.py collectstatic --no-input && cd /app/src && watchmedo auto-restart -p '*.py' --recursive -- python3 ./gunicorn_run.py"]
     environment:
@@ -95,6 +97,7 @@ services:
   #   Local development helper, rebuilds RiotJS/Stylus on change
   #----------------------------------------------------------------------------------------------------
   builder:
+    container_name: builder
     build:
       context: .
       dockerfile: packaging/container/Containerfile.builder
@@ -115,6 +118,7 @@ services:
   #----------------------------------------------------------------------------------------------------
   db:
     image: postgres:18-alpine
+    container_name: db
     env_file: .env
     environment:
       - PGDATA=/var/lib/postgresql/18/docker
@@ -136,6 +140,7 @@ services:
   #   Rabbitmq & Flower monitoring tool
   #----------------------------------------------------------------------------------------------------
   rabbit:
+    container_name: rabbit
     build:
       context: .
       dockerfile: packaging/container/Containerfile.rabbitmq
@@ -161,6 +166,7 @@ services:
         max-file: "5"
 
   flower:
+    container_name: flower
     image: mher/flower
     env_file: .env
     environment:
@@ -179,6 +185,7 @@ services:
   #   Redis
   #----------------------------------------------------------------------------------------------------
   redis:
+    container_name: redis
     image: redis
     ports:
       - 6379:6379
@@ -195,9 +202,8 @@ services:
     # This auto-reloads
     command: ["watchmedo auto-restart -p '*.py' --recursive -- celery -A celery_config worker -B -Q site-worker -l info -n site-worker@%n --concurrency=2"]
     working_dir: /app/src
-    build:
-      context: .
-      dockerfile: packaging/container/Containerfile
+    container_name: site_worker
+    image: django_site-worker
     depends_on:
       - rabbit
       - db
@@ -219,6 +225,7 @@ services:
   compute_worker:
     command: ["celery -A compute_worker worker -l info -Q compute-worker -n compute-worker@%n"]
     working_dir: /app
+    container_name: compute_worker
     build:
       context: .
       dockerfile: packaging/container/Containerfile.compute_worker
