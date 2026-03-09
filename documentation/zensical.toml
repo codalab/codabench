@@ -22,7 +22,7 @@ nav = [
             {"Competition Docker Image" = "Organizers/Benchmark_Creation/Competition-docker-image.md"},
             {"Dataset Competition Creation and participate instruction" = "Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md"},
             {"Leaderboard Features" = "Organizers/Benchmark_Creation/Leaderboard-Functionality.md"},
-            {"Competition Examples" = "https://github.com/codalab/competition-examples/tree/master/codabench"},
+            {"Competition Examples" = "Organizers/Benchmark_Creation/Benchmark-Examples.md"},
             {"Public Tasks and Tasks Sharing" = "Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md"},
             {"Detailed Results and Visualization" = "Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md"},
         ]},
@@ -68,7 +68,8 @@ nav = [
             {"Django 3 Upgrades (version < 1.20.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-3.md"},
             {"Minio Image Upgrade (version < 1.21.0)" = "Developers_and_Administrators/Upgrading_Codabench/Minio-image.md"},
             {"Docker-Py (version < 1.22.0)" = "Developers_and_Administrators/Upgrading_Codabench/Docker-py.md"},
-            {"Django 4 Upgrades (version < 1.23.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-4.md"}
+            {"Django 4 Upgrades (version < 1.23.0)" = "Developers_and_Administrators/Upgrading_Codabench/Django-4.md"},
+            {"Postgres 18 upgrade (version < 1.24.0)" = "Developers_and_Administrators/Upgrading_Codabench/Postgres-18.md"}
         ]}
         ]},
         {"Newsletters Archive" = [
