@@ -207,10 +207,7 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <label>Per page</label>
             <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
-                <option value="5">5</option>
-                <option value="10">10</option>
                 <option value="20">20</option>
-                <option value="50">50</option>
             </select>
 
             <div style="margin-left:10px; color: #8c8c8c;">
