@@ -227,7 +227,6 @@
 
                     <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
 
-                    <!-- Sometimes submissions end up in a bad state with no children..  -->
                     <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
                         <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error
                             during creation.</i>
