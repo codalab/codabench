@@ -7,7 +7,7 @@ ingress:
     rules:
     - http:
         paths:
-        - path: /<your-path-prefix>
+        - path: /
           pathType: Prefix
           backend:
             service:
