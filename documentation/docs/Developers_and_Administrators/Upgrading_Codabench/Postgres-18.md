@@ -1,6 +1,6 @@
 !!! note "After upgrading from Codabench <1.24.0, you will need to perform important manual interventions."
 
-## Rabbit (#2061)
+## Rabbit
 We also need to log into the RabbitMQ interface and enable the flags it wants us to enable after upgrading.
 
 RabbitMQ port, username and password to access the interface are defined in the `.env` file.
@@ -10,7 +10,7 @@ RabbitMQ port, username and password to access the interface are defined in the 
 More information about feature flags [here](https://www.rabbitmq.com/docs/feature-flags)
 
 
-## Database (Postgres 12 -> 18) (#2091)
+## Database (Postgres 12 -> 18)
 ### 1. Maintenance mode on to avoid update on the database during the upgrade:
 
 ```sh
