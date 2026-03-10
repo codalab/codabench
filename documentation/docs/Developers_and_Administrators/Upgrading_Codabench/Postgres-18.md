@@ -5,7 +5,7 @@ We also need to log into the RabbitMQ interface and enable the flags it wants us
 
 RabbitMQ port, username and password to access the interface are defined in the `.env` file.
 
-<img width="1401" height="403" alt="Capture d’écran 2026-02-25 à 12 50 32" src="https://github.com/user-attachments/assets/6659efd8-e953-42dd-b885-629c41beb1c7" />
+![Rabbit-screenshot](../_attachments/554725936-6659efd8-e953-42dd-b885-629c41beb1c7.png)
 
 More information about feature flags [here](https://www.rabbitmq.com/docs/feature-flags)
 
