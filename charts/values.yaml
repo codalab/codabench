@@ -55,7 +55,7 @@ compute_worker:
     limits:
       memory: 512Mi
   volumes:
-    pvcName: <shared-job-pvc-name>
+    pvcName: shared-job-pvc
   brokers:
     - name: "default"
       gpu:
@@ -74,7 +74,7 @@ siteWorker:
     runAsGroup: 0
     fsGroup: 0
   volumes:
-    pvcName: <app-state-pvc-name>
+    pvcName: app-state
 
 redis:
   image:
@@ -114,12 +114,12 @@ global:
 
 sharedJob:
   storageClass: <storage-class>
-  pvcName: <shared-job-pvc-name>
+  pvcName: shared-job-pvc
   storage: 1Gi
 
 appState:
   storageClass: <storage-class>
-  pvcName: <app-state-pvc-name>
+  pvcName: app-state-pvc
   storage: 1Gi
 
 db:
