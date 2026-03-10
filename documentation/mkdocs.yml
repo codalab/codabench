@@ -117,12 +117,12 @@ nav:
           - Competition Creation: Organizers/Benchmark_Creation/Competition-Creation.md
           - Competition Creation Form: Organizers/Benchmark_Creation/Competition-Creation-Form.md
           - Competition Creation Bundle: Organizers/Benchmark_Creation/Competition-Creation-Bundle.md
-          - Competition YAML Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
+          - Competition Bundle Structure: Organizers/Benchmark_Creation/Competition-Bundle-Structure.md
           - YAML Structure: Organizers/Benchmark_Creation/Yaml-Structure.md
           - Competition Docker Image: Organizers/Benchmark_Creation/Competition-docker-image.md
           - Dataset Competition Creation and participate instruction: Organizers/Benchmark_Creation/Dataset-competition-creation-and-participate-instruction.md
           - Leaderboard Features: Organizers/Benchmark_Creation/Leaderboard-Functionality.md
-          - Competition Examples: https://github.com/codalab/competition-examples/tree/master/codabench
+          - Competition Examples: Organizers/Benchmark_Creation/Benchmark-Examples.md
           - Public Tasks and Tasks Sharing: Organizers/Benchmark_Creation/Public-Tasks-and-Tasks-Sharing.md
           - Detailed Results and Visualization: Organizers/Benchmark_Creation/Detailed-Results-and-Visualizations.md
       - Running a Benchmarks:
@@ -161,8 +161,14 @@ nav:
           - Homepage Counters (version < 1.15.0): Developers_and_Administrators/Upgrading_Codabench/Homepage-counters.md
           - User Removal (version < 1.17.0): Developers_and_Administrators/Upgrading_Codabench/User-removal.md
           - Database size fix (version < 1.18.0): Developers_and_Administrators/Upgrading_Codabench/Database-size-fixes.md
+          - Hide Output update (version < 1.19.0): Developers_and_Administrators/Upgrading_Codabench/Hide-output.md
+          - Django 3 Upgrades (version < 1.20.0): Developers_and_Administrators/Upgrading_Codabench/Django-3.md
+          - Minio Image Upgrade (version < 1.21.0): Developers_and_Administrators/Upgrading_Codabench/Minio-image.md
+          - Docker-Py (version < 1.22.0): Developers_and_Administrators/Upgrading_Codabench/Docker-py.md
+          - Django 4 Upgrades (version < 1.23.0): Developers_and_Administrators/Upgrading_Codabench/Django-4.md
   - Newsletters Archive:
       - 2024: Newsletters_Archive/CodaLab-in-2024.md
+      - 2025: Newsletters_Archive/CodaLab-in-2025.md
   - How you can contribue:
       - Contribute/index.md
       - Contribute/contributing.md

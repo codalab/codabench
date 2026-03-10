@@ -243,10 +243,16 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 404
 
-    def test_who_can_see_detailed_result_when_visualization_is_true(self):
+    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_private(self):
         self.comp.enable_detailed_results = True
+        self.comp.published = False
         self.comp.save()
-        url = reverse('submission-get-detail-result', args=(self.existing_submission.pk,))
+
+        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
+
+        # Anonymous user cannot see submission detail result
+        resp = self.client.get(url)
+        assert resp.status_code == 403
 
         # Competition creator can see detail result
         self.client.force_login(self.creator)
@@ -263,17 +269,17 @@ class SubmissionAPITests(APITestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-        # approved user can see submission detail result
+        # Approved user can see submission detail result
         self.client.force_login(self.participant)
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-        # pending user cannot see submission detail result
+        # Pending user cannot see submission detail result
         self.client.force_login(self.pending_participant)
         resp = self.client.get(url)
         assert resp.status_code == 403
 
-        # denied user cannot see submission detail result
+        # Denied user cannot see submission detail result
         self.client.force_login(self.denied_participant)
         resp = self.client.get(url)
         assert resp.status_code == 403
@@ -282,6 +288,45 @@ class SubmissionAPITests(APITestCase):
         self.client.force_login(self.other_user)
         resp = self.client.get(url)
         assert resp.status_code == 403
+
+    def test_who_can_see_detailed_result_when_visualization_is_true_and_competition_is_public(self):
+        self.comp.enable_detailed_results = True
+        self.comp.published = True
+        self.comp.save()
+
+        url = reverse("submission-get-detail-result", args=(self.existing_submission.pk,))
+
+        # Detailed results are publicly available
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.creator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.collaborator)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.superuser)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.pending_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.denied_participant)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+
+        self.client.force_login(self.other_user)
+        resp = self.client.get(url)
+        assert resp.status_code == 200
 
 
 class SubmissionUpdateTest(APITestCase):

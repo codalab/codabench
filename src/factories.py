@@ -195,9 +195,9 @@ class ColumnFactory(DjangoModelFactory):
     class Meta:
         model = Column
 
-    title = factory.Faker('word')
-    key = factory.Faker('word')
     index = factory.Sequence(lambda n: n)
+    title = factory.LazyAttribute(lambda n: f"Col_{n.index}")
+    key = factory.LazyAttribute(lambda n: f"col_{n.index}")
     leaderboard = factory.SubFactory(LeaderboardFactory)
     sorting = factory.LazyAttribute(lambda n: random.choice(['asc', 'desc']))
 
