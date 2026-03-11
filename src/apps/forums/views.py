@@ -115,6 +115,12 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
     model = Post
     pk_url_kwarg = 'post_pk'
 
+    def get_success_url(self):
+        post = self.get_object()
+        if post.thread:
+            return post.thread.get_absolute_url() if post.thread.posts.count() > 1 else post.thread.forum.get_absolute_url()
+        return '/'
+
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
 
@@ -122,8 +128,8 @@ class DeletePostView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
             request.user in self.object.thread.forum.competition.collaborators.all() or \
                 self.object.thread.forum.competition.created_by == request.user:
             # If there are more posts in the thread, leave it around, otherwise delete it
+            success_url = self.get_success_url()
             if self.object.thread.posts.count() == 1:
-                success_url = self.object.thread.forum.get_absolute_url()
                 self.object.thread.delete()
             else:
                 success_url = self.object.thread.get_absolute_url()
@@ -164,6 +170,10 @@ class CreateThreadView(ForumBaseMixin, RedirectToThreadMixin, LoginRequiredMixin
 class DeleteThreadView(ForumBaseMixin, LoginRequiredMixin, DeleteView):
     model = Thread
     pk_url_kwarg = 'thread_pk'
+
+    def get_success_url(self):
+        thread = self.get_object()
+        return thread.forum.get_absolute_url()
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
