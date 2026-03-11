@@ -6,6 +6,7 @@
         <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}fact_sheet">FACT SHEET ANSWERS</div>
     </div>
+    <!-- Downloads -->
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
         <div class="ui relaxed centered grid">
             <div class="ui fifteen wide column">
@@ -36,117 +37,89 @@
             </div>
         </div>
     </div>
+    <!-- Logs -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
-        <div class="ui grid">
-            <div class="three wide column">
-                <div class="ui fluid vertical secondary menu">
-                    <div class="active submission-modal item" data-tab="{admin_: submission.admin}prediction">
-                        Prediction Logs
-                    </div>
-                    <div class="submission-modal item" data-tab="{admin_: submission.admin}scoring">
-                        Scoring Logs
-                    </div>
-                </div>
-            </div>
-            <div class="thirteen wide column">
-                <div class="ui active tab" data-tab="{admin_: submission.admin}prediction">
-                    <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}p_stdout">
-                            stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_stderr">
-                            stderr
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stdout">
-                            Ingestion stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}p_ingest_stderr">
-                            Ingestion stderr
-                        </div>
-                    </div>
-
-                    <div class="ui active bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_stdout">
-                        <!--
-                        todo: something like:
-                            <pre>{ logs.prediction_stdout ? logs.prediction_stdout : "Empty Logs"}</pre>
-                            so log files don't look empty
-                        -->
-                        <pre>{ logs.prediction_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_stderr">
-                        <pre>{ logs.prediction_stderr }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_ingest_stdout">
-                        <pre>{ logs.prediction_ingestion_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}p_ingest_stderr">
-                        <pre>{ logs.prediction_ingestion_stderr }</pre>
-                    </div>
-                </div>
-                <div class="ui tab" data-tab="{admin_: submission.admin}scoring">
-                    <div class="ui top attached inverted pointing menu">
-                        <div class="active submission-modal item" data-tab="{admin_: submission.admin}s_stdout">
-                            stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_stderr">
-                            stderr
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stdout">
-                            Ingestion stdout
-                        </div>
-                        <div class="submission-modal item" data-tab="{admin_: submission.admin}s_ingest_stderr">
-                            Ingestion stderr
-                        </div>
-                    </div>
-
-                    <div class="ui active bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_stdout">
-                        <pre>{ logs.scoring_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_stderr">
-                        <pre>{ logs.scoring_stderr }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_ingest_stdout">
-                        <pre>{ logs.scoring_ingestion_stdout }</pre>
-                    </div>
-
-                    <div class="ui bottom attached inverted segment tab log"
-                         data-tab="{admin_: submission.admin}s_ingest_stderr">
-                        <pre>{ logs.scoring_ingestion_stderr }</pre>
-                    </div>
-                </div>
+        <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}">
+            <div each="{tab, i in logTabs}"
+                class="submission-modal item {active: i === 0}"
+                data-tab="{tab.fullTabId}">
+                {tab.label}
             </div>
         </div>
+        <!-- If no logs -->
+        <div class="ui bottom attached inverted segment tab log active" if="{logTabs.length === 0}">
+            <pre class="empty">No logs available for this submission.</pre>
+        </div>
+        <!-- Dynamic tabs -->
+        <div each="{tab, i in logTabs}"
+            class="ui bottom attached inverted segment tab log {active: i === 0}"
+            data-tab="{tab.fullTabId}">
+            <pre class="{empty: is_empty(tab.content)}">{ show_log(tab.content) }</pre>
+        </div>
     </div>
+    <!-- Fact sheet -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}fact_sheet">
         <div class="ui inverted segment log">
             <textarea name="fact-sheet" id="fact_sheet" ref="fact_sheet_text_area">{ JSON.stringify(fact_sheet_answers, null, 2) }</textarea>
         </div>
         <div class="ui button green" onclick="{update_fact_sheet.bind(this)}">Save</div>
     </div>
+    <!-- Visualization -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
         <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
+    <!-- Admin -->
     <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
         <submission-scores leaderboards="{leaderboards}"></submission-scores>
     </div>
+
     <script>
         var self = this
         self.submission = {}
         self.logs = {}
         self.leaderboards = []
         self.columns = []
+
+        // Logs helpers
+        self.non_empty = (v) => !self.is_empty(v)
+        self.show_log = (v) => self.non_empty(v) ? self.normalizeLog(v) : "No logs for this tab."
+        self.normalizeLog = (v) => {
+            if (v == null) return v
+            if (Array.isArray(v)) return v.join('\n')
+            if (typeof v === "object") {
+                try { return JSON.stringify(v, null, 2) } catch { return String(v) }
+            }
+            return String(v)
+        }
+        self.is_empty = (v) => {
+            v = self.normalizeLog(v)
+            return v == null || (typeof v === "string" && v.trim().length === 0)
+        }
+
+        // Dynamic tabs state
+        self.logTabs = []
+
+        self.rebuild_log_tabs = () => {
+            const prefix = self.submission && self.submission.admin ? 'admin_' : ''
+            const candidates = [
+            { key:'p_stdout', label:'Prediction output', content: self.logs.prediction_stdout },
+            { key:'p_stderr', label:'Prediction errors', content: self.logs.prediction_stderr },
+            { key:'p_ing_out', label:'Ingestion output', content: self.logs.prediction_ingestion_stdout },
+            { key:'p_ing_err', label:'Ingestion errors', content: self.logs.prediction_ingestion_stderr },
+            { key:'s_stdout', label:'Scoring output', content: self.logs.scoring_stdout },
+            { key:'s_stderr', label:'Scoring errors', content: self.logs.scoring_stderr },
+            { key:'s_ing_out', label:'Scoring ingestion output', content: self.logs.scoring_ingestion_stdout },
+            { key:'s_ing_err', label:'Scoring ingestion errors', content: self.logs.scoring_ingestion_stderr },
+            ]
+
+            // Keep only non empty tabs
+            self.logTabs = candidates
+                .filter(t => !self.is_empty(t.content))
+                .map(t => ({
+                    ...t,
+                    fullTabId: `${prefix}${t.key}`
+                }))
+        }
 
         self.get_score_details = function (column) {
             try {
@@ -159,6 +132,9 @@
             }
         }
         self.update_submission_details = () => {
+            self.logs = {}
+            self.rebuild_log_tabs()
+            self.update()
             CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
                     self.leaderboards = data.leaderboards
@@ -168,13 +144,26 @@
                     self.detailed_result = data.detailed_result
                     self.fact_sheet_answers = data.fact_sheet_answers
 
-                    _.forEach(data.logs, (item) => {
-                        $.get(item.data_file)
-                            .done(function (content) {
-                                self.logs[item.name] = content
-                                self.update()
-                            })
+                    const requests = data.logs.map(item =>
+                    $.get(item.data_file)
+                        .done(content => { self.logs[item.name] = content })
+                        .fail(() => { self.logs[item.name] = "" })
+                    )
+                    // When all log files are done loading:
+                    $.when.apply($, requests).always(() => {
+                    self.rebuild_log_tabs()
+                    self.update()
+                    setTimeout(() => {
+                        const $items = $(self.root).find('.ui.top.attached.menu .item')
+                        $items.tab()
+                        // pick the first tab deterministically
+                        if (self.logTabs.length) {
+                        $items.tab('change tab', self.logTabs[0].fullTabId)
+                        }
+                    }, 0)
                     })
+                    self.rebuild_log_tabs()
+                    self.update()
                     if (self.submission.admin) {
                         _.forEach(data.leaderboards, (leaderboard) => {
                             _.map(leaderboard.columns, (column) => {
@@ -213,10 +202,15 @@
 
         CODALAB.events.on('submission_clicked', () => {
             self.submission = opts.submission
+            // reset per-submission state
+            self.logs = {}
+            self.logTabs = []
+            self.activeLogTabId = null
+            // update
             self.update()
             self.update_submission_details()
             let path = self.submission.admin ? 'admin_downloads' : 'downloads'
-            $('.menu .submission-modal.item').tab('change tab', path)
+            $('.ui.large.green.pointing.menu .submission-modal.item').tab('change tab', path)
         })
     </script>
 
@@ -235,7 +229,7 @@
 
         .file-download
             margin-top 25px !important
-            margin-botton 25px !important
+            margin-bottom 25px !important
 
         .graph-frame
             height 100%
@@ -246,10 +240,16 @@
         #downloads thead tr th, #downloads tbody tr td
             font-size 16px !important
 
-        .inverted, textarea
-            color: white
-            background: #1b1c1d
-            width: 100%
-            height: 98%
+        pre.empty 
+            opacity 0.7 
+
+        .log
+            color white
+            background #1b1c1d
+
+        .log textarea
+            width 100%
+            height 98%
+
     </style>
 </submission-modal>
