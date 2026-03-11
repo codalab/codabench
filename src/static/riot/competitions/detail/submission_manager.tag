@@ -204,7 +204,14 @@
             </button>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px; margin-left: auto;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label>Per page</label>
+            <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="all">all</option>
+            </select>
 
             <div style="margin-right: 10px; color: #8c8c8c;">
                 <small>{ total_count || 0 } total</small>
@@ -239,6 +246,8 @@
                         show_visualization="{opts.competition.enable_detailed_results}"
                         submission="{child}"></submission-modal>
                 </div>
+
+
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
                     <submission-scores leaderboards="{leaderboards}"></submission-scores>
                 </div>
@@ -258,7 +267,7 @@
         self.show_is_soft_deleted = false
 
         self.page = 1
-        self.page_size = 20
+        self.page_size = 50
         self.total_count = 0
         self.total_pages = 1
         self.next = null
@@ -325,9 +334,22 @@
                         self.next = response.next || null
                         self.previous = response.previous || null
                         self.total_count = response.count || 0
-                        // prefer page_size from server if present
-                        self.page_size = response.page_size || self.page_size
-                        self.total_pages = Math.max(1, Math.ceil(self.total_count / self.page_size))
+                        if (response && typeof response.page_size !== 'undefined') {
+                            const rsp = String(response.page_size).toLowerCase()
+                            if (rsp === 'all') {
+                                self.page_size = 'all'
+                            } else {
+                                const n = Number(response.page_size)
+                                self.page_size = isNaN(n) ? self.page_size : n
+                            }
+                        }
+
+                        if (String(self.page_size).toLowerCase() === 'all') {
+                            self.total_pages = 1
+                        } else {
+                            const ps = Number(self.page_size) || 1
+                            self.total_pages = Math.max(1, Math.ceil(self.total_count / ps))
+                        }
                     } else {
                         results = response || []
                         self.next = null
@@ -377,9 +399,18 @@
         }
 
         self.change_page_size = function (e) {
-            const val = (e && e.target && e.target.value) ? parseInt(e.target.value, 10) : parseInt(self.page_size, 10)
-            if (!val || val <= 0) return
-            self.page_size = val
+            const raw = (e && e.target && typeof e.target.value !== 'undefined') ? String(e.target.value).toLowerCase() : String(self.page_size).toLowerCase()
+
+            if (raw === 'all') {
+                self.page_size = 'all'
+            } else {
+                const val = parseInt(raw, 10)
+                if (isNaN(val) || val <= 0) return
+                // n'autorise que 50,100,500
+                if (![50, 100, 500].includes(val)) return
+                self.page_size = val
+            }
+
             self.page = 1  // reset to first page when page size changes
             self.update_submissions()
         }
