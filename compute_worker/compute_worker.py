@@ -704,6 +704,10 @@ class Run:
         # Creating this and setting 2 values to None in case there is not enough time for the worker to get logs, otherwise we will have errors later on
         logs_Unified = [None, None]
 
+        # To store on-going logs and avoid empty logs returning to the platform
+        stdout_chunks = []
+        stderr_chunks = []
+
         # Create a websocket to send the logs in real time to the codabench instance
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
         websocket = None
@@ -753,7 +757,9 @@ class Run:
                     "Show the logs and stream them to codabench " + container.get("Id")
                 )
                 for log in container_LogsDemux:
-                    if str(log[0]) != "None":
+                    # Output
+                    if log[0] is not None:
+                        stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
                         try:
                             if websocket is not None:
@@ -762,8 +768,10 @@ class Run:
                                 )
                         except Exception as e:
                             logger.error(e)
-
-                    elif str(log[1]) != "None":
+                    
+                    # Errors
+                    elif log[1] is not None:
+                        stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
                         try:
                             if websocket is not None:
@@ -785,13 +793,17 @@ class Run:
         # Get the return code of the competition container once done
         try:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
-            logs_Unified = client.attach(container, logs=True, demux=True)
             return_Code = client.wait(container)
+            logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
             logger.debug(
                 f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
             )
             if websocket is not None:
-                await websocket.close()
+                try:
+                    await websocket.close()
+                    await websocket.wait_closed()
+                except Exception as e:
+                    logger.error(e)
             client.remove_container(container, force=True)
 
             logger.debug(
@@ -1268,9 +1280,22 @@ class Run:
 
         finally:
             signal.alarm(0)
+            self.watch = False
+
+            # Cancel any remaining pending tasks before closing the loop
+            pending = [t for t in asyncio.all_tasks(loop) if not t.done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                try:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                except Exception:
+                    pass
+
+            # Close loop
             asyncio.set_event_loop(None)
             loop.close()
-            self.watch = False
+
             for kind, logs in self.logs.items():
                 if logs["end"] is not None:
                     elapsed_time = logs["end"] - logs["start"]
