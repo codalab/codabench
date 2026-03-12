@@ -259,12 +259,31 @@ def run_wrapper(run_args):
         if run.is_scoring:
             run.push_scores()
         run.push_output()
-    except (DockerImagePullException, SubmissionException, SoftTimeLimitExceeded) as e:
-        run._update_status(STATUS_FAILED, traceback.format_exc())
+    except DockerImagePullException as e:
+        msg = str(e).strip()
+        if msg:
+            msg = f"Docker image pull failed: {msg}"
+        else:
+            msg = "Docker image pull failed."
+        run._update_status(STATUS_FAILED, extra_information=msg)
+        raise
+    except SoftTimeLimitExceeded:
+        run._update_status(
+            STATUS_FAILED,
+            extra_information="Execution time limit exceeded.",
+        )
+        raise
+    except SubmissionException as e:
+        msg = str(e).strip()
+        if msg:
+            msg = f"Submission failed: {msg}. See logs for more details."
+        else:
+            msg = "Submission failed. See logs for more details."
+        run._update_status(STATUS_FAILED, extra_information=msg)
         raise
     except Exception as e:
         # Catch any exception to avoid getting stuck in Running status
-        run._update_status(STATUS_FAILED, traceback.format_exc())
+        run._update_status(STATUS_FAILED, extra_information=traceback.format_exc())
         raise
     finally:
         try:
