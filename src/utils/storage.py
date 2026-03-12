@@ -12,6 +12,7 @@ if settings.STORAGE_IS_S3:
 
         class PublicStorageClass(S3Boto3Storage):
             bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", None)
+            custom_domain = getattr(settings, "AWS_S3_PUBLIC_CUSTOM_DOMAIN", "")
 
         class PrivateStorageClass(S3Boto3Storage):
             bucket_name = getattr(settings, "AWS_STORAGE_PRIVATE_BUCKET_NAME", None)
