@@ -154,8 +154,8 @@ env:
 
   RERUN_SUBMISSION_LIMIT: "30"
 
-  ENABLE_SIGN_UP: "False"
-  ENABLE_SIGN_IN: "False"
+  ENABLE_SIGN_UP: "True"
+  ENABLE_SIGN_IN: "True"
 
   STORAGE_TYPE: s3
   AWS_ACCESS_KEY_ID: <aws-access-key>
