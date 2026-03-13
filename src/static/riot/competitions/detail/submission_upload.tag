@@ -1,6 +1,7 @@
 <submission-upload>
     <div class="ui sixteen wide column submission-container">
 
+        <!-- Submission upload button -->
         <div class="submission-form">
             <h1>Submission upload</h1>
             <div if="{_.get(selected_phase, 'status') === 'Previous'}" class="ui red message">This phase has ended and no longer accepts submissions!</div>
@@ -8,23 +9,25 @@
             <form class="ui form coda-animated {error: errors}" ref="form" enctype="multipart/form-data">
                 <div class="submission-form" ref="fact_sheet_form" if="{ opts.fact_sheet !== null}">
                     <h2>Metadata or Fact Sheet</h2>
-                    <div class="submission-form-question" each="{ question in opts.fact_sheet }">
-                        <span if="{ question.type === 'text' }">
-                            <label if="{question.is_required == 'true'}" class="required-answer" for="{ question.key }">{ question.title }:</label>
-                            <label if="{question.is_required == 'false'}" for="{ question.key }">{ question.title }:</label>
-                            <input type="text" name="{ question.key }">
-                        </span>
-                        <span if="{ question.type === 'checkbox' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <input type="hidden" name="{ question.key }" value="false">
-                            <input type="checkbox" name="{ question.key }" value="true">
-                        </span>
-                        <span if="{ question.type == 'select' }">
-                            <label for="{ question.key }">{ question.title }:</label>
-                            <select name="{ question.key }">
-                                <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
-                            </select>
-                        </span>
+                    <div class="fact-sheet-scroll">
+                        <div class="submission-form-question" each="{ question in opts.fact_sheet }">
+                            <span if="{ question.type === 'text' }">
+                                <label if="{question.is_required == 'true'}" class="required-answer" for="{ question.key }">{ question.title }:</label>
+                                <label if="{question.is_required == 'false'}" for="{ question.key }">{ question.title }:</label>
+                                <input type="text" name="{ question.key }">
+                            </span>
+                            <span if="{ question.type === 'checkbox' }">
+                                <label for="{ question.key }">{ question.title }:</label>
+                                <input type="hidden" name="{ question.key }" value="false">
+                                <input type="checkbox" name="{ question.key }" value="true">
+                            </span>
+                            <span if="{ question.type == 'select' }">
+                                <label for="{ question.key }">{ question.title }:</label>
+                                <select name="{ question.key }">
+                                    <option each="{ selection_opt in question.selection }" value="{ selection_opt }">{ selection_opt }</option>
+                                </select>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -70,12 +73,14 @@
             </form>
         </div>
 
+        <!-- Upload progress bar -->
         <div class="ui indicating progress" ref="progress">
             <div class="bar">
                 <div class="progress">{ upload_progress }%</div>
             </div>
         </div>
 
+        <!-- Submission Output-->
         <div class="ui styled fluid accordion submission-output-container {hidden: _.isEmpty(selected_submission) || selected_phase.hide_output || _.isEmpty(selected_submission.filename)}"
              ref="accordion">
             <div class="title">
@@ -85,7 +90,15 @@
             <div class="ui basic segment">
                 <div class="content">
                     <div id="submission-output" class="ui" ref="submission-output">
-                        <div class="header">Output</div>
+                        <!-- Header : Output + Autoscroll toggle -->
+                        <div class="header output-header">
+                            <span class="output-title">Output</span>
+                            <div class="ui checkbox autoscroll-toggle" ref="autoscroll_checkbox">
+                                <input type="checkbox" checked/>
+                                <label>Autoscroll Output</label>
+                            </div>
+                        </div>
+                        <!-- Output logs -->
                         <div class="content">
                             <div if="{!ingestion_during_scoring}">
                                 <div if="{_.isEmpty(children)}">
@@ -94,10 +107,6 @@
                                                 ref="submission_output"
                                                 detailed_result_url="{detailed_result_urls[selected_submission.id]}"
                                                 show_graph="{opts.competition.enable_detailed_results}"></log_window>
-                                    <div class="ui checkbox" ref="autoscroll_checkbox">
-                                        <input type="checkbox" checked/>
-                                        <label>Autoscroll Output</label>
-                                    </div>
                                 </div>
                                 <div if="{children}">
                                     <div class="ui secondary menu submission-tabs">
@@ -147,11 +156,11 @@
             </div>
         </div>
     </div>
+
     <script>
         var self = this
 
         self.mixin(ProgressBarMixin)
-
         self.chart = undefined
         self.errors = {}
         self.lines = {}
@@ -468,7 +477,6 @@
                     }
                     dropdown.attr('disabled', 'disabled')
 
-
                     // Call start_submission with dataset key
                     // start_submission returns submission key
                     CODALAB.api.create_submission({
@@ -582,6 +590,23 @@
                 font-weight 600
 
         #submission-output
+
+            .output-header
+                display flex
+                align-items center
+                justify-content space-between
+                gap 12px
+
+            .output-title
+                font-weight 700
+
+            .autoscroll-toggle
+                margin 0
+                white-space nowrap
+
+                label
+                    font-weight normal
+
             .submission-tabs
                 overflow-x scroll
                 padding-bottom 10px
@@ -614,6 +639,11 @@
         .graph-container
             display block
             height 250px
+
+        .fact-sheet-scroll
+            max-height: min(50vh, 520px)
+            overflow-y: auto
+            padding-right: 8px
 
     </style>
 </submission-upload>
