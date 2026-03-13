@@ -1,0 +1,24 @@
+charset utf-8;
+client_max_body_size 0;
+proxy_buffering off;
+proxy_request_buffering off;
+sendfile on;
+gzip on;
+
+location ~ /static/(.*) {
+    autoindex off;
+    access_log off;
+    include /etc/nginx/mime.types;
+    root /var/www/django/;
+}
+location ~ /media/(.*) {
+    autoindex off;
+    access_log off;
+    include /etc/nginx/mime.types;
+    root /var/www/django;
+}
+location /favicon.ico {
+    autoindex off;
+    access_log off;
+    alias /var/www/django/static/img/favicon.ico;
+}

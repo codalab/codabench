@@ -44,3 +44,5 @@ caddy_data/
 home_page_counters.json
 my-postgres.conf
 tests/config/state.json
+state.json
+certs/
