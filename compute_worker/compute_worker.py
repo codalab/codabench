@@ -240,6 +240,8 @@ def rewrite_bundle_url_if_needed(url):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+    # We need to convert the UUID given by celery into a byte like object otherwise things will break
+    run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
 
@@ -1183,14 +1185,14 @@ class Run:
 
         logger.info("Running scoring program, and then ingestion program")
         loop = asyncio.new_event_loop()
+        # Set the event loop for the gather
+        asyncio.set_event_loop(loop)
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind="program"),
             self._run_program_directory(ingestion_program_dir, kind="ingestion"),
             self.watch_detailed_results(),
-            loop=loop,
             return_exceptions=True,
         )
-
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
@@ -1278,6 +1280,9 @@ class Run:
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
         signal.alarm(0)
+        # Ensure loop is cleaned up
+        loop.close()
+        asyncio.set_event_loop(None)
 
         if self.is_scoring:
             # Check if scoring program failed

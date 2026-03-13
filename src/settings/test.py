@@ -4,7 +4,10 @@ from settings.base import *  # noqa: F401,F403
 DEBUG = True
 
 CELERY_TASK_ALWAYS_EAGER = True
-
+INSTALLED_APPS += ('debug_toolbar',)
+MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
+              'querycount.middleware.QueryCountMiddleware',
+              ) + MIDDLEWARE
 # Don't use whitenoise -- so we don't get exceptions for missing files
 
 STORAGES["staticfiles"] = {

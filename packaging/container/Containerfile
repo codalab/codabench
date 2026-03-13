@@ -1,16 +1,16 @@
 FROM almalinux:10-minimal
+
 RUN microdnf install -y tar gzip
 
 ENV PYTHONUNBUFFERED=1
 
 # Install UV and add paths to PATH for uv and the future .venv created by uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && microdnf remove -y tar gzip && microdnf clean all
 ENV PATH=$PATH:/root/.local/bin
 ENV PATH=$PATH:/.venv/bin
 
-
-COPY pyproject.toml ./
-COPY uv.lock ./
+# Copy pyproject and uv.lock
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies
 RUN uv sync --all-extras --frozen

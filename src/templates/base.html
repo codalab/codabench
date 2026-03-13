@@ -125,7 +125,7 @@
                                 <div class="header">My Resources</div>
                                 <a class="item" href="{% url 'competitions:management' %}"><i class="icon bi bi-trophy"></i>Competitions</a>
                                 <a selenium="resources" class="item" href="{% url 'tasks:task_management' %}"><i class="icon bi bi-folder"></i>Resources</a>
-                                 <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
+                                <a class="item" href="{% url 'queues:management' %}"><i class="icon bi bi-hourglass"></i>Queues</a>
                                 <div class="ui divider"></div>
                                 <!-- Account -->
                                 <div class="header">Account</div>
@@ -134,7 +134,9 @@
                                 <a class="item" href="{% url 'accounts:user_account' username=user.username %}"><i class="icon bi bi-gear"></i>Settings</a>
                                 <a class="item" href="{% url 'profiles:user_notifications' username=user.username %}"></i><i class="icon bi bi-bell"></i>Notifications</a>
                                 <a class="item" href="{% url 'accounts:password_reset' %}"><i class="icon bi bi-lock"></i>Change Password</a>
-                                <a class="item" href="{% url 'accounts:logout' %}"><i class="icon bi bi-door-open"></i>Logout</a>
+
+                                <a class="item" href="{% url 'accounts:logout' %}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="icon bi bi-door-open"></i>Logout</a>
+                                <form id="logout-form" method="post" action="{% url 'accounts:logout' %}" style="display:none;">{% csrf_token %}</form>
                                 <div class="ui divider"></div>
 
                                 <div class="header">Organizations</div>
@@ -312,7 +314,7 @@
             },
             // Forums
             FORUM: function (pk) {
-               return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
+                return "{% url "forums:forum_detail" forum_pk=0 %}".replace(0, pk)
             },
             // Datasets
             DATASET_MANAGEMENT: "{% url "datasets:management" %}",
