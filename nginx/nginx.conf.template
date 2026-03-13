@@ -47,6 +47,7 @@ http {
     acme_issuer letsencrypt {
         uri         https://acme-v02.api.letsencrypt.org/directory;
         contact   ${EMAIL};
+        #ssl_trusted_certificate /path/to/root_ca.crt;
         state_path  /var/cache/nginx/acme-letsencrypt;
 
         accept_terms_of_service;
@@ -92,7 +93,6 @@ http {
 
             proxy_pass http://django:8000;
         }
-        # MinIO console
         include extra/maintenance.conf;
 
     }
