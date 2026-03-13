@@ -19,15 +19,21 @@ USE_X_FORWARDED_HOST = True
 csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 
-CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
-CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+if os.environ.get("EXTERNAL_DOMAIN_NAME", "") != "":
+    csrf_https_external_domain = "https://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    csrf_http_external_domain = "http://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
 
-SITE_ID = 1
+    DOMAIN_NAME = os.environ.get('EXTERNAL_DOMAIN_NAME').split(':')[0]
+else:
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+
+    DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
-DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
-
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+SITE_ID = 1
 
 
 THIRD_PARTY_APPS = (

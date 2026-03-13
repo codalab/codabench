@@ -2,32 +2,64 @@
     <!--  HTML  -->
     <div class="background">
         <div id="profile_wrapper" class="ui two column doubling stackable grid container">
+
+            <!-- First Column -->
             <div class="column">
                 <div if="{!selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="/static/img/user-avatar.png"></div>
                 <div if="{selected_user.photo}"><img id="avatar" class="ui centered small rounded image" src="{selected_user.photo}"></div>
 
-                <!-- Competition Divider -->
-                <div class="ui horizontal divider">Organizations</div>
+                <!-- Organizations -->
+                <div if="{selected_user.organizations && selected_user.organizations.length}">
+                    <div class="ui horizontal divider">Organizations</div>
 
-                <!-- Competition Cards -->
-                <div each="{org in selected_user.organizations}" class="ui fluid card">
-                    <div class="comp_card center aligned image">
-                        <div  class="comp_header center aligned header content">
-                            <div class="comp_name">{org.name}</div>
-                            <img class="ui centered mini circular image"
-                                 src="{org.photo}">
+                    <div each="{org in selected_user.organizations}" class="ui fluid card">
+                        <div class="comp_card center aligned image">
+                            <div  class="comp_header center aligned header content">
+                                <div class="comp_name">{org.name}</div>
+                                <img class="ui centered mini circular image"
+                                    src="{org.photo}">
+                            </div>
+                        </div>
+                        <div class="content">
+                            <div class="description">
+                                <p>{ org.description.length > 225 ? org.description.substring(0, 222) + "..." : org.description}</p>
+                            </div>
+                        </div>
+                        <div class="right aligned extra content">
+                            <a class="status" href="/profiles/organization/{org.id}/">
+                                View Organization
+                                <i class="angle right icon"></i>
+                            </a>
                         </div>
                     </div>
-                    <div class="content">
-                        <div class="description">
-                            <p>{ org.description.length > 225 ? org.description.substring(0, 222) + "..." : org.description}</p>
+                </div>
+
+                <!-- Competitions Organized -->
+                <div if="{selected_user.competitions_organized && selected_user.competitions_organized.length}">
+                    <div class="ui horizontal divider">Competitions Organized</div>
+
+                    <div each="{competition in selected_user.competitions_organized}">
+                    <!-- tile-wrapper from public-list.tag -->
+                        <div class="tile-wrapper">
+                            <div class="ui square tiny bordered image img-wrapper">
+                                <img src="{competition.logo_icon ? competition.logo_icon : competition.logo}" loading="lazy">
+                            </div>
+                            <a class="link-no-deco" href="/competitions/{competition.id}">
+                                <div class="comp-info">
+                                <h4 class="heading">{competition.title}</h4>
+                                <p class="comp-description">{ pretty_description(competition.description) }</p>
+                                </div>
+                            </a>
+                            <div class="comp-stats">
+                                {pretty_date(competition.created_when)}
+                                <div if="{!competition.reward && ! competition.report}" class="ui divider"></div>
+                                <div>
+                                <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>
+                                <span if="{competition.report}"><a href="{competition.report}" target="_blank"><img width="30" height="30" src="/static/img/paper.png"></a></span>
+                                </div>
+                                <strong>{competition.participants_count}</strong> Participants
+                            </div>
                         </div>
-                    </div>
-                    <div class="right aligned extra content">
-                        <a class="status" href="/profiles/organization/{org.id}/">
-                            View Organization
-                            <i class="angle right icon"></i>
-                        </a>
                     </div>
                 </div>
             </div>
@@ -95,7 +127,6 @@
                 <!--  Empty About Message  -->
                 <span if="{!selected_user.location && !selected_user.title}" class="text-placeholder">Update your profile to show your job title and location here.</span>
                 
-                
 
                 <!--  Section Bio  -->
                 <div id="horiz-margin" class="ui horizontal divider">Bio</div>
@@ -156,8 +187,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Script -->
     <script>
+        var self = this
         self.selected_user = selected_user
+
+        self.pretty_date = function (date_string) {
+            return !!date_string ? luxon.DateTime.fromISO(date_string).toLocaleString(luxon.DateTime.DATE_FULL) : ''
+        }
+
+        self.pretty_description = function (description) {
+            return description.substring(0, 120) + (description.length > 120 ? '...' : '') || ''
+        }
     </script>
   
     <!--  CSS Styling   -->
@@ -253,5 +295,90 @@
         .value
             font-size 15px
             margin-left 10px
+
+        /* Competition cards (from public-list.tag) */
+        .link-no-deco
+            all unset
+            text-decoration none
+            cursor pointer
+            width 100%
+
+        .tile-wrapper
+            border solid 1px gainsboro
+            display inline-flex
+            background-color #fff
+            transition all 75ms ease-in-out
+            color #909090
+            width 100%
+            margin-bottom 6px
+
+        .tile-wrapper:hover
+            box-shadow 0 3px 4px -1px #cac9c9ff
+            transition all 75ms ease-in-out
+            background-color #e6edf2
+            border solid 1px #a5b7c5
+
+        .comp-stats
+            background-color #344d5e
+            transition background-color 75ms ease-in-out
+
+        .img-wrapper
+            padding 5px
+            align-self center
+
+        .img-wrapper img
+            max-height 60px !important
+            max-width 60px !important
+            margin 0 auto
+
+        .comp-info
+            flex 1
+            padding 0 10px
+
+        .comp-info .heading
+            text-align left
+            padding 5px
+            color #1b1b1b
+            margin-bottom 0
+
+        .comp-info .comp-description
+            text-align left
+            font-size 13px
+            line-height 1.15em
+            margin 0.35em
+
+        .organizer
+            font-size 13px
+            text-align left
+            margin 0.35em
+
+        .comp-stats
+            background #405e73
+            color #e8e8e8
+            padding 10px
+            text-align center
+            font-size 12px
+            width 140px
+
+        .loading-indicator
+            display flex
+            align-items center
+            padding 10px 0
+            width 100%
+            margin 0 auto
+
+        .spinner
+            border 4px solid rgba(0,0,0,.1)
+            width 28px
+            height 28px
+            border-radius 50%
+            border-top-color #3498db
+            animation spin 1s ease-in-out infinite
+
+        @keyframes spin
+            0%
+                transform rotate(0deg)
+            100%
+                transform rotate(360deg)
     </style>
 </profile-detail>

@@ -153,7 +153,6 @@ class Competition(models.Model):
                 created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
-                task=submission.task,
                 owner=submission.owner,
                 data=submission.data,
             )
@@ -670,8 +669,8 @@ class Submission(models.Model):
             # If a custom queue is set, we need to fetch the appropriate celery app
             if self.phase.competition.queue:
                 celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
-
-            celery_app.control.revoke(self.celery_task_id, terminate=True)
+            # We need to convert the UUID given by celery into a byte like object otherwise it won't work
+            celery_app.control.revoke(str(self.celery_task_id), terminate=True)
             self.status = status
             self.save()
             return True
