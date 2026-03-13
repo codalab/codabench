@@ -1,7 +1,8 @@
 import zipfile
 import json
 import csv
-from collections import OrderedDict
+import re
+from collections import OrderedDict, defaultdict
 from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
@@ -36,6 +37,12 @@ from utils.data import make_url_sassy
 from api.permissions import IsOrganizerOrCollaborator
 from django.db import transaction
 from django.conf import settings
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 class CompetitionViewSet(ModelViewSet):
@@ -431,9 +438,12 @@ class CompetitionViewSet(ModelViewSet):
             generated_columns = OrderedDict()
             for task in phase['tasks']:
                 for col in leaderboard.columns.all():
+                    # key by column_key-taskid
                     generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
             for submission in phase['submissions']:
-                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
+                # Use submission id to make each submission (parent or child) unique.
+                # This prevents multiple children of the same parent being merged.
+                submission_key = f'{submission["owner"]}-{submission["id"]}'
                 if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
                     leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
                     if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
@@ -442,9 +452,17 @@ class CompetitionViewSet(ModelViewSet):
                     for col_title in generated_columns.values():
                         leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({col_title: ""})
                 for score in submission['scores']:
-                    score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
+                    # make task id lookup robust: submission['task'] might be an int or dict with an 'id' key
+                    task_id = submission['task'] if isinstance(submission['task'], int) else (submission['task'].get('id') if submission.get('task') else None)
+                    if task_id is None:
+                        # skip if no task info
+                        continue
+                    key = f'{score["column_key"]}-{task_id}'
+                    if key in generated_columns:
+                        score_column = generated_columns[key]
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
         return leaderboard_data
+    
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
     def results(self, request, pk, format='json'):
@@ -767,104 +785,455 @@ class PhaseViewSet(ModelViewSet):
             return Response({"count": rerun_count})
         else:
             raise PermissionDenied(error_message)
-
-    # @swagger_auto_schema(responses={200: PhaseResultsSerializer})
+        
     @extend_schema(responses={200: PhaseResultsSerializer})
     @action(detail=True, methods=['GET'], permission_classes=[AllowAny])
     def get_leaderboard(self, request, pk):
-        phase = self.get_object()
-        if phase.competition.fact_sheet:
-            fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
-                               for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
-        else:
+        try:
+            phase = self.get_object()
+            logger.info("===== LEADERBOARD ENTRY =====")
+            logger.debug(f"Requested phase pk: {pk}; resolved phase id: {getattr(phase, 'id', None)}")
+
             fact_sheet_keys = None
-        query = LeaderboardPhaseSerializer(phase).data
-        response = {
-            'title': query['leaderboard']['title'],
-            'id': phase.id,
-            'submissions': [],
-            'tasks': [],
-            'fact_sheet_keys': fact_sheet_keys or None,
-            'primary_index': query['leaderboard']['primary_index']
-        }
-        columns = [col for col in query['columns']]
-        submissions_keys = {}
-        submission_detailed_results = {}
-        for submission in query['submissions']:
-            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
-            # gather detailed result from submissions for each task
-            # detailed_results are gathered based on submission key
-            # `id` is used to fetch the right detailed result in detailed results page
-            # `detailed_result` url is not needed
-            submission_detailed_results.setdefault(submission_key, []).append({
-                # 'detailed_result': submission['detailed_result'],
-                'task': submission['task'],
-                'id': submission['id']
-            })
+            try:
+                if phase.competition.fact_sheet:
+                    fact_sheet_keys = [
+                        (phase.competition.fact_sheet[q]['key'], phase.competition.fact_sheet[q]['title'])
+                        for q in phase.competition.fact_sheet
+                        if str(phase.competition.fact_sheet[q].get('is_on_leaderboard', '')).lower() == 'true'
+                    ]
+            except Exception:
+                logger.exception("Error reading competition.fact_sheet; continuing without fact_sheet_keys.")
 
-            if submission_key not in submissions_keys:
-                submissions_keys[submission_key] = len(response['submissions'])
-                response['submissions'].append({
-                    'id': submission['id'],
-                    'owner': submission['display_name'] or submission['owner'],
-                    'scores': [],
-                    'detailed_results': [],
-                    'fact_sheet_answers': submission['fact_sheet_answers'],
-                    'slug_url': submission['slug_url'],
-                    'organization': submission['organization'],
-                    'created_when': submission['created_when']
-                })
-            for score in submission['scores']:
+            try:
+                query = LeaderboardPhaseSerializer(phase).data
+            except Exception:
+                logger.exception("Failed to serialize phase with LeaderboardPhaseSerializer.")
+                return Response({"detail": "Failed to serialize leaderboard data."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                # to check if a column is found
-                # this is useful because of `hidden` field
-                # if a column is hidden it will not be shown here so
-                # we will not return that score to the front-end
-                column_found = False
-                # default precision is set to 2
-                precision = 2
-                # default hidden is set to false
-                hidden = False
+            serialized_submissions = list(query.get('submissions', []))
 
-                # loop over columns to find a column with the same index
-                # replace default precision with column precision
-                for col in columns:
-                    if col["index"] == score["index"]:
-                        precision = col["precision"]
-                        hidden = col["hidden"]
-                        column_found = True
-                        break
+            logger.warning("===== LEADERBOARD DEBUG START =====")
+            logger.warning(f"Phase ID: {getattr(phase, 'id', None)}")
+            logger.warning(f"Number of serialized submissions: {len(serialized_submissions)}")
+            logger.debug(f"Serialized submissions sample (first 8): {serialized_submissions[:8]}")
 
-                tempScore = score
-                tempScore['task_id'] = submission['task']
-                # round the score to 'precision' decimal points
-                tempScore['score'] = str(round(float(tempScore["score"]), precision))
-
-                # only add scores to the scores list
-                # if this column is found
-                # and
-                # column is not hidden
-                if column_found and not hidden:
-                    response['submissions'][submissions_keys[submission_key]]['scores'].append(tempScore)
-
-        # put detailed results in its submission
-        for k, v in submissions_keys.items():
-            response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
-
-        for task in query['tasks']:
-            # This can be used to rendered variable columns on each task
-            tempTask = {
-                'name': task['name'],
-                'id': task['id'],
-                'colWidth': len(columns),
-                'columns': [],
+            response = {
+                'title': query.get('leaderboard', {}).get('title'),
+                'id': phase.id,
+                'submissions': [],
+                'tasks': [],
+                'groups': [],
+                'fact_sheet_keys': fact_sheet_keys or None,
+                'primary_index': query.get('leaderboard', {}).get('primary_index')
             }
+
+            columns = [col for col in query.get('columns', []) or []]
+            logger.debug(f"Columns loaded: {[c.get('key') for c in columns]}")
+
+            group_order = []
+            try:
+                part_groups = getattr(phase.competition, "participant_groups", None)
+                if part_groups is not None:
+                    try:
+                        group_order = [g.name for g in part_groups.all()]
+                    except Exception:
+                        try:
+                            group_order = list(part_groups)
+                        except Exception:
+                            group_order = []
+            except Exception:
+                logger.exception("Error reading competition.participant_groups; ignoring.")
+            logger.debug(f"Initial group_order from competition: {group_order}")
+
+            tasks_in_query = query.get('tasks') or []
+            logger.debug(f"Tasks in query count: {len(tasks_in_query)}")
+
+            child_parent_group = defaultdict(dict)
+            children_by_parent = defaultdict(list)
+            seen_groups = set()
+            for s in serialized_submissions:
+                if not s.get('parent'):
+                    continue
+                parent_id = s['parent']
+                gid_raw = None
+                org = s.get('organization')
+                if isinstance(org, dict):
+                    gid_raw = org.get('name')
+                elif isinstance(org, str) and org:
+                    gid_raw = org
+                if not gid_raw:
+                    sd = s.get('status_details')
+                    if isinstance(sd, dict):
+                        gid_raw = sd.get('group') or sd.get('group_name') or sd.get('name')
+                    elif sd:
+                        gid_raw = str(sd)
+                if not gid_raw:
+                    owner = s.get('owner')
+                    if isinstance(owner, dict) and owner.get('username'):
+                        gid_raw = owner.get('username')
+                    elif isinstance(owner, str):
+                        gid_raw = owner
+                    else:
+                        gid_raw = f'group-{s.get("id")}'
+
+                gid_final = gid_raw
+                matched = None
+                if group_order:
+                    low_raw = (gid_raw or "").lower()
+                    group_order_lower = [g.lower() for g in group_order]
+                    if low_raw in group_order_lower:
+                        matched = group_order[group_order_lower.index(low_raw)]
+                    if not matched:
+                        for g in group_order:
+                            if low_raw and low_raw in (g or "").lower():
+                                matched = g
+                                break
+                            if (g or "").lower() and (g or "").lower() in low_raw:
+                                matched = g
+                                break
+                    if not matched:
+                        digits = re.findall(r'\d+', gid_raw or "")
+                        if digits:
+                            for d in digits:
+                                for g in group_order:
+                                    if d in (g or ""):
+                                        matched = g
+                                        break
+                                if matched:
+                                    break
+                    if matched:
+                        gid_final = matched
+                        logger.info(f"Child {s.get('id')} gid_raw='{gid_raw}' matched to canonical group '{gid_final}'")
+                    else:
+                        logger.debug(f"Child {s.get('id')} gid_raw='{gid_raw}' did NOT match any canonical group; keeping raw key.")
+
+                child_parent_group[parent_id][gid_final] = s
+                children_by_parent[parent_id].append(s)
+                seen_groups.add(gid_final)
+                logger.debug(f"Mapped child {s.get('id')} -> parent {parent_id} as group key '{gid_final}' (raw='{gid_raw}')")
+
+            if not group_order and seen_groups:
+                if len(seen_groups) > 1:
+                    group_order = sorted(list(seen_groups))
+                    logger.info(f"Fallback group_order from seen_groups (multiple keys): {group_order}")
+                else:
+                    if len(tasks_in_query) > 1:
+                        logger.info("Detected multi-task phase and only one seen_group -> skip using seen_groups as groups (treat as multi-task legacy).")
+                    else:
+                        group_order = sorted(list(seen_groups))
+                        logger.info(f"Fallback group_order from seen_groups (single key, single-task): {group_order}")
+
+            if group_order:
+                response['groups'] = [{'name': g, 'colCount': len(columns)} for g in group_order]
+                logger.info(f"Group order determined: {group_order}")
+            else:
+                logger.info("No participant groups found / used for this leaderboard.")
+
+            submissions_keys = {}
+            submission_detailed_results = {}
+            row_parent_map = {}
+
+            is_multi_task = (not group_order) and (len(tasks_in_query) > 1)
+            logger.debug(f"is_multi_task={is_multi_task} (group_order present? {bool(group_order)} tasks_count={len(tasks_in_query)})")
+
+            if group_order:
+                parent_ids = set()
+
+                for s in serialized_submissions:
+                    if s.get('parent'):
+                        parent_ids.add(s.get('parent'))
+                    else:
+                        parent_ids.add(s.get('id'))
+
+                for parent_id in parent_ids:
+                    parent_entry = next(
+                        (x for x in serialized_submissions if x.get('id') == parent_id and not x.get('parent')),
+                        None
+                    )
+
+                    if parent_entry:
+                        owner = parent_entry.get('display_name') or parent_entry.get('owner')
+                        slug = parent_entry.get('slug_url')
+                        org = parent_entry.get('organization')
+                        created = parent_entry.get('created_when')
+                        fact_sheet = parent_entry.get('fact_sheet_answers')
+                    else:
+                        child = children_by_parent.get(parent_id, [None])[0]
+                        owner = (child.get('display_name') or child.get('owner')) if child else "unknown"
+                        slug = child.get('slug_url') if child else None
+                        org = child.get('organization') if child else None
+                        created = child.get('created_when') if child else None
+                        fact_sheet = child.get('fact_sheet_answers') if child else {}
+
+                    submission_key = str(parent_id)
+                    submissions_keys[submission_key] = len(response['submissions'])
+
+                    response['submissions'].append({
+                        'id': parent_id,
+                        'owner': owner,
+                        'scores': [],
+                        'detailed_results': [],
+                        'fact_sheet_answers': fact_sheet,
+                        'slug_url': slug,
+                        'organization': org,
+                        'created_when': created
+                    })
+
+                    row_parent_map[submission_key] = parent_id
+
+            else:
+                for submission in serialized_submissions:
+                    if is_multi_task:
+                        submission_key = f"{submission.get('owner')}"
+                    else:
+                        submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
+
+                    submission_detailed_results.setdefault(submission_key, []).append({
+                        'task': submission.get('task'),
+                        'id': submission.get('id')
+                    })
+
+                    if submission_key not in submissions_keys:
+                        submissions_keys[submission_key] = len(response['submissions'])
+                        response['submissions'].append({
+                            'id': submission.get('id'),
+                            'owner': submission.get('display_name') or submission.get('owner'),
+                            'scores': [],
+                            'detailed_results': [],
+                            'fact_sheet_answers': submission.get('fact_sheet_answers'),
+                            'slug_url': submission.get('slug_url'),
+                            'organization': submission.get('organization'),
+                            'created_when': submission.get('created_when')
+                        })
+                        row_parent_map[submission_key] = submission.get('parent') if submission.get('parent') else submission.get('id')
+
+            if not group_order and not is_multi_task:
+                parent_candidates = set()
+                for s in serialized_submissions:
+                    if s.get('parent'):
+                        parent_candidates.add(s.get('parent'))
+                    else:
+                        parent_candidates.add(s.get('id'))
+
+                for parent_id in parent_candidates:
+                    parent_entry = next((x for x in serialized_submissions if x.get('id') == parent_id and not x.get('parent')), None)
+                    if parent_entry:
+                        parent_owner = parent_entry.get('owner')
+                    else:
+                        first_child = children_by_parent.get(parent_id, [None])[0]
+                        parent_owner = first_child.get('owner') if first_child else f'unknown-{parent_id}'
+
+                    submission_key = f"{parent_owner}{parent_id}"
+                    if submission_key not in submissions_keys:
+                        logger.info(f"Creating synthetic parent row for parent_id={parent_id} submission_key='{submission_key}'")
+                        submissions_keys[submission_key] = len(response['submissions'])
+                        if parent_entry:
+                            row_owner = parent_entry.get('display_name') or parent_entry.get('owner')
+                            slug = parent_entry.get('slug_url')
+                            org = parent_entry.get('organization')
+                            created = parent_entry.get('created_when')
+                            fact_sheet = parent_entry.get('fact_sheet_answers')
+                        else:
+                            child = children_by_parent.get(parent_id, [None])[0]
+                            row_owner = (child.get('display_name') or child.get('owner')) if child else parent_owner
+                            slug = child.get('slug_url') if child else None
+                            org = child.get('organization') if child else None
+                            created = child.get('created_when') if child else None
+                            fact_sheet = child.get('fact_sheet_answers') if child else {}
+
+                        response['submissions'].append({
+                            'id': parent_id,
+                            'owner': row_owner,
+                            'scores': [],
+                            'detailed_results': [],
+                            'fact_sheet_answers': fact_sheet,
+                            'slug_url': slug,
+                            'organization': org,
+                            'created_when': created
+                        })
+                        row_parent_map[submission_key] = parent_id
+
+            for k, v in submissions_keys.items():
+                response['submissions'][v]['detailed_results'] = submission_detailed_results.get(k, [])
+
+            for parent_id, children in list(children_by_parent.items()):
+                try:
+                    num_children = len(children)
+                    num_groups = len(group_order)
+                    assigned_groups = set(child_parent_group[parent_id].keys())
+                    if num_groups and num_children == num_groups and not set(group_order).issubset(assigned_groups):
+                        logger.warning(f"Fallback mapping: parent {parent_id} has {num_children} children and competition defines {num_groups} groups; remapping children to groups by child id order.")
+                        sorted_children = sorted(children, key=lambda c: (c.get('id') or 0))
+                        child_parent_group[parent_id].clear()
+                        for idx, child in enumerate(sorted_children):
+                            g = group_order[idx]
+                            child_parent_group[parent_id][g] = child
+                            child['_group_name'] = g
+                            logger.info(f"Fallback assigned child {child.get('id')} -> parent {parent_id} -> group '{g}'")
+                        children_by_parent[parent_id] = sorted_children
+                except Exception:
+                    logger.exception(f"Error during fallback group distribution for parent {parent_id}")
+
+            columns_by_index = {}
             for col in columns:
-                tempTask['columns'].append(col)
-            response['tasks'].append(tempTask)
-        return Response(response)
+                idx = col.get('index')
+                if idx is not None:
+                    columns_by_index[int(idx)] = col
 
+            task_fallback_id = None
+            if tasks_in_query:
+                try:
+                    task_fallback_id = tasks_in_query[0].get('id')
+                except Exception:
+                    task_fallback_id = None
 
+            if not group_order:
+                logger.debug("Filling scores in legacy (no groups) mode.")
+                for submission in serialized_submissions:
+                    if is_multi_task:
+                        submission_key = f"{submission.get('owner')}"
+                    else:
+                        submission_key = f"{submission.get('owner')}{submission.get('parent') or submission.get('id')}"
+                    row_idx = submissions_keys.get(submission_key)
+                    if row_idx is None:
+                        continue
+                    for score in submission.get('scores', []) or []:
+                        score_index = score.get("index")
+                        if score_index is None:
+                            logger.debug(f"Skipping score without index on submission {submission.get('id')}: {score}")
+                            continue
+
+                        col = columns_by_index.get(int(score_index))
+                        if not col:
+                            logger.debug(f"No column found for score index {score_index} on submission {submission.get('id')}; skipping.")
+                            continue
+
+                        if col.get("hidden", False):
+                            logger.debug(f"Column index {score_index} is hidden; skipping score for submission {submission.get('id')}")
+                            continue
+
+                        precision = col.get("precision", 2)
+                        try:
+                            precision_int = int(precision)
+                        except Exception:
+                            precision_int = 2
+
+                        tempScore = dict(score)
+                        tempScore['task_id'] = submission.get('task') if submission.get('task') is not None else task_fallback_id
+                        try:
+                            tempScore['score'] = str(round(float(tempScore.get("score")), precision_int))
+                        except Exception:
+                            tempScore['score'] = tempScore.get("score")
+
+                        response['submissions'][row_idx]['scores'].append(tempScore)
+                        logger.debug(f"Added legacy score to row {row_idx} (submission {submission.get('id')}): index={score_index} val={tempScore['score']} task_id={tempScore['task_id']}")
+            else:
+                logger.debug("Filling scores in grouped mode (one sub-column per group).")
+                for submission_key, row_idx in submissions_keys.items():
+                    parent_id = row_parent_map.get(submission_key)
+                    logger.debug(f"Building group cells for row {row_idx} parent_id={parent_id}")
+                    for g in group_order:
+                        child = child_parent_group.get(parent_id, {}).get(g)
+                        if child:
+                            logger.info(f"Found child {child.get('id')} for parent {parent_id} group '{g}'. child.scores={child.get('scores')}")
+                            for col in columns:
+                                found = None
+                                for s_score in child.get('scores', []) or []:
+                                    try:
+                                        if int(s_score.get('index')) == int(col.get('index')):
+                                            found = s_score
+                                            break
+                                    except Exception:
+                                        continue
+                                if found:
+                                    precision = col.get('precision') if col.get('precision') is not None else 2
+                                    try:
+                                        score_val = str(round(float(found.get('score')), int(precision)))
+                                    except Exception:
+                                        score_val = found.get('score')
+                                    logger.debug(f" -> child {child.get('id')} matched column index {col.get('index')} score {score_val}")
+                                    response['submissions'][row_idx]['scores'].append({
+                                        'id': found.get('id'),
+                                        'index': col.get('index'),
+                                        'column_key': f"{col.get('key')}__group__{g}",
+                                        'score': score_val,
+                                        'task_id': child.get('task'),
+                                        'group_name': g
+                                    })
+                                else:
+                                    logger.debug(f" -> child {child.get('id')} has NO score for column index {col.get('index')} -> placeholder")
+                                    response['submissions'][row_idx]['scores'].append({
+                                        'id': None,
+                                        'index': col.get('index'),
+                                        'column_key': f"{col.get('key')}__group__{g}",
+                                        'score': 'n/a',
+                                        'task_id': child.get('task'),
+                                        'group_name': g
+                                    })
+                        else:
+                            logger.debug(f"No child found for parent {parent_id} and group '{g}' -> adding placeholders")
+                            for col in columns:
+                                response['submissions'][row_idx]['scores'].append({
+                                    'id': None,
+                                    'index': col.get('index'),
+                                    'column_key': f"{col.get('key')}__group__{g}",
+                                    'score': 'n/a',
+                                    'task_id': None,
+                                    'group_name': g
+                                })
+
+            for task in query.get('tasks', []):
+                if not group_order:
+                    tempTask = {
+                        'name': task.get('name'),
+                        'id': task.get('id'),
+                        'colWidth': len(columns),
+                        'columns': [],
+                    }
+                    for col in columns:
+                        tempTask['columns'].append(col)
+                    response['tasks'].append(tempTask)
+                else:
+                    tempTask = {
+                        'name': task.get('name'),
+                        'id': task.get('id'),
+                        'colWidth': len(columns) * max(1, len(group_order)),
+                        'columns': [],
+                    }
+                    for g in group_order:
+                        for col in columns:
+                            tempTask['columns'].append({
+                                'id': col.get('id'),
+                                'computation': col.get('computation'),
+                                'computation_indexes': col.get('computation_indexes'),
+                                'key': f"{col.get('key')}__group__{g}",
+                                'title': col.get('title'),
+                                'group_title': g,
+                                'sorting': col.get('sorting'),
+                                'index': col.get('index'),
+                                'hidden': col.get('hidden'),
+                                'precision': col.get('precision'),
+                                'group_name': g,
+                                'task_id': task.get('id'),
+                            })
+                    response['tasks'].append(tempTask)
+
+            logger.warning("FINAL RESPONSE PREPARED FOR FRONTEND")
+            logger.warning(f"Groups: {response.get('groups')}")
+            logger.warning(f"Number of rows: {len(response.get('submissions', []))}")
+            for row in response.get('submissions', []):
+                logger.debug(f"Row {row.get('id')} owner {row.get('owner')} - scores count {len(row.get('scores', []))}")
+                logger.debug(f"Row {row.get('id')} scores sample: {row.get('scores')[:6]}")
+            logger.warning("===== LEADERBOARD DEBUG END =====")
+
+            return Response(response)
+
+        except Exception:
+            logger.exception("Unhandled exception in get_leaderboard.")
+            return Response({"detail": "Internal server error building leaderboard."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
     serializer_class = CompetitionParticipantSerializer
@@ -942,3 +1311,40 @@ class CompetitionParticipantViewSet(ModelViewSet):
             return Response({'detail': 'A message is required to send an email'}, status=status.HTTP_400_BAD_REQUEST)
         send_direct_participant_email(participant=participant, content=message)
         return Response({}, status=status.HTTP_200_OK)
+
+
+def resolve_owner_display(owner_serialized):
+    """
+    owner_serialized peut être : dict (avec id/username), int (id), str (username or 'admin-386'), or None.
+    Renvoie le username résolu; sinon renvoie une fallback string (owner_serialized) si possible; sinon None.
+    """
+    if not owner_serialized:
+        return None
+    try:
+        if isinstance(owner_serialized, dict):
+            # prefère username si présent, sinon id -> lookup
+            if owner_serialized.get('username'):
+                return str(owner_serialized.get('username'))
+            owner_id = owner_serialized.get('id') or owner_serialized.get('pk') or owner_serialized.get('user_id')
+            if owner_id:
+                return users_by_id.get(int(owner_id))
+        elif isinstance(owner_serialized, int):
+            return users_by_id.get(owner_serialized)
+        elif isinstance(owner_serialized, str):
+            # try exact username lookup
+            uname = users_by_username.get(owner_serialized)
+            if uname:
+                return uname
+            # maybe username contains dash-id like admin-386 -> we can try to match numeric id
+            if '-' in owner_serialized:
+                parts = owner_serialized.split('-')[::-1]
+                for p in parts:
+                    if p.isdigit():
+                        uid = int(p)
+                        if uid in users_by_id:
+                            return users_by_id[uid]
+            # fallback: return the raw string (useful if serializer only had username string)
+            return owner_serialized
+    except Exception:
+        logger.exception("Error resolving owner display from serialized owner.")
+    return None

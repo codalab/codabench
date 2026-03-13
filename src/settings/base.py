@@ -36,6 +36,9 @@ SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
 SITE_ID = 1
 
 
+SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+
+
 THIRD_PARTY_APPS = (
     'django_su',  # Must come before django.contrib.admin
     'ajax_select',  # For django_su
@@ -333,6 +336,48 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Logging
 # =============================================================================
 LOGGING_CONFIG = None
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {processName} {name}:{lineno} {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',
+            'formatter': 'verbose',
+        },
+    },
+
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+
+    'loggers': {
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        '__main__': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
 
 
 # This makes Celery not override the default logger that is configured for the project

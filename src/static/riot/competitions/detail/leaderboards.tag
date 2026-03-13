@@ -26,11 +26,21 @@
                 </div>
             </th>
         </tr>
+
         <tr class="task-row">
             <th>Task:</th>
             <th colspan=3></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
+
+        <tr if="{ groups && groups.length > 0 }" class="group-row">
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th each="{ group in groups }" colspan="{ group.colCount }" class="center aligned">{ group.name }</th>
+        </tr>
+
         <tr>
             <th class="center aligned">#</th>
             <th>Participant</th>
@@ -38,8 +48,10 @@
             <th>ID</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
         </tr>
+
+
+        </tr>
         </thead>
-        <!--  Always show leaderboard  -->
         <tbody>
         <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
             <td colspan="100%">
@@ -90,14 +102,11 @@
         }
        
         self.bold_class = function(column, submission){
-            // Return `text-bold` if submission has 
-            // more than one scores and score index  == leaderbaord.primary_index
-            // otherwise return empty string
-            return_class = '' // default class value
-            if(column.task_id != -1){ // factsheet check
-                if(submission.scores.length > 1){ // score length check
+            return_class = ''
+            if(column.task_id != -1){
+                if(submission.scores.length > 1){ 
                     let column_index = _.get(column, 'index')
-                    if(column_index === self.selected_leaderboard.primary_index){ // column index check
+                    if(column_index === self.selected_leaderboard.primary_index){
                         return_class = 'text-bold'
                     }
                 }
@@ -153,8 +162,8 @@
             CODALAB.api.get_leaderboard_for_render(self.phase_id)
                 .done(responseData => {
                     self.selected_leaderboard = responseData
+                    self.groups = responseData.groups || []      
                     self.columns = []
-                    // Make fake task and columns for Metadata so it can be filtered like columns
                     if(self.selected_leaderboard.fact_sheet_keys){
                         let fake_metadata_task = {
                             id: -1,
@@ -171,25 +180,16 @@
                         self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                     }
                     for(task of self.selected_leaderboard.tasks){
-
                         for(column of task.columns){
                             column.task_id = task.id
                             self.columns.push(column)
-                        }
-                        // -1 id is used for fact sheet answers
-                        if(self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1){
-                            self.columns.push({
-                              task_id: task.id,
-                              title: "Detailed Results"
-                            })
-                            task.colWidth += 1
                         }
                     }
                     self.filter_columns()
                     $('#leaderboardTable').tablesort()
                     self.update()
                 })
-        }
+            }
 
         self.get_detailed_result_submisison_id = function(column, submisison){
             for (index in submisison.detailed_results) {

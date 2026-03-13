@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from celery_config import app, app_for_vhost
 from leaderboards.models import SubmissionScore
-from profiles.models import User, Organization
+from profiles.models import CustomGroup, User, Organization
 from utils.data import PathWrapper
 from utils.storage import BundleStorage
 from PIL import Image
@@ -54,6 +54,15 @@ class Competition(models.Model):
     show_detailed_results_in_leaderboard = models.BooleanField(default=True)
     make_programs_available = models.BooleanField(default=False)
     make_input_data_available = models.BooleanField(default=False)
+
+    participant_groups = models.ManyToManyField(
+        CustomGroup,
+        blank=True,
+        related_name='competitions',
+        verbose_name="group of participants",
+        help_text="Competition owner being able to create groups of users."
+    )
+
 
     queue = models.ForeignKey('queues.Queue', on_delete=models.SET_NULL, null=True, blank=True,
                               related_name='competitions')
