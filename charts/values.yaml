@@ -133,7 +133,6 @@ env:
   SECRET_KEY: <your-django-secret-key>
 
   DJANGO_SETTINGS_MODULE: settings.develop
-  ALLOWED_HOSTS: <allowed-hosts>
   SUBMISSIONS_API_URL: http://django:8000/api
   MAX_EXECUTION_TIME_LIMIT: "600"
 
