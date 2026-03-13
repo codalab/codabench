@@ -153,7 +153,6 @@ class Competition(models.Model):
                 created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
-                task=submission.task,
                 owner=submission.owner,
                 data=submission.data,
             )
