@@ -70,10 +70,14 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
         user_data = UserSerializer(user).data
-        # Fetch competitions organized by this user
+        # Fetch competitions organized by this user (as owner or collaborator)
         organized_qs = (
             Competition.objects
-            .filter(created_by=user, published=True)
+            .filter(
+                Q(created_by=user) | Q(collaborators=user),
+                published=True,
+            )
+            .distinct()
             .order_by("-created_when")
         )
         # Serialize into the same shape your public-list cards expect
