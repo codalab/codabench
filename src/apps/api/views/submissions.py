@@ -16,6 +16,7 @@ from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
+from api.pagination import DynamicChoicePagination
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
@@ -32,6 +33,7 @@ class SubmissionViewSet(ModelViewSet):
     filterset_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
+    pagination_class = DynamicChoicePagination
 
     def check_object_permissions(self, request, obj):
         if self.action in ['submission_leaderboard_connection']:

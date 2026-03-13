@@ -187,6 +187,37 @@
         </tbody>
     </table>
 
+    <div class="ui pagination menu" style="display:flex; align-items:center; justify-content:space-between; margin-top: 12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="ui button" onclick="{ go_to_page.bind(this, page - 1) }" disabled="{ page <= 1 }">
+                <i class="icon chevron left"></i> Previous
+            </button>
+
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span>Page</span>
+                <input type="number" min="1" value="{ page }" onkeydown="{ handle_page_enter }" style="width:70px; text-align:center;" />
+                <span> / { total_pages || 1 }</span>
+            </div>
+
+            <button class="ui button" onclick="{ go_to_page.bind(this, page + 1) }" disabled="{ !next }">
+                Next <i class="icon chevron right"></i>
+            </button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label>Per page</label>
+            <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="all">all</option>
+            </select>
+
+            <div style="margin-right: 10px; color: #8c8c8c;">
+                <small>{ total_count || 0 } total</small>
+            </div>
+    </div>
+
     <div class="ui large modal" ref="modal">
         <div class="content">
             <div if="{!!selected_submission && !_.get(selected_submission, 'has_children', false)}">
@@ -203,7 +234,6 @@
 
                     <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
 
-                    <!-- Sometimes submissions end up in a bad state with no children..  -->
                     <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
                         <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error
                             during creation.</i>
@@ -216,6 +246,8 @@
                         show_visualization="{opts.competition.enable_detailed_results}"
                         submission="{child}"></submission-modal>
                 </div>
+
+
                 <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
                     <submission-scores leaderboards="{leaderboards}"></submission-scores>
                 </div>
@@ -233,6 +265,13 @@
         self.loading = true
         self.checked_submissions = []
         self.show_is_soft_deleted = false
+
+        self.page = 1
+        self.page_size = 50
+        self.total_count = 0
+        self.total_pages = 1
+        self.next = null
+        self.previous = null
 
         self.on("mount", function () {
             $(self.refs.search).dropdown()
@@ -269,37 +308,76 @@
             self.update()
         }
 
+        
         self.update_submissions = function (filters) {
             self.loading = true
             self.update()
-            if (opts.admin) {
-                filters = filters || { phase__competition: opts.competition.id }
-                filters.show_is_soft_deleted = self.show_is_soft_deleted
-            } else {
-                filters = filters || { phase: self.selected_phase.id }
+
+            if (!filters) {
+                if (opts.admin) {
+                    filters = { phase__competition: opts.competition.id }
+                    filters.show_is_soft_deleted = self.show_is_soft_deleted
+                } else {
+                    filters = { phase: self.selected_phase ? self.selected_phase.id : undefined }
+                }
             }
-            filters = filters || { phase: self.selected_phase.id }
+
+            filters.page = self.page
+            filters.page_size = self.page_size
+
             CODALAB.api.get_submissions(filters)
-                .done(function (submissions) {
-                    // TODO: should be able to do this with a serializer?
+                .done(function (response) {
+                    let data = response
+                    let results = response
+                    if (response && typeof response === 'object' && response.hasOwnProperty('results')) {
+                        results = response.results || []
+                        self.next = response.next || null
+                        self.previous = response.previous || null
+                        self.total_count = response.count || 0
+                        if (response && typeof response.page_size !== 'undefined') {
+                            const rsp = String(response.page_size).toLowerCase()
+                            if (rsp === 'all') {
+                                self.page_size = 'all'
+                            } else {
+                                const n = Number(response.page_size)
+                                self.page_size = isNaN(n) ? self.page_size : n
+                            }
+                        }
+
+                        if (String(self.page_size).toLowerCase() === 'all') {
+                            self.total_pages = 1
+                        } else {
+                            const ps = Number(self.page_size) || 1
+                            self.total_pages = Math.max(1, Math.ceil(self.total_count / ps))
+                        }
+                    } else {
+                        results = response || []
+                        self.next = null
+                        self.previous = null
+                        self.total_count = results.length
+                        self.total_pages = Math.max(1, Math.ceil(self.total_count / self.page_size))
+                    }
+
                     if (opts.admin) {
-                        self.submissions = submissions.map((item) => {
+                        self.submissions = results.map((item) => {
                             item.phase = opts.competition.phases.filter((phase) => {
                                 return phase.id === item.phase
                             })[0]
                             return item
                         })
                     } else {
-                        self.submissions = _.filter(submissions, sub => sub.owner === CODALAB.state.user.username)
+                        self.submissions = _.filter(results, sub => sub.owner === CODALAB.state.user.username)
                     }
+
                     if (!opts.admin) {
                         CODALAB.events.trigger('submissions_loaded', self.submissions)
                     }
+
                     self.csv_link = CODALAB.api.get_submission_csv_URL(filters)
+
                     self.update()
                     self.submission_checked()
 
-                    // Timeout here so loader doesn't flicker
                     _.delay(() => {
                         self.loading = false
                         self.update()
@@ -308,6 +386,43 @@
                 .fail(function (response) {
                     toastr.error("Error retrieving submissions")
                 })
+        }
+
+
+        self.go_to_page = function (p) {
+            let newPage = parseInt(p, 10)
+            if (isNaN(newPage) || newPage < 1) newPage = 1
+            if (self.total_pages && newPage > self.total_pages) newPage = self.total_pages
+            if (newPage === self.page) return
+            self.page = newPage
+            self.update_submissions()
+        }
+
+        self.change_page_size = function (e) {
+            const raw = (e && e.target && typeof e.target.value !== 'undefined') ? String(e.target.value).toLowerCase() : String(self.page_size).toLowerCase()
+
+            if (raw === 'all') {
+                self.page_size = 'all'
+            } else {
+                const val = parseInt(raw, 10)
+                if (isNaN(val) || val <= 0) return
+                // n'autorise que 50,100,500
+                if (![50, 100, 500].includes(val)) return
+                self.page_size = val
+            }
+
+            self.page = 1  // reset to first page when page size changes
+            self.update_submissions()
+        }
+
+        self.handle_page_enter = function (ev) {
+            if (ev.key === 'Enter') {
+                // value du champ input
+                let v = ev.target.value
+                let requested = parseInt(v, 10)
+                if (isNaN(requested)) return
+                self.go_to_page(requested)
+            }
         }
 
         self.add_to_leaderboard = function (submission) {
@@ -365,6 +480,7 @@
                         filters['phase__competition'] = opts.competition.id
                     }
                 }
+                self.page = 1
                 self.update_submissions(filters)
             }, 100)
         }
