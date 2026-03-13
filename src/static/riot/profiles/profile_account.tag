@@ -51,7 +51,7 @@
     </div>
 
     <script>
-        self = this;
+        var self = this;
         self.user = user;
 
         self.isDeleteAccountSubmitButtonDisabled = true;

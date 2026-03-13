@@ -182,7 +182,6 @@
         self.update_competitions_list(1)
     }
 
-
     self.one("mount", function () {
         const urlParams = new URLSearchParams(window.location.search)
 
