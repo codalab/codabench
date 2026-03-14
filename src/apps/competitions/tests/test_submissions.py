@@ -247,7 +247,8 @@ class MultipleTasksPerPhaseTests(SubmissionTestCase):
                     task = Task()
                 celery_app.return_value = task
                 mock_sassy.return_value = ''
-                run_submission(submission.pk)
+                with self.captureOnCommitCallbacks(execute=True):
+                    run_submission(submission.pk)
                 return celery_app
 
     def test_making_submission_creates_parent_sub_and_additional_sub_per_task(self):
