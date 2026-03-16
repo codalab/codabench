@@ -66,6 +66,7 @@ dependencies = [
     "django-filter==25.1",
     "django-cors-headers==4.9.0",
     "nh3==0.3.3",
+    "configobj==5.0.9",
 ]
 
 [tool.uv]
