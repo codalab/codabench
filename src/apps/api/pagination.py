@@ -26,10 +26,10 @@ class LargePagination(PageNumberPagination):
 
 class DynamicChoicePagination(PageNumberPagination):
     """
-    Pagination dynamique pour l'UI :
-    - défaut : 50
-    - valeurs autorisées côté client : 50, 100, 500, all
-    - si page_size=all => on renvoie tous les objets (dans la limite de max_page_size)
+    Dynamic pagination :
+    - défaut : 50 objects.
+    - predetermined values : 50, 100, 500, all
+    - if page_size=all => fetch all objects, capped by lax_page_size
     """
     page_size = 50
     page_size_query_param = 'page_size'
