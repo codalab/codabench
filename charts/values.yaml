@@ -29,8 +29,8 @@ django:
 
 flower:
   image:
-    repository: <flower-image-repository>
-    tag: <flower-image-tag>
+    repository: mher/flower
+    tag: latest
     pullPolicy: Always
   replicas: 1
   service:
