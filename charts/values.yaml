@@ -23,9 +23,6 @@ django:
   replicas: 1
   port: 8000
   workingDir: /app/src
-  gunicorn:
-    workers: 2
-    logLevel: info
 
 flower:
   image:
@@ -130,6 +127,8 @@ db:
   port: <database-port>
 
 env:
+  LOG_LEVEL: "info"
+  
   SECRET_KEY: <your-django-secret-key>
 
   DJANGO_SETTINGS_MODULE: settings.develop

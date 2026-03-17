@@ -20,10 +20,11 @@ spec:
             - bash
             - -c
             - >
-              python manage.py collectstatic --noinput &&
+              python manage.py migrate --no-input &&
+              python manage.py collectstatic --no-input &&
               cd {{ .Values.django.workingDir }} &&
               watchmedo auto-restart -p '*.py' --recursive --
-              gunicorn asgi:application -w {{ .Values.django.gunicorn.workers }} -k uvicorn.workers.UvicornWorker -b :{{ .Values.django.port }} --capture-output --log-level {{ .Values.django.gunicorn.logLevel }}
+              python3 ./gunicorn_run.py
           env:
           {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
