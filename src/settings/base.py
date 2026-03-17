@@ -5,7 +5,6 @@ from celery.schedules import crontab
 from celery import signals
 import dj_database_url
 from .logs_loguru import configure_logging
-from django.core.management.utils import get_random_secret_key
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Also add ../../apps to python path
@@ -126,7 +125,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# SECRET KEY 
+# SECRET KEY
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 LOGIN_REDIRECT_URL = '/'
