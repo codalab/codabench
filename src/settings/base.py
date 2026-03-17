@@ -126,8 +126,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-### SECRET KEY ###
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", get_random_secret_key())
+# SECRET KEY 
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
