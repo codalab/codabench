@@ -8,7 +8,6 @@ from rest_framework.exceptions import PermissionDenied
 
 from api.mixins import DefaultUserCreateMixin
 from api.serializers import leaderboards
-# from api.serializers.profiles import SimpleOrganizationSerializer
 from api.serializers.tasks import TaskSerializer
 from api.serializers.submission_leaderboard import SubmissionScoreSerializer
 from competitions.models import Submission, SubmissionDetails, CompetitionParticipant, Phase
