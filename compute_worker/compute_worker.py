@@ -329,16 +329,22 @@ def md5(filename):
 
 
 def get_folder_size_in_gb(folder):
+    # Check if the folder exists; if not, return 0 GB
     if not os.path.exists(folder):
         return 0
-    total_size = os.path.getsize(folder)
-    for item in os.listdir(folder):
-        path = os.path.join(folder, item)
-        if os.path.isfile(path):
-            total_size += os.path.getsize(path)
-        elif os.path.isdir(path):
-            total_size += get_folder_size_in_gb(path)
-    return total_size / 1000 / 1000 / 1000  # GB: decimal system (1000^3)
+
+    total_size = 0  # Initialize total size accumulator (in bytes)
+
+    # Walk through the folder and all its subdirectories
+    for root, dirs, files in os.walk(folder):
+        for f in files:
+            # Construct full path to the file
+            fp = os.path.join(root, f)
+            # Add the file size to total_size
+            total_size += os.path.getsize(fp)
+
+    # Convert bytes to gigabytes using decimal system (1 GB = 1000^3 bytes)
+    return total_size / (1000 ** 3)
 
 
 def delete_files_in_folder(folder):
