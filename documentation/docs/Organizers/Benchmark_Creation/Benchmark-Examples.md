@@ -11,6 +11,7 @@ More details are given below, to help you select the bundle that suits your own 
 ### Classify Wheat Seeds
 
 We propose three versions of the [Classify Wheat Seeds](https://github.com/codalab/competition-examples/tree/master/codabench/wheat_seeds):
+
 - [Result submission bundle](https://github.com/codalab/competition-examples/tree/master/codabench/wheat_seeds/results_submission_bundle), with simple submission of predictions
 - [Code submission bundle](https://github.com/codalab/competition-examples/tree/master/codabench/wheat_seeds/code_submission_bundle), with submission of Python algorithm
 - [Ingestion during scoring bundle](https://github.com/codalab/competition-examples/tree/master/codabench/wheat_seeds/ingestion_during_scoring_bundle), where ingestion and scoring run in parallel
@@ -22,6 +23,7 @@ We propose three versions of the [Classify Wheat Seeds](https://github.com/codal
 ### AutoWSL
 
 You can find two versions of the [Automated Weakly Supervised Learning Benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl):
+
 - [Code submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/code_submission)
 - [Dataset submission benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl/dataset_submission)
 
