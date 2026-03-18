@@ -210,7 +210,7 @@
                 <option value="50">50</option>
                 <option value="100">100</option>
                 <option value="500">500</option>
-                <option value="all">all</option>
+                <option value="all">1000</option>
             </select>
 
             <div style="margin-right: 10px; color: #8c8c8c;">
