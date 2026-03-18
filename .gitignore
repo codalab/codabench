@@ -24,6 +24,8 @@ src/static/generated/*
 db.sqlite3
 
 celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
 celerybeat-schedule.db
 package-lock.json
 artifacts/
@@ -44,3 +46,4 @@ caddy_data/
 home_page_counters.json
 my-postgres.conf
 tests/config/state.json
+
