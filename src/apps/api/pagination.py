@@ -49,7 +49,7 @@ class DynamicChoicePagination(PageNumberPagination):
             val = int(raw)
         except (TypeError, ValueError):
             return self.page_size
-    
+
         if val in (50, 100, 500):
             return min(val, self.max_page_size)
         return self.page_size
