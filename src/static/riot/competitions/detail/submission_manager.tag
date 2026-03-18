@@ -323,7 +323,11 @@
             }
 
             filters.page = self.page
-            filters.page_size = self.page_size
+            if (String(self.page_size).toLowerCase() === 'all') {
+                filters.page_size = 'all'
+            } else {
+                filters.page_size = self.page_size
+            }
 
             CODALAB.api.get_submissions(filters)
                 .done(function (response) {
@@ -334,21 +338,60 @@
                         self.next = response.next || null
                         self.previous = response.previous || null
                         self.total_count = response.count || 0
+
+                        var effectivePageSize = 1
+                        var serverPageSize = undefined
+                        var totalCount = (typeof response.count === 'number') ? response.count : self.total_count
+                        var isLastPage = (response.next === null)
+
                         if (response && typeof response.page_size !== 'undefined') {
-                            const rsp = String(response.page_size).toLowerCase()
-                            if (rsp === 'all') {
+                            serverPageSize = response.page_size
+                        }
+
+                        if (typeof serverPageSize !== 'undefined') {
+                            if (String(serverPageSize).toLowerCase() === 'all') {
                                 self.page_size = 'all'
                             } else {
-                                const n = Number(response.page_size)
-                                self.page_size = isNaN(n) ? self.page_size : n
+                                var parsedServerPS = Number(serverPageSize)
+                                if (!isNaN(parsedServerPS) && parsedServerPS > 0) {
+                                    self.page_size = parsedServerPS
+                                }
                             }
                         }
 
                         if (String(self.page_size).toLowerCase() === 'all') {
+                            if (typeof response.page_size_numeric === 'number' && response.page_size_numeric > 0) {
+                                effectivePageSize = response.page_size_numeric
+                            } else if (typeof response.effective_page_size === 'number' && response.effective_page_size > 0) {
+                                effectivePageSize = response.effective_page_size
+                            } else {
+                                if (!isLastPage && Array.isArray(results) && results.length > 0) {
+                                    effectivePageSize = results.length
+                                } else if (isLastPage && self.page > 1 && typeof totalCount === 'number' && totalCount > 0) {
+                                    var itemsOnLastPage = Array.isArray(results) ? results.length : 0
+                                    var pagesBefore = self.page - 1
+                                    var calc = Math.floor((totalCount - itemsOnLastPage) / pagesBefore)
+                                    if (calc > 0) {
+                                        effectivePageSize = calc
+                                    } else {
+                                        effectivePageSize = 50
+                                    }
+                                } else if (Array.isArray(results) && results.length > 0) {
+                                    effectivePageSize = results.length
+                                } else {
+                                    effectivePageSize = 50
+                                }
+                            }
+                        } else if (typeof self.page_size === 'number' && self.page_size > 0) {
+                            effectivePageSize = self.page_size
+                        } else {
+                            effectivePageSize = 50
+                        }
+
+                        if (typeof totalCount !== 'number' || totalCount < 0) {
                             self.total_pages = 1
                         } else {
-                            const ps = Number(self.page_size) || 1
-                            self.total_pages = Math.max(1, Math.ceil(self.total_count / ps))
+                            self.total_pages = Math.max(1, Math.ceil(totalCount / effectivePageSize))
                         }
                     } else {
                         results = response || []
@@ -640,15 +683,10 @@
             // Set checkboxes to be equal to Select_All checkbox
             check_boxes.prop('checked', check_boxes.first().is(':checked'))
 
-
             let inputs = $(self.refs.submission_table).find('input')
             let checked_boxes = inputs.not(':first').filter('input:checked')
             self.checked_submissions = checked_boxes.serializeArray().map((x) => { return x.name })
         }
-
-
-
-
 
         self.submission_clicked = function (submission) {
             // stupid workaround to not modify the original submission object
