@@ -137,14 +137,13 @@ with open(".env", "a+") as f:
     secret_key_count = 0
     f.seek(0)
     for x in f:
-        if "SECRET_KEY=" in x and x[0] == "S":
+        if x.strip().startswith("SECRET_KEY="):
             secret_key_count = 1
             SECRET_KEY = os.environ.get("SECRET_KEY", config['SECRET_KEY'])
             break
     if secret_key_count == 0:
         SECRET_KEY = get_random_secret_key()
-        f.write(f"SECRET_KEY='{SECRET_KEY}'")
-f.close()
+        f.write(f"\nSECRET_KEY={SECRET_KEY}\n")
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
