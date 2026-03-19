@@ -18,10 +18,13 @@ def user_quota_cleanup(request):
     ).count()
 
     # Get Unused datasets and programs count
+    # Exclude Submission, Competition Bundle, Public Data, Starting Kit
     unused_datasets_programs = Data.objects.filter(
         Q(created_by=request.user) &
         ~Q(type=Data.SUBMISSION) &
-        ~Q(type=Data.COMPETITION_BUNDLE)
+        ~Q(type=Data.COMPETITION_BUNDLE) &
+        ~Q(type=Data.PUBLIC_DATA) &
+        ~Q(type=Data.STARTING_KIT)
     ).exclude(
         Q(task_ingestion_programs__isnull=False) |
         Q(task_input_datas__isnull=False) |
@@ -81,10 +84,13 @@ def delete_unused_tasks(request):
 @api_view(['DELETE'])
 def delete_unused_datasets(request):
     try:
+        # Exclude Submission, Competition Bundle, Public Data, Starting Kit
         Data.objects.filter(
             Q(created_by=request.user) &
             ~Q(type=Data.SUBMISSION) &
-            ~Q(type=Data.COMPETITION_BUNDLE)
+            ~Q(type=Data.COMPETITION_BUNDLE) &
+            ~Q(type=Data.PUBLIC_DATA) &
+            ~Q(type=Data.STARTING_KIT)
         ).exclude(
             Q(task_ingestion_programs__isnull=False) |
             Q(task_input_datas__isnull=False) |
