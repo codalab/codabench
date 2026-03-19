@@ -269,7 +269,7 @@
                                 self.handle_websocket(event_data.submission_id, data)
                             }
                         })
-                        self.detailed_result_urls[submission_id] = detailed_result_url
+                        self.detailed_result_urls[event_data.submission_id] = detailed_result_url
                         self.update()
                         break
                     case 'message':
@@ -443,7 +443,7 @@
                     }
                 }
             }
-            return form_json === {} ? null : form_json
+            return _.isEmpty(form_json) ? null : form_json
         }
 
         self.upload = function () {
@@ -472,7 +472,7 @@
                     self.lines = {}
                     let dropdown = $('#organization_dropdown')
                     let organization = dropdown.dropdown('get value')
-                    if(organization === 'add_organization' | organization === 'None'){
+                    if(organization === 'add_organization' || organization === 'None'){
                         organization = null
                     }
                     dropdown.attr('disabled', 'disabled')
