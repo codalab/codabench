@@ -56,8 +56,7 @@ class CleanUpTests(APITestCase):
             DataFactory(created_by=user, type=Data.INGESTION_PROGRAM),
             DataFactory(created_by=user, type=Data.SCORING_PROGRAM),
             DataFactory(created_by=user, type=Data.INPUT_DATA),
-            DataFactory(created_by=user, type=Data.REFERENCE_DATA),
-            DataFactory(created_by=user, type=Data.PUBLIC_DATA)
+            DataFactory(created_by=user, type=Data.REFERENCE_DATA)
         ]
 
         self.client.login(username='test_user', password='test_user')
