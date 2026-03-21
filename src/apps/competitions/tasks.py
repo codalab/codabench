@@ -165,7 +165,7 @@ def _send_to_compute_worker(submission, is_scoring):
 
     if task.ingestion_program:
         if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-            run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
+            run_args['ingestion_program_data'] = make_url_sassy(task.ingestion_program.data_file.name)
 
     if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
         run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
@@ -175,9 +175,8 @@ def _send_to_compute_worker(submission, is_scoring):
 
     run_args['ingestion_only_during_scoring'] = task.ingestion_only_during_scoring
 
-    run_args['program_data'] = make_url_sassy(
-        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
-    )
+    run_args['scoring_program_data'] = make_url_sassy(path=task.scoring_program.data_file.name)
+    run_args['submission_data'] = make_url_sassy(path=submission.data.data_file.name)
 
     if not is_scoring:
         detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION

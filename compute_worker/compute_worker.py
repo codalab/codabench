@@ -10,33 +10,63 @@ import socket
 import tempfile
 import time
 import uuid
+import requests
+import websockets
+import yaml
+import docker
+import logging
+import sys  # This is only needed for the pytests to pass
 from shutil import make_archive
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from zipfile import ZipFile, BadZipFile
-import docker
-from rich.progress import Progress
-from rich.pretty import pprint
-import requests
-import websockets
-import yaml
-from billiard.exceptions import SoftTimeLimitExceeded
-from celery import Celery, shared_task, utils
-from kombu import Queue, Exchange
 from urllib3 import Retry
 
-# This is only needed for the pytests to pass
-import sys
+from rich.pretty import pprint
+from rich.progress import Progress
+from kombu import Queue, Exchange
+from celery import Celery, shared_task, utils, signals
+from billiard.exceptions import SoftTimeLimitExceeded
+
+from logs_loguru import configure_logging, colorize_run_args
+
+logger = logging.getLogger(__name__)
 
 sys.path.append("/app/src/settings/")
 
-from celery import signals
-import logging
 
-logger = logging.getLogger(__name__)
-from logs_loguru import configure_logging, colorize_run_args
-import json
+# -----------------------------------------------
+# CONSTANTS
+# -----------------------------------------------
+class ProgramKind:
+    INGESTION_PROGRAM = "ingestion_program"
+    SCORING_PROGRAM = "scoring_program"
+
+
+# -----------------------------------------------
+# Submission status
+# -----------------------------------------------
+class SubmissionStatus:
+    NONE = "None"
+    SUBMITTING = "Submitting"
+    SUBMITTED = "Submitted"
+    PREPARING = "Preparing"
+    RUNNING = "Running"
+    SCORING = "Scoring"
+    FINISHED = "Finished"
+    FAILED = "Failed"
+
+    AVAILABLE_STATUSES = (
+        NONE,
+        SUBMITTING,
+        SUBMITTED,
+        PREPARING,
+        RUNNING,
+        SCORING,
+        FINISHED,
+        FAILED,
+    )
 
 
 # -----------------------------------------------
@@ -183,30 +213,6 @@ MAX_CACHE_DIR_SIZE_GB = float(os.environ.get("MAX_CACHE_DIR_SIZE_GB", 10))
 
 
 # -----------------------------------------------
-# Submission status
-# -----------------------------------------------
-# Status options for submissions
-STATUS_NONE = "None"
-STATUS_SUBMITTING = "Submitting"
-STATUS_SUBMITTED = "Submitted"
-STATUS_PREPARING = "Preparing"
-STATUS_RUNNING = "Running"
-STATUS_SCORING = "Scoring"
-STATUS_FINISHED = "Finished"
-STATUS_FAILED = "Failed"
-AVAILABLE_STATUSES = (
-    STATUS_NONE,
-    STATUS_SUBMITTING,
-    STATUS_SUBMITTED,
-    STATUS_PREPARING,
-    STATUS_RUNNING,
-    STATUS_SCORING,
-    STATUS_FINISHED,
-    STATUS_FAILED,
-)
-
-
-# -----------------------------------------------
 # Exceptions
 # -----------------------------------------------
 class SubmissionException(Exception):
@@ -265,11 +271,11 @@ def run_wrapper(run_args):
             msg = f"Docker image pull failed: {msg}"
         else:
             msg = "Docker image pull failed."
-        run._update_status(STATUS_FAILED, extra_information=msg)
+        run._update_status(SubmissionStatus.FAILED, extra_information=msg)
         raise
     except SoftTimeLimitExceeded:
         run._update_status(
-            STATUS_FAILED,
+            SubmissionStatus.FAILED,
             extra_information="Execution time limit exceeded.",
         )
         raise
@@ -279,11 +285,11 @@ def run_wrapper(run_args):
             msg = f"Submission failed: {msg}. See logs for more details."
         else:
             msg = "Submission failed. See logs for more details."
-        run._update_status(STATUS_FAILED, extra_information=msg)
+        run._update_status(SubmissionStatus.FAILED, extra_information=msg)
         raise
     except Exception as e:
         # Catch any exception to avoid getting stuck in Running status
-        run._update_status(STATUS_FAILED, extra_information=traceback.format_exc())
+        run._update_status(SubmissionStatus.FAILED, extra_information=traceback.format_exc())
         raise
     finally:
         try:
@@ -420,9 +426,11 @@ class Run:
             self._get_stdout_stderr_file_names(run_args)
         )
         self.ingestion_container_name = f"ingestion_{self.run_related_name}"
-        self.program_container_name = f"scoring_{self.run_related_name}"
-        self.program_data = run_args.get("program_data")
-        self.ingestion_program_data = run_args.get("ingestion_program")
+        self.scoring_program_container_name = f"scoring_{self.run_related_name}"
+        # self.program_data = run_args.get("program_data")
+        self.scoring_program_data = run_args.get("scoring_program_data")
+        self.submission_data = run_args.get("submission_data")
+        self.ingestion_program_data = run_args.get("ingestion_program_data")
         self.input_data = run_args.get("input_data")
         self.reference_data = run_args.get("reference_data")
         self.ingestion_only_during_scoring = run_args.get(
@@ -573,9 +581,9 @@ class Run:
 
     def _update_status(self, status, extra_information=None):
         # Update submission status
-        if status not in AVAILABLE_STATUSES:
+        if status not in SubmissionStatus.AVAILABLE_STATUSES:
             raise SubmissionException(
-                f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}"
+                f"Status '{status}' is not in available statuses: {SubmissionStatus.AVAILABLE_STATUSES}"
             )
         data = {"status": status, "status_details": extra_information}
         try:
@@ -717,6 +725,108 @@ class Run:
         # Return the zip file path for other uses, e.g. for creating a MD5 hash to identify it
         return bundle_file
 
+    def _create_container(
+        self,
+        container_name: str,
+        command: str,
+        volumes_host: list,
+        volumes_config: dict
+    ):
+        """
+        Helper to create and configure a container for ingestion, scoring, or submission.
+        Returns the container object.
+        """
+        logger.info("Creating container with multiple configurations")
+
+        cap_drop_list = [
+            "AUDIT_WRITE",
+            "CHOWN",
+            "DAC_OVERRIDE",
+            "FOWNER",
+            "FSETID",
+            "KILL",
+            "MKNOD",
+            "NET_BIND_SERVICE",
+            "NET_RAW",
+            "SETFCAP",
+            "SETGID",
+            "SETPCAP",
+            "SETUID",
+            "SYS_CHROOT",
+        ]
+
+        # Configure whether or not we use the GPU. Also setting auto_remove to False because
+        if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+            security_options = ["no-new-privileges"]
+        else:
+            security_options = ["label=disable"]
+
+        # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
+        device_id = [os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")]
+        if os.environ.get("USE_GPU", "false").lower() == "true":
+            logger.info("Container configured with GPU capabilities")
+            host_config = client.create_host_config(
+                auto_remove=False,
+                cap_drop=cap_drop_list,
+                binds=volumes_config,
+                userns_mode="host",
+                security_opt=security_options,
+                device_requests=[
+                    {
+                        "Driver": "cdi",
+                        "DeviceIDs": device_id,
+                    },
+                ],
+            )
+        else:
+            logger.info("Container configured with CPU capabilities")
+            host_config = client.create_host_config(
+                auto_remove=False,
+                cap_drop=cap_drop_list,
+                binds=volumes_config,
+                userns_mode="host",
+                security_opt=security_options,
+            )
+
+        # Disable or not the competition container access to Internet (False by default)
+        container_network_disabled = os.environ.get(
+            "COMPETITION_CONTAINER_NETWORK_DISABLED", ""
+        )
+
+        # HTTP and HTTPS proxy for the competition container if needed
+        competition_container_proxy_http = os.environ.get(
+            "COMPETITION_CONTAINER_HTTP_PROXY", ""
+        )
+        competition_container_proxy_http = (
+            "http_proxy=" + competition_container_proxy_http
+        )
+
+        competition_container_proxy_https = os.environ.get(
+            "COMPETITION_CONTAINER_HTTPS_PROXY", ""
+        )
+        competition_container_proxy_https = (
+            "https_proxy=" + competition_container_proxy_https
+        )
+
+        # Creating container
+        container = client.create_container(
+            self.container_image,
+            name=container_name,
+            host_config=host_config,
+            detach=False,
+            volumes=volumes_host,
+            command=command,
+            working_dir="/app/program",
+            environment=[
+                "PYTHONUNBUFFERED=1",
+                competition_container_proxy_http,
+                competition_container_proxy_https,
+            ],
+            network_disabled=container_network_disabled.lower() == "true",
+        )
+
+        return container
+
     async def _run_container_engine_cmd(self, container, kind):
         """This runs a command and asynchronously writes the data to both a storage file
         and a socket
@@ -775,8 +885,7 @@ class Run:
 
             # If we enter the for loop after the container exited, the program will get stuck
             if (
-                client.inspect_container(container)["State"]["Status"].lower()
-                == "running"
+                client.inspect_container(container)["State"]["Status"].lower() == "running"
             ):
                 logger.debug(
                     "Show the logs and stream them to codabench " + container.get("Id")
@@ -793,7 +902,7 @@ class Run:
                                 )
                         except Exception as e:
                             logger.error(e)
-                    
+
                     # Errors
                     elif log[1] is not None:
                         stderr_chunks.append(log[1])
@@ -885,7 +994,7 @@ class Run:
         path = os.path.join(*paths)
 
         # pull front of path, which points to the location inside the container
-        path = path[len(BASE_DIR) :]
+        path = path[len(BASE_DIR):]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
@@ -1079,7 +1188,7 @@ class Run:
         container_name = (
             self.ingestion_container_name
             if kind == "ingestion"
-            else self.program_container_name
+            else self.scoring_program_container_name
         )
         # Disable or not the competition container access to Internet (False by default)
         container_network_disabled = os.environ.get(
@@ -1125,6 +1234,101 @@ class Run:
         except Exception as e:
             logger.exception("Program directory execution failed")
             raise SubmissionException(str(e))
+
+    async def _run_ingestion_program_directory(self, program_dir):
+        """
+        Run ingestion program directory.
+
+        Args:
+            program_dir: path to ingestion program
+        """
+        # Return if directory does not exist
+        if not os.path.exists(program_dir):
+            logger.warning(f"{program_dir} not found, no program to execute")
+            # Communicate that the program is closing
+            self.completed_program_counter += 1
+            return
+
+        # Find metadata file. Raise error if metadata is not founc
+        if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
+            metadata_path = "metadata.yaml"
+        elif os.path.exists(os.path.join(program_dir, "metadata")):
+            metadata_path = "metadata"
+        else:
+            raise SubmissionException(
+                "Ingestion program directory missing 'metadata.yaml/metadata'"
+            )
+
+        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
+        with open(os.path.join(program_dir, metadata_path), "r") as metadata_file:
+            # try to find a command in the metadata, in other cases set metadata to None
+            try:
+                metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
+                logger.info(f"Metadata contains:\n {metadata}")
+                if isinstance(metadata, dict):
+                    command = metadata.get("command")
+                else:
+                    command = None
+            except yaml.YAMLError as e:
+                logger.error("Error parsing YAML file: ", e)
+                print("Error parsing YAML file: ", e)
+                command = None
+
+            if not command:
+                raise SubmissionException(
+                    "Missing 'command' in metadata or metadata format is not correct!"
+                )
+
+        volumes_host = [
+            self._get_host_path(program_dir),
+            self._get_host_path(self.output_dir),
+            self.data_dir,
+            self._get_host_path(self.root_dir, "program")
+        ]
+        volumes_config = {
+            volumes_host[0]: {"bind": "/app/program", "mode": "z"},
+            volumes_host[1]: {"bind": "/app/output", "mode": "z"},
+            volumes_host[2]: {"bind": "/app/data", "mode": "ro"},
+            volumes_host[3]: {"bind": "/app/ingested_program"}
+        }
+
+        if self.input_data:
+            volumes_host.append(self._get_host_path(self.root_dir, "input_data"))
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/input_data"}})
+
+        # Handle Legacy competitions by replacing anything in the run command
+        command = replace_legacy_metadata_command(
+            command=command,
+            kind=ProgramKind.INGESTION_PROGRAM,
+            is_scoring=self.is_scoring,
+            ingestion_only_during_scoring=self.ingestion_only_during_scoring,
+        )
+        logger.info("Container will be run with command: " + command)
+
+        # Create container with configurations
+        container = self._create_container(
+            container_name=self.ingestion_container_name,
+            command=command,
+            volumes_host=volumes_host,
+            volumes_config=volumes_config
+        )
+        logger.debug("Created container: " + str(container))
+        logger.info("Volume configuration of the container: ")
+        pprint(volumes_config)
+        # This runs the container engine command and asynchronously passes data back via websocket
+        try:
+            return await self._run_container_engine_cmd(container, kind=ProgramKind.INGESTION_PROGRAM)
+        except Exception as e:
+            logger.exception("Program directory execution failed")
+            raise SubmissionException(str(e))
+
+    async def _run_scoring_program_directory(self, program_dir):
+        logger.error("[-] Run Scoring Program not implemented")
+        pass
+
+    async def _run_submission_directory(self, program_dir):
+        logger.error("[-] Run Submission not implemented")
+        pass
 
     def _put_dir(self, url, directory):
         """Zip the directory and send it to the given URL using _put_file."""
@@ -1197,15 +1401,15 @@ class Run:
         hostname = utils.nodenames.gethostname()
         if self.is_scoring:
             self._update_status(
-                STATUS_RUNNING, extra_information=f"scoring_hostname-{hostname}"
+                SubmissionStatus.RUNNING, extra_information=f"scoring_hostname-{hostname}"
             )
         else:
             self._update_status(
-                STATUS_RUNNING, extra_information=f"ingestion_hostname-{hostname}"
+                SubmissionStatus.RUNNING, extra_information=f"ingestion_hostname-{hostname}"
             )
         if not self.is_scoring:
             # Only during prediction step do we want to announce "preparing"
-            self._update_status(STATUS_PREPARING)
+            self._update_status(SubmissionStatus.PREPARING)
 
         # Setup cache and prune if it's out of control
         self._prep_cache_dir()
@@ -1214,7 +1418,9 @@ class Run:
         # sub folder.
         bundles = [
             # (url to file, relative folder destination)
-            (self.program_data, "program"),
+            # (self.program_data, "program"),
+            (self.scoring_program_data, "scoring_program"),
+            (self.submission_data, "submission"),
             (self.ingestion_program_data, "ingestion_program"),
             (self.input_data, "input_data"),
             (self.reference_data, "input/ref"),
@@ -1229,8 +1435,11 @@ class Run:
                 cache_this_bundle = path in ("input_data", "input/ref")
                 zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
-                # TODO: When we have `is_scoring_only` this needs to change...
-                if url == self.program_data and not self.is_scoring:
+                # Originally the following if condition was
+                # `if url == self.program_data and not self.is_scoring:`
+                # Which means if url == submission and this is ingestion run
+                # Below now we have a new condition i.e. when url == submission and this is ingestion run
+                if url == self.submission_data and not self.is_scoring:
                     # We want to get a checksum of submissions so we can check if they are
                     # a solution, or maybe match them against other submissions later
                     logger.info(f"Beginning MD5 checksum of submission: {zip_file}")
@@ -1247,19 +1456,50 @@ class Run:
         self._get_container_image(self.container_image)
 
     def start(self):
-        program_dir = os.path.join(self.root_dir, "program")
+        # program_dir = os.path.join(self.root_dir, "program")
+        # ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
+        submission_dir = os.path.join(self.root_dir, "submission")
+        scoring_program_dir = os.path.join(self.root_dir, "scoring_program")
         ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        logger.info("Running scoring program, and then ingestion program")
+        # logger.info("Running scoring program, and then ingestion program")
+        logger.info(f"Starting run: {ProgramKind.SCORING_PROGRAM if self.is_scoring else ProgramKind.INGESTION_PROGRAM}")
+
         loop = asyncio.new_event_loop()
         # Set the event loop for the gather
         asyncio.set_event_loop(loop)
-        gathered_tasks = asyncio.gather(
-            self._run_program_directory(program_dir, kind="program"),
-            self._run_program_directory(ingestion_program_dir, kind="ingestion"),
-            self.watch_detailed_results(),
-            return_exceptions=True,
-        )
+
+        tasks = []
+        if self.is_scoring:
+            # During scoring, run scoring program directory
+            tasks.append(
+                self._run_scoring_program_directory(scoring_program_dir)
+            )
+
+            # If ingestion_only_during_scoring is true, we also run ingestion program directory
+            if self.ingestion_only_during_scoring:
+                tasks.append(
+                    self._run_ingestion_program_directory(ingestion_program_dir)
+                )
+
+            tasks.append(
+                self.watch_detailed_results()
+            )
+        else:
+            # During ingestion we run ingestion program directory and submission directory
+            tasks.extend([
+                self._run_ingestion_program_directory(ingestion_program_dir),
+                self._run_submission_directory(submission_dir)
+            ])
+
+        # gathered_tasks = asyncio.gather(
+        #     self._run_program_directory(program_dir, kind="program"),
+        #     self._run_program_directory(ingestion_program_dir, kind="ingestion"),
+        #     self.watch_detailed_results(),
+        #     return_exceptions=True,
+        # )
+        gathered_tasks = asyncio.gather(*tasks, return_exceptions=True)
+
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
@@ -1282,7 +1522,7 @@ class Run:
             for kind, logs in self.logs.items():
                 containers_to_kill = []
                 containers_to_kill.append(self.ingestion_container_name)
-                containers_to_kill.append(self.program_container_name)
+                containers_to_kill.append(self.scoring_program_container_name)
                 logger.debug(
                     "Trying to kill and remove container " + str(containers_to_kill)
                 )
@@ -1337,7 +1577,7 @@ class Run:
                     if kind == "ingestion":
                         containers_to_kill = self.ingestion_container_name
                     else:
-                        containers_to_kill = self.program_container_name
+                        containers_to_kill = self.scoring_program_container_name
                     try:
                         client.kill(containers_to_kill)
                         client.remove_container(containers_to_kill, force=True)
@@ -1381,15 +1621,15 @@ class Run:
             failed_rc = (program_rc is None) or (program_rc != 0)
             if had_async_exc or failed_rc:
                 self._update_status(
-                    STATUS_FAILED,
+                    SubmissionStatus.FAILED,
                     extra_information=f"program_rc={program_rc}, async={task_results}",
                 )
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
-            self._update_status(STATUS_FINISHED)
+            self._update_status(SubmissionStatus.FINISHED)
 
         else:
-            self._update_status(STATUS_SCORING)
+            self._update_status(SubmissionStatus.SCORING)
 
     def push_scores(self):
         """This is only ran at the end of the scoring step"""
