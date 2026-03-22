@@ -959,7 +959,7 @@ class Run:
         finally:
             try:
                 # Last chance of removing container
-                client.remove_container(container_id, force=True)
+                client.remove_container(container.get("Id"), force=True)
             except Exception:
                 pass
 
