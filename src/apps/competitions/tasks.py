@@ -175,7 +175,9 @@ def _send_to_compute_worker(submission, is_scoring):
 
     run_args['ingestion_only_during_scoring'] = task.ingestion_only_during_scoring
 
-    run_args['scoring_program_data'] = make_url_sassy(path=task.scoring_program.data_file.name)
+    if is_scoring:
+        run_args['scoring_program_data'] = make_url_sassy(path=task.scoring_program.data_file.name)
+
     run_args['submission_data'] = make_url_sassy(path=submission.data.data_file.name)
 
     if not is_scoring:

@@ -42,6 +42,7 @@ sys.path.append("/app/src/settings/")
 class ProgramKind:
     INGESTION_PROGRAM = "ingestion_program"
     SCORING_PROGRAM = "scoring_program"
+    SUBMISSION = "submission"
 
 
 # -----------------------------------------------
@@ -970,13 +971,13 @@ class Run:
                 "data": logs_Unified[0],
                 "stream": logs_Unified[0],
                 "continue": True,
-                "location": self.stdout if kind == "program" else self.ingestion_stdout,
+                "location": self.stdout if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stdout,
             },
             "stderr": {
                 "data": logs_Unified[1],
                 "stream": logs_Unified[1],
                 "continue": True,
-                "location": self.stderr if kind == "program" else self.ingestion_stderr,
+                "location": self.stderr if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stderr,
             },
         }
 
@@ -1005,7 +1006,7 @@ class Run:
 
         return path
 
-    async def _run_program_directory(self, program_dir, kind):
+    async def _rrun_program_directory(self, program_dir, kind):
         """
         Function responsible for running program directory
 
@@ -1235,63 +1236,87 @@ class Run:
             logger.exception("Program directory execution failed")
             raise SubmissionException(str(e))
 
-    async def _run_ingestion_program_directory(self, program_dir):
+    async def _run_program_directory(self, kind, program_dir):
         """
-        Run ingestion program directory.
+        Function responsible for running
+            - ingestion program
+            - scoring program
+            - submission
 
         Args:
-            program_dir: path to ingestion program
+            kind: `ingestion_program` or `scoring_program` or `submission`
+            program_dir: path to the program to run
         """
         # Return if directory does not exist
         if not os.path.exists(program_dir):
-            logger.warning(f"{program_dir} not found, no program to execute")
+            logger.warning(f"{program_dir} for {kind} not found, no program to execute")
             # Communicate that the program is closing
             self.completed_program_counter += 1
             return
 
-        # Find metadata file. Raise error if metadata is not founc
+        # Find metadata file. 
+        # Raise error if metadata is not found for ingestion or scoring
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
             metadata_path = "metadata.yaml"
         elif os.path.exists(os.path.join(program_dir, "metadata")):
             metadata_path = "metadata"
         else:
-            raise SubmissionException(
-                "Ingestion program directory missing 'metadata.yaml/metadata'"
-            )
+            if kind in [ProgramKind.INGESTION_PROGRAM, ProgramKind.SCORING_PROGRAM]:
+                error_message = f"{program_dir} for {kind} missing 'metadata.yaml/metadata' file."
+                logger.error(error_message)
+                raise SubmissionException(error_message)
+            else:
+                logger.warning(f"{program_dir} for {kind} missing 'metadata.yaml/metadata' file. Assuming it is going to be handled by ingestion or scoring")
 
+        # Metadata file is found
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
+
+        # Reading metadata file to find command.
+        # Raise error if command is not found for ingestion or scoring
         with open(os.path.join(program_dir, metadata_path), "r") as metadata_file:
-            # try to find a command in the metadata, in other cases set metadata to None
+            command = None
             try:
                 metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
                 logger.info(f"Metadata contains:\n {metadata}")
                 if isinstance(metadata, dict):
                     command = metadata.get("command")
-                else:
-                    command = None
             except yaml.YAMLError as e:
                 logger.error("Error parsing YAML file: ", e)
-                print("Error parsing YAML file: ", e)
-                command = None
 
-            if not command:
+            if not command and kind in [ProgramKind.INGESTION_PROGRAM, ProgramKind.SCORING_PROGRAM]:
                 raise SubmissionException(
                     "Missing 'command' in metadata or metadata format is not correct!"
                 )
+            else:
+                logger.warning(
+                    "Missing 'command' in metadata or metadata format is not correct! Continuing anyway assuming it is going to be handled by ingestion or scoring"
+                )
 
+        # Setting volume host and volumes config.
+        # To be used by `_create_container` function
         volumes_host = [
             self._get_host_path(program_dir),
             self._get_host_path(self.output_dir),
             self.data_dir,
-            self._get_host_path(self.root_dir, "program")
+            self._get_host_path(self.root_dir, "submission")
         ]
         volumes_config = {
             volumes_host[0]: {"bind": "/app/program", "mode": "z"},
             volumes_host[1]: {"bind": "/app/output", "mode": "z"},
             volumes_host[2]: {"bind": "/app/data", "mode": "ro"},
-            volumes_host[3]: {"bind": "/app/ingested_program"}
+            volumes_host[3]: {"bind": "/app/ingested_program", "mode": "ro"},
         }
 
+        if kind == ProgramKind.SCORING_PROGRAM:
+            # For scoring program, we want to have a shared directory just in case we have an ingestion program.
+            volumes_host.extend([self._get_host_path(self.root_dir, "shared")])
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/shared"}})
+
+            # Input dir for scoring program
+            volumes_host.extend([self._get_host_path(self.root_dir, "input")])
+            volumes_config.update({volumes_host[-1]: {"bind": "/app/input"}})
+
+        # NOTE: self.input_data is valid when running an ingestion program and competition task has input data
         if self.input_data:
             volumes_host.append(self._get_host_path(self.root_dir, "input_data"))
             volumes_config.update({volumes_host[-1]: {"bind": "/app/input_data"}})
@@ -1317,7 +1342,7 @@ class Run:
         pprint(volumes_config)
         # This runs the container engine command and asynchronously passes data back via websocket
         try:
-            return await self._run_container_engine_cmd(container, kind=ProgramKind.INGESTION_PROGRAM)
+            return await self._run_container_engine_cmd(container, kind=kind)
         except Exception as e:
             logger.exception("Program directory execution failed")
             raise SubmissionException(str(e))
@@ -1456,14 +1481,13 @@ class Run:
         self._get_container_image(self.container_image)
 
     def start(self):
-        # program_dir = os.path.join(self.root_dir, "program")
-        # ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
-        submission_dir = os.path.join(self.root_dir, "submission")
-        scoring_program_dir = os.path.join(self.root_dir, "scoring_program")
-        ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
 
-        # logger.info("Running scoring program, and then ingestion program")
-        logger.info(f"Starting run: {ProgramKind.SCORING_PROGRAM if self.is_scoring else ProgramKind.INGESTION_PROGRAM}")
+        logger.info(f"Preparing to run: {ProgramKind.SCORING_PROGRAM if self.is_scoring else ProgramKind.INGESTION_PROGRAM}")
+
+        # Define directories for ingestion, scoring and submission
+        ingestion_program_dir = os.path.join(self.root_dir, "ingestion_program")
+        scoring_program_dir = os.path.join(self.root_dir, "scoring_program")
+        submission_dir = os.path.join(self.root_dir, "submission")
 
         loop = asyncio.new_event_loop()
         # Set the event loop for the gather
@@ -1473,31 +1497,26 @@ class Run:
         if self.is_scoring:
             # During scoring, run scoring program directory
             tasks.append(
-                self._run_scoring_program_directory(scoring_program_dir)
+                self._run_program_directory(kind=ProgramKind.SCORING_PROGRAM, program_dir=scoring_program_dir)
             )
 
-            # If ingestion_only_during_scoring is true, we also run ingestion program directory
+            # If ingestion_only_during_scoring is true, we also run ingestion program directory in parallel to scoring program
             if self.ingestion_only_during_scoring:
                 tasks.append(
-                    self._run_ingestion_program_directory(ingestion_program_dir)
+                    self._run_program_directory(kind=ProgramKind.INGESTION_PROGRAM, program_dir=ingestion_program_dir)
                 )
 
-            tasks.append(
-                self.watch_detailed_results()
-            )
+            # During scoring we watch for detailed results
+            # tasks.append(
+            #     self.watch_detailed_results()
+            # )
         else:
             # During ingestion we run ingestion program directory and submission directory
             tasks.extend([
-                self._run_ingestion_program_directory(ingestion_program_dir),
-                self._run_submission_directory(submission_dir)
+                self._run_program_directory(kind=ProgramKind.INGESTION_PROGRAM, program_dir=ingestion_program_dir),
+                self._run_program_directory(kind=ProgramKind.SUBMISSION, program_dir=submission_dir)
             ])
 
-        # gathered_tasks = asyncio.gather(
-        #     self._run_program_directory(program_dir, kind="program"),
-        #     self._run_program_directory(ingestion_program_dir, kind="ingestion"),
-        #     self.watch_detailed_results(),
-        #     return_exceptions=True,
-        # )
         gathered_tasks = asyncio.gather(*tasks, return_exceptions=True)
 
         task_results = []  # will store results/exceptions from gather
