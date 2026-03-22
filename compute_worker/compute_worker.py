@@ -1347,14 +1347,6 @@ class Run:
             logger.exception("Program directory execution failed")
             raise SubmissionException(str(e))
 
-    async def _run_scoring_program_directory(self, program_dir):
-        logger.error("[-] Run Scoring Program not implemented")
-        pass
-
-    async def _run_submission_directory(self, program_dir):
-        logger.error("[-] Run Submission not implemented")
-        pass
-
     def _put_dir(self, url, directory):
         """Zip the directory and send it to the given URL using _put_file."""
         logger.info("Putting dir %s in %s" % (directory, url))
