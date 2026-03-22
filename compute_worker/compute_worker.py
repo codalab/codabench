@@ -1006,236 +1006,6 @@ class Run:
 
         return path
 
-    async def _rrun_program_directory(self, program_dir, kind):
-        """
-        Function responsible for running program directory
-
-        Args:
-            - program_dir : can be either ingestion program or program/submission
-            - kind : either `program` or `ingestion`
-        """
-        # If the directory doesn't even exist, move on
-        if not os.path.exists(program_dir):
-            logger.warning(f"{program_dir} not found, no program to execute")
-
-            # Communicate that the program is closing
-            self.completed_program_counter += 1
-            return
-
-        if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
-            metadata_path = "metadata.yaml"
-        elif os.path.exists(os.path.join(program_dir, "metadata")):
-            metadata_path = "metadata"
-        else:
-            # Display a warning in logs when there is no metadata file in submission/program dir
-            if kind == "program":
-                logger.warning(
-                    "Program directory missing metadata, assuming it's going to be handled by ingestion"
-                )
-                # Copy submission files into prediction output
-                # This is useful for results submissions but wrongly uses storage
-                shutil.copytree(program_dir, self.output_dir)
-                return
-            else:
-                raise SubmissionException(
-                    "Program directory missing 'metadata.yaml/metadata'"
-                )
-
-        logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
-        with open(os.path.join(program_dir, metadata_path), "r") as metadata_file:
-            try:  # try to find a command in the metadata, in other cases set metadata to None
-                metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
-                logger.info(f"Metadata contains:\n {metadata}")
-                if isinstance(metadata, dict):  # command found
-                    command = metadata.get("command")
-                else:
-                    command = None
-            except yaml.YAMLError as e:
-                logger.error("Error parsing YAML file: ", e)
-                print("Error parsing YAML file: ", e)
-                command = None
-            if not command and kind == "ingestion":
-                raise SubmissionException(
-                    "Program directory missing 'command' in metadata"
-                )
-            elif not command:
-                logger.warning(
-                    f"Warning: {program_dir} has no command in metadata, continuing anyway "
-                    f"(may be meant to be consumed by an ingestion program)"
-                )
-                return
-        volumes_host = [
-            self._get_host_path(program_dir),
-            self._get_host_path(self.output_dir),
-            self.data_dir,
-        ]
-        volumes_config = {
-            volumes_host[0]: {
-                "bind": "/app/program",
-                "mode": "z",
-            },
-            volumes_host[1]: {
-                "bind": "/app/output",
-                "mode": "z",
-            },
-            volumes_host[2]: {
-                "bind": "/app/data",
-                "mode": "ro",
-            },
-        }
-
-        if kind == "ingestion":
-            # program here is either scoring program or submission, depends on if this ran during Prediction or Scoring
-            if self.ingestion_only_during_scoring and self.is_scoring:
-                # submission program moved to 'input/res' with shutil.move() above
-                ingested_program_location = "input/res"
-            else:
-                ingested_program_location = "program"
-            volumes_host.extend(
-                [self._get_host_path(self.root_dir, ingested_program_location)]
-            )
-            tempvolumeConfig = {
-                volumes_host[-1]: {
-                    "bind": "/app/ingested_program",
-                }
-            }
-            volumes_config.update(tempvolumeConfig)
-
-        if self.is_scoring:
-            # For scoring programs, we want to have a shared directory just in case we have an ingestion program.
-            # This will add the share dir regardless of ingestion or scoring, as long as we're `is_scoring`
-            volumes_host.extend([self._get_host_path(self.root_dir, "shared")])
-            tempvolumeConfig = {
-                volumes_host[-1]: {
-                    "bind": "/app/shared",
-                }
-            }
-            volumes_config.update(tempvolumeConfig)
-
-            # Input from submission (or submission + ingestion combo)
-            volumes_host.extend([self._get_host_path(self.input_dir)])
-            tempvolumeConfig = {
-                volumes_host[-1]: {
-                    "bind": "/app/input",
-                }
-            }
-            volumes_config.update(tempvolumeConfig)
-
-        if self.input_data:
-            volumes_host.extend([self._get_host_path(self.root_dir, "input_data")])
-            tempvolumeConfig = {
-                volumes_host[-1]: {
-                    "bind": "/app/input_data",
-                }
-            }
-            volumes_config.update(tempvolumeConfig)
-
-        # Handle Legacy competitions by replacing anything in the run command
-        command = replace_legacy_metadata_command(
-            command=command,
-            kind=kind,
-            is_scoring=self.is_scoring,
-            ingestion_only_during_scoring=self.ingestion_only_during_scoring,
-        )
-
-        cap_drop_list = [
-            "AUDIT_WRITE",
-            "CHOWN",
-            "DAC_OVERRIDE",
-            "FOWNER",
-            "FSETID",
-            "KILL",
-            "MKNOD",
-            "NET_BIND_SERVICE",
-            "NET_RAW",
-            "SETFCAP",
-            "SETGID",
-            "SETPCAP",
-            "SETUID",
-            "SYS_CHROOT",
-        ]
-        # Configure whether or not we use the GPU. Also setting auto_remove to False because
-        if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
-            security_options = ["no-new-privileges"]
-        else:
-            security_options = ["label=disable"]
-        # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
-        device_id = [os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")]
-        if os.environ.get("USE_GPU", "false").lower() == "true":
-            logger.info("Running the container with GPU capabilities")
-            host_config = client.create_host_config(
-                auto_remove=False,
-                cap_drop=cap_drop_list,
-                binds=volumes_config,
-                userns_mode="host",
-                security_opt=security_options,
-                device_requests=[
-                    {
-                        "Driver": "cdi",
-                        "DeviceIDs": device_id,
-                    },
-                ],
-            )
-        else:
-            host_config = client.create_host_config(
-                auto_remove=False,
-                cap_drop=cap_drop_list,
-                binds=volumes_config,
-                userns_mode="host",
-                security_opt=security_options,
-            )
-
-        logger.info("Running container with command " + command)
-        container_name = (
-            self.ingestion_container_name
-            if kind == "ingestion"
-            else self.scoring_program_container_name
-        )
-        # Disable or not the competition container access to Internet (False by default)
-        container_network_disabled = os.environ.get(
-            "COMPETITION_CONTAINER_NETWORK_DISABLED", ""
-        )
-
-        # HTTP and HTTPS proxy for the competition container if needed
-        competition_container_proxy_http = os.environ.get(
-            "COMPETITION_CONTAINER_HTTP_PROXY", ""
-        )
-        competition_container_proxy_http = (
-            "http_proxy=" + competition_container_proxy_http
-        )
-
-        competition_container_proxy_https = os.environ.get(
-            "COMPETITION_CONTAINER_HTTPS_PROXY", ""
-        )
-        competition_container_proxy_https = (
-            "https_proxy=" + competition_container_proxy_https
-        )
-
-        container = client.create_container(
-            self.container_image,
-            name=container_name,
-            host_config=host_config,
-            detach=False,
-            volumes=volumes_host,
-            command=command,
-            working_dir="/app/program",
-            environment=[
-                "PYTHONUNBUFFERED=1",
-                competition_container_proxy_http,
-                competition_container_proxy_https,
-            ],
-            network_disabled=container_network_disabled.lower() == "true",
-        )
-        logger.debug("Created container : " + str(container))
-        logger.info("Volume configuration of the container: ")
-        pprint(volumes_config)
-        # This runs the container engine command and asynchronously passes data back via websocket
-        try:
-            return await self._run_container_engine_cmd(container, kind=kind)
-        except Exception as e:
-            logger.exception("Program directory execution failed")
-            raise SubmissionException(str(e))
-
     async def _run_program_directory(self, kind, program_dir):
         """
         Function responsible for running
@@ -1254,7 +1024,7 @@ class Run:
             self.completed_program_counter += 1
             return
 
-        # Find metadata file. 
+        # Find metadata file.
         # Raise error if metadata is not found for ingestion or scoring
         if os.path.exists(os.path.join(program_dir, "metadata.yaml")):
             metadata_path = "metadata.yaml"
@@ -1623,23 +1393,24 @@ class Run:
 
         if self.is_scoring:
             # Check if scoring program failed
-            try:
-                program_results, _, _ = task_results
-            except:
-                program_results, _ = task_results
-            # Gather returns either normal values or exception instances when return_exceptions=True
-            had_async_exc = isinstance(
-                program_results, BaseException
-            ) and not isinstance(program_results, asyncio.CancelledError)
-            program_rc = getattr(self, "program_exit_code", None)
-            failed_rc = (program_rc is None) or (program_rc != 0)
-            if had_async_exc or failed_rc:
-                self._update_status(
-                    SubmissionStatus.FAILED,
-                    extra_information=f"program_rc={program_rc}, async={task_results}",
-                )
-                # Raise so upstream marks failed immediately
-                raise SubmissionException("Child task failed or non-zero return code")
+            # try:
+            #     program_results, _, _ = task_results
+            # except:
+            #     program_results, _ = task_results
+            # # Gather returns either normal values or exception instances when return_exceptions=True
+            # had_async_exc = isinstance(
+            #     program_results, BaseException
+            # ) and not isinstance(program_results, asyncio.CancelledError)
+            # program_rc = getattr(self, "program_exit_code", None)
+            # failed_rc = (program_rc is None) or (program_rc != 0)
+            # if had_async_exc or failed_rc:
+            #     self._update_status(
+            #         SubmissionStatus.FAILED,
+            #         extra_information=f"program_rc={program_rc}, async={task_results}",
+            #     )
+            #     # Raise so upstream marks failed immediately
+            #     raise SubmissionException("Child task failed or non-zero return code")
+
             self._update_status(SubmissionStatus.FINISHED)
 
         else:
