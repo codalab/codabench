@@ -474,7 +474,7 @@ class Run:
         start = time.time()
         expiration_seconds = 60
 
-        while self.watch and self.completed_program_counter < 2:
+        while self.watch and self.completed_program_counter < 1:
             if file_path:
                 new_time = os.path.getmtime(file_path)
                 if new_time != last_modified_time:
@@ -1499,9 +1499,9 @@ class Run:
                 )
 
             # During scoring we watch for detailed results
-            # tasks.append(
-            #     self.watch_detailed_results()
-            # )
+            tasks.append(
+                self.watch_detailed_results()
+            )
         else:
             # During ingestion we run ingestion program directory and submission directory
             tasks.extend([
@@ -1623,7 +1623,10 @@ class Run:
 
         if self.is_scoring:
             # Check if scoring program failed
-            program_results, _, _ = task_results
+            try:
+                program_results, _, _ = task_results
+            except:
+                program_results, _ = task_results
             # Gather returns either normal values or exception instances when return_exceptions=True
             had_async_exc = isinstance(
                 program_results, BaseException
