@@ -1094,7 +1094,7 @@ class Run:
         # Handle Legacy competitions by replacing anything in the run command
         command = replace_legacy_metadata_command(
             command=command,
-            kind=ProgramKind.INGESTION_PROGRAM,
+            kind=kind,
             is_scoring=self.is_scoring,
             ingestion_only_during_scoring=self.ingestion_only_during_scoring,
         )
