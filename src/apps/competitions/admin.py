@@ -92,16 +92,55 @@ def SubmissionsExport_as_csv(modeladmin, request, queryset):
         headers={"Content-Disposition": 'attachment; filename="submissions.csv"'},
     )
     writer = csv.writer(response)
-    writer.writerow(["ID", "Owner", "Status", "Task", "Phase", "Competition Title", "Competition creation date", "Scores"])
+    writer.writerow(
+        [
+            "ID",
+            "Owner",
+            "Status",
+            "Submitted on",
+            "Task",
+            "Phase",
+            "Competition Title",
+            "Competition creation date",
+            "Queue",
+            "Scores",
+        ]
+    )
     for obj in queryset:
         scores_list = []
         for scores in obj.scores.all():
             scores_list.append(scores.score)
         if obj.task is not None:
             if len(scores_list) == 0:
-                writer.writerow([obj.id, obj.owner, obj.status, obj.task, obj.phase, obj.phase.competition.title, obj.phase.competition.created_when, "None"])
+                writer.writerow(
+                    [
+                        obj.id,
+                        obj.owner,
+                        obj.status,
+                        obj.created_when,
+                        obj.task,
+                        obj.phase,
+                        obj.phase.competition.title,
+                        obj.phase.competition.created_when,
+                        obj.queue,
+                        "None",
+                    ]
+                )
             else:
-                writer.writerow([obj.id, obj.owner, obj.status, obj.task, obj.phase, obj.phase.competition.title, obj.phase.competition.created_when, scores_list[0]])
+                writer.writerow(
+                    [
+                        obj.id,
+                        obj.owner,
+                        obj.status,
+                        obj.created_when,
+                        obj.task,
+                        obj.phase,
+                        obj.phase.competition.title,
+                        obj.phase.competition.created_when,
+                        obj.queue,
+                        scores_list[0],
+                    ]
+                )
     return response
 
 

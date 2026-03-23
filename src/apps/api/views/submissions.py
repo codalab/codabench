@@ -291,6 +291,7 @@ class SubmissionViewSet(ModelViewSet):
             'created_when': 'Created When',
             'status': 'Status',
             'phase_name': 'Phase',
+            'scores.0.score': 'Score',
         }
         context["header"] = [k for k in context["labels"].keys()]
         return context
