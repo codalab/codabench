@@ -560,6 +560,14 @@ class SubmissionViewSet(ModelViewSet):
         # Use Queryset to update Submissions
         Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
+    
+    def paginate_queryset(self, queryset):
+        '''
+            This Méthode is added to override pagination when trying to download the Sub CSV
+        '''
+        if getattr(getattr(self.request, "accepted_renderer", None), "format", None) == "csv":
+            return None
+        return super().paginate_queryset(queryset)
 
 
 @api_view(['POST'])
