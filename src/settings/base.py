@@ -5,6 +5,8 @@ from celery.schedules import crontab
 from celery import signals
 import dj_database_url
 from .logs_loguru import configure_logging
+from django.core.management.utils import get_random_secret_key
+import configobj
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -125,7 +127,24 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
+
+# =============================================================================
+# Secret key (generate one if none is given, otherwise use given key)
+# =============================================================================
+# This is needed when the secret key is generated for the first time as it won't be loaded as an environment variable
+config = configobj.ConfigObj('.env')
+with open(".env", "a+") as f:
+    secret_key_count = 0
+    f.seek(0)
+    for x in f:
+        if x.strip().startswith("SECRET_KEY="):
+            secret_key_count = 1
+            SECRET_KEY = os.environ.get("SECRET_KEY", config['SECRET_KEY'])
+            break
+    if secret_key_count == 0:
+        SECRET_KEY = get_random_secret_key()
+        f.write(f"\nSECRET_KEY='{SECRET_KEY}'\n")
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
