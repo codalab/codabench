@@ -37,7 +37,56 @@ sys.path.append("/app/src/settings/")
 
 
 # -----------------------------------------------
-# CONSTANTS
+# Env Settings
+# -----------------------------------------------
+class Settings:
+
+    @staticmethod
+    def get(key, default=None):
+        """
+        Return the env var value if set, else default; returns None if not set and no default.
+        """
+        val = os.getenv(key)
+
+        if val is not None:
+            return val
+
+        if default is not None:
+            return default
+
+        logger.warning(f"Environment variable '{key}' not found and no default provided.")
+        return None
+
+    # Defaults
+    DEFAULT_SOCKETS = {
+        "docker": "unix:///var/run/docker.sock",
+        "podman": "unix:///run/user/1000/podman/podman.sock",
+    }
+
+    # Settings variables
+    LOG_LEVEL = get("LOG_LEVEL", "INFO")
+    SERIALIZED = get("SERIALIZED", "false")
+
+    USE_GPU = get("USE_GPU", "false")
+    CONTAINER_ENGINE_EXECUTABLE = get("CONTAINER_ENGINE_EXECUTABLE", "docker")
+    GPU_DEVICE = get("GPU_DEVICE", "nvidia.com/gpu=all")
+
+    CONTAINER_SOCKET = get("CONTAINER_SOCKET", DEFAULT_SOCKETS.get(CONTAINER_ENGINE_EXECUTABLE))
+
+    HOST_DIRECTORY = get("HOST_DIRECTORY", "/tmp/codabench/")
+    MAX_CACHE_DIR_SIZE_GB = get("MAX_CACHE_DIR_SIZE_GB", 10)
+
+    COMPETITION_CONTAINER_NETWORK_DISABLED = get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False")
+    COMPETITION_CONTAINER_HTTP_PROXY = get("COMPETITION_CONTAINER_HTTP_PROXY", "")
+    COMPETITION_CONTAINER_HTTPS_PROXY = get("COMPETITION_CONTAINER_HTTPS_PROXY", "")
+
+    CODALAB_IGNORE_CLEANUP_STEP = get("CODALAB_IGNORE_CLEANUP_STEP")
+
+    WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "")
+
+
+# -----------------------------------------------
+# Program Kind
 # -----------------------------------------------
 class ProgramKind:
     INGESTION_PROGRAM = "ingestion_program"
@@ -74,43 +123,24 @@ class SubmissionStatus:
 # Logging
 # -----------------------------------------------
 configure_logging(
-    os.environ.get("LOG_LEVEL", "INFO"), os.environ.get("SERIALIZED", "false")
+    Settings.LOG_LEVEL, Settings.SERIALIZED
 )
 
 # -----------------------------------------------
 # Initialize Docker or Podman depending on .env
 # -----------------------------------------------
-if os.environ.get("USE_GPU", "false").lower() == "true":
-    logger.info(
-        "Using "
-        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
-        + "with GPU capabilites : "
-        + os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")
-        + " network_disabled for the competition container is set to "
-        + os.environ.get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False")
-    )
-else:
-    logger.info(
-        "Using "
-        + os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").upper()
-        + " without GPU capabilities. "
-        + "network_disabled for the competition container is set to "
-        + os.environ.get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False")
-    )
+logger.info(
+    f"Using {Settings.CONTAINER_ENGINE_EXECUTABLE.upper()} "
+    f"{'with GPU capabilities: ' + Settings.GPU_DEVICE if Settings.USE_GPU.lower() == 'true' else 'without GPU capabilities'}. "
+    f"Network disabled for the competition container is set to {Settings.COMPETITION_CONTAINER_NETWORK_DISABLED}"
+)
 
-if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
-    client = docker.APIClient(
-        base_url=os.environ.get("CONTAINER_SOCKET", "unix:///var/run/docker.sock"),
-        version="auto",
-    )
-elif os.environ.get("CONTAINER_ENGINE_EXECUTABLE").lower() == "podman":
-    client = docker.APIClient(
-        base_url=os.environ.get(
-            "CONTAINER_SOCKET", "unix:///run/user/1000/podman/podman.sock"
-        ),
-        version="auto",
-    )
-
+# Intializing client
+# NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
+client = docker.APIClient(
+    base_url=Settings.CONTAINER_SOCKET,
+    version="auto",
+)
 
 # -----------------------------------------------
 # Show Progress bar on downloading images
@@ -178,8 +208,8 @@ def show_progress(line, progress):
                     total=total,
                 )
     except Exception as e:
-        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-            logger.exception("There was an error showing the progress bar")
+        if Settings.LOG_LEVEL.lower() == "debug":
+            logger.exception(f"There was an error showing the progress bar: {e}")
 
 
 # -----------------------------------------------
@@ -206,11 +236,11 @@ app.conf.task_queues = [
 # Directories
 # -----------------------------------------------
 # Setup base directories used by all submissions
-# note: we need to pass this directory to docker/podman so it knows where to store things!
-HOST_DIRECTORY = os.environ.get("HOST_DIRECTORY", "/tmp/codabench/")
+# NOTE: we need to pass this directory to docker/podman so it knows where to store things!
+HOST_DIRECTORY = Settings.HOST_DIRECTORY
 BASE_DIR = "/codabench/"  # base directory inside the container
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
-MAX_CACHE_DIR_SIZE_GB = float(os.environ.get("MAX_CACHE_DIR_SIZE_GB", 10))
+MAX_CACHE_DIR_SIZE_GB = float(Settings.MAX_CACHE_DIR_SIZE_GB)
 
 
 # -----------------------------------------------
@@ -239,7 +269,7 @@ def rewrite_bundle_url_if_needed(url):
 
     Example: http://localhost:9000|http://minio:9000
     """
-    rule = os.getenv("WORKER_BUNDLE_URL_REWRITE", "").strip()
+    rule = Settings.WORKER_BUNDLE_URL_REWRITE.strip()
     if not rule or "|" not in rule:
         return url
     src, dst = rule.split("|", 1)
@@ -757,14 +787,14 @@ class Run:
         ]
 
         # Configure whether or not we use the GPU. Also setting auto_remove to False because
-        if os.environ.get("CONTAINER_ENGINE_EXECUTABLE", "docker").lower() == "docker":
+        if Settings.CONTAINER_ENGINE_EXECUTABLE.lower() == "docker":
             security_options = ["no-new-privileges"]
         else:
             security_options = ["label=disable"]
 
         # Setting the device ID like this allows users to specify which gpu to use in the .env file, with all being the default if no value is given
-        device_id = [os.environ.get("GPU_DEVICE", "nvidia.com/gpu=all")]
-        if os.environ.get("USE_GPU", "false").lower() == "true":
+        device_id = [Settings.GPU_DEVICE]
+        if Settings.USE_GPU.lower() == "true":
             logger.info("Container configured with GPU capabilities")
             host_config = client.create_host_config(
                 auto_remove=False,
@@ -789,27 +819,9 @@ class Run:
                 security_opt=security_options,
             )
 
-        # Disable or not the competition container access to Internet (False by default)
-        container_network_disabled = os.environ.get(
-            "COMPETITION_CONTAINER_NETWORK_DISABLED", ""
-        )
-
-        # HTTP and HTTPS proxy for the competition container if needed
-        competition_container_proxy_http = os.environ.get(
-            "COMPETITION_CONTAINER_HTTP_PROXY", ""
-        )
-        competition_container_proxy_http = (
-            "http_proxy=" + competition_container_proxy_http
-        )
-
-        competition_container_proxy_https = os.environ.get(
-            "COMPETITION_CONTAINER_HTTPS_PROXY", ""
-        )
-        competition_container_proxy_https = (
-            "https_proxy=" + competition_container_proxy_https
-        )
-
         # Creating container
+        # COMPETITION_CONTAINER_NETWORK_DISABLED: Disable or not the competition container access to Internet (False by default)
+        # HTTP and HTTPS proxy for the competition container if needed
         container = client.create_container(
             self.container_image,
             name=container_name,
@@ -820,10 +832,10 @@ class Run:
             working_dir="/app/program",
             environment=[
                 "PYTHONUNBUFFERED=1",
-                competition_container_proxy_http,
-                competition_container_proxy_https,
+                "http_proxy=" + Settings.COMPETITION_CONTAINER_HTTP_PROXY,
+                "https_proxy=" + Settings.COMPETITION_CONTAINER_HTTPS_PROXY,
             ],
-            network_disabled=container_network_disabled.lower() == "true",
+            network_disabled=Settings.COMPETITION_CONTAINER_NETWORK_DISABLED.lower() == "true",
         )
 
         return container
@@ -868,7 +880,7 @@ class Run:
             logger.error(
                 f"There was an error trying to connect to the websocket on the codabench instance: {e}"
             )
-            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+            if Settings.LOG_LEVEL.lower() == "debug":
                 logger.exception(e)
 
         start = time.time()
@@ -922,7 +934,7 @@ class Run:
             logger.error(
                 f"There was an error while starting the container and getting the logs: {e}"
             )
-            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+            if Settings.LOG_LEVEL.lower() == "debug":
                 logger.exception(e)
 
         # Get the return code of the competition container once done
@@ -1316,7 +1328,7 @@ class Run:
                         logger.error(
                             f"There was a problem killing {containers_to_kill}: {e}"
                         )
-                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                        if Settings.LOG_LEVEL.lower() == "debug":
                             logger.exception(e)
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
@@ -1368,7 +1380,7 @@ class Run:
                         logger.error(
                             f"There was a problem killing {containers_to_kill}: {e}"
                         )
-                        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+                        if Settings.LOG_LEVEL.lower() == "debug":
                             logger.exception(e)
                 if kind == "program":
                     self.program_exit_code = return_code
@@ -1486,7 +1498,7 @@ class Run:
             self._put_dir(self.scoring_result, self.output_dir)
 
     def clean_up(self):
-        if os.environ.get("CODALAB_IGNORE_CLEANUP_STEP"):
+        if Settings.CODALAB_IGNORE_CLEANUP_STEP:
             logger.warning(
                 f"CODALAB_IGNORE_CLEANUP_STEP mode enabled, ignoring clean up of: {self.root_dir}"
             )
