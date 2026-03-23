@@ -143,7 +143,7 @@ with open(".env", "a+") as f:
             break
     if secret_key_count == 0:
         SECRET_KEY = get_random_secret_key()
-        f.write(f"\nSECRET_KEY={SECRET_KEY}\n")
+        f.write(f"\nSECRET_KEY='{SECRET_KEY}'\n")
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
