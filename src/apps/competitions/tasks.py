@@ -15,7 +15,6 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
-from django.db import transaction
 from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
@@ -117,11 +116,7 @@ COLUMN_FIELDS = [
 ]
 MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600))  # time limit of the default queue
 
-
 def _send_to_compute_worker(submission, is_scoring, target_group=None):
-<<<<<<< HEAD
-    logger.info("Site Worker ==> STARTING")
-=======
     logger.info(
         "Site Worker ==> STARTING submission_id=%s is_scoring=%s "
         "target_group_param=%s submission.queue=%s parent=%s",
@@ -131,7 +126,6 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         getattr(getattr(submission, "queue", None), "name", None),
         getattr(submission.parent, "pk", None) if submission.parent else None,
     )
->>>>>>> 0dc476f1 (debug serveur status routing of scoring)
 
     run_args = {
         "user_pk": submission.owner.pk,
@@ -142,19 +136,8 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         "id": submission.pk,
         "is_scoring": is_scoring,
     }
+    logger.debug("Initial run_args: %s", run_args)
 
-<<<<<<< HEAD
-    if not submission.detailed_result.name and submission.phase.competition.enable_detailed_results:
-        submission.detailed_result.save('detailed_results.html', ContentFile(''.encode()))
-        submission.save(update_fields=['detailed_result'])
-    if not submission.prediction_result.name:
-        submission.prediction_result.save('prediction_result.zip', ContentFile(''.encode()))
-        submission.save(update_fields=['prediction_result'])
-    if not submission.scoring_result.name:
-        submission.scoring_result.save('scoring_result.zip', ContentFile(''.encode()))
-        submission.save(update_fields=['scoring_result'])
-
-=======
     if submission.phase.competition.enable_detailed_results and not getattr(submission.detailed_result, "name", None):
         logger.info("Creating empty detailed_result for submission %s", submission.pk)
         submission.detailed_result.save("detailed_results.html", ContentFile(b""))
@@ -170,12 +153,10 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         submission.scoring_result.save("scoring_result.zip", ContentFile(b""))
         submission.save(update_fields=["scoring_result"])
 
->>>>>>> e0c39abf (feature ok, needs to be tested)
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
+    logger.debug("Reloaded submission %s from DB; task=%s", submission.pk, getattr(task, "pk", None))
 
-<<<<<<< HEAD
-=======
     if task is None:
         fallback_task = submission.phase.tasks.first()
         if fallback_task is not None:
@@ -192,35 +173,43 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                 submission.phase.pk,
             )
 
->>>>>>> e0c39abf (feature ok, needs to be tested)
     priority = 10 if is_scoring else 0
+    logger.debug("Computed task priority=%s", priority)
 
     if not is_scoring:
-        run_args['prediction_result'] = make_url_sassy(
-            path=submission.prediction_result.name,
-            permission='w'
-        )
-    else:
-        if submission.phase.competition.enable_detailed_results:
-            run_args['detailed_results_url'] = make_url_sassy(
-                path=submission.detailed_result.name,
-                permission='w',
-                content_type='text/html'
+        if getattr(submission.prediction_result, "name", None):
+            run_args["prediction_result"] = make_url_sassy(
+                path=submission.prediction_result.name,
+                permission="w",
             )
-        run_args['prediction_result'] = make_url_sassy(
-            path=submission.prediction_result.name,
-            permission='r'
-        )
-        run_args['scoring_result'] = make_url_sassy(
-            path=submission.scoring_result.name,
-            permission='w'
+            logger.debug("Prediction phase: prediction_result=%s", run_args["prediction_result"])
+        else:
+            logger.debug("Prediction phase: no prediction_result.path available for submission %s", submission.pk)
+    else:
+        if submission.phase.competition.enable_detailed_results and getattr(submission.detailed_result, "name", None):
+            run_args["detailed_results_url"] = make_url_sassy(
+                path=submission.detailed_result.name,
+                permission="w",
+                content_type="text/html",
+            )
+            logger.debug("Scoring phase: detailed_results_url=%s", run_args["detailed_results_url"])
+
+        if getattr(submission.prediction_result, "name", None):
+            run_args["prediction_result"] = make_url_sassy(
+                path=submission.prediction_result.name,
+                permission="r",
+            )
+        if getattr(submission.scoring_result, "name", None):
+            run_args["scoring_result"] = make_url_sassy(
+                path=submission.scoring_result.name,
+                permission="w",
+            )
+        logger.debug(
+            "Scoring phase: prediction_result=%s scoring_result=%s",
+            run_args.get("prediction_result"),
+            run_args.get("scoring_result"),
         )
 
-<<<<<<< HEAD
-    if task.ingestion_program:
-        if (task.ingestion_only_during_scoring and is_scoring) or (not task.ingestion_only_during_scoring and not is_scoring):
-            run_args['ingestion_program'] = make_url_sassy(task.ingestion_program.data_file.name)
-=======
     if task is not None:
         try:
             if getattr(task, "ingestion_program", None):
@@ -234,20 +223,23 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                         logger.debug("Added ingestion_program=%s", run_args["ingestion_program"])
                     else:
                         logger.debug("Task %s ingestion_program exists but no data_file", task.pk)
->>>>>>> e0c39abf (feature ok, needs to be tested)
 
-    if task.input_data and (not is_scoring or task.ingestion_only_during_scoring):
-        run_args['input_data'] = make_url_sassy(task.input_data.data_file.name)
+            if getattr(task, "input_data", None) and (not is_scoring or getattr(task, "ingestion_only_during_scoring", False)):
+                input_data_file = getattr(task.input_data, "data_file", None)
+                if input_data_file:
+                    run_args["input_data"] = make_url_sassy(input_data_file.name)
+                    logger.debug("Added input_data=%s", run_args["input_data"])
 
-    if is_scoring and task.reference_data:
-        run_args['reference_data'] = make_url_sassy(task.reference_data.data_file.name)
+            if is_scoring and getattr(task, "reference_data", None):
+                reference_file = getattr(task.reference_data, "data_file", None)
+                if reference_file:
+                    run_args["reference_data"] = make_url_sassy(reference_file.name)
+                    logger.debug("Added reference_data=%s", run_args["reference_data"])
+        except Exception:
+            logger.exception("Error while resolving task assets for submission %s", submission.pk)
+    else:
+        logger.debug("No task available for submission %s: skipping ingestion/input/reference attachments", submission.pk)
 
-<<<<<<< HEAD
-    run_args['ingestion_only_during_scoring'] = task.ingestion_only_during_scoring
-
-    run_args['program_data'] = make_url_sassy(
-        path=submission.data.data_file.name if not is_scoring else task.scoring_program.data_file.name
-=======
     run_args["ingestion_only_during_scoring"] = getattr(task, "ingestion_only_during_scoring", False)
 
     program_data_path = None
@@ -268,62 +260,27 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
         SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
         if not is_scoring
         else SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
->>>>>>> e0c39abf (feature ok, needs to be tested)
     )
-
-    if not is_scoring:
-        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_PREDICTION
-    else:
-        detail_names = SubmissionDetails.DETAILED_OUTPUT_NAMES_SCORING
 
     for detail_name in detail_names:
         run_args[detail_name] = create_detailed_output_file(detail_name, submission)
+        logger.debug("Created detailed output %s=%s", detail_name, run_args[detail_name])
 
-    logger.info(f"Task data for submission id = {submission.id}")
-    logger.debug(run_args)
+    logger.info("Final task payload ready for submission %s", submission.pk)
+    logger.debug("run_args=%s", run_args)
 
-<<<<<<< HEAD
-    # Pad timelimit so worker has time to cleanup
-    time_padding = 60 * 20  # 20 minutes
-=======
     time_padding = 60 * 20
->>>>>>> e0c39abf (feature ok, needs to be tested)
     time_limit = submission.phase.execution_time_limit + time_padding
+    logger.debug(
+        "Computed time_limit=%s (base=%s padding=%s)",
+        time_limit,
+        submission.phase.execution_time_limit,
+        time_padding,
+    )
 
-<<<<<<< HEAD
-    # Determine routing: prefer explicitly passed target_group, else fallback to competition/group resolution
-=======
->>>>>>> e0c39abf (feature ok, needs to be tested)
     target_vhost = None
     try:
         if target_group:
-<<<<<<< HEAD
-            if getattr(target_group, 'queue', None):
-                run_args['queue'] = target_group.queue.name
-                target_vhost = getattr(target_group.queue, 'vhost', None)
-            logger.info("Submission %s forced to group %s queue=%s", submission.pk,
-                        getattr(target_group, 'pk', None), run_args.get('queue'))
-        else:
-            #   Legacy behavior
-            competition = submission.phase.competition
-            user_group_ids = list(submission.owner.groups.values_list("id", flat=True))
-            logger.debug("User %s groups ids: %s", submission.owner.pk, user_group_ids)
-
-            comp_user_groups_qs = (
-                competition.participant_groups
-                .select_related("queue")
-                .filter(id__in=user_group_ids)
-            )
-
-            group = comp_user_groups_qs.filter(queue__isnull=False).first() or comp_user_groups_qs.first()
-            if group and group.queue:
-                run_args["queue"] = group.queue.name
-                target_vhost = getattr(group.queue, "vhost", None)
-                logger.info("Submission %s chosen group=%s queue=%s", submission.pk, group.pk, group.queue.name)
-            else:
-                logger.debug("Submission %s owner %s: no matching group with queue for competition %s",
-                             submission.pk, submission.owner.pk, competition.pk)
-=======
             if getattr(target_group, "queue", None):
                 run_args["queue"] = target_group.queue.name
                 target_vhost = getattr(target_group.queue, "vhost", None)
@@ -427,61 +384,81 @@ def _send_to_compute_worker(submission, is_scoring, target_group=None):
                                 )
                         except Exception:
                             logger.exception("Error while trying to resolve queue from sibling for submission %s", submission.pk)
->>>>>>> 0dc476f1 (debug serveur status routing of scoring)
     except Exception:
-        logger.exception("Error while resolving competition/group for submission %s", submission.pk)
+        logger.exception(
+            "Error while resolving routing for submission %s", submission.pk
+        )
 
-<<<<<<< HEAD
-    # If no group vhost, fallback to competition-level queue vhost
-=======
->>>>>>> e0c39abf (feature ok, needs to be tested)
     if target_vhost is None:
-        comp_queue = getattr(submission.phase.competition, 'queue', None)
+        comp_queue = getattr(submission.phase.competition, "queue", None)
         if comp_queue:
-            run_args['queue'] = getattr(comp_queue, 'name', None)
-            target_vhost = getattr(comp_queue, 'vhost', None)
+            run_args["queue"] = getattr(comp_queue, "name", None)
+            target_vhost = getattr(comp_queue, "vhost", None)
+            logger.info(
+                "Fallback to competition queue=%s vhost=%s for submission %s",
+                run_args.get("queue"),
+                target_vhost,
+                submission.pk,
+            )
 
-<<<<<<< HEAD
-    # Send the task to the compute-worker
-=======
->>>>>>> e0c39abf (feature ok, needs to be tested)
     task_obj = None
     try:
         if target_vhost:
+            logger.info(
+                "Sending task to compute-worker with explicit vhost=%s submission=%s",
+                target_vhost,
+                submission.pk,
+            )
             celery_app = app_or_default()
             with celery_app.connection() as new_connection:
                 new_connection.virtual_host = str(target_vhost)
                 task_obj = celery_app.send_task(
-                    'compute_worker_run',
+                    "compute_worker_run",
                     args=(run_args,),
-                    queue='compute-worker',
+                    queue="compute-worker",
                     soft_time_limit=time_limit,
                     connection=new_connection,
                     priority=priority,
                 )
         else:
+            logger.info(
+                "Sending task to compute-worker with default vhost submission=%s",
+                submission.pk,
+            )
             task_obj = app.send_task(
-                'compute_worker_run',
+                "compute_worker_run",
                 args=(run_args,),
-                queue='compute-worker',
+                queue="compute-worker",
                 soft_time_limit=time_limit,
                 priority=priority,
             )
     except Exception:
-        logger.exception("Failed to enqueue compute_worker_run for submission %s", submission.pk)
+        logger.exception(
+            "Failed to enqueue compute_worker_run for submission %s",
+            submission.pk,
+        )
         task_obj = None
 
     if task_obj:
-        submission.celery_task_id = getattr(task_obj, 'id', None)
+        submission.celery_task_id = getattr(task_obj, "id", None)
+        logger.info(
+            "Task enqueued successfully submission=%s celery_task_id=%s",
+            submission.pk,
+            submission.celery_task_id,
+        )
 
     if submission.status == Submission.SUBMITTING:
         submission.status = Submission.SUBMITTED
-        submission.save(update_fields=["status"])
+        logger.debug("Submission %s status updated to SUBMITTED", submission.pk)
 
     try:
         submission.save()
+        logger.info("Submission %s saved successfully", submission.pk)
     except Exception:
-        logger.exception("Failed to save submission after enqueue for submission %s", submission.pk)
+        logger.exception(
+            "Failed to save submission after enqueue submission=%s",
+            submission.pk,
+        )
 
 
 def create_detailed_output_file(detail_name, submission):
@@ -489,10 +466,27 @@ def create_detailed_output_file(detail_name, submission):
     new_details.data_file.save(f'{detail_name}.txt', ContentFile(''.encode()))  # must encode here for GCS
     return make_url_sassy(new_details.data_file.name, permission="w")
 
-
 def run_submission(submission_pk, tasks=None, is_scoring=False):
-    task_ids = [t.id for t in tasks] if tasks else None
+    """
+    Legacy-compatible handling:
+    - tasks may be None
+    - tasks may contain None
+    - in those cases we fallback to phase.tasks (as legacy did)
+    """
+
+    task_ids = None
+
+    if tasks:
+        cleaned_tasks = [t for t in tasks if t is not None]
+
+        if cleaned_tasks:
+            task_ids = [t.id for t in cleaned_tasks]
+        else:
+            # behave like legacy: treat as None
+            task_ids = None
+
     return _run_submission.apply_async((submission_pk, task_ids, is_scoring))
+
 
 
 def send_submission_message(submission, data):
@@ -574,7 +568,8 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                                 participant=submission.participant,
                                 parent=submission,
                                 task=task_obj,
-                                fact_sheet_answers=submission.fact_sheet_answers
+                                fact_sheet_answers=submission.fact_sheet_answers,
+                                queue=group.queue,
                             )
                             child_sub.save(ignore_submission_limit=True)
                             send_child_id(submission, child_sub.id)
@@ -591,7 +586,8 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                             participant=submission.participant,
                             parent=submission,
                             task=tasks[0],
-                            fact_sheet_answers=submission.fact_sheet_answers
+                            fact_sheet_answers=submission.fact_sheet_answers,
+                            queue=group.queue,
                         )
                         child_sub.save(ignore_submission_limit=True)
                         send_child_id(submission, child_sub.id)
@@ -609,6 +605,7 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
     '''END BLOCK'''
 
 
+
     if len(tasks) > 1:
         # The initial submission object becomes the parent submission and we create children for each task
         submission.has_children = True
@@ -624,34 +621,35 @@ def _run_submission(submission_pk, task_pks=None, is_scoring=False):
                 data=submission.data,
                 participant=submission.participant,
                 parent=submission,
-                task=task[0],
-                fact_sheet_answers=submission.fact_sheet_answers
+                task=task,
+                fact_sheet_answers=submission.fact_sheet_answers,
+                queue=(assigned_group.queue if assigned_group else None),
             )
             child_sub.save(ignore_submission_limit=True)
-            _send_to_compute_worker(child_sub, is_scoring=False, target_group=assigned_group)
-            send_child_id(submission, child_sub.id)
-        else:
-            child_sub = Submission(
-                owner=submission.owner,
-                phase=submission.phase,
-                data=submission.data,
-                participant=submission.participant,
-                parent=submission,
-                task=tasks[0],
-                fact_sheet_answers=submission.fact_sheet_answers
-            )
-            child_sub.save(ignore_submission_limit=True)
-
-            send_child_id(submission, child_sub.id)
 
             try:
-                _send_to_compute_worker(child_sub, is_scoring, target_group=group)
+                _send_to_compute_worker(child_sub, is_scoring=is_scoring, target_group=assigned_group)
+                logger.info("Dispatched child submission %s for task %s (parent=%s)", child_sub.pk, task.pk, submission.pk)
             except Exception:
                 logger.exception(
                     "Failed to send child submission %s to compute worker for group %s",
                     child_sub.pk,
-                    getattr(group, 'pk', None)
+                    getattr(assigned_group, 'pk', None)
                 )
+
+            send_child_id(submission, child_sub.id)
+
+    else:
+        try:
+            _send_to_compute_worker(submission, is_scoring=is_scoring, target_group=assigned_group)
+            logger.info("Dispatched original submission %s for single-task execution (assigned_group=%s)",
+                        submission.pk, getattr(assigned_group, 'pk', None))
+        except Exception:
+            logger.exception(
+                "Failed to send submission %s to compute worker for group %s",
+                submission.pk,
+                getattr(assigned_group, 'pk', None)
+            )
 
 @app.task(queue='site-worker', soft_time_limit=60 * 60)  # 1 hour timeout
 def unpack_competition(status_pk):
