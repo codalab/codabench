@@ -104,6 +104,7 @@ def SubmissionsExport_as_csv(modeladmin, request, queryset):
             "Competition creation date",
             "Queue",
             "Scores",
+            "On Leaderboard",
         ]
     )
     for obj in queryset:
@@ -124,6 +125,7 @@ def SubmissionsExport_as_csv(modeladmin, request, queryset):
                         obj.phase.competition.created_when,
                         obj.queue,
                         "None",
+                        obj.appear_on_leaderboards,
                     ]
                 )
             else:
@@ -139,6 +141,7 @@ def SubmissionsExport_as_csv(modeladmin, request, queryset):
                         obj.phase.competition.created_when,
                         obj.queue,
                         scores_list[0],
+                        obj.appear_on_leaderboards,
                     ]
                 )
     return response
