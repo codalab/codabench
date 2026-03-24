@@ -75,7 +75,7 @@
             </div>
           </a>
           <div class="comp-stats">
-            {pretty_date(competition.created_when)}
+            {pretty_date(competition.first_phase_start)}
             <div if="{!competition.reward && ! competition.report}" class="ui divider"></div>
             <div>
               <span if="{competition.reward}"><img width="30" height="30" src="/static/img/trophy.png"></span>

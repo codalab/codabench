@@ -458,6 +458,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
     created_by = serializers.CharField(source='created_by.username', read_only=True)
     owner_display_name = serializers.SerializerMethodField()
     participants_count = serializers.IntegerField(read_only=True)
+    first_phase_start = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Competition
@@ -467,6 +468,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'created_by',
             'owner_display_name',
             'created_when',
+            'first_phase_start',
             'published',
             'participants_count',
             'logo',
@@ -477,8 +479,7 @@ class CompetitionSerializerSimple(serializers.ModelSerializer):
             'contact_email',
             'report',
             'is_featured',
-            'submissions_count',
-            'participants_count'
+            'submissions_count'
         )
 
     def get_created_by(self, obj):

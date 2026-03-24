@@ -293,6 +293,7 @@ class SubmissionViewSet(ModelViewSet):
             'phase_name': 'Phase',
             'task.name': 'Task',
             'scores.0.score': 'Score',
+            'on_leaderboard': 'On Leaderboard'
         }
         context["header"] = [k for k in context["labels"].keys()]
         return context

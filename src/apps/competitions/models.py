@@ -102,6 +102,13 @@ class Competition(models.Model):
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
 
+    @property
+    def first_phase_start(self):
+        first_phase = self.phases.filter(index=0).first()
+        if first_phase and first_phase.start:
+            return first_phase.start
+        return self.created_when
+
     def user_has_admin_permission(self, user):
         if isinstance(user, int):
             try:
