@@ -1432,23 +1432,23 @@ class Run:
 
         if self.is_scoring:
             # Check if scoring program failed
-            # try:
-            #     program_results, _, _ = task_results
-            # except:
-            #     program_results, _ = task_results
-            # # Gather returns either normal values or exception instances when return_exceptions=True
-            # had_async_exc = isinstance(
-            #     program_results, BaseException
-            # ) and not isinstance(program_results, asyncio.CancelledError)
-            # program_rc = getattr(self, "program_exit_code", None)
-            # failed_rc = (program_rc is None) or (program_rc != 0)
-            # if had_async_exc or failed_rc:
-            #     self._update_status(
-            #         SubmissionStatus.FAILED,
-            #         extra_information=f"program_rc={program_rc}, async={task_results}",
-            #     )
-            #     # Raise so upstream marks failed immediately
-            #     raise SubmissionException("Child task failed or non-zero return code")
+            try:
+                program_results, _, _ = task_results
+            except:
+                program_results, _ = task_results
+            # Gather returns either normal values or exception instances when return_exceptions=True
+            had_async_exc = isinstance(
+                program_results, BaseException
+            ) and not isinstance(program_results, asyncio.CancelledError)
+            program_rc = getattr(self, "program_exit_code", None)
+            failed_rc = (program_rc is None) or (program_rc != 0)
+            if had_async_exc or failed_rc:
+                self._update_status(
+                    SubmissionStatus.FAILED,
+                    extra_information=f"program_rc={program_rc}, async={task_results}",
+                )
+                # Raise so upstream marks failed immediately
+                raise SubmissionException("Child task failed or non-zero return code")
 
             self._update_status(SubmissionStatus.FINISHED)
 
