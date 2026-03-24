@@ -862,19 +862,19 @@ class Run:
         try:
             websocket_url = f"{self.websocket_url}?kind={kind}"
             logger.debug(
-                "Connecting to "
-                + websocket_url
-                + "for container "
-                + str(container.get("Id"))
+                "Connecting to " +
+                websocket_url +
+                "for container " +
+                str(container.get("Id"))
             )
             websocket = await asyncio.wait_for(
                 websockets.connect(websocket_url), timeout=10.0
             )
             logger.debug(
-                "connected to "
-                + str(websocket_url)
-                + "for container "
-                + str(container.get("Id"))
+                "connected to " +
+                str(websocket_url) +
+                "for container " +
+                str(container.get("Id"))
             )
         except Exception as e:
             logger.error(
@@ -954,10 +954,10 @@ class Run:
             client.remove_container(container, force=True)
 
             logger.debug(
-                "Container "
-                + container.get("Id")
-                + "exited with status code : "
-                + str(return_Code["StatusCode"])
+                "Container " +
+                container.get("Id") +
+                "exited with status code : " +
+                str(return_Code["StatusCode"])
             )
 
         except (
@@ -1095,7 +1095,7 @@ class Run:
             volumes_config.update({volumes_host[-1]: {"bind": "/app/shared"}})
 
             # Input dir for scoring program
-            volumes_host.extend([self._get_host_path(self.root_dir, "input")])
+            volumes_host.extend([self._get_host_path(self.input_dir)])
             volumes_config.update({volumes_host[-1]: {"bind": "/app/input"}})
 
         # NOTE: self.input_data is valid when running an ingestion program and competition task has input data
@@ -1196,6 +1196,31 @@ class Run:
         else:
             logger.info("Cache directory does not need to be pruned!")
 
+    def _copy_submission_to_input_res(self):
+        """
+        Temporary backward-compatibility function.
+
+        Earlier, scoring programs expected submission files in ingestion output:
+        /app/input/res/
+
+        Newer changes expose submission under:
+        /app/ingested_program/
+
+        To avoid breaking older scoring programs, we copy the submission
+        directory into input/res
+        """
+
+        submission_directory = os.path.join(self.root_dir, "submission")
+        ingestion_res_directory = os.path.join(self.root_dir, "input/res")
+
+        # copy from submission_directory ingestion_res_directory
+        try:
+            shutil.copytree(submission_directory, ingestion_res_directory, dirs_exist_ok=True)
+            logger.info(f"Copied submission files to input/res successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to copy submission to input/res: {e}")
+
     def prepare(self):
         hostname = utils.nodenames.gethostname()
         if self.is_scoring:
@@ -1234,10 +1259,7 @@ class Run:
                 cache_this_bundle = path in ("input_data", "input/ref")
                 zip_file = self._get_bundle(url, path, cache=cache_this_bundle)
 
-                # Originally the following if condition was
-                # `if url == self.program_data and not self.is_scoring:`
-                # Which means if url == submission and this is ingestion run
-                # Below now we have a new condition i.e. when url == submission and this is ingestion run
+                # Computing checksum of the submission file during ingestion run
                 if url == self.submission_data and not self.is_scoring:
                     # We want to get a checksum of submissions so we can check if they are
                     # a solution, or maybe match them against other submissions later
@@ -1245,6 +1267,11 @@ class Run:
                     checksum = md5(zip_file)
                     logger.info(f"Checksum result: {checksum}")
                     self._update_submission({"md5": checksum})
+
+        # During scoring: copy submission files into "input/res"
+        if self.is_scoring:
+            # NOTE: Temporary compatibility hook (To be removed in the future)
+            self._copy_submission_to_input_res()
 
         # For logging purposes let's dump file names
         for filename in glob.iglob(self.root_dir + "**/*.*", recursive=True):
