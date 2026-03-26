@@ -107,7 +107,7 @@ class Settings:
 
     CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
 
-    WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "")
+    WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
 
 
 # -----------------------------------------------
@@ -235,7 +235,7 @@ def show_progress(line, progress):
                     total=total,
                 )
     except Exception as e:
-        if Settings.LOG_LEVEL == Settings.DEBUG:
+        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
             logger.exception(f"There was an error showing the progress bar: {e}")
 
 
@@ -296,7 +296,7 @@ def rewrite_bundle_url_if_needed(url):
 
     Example: http://localhost:9000|http://minio:9000
     """
-    rule = Settings.WORKER_BUNDLE_URL_REWRITE.strip()
+    rule = Settings.WORKER_BUNDLE_URL_REWRITE
     if not rule or "|" not in rule:
         return url
     src, dst = rule.split("|", 1)
