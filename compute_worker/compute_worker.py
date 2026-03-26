@@ -114,7 +114,6 @@ class Settings:
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
 
 
-
 # -----------------------------------------------
 # Program Kind
 # -----------------------------------------------
@@ -293,7 +292,6 @@ def rewrite_bundle_url_if_needed(url):
     """
 
     rule = Settings.WORKER_BUNDLE_URL_REWRITE
-
     if not rule or "|" not in rule:
         return url
     src, dst = rule.split("|", 1)
