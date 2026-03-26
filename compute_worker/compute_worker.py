@@ -114,6 +114,7 @@ class Settings:
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
 
 
+
 # -----------------------------------------------
 # Program Kind
 # -----------------------------------------------
@@ -264,7 +265,6 @@ app.conf.task_queues = [
     ),
 ]
 
-
 # -----------------------------------------------
 # Exceptions
 # -----------------------------------------------
@@ -291,7 +291,9 @@ def rewrite_bundle_url_if_needed(url):
 
     Example: http://localhost:9000|http://minio:9000
     """
+
     rule = Settings.WORKER_BUNDLE_URL_REWRITE
+
     if not rule or "|" not in rule:
         return url
     src, dst = rule.split("|", 1)
@@ -1229,6 +1231,8 @@ class Run:
             # Only during prediction step do we want to announce "preparing"
             self._update_status(SubmissionStatus.PREPARING, extra_information=f"ingestion_hostname-{hostname}")
 
+
+
         # Setup cache and prune if it's out of control
         self._prep_cache_dir()
 
@@ -1301,25 +1305,24 @@ class Run:
                 "error_message": error_message,
                 "is_scoring": self.is_scoring,
             }
+
             # Cleanup containers
             containers_to_kill = [
                 self.ingestion_container_name, 
                 self.program_container_name
             ]
-            logger.debug(
-                "Trying to kill and remove container " + str(containers_to_kill)
-            )
+            logger.debug("Trying to kill and remove container " + str(containers_to_kill))
+
             for container in containers_to_kill:
                 try:
                     client.remove_container(str(container), force=True)
                 except docker.errors.APIError as e:
                     logger.error(e)
                 except Exception as e:
-                    logger.error(
-                        f"There was a problem killing {containers_to_kill}: {e}"
-                    )
+                    logger.error(f"There was a problem killing {containers_to_kill}: {e}")
                     if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
                         logger.exception(e)
+
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
             # Send error through web socket to the frontend
