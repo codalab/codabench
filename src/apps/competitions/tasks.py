@@ -195,9 +195,9 @@ def _send_to_compute_worker(submission, is_scoring):
     time_limit = submission.phase.execution_time_limit + time_padding
 
     if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
-        submission.queue_name = submission.phase.competition.queue.name or ''
+        submission.queue = submission.phase.competition.queue.name or ''
         run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
-        submission.save(update_fields=["queue_name"])
+        submission.save(update_fields=["queue"])
     if submission.status == Submission.SUBMITTING:
         # Don't want to mark an already-prepared submission as "submitted" again, so
         # only do this if we were previously "SUBMITTING"
