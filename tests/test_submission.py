@@ -48,20 +48,21 @@ def run_tests(page, competition, submission, expected_result="Finished") -> None
         expect(page.get_by_role("cell", name=finished_or_failed)).to_be_visible(timeout=2000)
     # Then we actually check if we got the expected result
     expect(page.get_by_role("cell", name=expected_result)).to_be_visible()
-    # Add to leaderboard and see if shows
-    text = page.locator(".submission_row").first.inner_text()
-    submission_Id = text.split(None, 1)
-    try:
-        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
-    except:
-        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
-    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
-    expect(
-        page.locator("#leaderboardTable").get_by_role(
-            "link", name=data["default_user"]["username"]
-        )
-    ).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
+    if expected_result == "Finished":
+        # Add to leaderboard and see if shows
+        text = page.locator(".submission_row").first.inner_text()
+        submission_Id = text.split(None, 1)
+        try:
+            page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+        except:
+            page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+        page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+        expect(
+            page.locator("#leaderboardTable").get_by_role(
+                "link", name=data["default_user"]["username"]
+            )
+        ).to_be_visible()
+        expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
 def test_v2_code(page: Page):
