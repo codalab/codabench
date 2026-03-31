@@ -593,7 +593,7 @@ class Run:
                     for line in resp:
                         if isinstance(line, dict) and line.get("error"):
                             raise DockerImagePullException(line["error"])
-                        show_progress(line, progress)
+                        show_progress(line, progress, tasks)
                     break  # Break if the loop is successful to exit "with Progress() as progress"
 
             except (docker.errors.APIError, Exception) as pull_error:
