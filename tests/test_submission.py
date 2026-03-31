@@ -39,7 +39,8 @@ def run_tests(page, competition, submission, expected_result="Finished") -> None
     expect(page.locator(".ui.indicating")).to_be_visible()
     expect(page.locator(".ui.indicating")).not_to_be_visible()
     # Wait for the run to be completed (Finished or Failed) to show. 
-    finished_or_failed = re.compile(r"^(Finished|Failed)$")
+    # "Failed" regex is more flexible because the cell also contain a question mark
+    finished_or_failed = re.compile(r"^(Finished|Failed.*)$")
     try:
         expect(page.get_by_role("cell", name=finished_or_failed)).to_be_visible(timeout=25000)
     # If it does not, catch the error and reload the page in case the page didn't update automatically
@@ -47,8 +48,10 @@ def run_tests(page, competition, submission, expected_result="Finished") -> None
         page.reload()
         expect(page.get_by_role("cell", name=finished_or_failed)).to_be_visible(timeout=2000)
     # Then we actually check if we got the expected result
-    expect(page.get_by_role("cell", name=expected_result)).to_be_visible()
-    if expected_result == "Finished":
+    if expected_result == "Failed":
+        expect(page.get_by_role("cell", name=re.compile(r"^Failed.*$"))).to_be_visible()
+    elif expected_result == "Finished":
+        expect(page.get_by_role("cell", name=expected_result)).to_be_visible()
         # Add to leaderboard and see if shows
         text = page.locator(".submission_row").first.inner_text()
         submission_Id = text.split(None, 1)
@@ -63,6 +66,11 @@ def run_tests(page, competition, submission, expected_result="Finished") -> None
             )
         ).to_be_visible()
         expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
+    else:
+        raise ValueError(
+            f"Unsupported expected_result={expected_result!r}. "
+            "Expected 'Finished' or 'Failed'."
+        )
 
 
 def test_v2_code(page: Page):
