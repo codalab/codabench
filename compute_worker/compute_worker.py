@@ -925,15 +925,15 @@ class Run:
         # Take our list of paths and smash 'em together
         path = os.path.join(*paths)
 
+        # Create if necessary
+        os.makedirs(path, exist_ok=True)
+
         # pull front of path, which points to the location inside the container
         path = path[len(Settings.BASE_DIR):]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
         path = os.path.join(Settings.HOST_DIRECTORY, path)
-
-        # Create if necessary
-        os.makedirs(path, exist_ok=True)
 
         return path
 
