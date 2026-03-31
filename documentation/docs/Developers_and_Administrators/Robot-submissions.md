@@ -127,7 +127,7 @@ On the Leaderboard, you can see the score details of each of your tasks.
 
 * Create a competition with robot submissions enabled
 
-  [Example competition bundle](https://github.com/codalab/competitions-v2/blob/develop/src/tests/functional/test_files/competition.zip)
+  [Example competition bundle](https://github.com/codalab/competitions-v2/blob/develop/src/tests/functional/test_files/competition_v2_wheat_code.zip)
 
 
 ![Edit Competition Page Allow Bots Checkbox](../_attachments/87486437-3037af00-c5f0-11ea-8edf-e758c969ab84_1752851308355029.jpeg)

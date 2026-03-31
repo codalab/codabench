@@ -23,13 +23,13 @@ The repo comes with a couple examples that are used during tests:
 
 ### v2 test data
  ```
- src/tests/functional/test_files/submission.zip
- src/tests/functional/test_files/competition.zip
+ src/tests/functional/test_files/submission_v2_wheat_code.zip
+ src/tests/functional/test_files/competition_v2_wheat_code.zip
  ```
 ### v1.5 legacy test data
  ```
- src/tests/functional/test_files/submission15.zip
- src/tests/functional/test_files/competition15.zip
+ src/tests/functional/test_files/submission15_sncf.zip
+ src/tests/functional/test_files/competition15_sncf.zip
  ```
  
 ### Other Codalab Competition examples

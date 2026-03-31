@@ -25,7 +25,7 @@ def test_competition_upload(page: Page):
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competitions/competition.zip")
+    file_chooser.set_files("test_files/competitions/competition_v2_wheat_code.zip")
     expect(page.get_by_text("Competition created!")).to_be_visible()
 
 
