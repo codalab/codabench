@@ -15,13 +15,10 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
+from django.db import transaction
 from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
-
-from urllib.request import urlopen
-from contextlib import closing
-from urllib.error import ContentTooShortError
 
 from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
@@ -145,14 +142,6 @@ def _send_to_compute_worker(submission, is_scoring):
     submission = Submission.objects.get(id=submission.id)
     task = submission.task
 
-    # priority of scoring tasks is higher, we don't want to wait around for
-    # many submissions to be scored while we're waiting for results
-    if is_scoring:
-        # higher numbers are higher priority
-        priority = 10
-    else:
-        priority = 0
-
     if not is_scoring:
         run_args['prediction_result'] = make_url_sassy(
             path=submission.prediction_result.name,
@@ -206,39 +195,43 @@ def _send_to_compute_worker(submission, is_scoring):
     time_limit = submission.phase.execution_time_limit + time_padding
 
     if submission.phase.competition.queue:  # if the competition is running on a custom queue, not the default queue
-        submission.queue_name = submission.phase.competition.queue.name or ''
+        submission.queue = submission.phase.competition.queue
         run_args['execution_time_limit'] = submission.phase.execution_time_limit  # use the competition time limit
-        submission.save()
-
-        # Send to special queue? Using `celery_app` var name here since we'd be overriding the imported `app`
-        # variable above
-        celery_app = app_or_default()
-        with celery_app.connection() as new_connection:
-            new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
-            task = celery_app.send_task(
-                'compute_worker_run',
-                args=(run_args,),
-                queue='compute-worker',
-                soft_time_limit=time_limit,
-                connection=new_connection,
-                priority=priority,
-            )
-    else:
-        task = app.send_task(
-            'compute_worker_run',
-            args=(run_args,),
-            queue='compute-worker',
-            soft_time_limit=time_limit,
-            priority=priority,
-        )
-    submission.celery_task_id = task.id
-
+        submission.save(update_fields=["queue"])
     if submission.status == Submission.SUBMITTING:
         # Don't want to mark an already-prepared submission as "submitted" again, so
         # only do this if we were previously "SUBMITTING"
         submission.status = Submission.SUBMITTED
+        submission.save(update_fields=["status"])
 
-    submission.save()
+    def _enqueue_after_commit():
+        # priority of scoring tasks is higher, we don't want to wait around for
+        # many submissions to be scored while we're waiting for results
+        priority = 10 if is_scoring else 0
+        if submission.phase.competition.queue:
+            celery_app = app_or_default()
+            with celery_app.connection() as new_connection:
+                new_connection.virtual_host = str(submission.phase.competition.queue.vhost)
+                task = celery_app.send_task(
+                    'compute_worker_run',
+                    args=(run_args,),
+                    queue='compute-worker',
+                    soft_time_limit=time_limit,
+                    connection=new_connection,
+                    priority=priority,
+                )
+        else:
+            task = app.send_task(
+                'compute_worker_run',
+                args=(run_args,),
+                queue='compute-worker',
+                soft_time_limit=time_limit,
+                priority=priority,
+            )
+        submission.celery_task_id = task.id
+        submission.save(update_fields=["celery_task_id"])
+
+    transaction.on_commit(_enqueue_after_commit)
 
 
 def create_detailed_output_file(detail_name, submission):
@@ -278,49 +271,6 @@ def send_child_id(submission, child_id):
         "kind": "child_update",
         "child_id": child_id
     })
-
-
-def retrieve_data(url, data=None):
-    with closing(urlopen(url, data)) as fp:
-        headers = fp.info()
-
-        bs = 1024 * 8
-        size = -1
-        read = 0
-        if "content-length" in headers:
-            size = int(headers["Content-Length"])
-
-        while True:
-            block = fp.read(bs)
-            if not block:
-                break
-            read += len(block)
-            yield(block)
-
-    if size >= 0 and read < size:
-        raise ContentTooShortError(
-            "retrieval incomplete: got only %i out of %i bytes"
-            % (read, size))
-
-
-def zip_generator(submission_pks):
-    in_memory_zip = BytesIO()
-    with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for submission_id in submission_pks:
-            submission = Submission.objects.get(id=submission_id)
-            short_name = "ID_" + str(submission_id) + '_' + submission.data.data_file.name.split('/')[-1]
-            url = make_url_sassy(path=submission.data.data_file.name)
-            for block in retrieve_data(url):
-                zip_file.writestr(short_name, block)
-
-    in_memory_zip.seek(0)
-
-    return in_memory_zip
-
-
-@app.task(queue='site-worker', soft_time_limit=60 * 60)
-def stream_batch_download(submission_pks):
-    return zip_generator(submission_pks)
 
 
 @app.task(queue='site-worker', soft_time_limit=60)
@@ -424,7 +374,7 @@ def unpack_competition(status_pk):
                 raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
                                                     "to make sure it is in the root directory.")
             with open(yaml_path) as f:
-                competition_yaml = yaml.load(f.read())
+                competition_yaml = yaml.safe_load(f.read())
 
             yaml_version = str(competition_yaml.get('version', '1'))
 

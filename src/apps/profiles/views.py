@@ -19,6 +19,7 @@ from django.views.generic import DetailView, TemplateView
 
 from api.serializers.profiles import UserSerializer, OrganizationDetailSerializer, OrganizationEditSerializer, \
     UserNotificationSerializer
+from api.serializers.competitions import CompetitionSerializerSimple
 from .forms import SignUpForm, LoginForm, ActivationForm
 from .models import User, DeletedUser, Organization, Membership
 from oidc_configurations.models import Auth_Organization
@@ -67,7 +68,23 @@ class UserDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['serialized_user'] = json.dumps(UserSerializer(self.get_object()).data)
+        user = self.get_object()
+        user_data = UserSerializer(user).data
+        # Fetch competitions organized by this user (as owner or collaborator)
+        organized_qs = (
+            Competition.objects
+            .filter(
+                Q(created_by=user) | Q(collaborators=user),
+                published=True,
+            )
+            .distinct()
+            .order_by("-created_when")
+        )
+        # Serialize into the same shape your public-list cards expect
+        user_data["competitions_organized"] = CompetitionSerializerSimple(
+            organized_qs, many=True, context={"request": self.request}
+        ).data
+        context["serialized_user"] = json.dumps(user_data).replace("</", "<\\/")
         return context
 
 
@@ -296,8 +313,11 @@ def log_in(request):
 
     # Fetch auth_organizations from the database
     auth_organizations = Auth_Organization.objects.all()
-    if auth_organizations:
-        context['auth_organizations'] = auth_organizations
+    context['auth_organizations'] = auth_organizations
+
+    # Always provide activation_error in context, even if None
+    if 'activation_error' not in context:
+        context['activation_error'] = None
 
     if not context.get('form'):
         context['form'] = LoginForm()
@@ -347,7 +367,6 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
        We have to use app:view_name syntax in templates like " {% url 'accounts:password_reset_confirm'%} "
        Therefore we need to tell this view to find the right success_url with that syntax or django won't be
        able to find the view.
-    3. from_email: We want to use SERVER_EMAIL already set in the .env
     #  The other commented sections are the defaults for other attributes in auth_views.PasswordResetView.
        They are in here in case someone wants to customize in the future. All attributes show up in the order
        shown in the docs.
@@ -358,7 +377,6 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
     # subject_template_name = ''  # Defaults to registration/password_reset_subject.txt if not supplied.
     # token_generator = ''  # This will default to default_token_generator, it’s an instance of django.contrib.auth.tokens.PasswordResetTokenGenerator.
     success_url = django.urls.reverse_lazy("accounts:password_reset_done")
-    from_email = settings.SERVER_EMAIL
 
 
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):

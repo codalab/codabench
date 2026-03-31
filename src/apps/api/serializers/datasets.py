@@ -46,12 +46,19 @@ class DataSerializer(DefaultUserCreateMixin, serializers.ModelSerializer):
         return is_public
 
     def validate(self, attrs):
+        # Check for duplicate name
         if 'name' in attrs:
             existing_lookup = Data.objects.filter(name=attrs['name'], created_by=self.context['request'].user)
             if self.instance:
                 existing_lookup = existing_lookup.exclude(pk=self.instance.pk)
             if existing_lookup.exists():
                 raise ValidationError("You already have a dataset by this name, please delete that dataset or rename this one")
+
+        # Validate file type
+        request_sassy_file_name = attrs.get('request_sassy_file_name')
+        if request_sassy_file_name and not request_sassy_file_name.endswith('.zip'):
+            raise ValidationError("Only zip files are allowed!")
+
         return attrs
 
     def create(self, validated_data):

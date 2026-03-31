@@ -18,15 +18,38 @@ unqualified-search-registries = ["docker.io"]
 Create the `.env` file in order to add the compute worker into a queue (here, the default queue is used. If you use a particular queue, then, fill in your BROKER_URL generated when creating this particular queue) : 
 
 ```ini title=".env"
+#######################################################################
+#                       Connection URL                                #
+#######################################################################
 BROKER_URL=pyamqp://<login>:<password>@www.codabench.org:5672/
-HOST_DIRECTORY=/codabench
 # If SSL isn't enabled, then comment or remove the following line
 BROKER_USE_SSL=True
+
+#######################################################################
+#                       Temporary Storage                             #
+#######################################################################
+HOST_DIRECTORY=/codabench
+
+
+#######################################################################
+#                       Runtime                                       #
+#######################################################################
 CONTAINER_ENGINE_EXECUTABLE=podman
 #USE_GPU=True
 #GPU_DEVICE=nvidia.com/gpu=all
+
+#######################################################################
+#                       Network                                       #
+#######################################################################
+#COMPETITION_CONTAINER_NETWORK_DISABLED=False
+
+#COMPETITION_CONTAINER_HTTP_PROXY=https://example_proxy:123
+#COMPETITION_CONTAINER_HTTPS_PROXY=http://example_proxy:1233
 ```
 
+By default, the competition container created by the compute worker has access to internet. If you want to remove this access, you can uncomment `COMPETITION_CONTAINER_NETWORK_DISABLED` and set it to `True`
+
+If the VM hosting the compute worker is behind a proxy, and you want to allow the competition container to access internet, you will also need to set the proxy for the competition container to use, in which case you can use `COMPETITION_CONTAINER_HTTP_PROXY`
 
 You will also need to create the `codabench` folder defined in the `.env` file, as well as change its permissions to the user that is running the compute worker.
 

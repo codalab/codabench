@@ -4,10 +4,15 @@ from settings.base import *  # noqa: F401,F403
 DEBUG = True
 
 CELERY_TASK_ALWAYS_EAGER = True
-
+INSTALLED_APPS += ('debug_toolbar',)
+MIDDLEWARE = ('debug_toolbar.middleware.DebugToolbarMiddleware',
+              'querycount.middleware.QueryCountMiddleware',
+              ) + MIDDLEWARE
 # Don't use whitenoise -- so we don't get exceptions for missing files
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
+STORAGES["staticfiles"] = {
+    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+}
 # NOTE! We cannot use in memory databases at the moment with Channels. If we remove channels,
 # we can turn this back on:
 #     # Use in memory database

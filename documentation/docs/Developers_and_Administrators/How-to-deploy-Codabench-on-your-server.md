@@ -21,10 +21,11 @@ Then you need to modify the `.env` file with the relevant settings. This step is
 - Go to the folder where codabench is located (`cd codabench`)
 ```bash
 cp .env_sample .env
+cp my-postgres_sample.conf my-postgres.conf
 ```
 
 
-Then edit the variables inside the `.env` file.
+Then edit the variables inside the `.env` and the `my-postgres.conf` files. You can keep the default values of `my-postgres.conf` if you don't want to change anything
 
 ### Submissions endpoint
 For an online deployment, you'll need to fill in the IP address or domain name in some environment variables.
@@ -439,3 +440,6 @@ Caddyfile :
     }
     reverse_proxy @min_bucket minio:{$MINIO_PORT}
 ```
+
+## Codabench Instance behind a reverse proxy
+If you put your instance behind a reverse proxy and want that proxy to contact the instance via http or https, your `DOMAIN_NAME` might not be reachable from the outside. In this case, you can set `DOMAIN_NAME` as your internal domain name, used by the reverse proxy, and `EXTERNAL_DOMAIN_NAME` as the domain name that is known on external networks (like the internet).

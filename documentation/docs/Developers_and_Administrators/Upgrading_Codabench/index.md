@@ -23,3 +23,8 @@ You can find here various manual intervention needed depending on which version 
 - [Homepage counters](Homepage-counters.md) (version < 1.15.0)
 - [User removal](User-removal.md) (version < 1.17.0)
 - [Database size Fix](Database-size-fixes.md) (version < 1.18.0)
+- [Hide output](Hide-output.md) (version < 1.19.0)
+- [Django 3.0](Django-3.md) (version < 1.20.0)
+- [Minio image](Minio-image.md) (version < 1.21.1)
+- [Docker-py](Docker-py.md) (version < 1.22.0)
+- [Django 4.2](Django-4.md) (version < 1.23.0)

@@ -102,5 +102,5 @@ class CompetitionDetail(DetailView):
         return context
 
 
-class CompetitionDetailedResults(LoginRequiredMixin, TemplateView):
+class CompetitionDetailedResults(TemplateView):
     template_name = 'competitions/detailed_results.html'

@@ -4,7 +4,7 @@
         <div class="col">
             <div class="col-content">
                 Number of submissions used for the day
-                <a class="float-left" data-tooltip="The submission limit resets at midnight server time." data-position="right center">
+                <a class="help-icon" data-tooltip="The submission limit resets at midnight server time." data-position="right center">
                     <i class="grey question circle icon"></i>
                 </a>
             </div>
@@ -79,6 +79,9 @@
         .col-content
             font-weight bold
             text-align center
+
+        .help-icon
+            margin-left: 0.4em
 
         .badge
             padding 0.5em 1em

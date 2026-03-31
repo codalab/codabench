@@ -8,6 +8,8 @@ This getting started tutorial shows a **simple example** of how to create a comp
 - Download the [sample competition bundle](https://github.com/codalab/competition-examples/blob/master/codabench/wheat_seeds/code_submission_bundle.zip) and the [sample submission](https://github.com/codalab/competition-examples/blob/master/codabench/wheat_seeds/sample_code_submission.zip).
 - Do not unzip them.
 
+!!! tip "You can find benchmark templates to start your own project in [Benchmark Examples](Benchmark-Examples.md) page."
+
 ## Create a competition
 - From the front page of [Codabench](https://codabench.org), in the top menu, go to the **Benchmark > Management** 
 - Click the green **Upload** button at the top right.

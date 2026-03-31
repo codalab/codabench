@@ -57,7 +57,11 @@
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td>{ pretty_date(submission.created_when) }</td>
+            <td data-sort="{ sort_date_value(submission.created_when) }"
+                data-sort-value="{ sort_date_value(submission.created_when) }"
+            >
+                { pretty_date(submission.created_when) }
+            </td>
             <td>{submission.id}</td>
             <td each="{ column in filtered_columns }">
                 <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
@@ -87,6 +91,12 @@
             } else {
                 return ''
             }
+        }
+
+        self.sort_date_value = function (date_string) {
+            if (!date_string) return 0
+            const dt = luxon.DateTime.fromISO(date_string)
+            return dt.isValid ? dt.toMillis() : 0
         }
        
         self.bold_class = function(column, submission){
