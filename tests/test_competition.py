@@ -75,7 +75,7 @@ def test_manual_competition_creation(page: Page):
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/competition/test_logo.png")
+    file_chooser.set_files("test_files/competitions/test_logo.png")
     page.locator(".CodeMirror-scroll").first.click()
     page.get_by_role("application").get_by_role("textbox").fill("Test Description ")
     page.get_by_role("textbox", name="Example: $1000 for the top").click()
