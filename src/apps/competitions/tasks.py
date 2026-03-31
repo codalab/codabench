@@ -32,6 +32,9 @@ from datasets.models import Data
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -785,9 +788,66 @@ def submission_status_cleanup():
     submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')
 
     for sub in submissions:
-        # Check if the submission has been running for 24 hours longer than execution_time_limit
         if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
             if sub.parent is not None:
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
+
+
+def _broadcast_worker_state(payload):
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+
+    async_to_sync(channel_layer.group_send)(
+        "compute_workers",
+        {
+            "type": "worker.health",
+            "worker": payload,
+        },
+    )
+
+
+@app.task(queue="site-worker", soft_time_limit=60)
+def refresh_compute_worker_health():
+    celery_app = app_or_default()
+    inspector = celery_app.control.inspect(timeout=1)
+
+    if inspector is None:
+        logger.warning("Celery inspect returned None")
+        return
+
+    try:
+        stats = inspector.stats() or {}
+        active = inspector.active() or {}
+        reserved = inspector.reserved() or {}
+    except Exception:
+        logger.exception("Unable to inspect Celery workers")
+        return
+
+    for worker_name in stats.keys():
+        if not worker_name.startswith("compute-worker"):
+            continue
+
+        raw_running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
+        status = "busy" if raw_running_jobs > 0 else "available"
+
+        payload = {
+            "hostname": worker_name,
+            "status": status,
+            "running_jobs": raw_running_jobs,
+            "timestamp": now().timestamp(),
+        }
+
+        r.set(f"worker:{worker_name}:heartbeat", json.dumps(payload), ex=35)
+        r.hset(
+            WORKERS_REGISTRY_KEY,
+            worker_name,
+            json.dumps({
+                "hostname": worker_name,
+                "last_seen": payload["timestamp"],
+            }),
+        )
+
+        _broadcast_worker_state(payload)
