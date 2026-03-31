@@ -836,7 +836,6 @@ def submission_status_cleanup():
     submissions = Submission.objects.filter(status=Submission.RUNNING, has_children=False).select_related('phase', 'parent')
 
     for sub in submissions:
-        # Check if the submission has been running for 24 hours longer than execution_time_limit
         if sub.started_when < now() - timedelta(milliseconds=(3600000 * 24) + sub.phase.execution_time_limit):
             if sub.parent is not None:
                 sub.parent.cancel(status=Submission.FAILED)
