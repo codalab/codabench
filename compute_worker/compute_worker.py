@@ -37,7 +37,7 @@ sys.path.append("/app/src/settings/")
 
 
 # -----------------------------------------------
-# Env Settings
+# Settings
 # -----------------------------------------------
 class Settings:
 
@@ -77,6 +77,13 @@ class Settings:
             logger.warning(f"Failed to parse boolean from '{val}': {e}")
             return val
 
+    # Directories
+    # NOTE: we need to pass this directory to docker/podman so it knows where to store things!
+    HOST_DIRECTORY = get("HOST_DIRECTORY", "/tmp/codabench/")
+    MAX_CACHE_DIR_SIZE_GB = float(get("MAX_CACHE_DIR_SIZE_GB", 10))
+    BASE_DIR = "/codabench/"  # base directory inside the container
+    CACHE_DIR = os.path.join(BASE_DIR, "cache")
+
     # Constants
     DOCKER = "docker"
     PODMAN = "podman"
@@ -88,7 +95,7 @@ class Settings:
         PODMAN: "unix:///run/user/1000/podman/podman.sock",
     }
 
-    # Settings variables
+    # env variables
     LOG_LEVEL = get("LOG_LEVEL", "INFO").lower()
     SERIALIZED = get("SERIALIZED", "false")
 
@@ -97,9 +104,6 @@ class Settings:
     GPU_DEVICE = get("GPU_DEVICE", "nvidia.com/gpu=all")
 
     CONTAINER_SOCKET = get("CONTAINER_SOCKET", DEFAULT_SOCKETS.get(CONTAINER_ENGINE_EXECUTABLE))
-
-    HOST_DIRECTORY = get("HOST_DIRECTORY", "/tmp/codabench/")
-    MAX_CACHE_DIR_SIZE_GB = get("MAX_CACHE_DIR_SIZE_GB", 10)
 
     COMPETITION_CONTAINER_NETWORK_DISABLED = to_bool(get("COMPETITION_CONTAINER_NETWORK_DISABLED", "False"))
     COMPETITION_CONTAINER_HTTP_PROXY = get("COMPETITION_CONTAINER_HTTP_PROXY", "")
@@ -259,15 +263,6 @@ app.conf.task_queues = [
         queue_arguments={"x-max-priority": 10},
     ),
 ]
-# -----------------------------------------------
-# Directories
-# -----------------------------------------------
-# Setup base directories used by all submissions
-# NOTE: we need to pass this directory to docker/podman so it knows where to store things!
-HOST_DIRECTORY = Settings.HOST_DIRECTORY
-BASE_DIR = "/codabench/"  # base directory inside the container
-CACHE_DIR = os.path.join(BASE_DIR, "cache")
-MAX_CACHE_DIR_SIZE_GB = float(Settings.MAX_CACHE_DIR_SIZE_GB)
 
 
 # -----------------------------------------------
@@ -458,13 +453,11 @@ class Run:
         # Directories for the run
         self.watch = True
         self.completed_program_counter = 0
-        self.root_dir = tempfile.mkdtemp(prefix=f'{self.run_related_name}__', dir=BASE_DIR)
+        self.root_dir = tempfile.mkdtemp(prefix=f'{self.run_related_name}__', dir=Settings.BASE_DIR)
         self.bundle_dir = os.path.join(self.root_dir, "bundles")
         self.input_dir = os.path.join(self.root_dir, "input")
         self.output_dir = os.path.join(self.root_dir, "output")
-        self.data_dir = os.path.join(
-            HOST_DIRECTORY, "data"
-        )  # absolute path to data in the host
+        self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
         self.logs = {}
 
         # Details for submission
@@ -743,7 +736,7 @@ class Run:
             # Hash url and download it if it doesn't exist
             url_without_params = url.split("?")[0]
             url_hash = hashlib.sha256(url_without_params.encode("utf8")).hexdigest()
-            bundle_file = os.path.join(CACHE_DIR, url_hash)
+            bundle_file = os.path.join(Settings.CACHE_DIR, url_hash)
             download_needed = not os.path.exists(bundle_file)
         else:
             if not os.path.exists(self.bundle_dir):
@@ -933,11 +926,11 @@ class Run:
         path = os.path.join(*paths)
 
         # pull front of path, which points to the location inside the container
-        path = path[len(BASE_DIR):]
+        path = path[len(Settings.BASE_DIR):]
 
         # add host to front, so when we run commands in the container on the host they
         # can be seen properly
-        path = os.path.join(HOST_DIRECTORY, path)
+        path = os.path.join(Settings.HOST_DIRECTORY, path)
 
         # Create if necessary
         os.makedirs(path, exist_ok=True)
@@ -1218,13 +1211,13 @@ class Run:
         logger.info(f"response: {resp}")
         logger.info(f"content: {resp.content}")
 
-    def _prep_cache_dir(self, max_size=MAX_CACHE_DIR_SIZE_GB):
-        if not os.path.exists(CACHE_DIR):
-            os.mkdir(CACHE_DIR)
+    def _prep_cache_dir(self, max_size=Settings.MAX_CACHE_DIR_SIZE_GB):
+        if not os.path.exists(Settings.CACHE_DIR):
+            os.mkdir(Settings.CACHE_DIR)
         logger.info("Checking if cache directory needs to be pruned...")
-        if get_folder_size_in_gb(CACHE_DIR) > max_size:
+        if get_folder_size_in_gb(Settings.CACHE_DIR) > max_size:
             logger.info("Pruning cache directory")
-            delete_files_in_folder(CACHE_DIR)
+            delete_files_in_folder(Settings.CACHE_DIR)
         else:
             logger.info("Cache directory does not need to be pruned!")
 
