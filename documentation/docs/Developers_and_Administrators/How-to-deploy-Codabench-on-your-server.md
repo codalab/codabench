@@ -440,3 +440,6 @@ Caddyfile :
     }
     reverse_proxy @min_bucket minio:{$MINIO_PORT}
 ```
+
+## Codabench Instance behind a reverse proxy
+If you put your instance behind a reverse proxy and want that proxy to contact the instance via http or https, your `DOMAIN_NAME` might not be reachable from the outside. In this case, you can set `DOMAIN_NAME` as your internal domain name, used by the reverse proxy, and `EXTERNAL_DOMAIN_NAME` as the domain name that is known on external networks (like the internet).

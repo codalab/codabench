@@ -16,6 +16,7 @@ from rest_framework_csv import renderers
 from django.core.files.base import ContentFile
 
 from profiles.models import Organization, Membership
+from api.pagination import DynamicChoicePagination
 from tasks.models import Task
 from api.serializers.submissions import SubmissionCreationSerializer, SubmissionSerializer, SubmissionFilesSerializer, SubmissionDetailSerializer
 from competitions.models import Submission, SubmissionDetails, Phase, CompetitionParticipant
@@ -29,9 +30,10 @@ class SubmissionViewSet(ModelViewSet):
     queryset = Submission.objects.all().order_by('-pk')
     permission_classes = []
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    filter_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
+    filterset_fields = ('phase__competition', 'phase', 'status', 'is_soft_deleted')
     search_fields = ('data__data_file', 'description', 'name', 'owner__username')
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES + [renderers.CSVRenderer]
+    pagination_class = DynamicChoicePagination
 
     def check_object_permissions(self, request, obj):
         if self.action in ['submission_leaderboard_connection']:
@@ -289,6 +291,9 @@ class SubmissionViewSet(ModelViewSet):
             'created_when': 'Created When',
             'status': 'Status',
             'phase_name': 'Phase',
+            'task.name': 'Task',
+            'scores.0.score': 'Score',
+            'on_leaderboard': 'On Leaderboard'
         }
         context["header"] = [k for k in context["labels"].keys()]
         return context
@@ -558,6 +563,14 @@ class SubmissionViewSet(ModelViewSet):
         # Use Queryset to update Submissions
         Submission.objects.filter(Q(parent=top_level_submission) | Q(id=top_level_submission.id)).update(fact_sheet_answers=request_data)
         return Response({})
+
+    def paginate_queryset(self, queryset):
+        '''
+            This Méthode is added to override pagination when trying to download the Sub CSV
+        '''
+        if getattr(getattr(self.request, "accepted_renderer", None), "format", None) == "csv":
+            return None
+        return super().paginate_queryset(queryset)
 
 
 @api_view(['POST'])

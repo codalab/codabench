@@ -103,7 +103,7 @@
         </div>
     </div>
     <script>
-        self = this
+        var self = this
         self.state = 'loading'
         self.queryString = window.location.search
         self.urlParams = new URLSearchParams(self.queryString)

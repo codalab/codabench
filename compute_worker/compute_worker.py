@@ -3,6 +3,7 @@ import glob
 import hashlib
 import json
 import os
+import traceback
 import shutil
 import signal
 import socket
@@ -18,7 +19,6 @@ import docker
 from rich.progress import Progress
 from rich.pretty import pprint
 import requests
-
 import websockets
 import yaml
 from billiard.exceptions import SoftTimeLimitExceeded
@@ -89,22 +89,31 @@ tasks = {}
 
 def show_progress(line, progress):
     try:
-        if "Status: Image is up to date" in line["status"]:
-            logger.info(line["status"])
+        status = line.get("status") or ""
+        layer_id = line.get("id")
+        detail = line.get("progressDetail") or {}
+        current = detail.get("current")
+        total = detail.get("total")
+
+        if "Status: Image is up to date" in status:
+            logger.info(status)
+
+        if not layer_id:
+            return
 
         completed = False
-        if line["status"] == "Download complete":
+        if status == "Download complete":
             description = (
-                f"[blue][Download complete, waiting for extraction  {line['id']}]"
+                f"[blue][Download complete, waiting for extraction  {layer_id}]"
             )
             completed = True
-        elif line["status"] == "Downloading":
-            description = f"[bold][Downloading {line['id']}]"
-        elif line["status"] == "Pull complete":
-            description = f"[green][Extraction complete  {line['id']}]"
+        elif status == "Downloading":
+            description = f"[bold][Downloading {layer_id}]"
+        elif status == "Pull complete":
+            description = f"[green][Extraction complete  {layer_id}]"
             completed = True
-        elif line["status"] == "Extracting":
-            description = f"[blue][Extracting  {line['id']}]"
+        elif status == "Extracting":
+            description = f"[blue][Extracting  {layer_id}]"
 
         else:
             # skip other statuses, but show extraction progress
@@ -121,7 +130,7 @@ def show_progress(line, progress):
                 )
             else:
                 tasks[task_id] = progress.add_task(
-                    description, total=line["progressDetail"]["total"]
+                    description, total=total
                 )
         else:
             if completed:
@@ -134,12 +143,12 @@ def show_progress(line, progress):
             else:
                 progress.update(
                     tasks[task_id],
-                    completed=line["progressDetail"]["current"],
-                    total=line["progressDetail"]["total"],
+                    completed=current,
+                    total=total,
                 )
     except Exception as e:
-        logger.error("There was an error showing the progress bar")
-        logger.error(e)
+        if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
+            logger.exception("There was an error showing the progress bar")
 
 
 # -----------------------------------------------
@@ -240,9 +249,10 @@ def rewrite_bundle_url_if_needed(url):
 # -----------------------------------------------------------------------------
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
+    # We need to convert the UUID given by celery into a byte like object otherwise things will break
+    run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
-
     try:
         run.prepare()
         run.start()
@@ -250,12 +260,37 @@ def run_wrapper(run_args):
             run.push_scores()
         run.push_output()
     except DockerImagePullException as e:
-        run._update_status(STATUS_FAILED, str(e))
-    except SubmissionException as e:
-        run._update_status(STATUS_FAILED, str(e))
+        msg = str(e).strip()
+        if msg:
+            msg = f"Docker image pull failed: {msg}"
+        else:
+            msg = "Docker image pull failed."
+        run._update_status(STATUS_FAILED, extra_information=msg)
+        raise
     except SoftTimeLimitExceeded:
-        run._update_status(STATUS_FAILED, "Soft time limit exceeded!")
+        run._update_status(
+            STATUS_FAILED,
+            extra_information="Execution time limit exceeded.",
+        )
+        raise
+    except SubmissionException as e:
+        msg = str(e).strip()
+        if msg:
+            msg = f"Submission failed: {msg}. See logs for more details."
+        else:
+            msg = "Submission failed. See logs for more details."
+        run._update_status(STATUS_FAILED, extra_information=msg)
+        raise
+    except Exception as e:
+        # Catch any exception to avoid getting stuck in Running status
+        run._update_status(STATUS_FAILED, extra_information=traceback.format_exc())
+        raise
     finally:
+        try:
+            # Try to push logs before cleanup
+            run.push_logs()
+        except Exception:
+            logger.exception("push_logs failed")
         run.clean_up()
 
 
@@ -294,16 +329,22 @@ def md5(filename):
 
 
 def get_folder_size_in_gb(folder):
+    # Check if the folder exists; if not, return 0 GB
     if not os.path.exists(folder):
         return 0
-    total_size = os.path.getsize(folder)
-    for item in os.listdir(folder):
-        path = os.path.join(folder, item)
-        if os.path.isfile(path):
-            total_size += os.path.getsize(path)
-        elif os.path.isdir(path):
-            total_size += get_folder_size_in_gb(path)
-    return total_size / 1000 / 1000 / 1000  # GB: decimal system (1000^3)
+
+    total_size = 0  # Initialize total size accumulator (in bytes)
+
+    # Walk through the folder and all its subdirectories
+    for root, dirs, files in os.walk(folder):
+        for f in files:
+            # Construct full path to the file
+            fp = os.path.join(root, f)
+            # Add the file size to total_size
+            total_size += os.path.getsize(fp)
+
+    # Convert bytes to gigabytes using decimal system (1 GB = 1000^3 bytes)
+    return total_size / (1000 ** 3)
 
 
 def delete_files_in_folder(folder):
@@ -444,6 +485,22 @@ class Run:
             if file_path:
                 await self.send_detailed_results(file_path)
 
+    def push_logs(self):
+        """Upload any collected logs, even in case of crash.
+        """
+        try:
+            for kind, logs in (self.logs or {}).items():
+                for stream_key in ("stdout", "stderr"):
+                    entry = logs.get(stream_key) if isinstance(logs, dict) else None
+                    if not entry:
+                        continue
+                    location = entry.get("location")
+                    data = entry.get("data") or b""
+                    if location:
+                        self._put_file(location, raw_data=data)
+        except Exception as e:
+            logger.exception(f"Failed best-effort log upload: {e}")
+
     def get_detailed_results_file_path(self):
         default_detailed_results_path = os.path.join(
             self.output_dir, "detailed_results.html"
@@ -465,7 +522,7 @@ class Run:
         )
         websocket_url = f"{self.websocket_url}?kind=detailed_results"
         logger.info(f"Connecting to {websocket_url} for detailed results")
-        # Wrap this with a Try ... Except otherwise a failure here will make the submission get stuck on Running
+        # Wrap this with a Try block to avoid getting stuck on Running
         try:
             websocket = await asyncio.wait_for(
                 websockets.connect(websocket_url), timeout=30.0
@@ -478,14 +535,8 @@ class Run:
                 )
             )
         except Exception as e:
-            logger.error(
-                f"This error might result in a Execution Time Exceeded error: {e}"
-            )
-            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-                logger.exception(e)
-            raise SubmissionException(
-                "Could not connect to instance to update detailed result"
-            )
+            logger.exception(e)
+            return
 
     def _get_stdout_stderr_file_names(self, run_args):
         # run_args should be the run_args argument passed to __init__ from the run_wrapper.
@@ -511,7 +562,7 @@ class Run:
 
         logger.info(f"Updating submission @ {url} with data = {data}")
 
-        resp = self.requests_session.patch(url, data, timeout=150)
+        resp = self.requests_session.patch(url, data=data, timeout=150)
         if resp.status_code == 200:
             logger.info("Submission updated successfully!")
         else:
@@ -521,23 +572,17 @@ class Run:
             raise SubmissionException("Failure updating submission data.")
 
     def _update_status(self, status, extra_information=None):
+        # Update submission status
         if status not in AVAILABLE_STATUSES:
             raise SubmissionException(
                 f"Status '{status}' is not in available statuses: {AVAILABLE_STATUSES}"
             )
-
-        data = {
-            "status": status,
-            "status_details": extra_information,
-        }
-
-        # TODO: figure out if we should pull this task code later(submission.task should always be set)
-        # When we start
-        # if status == STATUS_SCORING:
-        #     data.update({
-        #         "task_pk": self.task_pk,
-        #     })
-        self._update_submission(data)
+        data = {"status": status, "status_details": extra_information}
+        try:
+            self._update_submission(data)
+        except Exception as e:
+            # Always catch exception and never raise error
+            logger.exception(f"Failed to update submission status to {status}: {e}")
 
     def _get_container_image(self, image_name):
         logger.info("Running pull for image: {}".format(image_name))
@@ -547,6 +592,8 @@ class Run:
                 with Progress() as progress:
                     resp = client.pull(image_name, stream=True, decode=True)
                     for line in resp:
+                        if isinstance(line, dict) and line.get("error"):
+                            raise DockerImagePullException(line["error"])
                         show_progress(line, progress)
                     break  # Break if the loop is successful to exit "with Progress() as progress"
 
@@ -682,8 +729,13 @@ class Run:
         # Creating this and setting 2 values to None in case there is not enough time for the worker to get logs, otherwise we will have errors later on
         logs_Unified = [None, None]
 
+        # To store on-going logs and avoid empty logs returning to the platform
+        stdout_chunks = []
+        stderr_chunks = []
+
         # Create a websocket to send the logs in real time to the codabench instance
         # We need to set a timeout for the websocket connection otherwise the program will get stuck if he websocket does not connect.
+        websocket = None
         try:
             websocket_url = f"{self.websocket_url}?kind={kind}"
             logger.debug(
@@ -730,21 +782,27 @@ class Run:
                     "Show the logs and stream them to codabench " + container.get("Id")
                 )
                 for log in container_LogsDemux:
-                    if str(log[0]) != "None":
+                    # Output
+                    if log[0] is not None:
+                        stdout_chunks.append(log[0])
                         logger.info(log[0].decode())
                         try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[0].decode()})
-                            )
+                            if websocket is not None:
+                                await websocket.send(
+                                    json.dumps({"kind": kind, "message": log[0].decode()})
+                                )
                         except Exception as e:
                             logger.error(e)
-
-                    elif str(log[1]) != "None":
+                    
+                    # Errors
+                    elif log[1] is not None:
+                        stderr_chunks.append(log[1])
                         logger.error(log[1].decode())
                         try:
-                            await websocket.send(
-                                json.dumps({"kind": kind, "message": log[1].decode()})
-                            )
+                            if websocket is not None:
+                                await websocket.send(
+                                    json.dumps({"kind": kind, "message": log[1].decode()})
+                                )
                         except Exception as e:
                             logger.error(e)
 
@@ -760,12 +818,17 @@ class Run:
         # Get the return code of the competition container once done
         try:
             # Gets the logs of the container, sperating stdout and stderr (first and second position) thanks for demux=True
-            logs_Unified = client.attach(container, logs=True, demux=True)
             return_Code = client.wait(container)
+            logs_Unified = (b"".join(stdout_chunks), b"".join(stderr_chunks))
             logger.debug(
                 f"WORKER_MARKER: Disconnecting from {websocket_url}, program counter = {self.completed_program_counter}"
             )
-            await websocket.close()
+            if websocket is not None:
+                try:
+                    await websocket.close()
+                    await websocket.wait_closed()
+                except Exception as e:
+                    logger.error(e)
             client.remove_container(container, force=True)
 
             logger.debug(
@@ -782,6 +845,13 @@ class Run:
         ) as e:
             logger.error(e)
             return_Code = {"StatusCode": 1}
+
+        finally:
+            try:
+                # Last chance of removing container
+                client.remove_container(container_id, force=True)
+            except Exception:
+                pass
 
         self.logs[kind] = {
             "returncode": return_Code["StatusCode"],
@@ -1053,9 +1123,8 @@ class Run:
         try:
             return await self._run_container_engine_cmd(container, kind=kind)
         except Exception as e:
-            logger.error(e)
-            if os.environ.get("LOG_LEVEL", "info").lower() == "debug":
-                logger.exception(e)
+            logger.exception("Program directory execution failed")
+            raise SubmissionException(str(e))
 
     def _put_dir(self, url, directory):
         """Zip the directory and send it to the given URL using _put_file."""
@@ -1097,7 +1166,7 @@ class Run:
             logger.info("Putting file %s in %s" % (file, url))
             data = open(file, "rb")
             headers["Content-Length"] = str(os.path.getsize(file))
-        elif raw_data:
+        elif raw_data is not None:
             logger.info("Putting raw data %s in %s" % (raw_data, url))
             data = raw_data
         else:
@@ -1183,21 +1252,23 @@ class Run:
 
         logger.info("Running scoring program, and then ingestion program")
         loop = asyncio.new_event_loop()
+        # Set the event loop for the gather
+        asyncio.set_event_loop(loop)
         gathered_tasks = asyncio.gather(
             self._run_program_directory(program_dir, kind="program"),
             self._run_program_directory(ingestion_program_dir, kind="ingestion"),
             self.watch_detailed_results(),
-            loop=loop,
             return_exceptions=True,
         )
-
         task_results = []  # will store results/exceptions from gather
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.alarm(self.execution_time_limit)
+
         try:
             # run tasks
             # keep what gather returned so we can detect async errors later
             task_results = loop.run_until_complete(gathered_tasks) or []
+
         except ExecutionTimeLimitExceeded:
             error_message = f"Execution Time Limit exceeded. Limit was {self.execution_time_limit} seconds"
             logger.error(error_message)
@@ -1231,8 +1302,25 @@ class Run:
             # Send error through web socket to the frontend
             asyncio.run(self._send_data_through_socket(error_message))
             raise SubmissionException(error_message)
+
         finally:
+            signal.alarm(0)
             self.watch = False
+
+            # Cancel any remaining pending tasks before closing the loop
+            pending = [t for t in asyncio.all_tasks(loop) if not t.done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                try:
+                    loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                except Exception:
+                    pass
+
+            # Close loop
+            asyncio.set_event_loop(None)
+            loop.close()
+
             for kind, logs in self.logs.items():
                 if logs["end"] is not None:
                     elapsed_time = logs["end"] - logs["start"]
@@ -1278,6 +1366,9 @@ class Run:
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
         signal.alarm(0)
+        # Ensure loop is cleaned up
+        loop.close()
+        asyncio.set_event_loop(None)
 
         if self.is_scoring:
             # Check if scoring program failed
@@ -1287,7 +1378,7 @@ class Run:
                 program_results, BaseException
             ) and not isinstance(program_results, asyncio.CancelledError)
             program_rc = getattr(self, "program_exit_code", None)
-            failed_rc = program_rc not in (0, None)
+            failed_rc = (program_rc is None) or (program_rc != 0)
             if had_async_exc or failed_rc:
                 self._update_status(
                     STATUS_FAILED,
@@ -1296,6 +1387,7 @@ class Run:
                 # Raise so upstream marks failed immediately
                 raise SubmissionException("Child task failed or non-zero return code")
             self._update_status(STATUS_FINISHED)
+
         else:
             self._update_status(STATUS_SCORING)
 

@@ -63,7 +63,7 @@
     </form>
     </div>
     <script>
-        self = this
+        var self = this
         self.organization = organization
         self.original_org_photo_name = typeof self.organization.photo !== 'undefined' ? null : self.organization.photo.replace(/\\/g, '/').replace(/.*\//, '')
         self.original_org_photo = self.organization.photo

@@ -18,7 +18,7 @@
                             <tr>
                                 <th>Name</th>
                                 <th width="100">Type</th>
-                                <th width="125">Uploaded...</th>
+                                <th width="125">Uploaded</th>
                                 <th width="50px">Publish</th>
                                 <th width="50px">Edit</th>
                                 <th width="50px">Delete</th>
@@ -61,7 +61,7 @@
                             <thead>
                             <tr>
                                 <th>Name</th>
-                                <th width="125px">Uploaded...</th>
+                                <th width="125px">Uploaded</th>
                             </tr>
                             </thead>
                             <tbody>

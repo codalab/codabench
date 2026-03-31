@@ -10,7 +10,8 @@ def send_participation_requested_emails(participant):
         return
 
     context = {
-        'participant': participant
+        'participant': participant,
+        'user': participant.user
     }
     # Notify Organizers
     codalab_send_mail(
@@ -36,7 +37,8 @@ def send_participation_accepted_emails(participant):
         return
 
     context = {
-        'participant': participant
+        'participant': participant,
+        'user': participant.user
     }
     codalab_send_mail(
         context_data=context,
@@ -60,7 +62,8 @@ def send_participation_denied_emails(participant):
         return
 
     context = {
-        'participant': participant
+        'participant': participant,
+        'user': participant.user
     }
     # Notify Organizers
     codalab_send_mail(

@@ -58,7 +58,7 @@
     </div>
 
     <script>
-        self = this
+        var self = this
         self.org_photo = null
 
         self.one("mount", function () {

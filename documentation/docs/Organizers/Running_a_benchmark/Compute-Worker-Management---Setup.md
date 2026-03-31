@@ -27,11 +27,11 @@ b) Install manually, following the steps at: https://docs.docker.com/install/
 ## Pull Compute Worker Image
 On the compute worker machine, run the following command in a shell:
 ```bash
-docker pull codalab/competitions-v2-compute-worker
+docker pull codalab/codabench-compute-worker
 ```
 
 That will pull the latest image for the v2 worker. For specific versions, see the docker hub page at:
-https://hub.docker.com/r/codalab/competitions-v2-compute-worker/tags
+https://hub.docker.com/r/codalab/codabench-compute-worker/tags
 
 
 ## Start CPU worker
@@ -108,21 +108,6 @@ You can then launch the worker by running this command in the terminal where the
 docker compose up -d
 ```
 
-### Deprecated method (one liner)
-Alternately, you can use the docker run below:
-```bash
-docker run \
-    -v /codabench:/codabench \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -d \
-    --env-file .env \
-    --name compute_worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:latest
-```
-
 
 ## Start GPU worker
 Make a `.env` file, as explained in CPU worker instructions.
@@ -163,23 +148,6 @@ You can then launch the worker by running this command in the terminal where the
 docker compose up -d
 ```
 
-
-### NVIDIA-docker Wrapper (deprecated method)
-[Nvidia installation instructions](https://github.com/NVIDIA/nvidia-docker#quickstart)
-```bash
-nvidia-docker run \
-    -v /codabench:/codabench \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /var/lib/nvidia-docker/nvidia-docker.sock:/var/lib/nvidia-docker/nvidia-docker.sock \
-    -d \
-    --env-file .env \
-    --name compute_worker \
-    --restart unless-stopped \
-    --log-opt max-size=50m \
-    --log-opt max-file=3 \
-    codalab/competitions-v2-compute-worker:gpu
-```
-
 Note that a competition docker image including CUDA and other GPU libraries, such as `codalab/codalab-legacy:gpu`, is then required.
 
 ## Check logs
@@ -213,7 +181,7 @@ It is recommended to store the docker container hostname to identify the worker.
 ```sh
 $ docker ps
 CONTAINER ID   IMAGE                                           COMMAND                  CREATED      STATUS      PORTS     NAMES
-1a2b3d4e5f67   codalab/competitions-v2-compute-worker:latest   "/bin/sh -c 'celery …"   3 days ago   Up 3 days             compute_worker
+1a2b3d4e5f67   codalab/codabench-compute-worker:latest   "/bin/sh -c 'celery …"   3 days ago   Up 3 days             compute_worker
 ```
 
 For each submission made to your queue, you can know what worker computed the ingestion and the scoring jobs in the [server status page](Server-status-page.md).

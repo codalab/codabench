@@ -5,6 +5,8 @@ from celery.schedules import crontab
 from celery import signals
 import dj_database_url
 from .logs_loguru import configure_logging
+from django.core.management.utils import get_random_secret_key
+import configobj
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,15 +21,21 @@ USE_X_FORWARDED_HOST = True
 csrf_https_domain = "https://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 csrf_http_domain = "http://" + os.environ.get("DOMAIN_NAME").split(':')[0]
 
-CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
-CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+if os.environ.get("EXTERNAL_DOMAIN_NAME", "") != "":
+    csrf_https_external_domain = "https://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    csrf_http_external_domain = "http://" + os.environ.get("EXTERNAL_DOMAIN_NAME", "").split(':')[0]
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain, csrf_https_external_domain, csrf_http_external_domain]
 
-SITE_ID = 1
+    DOMAIN_NAME = os.environ.get('EXTERNAL_DOMAIN_NAME').split(':')[0]
+else:
+    CSRF_TRUSTED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+    CSRF_ALLOWED_ORIGINS = [csrf_https_domain, csrf_http_domain]
+
+    DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
 
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost')
-DOMAIN_NAME = os.environ.get('DOMAIN_NAME', 'localhost').split(':')[0]
-
-SELENIUM_HOSTNAME = os.environ.get("SELENIUM_HOSTNAME", "localhost")
+SITE_ID = 1
 
 
 THIRD_PARTY_APPS = (
@@ -119,7 +127,24 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-SECRET_KEY = os.environ.get("SECRET_KEY", '(*0&74%ihg0ui+400+@%2pe92_c)x@w2m%6s(jhs^)dc$&&g93')
+
+# =============================================================================
+# Secret key (generate one if none is given, otherwise use given key)
+# =============================================================================
+# This is needed when the secret key is generated for the first time as it won't be loaded as an environment variable
+config = configobj.ConfigObj('.env')
+with open(".env", "a+") as f:
+    secret_key_count = 0
+    f.seek(0)
+    for x in f:
+        if x.strip().startswith("SECRET_KEY="):
+            secret_key_count = 1
+            SECRET_KEY = os.environ.get("SECRET_KEY", config['SECRET_KEY'])
+            break
+    if secret_key_count == 0:
+        SECRET_KEY = get_random_secret_key()
+        f.write(f"\nSECRET_KEY='{SECRET_KEY}'\n")
+
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 

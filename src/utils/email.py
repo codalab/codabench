@@ -1,4 +1,4 @@
-import bleach
+import nh3
 import markdown
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -13,7 +13,7 @@ def codalab_send_mail(context_data, to_email, html_file, text_file, subject, fro
 
     text = render_to_string(text_file, context_data)
     html = render_to_string(html_file, context_data)
-    to_email = to_email if type(to_email) == list else [to_email]
+    to_email = to_email if type(to_email) is list else [to_email]
     message = EmailMultiAlternatives(subject, text, from_email=from_email, to=to_email)
     message.attach_alternative(html, 'text/html')
     message.send()
@@ -32,7 +32,7 @@ def sanitize(content):
         'h6',
     ]
     attrs = {'img': ['src']}
-    return bleach.clean(
+    return nh3.clean(
         content,
         tags=tags,
         attributes=attrs

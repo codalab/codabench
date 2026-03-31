@@ -102,6 +102,13 @@ class Competition(models.Model):
     def all_organizers(self):
         return [self.created_by] + list(self.collaborators.all())
 
+    @property
+    def first_phase_start(self):
+        first_phase = self.phases.filter(index=0).first()
+        if first_phase and first_phase.start:
+            return first_phase.start
+        return self.created_when
+
     def user_has_admin_permission(self, user):
         if isinstance(user, int):
             try:
@@ -153,7 +160,6 @@ class Competition(models.Model):
                 created_by_migration=current_phase,
                 participant=submission.participant,
                 phase=next_phase,
-                task=submission.task,
                 owner=submission.owner,
                 data=submission.data,
             )
@@ -670,8 +676,8 @@ class Submission(models.Model):
             # If a custom queue is set, we need to fetch the appropriate celery app
             if self.phase.competition.queue:
                 celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
-
-            celery_app.control.revoke(self.celery_task_id, terminate=True)
+            # We need to convert the UUID given by celery into a byte like object otherwise it won't work
+            celery_app.control.revoke(str(self.celery_task_id), terminate=True)
             self.status = status
             self.save()
             return True
