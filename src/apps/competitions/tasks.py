@@ -445,7 +445,7 @@ def unpack_competition(status_pk):
         if isinstance(e, KeyError):
             message = f"Unpacking the bundle failed. A required key or referenced index ({e}) was not found in the YAML. Check that all mandatory fields are present and that any item referenced by index is correctly defined."
         else:
-            message = "Unpacking the bundle failed. Here is the error log: {}".format(e)
+            message = f"Unpacking the bundle failed. Here is the error log: {e}"
         mark_status_as_failed_and_delete_dataset(status, message)
 
 
