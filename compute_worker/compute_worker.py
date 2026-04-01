@@ -1226,9 +1226,8 @@ class Run:
         if self.is_scoring:
             self._update_status(SubmissionStatus.RUNNING, extra_information=f"scoring_hostname-{hostname}")
         else:
-            self._update_status(SubmissionStatus.RUNNING, extra_information=f"ingestion_hostname-{hostname}")
             # Only during prediction step do we want to announce "preparing"
-            self._update_status(SubmissionStatus.PREPARING)
+            self._update_status(SubmissionStatus.PREPARING, extra_information=f"ingestion_hostname-{hostname}")
 
         # Setup cache and prune if it's out of control
         self._prep_cache_dir()
@@ -1268,6 +1267,7 @@ class Run:
         # Before the run starts we want to download images, they may take a while to download
         # and to do this during the run would subtract from the participants time.
         self._get_container_image(self.container_image)
+        self._update_status(SubmissionStatus.RUNNING)
 
     def start(self):
         program_dir = os.path.join(self.root_dir, "program")
