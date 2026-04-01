@@ -520,6 +520,8 @@ class Run:
         start = time.time()
         expiration_seconds = 60
 
+        # When running scoring program, we have at least one program to run i.e. scoring_program
+        # Sometimes when ingestion_only_during_scoring is True, we have two programs to run
         expected_completed_program_counters = 1 + int(bool(self.ingestion_only_during_scoring))
         while self.watch and self.completed_program_counter < expected_completed_program_counters:
             if file_path:
