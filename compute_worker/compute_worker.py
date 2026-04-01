@@ -262,6 +262,7 @@ app.conf.task_queues = [
     ),
 ]
 
+
 # -----------------------------------------------
 # Exceptions
 # -----------------------------------------------
@@ -1232,8 +1233,6 @@ class Run:
         else:
             # Only during prediction step do we want to announce "preparing"
             self._update_status(SubmissionStatus.PREPARING, extra_information=f"ingestion_hostname-{hostname}")
-
-
 
         # Setup cache and prune if it's out of control
         self._prep_cache_dir()
