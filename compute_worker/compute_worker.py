@@ -823,9 +823,7 @@ class Run:
             )
 
             # If we enter the for loop after the container exited, the program will get stuck
-            if (
-                client.inspect_container(container)["State"]["Status"].lower() == "running"
-            ):
+            if client.inspect_container(container)["State"]["Status"].lower() == "running":
                 logger.debug(
                     "Show the logs and stream them to codabench " + container.get("Id")
                 )
