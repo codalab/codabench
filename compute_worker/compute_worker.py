@@ -289,7 +289,6 @@ def rewrite_bundle_url_if_needed(url):
 
     Example: http://localhost:9000|http://minio:9000
     """
-
     rule = Settings.WORKER_BUNDLE_URL_REWRITE
     if not rule or "|" not in rule:
         return url
@@ -1425,6 +1424,8 @@ class Run:
 
         if self.is_scoring:
             # Check if scoring program failed
+            # We have try except here because when running scoring program we can have 2 or 3 gathered tasks
+            # 3 gathered tasks in case when `ingestion_only_during_scoring` is True
             try:
                 program_results, _, _ = task_results
             except Exception:
