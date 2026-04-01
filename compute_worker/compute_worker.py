@@ -405,6 +405,8 @@ def get_folder_size_in_gb(folder):
 
 
 def delete_files_in_folder(folder):
+    if not os.path.isdir(folder):
+        return
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         if os.path.isfile(file_path) or os.path.islink(file_path):
@@ -975,15 +977,15 @@ class Run:
         logger.info(f"Metadata path is {os.path.join(program_dir, metadata_path)}")
         with open(os.path.join(program_dir, metadata_path), "r") as metadata_file:
             try:  # try to find a command in the metadata, in other cases set metadata to None
-                metadata = yaml.load(metadata_file.read(), Loader=yaml.FullLoader)
+                metadata = yaml.safe_load(metadata_file.read())
                 logger.info(f"Metadata contains:\n {metadata}")
                 if isinstance(metadata, dict):  # command found
                     command = metadata.get("command")
                 else:
                     command = None
             except yaml.YAMLError as e:
-                logger.error("Error parsing YAML file: ", e)
-                print("Error parsing YAML file: ", e)
+                logger.error(f"Error parsing YAML file: {e}")
+                print(f"Error parsing YAML file: {e}")
                 command = None
             if not command and kind == "ingestion":
                 raise SubmissionException(
@@ -1227,7 +1229,6 @@ class Run:
             self._update_status(SubmissionStatus.RUNNING, extra_information=f"scoring_hostname-{hostname}")
         else:
             self._update_status(SubmissionStatus.RUNNING, extra_information=f"ingestion_hostname-{hostname}")
-        if not self.is_scoring:
             # Only during prediction step do we want to announce "preparing"
             self._update_status(SubmissionStatus.PREPARING)
 
@@ -1302,25 +1303,25 @@ class Run:
                 "error_message": error_message,
                 "is_scoring": self.is_scoring,
             }
-            # Some cleanup
-            for kind, logs in self.logs.items():
-                containers_to_kill = []
-                containers_to_kill.append(self.ingestion_container_name)
-                containers_to_kill.append(self.program_container_name)
-                logger.debug(
-                    "Trying to kill and remove container " + str(containers_to_kill)
-                )
-                for container in containers_to_kill:
-                    try:
-                        client.remove_container(str(container), force=True)
-                    except docker.errors.APIError as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(
-                            f"There was a problem killing {containers_to_kill}: {e}"
-                        )
-                        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                            logger.exception(e)
+            # Cleanup containers
+            containers_to_kill = [
+                self.ingestion_container_name, 
+                self.program_container_name
+            ]
+            logger.debug(
+                "Trying to kill and remove container " + str(containers_to_kill)
+            )
+            for container in containers_to_kill:
+                try:
+                    client.remove_container(str(container), force=True)
+                except docker.errors.APIError as e:
+                    logger.error(e)
+                except Exception as e:
+                    logger.error(
+                        f"There was a problem killing {containers_to_kill}: {e}"
+                    )
+                    if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                        logger.exception(e)
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
             # Send error through web socket to the frontend
@@ -1390,9 +1391,6 @@ class Run:
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
         signal.alarm(0)
-        # Ensure loop is cleaned up
-        loop.close()
-        asyncio.set_event_loop(None)
 
         if self.is_scoring:
             # Check if scoring program failed
@@ -1434,7 +1432,7 @@ class Run:
         elif os.path.exists(os.path.join(self.output_dir, "scores.txt")):
             scores_file = os.path.join(self.output_dir, "scores.txt")
             with open(scores_file) as f:
-                scores = yaml.load(f, yaml.Loader)
+                scores = yaml.safe_load(f)
         else:
             raise SubmissionException(
                 "Could not find scores file, did the scoring program output it?"
