@@ -3,15 +3,16 @@ import os
 import re
 import traceback
 import zipfile
+import json
 from datetime import timedelta, datetime
-
+from django.conf import settings
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import oyaml as yaml
 import requests
 from celery._state import app_or_default
-from django.conf import settings
+from django_redis import get_redis_connection
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -39,8 +40,11 @@ from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
 import logging
-
 logger = logging.getLogger(__name__)
+
+r = get_redis_connection("default")
+WORKERS_REGISTRY_KEY = "compute_workers_registry"
+WORKER_HEARTBEAT_TTL = 35
 
 COMPETITION_FIELDS = [
     "title",
