@@ -8,11 +8,16 @@ app = Celery()
 
 from django.conf import settings  # noqa
 
-app.config_from_object('django.conf:settings', namespace='CELERY')
+app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 app.conf.task_queues = [
     # Mostly defining queue here so we can set x-max-priority
-    Queue('compute-worker', Exchange('compute-worker'), routing_key='compute-worker', queue_arguments={'x-max-priority': 10}),
+    Queue(
+        "compute-worker",
+        Exchange("compute-worker"),
+        routing_key="compute-worker",
+        queue_arguments={"x-max-priority": 10},
+    ),
 ]
 
 _vhost_apps = {}
@@ -32,11 +37,10 @@ def app_for_vhost(vhost):
         # Copy the settings so we can modify the broker url to include the vhost
         django_settings = copy.copy(settings)
         django_settings.CELERY_BROKER_URL = broker_url
-        vhost_app.config_from_object(django_settings, namespace='CELERY')
+        vhost_app.config_from_object(django_settings, namespace="CELERY")
         vhost_app.conf.task_queues = app.conf.task_queues
         _vhost_apps[vhost] = vhost_app
     return _vhost_apps[vhost]
-
 
 
 app.conf.beat_schedule = {

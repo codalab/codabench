@@ -25,10 +25,12 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
     async def _push_workers_loop(self):
         while self._running:
             workers = await sync_to_async(self._load_snapshot)()
-            await self.send_json({
-                "type": "workers.snapshot",
-                "workers": workers,
-            })
+            await self.send_json(
+                {
+                    "type": "workers.snapshot",
+                    "workers": workers,
+                }
+            )
             await asyncio.sleep(3)
 
     def _load_snapshot(self):
@@ -64,14 +66,18 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             if not is_compute_worker:
                 continue
 
-            running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
+            running_jobs = len(active.get(worker_name, [])) + len(
+                reserved.get(worker_name, [])
+            )
             status = "busy" if running_jobs > 0 else "available"
 
-            workers.append({
-                "hostname": worker_name,
-                "status": status,
-                "running_jobs": running_jobs,
-                "timestamp": time.time(),
-            })
+            workers.append(
+                {
+                    "hostname": worker_name,
+                    "status": status,
+                    "running_jobs": running_jobs,
+                    "timestamp": time.time(),
+                }
+            )
 
         return workers
