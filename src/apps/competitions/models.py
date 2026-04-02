@@ -674,8 +674,10 @@ class Submission(models.Model):
                     sub.cancel(status=status)
             celery_app = app
             # If a custom queue is set, we need to fetch the appropriate celery app
-            if self.phase.competition.queue:
-                celery_app = app_for_vhost(str(self.phase.competition.queue.vhost))
+            # NOTE: We fetch the queue from submission and not from competition to be sure that we are using the correct queue
+            # Originally we were using queue from the competition (self.phase.competition.queue)
+            if self.queue:
+                celery_app = app_for_vhost(str(self.queue.vhost))
             # We need to convert the UUID given by celery into a byte like object otherwise it won't work
             celery_app.control.revoke(str(self.celery_task_id), terminate=True)
             self.status = status
