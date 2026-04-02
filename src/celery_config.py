@@ -44,7 +44,6 @@ def app_for_vhost(vhost):
     return _vhost_apps[vhost]
 
 
-
 app.conf.beat_schedule = {
     "refresh-compute-worker-health": {
         "task": "chemin.vers.refresh_compute_worker_health",
