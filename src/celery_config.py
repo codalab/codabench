@@ -42,6 +42,7 @@ def app_for_vhost(vhost):
         _vhost_apps[vhost] = vhost_app
     return _vhost_apps[vhost]
 
+
 app.conf.beat_schedule = {
     "refresh-compute-worker-health": {
         "task": "apps.competitions.tasks.refresh_compute_worker_health",

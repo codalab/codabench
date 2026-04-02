@@ -43,6 +43,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 r = get_redis_connection("default")
@@ -933,9 +934,8 @@ def refresh_compute_worker_health():
         if not is_compute_worker:
             continue
 
-        running_jobs = (
-            len(active.get(worker_name, []))
-            + len(reserved.get(worker_name, []))
+        running_jobs = len(active.get(worker_name, [])) + len(
+            reserved.get(worker_name, [])
         )
         status = "busy" if running_jobs > 0 else "available"
 
@@ -957,12 +957,14 @@ def refresh_compute_worker_health():
         r.hset(
             WORKERS_REGISTRY_KEY,
             worker_name,
-            json.dumps({
-                "hostname": worker_name,
-                "status": status,
-                "running_jobs": running_jobs,
-                "last_seen": payload["timestamp"],
-            }),
+            json.dumps(
+                {
+                    "hostname": worker_name,
+                    "status": status,
+                    "running_jobs": running_jobs,
+                    "last_seen": payload["timestamp"],
+                }
+            ),
         )
 
         _broadcast_worker_state(payload)

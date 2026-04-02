@@ -79,9 +79,8 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             if not is_compute_worker:
                 continue
 
-            running_jobs = (
-                len(active.get(worker_name, []))
-                + len(reserved.get(worker_name, []))
+            running_jobs = len(active.get(worker_name, [])) + len(
+                reserved.get(worker_name, [])
             )
             status = "busy" if running_jobs > 0 else "available"
 
