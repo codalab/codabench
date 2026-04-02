@@ -8,6 +8,11 @@ from celery._state import app_or_default
 
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        user = self.scope["user"]
+
+        if user is None or user.is_anonymous:
+            await self.close()
+            return
         await self.accept()
         self._running = True
         self._task = asyncio.create_task(self._push_workers_loop())
