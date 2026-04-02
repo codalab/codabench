@@ -392,6 +392,12 @@ CODALAB.api = {
     delete_failed_submissions: () => {
         return CODALAB.api.request('DELETE', `${URLS.API}delete_failed_submissions/`)
     },
+    delete_unused_starting_kits: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_starting_kits/`)
+    },
+    delete_unused_competition_bundles: () => {
+        return CODALAB.api.request('DELETE', `${URLS.API}delete_unused_competition_bundles/`)
+    },
     /*---------------------------------------------------------------------
          User Account
     ---------------------------------------------------------------------*/

@@ -54,6 +54,8 @@ urlpatterns = [
     path('delete_unused_datasets/', quota.delete_unused_datasets, name="delete_unused_datasets"),
     path('delete_unused_submissions/', quota.delete_unused_submissions, name="delete_unused_submissions"),
     path('delete_failed_submissions/', quota.delete_failed_submissions, name="delete_failed_submissions"),
+    path('delete_unused_starting_kits/', quota.delete_unused_starting_kits, name="delete_unused_starting_kits"),
+    path('delete_unused_competition_bundles/', quota.delete_unused_competition_bundles, name="delete_unused_competition_bundles"),
 
     # User account
     path('delete_account/', profiles.delete_account, name="delete_account"),
