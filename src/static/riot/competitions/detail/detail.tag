@@ -475,10 +475,10 @@
         }
 
         .workers-toggle-btn
+            z-index 0
             position fixed
             top 74px
             right 24px
-            z-index 30
             background #576671 !important
             color white !important
             
