@@ -5,22 +5,33 @@ from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from celery._state import app_or_default
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        user = self.scope["user"]
+        user = self.scope.get("user")
 
         if user is None or user.is_anonymous:
             await self.close()
             return
+
         await self.accept()
         self._running = True
         self._task = asyncio.create_task(self._push_workers_loop())
 
     async def disconnect(self, close_code):
         self._running = False
-        if hasattr(self, "_task"):
-            self._task.cancel()
+
+        task = getattr(self, "_task", None)
+        if task:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     async def _push_workers_loop(self):
         while self._running:
@@ -46,6 +57,7 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             reserved = inspector.reserved() or {}
             active_queues = inspector.active_queues() or {}
         except Exception:
+            logger.exception("Unable to inspect Celery workers")
             return []
 
         workers = []
@@ -53,6 +65,7 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
         for worker_name in stats.keys():
             queues = active_queues.get(worker_name, []) or []
             queue_names = []
+
             for q in queues:
                 if isinstance(q, dict) and q.get("name"):
                     queue_names.append(q["name"])
@@ -66,8 +79,9 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             if not is_compute_worker:
                 continue
 
-            running_jobs = len(active.get(worker_name, [])) + len(
-                reserved.get(worker_name, [])
+            running_jobs = (
+                len(active.get(worker_name, []))
+                + len(reserved.get(worker_name, []))
             )
             status = "busy" if running_jobs > 0 else "available"
 

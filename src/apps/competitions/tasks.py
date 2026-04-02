@@ -3,15 +3,16 @@ import os
 import re
 import traceback
 import zipfile
+import json
 from datetime import timedelta, datetime
-
+from django.conf import settings
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import oyaml as yaml
 import requests
 from celery._state import app_or_default
-from django.conf import settings
+from django_redis import get_redis_connection
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -42,8 +43,11 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 import logging
-
 logger = logging.getLogger(__name__)
+
+r = get_redis_connection("default")
+WORKERS_REGISTRY_KEY = "compute_workers_registry"
+WORKER_HEARTBEAT_TTL = 35
 
 COMPETITION_FIELDS = [
     "title",
@@ -907,36 +911,61 @@ def refresh_compute_worker_health():
         stats = inspector.stats() or {}
         active = inspector.active() or {}
         reserved = inspector.reserved() or {}
+        active_queues = inspector.active_queues() or {}
     except Exception:
         logger.exception("Unable to inspect Celery workers")
         return
 
     for worker_name in stats.keys():
-        if not worker_name.startswith("compute-worker"):
+        queues = active_queues.get(worker_name, []) or []
+        queue_names = []
+
+        for q in queues:
+            if isinstance(q, dict) and q.get("name"):
+                queue_names.append(q["name"])
+
+        is_compute_worker = (
+            "compute-worker" in queue_names
+            or worker_name.startswith("compute-worker")
+            or worker_name.startswith("CW")
+        )
+
+        if not is_compute_worker:
             continue
 
-        raw_running_jobs = len(active.get(worker_name, [])) + len(
-            reserved.get(worker_name, [])
+        running_jobs = (
+            len(active.get(worker_name, []))
+            + len(reserved.get(worker_name, []))
         )
-        status = "busy" if raw_running_jobs > 0 else "available"
+        status = "busy" if running_jobs > 0 else "available"
 
         payload = {
             "hostname": worker_name,
             "status": status,
-            "running_jobs": raw_running_jobs,
+            "running_jobs": running_jobs,
             "timestamp": now().timestamp(),
         }
 
-        r.set(f"worker:{worker_name}:heartbeat", json.dumps(payload), ex=35)
+        heartbeat_key = f"worker:{worker_name}:heartbeat"
+
+        r.set(
+            heartbeat_key,
+            json.dumps(payload),
+            ex=WORKER_HEARTBEAT_TTL,
+        )
+
         r.hset(
             WORKERS_REGISTRY_KEY,
             worker_name,
-            json.dumps(
-                {
-                    "hostname": worker_name,
-                    "last_seen": payload["timestamp"],
-                }
-            ),
+            json.dumps({
+                "hostname": worker_name,
+                "status": status,
+                "running_jobs": running_jobs,
+                "last_seen": payload["timestamp"],
+            }),
         )
 
         _broadcast_worker_state(payload)
+        logger.info(
+            f"[WORKER-HEALTH] {worker_name} status={status} jobs={running_jobs}"
+        )
