@@ -1,11 +1,10 @@
 import asyncio
+import logging
 import time
 
 from asgiref.sync import sync_to_async
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from celery._state import app_or_default
-
-import logging
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 logger = logging.getLogger(__name__)
 

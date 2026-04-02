@@ -1,48 +1,46 @@
 import asyncio
+import json
+import logging
 import os
 import re
 import traceback
 import zipfile
-import json
-from datetime import timedelta, datetime
-from django.conf import settings
+from datetime import datetime, timedelta
 from io import BytesIO
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import oyaml as yaml
 import requests
+from asgiref.sync import async_to_sync
 from celery._state import app_or_default
-from django_redis import get_redis_connection
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
-from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
-from django.db import transaction
-from django.utils.text import slugify
-from django.utils.timezone import now
-from rest_framework.exceptions import ValidationError
-
-from celery_config import app
+from channels.layers import get_channel_layer
 from competitions.models import (
-    Submission,
-    CompetitionCreationTaskStatus,
-    SubmissionDetails,
     Competition,
+    CompetitionCreationTaskStatus,
     CompetitionDump,
     Phase,
+    Submission,
+    SubmissionDetails,
 )
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
-from leaderboards.models import Leaderboard
-from tasks.models import Task
 from datasets.models import Data
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
+from django.db import transaction
+from django.db.models import Case, Count, F, OuterRef, Subquery, Value, When
+from django.utils.text import slugify
+from django.utils.timezone import now
+from django_redis import get_redis_connection
+from leaderboards.models import Leaderboard
+from rest_framework.exceptions import ValidationError
+from tasks.models import Task
+
+from celery_config import app
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
-
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
-
-import logging
 
 logger = logging.getLogger(__name__)
 

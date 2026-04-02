@@ -1,8 +1,9 @@
-from celery import Celery
-from kombu import Queue, Exchange
-from django.conf import settings
-import urllib.parse
 import copy
+import urllib.parse
+
+from celery import Celery
+from django.conf import settings
+from kombu import Exchange, Queue
 
 app = Celery()
 
