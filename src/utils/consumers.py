@@ -17,12 +17,6 @@ r = get_redis_connection("default")
 
 
 def _load_snapshot(competition_queue_name=None):
-    """
-    Charge les workers depuis Redis.
-    - workers par défaut : toujours inclus (queue_source == 'default')
-    - workers privés : inclus uniquement si leur queue_source correspond
-      à la queue de la compétition courante
-    """
     raw = r.hgetall(WORKERS_REGISTRY_KEY)
     workers = []
     private_workers = []
@@ -50,7 +44,6 @@ def _load_snapshot(competition_queue_name=None):
 
 
 def _get_competition_queue_name(competition_id):
-    """Retourne le nom de la queue de la compétition, ou None."""
     if not competition_id:
         return None
     try:
@@ -61,14 +54,21 @@ def _get_competition_queue_name(competition_id):
         logger.warning("Competition %s not found or has no queue", competition_id)
     return None
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        user = self.scope.get("user")
 
     async def connect(self):
         user = self.scope.get("user")
         if user is None or user.is_anonymous:
             await self.close()
             return
+
         await self.accept()
         await self.channel_layer.group_add("compute_workers", self.channel_name)
         self._competition_queue_name = None
@@ -78,29 +78,23 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, close_code):
         self._running = False
-        await self.channel_layer.group_discard("compute_workers", self.channel_name)
         task = getattr(self, "_task", None)
         if task:
             task.cancel()
             try:
                 await task
-            except (asyncio.CancelledError, RuntimeError):
+            except asyncio.CancelledError:
                 pass
-
-    async def receive_json(self, content):
-        logger.debug("WebSocket received: %s", content)
-        if content.get("type") == "subscribe":
-            competition_id = content.get("competition_id")
-            self._competition_queue_name = await sync_to_async(_get_competition_queue_name)(
-                competition_id)
-            self._subscribed.set()
 
     async def _push_workers_loop(self):
         try:
-            try:
-                await asyncio.wait_for(self._subscribed.wait(), timeout=5.0)
-            except asyncio.TimeoutError:
-                logger.warning("WebSocket subscribe timeout, proceeding without competition filter")
+            stats = inspector.stats() or {}
+            active = inspector.active() or {}
+            reserved = inspector.reserved() or {}
+            active_queues = inspector.active_queues() or {}
+        except Exception:
+            logger.exception("Unable to inspect Celery workers")
+            return []
 
             while self._running:
                 workers, private_workers = await sync_to_async(_load_snapshot)(
@@ -120,23 +114,36 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
         except asyncio.CancelledError:
             pass
 
-    async def worker_health(self, event):
-        worker = event["worker"]
-        is_default = worker.get("queue_source") == "default"
-        is_mine = (
-            self._competition_queue_name is not None
-            and worker.get("queue_source") == self._competition_queue_name
-        )
-        if not is_default and not is_mine:
-            return
-        try:
-            workers, private_workers = await sync_to_async(_load_snapshot)(
-                self._competition_queue_name
+        for worker_name in stats.keys():
+            queues = active_queues.get(worker_name, []) or []
+            queue_names = []
+
+            for q in queues:
+                if isinstance(q, dict) and q.get("name"):
+                    queue_names.append(q["name"])
+
+            is_compute_worker = (
+                "compute-worker" in queue_names
+                or worker_name.startswith("compute-worker")
+                or worker_name.startswith("CW")
             )
-            await self.send_json({
-                "type": "workers.snapshot",
-                "workers": workers,
-                "private_workers": private_workers,
-            })
-        except RuntimeError:
-            pass
+
+            if not is_compute_worker:
+                continue
+
+            running_jobs = (
+                len(active.get(worker_name, []))
+                + len(reserved.get(worker_name, []))
+            )
+            status = "busy" if running_jobs > 0 else "available"
+
+            workers.append(
+                {
+                    "hostname": worker_name,
+                    "status": status,
+                    "running_jobs": running_jobs,
+                    "timestamp": time.time(),
+                }
+            )
+
+        return workers
