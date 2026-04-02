@@ -353,11 +353,14 @@ def unpack_competition(status_pk):
                 with NamedTemporaryFile(mode="w+b") as temp_file:
                     logger.info(f"Download competition bundle: {competition_dataset.data_file.name}")
                     competition_bundle_url = make_url_sassy(competition_dataset.data_file.url)
-                    with requests.get(competition_bundle_url, stream=True) as r:
-                        r.raise_for_status()
-                        for chunk in r.iter_content(chunk_size=8192):
-                            temp_file.write(chunk)
-                        r.close()
+                    try:
+                        with requests.get(competition_bundle_url, stream=True) as r:
+                            r.raise_for_status()
+                            for chunk in r.iter_content(chunk_size=8192):
+                                temp_file.write(chunk)
+                            r.close()
+                    except requests.exceptions.RequestException as e:
+                        raise CompetitionUnpackingException(f"Failed to download bundle from storage: {e}")
 
                     # seek back to the start of the tempfile after writing to it..
                     temp_file.seek(0)
@@ -371,10 +374,17 @@ def unpack_competition(status_pk):
             # Read metadata (competition.yaml)
             yaml_path = os.path.join(temp_directory, "competition.yaml")
             if not os.path.exists(yaml_path):
-                raise CompetitionUnpackingException("competition.yaml is missing from zip, check your folder structure "
-                                                    "to make sure it is in the root directory.")
-            with open(yaml_path) as f:
-                competition_yaml = yaml.safe_load(f.read())
+                raise CompetitionUnpackingException(
+                    "competition.yaml is missing from zip, check your folder structure "
+                    "to make sure it is in the root directory."
+                )
+            try:
+                with open(yaml_path) as f:
+                    competition_yaml = yaml.safe_load(f.read())
+            except yaml.YAMLError as e:
+                raise CompetitionUnpackingException(f"Error parsing competition.yaml: {e}")
+            except Exception as e:
+                raise CompetitionUnpackingException(f"Failed to read competition.yaml: {e}")
 
             yaml_version = str(competition_yaml.get('version', '1'))
 
@@ -428,11 +438,14 @@ def unpack_competition(status_pk):
         mark_status_as_failed_and_delete_dataset(status, message)
         raise e
 
-    except Exception as e:  # noqa: E722
+    except Exception as e:
         # These are critical uncaught exceptions, make sure the end user is at least informed
         # that unpacking has failed -- do not share unhandled exception details
         logger.error(traceback.format_exc())
-        message = "Unpacking the bundle failed. Here is the error log: {}".format(e)
+        if isinstance(e, KeyError):
+            message = f"Unpacking the bundle failed. A required key or referenced index ({e}) was not found in the YAML. Check that all mandatory fields are present and that any item referenced by index is correctly defined."
+        else:
+            message = f"Unpacking the bundle failed. Here is the error log: {e}"
         mark_status_as_failed_and_delete_dataset(status, message)
 
 
