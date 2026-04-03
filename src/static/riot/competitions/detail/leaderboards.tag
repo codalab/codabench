@@ -48,12 +48,12 @@
         </tr>
         <tr each="{ submission, index in selected_leaderboard.submissions}">
             <td class="collapsing index-column center aligned">
-                <gold-medal if="{index + 1 === 1}"></gold-medal>
-                <silver-medal if="{index + 1 === 2}"></silver-medal>
-                <bronze-medal if="{index + 1 === 3}"></bronze-medal>
-                <fourth-place-medal if="{index + 1 === 4}"></fourth-place-medal>
-                <fifth-place-medal if="{index + 1 === 5}"></fifth-place-medal>
-                <virtual if="{index + 1 > 5}">{index + 1}</virtual>
+                <gold-medal if="{get_row_number(index) === 1}"></gold-medal>
+                <silver-medal if="{get_row_number(index) === 2}"></silver-medal>
+                <bronze-medal if="{get_row_number(index) === 3}"></bronze-medal>
+                <fourth-place-medal if="{get_row_number(index) === 4}"></fourth-place-medal>
+                <fifth-place-medal if="{get_row_number(index) === 5}"></fifth-place-medal>
+                <virtual if="{get_row_number(index) > 5}">{get_row_number(index)}</virtual>
             </td>
             <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
             <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
@@ -73,6 +73,38 @@
         </tbody>
     </table>
 
+    <div class="ui pagination menu" style="display:flex; align-items:center; justify-content:space-between; margin-top: 12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="ui button" onclick="{ go_to_page.bind(this, page - 1) }" disabled="{ page <= 1 }">
+                <i class="icon chevron left"></i> Previous
+            </button>
+
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span>Page</span>
+                <input type="number" min="1" value="{ page }" onkeydown="{ handle_page_enter }" style="width:70px; text-align:center;" />
+                <span> / { total_pages || 1 }</span>
+            </div>
+
+            <button class="ui button" onclick="{ go_to_page.bind(this, page + 1) }" disabled="{ page >= total_pages }">
+                Next <i class="icon chevron right"></i>
+            </button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label>Per page</label>
+            <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+                <option value="all">all</option>
+            </select>
+
+            <div style="margin-right: 10px; color: #8c8c8c;">
+                <small>{ total_count || 0 } total</small>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         let self = this
@@ -84,6 +116,87 @@
         self.competition_id = null
         self.enable_detailed_results = false
         self.show_detailed_results_in_leaderboard = false
+
+        self.page = 1
+        self.page_size = 50
+        self.total_count = 0
+        self.total_pages = 1
+        self.paginated_submissions = []
+
+
+        self.get_page_size_value = function () {
+            if (String(self.page_size).toLowerCase() === 'all') {
+                return self.total_count || 1
+            }
+
+            var n = parseInt(self.page_size, 10)
+            if (isNaN(n) || n <= 0) {
+                return 50
+            }
+
+            return n
+        }
+
+        self.get_row_number = function (index) {
+            if (String(self.page_size).toLowerCase() === 'all') {
+                return index + 1
+            }
+
+            return ((self.page - 1) * self.get_page_size_value()) + index + 1
+        }
+
+        self.update_pagination = function () {
+            self.total_count = _.get(self.selected_leaderboard, 'submissions', []).length
+
+            var page_size_value = self.get_page_size_value()
+
+            if (String(self.page_size).toLowerCase() === 'all') {
+                self.total_pages = 1
+                self.page = 1
+                self.paginated_submissions = _.get(self.selected_leaderboard, 'submissions', [])
+                return
+            }
+
+            self.total_pages = Math.max(1, Math.ceil(self.total_count / page_size_value))
+
+            if (self.page > self.total_pages) {
+                self.page = self.total_pages
+            }
+
+            var start = (self.page - 1) * page_size_value
+            var end = start + page_size_value
+            self.paginated_submissions = _.slice(_.get(self.selected_leaderboard, 'submissions', []), start, end)
+        }
+
+        self.go_to_page = function (p) {
+            var newPage = parseInt(p, 10)
+            if (isNaN(newPage) || newPage < 1) newPage = 1
+            if (newPage > self.total_pages) newPage = self.total_pages
+            if (newPage === self.page) return
+
+            self.page = newPage
+            self.update_pagination()
+            self.update()
+        }
+
+        self.change_page_size = function (e) {
+            var raw = (e && e.target && typeof e.target.value !== 'undefined')
+                ? String(e.target.value).toLowerCase()
+                : String(self.page_size).toLowerCase()
+
+            if (raw === 'all') {
+                self.page_size = 'all'
+            } else {
+                var val = parseInt(raw, 10)
+                if (isNaN(val) || val <= 0) return
+                if ([50, 100, 500].indexOf(val) === -1) return
+                self.page_size = val
+            }
+
+            self.page = 1
+            self.update_pagination()
+            self.update()
+        }
 
         self.pretty_date = function (date_string) {
             if (!!date_string) {
