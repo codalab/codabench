@@ -38,10 +38,11 @@
     </div>
     <!-- Logs -->
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}logs" hide="{opts.hide_output}">
-        <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}">
+        <div class="ui top attached inverted pointing menu" if="{logTabs.length > 0}" ref="log_tabs_menu">
             <div each="{tab, i in logTabs}"
-                class="submission-modal item {active: i === 0}"
-                data-tab="{tab.fullTabId}">
+                class="submission-modal item {active: tab.fullTabId === activeLogTabId || (!activeLogTabId && i === 0)}"
+                data-tab="{tab.fullTabId}"
+                onclick="{() => activeLogTabId = tab.fullTabId}">
                 {tab.label}
             </div>
         </div>
@@ -51,7 +52,7 @@
         </div>
         <!-- Dynamic tabs -->
         <div each="{tab, i in logTabs}"
-            class="ui bottom attached inverted segment tab log {active: i === 0}"
+            class="ui bottom attached inverted segment tab log {active: tab.fullTabId === activeLogTabId || (!activeLogTabId && i === 0)}"
             data-tab="{tab.fullTabId}">
             <pre class="{empty: is_empty(tab.content)}">{ show_log(tab.content) }</pre>
         </div>
@@ -116,8 +117,12 @@
                 .filter(t => !self.is_empty(t.content))
                 .map(t => ({
                     ...t,
-                    fullTabId: `${prefix}${t.key}`
+                    fullTabId: `${prefix}sub_${self.submission.id}_${t.key}`
                 }))
+
+            if (!self.activeLogTabId || !self.logTabs.find(t => t.fullTabId === self.activeLogTabId)) {
+                self.activeLogTabId = self.logTabs.length ? self.logTabs[0].fullTabId : null
+            }
         }
 
         self.get_score_details = function (column) {
@@ -153,11 +158,11 @@
                     self.rebuild_log_tabs()
                     self.update()
                     setTimeout(() => {
-                        const $items = $(self.root).find('.ui.top.attached.menu .item')
+                        if (!self.refs.log_tabs_menu) return
+                        const $items = $(self.refs.log_tabs_menu).find('.item')
                         $items.tab()
-                        // pick the first tab deterministically
                         if (self.logTabs.length) {
-                        $items.tab('change tab', self.logTabs[0].fullTabId)
+                            $items.tab('change tab', self.activeLogTabId || self.logTabs[0].fullTabId)
                         }
                     }, 0)
                     })
