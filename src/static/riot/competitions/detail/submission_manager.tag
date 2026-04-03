@@ -641,8 +641,12 @@
 
         self.get_score = function (submission) {
             try {
-                return parseFloat(submission.scores[0].score).toFixed(2)
-
+                // Look for a primary score, fallback to the first score if not found
+                let score_obj = _.find(submission.scores, s => s.is_primary) || submission.scores[0]
+                if (score_obj) {
+                    return parseFloat(score_obj.score).toFixed(score_obj.precision || 0)
+                }
+                return ""
             } catch {
                 return ""
             }
