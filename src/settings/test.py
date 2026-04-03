@@ -1,4 +1,4 @@
-from settings.base import *  # noqa: F401,F403
+from settings.base import INSTALLED_APPS, MIDDLEWARE, STORAGES
 # these noqa comments are for flake8 ignores
 
 DEBUG = True

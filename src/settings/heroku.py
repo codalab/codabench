@@ -1,6 +1,6 @@
 from urllib.parse import urlsplit
-
-from .production import *  # noqa: F401,F403
+from .production import MIDDLEWARE
+import os
 
 # Example structure:
 #   amqps://username:password@toad.rmq.cloudamqp.com/vhost

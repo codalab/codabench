@@ -1,4 +1,5 @@
-from .base import *  # noqa: F401,F403
+from .base import INSTALLED_APPS, STORAGES, MIDDLEWARE
+import os
 
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
