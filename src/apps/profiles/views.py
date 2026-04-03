@@ -94,15 +94,15 @@ def activate(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
         user = None
-        messages.error(request, f"User not found. Please sign up again.")
+        messages.error(request, "User not found. Please sign up again.")
         return redirect('accounts:signup')
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-        messages.success(request, f'Your account is fully setup! Please login.')
+        messages.success(request, "Your account is fully setup! Please login.")
         return redirect('accounts:login')
     else:
-        messages.error(request, f"Activation link is invalid or expired. Please double check your link.")
+        messages.error(request, "Activation link is invalid or expired. Please double check your link.")
         return redirect('accounts:resend_activation')
     return redirect('pages:home')
 
@@ -134,7 +134,7 @@ def send_delete_account_confirmation_mail(request, user):
     }
     codalab_send_mail(
         context_data=context,
-        subject=f'Confirm Your Account Deletion Request',
+        subject="Confirm Your Account Deletion Request",
         html_file="profiles/emails/template_delete_account.html",
         text_file="profiles/emails/template_delete_account.txt",
         to_email=[user.email]
@@ -181,7 +181,7 @@ def send_user_deletion_notice_to_admin(user):
 def send_user_deletion_confirmed(email):
     codalab_send_mail(
         context_data={},
-        subject=f'Codabench: your account has been successfully removed',
+        subject="Codabench: your account has been successfully removed",
         html_file="profiles/emails/template_delete_account_confirmed.html",
         text_file="profiles/emails/template_delete_account_confirmed.txt",
         to_email=[email]
@@ -194,15 +194,15 @@ def delete(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except User.DoesNotExist:
         user = None
-        messages.error(request, f"User not found.")
+        messages.error(request, "User not found.")
         return redirect('accounts:user_account')
     if user is not None and account_deletion_token.check_token(user, token):
         # Soft delete the user
         user.delete()
-        messages.success(request, f'Your account has been removed!')
+        messages.success(request, "Your account has been removed!")
         return redirect('accounts:logout')
     else:
-        messages.error(request, f"Confirmation link is invalid or expired.")
+        messages.error(request, "Confirmation link is invalid or expired.")
         return redirect('pages:home')
 
 

@@ -204,7 +204,7 @@ class V2Unpacker(BaseUnpacker):
             try:
                 new_phase['tasks'] = phase_data['tasks']
             except KeyError:
-                raise CompetitionUnpackingException(f'Phases must contain at least one task to be valid')
+                raise CompetitionUnpackingException('Phases must contain at least one task to be valid')
 
             execution_time_limit = phase_data.get('execution_time_limit')
             if execution_time_limit:

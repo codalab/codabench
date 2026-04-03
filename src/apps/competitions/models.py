@@ -375,9 +375,9 @@ class Phase(models.Model):
                 self.competition.apply_phase_migration(current_phase, next_phase)
 
         except next_phase.DoesNotExist:
-            logger.error(f"This competition is missing the next phase to migrate to.")
+            logger.error("This competition is missing the next phase to migrate to.")
         except current_phase.DoesNotExist:
-            logger.error(f"This competition is missing the previous phase to migrate from.")
+            logger.error("This competition is missing the previous phase to migrate from.")
 
 
 class PhaseTaskInstance(models.Model):

@@ -236,15 +236,15 @@ class TaskViewSet(ModelViewSet):
 
                     # Check if task has a name
                     if "name" not in task_data:
-                        return Response({"error": f"Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: name, task must have a name"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a description
                     if "description" not in task_data:
-                        return Response({"error": f"Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: description, task must have a description"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Check if task has a scoring program
                     if Data.SCORING_PROGRAM not in task_data:
-                        return Response({"error": f"Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Missing: scoring_program, task must have a scoring_program"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # ------------------------------
                     # Process datasets and programs
