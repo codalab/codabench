@@ -41,35 +41,35 @@
         </thead>
         <!--  Always show leaderboard  -->
         <tbody>
-        <tr if="{_.isEmpty(selected_leaderboard.submissions)}" class="center aligned">
-            <td colspan="100%">
-                <em>No submissions have been added to this leaderboard yet!</em>
-            </td>
-        </tr>
-        <tr each="{ submission, index in selected_leaderboard.submissions}">
-            <td class="collapsing index-column center aligned">
-                <gold-medal if="{get_row_number(index) === 1}"></gold-medal>
-                <silver-medal if="{get_row_number(index) === 2}"></silver-medal>
-                <bronze-medal if="{get_row_number(index) === 3}"></bronze-medal>
-                <fourth-place-medal if="{get_row_number(index) === 4}"></fourth-place-medal>
-                <fifth-place-medal if="{get_row_number(index) === 5}"></fifth-place-medal>
-                <virtual if="{get_row_number(index) > 5}">{get_row_number(index)}</virtual>
-            </td>
-            <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
-            <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
-            <td data-sort="{ sort_date_value(submission.created_when) }"
-                data-sort-value="{ sort_date_value(submission.created_when) }"
-            >
-                { pretty_date(submission.created_when) }
-            </td>
-            <td>{submission.id}</td>
-            <td each="{ column in filtered_columns }">
-                <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
-                    <i class="icon grey eye eye-icon"></i>
-                </a>
-                <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
-            </td>
-        </tr>
+            <tr if="{_.isEmpty(paginated_submissions)}" class="center aligned">
+                <td colspan="100%">
+                    <em>No submissions have been added to this leaderboard yet!</em>
+                </td>
+            </tr>
+
+            <tr each="{ submission, index in paginated_submissions}">
+                <td class="collapsing index-column center aligned">
+                    <gold-medal if="{get_row_number(index) === 1}"></gold-medal>
+                    <silver-medal if="{get_row_number(index) === 2}"></silver-medal>
+                    <bronze-medal if="{get_row_number(index) === 3}"></bronze-medal>
+                    <fourth-place-medal if="{get_row_number(index) === 4}"></fourth-place-medal>
+                    <fifth-place-medal if="{get_row_number(index) === 5}"></fifth-place-medal>
+                    <virtual if="{get_row_number(index) > 5}">{get_row_number(index)}</virtual>
+                </td>
+                <td if="{submission.organization === null}"><a href="{submission.slug_url}">{ submission.owner }</a></td>
+                <td if="{submission.organization !== null}"><a href="{submission.organization.url}">{ submission.organization.name }</a></td>
+                <td data-sort="{ sort_date_value(submission.created_when) }"
+                    data-sort-value="{ sort_date_value(submission.created_when) }">
+                    { pretty_date(submission.created_when) }
+                </td>
+                <td>{submission.id}</td>
+                <td each="{ column in filtered_columns }">
+                    <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
+                        <i class="icon grey eye eye-icon"></i>
+                    </a>
+                    <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -309,6 +309,7 @@
                         }
                     }
                     self.filter_columns()
+                    self.update_pagination()
                     $('#leaderboardTable').tablesort()
                     self.update()
                 })
