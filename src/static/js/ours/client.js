@@ -147,6 +147,10 @@ CODALAB.api = {
     get_leaderboard_for_render: function (phase_pk) {
         return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`)
     },
+    get_leaderboard_for_render: function (phase_pk, params = {}) {
+        return CODALAB.api.request('GET', `${URLS.API}phases/${phase_pk}/get_leaderboard/`, params)
+    },
+
     update_submission_score: function (pk, data) {
         return CODALAB.api.request('PATCH', `${URLS.API}submission_scores/${pk}/`, data)
     },

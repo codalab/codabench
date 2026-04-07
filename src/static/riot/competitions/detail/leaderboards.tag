@@ -123,7 +123,6 @@
         self.total_pages = 1
         self.paginated_submissions = []
 
-
         self.get_page_size_value = function () {
             if (String(self.page_size).toLowerCase() === 'all') {
                 return self.total_count || 1
@@ -146,37 +145,54 @@
         }
 
         self.update_pagination = function () {
-            self.total_count = _.get(self.selected_leaderboard, 'submissions', []).length
+            var submissions = _.get(self.selected_leaderboard, 'submissions', [])
 
-            var page_size_value = self.get_page_size_value()
+            self.total_count = parseInt(_.get(self.selected_leaderboard, 'count', submissions.length), 10) || submissions.length
 
-            if (String(self.page_size).toLowerCase() === 'all') {
+            var raw_page_size = _.get(self.selected_leaderboard, 'page_size', self.page_size)
+
+            if (String(raw_page_size).toLowerCase() === 'all') {
+                self.page_size = 'all'
                 self.total_pages = 1
                 self.page = 1
-                self.paginated_submissions = _.get(self.selected_leaderboard, 'submissions', [])
-                return
+            } else {
+                var page_size_value = parseInt(raw_page_size, 10)
+                if (isNaN(page_size_value) || page_size_value <= 0) {
+                    page_size_value = self.get_page_size_value()
+                }
+
+                self.page_size = page_size_value
+                self.total_pages = Math.max(1, Math.ceil(self.total_count / page_size_value))
+
+                if (self.page > self.total_pages) {
+                    self.page = self.total_pages
+                }
             }
 
-            self.total_pages = Math.max(1, Math.ceil(self.total_count / page_size_value))
-
-            if (self.page > self.total_pages) {
-                self.page = self.total_pages
-            }
-
-            var start = (self.page - 1) * page_size_value
-            var end = start + page_size_value
-            self.paginated_submissions = _.slice(_.get(self.selected_leaderboard, 'submissions', []), start, end)
+            self.paginated_submissions = submissions
         }
 
         self.go_to_page = function (p) {
+            if (String(self.page_size).toLowerCase() === 'all') {
+                return
+            }
+
             var newPage = parseInt(p, 10)
             if (isNaN(newPage) || newPage < 1) newPage = 1
             if (newPage > self.total_pages) newPage = self.total_pages
             if (newPage === self.page) return
 
             self.page = newPage
-            self.update_pagination()
-            self.update()
+            self.update_leaderboard()
+        }
+
+        self.handle_page_enter = function (e) {
+            if (e.key !== 'Enter' && e.keyCode !== 13) {
+                return
+            }
+
+            e.preventDefault()
+            self.go_to_page(e.target.value)
         }
 
         self.change_page_size = function (e) {
@@ -194,8 +210,7 @@
             }
 
             self.page = 1
-            self.update_pagination()
-            self.update()
+            self.update_leaderboard()
         }
 
         self.pretty_date = function (date_string) {
@@ -211,22 +226,20 @@
             const dt = luxon.DateTime.fromISO(date_string)
             return dt.isValid ? dt.toMillis() : 0
         }
-       
+
         self.bold_class = function(column, submission){
-            // Return `text-bold` if submission has 
-            // more than one scores and score index  == leaderbaord.primary_index
-            // otherwise return empty string
-            return_class = '' // default class value
-            if(column.task_id != -1){ // factsheet check
-                if(submission.scores.length > 1){ // score length check
+            return_class = ''
+            if(column.task_id != -1){
+                if(submission.scores.length > 1){
                     let column_index = _.get(column, 'index')
-                    if(column_index === self.selected_leaderboard.primary_index){ // column index check
+                    if(column_index === self.selected_leaderboard.primary_index){
                         return_class = 'text-bold'
                     }
                 }
             }
             return return_class
         }
+
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
                 return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
@@ -239,7 +252,7 @@
             return 'n/a'
         }
 
-        self.on("mount" , function () {
+        self.on("mount", function () {
             this.refs.leaderboardFilter.onkeyup = function (e) {
                 self.filter_columns()
             }
@@ -251,96 +264,99 @@
 
         self.filter_columns = () => {
             let search_key = self.refs.leaderboardFilter.value.toLowerCase()
-            self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks))
-            if(search_key){
+            self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks || []))
+
+            if (search_key) {
                 self.filtered_columns = []
-                for (const column of self.columns){
-                    let key = column.key.toLowerCase()
-                    let title = column.title.toLowerCase()
-                    if((key.includes(search_key) || title.includes(search_key))) {
+                for (const column of self.columns) {
+                    let key = (column.key || '').toLowerCase()
+                    let title = (column.title || '').toLowerCase()
+                    if ((key.includes(search_key) || title.includes(search_key))) {
                         self.filtered_columns.push(column)
-                    }
-                    else {
+                    } else {
                         let task = _.find(self.filtered_tasks, {id: column.task_id})
-                        task.colWidth -= 1
+                        if (task) task.colWidth -= 1
                     }
                 }
                 self.filtered_tasks = self.filtered_tasks.filter(task => task.colWidth > 0)
             } else {
                 self.filtered_columns = self.columns
             }
+
             self.update()
         }
 
         self.update_leaderboard = () => {
-            CODALAB.api.get_leaderboard_for_render(self.phase_id)
-                .done(responseData => {
-                    self.selected_leaderboard = responseData
-                    self.columns = []
-                    // Make fake task and columns for Metadata so it can be filtered like columns
-                    if(self.selected_leaderboard.fact_sheet_keys){
-                        let fake_metadata_task = {
-                            id: -1,
-                            colWidth: self.selected_leaderboard.fact_sheet_keys.length,
-                            columns: [],
-                            name: "Fact Sheet Answers"
-                        }
-                        for(question of self.selected_leaderboard.fact_sheet_keys){
-                            fake_metadata_task.columns.push({
-                                key: question[0],
-                                title: question[1],
-                            })
-                        }
-                        self.selected_leaderboard.tasks.unshift(fake_metadata_task)
-                    }
-                    for(task of self.selected_leaderboard.tasks){
+            CODALAB.api.get_leaderboard_for_render(self.phase_id, {
+                page: self.page,
+                page_size: self.page_size
+            })
+            .done(responseData => {
+                self.selected_leaderboard = responseData
+                self.columns = []
 
-                        for(column of task.columns){
-                            column.task_id = task.id
-                            self.columns.push(column)
-                        }
-                        // -1 id is used for fact sheet answers
-                        if(self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1){
-                            self.columns.push({
-                              task_id: task.id,
-                              title: "Detailed Results"
-                            })
-                            task.colWidth += 1
-                        }
+                if (self.selected_leaderboard.fact_sheet_keys) {
+                    let fake_metadata_task = {
+                        id: -1,
+                        colWidth: self.selected_leaderboard.fact_sheet_keys.length,
+                        columns: [],
+                        name: "Fact Sheet Answers"
                     }
-                    self.filter_columns()
-                    self.update_pagination()
-                    $('#leaderboardTable').tablesort()
-                    self.update()
-                })
+                    for (question of self.selected_leaderboard.fact_sheet_keys) {
+                        fake_metadata_task.columns.push({
+                            key: question[0],
+                            title: question[1],
+                        })
+                    }
+                    self.selected_leaderboard.tasks.unshift(fake_metadata_task)
+                }
+
+                for (task of self.selected_leaderboard.tasks) {
+                    for (column of task.columns) {
+                        column.task_id = task.id
+                        self.columns.push(column)
+                    }
+                    if (self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1) {
+                        self.columns.push({
+                            task_id: task.id,
+                            title: "Detailed Results"
+                        })
+                        task.colWidth += 1
+                    }
+                }
+
+                self.filter_columns()
+                self.update_pagination()
+                $('#leaderboardTable').tablesort()
+                self.update()
+            })
         }
 
         self.get_detailed_result_submisison_id = function(column, submisison){
             for (index in submisison.detailed_results) {
-                if(column.task_id == submisison.detailed_results[index].task){
+                if (column.task_id == submisison.detailed_results[index].task) {
                     return submisison.detailed_results[index].id
                 }
             }
         }
 
-
         CODALAB.events.on('phase_selected', data => {
             self.phase_id = data.id
+            self.page = 1
             self.update_leaderboard()
         })
 
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
             self.participant_status = competition.participant_status
-            self.opts.is_admin ? self.show_download = "visible": self.show_download = "hidden"
+            self.opts.is_admin ? self.show_download = "visible" : self.show_download = "hidden"
             self.enable_detailed_results = competition.enable_detailed_results
             self.show_detailed_results_in_leaderboard = competition.show_detailed_results_in_leaderboard
-            
         })
 
         CODALAB.events.on('submission_changed_on_leaderboard', self.update_leaderboard)
-
     </script>
+    
     <style type="text/stylus">
         :scope
             display: block

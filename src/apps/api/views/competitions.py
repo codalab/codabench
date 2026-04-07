@@ -18,7 +18,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework_csv.renderers import CSVRenderer
-from api.pagination import LargePagination
+from api.pagination import DynamicChoicePagination, LargePagination
 from api.renderers import ZipRenderer
 from rest_framework.viewsets import ModelViewSet
 from api.serializers.competitions import CompetitionSerializerSimple, PhaseSerializer, \
@@ -775,9 +775,10 @@ class PhaseViewSet(ModelViewSet):
         phase = self.get_object()
         if phase.competition.fact_sheet:
             fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
-                               for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
+                            for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
         else:
             fact_sheet_keys = None
+
         query = LeaderboardPhaseSerializer(phase).data
         response = {
             'title': query['leaderboard']['title'],
@@ -787,9 +788,11 @@ class PhaseViewSet(ModelViewSet):
             'fact_sheet_keys': fact_sheet_keys or None,
             'primary_index': query['leaderboard']['primary_index']
         }
+
         columns = [col for col in query['columns']]
         submissions_keys = {}
         submission_detailed_results = {}
+
         for submission in query['submissions']:
             submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
             # gather detailed result from submissions for each task
@@ -814,6 +817,7 @@ class PhaseViewSet(ModelViewSet):
                     'organization': submission['organization'],
                     'created_when': submission['created_when']
                 })
+
             for score in submission['scores']:
 
                 # to check if a column is found
@@ -851,6 +855,21 @@ class PhaseViewSet(ModelViewSet):
         for k, v in submissions_keys.items():
             response['submissions'][v]['detailed_results'] = submission_detailed_results[k]
 
+        # --- pagination addition ---
+        total_count = len(response['submissions'])
+        paginator = DynamicChoicePagination()
+        paginated_submissions = paginator.paginate_queryset(response['submissions'], request, view=self)
+        if paginated_submissions is None:
+            paginated_submissions = response['submissions']
+
+        response['submissions'] = paginated_submissions
+        response['count'] = total_count
+        response['page_size'] = getattr(paginator, 'requested_page_size', request.query_params.get('page_size', 50))
+        response['next'] = paginator.get_next_link()
+        response['previous'] = paginator.get_previous_link()
+        response['allowed_page_sizes'] = [50, 100, 500, 'all']
+        # --- end pagination addition ---
+
         for task in query['tasks']:
             # This can be used to rendered variable columns on each task
             tempTask = {
@@ -862,6 +881,7 @@ class PhaseViewSet(ModelViewSet):
             for col in columns:
                 tempTask['columns'].append(col)
             response['tasks'].append(tempTask)
+
         return Response(response)
 
 
