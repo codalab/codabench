@@ -23,6 +23,8 @@
                         <i class="server icon"></i>
                         <div class="workers-title-text">
                             Compute Workers
+                            </br>
+                            <small><small><small>displayed only for competition organizers</small></small></small>
                             <div class="workers-subtitle">
                                 <span class="workers-connection { wsState }">{ connectionLabel() }</span>
                                 <span class="workers-separator">•</span>
@@ -475,10 +477,10 @@
         }
 
         .workers-toggle-btn
-            z-index 0
-            position fixed
-            top 74px
-            right 24px
+            z-index 10
+            position relative
+            top 150%
+            right 1%
             background #576671 !important
             color white !important
             
