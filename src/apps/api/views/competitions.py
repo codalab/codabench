@@ -774,8 +774,14 @@ class PhaseViewSet(ModelViewSet):
     def get_leaderboard(self, request, pk):
         phase = self.get_object()
         if phase.competition.fact_sheet:
-            fact_sheet_keys = [(phase.competition.fact_sheet[question]['key'], phase.competition.fact_sheet[question]['title'])
-                            for question in phase.competition.fact_sheet if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true']
+            fact_sheet_keys = [
+                (
+                    phase.competition.fact_sheet[question]['key'],
+                    phase.competition.fact_sheet[question]['title']
+                )
+                for question in phase.competition.fact_sheet
+                if phase.competition.fact_sheet[question]['is_on_leaderboard'] == 'true'
+            ]
         else:
             fact_sheet_keys = None
 
