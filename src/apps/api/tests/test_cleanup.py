@@ -56,8 +56,19 @@ class CleanUpTests(APITestCase):
             DataFactory(created_by=user, type=Data.INGESTION_PROGRAM),
             DataFactory(created_by=user, type=Data.SCORING_PROGRAM),
             DataFactory(created_by=user, type=Data.INPUT_DATA),
-            DataFactory(created_by=user, type=Data.REFERENCE_DATA),
-            DataFactory(created_by=user, type=Data.PUBLIC_DATA)
+            DataFactory(created_by=user, type=Data.REFERENCE_DATA)
+        ]
+
+        # Create unused starting kits
+        self.unused_starting_kits = [
+            DataFactory(created_by=user, type=Data.STARTING_KIT),
+            DataFactory(created_by=user, type=Data.STARTING_KIT)
+        ]
+
+        # Create unused competition bundles
+        self.unused_competition_bundles = [
+            DataFactory(created_by=user, type=Data.COMPETITION_BUNDLE),
+            DataFactory(created_by=user, type=Data.COMPETITION_BUNDLE)
         ]
 
         self.client.login(username='test_user', password='test_user')
@@ -72,6 +83,8 @@ class CleanUpTests(APITestCase):
         assert content["unused_datasets_programs"] == len(self.unused_datasets_programs)
         assert content["unused_submissions"] == len(self.unused_submissions)
         assert content["failed_submissions"] == len(self.failed_submissions)
+        assert content["unused_starting_kits"] == len(self.unused_starting_kits)
+        assert content["unused_competition_bundles"] == len(self.unused_competition_bundles)
 
     def test_delete_unused_tasks(self):
 
@@ -132,3 +145,33 @@ class CleanUpTests(APITestCase):
         assert resp.status_code == 200
         content = json.loads(resp.content)
         assert content["failed_submissions"] == 0
+
+    def test_delete_unused_starting_kits(self):
+
+        url = reverse('delete_unused_starting_kits')
+        resp = self.client.delete(url)
+        assert resp.status_code == 200
+        content = json.loads(resp.content)
+        assert content["success"]
+        assert content["message"] == "Unused starting kits deleted successfully"
+
+        url = reverse('user_quota_cleanup')
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        content = json.loads(resp.content)
+        assert content["unused_starting_kits"] == 0
+
+    def test_delete_unused_competition_bundles(self):
+
+        url = reverse('delete_unused_competition_bundles')
+        resp = self.client.delete(url)
+        assert resp.status_code == 200
+        content = json.loads(resp.content)
+        assert content["success"]
+        assert content["message"] == "Unused competition bundles deleted successfully"
+
+        url = reverse('user_quota_cleanup')
+        resp = self.client.get(url)
+        assert resp.status_code == 200
+        content = json.loads(resp.content)
+        assert content["unused_competition_bundles"] == 0

@@ -21,7 +21,9 @@ def user_quota_cleanup(request):
     unused_datasets_programs = Data.objects.filter(
         Q(created_by=request.user) &
         ~Q(type=Data.SUBMISSION) &
-        ~Q(type=Data.COMPETITION_BUNDLE)
+        ~Q(type=Data.COMPETITION_BUNDLE) &
+        ~Q(type=Data.PUBLIC_DATA) &
+        ~Q(type=Data.STARTING_KIT)
     ).exclude(
         Q(task_ingestion_programs__isnull=False) |
         Q(task_input_datas__isnull=False) |
@@ -42,11 +44,29 @@ def user_quota_cleanup(request):
         Q(status=Submission.FAILED)
     ).count()
 
+    # Get unused starting kits count
+    unused_starting_kits = Data.objects.filter(
+        Q(created_by=request.user) &
+        Q(type=Data.STARTING_KIT) &
+        Q(competition__isnull=True) &
+        Q(phase_starting_kit__isnull=True)
+    ).count()
+
+    # Get unused competition bundles
+    unused_competition_bundles = Data.objects.filter(
+        Q(created_by=request.user) &
+        Q(type=Data.COMPETITION_BUNDLE) &
+        Q(competition__isnull=True) &
+        Q(competition_bundles__isnull=True)
+    ).count()
+
     return Response({
         "unused_tasks": unused_tasks,
         "unused_datasets_programs": unused_datasets_programs,
         "unused_submissions": unused_submissions,
-        "failed_submissions": failed_submissions
+        "failed_submissions": failed_submissions,
+        "unused_starting_kits": unused_starting_kits,
+        "unused_competition_bundles": unused_competition_bundles
     })
 
 
@@ -84,7 +104,9 @@ def delete_unused_datasets(request):
         Data.objects.filter(
             Q(created_by=request.user) &
             ~Q(type=Data.SUBMISSION) &
-            ~Q(type=Data.COMPETITION_BUNDLE)
+            ~Q(type=Data.COMPETITION_BUNDLE) &
+            ~Q(type=Data.PUBLIC_DATA) &
+            ~Q(type=Data.STARTING_KIT)
         ).exclude(
             Q(task_ingestion_programs__isnull=False) |
             Q(task_input_datas__isnull=False) |
@@ -140,6 +162,50 @@ def delete_failed_submissions(request):
         })
     except Exception as e:
         logger.error(f"FAILED SUBMISSIONS DELETION --- {e}")
+        return Response({
+            "success": False,
+            "message": f"{e}"
+        })
+
+
+@api_view(['DELETE'])
+def delete_unused_starting_kits(request):
+    try:
+        Data.objects.filter(
+            Q(created_by=request.user) &
+            Q(type=Data.STARTING_KIT) &
+            Q(competition__isnull=True) &
+            Q(phase_starting_kit__isnull=True)
+        ).delete()
+
+        return Response({
+            "success": True,
+            "message": "Unused starting kits deleted successfully"
+        })
+    except Exception as e:
+        logger.error(f"UNUSED STARTING KITS DELETION --- {e}")
+        return Response({
+            "success": False,
+            "message": f"{e}"
+        })
+
+
+@api_view(['DELETE'])
+def delete_unused_competition_bundles(request):
+    try:
+        Data.objects.filter(
+            Q(created_by=request.user) &
+            Q(type=Data.COMPETITION_BUNDLE) &
+            Q(competition__isnull=True) &
+            Q(competition_bundles__isnull=True)
+        ).delete()
+
+        return Response({
+            "success": True,
+            "message": "Unused competition bundles deleted successfully"
+        })
+    except Exception as e:
+        logger.error(f"UNUSED COMPETITION BUNDLES DELETION --- {e}")
         return Response({
             "success": False,
             "message": f"{e}"
