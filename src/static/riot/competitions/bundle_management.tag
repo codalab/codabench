@@ -242,7 +242,11 @@
         }
 
         // Update bundles on unused bundles delete
+<<<<<<< HEAD
         CODALAB.events.on('reload_competition_bundles', self.update_competition_bundles)
+=======
+        CODALAB.events.on('reload_competition_bundles', self.update_datasets)
+>>>>>>> 801a7bd9 (quota cleanup updated to allow users to remove unused starting kits and competition bundles. Starting kit and public data are not included in unused datasets anymore)
 
 
     </script>
