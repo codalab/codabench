@@ -63,6 +63,11 @@
                     { pretty_date(submission.created_when) }
                 </td>
                 <td>{submission.id}</td>
+                <td if="{ has_group_queues }">
+                    <span if="{ submission.queue_name }">{ submission.queue_name }</span>
+                    <span if="{ !submission.queue_name }" class="ui grey text">—</span>
+                </td>
+                <td each="{ column in filtered_columns }">
                 <td each="{ column in filtered_columns }"
                     data-sort="{ get_score_sort_value(column, submission) }"
                     data-sort-value="{ get_score_sort_value(column, submission) }">
@@ -200,6 +205,9 @@
             return dt.isValid ? dt.toMillis() : 0
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c462729b (Clean up leaderboard ordering logic)
 
         self.get_score_sort_value = function(column, submission) {
             if (column.task_id === -1) {
@@ -213,8 +221,11 @@
             return (score !== null && typeof score !== 'undefined' && score !== '') ? score : ''
         }
 
+<<<<<<< HEAD
 =======
 >>>>>>> ba0e679c (leaderboad group feature)
+=======
+>>>>>>> c462729b (Clean up leaderboard ordering logic)
         self.bold_class = function(column, submission){
             return_class = ''
             if(column.task_id != -1){
