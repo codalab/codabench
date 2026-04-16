@@ -261,6 +261,24 @@
             // awesome markdown editor
             self.simple_markdown_editor = create_easyMDE(self.refs.description)
 
+            // Custom menu template that renders description under the item name
+            // data-text is set to name-only so that selected labels show only the title
+            var dropdown_menu_template = function(response, fields) {
+                var html = ''
+                $.each(response[fields.values], function(index, item) {
+                    var name = item[fields.name] || ''
+                    var value = item[fields.value] || ''
+                    var description = item.description
+                    html += '<div class="item" data-value="' + value + '" data-text="' + name + '">'
+                    html += '<strong>' + name + '</strong>'
+                    if (description) {
+                        html += '<div class="dropdown-item-description">' + description + '</div>'
+                    }
+                    html += '</div>'
+                })
+                return html
+            }
+
             // semantic multiselect
             $(self.refs.multiselect).dropdown({
                 apiSettings: {
@@ -270,6 +288,7 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.task_added,
                 onRemove: self.task_removed,
             })
@@ -282,10 +301,11 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.public_data_added,
                 onRemove: self.public_data_removed,
             })
-            
+
             $(self.refs.starting_kit_multiselect).dropdown({
                 apiSettings: {
                     url: `${URLS.API}datasets/?search={query}&type=starting_kit`,
@@ -294,6 +314,7 @@
                         return {success: true, results: _.values(data.results)}
                     },
                 },
+                templates: {menu: dropdown_menu_template},
                 onAdd: self.starting_kit_added,
                 onRemove: self.starting_kit_removed,
             })
@@ -858,5 +879,11 @@
     <style type="text/stylus">
         .chevron, .icon-button
             cursor pointer
+        .dropdown-item-description
+            font-size 0.85em
+            color rgba(0,0,0,0.5)
+            margin-top 2px
+            white-space normal
+            line-height 1.3
     </style>
 </competition-phases>
