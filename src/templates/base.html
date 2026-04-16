@@ -292,7 +292,7 @@
             },
             SECRET_KEY_URL: function (pk, secret_key) {
                 var url = "{% url "competitions:detail" pk=0 %}".replace(0, pk)
-                return `{{ request.get_host }}${url}?secret_key=${secret_key}`
+                return `{{ DOMAIN_NAME }}${url}?secret_key=${secret_key}`
             },
             COMPETITION_GET_ZIP: function (pk) {
                 let urlBase = "{% url "competition-results" pk=0 %}".replace(0, pk)
