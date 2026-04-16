@@ -832,28 +832,37 @@
 <nav aria-label="Example competitions" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#v2-test-data">
+<a class="md-nav__link" href="#codabench-v2-test-data">
 <span class="md-ellipsis">
       
-        v2 test data
+        Codabench (v2) test data
       
     </span>
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#v15-legacy-test-data">
+<a class="md-nav__link" href="#codalab-v18-test-data">
 <span class="md-ellipsis">
       
-        v1.5 legacy test data
+        CodaLab (v1.8) test data
       
     </span>
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#other-codalab-competition-examples">
+<a class="md-nav__link" href="#codalab-v15-test-data">
 <span class="md-ellipsis">
       
-        Other Codalab Competition examples
+        CodaLab (v1.5) test data
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#other-competition-examples">
+<span class="md-ellipsis">
+      
+        Other competition examples
       
     </span>
 </a>
@@ -1287,28 +1296,37 @@
 <nav aria-label="Example competitions" class="md-nav">
 <ul class="md-nav__list">
 <li class="md-nav__item">
-<a class="md-nav__link" href="#v2-test-data">
+<a class="md-nav__link" href="#codabench-v2-test-data">
 <span class="md-ellipsis">
       
-        v2 test data
+        Codabench (v2) test data
       
     </span>
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#v15-legacy-test-data">
+<a class="md-nav__link" href="#codalab-v18-test-data">
 <span class="md-ellipsis">
       
-        v1.5 legacy test data
+        CodaLab (v1.8) test data
       
     </span>
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="#other-codalab-competition-examples">
+<a class="md-nav__link" href="#codalab-v15-test-data">
 <span class="md-ellipsis">
       
-        Other Codalab Competition examples
+        CodaLab (v1.5) test data
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#other-competition-examples">
+<span class="md-ellipsis">
+      
+        Other competition examples
       
     </span>
 </a>
@@ -1335,9 +1353,10 @@
 </span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="c1"># Playwright tests (make sure to install uv first: https://docs.astral.sh/uv/getting-started/installation/) </span>
 </span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen
-</span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>uv<span class="w"> </span>run<span class="w"> </span>playwright<span class="w"> </span>install
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">DJANGO_SUPERUSER_PASSWORD</span><span class="o">=</span>codabench<span class="w"> </span>django<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser<span class="w"> </span>--username<span class="w"> </span>codabench<span class="w"> </span>--email<span class="w"> </span>codabench@test.mail<span class="w"> </span>--no-input
-</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>test_auth.py<span class="w"> </span>test_account_creation.py<span class="w"> </span>test_competition.py<span class="w"> </span>test_submission.py
+</span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>uv<span class="w"> </span>add<span class="w"> </span>playwright
+</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>uv<span class="w"> </span>run<span class="w"> </span>playwright<span class="w"> </span>install
+</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-e<span class="w"> </span><span class="nv">DJANGO_SUPERUSER_PASSWORD</span><span class="o">=</span>codabench<span class="w"> </span>django<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser<span class="w"> </span>--username<span class="w"> </span>codabench<span class="w"> </span>--email<span class="w"> </span>codabench@test.mail<span class="w"> </span>--no-input
+</span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>test_auth.py<span class="w"> </span>test_account_creation.py<span class="w"> </span>test_competition.py<span class="w"> </span>test_submission.py
 </span></code></pre></div>
 <h2 id="circleci">CircleCI<a class="headerlink" href="#circleci" title="Permanent link">¶</a></h2>
 <p>To simulate the tests run by CircleCI locally, run the following command:</p>
@@ -1345,16 +1364,40 @@
 </span></code></pre></div>
 <h2 id="example-competitions">Example competitions<a class="headerlink" href="#example-competitions" title="Permanent link">¶</a></h2>
 <p>The repo comes with a couple examples that are used during tests:</p>
-<h3 id="v2-test-data">v2 test data<a class="headerlink" href="#v2-test-data" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>src/tests/functional/test_files/submission.zip
-</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>src/tests/functional/test_files/competition.zip
+<h3 id="codabench-v2-test-data">Codabench (v2) test data<a class="headerlink" href="#codabench-v2-test-data" title="Permanent link">¶</a></h3>
+<p>Competition bundles:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>codabench/tests/test_files/competitions/competition_v2_miniautoml.zip
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>codabench/tests/test_files/competitions/competition_v2_multi_task.zip
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>codabench/tests/test_files/competitions/competition_v2_multi_task_fact_sheet.zip
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a>codabench/tests/test_files/competitions/competition_v2_wheat_code.zip
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a>codabench/tests/test_files/competitions/competition_v2_wheat_results.zip
 </span></code></pre></div>
-<h3 id="v15-legacy-test-data">v1.5 legacy test data<a class="headerlink" href="#v15-legacy-test-data" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a>src/tests/functional/test_files/submission15.zip
-</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>src/tests/functional/test_files/competition15.zip
+<p>And the corresponding submissions:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a>codabench/tests/test_files/submissions/submission_v2_miniautoml.zip
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>codabench/tests/test_files/submissions/submission_v2_wheat_code.zip
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a>codabench/tests/test_files/submissions/submission_v2_wheat_results.zip
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a>codabench/tests/test_files/submissions/submission_v2_wheat_results_failure.zip
 </span></code></pre></div>
-<h3 id="other-codalab-competition-examples">Other Codalab Competition examples<a class="headerlink" href="#other-codalab-competition-examples" title="Permanent link">¶</a></h3>
-<p><a href="https://github.com/codalab/competition-examples/tree/master/v2/">https://github.com/codalab/competition-examples/tree/master/v2/</a></p>
+<h3 id="codalab-v18-test-data">CodaLab (v1.8) test data<a class="headerlink" href="#codalab-v18-test-data" title="Permanent link">¶</a></h3>
+<p>Competition bundle:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a>codabench/tests/test_files/competitions/competition_v18_autowsl.zip
+</span></code></pre></div>
+<p>And the corresponding submission:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a>codabench/tests/test_files/submissions/submission_v18_autowsl.zip
+</span></code></pre></div>
+<h3 id="codalab-v15-test-data">CodaLab (v1.5) test data<a class="headerlink" href="#codalab-v15-test-data" title="Permanent link">¶</a></h3>
+<p>Competition bundles:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a>codabench/tests/test_files/competitions/competition_v15_iris.zip
+</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a>codabench/tests/test_files/competitions/competition_v15_sncf.zip
+</span></code></pre></div>
+<p>And the corresponding submissions:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a>codabench/tests/test_files/submissions/submission_v15_iris_code.zip
+</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a>codabench/tests/test_files/submissions/submission_v15_iris_results.zip
+</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a>codabench/tests/test_files/submissions/submission_v15_sncf.zip
+</span></code></pre></div>
+<h3 id="other-competition-examples">Other competition examples<a class="headerlink" href="#other-competition-examples" title="Permanent link">¶</a></h3>
+<p>The following repository contains Codabench and CodaLab competition examples:</p>
+<p><a href="https://github.com/codalab/competition-examples/">https://github.com/codalab/competition-examples/</a></p>
 </article>
 </div>
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
