@@ -22,7 +22,7 @@ def browser_context_args(browser_context_args):
     return browser_context_args
 
 
-def run_tests(page, competition, submission) -> None:
+def run_tests(page, competition, submission, expected_result="Finished") -> None:
     page.goto("/")
     page.get_by_role("link", name=" Benchmarks/Competitions").click()
     page.get_by_role("link", name=" Upload").click()
@@ -38,65 +38,103 @@ def run_tests(page, competition, submission) -> None:
     file_chooser.set_files(submission)
     expect(page.locator(".ui.indicating")).to_be_visible()
     expect(page.locator(".ui.indicating")).not_to_be_visible()
-    # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
+    # Wait for the run to be completed (Finished or Failed) to show. 
+    # "Failed" regex is more flexible because the cell also contain a question mark
+    finished_or_failed = re.compile(r"^(Finished|Failed.*)$")
     try:
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=25000)
+        expect(page.get_by_role("cell", name=finished_or_failed)).to_be_visible(timeout=25000)
+    # If it does not, catch the error and reload the page in case the page didn't update automatically
     except:
         page.reload()
-        expect(page.get_by_role("cell", name="Finished")).to_be_visible(timeout=2000)
-    # Add to leaderboard and see if shows
-    text = page.locator(".submission_row").first.inner_text()
-    submission_Id = text.split(None, 1)
-    try:
-        page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
-    except:
-        page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
-    page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
-    expect(
-        page.locator("#leaderboardTable").get_by_role(
-            "link", name=data["default_user"]["username"]
+        expect(page.get_by_role("cell", name=finished_or_failed)).to_be_visible(timeout=2000)
+    # Then we actually check if we got the expected result
+    if expected_result == "Failed":
+        expect(page.get_by_role("cell", name=re.compile(r"^Failed.*$"))).to_be_visible()
+    elif expected_result == "Finished":
+        expect(page.get_by_role("cell", name=expected_result)).to_be_visible()
+        # Add to leaderboard and see if shows
+        text = page.locator(".submission_row").first.inner_text()
+        submission_Id = text.split(None, 1)
+        try:
+            page.locator("td:nth-child(6) > span > .icon").first.click(timeout=300)
+        except:
+            page.locator("td:nth-child(7) > span > .icon").first.click(timeout=300)
+        page.locator("div").filter(has_text=re.compile(r"^Results$")).click()
+        expect(
+            page.locator("#leaderboardTable").get_by_role(
+                "link", name=data["default_user"]["username"]
+            )
+        ).to_be_visible()
+        expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
+    else:
+        raise ValueError(
+            f"Unsupported expected_result={expected_result!r}. "
+            "Expected 'Finished' or 'Failed'."
         )
-    ).to_be_visible()
-    expect(page.get_by_role("cell", name=submission_Id[0], exact=True)).to_be_visible()
 
 
-def test_basic(page: Page):
+def test_v2_code(page: Page):
     run_tests(
         page,
-        competition="test_files/competitions/competition.zip",
-        submission="test_files/submissions/submission.zip",
+        competition="test_files/competitions/competition_v2_wheat_code.zip",
+        submission="test_files/submissions/submission_v2_wheat_code.zip",
     )
 
 
-def test_v15(page: Page):
+def test_v2_results(page: Page):
     run_tests(
         page,
-        competition="test_files/competitions/competition_15.zip",
-        submission="test_files/submissions/submission_15.zip",
+        competition="test_files/competitions/competition_v2_wheat_results.zip",
+        submission="test_files/submissions/submission_v2_wheat_results.zip",
     )
 
 
-def test_irisV15_code(page: Page):
+def test_v2_results_failure(page: Page):
     run_tests(
         page,
-        competition="test_files/competitions/competition_15_iris.zip",
-        submission="test_files/submissions/submission_15_iris_code.zip",
+        competition="test_files/competitions/competition_v2_wheat_results.zip",
+        submission="test_files/submissions/submission_v2_wheat_results_failure.zip",
+        expected_result="Failed",
     )
 
 
-def test_irisV15_result(page: Page):
+def test_v2_miniautoml(page: Page):
     run_tests(
         page,
-        competition="test_files/competitions/competition_15_iris.zip",
-        submission="test_files/submissions/submission_15_iris_result.zip",
+        competition="test_files/competitions/competition_v2_miniautoml.zip",
+        submission="test_files/submissions/submission_v2_miniautoml.zip",
     )
 
 
-def test_v18(page: Page):
+def test_v15_sncf(page: Page):
     run_tests(
         page,
-        competition="test_files/competitions/competition_18.zip",
-        submission="test_files/submissions/submission_18.zip",
+        competition="test_files/competitions/competition_v15_sncf.zip",
+        submission="test_files/submissions/submission_v15_sncf.zip",
+    )
+
+
+def test_v15_iris_code(page: Page):
+    run_tests(
+        page,
+        competition="test_files/competitions/competition_v15_iris.zip",
+        submission="test_files/submissions/submission_v15_iris_code.zip",
+    )
+
+
+def test_v15_iris_results(page: Page):
+    run_tests(
+        page,
+        competition="test_files/competitions/competition_v15_iris.zip",
+        submission="test_files/submissions/submission_v15_iris_results.zip",
+    )
+
+
+def test_v18_autowsl(page: Page):
+    run_tests(
+        page,
+        competition="test_files/competitions/competition_v18_autowsl.zip",
+        submission="test_files/submissions/submission_v18_autowsl.zip",
     )
 
 
@@ -115,7 +153,7 @@ def test_v2_multiTask(page: Page) -> None:
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/submissions/submission.zip")
+    file_chooser.set_files("test_files/submissions/submission_v2_wheat_code.zip")
     expect(page.locator(".ui.indicating")).to_be_visible()
     expect(page.locator(".ui.indicating")).not_to_be_visible()
     # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
@@ -175,7 +213,7 @@ def test_v2_multiTaskFactSheet(page: Page) -> None:
     with page.expect_file_chooser() as fc_info:
         page.get_by_role("button", name="").click()
     file_chooser = fc_info.value
-    file_chooser.set_files("test_files/submissions/submission.zip")
+    file_chooser.set_files("test_files/submissions/submission_v2_wheat_code.zip")
     expect(page.locator(".ui.indicating")).to_be_visible()
     expect(page.locator(".ui.indicating")).not_to_be_visible()
     # Wait for Finished to show. If it does not, catch the error and reload the page in case the page didn't update automatically
