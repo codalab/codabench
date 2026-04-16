@@ -4,6 +4,7 @@ $ docker compose exec django py.test -m "not e2e"
 
 # Playwright tests (make sure to install uv first: https://docs.astral.sh/uv/getting-started/installation/) 
 uv sync --frozen
+uv add playwright
 uv run playwright install
 docker compose exec -e DJANGO_SUPERUSER_PASSWORD=codabench django python manage.py createsuperuser --username codabench --email codabench@test.mail --no-input
 uv run pytest test_auth.py test_account_creation.py test_competition.py test_submission.py
