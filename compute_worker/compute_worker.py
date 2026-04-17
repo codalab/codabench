@@ -1233,6 +1233,9 @@ class Run:
             # Only during prediction step do we want to announce "preparing"
             self._update_status(SubmissionStatus.PREPARING, extra_information=f"ingestion_hostname-{hostname}")
 
+        # Ensure output_dir exists on the host
+        self._get_host_path(self.output_dir)
+
         # Setup cache and prune if it's out of control
         self._prep_cache_dir()
 
