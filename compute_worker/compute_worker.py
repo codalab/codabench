@@ -1510,7 +1510,7 @@ class Run:
                 f.write(yaml.dump(prog_status, default_flow_style=False))
         except Exception as e:
             logger.error(e)
-            raise SubmissionException("Metadata file not found")
+            raise SubmissionException("Failed to write metadata file.")
 
         if not self.is_scoring:
             self._put_dir(self.prediction_result, self.output_dir)
