@@ -3,7 +3,6 @@
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" show="{!opts.hide_output}">LOGS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{!opts.hide_output && opts.show_visualization}">VISUALIZATION</div>
-        <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}fact_sheet">FACT SHEET ANSWERS</div>
     </div>
     <div class="ui tab active modal-tab" data-tab="{admin_: submission.admin}downloads">
@@ -138,9 +137,6 @@
     <div class="ui tab modal-tab" data-tab="{admin_: submission.admin}graph" show="{opts.show_visualization && (!opts.hide_output || submission.admin)}">
         <iframe src="{detailed_result}" class="graph-frame" show="{detailed_result}"></iframe>
     </div>
-    <div class="ui tab leaderboard-tab" data-tab="admin" if="{submission.admin}">
-        <submission-scores leaderboards="{leaderboards}"></submission-scores>
-    </div>
     <script>
         var self = this
         self.submission = {}
@@ -148,16 +144,6 @@
         self.leaderboards = []
         self.columns = []
 
-        self.get_score_details = function (column) {
-            try {
-                let score = _.filter(self.submission.scores, (score) => {
-                    return score.column_key === column.key
-                })[0]
-                return [score.score, score.id]
-            } catch {
-                return ['', '']
-            }
-        }
         self.update_submission_details = () => {
             CODALAB.api.get_submission_details(self.submission.id)
                 .done(function (data) {
@@ -175,16 +161,6 @@
                                 self.update()
                             })
                     })
-                    if (self.submission.admin) {
-                        _.forEach(data.leaderboards, (leaderboard) => {
-                            _.map(leaderboard.columns, (column) => {
-                                let [score, score_id] = self.get_score_details(column)
-                                column.score = score
-                                column.score_id = score_id
-                                return column
-                            })
-                        })
-                    }
                     self.update()
                 })
         }
@@ -215,7 +191,7 @@
             self.submission = opts.submission
             self.update()
             self.update_submission_details()
-            let path = self.submission.admin ? 'admin_downloads' : 'downloads'
+            let path = 'downloads'
             $('.menu .submission-modal.item').tab('change tab', path)
         })
     </script>
@@ -224,10 +200,6 @@
         .log
             height 465px
             max-height 465px
-            overflow auto
-
-        .leaderboard-tab
-            height 515px
             overflow auto
 
         .modal-tab

@@ -232,7 +232,6 @@
                         Task {i + 1}
                     </div>
 
-                    <div if="{is_admin()}" data-tab="admin" class="parent-modal item">Admin</div>
 
                     <div class="item" if="{_.get(selected_submission, 'children').length === 0}">
                         <i style="padding: 5px;">ERROR: Submission is a parent, but has no children. There was an error
@@ -248,9 +247,6 @@
                 </div>
 
 
-                <div class="ui tab" style="height: 565px; overflow: auto;" data-tab="admin" if="{is_admin()}">
-                    <submission-scores leaderboards="{leaderboards}"></submission-scores>
-                </div>
             </div>
         </div>
     </div>
@@ -712,9 +708,6 @@
                         })
                         self.update()
                     })
-            }
-            if (opts.admin) {
-                submission.admin = true
             }
             self.selected_submission = submission
             self.update()

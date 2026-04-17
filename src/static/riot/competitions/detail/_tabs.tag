@@ -583,10 +583,6 @@
             .phase-info
                 margin-bottom 10px
 
-        .admin-tab
-            margin 0 auto
-            width 100%
-
         pre
             background #f4f4f4
             border 1px solid #ddd
