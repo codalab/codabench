@@ -4,13 +4,16 @@ import csv
 from zipfile import ZipFile
 from io import StringIO, BytesIO
 from unittest import mock
+from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory
 
 from api.serializers.competitions import CompetitionSerializer
+from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, DataFactory
+from datasets.models import Data
 
 
 class CompetitionTests(APITestCase):
@@ -347,3 +350,91 @@ class TestCompetitionFactSheets(APITestCase):
         }
         competition_serializer = CompetitionSerializer(data=new_comp_data)
         assert not competition_serializer.is_valid()
+
+
+class CompetitionTaskDatasetVisibilityTests(APITestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.creator = UserFactory(username="creator-datasets")
+        self.organizer = UserFactory(username="organizer-datasets")
+        self.participant = UserFactory(username="participant-datasets")
+
+        self.competition = CompetitionFactory(
+            created_by=self.creator,
+            logo=None,
+            published=True,
+            make_input_data_available=True,
+            make_programs_available=True,
+        )
+        self.competition.collaborators.add(self.organizer)
+
+        CompetitionParticipantFactory(
+            user=self.participant,
+            competition=self.competition,
+            status=CompetitionParticipant.APPROVED,
+        )
+
+        hidden_input = DataFactory(created_by=self.creator, type=Data.INPUT_DATA)
+        hidden_reference = DataFactory(created_by=self.creator, type=Data.REFERENCE_DATA)
+        hidden_ingestion = DataFactory(created_by=self.creator, type=Data.INGESTION_PROGRAM)
+        hidden_scoring = DataFactory(created_by=self.creator, type=Data.SCORING_PROGRAM)
+        visible_input = DataFactory(created_by=self.creator, type=Data.INPUT_DATA)
+        visible_reference = DataFactory(created_by=self.creator, type=Data.REFERENCE_DATA)
+        visible_ingestion = DataFactory(created_by=self.creator, type=Data.INGESTION_PROGRAM)
+        visible_scoring = DataFactory(created_by=self.creator, type=Data.SCORING_PROGRAM)
+
+        self.hidden_task = TaskFactory(
+            created_by=self.creator,
+            input_data=hidden_input,
+            reference_data=hidden_reference,
+            ingestion_program=hidden_ingestion,
+            scoring_program=hidden_scoring,
+        )
+        self.visible_task = TaskFactory(
+            created_by=self.creator,
+            input_data=visible_input,
+            reference_data=visible_reference,
+            ingestion_program=visible_ingestion,
+            scoring_program=visible_scoring,
+        )
+
+        self.hidden_phase = PhaseFactory(
+            competition=self.competition,
+            leaderboard=LeaderboardFactory(hidden=True),
+            hide_output=True,
+            index=0,
+            tasks=[self.hidden_task],
+        )
+        self.visible_phase = PhaseFactory(
+            competition=self.competition,
+            leaderboard=LeaderboardFactory(hidden=False),
+            index=1,
+            tasks=[self.visible_task],
+        )
+
+        self.hidden_task_instance = self.hidden_phase.task_instances.get(task=self.hidden_task)
+        self.visible_task_instance = self.visible_phase.task_instances.get(task=self.visible_task)
+
+    def _get_public_dataset_types(self, task_instance, user=None):
+        request = self.factory.get("/")
+        request.user = user or AnonymousUser()
+        serializer = PhaseTaskInstanceSerializer(task_instance, context={"request": request})
+        return {dataset["type"] for dataset in serializer.data["public_datasets"]}
+
+    def test_anonymous_users_do_not_receive_hidden_phase_task_datasets(self):
+        self.assertEqual(self._get_public_dataset_types(self.hidden_task_instance), set())
+
+    def test_approved_participants_do_not_receive_hidden_phase_task_datasets(self):
+        self.assertEqual(self._get_public_dataset_types(self.hidden_task_instance, self.participant), set())
+
+    def test_approved_participants_only_receive_allowed_visible_phase_task_datasets(self):
+        self.assertEqual(
+            self._get_public_dataset_types(self.visible_task_instance, self.participant),
+            {Data.INPUT_DATA, Data.INGESTION_PROGRAM, Data.SCORING_PROGRAM},
+        )
+
+    def test_organizers_receive_hidden_phase_task_datasets(self):
+        self.assertEqual(
+            self._get_public_dataset_types(self.hidden_task_instance, self.organizer),
+            {Data.INPUT_DATA, Data.REFERENCE_DATA, Data.INGESTION_PROGRAM, Data.SCORING_PROGRAM},
+        )

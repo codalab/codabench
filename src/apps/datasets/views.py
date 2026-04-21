@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, DetailView
 
+from datasets.access import user_can_download_dataset
 from datasets.models import Data
 from utils.data import make_url_sassy
 from api.serializers.datasets import DatasetSerializer
@@ -47,13 +48,17 @@ class DatasetDetail(DetailView):
 
 def download(request, key):
     data = get_object_or_404(Data, key=key)
+
+    if not user_can_download_dataset(request.user, data):
+        raise Http404()
+
     return HttpResponseRedirect(make_url_sassy(data.data_file.name))
 
 
 def download_by_pk(request, pk):
     dataset = get_object_or_404(Data, pk=pk)
 
-    if dataset.is_public or dataset.created_by == request.user:
+    if user_can_download_dataset(request.user, dataset):
         # Increment download count
         dataset.downloads = (dataset.downloads or 0) + 1
         dataset.save(update_fields=["downloads"])

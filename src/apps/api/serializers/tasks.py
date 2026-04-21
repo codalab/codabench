@@ -3,6 +3,7 @@ from rest_framework import serializers
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
+from datasets.access import user_can_access_task_dataset
 from datasets.models import Data
 from tasks.models import Task, Solution
 from competitions.models import Competition
@@ -215,28 +216,22 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
 
-        input_data = instance.task.input_data
-        reference_data = instance.task.reference_data
-        ingestion_program = instance.task.ingestion_program
-        scoring_program = instance.task.scoring_program
+        datasets = [
+            instance.task.input_data,
+            instance.task.reference_data,
+            instance.task.ingestion_program,
+            instance.task.scoring_program,
+        ]
+        datasets = [
+            dataset for dataset in datasets
+            if user_can_access_task_dataset(user, instance.phase, dataset)
+        ]
 
-        # Some tasks may not have input data, reference data and ingestion program
-        # Checking all the datasets and programs and adding them to dataset_list_ids
-        dataset_list_ids = []
-        if input_data:
-            dataset_list_ids.append(input_data.id)
-        if reference_data:
-            dataset_list_ids.append(reference_data.id)
-        if ingestion_program:
-            dataset_list_ids.append(ingestion_program.id)
-        if scoring_program:
-            dataset_list_ids.append(scoring_program.id)
-
-        # Serializing the datasets
         try:
-            qs = Data.objects.filter(id__in=dataset_list_ids)
-            return DataDetailSerializer(qs, many=True).data
+            return DataDetailSerializer(datasets, many=True).data
         except Exception:
             # No datasets or programs to return
             return []

@@ -7,10 +7,13 @@ from factories import (
     UserFactory,
     DataFactory,
     CompetitionFactory,
+    CompetitionParticipantFactory,
     PhaseFactory,
+    LeaderboardFactory,
     TaskFactory,
     SubmissionFactory
 )
+from competitions.models import CompetitionParticipant
 from utils.data import pretty_bytes, gb_to_bytes
 from unittest.mock import patch
 
@@ -329,6 +332,97 @@ class DatasetCreateTests(APITestCase):
             'file_size': 1234,
         })
         self.assertEqual(resp.status_code, 403)
+
+
+class CompetitionDatasetDownloadAccessTests(TestCase):
+    def setUp(self):
+        self.creator = UserFactory(username="creator-downloads")
+        self.organizer = UserFactory(username="organizer-downloads")
+        self.participant = UserFactory(username="participant-downloads")
+        self.client.force_login(self.creator)
+
+        self.competition = CompetitionFactory(
+            created_by=self.creator,
+            logo=None,
+            published=True,
+            make_input_data_available=True,
+            make_programs_available=True,
+        )
+        self.competition.collaborators.add(self.organizer)
+
+        CompetitionParticipantFactory(
+            user=self.participant,
+            competition=self.competition,
+            status=CompetitionParticipant.APPROVED,
+        )
+
+        self.hidden_input = DataFactory(created_by=self.creator, type=Data.INPUT_DATA)
+        self.hidden_reference = DataFactory(created_by=self.creator, type=Data.REFERENCE_DATA)
+        self.visible_input = DataFactory(created_by=self.creator, type=Data.INPUT_DATA)
+
+        hidden_task = TaskFactory(
+            created_by=self.creator,
+            input_data=self.hidden_input,
+            reference_data=self.hidden_reference,
+        )
+        visible_task = TaskFactory(
+            created_by=self.creator,
+            input_data=self.visible_input,
+        )
+
+        PhaseFactory(
+            competition=self.competition,
+            leaderboard=LeaderboardFactory(hidden=True),
+            hide_output=True,
+            index=0,
+            tasks=[hidden_task],
+        )
+        PhaseFactory(
+            competition=self.competition,
+            leaderboard=LeaderboardFactory(hidden=False),
+            index=1,
+            tasks=[visible_task],
+        )
+
+    @patch("datasets.views.make_url_sassy")
+    def test_anonymous_user_cannot_download_hidden_phase_input_data_by_key(self, mock_make_url_sassy):
+        self.client.logout()
+
+        response = self.client.get(reverse("datasets:download", args=[self.hidden_input.key]))
+
+        self.assertEqual(response.status_code, 404)
+        mock_make_url_sassy.assert_not_called()
+
+    @patch("datasets.views.make_url_sassy")
+    def test_approved_participant_cannot_download_hidden_phase_reference_data_by_key(self, mock_make_url_sassy):
+        self.client.force_login(self.participant)
+
+        response = self.client.get(reverse("datasets:download", args=[self.hidden_reference.key]))
+
+        self.assertEqual(response.status_code, 404)
+        mock_make_url_sassy.assert_not_called()
+
+    @patch("datasets.views.make_url_sassy")
+    def test_approved_participant_can_download_visible_input_data_by_key(self, mock_make_url_sassy):
+        self.client.force_login(self.participant)
+        mock_make_url_sassy.return_value = "http://codebench-storage/visible_input.zip"
+
+        response = self.client.get(reverse("datasets:download", args=[self.visible_input.key]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "http://codebench-storage/visible_input.zip")
+        mock_make_url_sassy.assert_called_once()
+
+    @patch("datasets.views.make_url_sassy")
+    def test_organizer_can_download_hidden_phase_reference_data_by_key(self, mock_make_url_sassy):
+        self.client.force_login(self.organizer)
+        mock_make_url_sassy.return_value = "http://codebench-storage/hidden_reference.zip"
+
+        response = self.client.get(reverse("datasets:download", args=[self.hidden_reference.key]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "http://codebench-storage/hidden_reference.zip")
+        mock_make_url_sassy.assert_called_once()
 
 
 class DatasetDeleteTests(APITestCase):
