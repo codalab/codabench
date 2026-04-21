@@ -6,7 +6,6 @@ from competitions.models import Submission
 from announcements.models import Announcement, NewsPost
 
 from django.conf import settings
-from django.shortcuts import render
 from utils.data import pretty_bytes
 
 
@@ -116,7 +115,3 @@ class ServerStatusView(TemplateView):
 class MonitorQueuesView(TemplateView):
     template_name = 'pages/monitor_queues.html'
 
-
-def page_not_found_view(request, exception):
-    print(request)
-    return render(request, '404.html', status=404)
