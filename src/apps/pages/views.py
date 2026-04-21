@@ -114,4 +114,3 @@ class ServerStatusView(TemplateView):
 
 class MonitorQueuesView(TemplateView):
     template_name = 'pages/monitor_queues.html'
-
