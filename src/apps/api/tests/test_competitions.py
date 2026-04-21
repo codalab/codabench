@@ -8,11 +8,11 @@ from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIRequestFactory
 
-from api.serializers.competitions import CompetitionSerializer
+from api.serializers.competitions import CompetitionSerializer, PhaseDetailSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import CompetitionParticipant, Submission, Competition
 from factories import UserFactory, CompetitionFactory, CompetitionParticipantFactory, PhaseFactory, LeaderboardFactory, \
-    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, DataFactory
+    ColumnFactory, SubmissionFactory, SubmissionScoreFactory, TaskFactory, DataFactory, SolutionFactory
 from datasets.models import Data
 
 
@@ -378,10 +378,19 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
         hidden_reference = DataFactory(created_by=self.creator, type=Data.REFERENCE_DATA)
         hidden_ingestion = DataFactory(created_by=self.creator, type=Data.INGESTION_PROGRAM)
         hidden_scoring = DataFactory(created_by=self.creator, type=Data.SCORING_PROGRAM)
+        hidden_public_data = DataFactory(created_by=self.creator, type=Data.PUBLIC_DATA)
+        hidden_starting_kit = DataFactory(created_by=self.creator, type=Data.STARTING_KIT)
+        hidden_solution_data = DataFactory(created_by=self.creator, type=Data.SOLUTION)
         visible_input = DataFactory(created_by=self.creator, type=Data.INPUT_DATA)
         visible_reference = DataFactory(created_by=self.creator, type=Data.REFERENCE_DATA)
         visible_ingestion = DataFactory(created_by=self.creator, type=Data.INGESTION_PROGRAM)
         visible_scoring = DataFactory(created_by=self.creator, type=Data.SCORING_PROGRAM)
+        visible_public_data = DataFactory(created_by=self.creator, type=Data.PUBLIC_DATA)
+        visible_starting_kit = DataFactory(created_by=self.creator, type=Data.STARTING_KIT)
+        visible_solution_data = DataFactory(created_by=self.creator, type=Data.SOLUTION)
+
+        hidden_solution = SolutionFactory(data=hidden_solution_data)
+        visible_solution = SolutionFactory(data=visible_solution_data)
 
         self.hidden_task = TaskFactory(
             created_by=self.creator,
@@ -389,6 +398,7 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
             reference_data=hidden_reference,
             ingestion_program=hidden_ingestion,
             scoring_program=hidden_scoring,
+            solutions=[hidden_solution],
         )
         self.visible_task = TaskFactory(
             created_by=self.creator,
@@ -396,6 +406,7 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
             reference_data=visible_reference,
             ingestion_program=visible_ingestion,
             scoring_program=visible_scoring,
+            solutions=[visible_solution],
         )
 
         self.hidden_phase = PhaseFactory(
@@ -403,12 +414,16 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
             leaderboard=LeaderboardFactory(hidden=True),
             hide_output=True,
             index=0,
+            public_data=hidden_public_data,
+            starting_kit=hidden_starting_kit,
             tasks=[self.hidden_task],
         )
         self.visible_phase = PhaseFactory(
             competition=self.competition,
             leaderboard=LeaderboardFactory(hidden=False),
             index=1,
+            public_data=visible_public_data,
+            starting_kit=visible_starting_kit,
             tasks=[self.visible_task],
         )
 
@@ -420,6 +435,17 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
         request.user = user or AnonymousUser()
         serializer = PhaseTaskInstanceSerializer(task_instance, context={"request": request})
         return {dataset["type"] for dataset in serializer.data["public_datasets"]}
+
+    def _get_solution_names(self, task_instance, user=None):
+        request = self.factory.get("/")
+        request.user = user or AnonymousUser()
+        serializer = PhaseTaskInstanceSerializer(task_instance, context={"request": request})
+        return {solution["name"] for solution in serializer.data["solutions"]}
+
+    def _serialize_phase(self, phase, user=None):
+        request = self.factory.get("/")
+        request.user = user or AnonymousUser()
+        return PhaseDetailSerializer(phase, context={"request": request}).data
 
     def test_anonymous_users_do_not_receive_hidden_phase_task_datasets(self):
         self.assertEqual(self._get_public_dataset_types(self.hidden_task_instance), set())
@@ -438,3 +464,24 @@ class CompetitionTaskDatasetVisibilityTests(APITestCase):
             self._get_public_dataset_types(self.hidden_task_instance, self.organizer),
             {Data.INPUT_DATA, Data.REFERENCE_DATA, Data.INGESTION_PROGRAM, Data.SCORING_PROGRAM},
         )
+
+    def test_approved_participants_do_not_receive_hidden_phase_solutions(self):
+        self.assertEqual(self._get_solution_names(self.hidden_task_instance, self.participant), set())
+
+    def test_approved_participants_receive_visible_phase_solutions(self):
+        self.assertEqual(len(self._get_solution_names(self.visible_task_instance, self.participant)), 1)
+
+    def test_approved_participants_do_not_receive_hidden_phase_assets(self):
+        phase_data = self._serialize_phase(self.hidden_phase, self.participant)
+        self.assertIsNone(phase_data["public_data"])
+        self.assertIsNone(phase_data["starting_kit"])
+
+    def test_approved_participants_receive_visible_phase_assets(self):
+        phase_data = self._serialize_phase(self.visible_phase, self.participant)
+        self.assertEqual(phase_data["public_data"]["type"], Data.PUBLIC_DATA)
+        self.assertEqual(phase_data["starting_kit"]["type"], Data.STARTING_KIT)
+
+    def test_organizers_receive_hidden_phase_assets(self):
+        phase_data = self._serialize_phase(self.hidden_phase, self.organizer)
+        self.assertEqual(phase_data["public_data"]["type"], Data.PUBLIC_DATA)
+        self.assertEqual(phase_data["starting_kit"]["type"], Data.STARTING_KIT)

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from api.mixins import DefaultUserCreateMixin
 from api.serializers.datasets import DataDetailSerializer, DataSimpleSerializer
 from competitions.models import PhaseTaskInstance, Phase
-from datasets.access import user_can_access_task_dataset
+from datasets.access import user_can_access_task_dataset, user_can_access_task_solution
 from datasets.models import Data
 from tasks.models import Task, Solution
 from competitions.models import Competition
@@ -213,6 +213,12 @@ class PhaseTaskInstanceSerializer(serializers.HyperlinkedModelSerializer):
 
     def get_solutions(self, instance):
         qs = instance.task.solutions.all()
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        qs = [
+            solution for solution in qs
+            if user_can_access_task_solution(user, instance.phase, solution)
+        ]
         return SolutionSerializer(qs, many=True).data
 
     def get_public_datasets(self, instance):

@@ -10,6 +10,7 @@ from api.serializers.profiles import CollaboratorSerializer
 from api.serializers.submissions import SubmissionScoreSerializer
 from api.serializers.tasks import PhaseTaskInstanceSerializer
 from competitions.models import Competition, Phase, Page, CompetitionCreationTaskStatus, CompetitionParticipant, CompetitionWhiteListEmail
+from datasets.access import user_can_access_competition_phase_resource
 from forums.models import Forum
 from leaderboards.models import Leaderboard
 from profiles.models import User
@@ -104,8 +105,8 @@ class PhaseSerializer(WritableNestedModelSerializer):
 class PhaseDetailSerializer(serializers.ModelSerializer):
     tasks = PhaseTaskInstanceSerializer(source='task_instances', many=True)
     status = serializers.SerializerMethodField()
-    public_data = DataDetailSerializer(read_only=True)
-    starting_kit = DataDetailSerializer(read_only=True)
+    public_data = serializers.SerializerMethodField()
+    starting_kit = serializers.SerializerMethodField()
     used_submissions_per_day = serializers.SerializerMethodField()
     used_submissions_per_person = serializers.SerializerMethodField()
 
@@ -200,6 +201,20 @@ class PhaseDetailSerializer(serializers.ModelSerializer):
                 total_submission_count = qs.count()
                 return total_submission_count
         return 0
+
+    def get_public_data(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if obj.public_data and user_can_access_competition_phase_resource(user, obj):
+            return DataDetailSerializer(obj.public_data).data
+        return None
+
+    def get_starting_kit(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if obj.starting_kit and user_can_access_competition_phase_resource(user, obj):
+            return DataDetailSerializer(obj.starting_kit).data
+        return None
 
 
 class PhaseUpdateSerializer(PhaseSerializer):

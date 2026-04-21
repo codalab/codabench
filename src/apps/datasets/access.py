@@ -18,6 +18,7 @@ TASK_DATASET_COMPETITION_FLAGS = {
 
 def phase_is_hidden_from_participants(phase):
     leaderboard = getattr(phase, "leaderboard", None)
+    # Treat blind-output phases as hidden for downloadable assets too.
     return bool(
         phase.hide_output
         or phase.hide_prediction_output
@@ -48,7 +49,17 @@ def user_can_access_competition_phase_resource(user, phase):
     if competition.user_has_admin_permission(user):
         return True
 
-    return user_is_approved_participant(user, competition)
+    if not user_is_approved_participant(user, competition):
+        return False
+
+    return not phase_is_hidden_from_participants(phase)
+
+
+def user_can_access_task_solution(user, phase, solution):
+    if solution is None:
+        return False
+
+    return user_can_access_competition_phase_resource(user, phase)
 
 
 def user_can_access_task_dataset(user, phase, dataset):
