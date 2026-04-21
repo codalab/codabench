@@ -9,6 +9,7 @@ from utils.data import make_url_sassy
 from api.serializers.datasets import DatasetSerializer
 from competitions.models import Competition, CompetitionParticipant
 
+
 def user_can_download(user, data):
     if data.is_public:
         return True
