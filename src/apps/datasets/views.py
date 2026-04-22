@@ -27,7 +27,8 @@ def user_can_download(user, data):
         Q(phases__task_instances__task__input_data=data) |
         Q(phases__task_instances__task__reference_data=data) |
         Q(phases__task_instances__task__scoring_program=data) |
-        Q(phases__task_instances__task__ingestion_program=data)
+        Q(phases__task_instances__task__ingestion_program=data) |
+        Q(phases__task_instances__task__solutions__data=data)
     )
     if data.type == Data.SUBMISSION and data.competition:
         organizer_qs = organizer_qs | Competition.objects.filter(
@@ -37,8 +38,8 @@ def user_can_download(user, data):
     if organizer_qs.exists():
         return True
 
-    # Reference data and solutions are never accessible to participants
-    if data.type in (Data.REFERENCE_DATA, Data.SOLUTION, Data.SUBMISSION, Data.COMPETITION_BUNDLE):
+    # Reference data, submissions, and bundles are never accessible to participants
+    if data.type in (Data.REFERENCE_DATA, Data.SUBMISSION, Data.COMPETITION_BUNDLE):
         return False
 
     approved_participant = Q(
@@ -60,6 +61,11 @@ def user_can_download(user, data):
         return Competition.objects.filter(approved_participant, make_programs_available=True).filter(
             Q(phases__task_instances__task__scoring_program=data) |
             Q(phases__task_instances__task__ingestion_program=data)
+        ).exists()
+
+    if data.type == Data.SOLUTION:
+        return Competition.objects.filter(approved_participant).filter(
+            phases__task_instances__task__solutions__data=data
         ).exists()
 
     return False
