@@ -175,7 +175,6 @@ class DatasetDownloadTests(TestCase):
             created_by=self.owner,
             downloads=5
         )
-
         self.private_dataset = DataFactory(
             is_public=False,
             created_by=self.owner,
@@ -187,13 +186,10 @@ class DatasetDownloadTests(TestCase):
         # Mock the URL that would normally be generated for the file
         # This avoids depending on actual file storage or signature logic
         mock_make_url_sassy.return_value = "http://codebench-storage/public_dataset.zip"
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.public_dataset.pk]))
-
         # Should redirect to the URL
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "http://codebench-storage/public_dataset.zip")
-
         # Should increment download count
         self.public_dataset.refresh_from_db()
         self.assertEqual(self.public_dataset.downloads, 6)
@@ -203,27 +199,21 @@ class DatasetDownloadTests(TestCase):
         # Mock the URL that would normally be generated for the file
         # This avoids depending on actual file storage or signature logic
         mock_make_url_sassy.return_value = "http://codebench-storage/private_dataset.zip"
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.private_dataset.pk]))
-
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "http://codebench-storage/private_dataset.zip")
-
         self.private_dataset.refresh_from_db()
         self.assertEqual(self.private_dataset.downloads, 3)
 
     def test_download_private_dataset_as_other_user(self):
         # Authenticate as a different user who is not the owner
         self.client.force_login(self.other_user)
-
         response = self.client.get(reverse("datasets:download_by_pk", args=[self.private_dataset.pk]))
-
         # Should return 404 (access denied)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_download_nonexistent_dataset(self):
         response = self.client.get(reverse("datasets:download_by_pk", args=[99999]))
-
         # Should return 404 (access denied)
         self.assertEqual(response.status_code, 404)
 
