@@ -1,4 +1,3 @@
-import pytest
 from leaderboards.ranking import fractional_rank, inject_average_ranks
 
 
