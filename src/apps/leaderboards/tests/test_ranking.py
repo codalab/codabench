@@ -134,14 +134,16 @@ def test_inject_average_ranks_ascending_column():
 
 
 def test_inject_average_ranks_missing_score_gets_worst_rank():
-    # Submission without a score on the sub-column gets rank n (=3 here)
+    # Submission that has scores for other columns but not the avg_rank sub-column
+    # gets worst rank (= n = 3). It still has a task_id from its other scores so
+    # the injected entry can be matched by the frontend.
     col0 = _make_col(0, 'col0', sorting='desc')
     avg_col = _make_col(1, 'avg_rank', computation_indexes=[0])
 
     submissions = [
-        _make_submission([(0, 'col0', 0.9, 1)]),   # rank 1
-        _make_submission([(0, 'col0', 0.5, 1)]),   # rank 2
-        _make_submission([]),                       # no score → rank 3
+        _make_submission([(0, 'col0', 0.9, 1)]),          # rank 1
+        _make_submission([(0, 'col0', 0.5, 1)]),          # rank 2
+        _make_submission([(99, 'other_col', 0.7, 1)]),    # no col0 score → rank 3
     ]
 
     col_by_index = {0: col0, 1: avg_col}
