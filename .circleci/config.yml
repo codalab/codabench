@@ -46,6 +46,7 @@ jobs:
           name: "Docker: Pull required images"
           # not available without "not e2e" tests as they pull ahead of time
           command: |
+            docker pull codalab/codalab-legacy:py312
             docker pull codalab/codalab-legacy:py37
             docker pull codalab/codalab-legacy:py3
             docker pull vergilgxw/autotable:v2

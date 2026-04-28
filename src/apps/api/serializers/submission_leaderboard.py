@@ -8,10 +8,15 @@ from api.serializers.profiles import SimpleOrganizationSerializer
 class SubmissionScoreSerializer(serializers.ModelSerializer):
     index = serializers.IntegerField(source='column.index', read_only=True)
     column_key = serializers.CharField(source='column.key', read_only=True)
+    precision = serializers.IntegerField(source='column.precision', read_only=True)
+    is_primary = serializers.SerializerMethodField()
 
     class Meta:
         model = SubmissionScore
-        fields = ('id', 'index', 'score', 'column_key')
+        fields = ('id', 'index', 'score', 'column_key', 'precision', 'is_primary')
+
+    def get_is_primary(self, obj):
+        return obj.column.index == obj.column.leaderboard.primary_index
 
 
 class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):

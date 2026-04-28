@@ -20,6 +20,10 @@ We propose three versions of the [Classify Wheat Seeds](https://github.com/codal
 
 [Mini-AutoML Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/mini-automl) is a benchmark template for Codabench, featuring code submission to multiple datasets (tasks).
 
+### Shortest Path on Weighted Graph (SPoWG)
+
+[SPoWG Bundle](https://github.com/codalab/competition-examples/tree/master/codabench/shortest_path) is a benchmark template for Codabench, featuring code submission to solve an optimization problem on graphs.
+
 ### AutoWSL
 
 You can find two versions of the [Automated Weakly Supervised Learning Benchmark](https://github.com/codalab/competition-examples/tree/master/codabench/autowsl):

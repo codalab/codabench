@@ -10,14 +10,14 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
-    "django==5.2.12",
+    "django==5.2.13",
     "django-oauth-toolkit==1.6.3",
     "social-auth-core==4.8.5",
     "social-auth-app-django==5.6.0",
     "django-extensions==4.1.0",
     "channels==4.3.2",
     "channels-redis==4.0.0",
-    "pillow==12.1.1",
+    "pillow==12.2.0",
     "celery==5.6.2",
     "gunicorn==23.0",
     "urllib3==2.6.3",
@@ -46,7 +46,7 @@ dependencies = [
     "djangorestframework-csv==3.0.1",
     "drf-extensions==0.8.0",
     "markdown==3.10.2",
-    "pygments==2.19.2",
+    "pygments==2.20.0",
     "drf-writable-nested==0.7.2",
     "flex==6.14.1",
     "pyrabbit2==1.0.7",
@@ -54,7 +54,7 @@ dependencies = [
     "twisted==25.5.0",
     "ipdb==0.13.13",
     "jinja2==3.1.6",
-    "requests==2.33.0",
+    "requests==2.33.1",
     "drf-extra-fields==3.7.0",
     "botocore==1.42.50",
     "s3transfer==0.16.0",
@@ -81,7 +81,7 @@ dev = [
     "django-querycount==0.7.0",
     "django-debug-toolbar==6.2.0",
     "flake8==7.3.0",
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "pytest-django==4.12.0",
 ]
 [tool.pytest.ini_options]

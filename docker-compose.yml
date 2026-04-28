@@ -204,6 +204,7 @@ services:
     working_dir: /app/src
     container_name: site_worker
     image: django_site-worker
+    pull_policy: never
     depends_on:
       - rabbit
       - db
