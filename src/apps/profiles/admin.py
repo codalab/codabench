@@ -25,6 +25,10 @@ class InputFilter(admin.SimpleListFilter):
         )
         yield all_choice
 
+    def get_facet_counts(self, pk_attname, filtered_qs):
+        # Text-input filters have no predefined choices to count (Django 5.0+ facets).
+        return {}
+
 
 class QuotaFilter(InputFilter):
     # Human-readable title which will be displayed in the
