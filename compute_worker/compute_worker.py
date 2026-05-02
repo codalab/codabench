@@ -1340,8 +1340,8 @@ class Run:
 
             # Cleanup containers
             containers_to_kill = [
-                self.ingestion_container_name, 
-                self.program_container_name
+                self.ingestion_program_container_name, 
+                self.scoring_program_container_name
             ]
             logger.debug("Trying to kill and remove container " + str(containers_to_kill))
 
@@ -1501,6 +1501,8 @@ class Run:
 
         logger.info(f"Metadata output: {prog_status}")
 
+        # Create output_dir if does not exist
+        os.makedirs(self.output_dir, exist_ok=True)
         metadata_path = os.path.join(self.output_dir, "metadata")
 
         if os.path.exists(metadata_path):
