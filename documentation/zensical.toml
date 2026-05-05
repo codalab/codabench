@@ -164,3 +164,5 @@ footer_links = [
     {"text" = "About"},
     {"href" = "https://github.com/codalab/codabench/blob/master/documentation/ABOUT.md"}
 ]
+[project.extra.version]
+provider = "mike"
