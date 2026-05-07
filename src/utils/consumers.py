@@ -2,11 +2,12 @@ import asyncio
 import logging
 import time
 
+import urllib
+
 from asgiref.sync import sync_to_async
-from celery._state import app_or_default
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from kombu import Connection
 from queues.models import Queue
+from celery_config import app as celery_app, app_for_vhost
 
 logger = logging.getLogger(__name__)
 
@@ -112,17 +113,16 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             pass
 
     def _load_snapshot(self):
-        celery_app = app_or_default()
         known_queue_names = _known_compute_queue_names()
         workers = []
         seen = set()
         inspected_brokers = set()
         broker_sources = []
 
-        default_broker = getattr(celery_app.conf, "broker_url", None)
-        if default_broker:
-            broker_sources.append(("default", default_broker))
+        # Broker par défaut : l'app principale déjà configurée
+        broker_sources.append(("default", celery_app.conf.broker_url, celery_app))
 
+        # Brokers privés : utiliser app_for_vhost comme le reste du code
         private_queues = (
             Queue.objects.filter(competitions__isnull=False)
             .exclude(name__isnull=True)
@@ -130,72 +130,32 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             .distinct()
         )
         for queue in private_queues:
-            broker_url = _resolve_broker_url(celery_app, queue.broker_url)
-            if broker_url:
-                broker_sources.append((queue.name, broker_url))
+            if not queue.broker_url:
+                continue
+            # Extraire le vhost de l'URL de la queue
+            parsed = urllib.parse.urlparse(queue.broker_url)
+            vhost = parsed.path  # ex: "/0475fa69-6c4f-4de6-992b-dafa6899211b"
+            broker_url = urllib.parse.urljoin(celery_app.conf.broker_url, vhost)
+            if broker_url in inspected_brokers:
+                continue
+            broker_sources.append((queue.name, broker_url, app_for_vhost(vhost)))
 
-        for source_name, broker_url in broker_sources:
+        for source_name, broker_url, broker_app in broker_sources:
             if broker_url in inspected_brokers:
                 continue
             inspected_brokers.add(broker_url)
 
-            broker_app = celery_app.__class__(
-                "compute-worker-monitor",
-                broker=broker_url,
-            )
-            broker_app.conf.update(
-                broker_connection_retry=False,
-                broker_connection_max_retries=0,
-            )
-
-            conn = Connection(
-                broker_url,
-                connect_timeout=10,
-                socket_timeout=10,
-            )
             try:
-                conn.ensure_connection(max_retries=1, timeout=10)
-            except Exception:
-                logger.warning(
-                    "Cannot connect to broker %s (%s), skipping",
-                    source_name,
-                    broker_url,
-                )
-                try:
-                    conn.release()
-                except Exception:
-                    pass
-                try:
-                    broker_app.close()
-                except Exception:
-                    pass
-                continue
-
-            try:
-                inspector = broker_app.control.inspect(timeout=10, connection=conn)
-                if inspector is None:
-                    continue
-
+                inspector = broker_app.control.inspect(timeout=10)
                 stats = inspector.stats() or {}
                 active = inspector.active() or {}
                 reserved = inspector.reserved() or {}
                 active_queues = inspector.active_queues() or {}
-
             except Exception:
                 logger.exception(
-                    "Unable to inspect Celery workers for broker %s",
-                    source_name,
+                    "Unable to inspect Celery workers for broker %s", source_name
                 )
                 continue
-            finally:
-                try:
-                    conn.release()
-                except Exception:
-                    pass
-                try:
-                    broker_app.close()
-                except Exception:
-                    pass
 
             for worker_name in stats.keys():
                 queues = active_queues.get(worker_name, []) or []
@@ -210,11 +170,10 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 running_jobs = len(active.get(worker_name, [])) + len(
                     reserved.get(worker_name, [])
                 )
-                status = "busy" if running_jobs > 0 else "available"
                 workers.append(
                     {
                         "hostname": worker_name,
-                        "status": status,
+                        "status": "busy" if running_jobs > 0 else "available",
                         "running_jobs": running_jobs,
                         "timestamp": time.time(),
                         "queue_source": source_name,
