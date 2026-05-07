@@ -931,7 +931,6 @@ def refresh_compute_worker_health():
     known_queue_names = _known_compute_queue_names()
 
     broker_sources = []
-
     default_broker = getattr(celery_app.conf, "broker_url", None)
     if default_broker:
         broker_sources.append(("default", default_broker))
@@ -942,56 +941,55 @@ def refresh_compute_worker_health():
         .exclude(name="")
         .distinct()
     )
-
     for queue in private_queues:
         broker_url = _resolve_broker_url(celery_app, queue.broker_url)
         if broker_url:
             broker_sources.append((queue.name, broker_url))
 
     inspected_brokers = set()
-
     for source_name, broker_url in broker_sources:
         if broker_url in inspected_brokers:
             continue
         inspected_brokers.add(broker_url)
 
+        broker_app = celery_app.__class__(
+            "worker-monitor",
+            broker=broker_url,
+        )
+        broker_app.conf.update(
+            broker_connection_timeout=2,
+            broker_connection_retry=False,
+            broker_connection_max_retries=0,
+        )
         try:
-            broker_app = celery_app.__class__(
-                "worker-monitor",
-                broker=broker_url,
-            )
-
             inspector = broker_app.control.inspect(timeout=1)
-
             if inspector is None:
-                logger.warning(
-                    "Celery inspect returned None for broker=%s",
-                    source_name,
-                )
+                logger.warning("Celery inspect returned None for broker=%s", source_name)
                 continue
-
             stats = inspector.stats() or {}
             active = inspector.active() or {}
             reserved = inspector.reserved() or {}
             active_queues = inspector.active_queues() or {}
-
         except Exception:
             logger.exception(
                 "Unable to inspect Celery workers for broker %s",
                 source_name,
             )
             continue
+        finally:
+            try:
+                broker_app.close()
+            except Exception:
+                pass
 
         for worker_name in stats.keys():
             queues = active_queues.get(worker_name, []) or []
             queue_names = _extract_queue_names(queues)
-
             if not _is_compute_worker(worker_name, queue_names, known_queue_names):
                 continue
 
             running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
             status = "busy" if running_jobs > 0 else "available"
-
             payload = {
                 "hostname": worker_name,
                 "status": status,
@@ -1002,13 +1000,11 @@ def refresh_compute_worker_health():
             }
 
             heartbeat_key = f"worker:{source_name}:{worker_name}:heartbeat"
-
             r.set(
                 heartbeat_key,
                 json.dumps(payload),
                 ex=WORKER_HEARTBEAT_TTL,
             )
-
             r.hset(
                 WORKERS_REGISTRY_KEY,
                 f"{source_name}:{worker_name}",
@@ -1023,8 +1019,12 @@ def refresh_compute_worker_health():
                     }
                 ),
             )
-
             _broadcast_worker_state(payload)
             logger.info(
-                f"[WORKER-HEALTH] source={source_name} {worker_name} status={status} jobs={running_jobs} queues={sorted(queue_names)}"
+                "[WORKER-HEALTH] source=%s worker=%s status=%s jobs=%d queues=%s",
+                source_name,
+                worker_name,
+                status,
+                running_jobs,
+                sorted(queue_names),
             )

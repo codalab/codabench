@@ -20,7 +20,7 @@ def _extract_queue_names(active_queues):
 
 def _known_compute_queue_names():
     return set(
-        Queue.objects.exclude(name__isnull=False)
+        Queue.objects.exclude(name__isnull=True)
         .exclude(name="")
         .values_list("name", flat=True)
     )
@@ -111,13 +111,11 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
     def _load_snapshot(self):
         celery_app = app_or_default()
         known_queue_names = _known_compute_queue_names()
-
         workers = []
         seen = set()
         inspected_brokers = set()
 
         broker_sources = []
-
         default_broker = getattr(celery_app.conf, "broker_url", None)
         if default_broker:
             broker_sources.append(("default", default_broker))
@@ -128,7 +126,6 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             .exclude(name="")
             .distinct()
         )
-
         for queue in private_queues:
             broker_url = _resolve_broker_url(celery_app, queue.broker_url)
             if broker_url:
@@ -139,44 +136,48 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 continue
             inspected_brokers.add(broker_url)
 
+            broker_app = celery_app.__class__(
+                "compute-worker-monitor",
+                broker=broker_url,
+            )
+            # Timeout de connexion court + pas de retry pour ne pas bloquer le WS
+            broker_app.conf.update(
+                broker_connection_timeout=2,
+                broker_connection_retry=False,
+                broker_connection_max_retries=0,
+            )
             try:
-                broker_app = celery_app.__class__(
-                    "compute-worker-monitor",
-                    broker=broker_url,
-                )
-
                 inspector = broker_app.control.inspect(timeout=2)
-
                 if inspector is None:
                     continue
-
                 stats = inspector.stats() or {}
                 active = inspector.active() or {}
                 reserved = inspector.reserved() or {}
                 active_queues = inspector.active_queues() or {}
-
             except Exception:
                 logger.exception(
                     "Unable to inspect Celery workers for broker %s",
                     source_name,
                 )
                 continue
+            finally:
+                # Toujours libérer les ressources, même en cas d'erreur
+                try:
+                    broker_app.close()
+                except Exception:
+                    pass
 
             for worker_name in stats.keys():
                 queues = active_queues.get(worker_name, []) or []
                 queue_names = _extract_queue_names(queues)
-
                 if not _is_compute_worker(worker_name, queue_names, known_queue_names):
                     continue
-
                 unique_key = (source_name, worker_name)
                 if unique_key in seen:
                     continue
                 seen.add(unique_key)
-
                 running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
                 status = "busy" if running_jobs > 0 else "available"
-
                 workers.append(
                     {
                         "hostname": worker_name,
