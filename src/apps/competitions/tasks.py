@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from queue import Queue
 import re
 import traceback
 import zipfile
@@ -46,7 +47,7 @@ from utils.email import codalab_send_markdown_email
 logger = logging.getLogger(__name__)
 
 r = get_redis_connection("default")
-WORKERS_REGISTRY_KEY = "compute_workers_registry"
+WORKERS_REGISTRY_KEY = "workers:registry"
 WORKER_HEARTBEAT_TTL = 35
 
 COMPETITION_FIELDS = [
@@ -884,6 +885,7 @@ def submission_status_cleanup():
                 sub.cancel(status=Submission.FAILED)
 
 
+# -------------------------------------------------
 def _broadcast_worker_state(payload):
     channel_layer = get_channel_layer()
     if not channel_layer:
@@ -898,67 +900,131 @@ def _broadcast_worker_state(payload):
     )
 
 
+def _get_broker_host(broker_url):
+    if not broker_url or "@" not in broker_url:
+        return None
+    try:
+        return broker_url.split("@", 1)[1].split("/", 1)[0].split(":", 1)[0]
+    except Exception:
+        return None
+
+
+def _resolve_broker_url(celery_app, broker_url):
+    if not broker_url:
+        return broker_url
+
+    if "@localhost:" not in broker_url:
+        return broker_url
+
+    default_broker = getattr(celery_app.conf, "broker_url", None)
+    default_host = _get_broker_host(default_broker)
+
+    if not default_host or default_host == "localhost":
+        return broker_url
+
+    return broker_url.replace("@localhost:", f"@{default_host}:")
+
+
 @app.task(queue="site-worker", soft_time_limit=60)
 def refresh_compute_worker_health():
     celery_app = app_or_default()
-    inspector = celery_app.control.inspect(timeout=1)
-
-    if inspector is None:
-        logger.warning("Celery inspect returned None")
-        return
-
-    try:
-        stats = inspector.stats() or {}
-        active = inspector.active() or {}
-        reserved = inspector.reserved() or {}
-        active_queues = inspector.active_queues() or {}
-    except Exception:
-        logger.exception("Unable to inspect Celery workers")
-        return
-
     known_queue_names = _known_compute_queue_names()
 
-    for worker_name in stats.keys():
-        queues = active_queues.get(worker_name, []) or []
-        queue_names = _extract_queue_names(queues)
+    broker_sources = []
 
-        if not _is_compute_worker(worker_name, queue_names, known_queue_names):
+    default_broker = getattr(celery_app.conf, "broker_url", None)
+    if default_broker:
+        broker_sources.append(("default", default_broker))
+
+    private_queues = (
+        Queue.objects.filter(competitions__isnull=False)
+        .exclude(name__isnull=True)
+        .exclude(name="")
+        .distinct()
+    )
+
+    for queue in private_queues:
+        broker_url = _resolve_broker_url(celery_app, queue.broker_url)
+        if broker_url:
+            broker_sources.append((queue.name, broker_url))
+
+    inspected_brokers = set()
+
+    for source_name, broker_url in broker_sources:
+        if broker_url in inspected_brokers:
+            continue
+        inspected_brokers.add(broker_url)
+
+        try:
+            broker_app = celery_app.__class__(
+                "worker-monitor",
+                broker=broker_url,
+            )
+
+            inspector = broker_app.control.inspect(timeout=1)
+
+            if inspector is None:
+                logger.warning(
+                    "Celery inspect returned None for broker=%s",
+                    source_name,
+                )
+                continue
+
+            stats = inspector.stats() or {}
+            active = inspector.active() or {}
+            reserved = inspector.reserved() or {}
+            active_queues = inspector.active_queues() or {}
+
+        except Exception:
+            logger.exception(
+                "Unable to inspect Celery workers for broker %s",
+                source_name,
+            )
             continue
 
-        running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
-        status = "busy" if running_jobs > 0 else "available"
+        for worker_name in stats.keys():
+            queues = active_queues.get(worker_name, []) or []
+            queue_names = _extract_queue_names(queues)
 
-        payload = {
-            "hostname": worker_name,
-            "status": status,
-            "running_jobs": running_jobs,
-            "timestamp": now().timestamp(),
-            "queue_names": sorted(queue_names),
-        }
+            if not _is_compute_worker(worker_name, queue_names, known_queue_names):
+                continue
 
-        heartbeat_key = f"worker:{worker_name}:heartbeat"
+            running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
+            status = "busy" if running_jobs > 0 else "available"
 
-        r.set(
-            heartbeat_key,
-            json.dumps(payload),
-            ex=WORKER_HEARTBEAT_TTL,
-        )
+            payload = {
+                "hostname": worker_name,
+                "status": status,
+                "running_jobs": running_jobs,
+                "timestamp": now().timestamp(),
+                "queue_source": source_name,
+                "queue_names": sorted(queue_names),
+            }
 
-        r.hset(
-            WORKERS_REGISTRY_KEY,
-            worker_name,
-            json.dumps(
-                {
-                    "hostname": worker_name,
-                    "status": status,
-                    "running_jobs": running_jobs,
-                    "last_seen": payload["timestamp"],
-                    "queue_names": sorted(queue_names),
-                }
-            ),
-        )
+            heartbeat_key = f"worker:{source_name}:{worker_name}:heartbeat"
 
-        _broadcast_worker_state(payload)
-        logger.info(
-            f"[WORKER-HEALTH] {worker_name} status={status} jobs={running_jobs} queues={sorted(queue_names)}"
-        )
+            r.set(
+                heartbeat_key,
+                json.dumps(payload),
+                ex=WORKER_HEARTBEAT_TTL,
+            )
+
+            r.hset(
+                WORKERS_REGISTRY_KEY,
+                f"{source_name}:{worker_name}",
+                json.dumps(
+                    {
+                        "hostname": worker_name,
+                        "status": status,
+                        "running_jobs": running_jobs,
+                        "last_seen": payload["timestamp"],
+                        "queue_source": source_name,
+                        "queue_names": sorted(queue_names),
+                    }
+                ),
+            )
+
+            _broadcast_worker_state(payload)
+            logger.info(
+                f"[WORKER-HEALTH] source={source_name} {worker_name} status={status} jobs={running_jobs} queues={sorted(queue_names)}"
+            )
