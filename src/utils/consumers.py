@@ -5,6 +5,7 @@ import time
 from asgiref.sync import sync_to_async
 from celery._state import app_or_default
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from kombu import Connection
 from queues.models import Queue
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,9 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
     async def _push_workers_loop(self):
         try:
             while self._running:
-                workers = await sync_to_async(self._load_snapshot, thread_sensitive=True)()
+                workers = await sync_to_async(
+                    self._load_snapshot, thread_sensitive=True
+                )()
 
                 if not self._running:
                     break
@@ -140,14 +143,18 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 "compute-worker-monitor",
                 broker=broker_url,
             )
-            # Timeout de connexion court + pas de retry pour ne pas bloquer le WS
             broker_app.conf.update(
-                broker_connection_timeout=2,
                 broker_connection_retry=False,
                 broker_connection_max_retries=0,
             )
+
+            conn = Connection(
+                broker_url,
+                connect_timeout=10,
+                socket_timeout=10,
+            )
             try:
-                inspector = broker_app.control.inspect(timeout=2)
+                inspector = broker_app.control.inspect(timeout=2, connection=conn)
                 if inspector is None:
                     continue
                 stats = inspector.stats() or {}
@@ -161,7 +168,10 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 )
                 continue
             finally:
-                # Toujours libérer les ressources, même en cas d'erreur
+                try:
+                    conn.release()
+                except Exception:
+                    pass
                 try:
                     broker_app.close()
                 except Exception:
@@ -176,7 +186,9 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 if unique_key in seen:
                     continue
                 seen.add(unique_key)
-                running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
+                running_jobs = len(active.get(worker_name, [])) + len(
+                    reserved.get(worker_name, [])
+                )
                 status = "busy" if running_jobs > 0 else "available"
                 workers.append(
                     {
