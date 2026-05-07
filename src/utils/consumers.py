@@ -25,7 +25,6 @@ def _load_snapshot():
             worker = json.loads(value)
         except Exception:
             continue
-        # Filtrer les workers dont le heartbeat est trop vieux
         last_seen = worker.get("last_seen", 0)
         if now - last_seen > WORKER_HEARTBEAT_TTL:
             continue

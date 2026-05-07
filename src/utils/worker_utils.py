@@ -1,4 +1,4 @@
-from queue import Queue
+from queues.models import Queue
 
 
 def extract_queue_names(active_queues):
@@ -22,5 +22,4 @@ def is_compute_worker(worker_name, queue_names, known_queue_names):
         bool(queue_names & known_queue_names)
         or "compute-worker" in queue_names
         or worker_name.startswith("compute-worker")
-        or worker_name.startswith("CW")
     )

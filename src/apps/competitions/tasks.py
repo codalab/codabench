@@ -2,18 +2,18 @@ import asyncio
 import json
 import logging
 import os
-from queue import Queue
 import re
 import traceback
+import urllib.parse
 import zipfile
 from datetime import datetime, timedelta
 from io import BytesIO
+from queues.models import Queue
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import oyaml as yaml
 import requests
 from asgiref.sync import async_to_sync
-from celery._state import app_or_default
 from channels.layers import get_channel_layer
 from competitions.models import (
     Competition,
@@ -40,9 +40,15 @@ from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
 from celery_config import app
-from utils.worker_utils import extract_queue_names, known_compute_queue_names, is_compute_worker
+from celery_config import app as celery_app
+from celery_config import app_for_vhost
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
+from utils.worker_utils import (
+    extract_queue_names,
+    is_compute_worker,
+    known_compute_queue_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +242,7 @@ def _send_to_compute_worker(submission, is_scoring):
         # many submissions to be scored while we're waiting for results
         priority = 10 if is_scoring else 0
         if submission.phase.competition.queue:
-            celery_app = app_or_default()
+            celery_app = celery_app.conf.broker_url()
             with celery_app.connection() as new_connection:
                 new_connection.virtual_host = str(
                     submission.phase.competition.queue.vhost
@@ -916,7 +922,7 @@ def _resolve_broker_url(celery_app, broker_url):
     if "@localhost:" not in broker_url:
         return broker_url
 
-    default_broker = getattr(celery_app.conf, "broker_url", None)
+    default_broker = celery_app.conf.broker_url
     default_host = _get_broker_host(default_broker)
 
     if not default_host or default_host == "localhost":
@@ -927,13 +933,12 @@ def _resolve_broker_url(celery_app, broker_url):
 
 @app.task(queue="site-worker", soft_time_limit=60)
 def refresh_compute_worker_health():
-    celery_app = app_or_default()
-    known_queue_names = known_compute_queue_names()
 
+    known_queue_names = known_compute_queue_names()
     broker_sources = []
-    default_broker = getattr(celery_app.conf, "broker_url", None)
-    if default_broker:
-        broker_sources.append(("default", default_broker))
+
+    # Broker par défaut — app déjà configurée
+    broker_sources.append(("default", celery_app.conf.broker_url, celery_app))
 
     private_queues = (
         Queue.objects.filter(competitions__isnull=False)
@@ -942,29 +947,25 @@ def refresh_compute_worker_health():
         .distinct()
     )
     for queue in private_queues:
-        broker_url = _resolve_broker_url(celery_app, queue.broker_url)
-        if broker_url:
-            broker_sources.append((queue.name, broker_url))
+        if not queue.broker_url:
+            continue
+        parsed = urllib.parse.urlparse(queue.broker_url)
+        vhost = parsed.path
+        broker_url = urllib.parse.urljoin(celery_app.conf.broker_url, vhost)
+        broker_sources.append((queue.name, broker_url, app_for_vhost(vhost)))
 
     inspected_brokers = set()
-    for source_name, broker_url in broker_sources:
+    for source_name, broker_url, broker_app in broker_sources:
         if broker_url in inspected_brokers:
             continue
         inspected_brokers.add(broker_url)
 
-        broker_app = celery_app.__class__(
-            "worker-monitor",
-            broker=broker_url,
-        )
-        broker_app.conf.update(
-            broker_connection_timeout=2,
-            broker_connection_retry=False,
-            broker_connection_max_retries=0,
-        )
         try:
-            inspector = broker_app.control.inspect(timeout=1)
+            inspector = broker_app.control.inspect(timeout=10)
             if inspector is None:
-                logger.warning("Celery inspect returned None for broker=%s", source_name)
+                logger.warning(
+                    "Celery inspect returned None for broker=%s", source_name
+                )
                 continue
             stats = inspector.stats() or {}
             active = inspector.active() or {}
@@ -972,15 +973,9 @@ def refresh_compute_worker_health():
             active_queues = inspector.active_queues() or {}
         except Exception:
             logger.exception(
-                "Unable to inspect Celery workers for broker %s",
-                source_name,
+                "Unable to inspect Celery workers for broker %s", source_name
             )
             continue
-        finally:
-            try:
-                broker_app.close()
-            except Exception:
-                pass
 
         for worker_name in stats.keys():
             queues = active_queues.get(worker_name, []) or []
@@ -988,7 +983,9 @@ def refresh_compute_worker_health():
             if not is_compute_worker(worker_name, queue_names, known_queue_names):
                 continue
 
-            running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
+            running_jobs = len(active.get(worker_name, [])) + len(
+                reserved.get(worker_name, [])
+            )
             status = "busy" if running_jobs > 0 else "available"
             payload = {
                 "hostname": worker_name,
@@ -998,13 +995,8 @@ def refresh_compute_worker_health():
                 "queue_source": source_name,
                 "queue_names": sorted(queue_names),
             }
-
             heartbeat_key = f"worker:{source_name}:{worker_name}:heartbeat"
-            r.set(
-                heartbeat_key,
-                json.dumps(payload),
-                ex=WORKER_HEARTBEAT_TTL,
-            )
+            r.set(heartbeat_key, json.dumps(payload), ex=WORKER_HEARTBEAT_TTL)
             r.hset(
                 WORKERS_REGISTRY_KEY,
                 f"{source_name}:{worker_name}",
