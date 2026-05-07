@@ -5,8 +5,34 @@ import time
 from asgiref.sync import sync_to_async
 from celery._state import app_or_default
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from queues.models import Queue
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_queue_names(active_queues):
+    names = set()
+    for q in active_queues or []:
+        if isinstance(q, dict) and q.get("name"):
+            names.add(q["name"])
+    return names
+
+
+def _known_compute_queue_names():
+    return set(
+        Queue.objects.exclude(name__isnull=True)
+        .exclude(name="")
+        .values_list("name", flat=True)
+    )
+
+
+def _is_compute_worker(worker_name, queue_names, known_queue_names):
+    return (
+        bool(queue_names & known_queue_names)
+        or "compute-worker" in queue_names
+        or worker_name.startswith("compute-worker")
+        or worker_name.startswith("CW")
+    )
 
 
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
@@ -59,28 +85,17 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             logger.exception("Unable to inspect Celery workers")
             return []
 
+        known_queue_names = _known_compute_queue_names()
         workers = []
 
         for worker_name in stats.keys():
             queues = active_queues.get(worker_name, []) or []
-            queue_names = []
+            queue_names = _extract_queue_names(queues)
 
-            for q in queues:
-                if isinstance(q, dict) and q.get("name"):
-                    queue_names.append(q["name"])
-
-            is_compute_worker = (
-                "compute-worker" in queue_names
-                or worker_name.startswith("compute-worker")
-                or worker_name.startswith("CW")
-            )
-
-            if not is_compute_worker:
+            if not _is_compute_worker(worker_name, queue_names, known_queue_names):
                 continue
 
-            running_jobs = len(active.get(worker_name, [])) + len(
-                reserved.get(worker_name, [])
-            )
+            running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
             status = "busy" if running_jobs > 0 else "available"
 
             workers.append(
@@ -89,6 +104,7 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                     "status": status,
                     "running_jobs": running_jobs,
                     "timestamp": time.time(),
+                    "queue_names": sorted(queue_names),
                 }
             )
 

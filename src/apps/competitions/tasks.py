@@ -39,6 +39,7 @@ from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
 from celery_config import app
+from utils.consumers import _extract_queue_names, _is_compute_worker, _known_compute_queue_names
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
@@ -915,26 +916,16 @@ def refresh_compute_worker_health():
         logger.exception("Unable to inspect Celery workers")
         return
 
+    known_queue_names = _known_compute_queue_names()
+
     for worker_name in stats.keys():
         queues = active_queues.get(worker_name, []) or []
-        queue_names = []
+        queue_names = _extract_queue_names(queues)
 
-        for q in queues:
-            if isinstance(q, dict) and q.get("name"):
-                queue_names.append(q["name"])
-
-        is_compute_worker = (
-            "compute-worker" in queue_names
-            or worker_name.startswith("compute-worker")
-            or worker_name.startswith("CW")
-        )
-
-        if not is_compute_worker:
+        if not _is_compute_worker(worker_name, queue_names, known_queue_names):
             continue
 
-        running_jobs = len(active.get(worker_name, [])) + len(
-            reserved.get(worker_name, [])
-        )
+        running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
         status = "busy" if running_jobs > 0 else "available"
 
         payload = {
@@ -942,6 +933,7 @@ def refresh_compute_worker_health():
             "status": status,
             "running_jobs": running_jobs,
             "timestamp": now().timestamp(),
+            "queue_names": sorted(queue_names),
         }
 
         heartbeat_key = f"worker:{worker_name}:heartbeat"
@@ -961,11 +953,12 @@ def refresh_compute_worker_health():
                     "status": status,
                     "running_jobs": running_jobs,
                     "last_seen": payload["timestamp"],
+                    "queue_names": sorted(queue_names),
                 }
             ),
         )
 
         _broadcast_worker_state(payload)
         logger.info(
-            f"[WORKER-HEALTH] {worker_name} status={status} jobs={running_jobs}"
+            f"[WORKER-HEALTH] {worker_name} status={status} jobs={running_jobs} queues={sorted(queue_names)}"
         )
