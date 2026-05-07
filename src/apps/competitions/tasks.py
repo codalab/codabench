@@ -40,7 +40,7 @@ from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
 from celery_config import app
-from utils.consumers import _extract_queue_names, _is_compute_worker, _known_compute_queue_names
+from utils.worker_utils import extract_queue_names, known_compute_queue_names, is_compute_worker
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
@@ -928,7 +928,7 @@ def _resolve_broker_url(celery_app, broker_url):
 @app.task(queue="site-worker", soft_time_limit=60)
 def refresh_compute_worker_health():
     celery_app = app_or_default()
-    known_queue_names = _known_compute_queue_names()
+    known_queue_names = known_compute_queue_names()
 
     broker_sources = []
     default_broker = getattr(celery_app.conf, "broker_url", None)
@@ -984,8 +984,8 @@ def refresh_compute_worker_health():
 
         for worker_name in stats.keys():
             queues = active_queues.get(worker_name, []) or []
-            queue_names = _extract_queue_names(queues)
-            if not _is_compute_worker(worker_name, queue_names, known_queue_names):
+            queue_names = extract_queue_names(queues)
+            if not is_compute_worker(worker_name, queue_names, known_queue_names):
                 continue
 
             running_jobs = len(active.get(worker_name, [])) + len(reserved.get(worker_name, []))
