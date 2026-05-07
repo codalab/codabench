@@ -278,7 +278,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "refresh_compute_worker_health": {
         "task": "competitions.tasks.refresh_compute_worker_health",
-        "schedule": 30,
+        "schedule": 60,
     },
 }
 CELERY_TIMEZONE = 'UTC'

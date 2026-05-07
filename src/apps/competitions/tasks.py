@@ -8,7 +8,6 @@ import urllib.parse
 import zipfile
 from datetime import datetime, timedelta
 from io import BytesIO
-from queues.models import Queue
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import oyaml as yaml
@@ -36,6 +35,7 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 from django_redis import get_redis_connection
 from leaderboards.models import Leaderboard
+from queues.models import Queue
 from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
@@ -906,38 +906,10 @@ def _broadcast_worker_state(payload):
     )
 
 
-def _get_broker_host(broker_url):
-    if not broker_url or "@" not in broker_url:
-        return None
-    try:
-        return broker_url.split("@", 1)[1].split("/", 1)[0].split(":", 1)[0]
-    except Exception:
-        return None
-
-
-def _resolve_broker_url(celery_app, broker_url):
-    if not broker_url:
-        return broker_url
-
-    if "@localhost:" not in broker_url:
-        return broker_url
-
-    default_broker = celery_app.conf.broker_url
-    default_host = _get_broker_host(default_broker)
-
-    if not default_host or default_host == "localhost":
-        return broker_url
-
-    return broker_url.replace("@localhost:", f"@{default_host}:")
-
-
-@app.task(queue="site-worker", soft_time_limit=60)
+@app.task(queue="site-worker", soft_time_limit=120)  # 60 → 120
 def refresh_compute_worker_health():
-
     known_queue_names = known_compute_queue_names()
     broker_sources = []
-
-    # Broker par défaut — app déjà configurée
     broker_sources.append(("default", celery_app.conf.broker_url, celery_app))
 
     private_queues = (
@@ -961,7 +933,8 @@ def refresh_compute_worker_health():
         inspected_brokers.add(broker_url)
 
         try:
-            inspector = broker_app.control.inspect(timeout=10)
+            # timeout=5 au lieu de 10 : 4 appels × 5s × N brokers reste raisonnable
+            inspector = broker_app.control.inspect(timeout=5)
             if inspector is None:
                 logger.warning(
                     "Celery inspect returned None for broker=%s", source_name

@@ -11,7 +11,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 logger = logging.getLogger(__name__)
 
 WORKERS_REGISTRY_KEY = "workers:registry"
-WORKER_HEARTBEAT_TTL = 35
+WORKER_HEARTBEAT_TTL = 180
 
 r = get_redis_connection("default")
 
