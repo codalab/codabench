@@ -117,8 +117,8 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
         workers = []
         seen = set()
         inspected_brokers = set()
-
         broker_sources = []
+
         default_broker = getattr(celery_app.conf, "broker_url", None)
         if default_broker:
             broker_sources.append(("default", default_broker))
@@ -154,13 +154,33 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 socket_timeout=10,
             )
             try:
-                inspector = broker_app.control.inspect(timeout=2, connection=conn)
+                conn.ensure_connection(max_retries=1, timeout=10)
+            except Exception:
+                logger.warning(
+                    "Cannot connect to broker %s (%s), skipping",
+                    source_name,
+                    broker_url,
+                )
+                try:
+                    conn.release()
+                except Exception:
+                    pass
+                try:
+                    broker_app.close()
+                except Exception:
+                    pass
+                continue
+
+            try:
+                inspector = broker_app.control.inspect(timeout=10, connection=conn)
                 if inspector is None:
                     continue
+
                 stats = inspector.stats() or {}
                 active = inspector.active() or {}
                 reserved = inspector.reserved() or {}
                 active_queues = inspector.active_queues() or {}
+
             except Exception:
                 logger.exception(
                     "Unable to inspect Celery workers for broker %s",
@@ -186,6 +206,7 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 if unique_key in seen:
                     continue
                 seen.add(unique_key)
+
                 running_jobs = len(active.get(worker_name, [])) + len(
                     reserved.get(worker_name, [])
                 )
