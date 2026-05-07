@@ -20,7 +20,7 @@ def _extract_queue_names(active_queues):
 
 def _known_compute_queue_names():
     return set(
-        Queue.objects.exclude(name__isnull=True)
+        Queue.objects.exclude(name__isnull=False)
         .exclude(name="")
         .values_list("name", flat=True)
     )
