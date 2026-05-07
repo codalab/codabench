@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from queue import Queue
 import re
 import traceback
 import zipfile
@@ -42,7 +43,13 @@ from utils.email import codalab_send_markdown_email
 
 import logging
 
+<<<<<<< HEAD
 logger = logging.getLogger(__name__)
+=======
+r = get_redis_connection("default")
+WORKERS_REGISTRY_KEY = "workers:registry"
+WORKER_HEARTBEAT_TTL = 35
+>>>>>>> b7de9241 (compute worker monitoring on private queues (amazing stuff))
 
 COMPETITION_FIELDS = [
     "title",

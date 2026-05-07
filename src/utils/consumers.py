@@ -37,6 +37,31 @@ def _load_snapshot(competition_queue_name=None):
     return workers, private_workers
 
 
+def _get_broker_host(broker_url):
+    if not broker_url or "@" not in broker_url:
+        return None
+    try:
+        return broker_url.split("@", 1)[1].split("/", 1)[0].split(":", 1)[0]
+    except Exception:
+        return None
+
+
+def _resolve_broker_url(celery_app, broker_url):
+    if not broker_url:
+        return broker_url
+
+    if "@localhost:" not in broker_url:
+        return broker_url
+
+    default_broker = getattr(celery_app.conf, "broker_url", None)
+    default_host = _get_broker_host(default_broker)
+
+    if not default_host or default_host == "localhost":
+        return broker_url
+
+    return broker_url.replace("@localhost:", f"@{default_host}:")
+
+
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
@@ -60,6 +85,8 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             try:
                 await task
             except (asyncio.CancelledError, RuntimeError):
+                pass
+            except RuntimeError:
                 pass
 
     async def receive_json(self, content):
