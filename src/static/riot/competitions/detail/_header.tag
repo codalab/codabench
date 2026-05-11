@@ -38,9 +38,9 @@
 
                         <worker-monitor-toggle
                             if="{competition.admin}"
-                            can_view_workers_panel="true">
+                            can_view_workers_panel="true"
+                            competition_id="{ competition.id }">
                         </worker-monitor-toggle>
-
 
                     </div>
                     <div class="row">

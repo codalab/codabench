@@ -138,6 +138,8 @@
         self.canViewWorkersPanel =
             String(self.opts.can_view_workers_panel || 'false') === 'true'
 
+        self.competitionId = parseInt(self.opts.competition_id) || null
+
         self.showWorkersPanel = false
         self.panelLeft = 24
         self.panelTop = 24
@@ -149,7 +151,7 @@
 
         self.toggleWorkersPanel = function () {
             self.showWorkersPanel = !self.showWorkersPanel
-
+            #   here, we make sure the network is not used when the pannel is closed
             if (self.showWorkersPanel) {
                 self.loadPanelPosition()
                 self.connect_workers_socket()
@@ -183,7 +185,7 @@
                 } catch (e) {}
                 self.ws = null
             }
-
+            var competitionId = parseInt(self.opts.competition_id) || null
             var scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
             var url = scheme + '://' + window.location.host + '/ws/workers/'
 
@@ -194,9 +196,12 @@
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
+                if (self.competitionId) {
+                    var msg = JSON.stringify({ type: 'subscribe', competition_id: self.competitionId })
+                    self.ws.send(msg)
+                }
                 self.update()
             }
-
             self.ws.onmessage = function (event) {
                 var message = null
 

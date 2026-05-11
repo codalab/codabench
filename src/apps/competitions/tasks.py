@@ -39,9 +39,7 @@ from queues.models import Queue
 from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
-from celery_config import app
-from celery_config import app as celery_app
-from celery_config import app_for_vhost
+from celery_config import app, app_for_vhost
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 from utils.worker_utils import (
@@ -53,7 +51,7 @@ from utils.worker_utils import (
 )
 
 logger = logging.getLogger(__name__)
-
+celery_app = app
 r = get_redis_connection("default")
 
 COMPETITION_FIELDS = [
@@ -906,7 +904,7 @@ def _broadcast_worker_state(payload):
     )
 
 
-@app.task(queue="site-worker", soft_time_limit=120)  # 60 → 120
+@app.task(queue="site-worker", soft_time_limit=120)
 def refresh_compute_worker_health():
     known_queue_names = known_compute_queue_names()
     broker_sources = []
@@ -933,7 +931,7 @@ def refresh_compute_worker_health():
         inspected_brokers.add(broker_url)
 
         try:
-            # timeout=5 au lieu de 10 : 4 appels × 5s × N brokers reste raisonnable
+            # timeout=5 : 4 appels × 5s × N brokers
             inspector = broker_app.control.inspect(timeout=5)
             if inspector is None:
                 logger.warning(
@@ -985,11 +983,12 @@ def refresh_compute_worker_health():
                 ),
             )
             _broadcast_worker_state(payload)
-            logger.info(
-                "[WORKER-HEALTH] source=%s worker=%s status=%s jobs=%d queues=%s",
-                source_name,
-                worker_name,
-                status,
-                running_jobs,
-                sorted(queue_names),
-            )
+            #   Logs about CW health HERE
+            # logger.info(
+            #     "[WORKER-HEALTH] source=%s worker=%s status=%s jobs=%d queues=%s",
+            #     source_name,
+            #     worker_name,
+            #     status,
+            #     running_jobs,
+            #     sorted(queue_names),
+            # )
