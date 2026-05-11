@@ -45,6 +45,8 @@ from celery_config import app_for_vhost
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 from utils.worker_utils import (
+    WORKER_HEARTBEAT_TTL,
+    WORKERS_REGISTRY_KEY,
     extract_queue_names,
     is_compute_worker,
     known_compute_queue_names,
@@ -53,8 +55,6 @@ from utils.worker_utils import (
 logger = logging.getLogger(__name__)
 
 r = get_redis_connection("default")
-WORKERS_REGISTRY_KEY = "workers:registry"
-WORKER_HEARTBEAT_TTL = 35
 
 COMPETITION_FIELDS = [
     "title",

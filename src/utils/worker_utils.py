@@ -1,5 +1,8 @@
 from queues.models import Queue
 
+WORKERS_REGISTRY_KEY = "workers:registry"
+WORKER_HEARTBEAT_TTL = 180
+
 
 def extract_queue_names(active_queues):
     names = set()
