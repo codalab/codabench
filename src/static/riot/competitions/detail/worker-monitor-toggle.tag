@@ -151,7 +151,7 @@
 
         self.toggleWorkersPanel = function () {
             self.showWorkersPanel = !self.showWorkersPanel
-            #   here, we make sure the network is not used when the pannel is closed
+            //   here, we make sure the network is not used when the pannel is closed
             if (self.showWorkersPanel) {
                 self.loadPanelPosition()
                 self.connect_workers_socket()
