@@ -96,7 +96,6 @@
                         <thead>
                             <tr>
                                 <th>Worker</th>
-                                <th>Queue</th>
                                 <th>Status</th>
                                 <th>Jobs</th>
                                 <th>Last seen</th>
