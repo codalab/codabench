@@ -3,7 +3,6 @@
         <div class="active submission-modal item" data-tab="{admin_: submission.admin}downloads">DOWNLOADS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}logs" show="{!opts.hide_output}">LOGS</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}graph" show="{!opts.hide_output && opts.show_visualization}">VISUALIZATION</div>
-        <div class="submission-modal item" data-tab="admin" if="{submission.admin}">ADMIN</div>
         <div class="submission-modal item" data-tab="{admin_: submission.admin}fact_sheet">FACT SHEET ANSWERS</div>
     </div>
     <!-- Downloads -->
@@ -223,10 +222,6 @@
         .log
             height 465px
             max-height 465px
-            overflow auto
-
-        .leaderboard-tab
-            height 515px
             overflow auto
 
         .modal-tab
