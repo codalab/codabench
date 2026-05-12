@@ -46,9 +46,12 @@
             </div>
 
             <div class="workers-section">
-                <div class="workers-section-title">Default compute workers</div>
+                <div class="workers-section-title workers-section-header" onclick="{ toggleDefaultWorkers }">
+                    <span>Default compute workers</span>
 
-                <div class="workers-table-wrap">
+                    <i class="dropdown icon workers-collapse-icon { showDefaultWorkers ? 'open' : '' }"></i>
+                </div>
+                <div class="workers-table-wrap" if="{ showDefaultWorkers }">
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
@@ -92,7 +95,7 @@
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
-                                <th>Competition</th>
+                                <th>Worker</th>
                                 <th>Queue</th>
                                 <th>Status</th>
                                 <th>Jobs</th>
@@ -134,6 +137,7 @@
         self.wsReconnectTimer = null
         self.wsState = 'disconnected'
         self.lastSyncAt = null
+        self.showDefaultWorkers = true
 
         self.canViewWorkersPanel =
             String(self.opts.can_view_workers_panel || 'false') === 'true'
@@ -370,6 +374,11 @@
             if (self.displayStatus(worker) === 'available') return 'green'
             if (self.displayStatus(worker) === 'busy') return 'yellow'
             return 'red'
+        }
+
+        self.toggleDefaultWorkers = function () {
+            self.showDefaultWorkers = !self.showDefaultWorkers
+            self.update()
         }
 
         self.getStatusIcon = function (worker) {
