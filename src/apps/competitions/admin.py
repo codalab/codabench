@@ -1,9 +1,13 @@
 from django.contrib import admin
+from django import forms
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.auth.models import Group
+
 from django.utils.translation import gettext_lazy as _
 import json
 import csv
 from django.http import HttpResponse
-from profiles.models import User
+from profiles.models import CustomGroup, User
 from . import models
 
 
@@ -409,3 +413,45 @@ admin.site.register(models.CompetitionParticipant, CompetitionParticipantExpansi
 admin.site.register(models.Page, PageExpansion)
 admin.site.register(models.Phase, PhaseExpansion)
 admin.site.register(models.Submission, SubmissionExpansion)
+
+
+class CustomGroupAdminForm(forms.ModelForm):
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=FilteredSelectMultiple("Users", is_stacked=False),
+        help_text="Add/Remove users for this group."
+    )
+
+    class Meta:
+        model = CustomGroup
+        fields = ('name', 'permissions', 'queue', 'users')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['users'].initial = self.instance.user_set.all()
+
+
+@admin.register(CustomGroup)
+class CustomGroupAdmin(admin.ModelAdmin):
+    form = CustomGroupAdminForm
+    list_display = ('name', 'queue')
+    search_fields = ('name',)
+    filter_horizontal = ('permissions',)
+    fieldsets = (
+        (None, {'fields': ('name',)}),
+        ('Permissions', {'fields': ('permissions',)}),
+        ('Utilisateurs', {'fields': ('users',)}),
+        ('Options', {'fields': ('queue',)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.user_set.set(form.cleaned_data['users'])
+
+
+admin.site.unregister(Group)
