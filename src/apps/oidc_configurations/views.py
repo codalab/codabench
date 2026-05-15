@@ -53,62 +53,61 @@ def oidc_complete(request, auth_organization_id):
 
     if error:
         context["error"] = error
-
     if error_description:
         context["error_description"] = error_description
 
-    # Token exhange process
-    if authorization_code:
+    if error or error_description:
+        return render(request, 'oidc/oidc_complete.html', context)
 
-        try:
-            # STEP 1: Get auth organization using its id
-            organization = get_object_or_404(Auth_Organization, pk=auth_organization_id)
+    if not authorization_code:
+        context["error"] = "Authorization Code not provided!"
+        return render(request, 'oidc/oidc_complete.html', context)
 
-            if organization:
+    try:
+        # STEP 1: Get auth organization using its id
+        organization = get_object_or_404(Auth_Organization, pk=auth_organization_id)
 
-                # STEP 2:  Get access token
-                access_token, token_error = get_access_token(organization, authorization_code)
-
-                if token_error:
-                    context["error"] = token_error
-                else:
-                    # STEP 3: Get user info
-                    user_info, user_info_error = get_user_info(organization, access_token)
-                    if user_info_error:
-                        context["error"] = user_info_error
-                    else:
-                        if not isinstance(user_info, dict):
-                            context["error"] = "Invalid user info payload from OIDC provider."
-                            return render(request, 'oidc/oidc_complete.html', context)
-
-                        user_email = user_info.get("email", None)
-                        user_nickname = user_info.get("nickname", None)
-                        if not user_email:
-                            context["error"] = (
-                                "Unable to extract email from user info."
-                            )
-                            return render(request, 'oidc/oidc_complete.html', context)
-                        user_email = str(user_email).strip().lower()
-
-                        if user_nickname is not None:
-                            user_nickname = str(user_nickname).strip() or None
-
-                        # get user with this email
-                        user = get_user_by_email(user_email)
-                        # STEP 4: Check if user exists and user is created using oidc and oidc orgnaization matches this one
-                        if user:
-                            login(request, user, backend=BACKEND)
-                            # Redirect the user home page
-                            return redirect('pages:home')
-                        else:
-                            return register_and_authenticate_user(request, user_email, user_nickname, organization)
-
+        # STEP 2:  Get access token
+        access_token, token_error = get_access_token(organization, authorization_code)
+        if token_error:
+            context["error"] = token_error
+            return render(request, 'oidc/oidc_complete.html', context)
+        else:
+            # STEP 3: Get user info
+            user_info, user_info_error = get_user_info(organization, access_token)
+            if user_info_error:
+                context["error"] = user_info_error
+                return render(request, 'oidc/oidc_complete.html', context)
             else:
-                context["error"] = "Invalid Organization ID!"
-        except Exception as e:
-            context["error"] = f"{e}"
+                if not isinstance(user_info, dict):
+                    context["error"] = "Invalid user info payload from OIDC provider."
+                    return render(request, 'oidc/oidc_complete.html', context)
 
-    return render(request, 'oidc/oidc_complete.html', context)
+                user_email = user_info.get("email", None)
+                user_nickname = user_info.get("nickname", None)
+                if not user_email:
+                    context["error"] = "Unable to extract email from user info."
+                    return render(request, 'oidc/oidc_complete.html', context)
+
+                user_email = str(user_email).strip().lower()
+
+                if user_nickname is not None:
+                    user_nickname = str(user_nickname).strip() or None
+
+                # get user with this email
+                user = get_user_by_email(user_email)
+
+                # STEP 4: Check if user exists and user is created using oidc and oidc orgnaization matches this one
+                if user:
+                    login(request, user, backend=BACKEND)
+                    # Redirect the user home page
+                    return redirect('pages:home')
+                else:
+                    return register_and_authenticate_user(request, user_email, user_nickname, organization)
+
+    except Exception as e:
+        context["error"] = f"{e}"
+        return render(request, 'oidc/oidc_complete.html', context)
 
 
 def get_access_token(organization, authorization_code):
