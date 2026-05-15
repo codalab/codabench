@@ -218,6 +218,7 @@ def get_user_by_email(email):
     except User.DoesNotExist:
         return None
 
+
 def normalize_username(username):
     # Keep OIDC names readable while removing unsupported chars.
     # Keep in sync with profile URL regex: [-a-zA-Z0-9_]+
@@ -226,6 +227,7 @@ def normalize_username(username):
         raise ValueError("OIDC username contains no valid route-safe characters")
 
     return cleaned
+
 
 def with_suffix(base_username, suffix, max_username_length):
     suffix = f"_{suffix}"
