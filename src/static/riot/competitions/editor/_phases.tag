@@ -263,12 +263,13 @@
 
             // Custom menu template that renders description under the item name
             // data-text is set to name-only so that selected labels show only the title
-            var dropdown_menu_template = function(response, fields) {
+            var dropdown_menu_template = function(response) {
                 var html = ''
-                $.each(response[fields.values], function(index, item) {
-                    var name = item[fields.name] || ''
-                    var value = item[fields.value] || ''
-                    var description = item.description
+                //$.each(response[fields.values], function(index, item) {
+                $.each(response.values, function(index, item) {
+                    let name = item.name || ''
+                    let value = item.value || ''
+                    let description = item.description
                     html += '<div class="item" data-value="' + value + '" data-text="' + name + '">'
                     html += '<strong>' + name + '</strong>'
                     if (description) {
