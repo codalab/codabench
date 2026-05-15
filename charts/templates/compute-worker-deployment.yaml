@@ -26,13 +26,39 @@ spec:
             - bash
             - -c
             - >
-              watchmedo auto-restart -p '*.py' --recursive -- celery -A compute_worker worker -l info -Q compute-worker -n compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}@%n
-          workingDir: /app
+              celery -A compute_worker worker -l info -Q compute-worker -n compute-worker{{ if not $isDefault }}-{{ .name }}{{ end }}@%n
+          workingDir: /
           env:
+            - name: CONTAINER_ENGINE_EXECUTABLE
+              value: '{{ $.Values.compute_worker.container_engine_executable }}'
+            - name: USE_GPU
+              value: '{{ .gpu.enabled }}'
+            - name: RESOURCE_LIMITS
+              value: '{{ toJson .gpu.resourceLimits }}'
+            - name: NODE_SELECTOR
+              value: '{{ toJson .gpu.nodeSelector }}'
+            - name: TOTAL_TIME_TO_WAIT_FOR_POD
+              value: '{{ $.Values.compute_worker.podCreationRetries.totalTimeToWaitForPod }}'
+            - name: SLEEP_TIME_BETWEEN_RETRIES
+              value: '{{ $.Values.compute_worker.podCreationRetries.sleepTimeBetweenRetries }}'
+            - name: USERID
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.runAsUser }}'
+            - name: GROUPID
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.runAsGroup }}'
+            - name: FSGROUP
+              value: '{{ $.Values.compute_worker.submissionPods.securityContext.fsGroup }}'
+            - name: COMPUTE_WORKER_LABELS
+              value: '{{ toJson $.Values.compute_worker.submissionPods.metadata.labels }}'
+            - name: CURRENT_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SHARED_JOB_PVC
+              value: '{{ $.Values.sharedJob.pvcName }}'
             - name: BROKER_URL
               value: "{{ if .url }}{{ .url }}{{ else }}pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS }}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//{{ end }}"
             - name: CODALAB_IGNORE_CLEANUP_STEP
-              value: "1"
+              value: '{{ $.Values.compute_worker.codalabIgnoreCleanupStep }}'
             {{- range $key, $value := $.Values.env }}
             - name: {{ $key }}
               value: "{{ $value }}"
