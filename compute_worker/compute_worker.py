@@ -1427,11 +1427,10 @@ class Run:
 
         if self.is_scoring:
             # Check if scoring program failed
-            # We have try except here because when running scoring program we can have 2 or 3 gathered tasks
-            # 3 gathered tasks in case when `ingestion_only_during_scoring` is True
-            try:
+            # We have can have 2 or 3 gathered tasks: 3 gathered tasks in case when `ingestion_only_during_scoring` is True, 2 otherwise
+            if self.ingestion_only_during_scoring:
                 program_results, _, _ = task_results
-            except Exception:
+            else:
                 program_results, _ = task_results
             # Gather returns either normal values or exception instances when return_exceptions=True
             had_async_exc = isinstance(
