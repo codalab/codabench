@@ -1412,7 +1412,7 @@ class Run:
 
             # Cleanup containers
             containers_to_kill = [
-                self.ingestion_program_container_name, 
+                self.ingestion_program_container_name,
                 self.scoring_program_container_name
             ]
             logger.debug("Trying to kill and remove container " + str(containers_to_kill))
