@@ -1,7 +1,7 @@
 import zipfile
 import json
 import csv
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from io import StringIO
 from django.http import HttpResponse
 from tempfile import SpooledTemporaryFile
@@ -792,21 +792,55 @@ class PhaseViewSet(ModelViewSet):
             'submissions': [],
             'tasks': [],
             'fact_sheet_keys': fact_sheet_keys or None,
-            'primary_index': query['leaderboard']['primary_index']
+            'primary_index': query['leaderboard']['primary_index'],
+            'has_group_queues': False,
         }
 
         columns = [col for col in query['columns']]
         submissions_keys = {}
         submission_detailed_results = {}
 
+        group_name_by_user_queue = {}
+        for group in phase.competition.participant_groups.filter(
+            queue__isnull=False
+        ).select_related('queue').prefetch_related('user_set'):
+            for user in group.user_set.all():
+                group_name_by_user_queue[(user.username, group.queue_id)] = group.name
+
+        parent_ids = {s['parent'] for s in query['submissions'] if s['parent'] is not None}
+        parent_task_counts = Counter(
+            (s['parent'], s['task'])
+            for s in query['submissions']
+            if s['parent'] is not None
+        )
+
         for submission in query['submissions']:
-            submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}"
+            if submission['id'] in parent_ids:
+                continue
+
+            queue_name = submission.get('queue_name') or ''
+            queue_id = submission.get('queue_id')
+            group_name = group_name_by_user_queue.get(
+                (submission['owner'], queue_id)
+            ) if queue_id else None
+
+            display_group = group_name or queue_name or None
+
+            parent_id = submission['parent']
+            task_id = submission.get('task')
+            is_multi_group_null_queue = (
+                parent_id is not None
+                and not queue_name
+                and parent_task_counts.get((parent_id, task_id), 0) > 1
+            )
+
+            if is_multi_group_null_queue:
+                submission_key = f"{submission['owner']}{parent_id}_{submission['id']}"
+            else:
+                submission_key = f"{submission['owner']}{submission['parent'] or submission['id']}_{queue_name}"
+
             # gather detailed result from submissions for each task
-            # detailed_results are gathered based on submission key
-            # `id` is used to fetch the right detailed result in detailed results page
-            # `detailed_result` url is not needed
             submission_detailed_results.setdefault(submission_key, []).append({
-                # 'detailed_result': submission['detailed_result'],
                 'task': submission['task'],
                 'id': submission['id']
             })
@@ -821,8 +855,11 @@ class PhaseViewSet(ModelViewSet):
                     'fact_sheet_answers': submission['fact_sheet_answers'],
                     'slug_url': submission['slug_url'],
                     'organization': submission['organization'],
-                    'created_when': submission['created_when']
+                    'created_when': submission['created_when'],
+                    'queue_name': display_group,
                 })
+                if queue_name or is_multi_group_null_queue:
+                    response['has_group_queues'] = True
 
             for score in submission['scores']:
 

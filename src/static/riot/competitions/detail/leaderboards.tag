@@ -28,7 +28,7 @@
         </tr>
         <tr class="task-row">
             <th>Task:</th>
-            <th colspan=3></th>
+            <th colspan="{ has_group_queues ? 4 : 3 }"></th>
             <th each="{ task in filtered_tasks }" class="center aligned" colspan="{ task.colWidth }">{ task.name }</th>
         </tr>
         <tr>
@@ -36,6 +36,7 @@
             <th>Participant</th>
             <th>Date</th>
             <th>ID</th>
+            <th if="{ has_group_queues }">Queue</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
         </tr>
         </thead>
@@ -46,7 +47,6 @@
                     <em>No submissions have been added to this leaderboard yet!</em>
                 </td>
             </tr>
-
             <tr each="{ submission, index in paginated_submissions}">
                 <td class="collapsing index-column center aligned">
                     <gold-medal if="{get_row_number(index) === 1}"></gold-medal>
@@ -74,24 +74,20 @@
             </tr>
         </tbody>
     </table>
-
     <div class="ui pagination menu" style="display:flex; align-items:center; justify-content:space-between; margin-top: 12px;">
         <div style="display:flex; align-items:center; gap:8px;">
             <button class="ui button" onclick="{ go_to_page.bind(this, page - 1) }" disabled="{ page <= 1 }">
                 <i class="icon chevron left"></i> Previous
             </button>
-
             <div style="display:flex; align-items:center; gap:6px;">
                 <span>Page</span>
                 <input type="number" min="1" value="{ page }" onkeydown="{ handle_page_enter }" style="width:70px; text-align:center;" />
                 <span> / { total_pages || 1 }</span>
             </div>
-
             <button class="ui button" onclick="{ go_to_page.bind(this, page + 1) }" disabled="{ page >= total_pages }">
                 Next <i class="icon chevron right"></i>
             </button>
         </div>
-
         <div style="display:flex; align-items:center; gap:8px;">
             <label>Per page</label>
             <select class="ui dropdown" value="{ page_size }" onchange="{ change_page_size.bind(this) }">
@@ -100,14 +96,11 @@
                 <option value="500">500</option>
                 <option value="all">all</option>
             </select>
-
             <div style="margin-right: 10px; color: #8c8c8c;">
                 <small>{ total_count || 0 } total</small>
             </div>
         </div>
     </div>
-
-
     <script>
         let self = this
         self.selected_leaderboard = {}
@@ -118,41 +111,32 @@
         self.competition_id = null
         self.enable_detailed_results = false
         self.show_detailed_results_in_leaderboard = false
-
+        self.has_group_queues = false
         self.page = 1
         self.page_size = 50
         self.total_count = 0
         self.total_pages = 1
         self.paginated_submissions = []
-
         self.get_page_size_value = function () {
             if (String(self.page_size).toLowerCase() === 'all') {
                 return self.total_count || 1
             }
-
             var n = parseInt(self.page_size, 10)
             if (isNaN(n) || n <= 0) {
                 return 50
             }
-
             return n
         }
-
         self.get_row_number = function (index) {
             if (String(self.page_size).toLowerCase() === 'all') {
                 return index + 1
             }
-
             return ((self.page - 1) * self.get_page_size_value()) + index + 1
         }
-
         self.update_pagination = function () {
             var submissions = _.get(self.selected_leaderboard, 'submissions', [])
-
             self.total_count = parseInt(_.get(self.selected_leaderboard, 'count', submissions.length), 10) || submissions.length
-
             var raw_page_size = _.get(self.selected_leaderboard, 'page_size', self.page_size)
-
             if (String(raw_page_size).toLowerCase() === 'all') {
                 self.page_size = 'all'
                 self.total_pages = 1
@@ -162,46 +146,36 @@
                 if (isNaN(page_size_value) || page_size_value <= 0) {
                     page_size_value = self.get_page_size_value()
                 }
-
                 self.page_size = page_size_value
                 self.total_pages = Math.max(1, Math.ceil(self.total_count / page_size_value))
-
                 if (self.page > self.total_pages) {
                     self.page = self.total_pages
                 }
             }
-
             self.paginated_submissions = submissions
         }
-
         self.go_to_page = function (p) {
             if (String(self.page_size).toLowerCase() === 'all') {
                 return
             }
-
             var newPage = parseInt(p, 10)
             if (isNaN(newPage) || newPage < 1) newPage = 1
             if (newPage > self.total_pages) newPage = self.total_pages
             if (newPage === self.page) return
-
             self.page = newPage
             self.update_leaderboard()
         }
-
         self.handle_page_enter = function (e) {
             if (e.key !== 'Enter' && e.keyCode !== 13) {
                 return
             }
-
             e.preventDefault()
             self.go_to_page(e.target.value)
         }
-
         self.change_page_size = function (e) {
             var raw = (e && e.target && typeof e.target.value !== 'undefined')
                 ? String(e.target.value).toLowerCase()
                 : String(self.page_size).toLowerCase()
-
             if (raw === 'all') {
                 self.page_size = 'all'
             } else {
@@ -210,11 +184,9 @@
                 if ([50, 100, 500].indexOf(val) === -1) return
                 self.page_size = val
             }
-
             self.page = 1
             self.update_leaderboard()
         }
-
         self.pretty_date = function (date_string) {
             if (!!date_string) {
                 return luxon.DateTime.fromISO(date_string).toFormat('yyyy-MM-dd HH:mm')
@@ -222,12 +194,12 @@
                 return ''
             }
         }
-
         self.sort_date_value = function (date_string) {
             if (!date_string) return 0
             const dt = luxon.DateTime.fromISO(date_string)
             return dt.isValid ? dt.toMillis() : 0
         }
+<<<<<<< HEAD
 
         self.get_score_sort_value = function(column, submission) {
             if (column.task_id === -1) {
@@ -241,6 +213,8 @@
             return (score !== null && typeof score !== 'undefined' && score !== '') ? score : ''
         }
 
+=======
+>>>>>>> ba0e679c (leaderboad group feature)
         self.bold_class = function(column, submission){
             return_class = ''
             if(column.task_id != -1){
@@ -253,7 +227,6 @@
             }
             return return_class
         }
-
         self.get_score = function(column, submission) {
             if(column.task_id === -1){
                 return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
@@ -265,7 +238,6 @@
             }
             return 'n/a'
         }
-
         self.on("mount", function () {
             this.refs.leaderboardFilter.onkeyup = function (e) {
                 self.filter_columns()
@@ -275,11 +247,9 @@
             })
             $('#leaderboardTable').tablesort()
         })
-
         self.filter_columns = () => {
             let search_key = self.refs.leaderboardFilter.value.toLowerCase()
             self.filtered_tasks = JSON.parse(JSON.stringify(self.selected_leaderboard.tasks || []))
-
             if (search_key) {
                 self.filtered_columns = []
                 for (const column of self.columns) {
@@ -296,18 +266,27 @@
             } else {
                 self.filtered_columns = self.columns
             }
-
             self.update()
         }
-
         self.update_leaderboard = () => {
+            console.log('[LEADERBOARD] update_leaderboard called, phase_id =', self.phase_id)
+
             CODALAB.api.get_leaderboard_for_render(self.phase_id, {
                 page: self.page,
                 page_size: self.page_size
             })
             .done(responseData => {
+                console.log('[LEADERBOARD] raw responseData =', responseData)
+
                 self.selected_leaderboard = responseData
+                self.has_group_queues = responseData.has_group_queues || false
+                self.available_queues = responseData.available_queues || []
                 self.columns = []
+
+                console.log('[LEADERBOARD] has_group_queues =', self.has_group_queues)
+                console.log('[LEADERBOARD] available_queues =', self.available_queues)
+                console.log('[LEADERBOARD] tasks =', self.selected_leaderboard.tasks)
+                console.log('[LEADERBOARD] submissions =', self.selected_leaderboard.submissions)
 
                 if (self.selected_leaderboard.fact_sheet_keys) {
                     let fake_metadata_task = {
@@ -316,21 +295,37 @@
                         columns: [],
                         name: "Fact Sheet Answers"
                     }
-                    for (question of self.selected_leaderboard.fact_sheet_keys) {
+
+                    for (let question of self.selected_leaderboard.fact_sheet_keys) {
                         fake_metadata_task.columns.push({
                             key: question[0],
                             title: question[1],
                         })
                     }
+
                     self.selected_leaderboard.tasks.unshift(fake_metadata_task)
                 }
 
-                for (task of self.selected_leaderboard.tasks) {
-                    for (column of task.columns) {
-                        column.task_id = task.id
-                        self.columns.push(column)
+                for (let task of self.selected_leaderboard.tasks) {
+                    if (self.available_queues.length > 0) {
+                        for (let queue_name of self.available_queues) {
+                            for (let column of task.columns) {
+                                let clonedColumn = Object.assign({}, column)
+                                clonedColumn.task_id = task.id
+                                clonedColumn.queue_name = queue_name
+                                clonedColumn.title = `${column.title} (${queue_name})`
+                                self.columns.push(clonedColumn)
+                            }
+                        }
+                    } else {
+                        for (let column of task.columns) {
+                            let clonedColumn = Object.assign({}, column)
+                            clonedColumn.task_id = task.id
+                            self.columns.push(clonedColumn)
+                        }
                     }
-                    if (self.enable_detailed_results & self.show_detailed_results_in_leaderboard & task.id != -1) {
+
+                    if (self.enable_detailed_results && self.show_detailed_results_in_leaderboard && task.id != -1) {
                         self.columns.push({
                             task_id: task.id,
                             title: "Detailed Results"
@@ -345,7 +340,6 @@
                 self.update()
             })
         }
-
         self.get_detailed_result_submisison_id = function(column, submisison){
             for (index in submisison.detailed_results) {
                 if (column.task_id == submisison.detailed_results[index].task) {
@@ -353,13 +347,11 @@
                 }
             }
         }
-
         CODALAB.events.on('phase_selected', data => {
             self.phase_id = data.id
             self.page = 1
             self.update_leaderboard()
         })
-
         CODALAB.events.on('competition_loaded', (competition) => {
             self.competition_id = competition.id
             self.participant_status = competition.participant_status
@@ -367,7 +359,6 @@
             self.enable_detailed_results = competition.enable_detailed_results
             self.show_detailed_results_in_leaderboard = competition.show_detailed_results_in_leaderboard
         })
-
         CODALAB.events.on('submission_changed_on_leaderboard', self.update_leaderboard)
     </script>
     
@@ -378,7 +369,6 @@
             height: 100%
         .celled.table.selectable
             margin 1em 0
-
         table tbody .center.aligned td
             color #8c8c8c
         .index-column

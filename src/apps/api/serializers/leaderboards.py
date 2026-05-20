@@ -112,7 +112,7 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
                 leaderboard=instance,
                 is_specific_task_re_run=False
             )
-            .select_related('owner')
+            .select_related('owner', 'queue')
             .prefetch_related('scores')
             .annotate(primary_col=Sum('scores__score', filter=Q(scores__column=primary_col)))
         )
