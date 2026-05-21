@@ -269,24 +269,15 @@
             self.update()
         }
         self.update_leaderboard = () => {
-            console.log('[LEADERBOARD] update_leaderboard called, phase_id =', self.phase_id)
-
             CODALAB.api.get_leaderboard_for_render(self.phase_id, {
                 page: self.page,
                 page_size: self.page_size
             })
             .done(responseData => {
-                console.log('[LEADERBOARD] raw responseData =', responseData)
-
                 self.selected_leaderboard = responseData
                 self.has_group_queues = responseData.has_group_queues || false
                 self.available_queues = responseData.available_queues || []
                 self.columns = []
-
-                console.log('[LEADERBOARD] has_group_queues =', self.has_group_queues)
-                console.log('[LEADERBOARD] available_queues =', self.available_queues)
-                console.log('[LEADERBOARD] tasks =', self.selected_leaderboard.tasks)
-                console.log('[LEADERBOARD] submissions =', self.selected_leaderboard.submissions)
 
                 if (self.selected_leaderboard.fact_sheet_keys) {
                     let fake_metadata_task = {
