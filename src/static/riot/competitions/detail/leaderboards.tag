@@ -36,7 +36,7 @@
             <th>Participant</th>
             <th>Date</th>
             <th>ID</th>
-            <th if="{ has_group_queues }">Queue</th>
+            <th if="{ has_group_queues }">Groups</th>
             <th each="{ column in filtered_columns }" colspan="1">{column.title}</th>
         </tr>
         </thead>

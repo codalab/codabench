@@ -411,6 +411,7 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
+
     def collect_leaderboard_data(self, competition, phase_pk=None):
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
@@ -424,26 +425,43 @@ class CompetitionViewSet(ModelViewSet):
             phase_id = phases[0].id
 
         leaderboard = Leaderboard.objects.prefetch_related('columns').get(phases=phase_id)
-        leaderboard_titles = {phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})' for phase in submission_query}
+        leaderboard_titles = {
+            phase['id']: f'{leaderboard.title} - {phase["name"]}({phase["id"]})'
+            for phase in submission_query
+        }
         leaderboard_data = {title: {} for title in leaderboard_titles.values()}
 
         for phase in submission_query:
             generated_columns = OrderedDict()
             for task in phase['tasks']:
                 for col in leaderboard.columns.all():
-                    generated_columns.update({f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'})
+                    generated_columns.update({
+                        f'{col.key}-{task["id"]}': f'{task["name"]}({task["id"]})-{col.title}'
+                    })
+
             for submission in phase['submissions']:
-                submission_key = f'{submission["owner"]}-{submission["parent"] or submission["id"]}'
-                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]].keys():
-                    leaderboard_data[leaderboard_titles[phase['id']]].update({submission_key: OrderedDict()})
-                    if 'fact_sheet_answers' in submission.keys() and submission['fact_sheet_answers']:
-                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key]\
-                            .update({'fact_sheet_answers': submission['fact_sheet_answers']})
+                queue_name = submission.get('queue_name') or ''
+                submission_key = f'{submission["owner"]}-{submission["id"]}'
+                if queue_name:
+                    submission_key = f'{submission_key}-{queue_name}'
+
+                if submission_key not in leaderboard_data[leaderboard_titles[phase['id']]]:
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key] = OrderedDict()
+
+                    if submission.get('fact_sheet_answers'):
+                        leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                            'fact_sheet_answers': submission['fact_sheet_answers']
+                        })
+
                     for col_title in generated_columns.values():
                         leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({col_title: ""})
+
                 for score in submission['scores']:
                     score_column = generated_columns[f'{score["column_key"]}-{submission["task"]}']
-                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({score_column: score['score']})
+                    leaderboard_data[leaderboard_titles[phase['id']]][submission_key].update({
+                        score_column: score['score']
+                    })
+
         return leaderboard_data
 
     @action(detail=True, methods=['GET'], renderer_classes=[JSONRenderer, CSVRenderer, ZipRenderer])
