@@ -67,14 +67,22 @@
                     <span if="{ submission.queue_name }">{ submission.queue_name }</span>
                     <span if="{ !submission.queue_name }" class="ui grey text">—</span>
                 </td>
-                <td each="{ column in filtered_columns }">
+
                 <td each="{ column in filtered_columns }"
                     data-sort="{ get_score_sort_value(column, submission) }"
                     data-sort-value="{ get_score_sort_value(column, submission) }">
-                    <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
+
+                    <a if="{column.title == 'Detailed Results'}"
+                    href="detailed_results/{get_detailed_result_submisison_id(column, submission)}"
+                    target="_blank"
+                    class="eye-icon-link">
                         <i class="icon grey eye eye-icon"></i>
                     </a>
-                    <span if="{column.title != 'Detailed Results'}" class="{bold_class(column, submission)}">{get_score(column, submission)}</span>
+
+                    <span if="{column.title != 'Detailed Results'}"
+                        class="{bold_class(column, submission)}">
+                        {get_score(column, submission)}
+                    </span>
                 </td>
             </tr>
         </tbody>
