@@ -41,6 +41,7 @@ from asgiref.sync import async_to_sync
 
 import logging
 
+from billiard.exceptions import SoftTimeLimitExceeded
 from utils.worker_utils import WORKER_HEARTBEAT_TTL, WORKERS_REGISTRY_KEY, extract_queue_names, is_compute_worker, known_compute_queue_names
 logger = logging.getLogger(__name__)
 
@@ -846,24 +847,20 @@ def refresh_compute_worker_health():
         inspected_brokers.add(broker_url)
 
         try:
-            # timeout=5 : 4 appels × 5s × N brokers
-            inspector = broker_app.control.inspect(timeout=5)
-            if inspector is None:
-                logger.warning(
-                    "Celery inspect returned None for broker=%s", source_name
-                )
-                continue
-            stats = inspector.stats() or {}
+            # timeout=2 : 3 calls × 2s × N brokers
+            inspector = broker_app.control.inspect(timeout=2)
             active = inspector.active() or {}
             reserved = inspector.reserved() or {}
             active_queues = inspector.active_queues() or {}
+        except SoftTimeLimitExceeded:
+            raise
         except Exception:
             logger.exception(
                 "Unable to inspect Celery workers for broker %s", source_name
             )
             continue
 
-        for worker_name in stats.keys():
+        for worker_name in active_queues.keys():
             queues = active_queues.get(worker_name, []) or []
             queue_names = extract_queue_names(queues)
             if not is_compute_worker(worker_name, queue_names, known_queue_names):
