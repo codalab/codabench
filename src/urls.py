@@ -33,7 +33,6 @@ urlpatterns = [
 
 ]
 
-
 if settings.DEBUG:
     # Static files for local dev, so we don't have to collectstatic and such
     urlpatterns += staticfiles_urlpatterns()
