@@ -129,19 +129,48 @@ MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600)) 
 
 def _get_user_group_queues(user, competition):
     """
-    Group feature method, returns a list of queues from groups of the competition for the user
+    Group feature: retourne la liste des queues vers lesquelles router la soumission,
+    en fonction des groupes de la compétition auxquels l'utilisateur appartient.
+
+    Règles :
+    - Groupe avec queue  → sa queue est ajoutée au routage
+    - Groupe sans queue  → la queue de la compétition est ajoutée une seule fois
+                           (None si la compétition n'a pas de queue privée = queue par défaut)
+    - Utilisateur dans des groupes sans queue seulement → [] (soumission unique legacy)
+    - Utilisateur dans aucun groupe → [] (soumission unique legacy)
+    - Déduplication : si une queue de groupe est identique à la queue de la compétition,
+      un seul enfant est créé (pas de doublon)
     """
-    groups = competition.participant_groups.filter(
-        user__pk=user.pk,
-        queue__isnull=False
-    ).select_related('queue').distinct()
+    all_user_groups = list(
+        competition.participant_groups
+        .filter(user__pk=user.pk)
+        .select_related('queue')
+        .distinct()
+    )
+
+    if not all_user_groups:
+        return []
+
+    groups_with_queue = [g for g in all_user_groups if g.queue_id is not None]
+    has_groups_without_queue = any(g.queue_id is None for g in all_user_groups)
+
+    if not groups_with_queue:
+        return []
 
     seen_ids = set()
     queues = []
-    for group in groups:
+    for group in groups_with_queue:
         if group.queue_id not in seen_ids:
             seen_ids.add(group.queue_id)
             queues.append(group.queue)
+
+    if has_groups_without_queue:
+        competition_queue = competition.queue
+        if competition_queue is None:
+            queues.append(None)
+        elif competition_queue.id not in seen_ids:
+            queues.append(competition_queue)
+
     return queues
 
 
