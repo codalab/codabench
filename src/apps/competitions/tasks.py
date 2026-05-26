@@ -816,6 +816,7 @@ def _broadcast_worker_state(payload):
         },
     )
 
+
 @app.task(queue="site-worker", soft_time_limit=30, time_limit=40)
 def refresh_compute_worker_health():
     celery_app = app
