@@ -49,12 +49,13 @@ class CompetitionUpdateForm(LoginRequiredMixin, DetailView):
         )
 
         participant_user_ids_set = set(participant_user_ids)
-        
+
         ctx['available_groups_json'] = json.dumps([
             {
                 'id': g.id,
-                'name': g.name,
+                'name': _group_display_name(g.name, comp.pk),
                 'queue': g.queue.name if g.queue else None,
+                'queue_id': g.queue.pk if g.queue else None,
                 'members': [u.username for u in g.user_set.all() if u.pk in participant_user_ids_set],
             }
             for g in groups_qs
@@ -192,6 +193,8 @@ def competition_create_group(request, pk):
 
     if not name:
         return HttpResponseBadRequest("Missing name")
+    
+    stored_name = _group_stored_name(competition.pk, name)
 
     allowed_user_ids = set(
         CompetitionParticipant.objects.filter(competition=competition)
@@ -200,7 +203,7 @@ def competition_create_group(request, pk):
 
     try:
         with transaction.atomic():
-            group = CustomGroup(name=name)
+            group = CustomGroup(name=stored_name)
             if queue_id:
                 try:
                     queue = Queue.objects.get(pk=queue_id)
@@ -229,7 +232,7 @@ def competition_create_group(request, pk):
 
             group_data = {
                 'id': group.id,
-                'name': group.name,
+                'name': name,
                 'queue': group.queue.name if group.queue else None,
                 'queue_id': group.queue.pk if group.queue else None,
                 'members': members,
@@ -279,6 +282,8 @@ def competition_update_group(request, pk, group_id):
 
     if not name:
         return HttpResponseBadRequest("Missing name")
+    
+    stored_name = _group_stored_name(competition.pk, name)
 
     allowed_user_ids = set(
         CompetitionParticipant.objects.filter(competition=competition)
@@ -287,7 +292,7 @@ def competition_update_group(request, pk, group_id):
 
     try:
         with transaction.atomic():
-            group.name = name
+            group.name = stored_name
             if queue_id:
                 group.queue = Queue.objects.filter(pk=queue_id).first()
             else:
@@ -314,7 +319,7 @@ def competition_update_group(request, pk, group_id):
         'status': 'ok',
         'group': {
             'id': group.id,
-            'name': group.name,
+            'name': name,
             'queue': group.queue.name if group.queue else None,
             'queue_id': group.queue.pk if group.queue else None,  # manquant
             'members': list(group.user_set.values_list('username', flat=True)),
@@ -370,3 +375,12 @@ def competition_delete_group(request, pk, group_id):
     return HttpResponseRedirect(
         reverse("competitions:edit", kwargs={"pk": competition.pk})
     )
+
+def _group_stored_name(competition_pk, user_name):
+    return f"comp{competition_pk}__{user_name}"
+
+def _group_display_name(stored_name, competition_pk):
+    prefix = f"comp{competition_pk}__"
+    if stored_name.startswith(prefix):
+        return stored_name[len(prefix):]
+    return stored_name

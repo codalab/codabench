@@ -153,6 +153,15 @@
     const initUI = () => {
       try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
       try { $('.ui.dropdown', self.root).dropdown() } catch(e) {}
+      try {
+        if (self.refs && self.refs.group_queue) {
+            $(self.refs.group_queue).dropdown('destroy')
+            $(self.refs.group_queue).dropdown({
+                clearable: true,
+                placeholder: 'None'
+            })
+        }
+      } catch(e) {}
 
       try {
         if (self.refs && self.refs.group_user_select) {
