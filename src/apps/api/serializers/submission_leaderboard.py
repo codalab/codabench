@@ -26,7 +26,6 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
     slug_url = serializers.CharField(source='owner.slug_url')
     organization = SimpleOrganizationSerializer(allow_null=True)
     created_when = serializers.DateTimeField()
-    queue_name = serializers.SerializerMethodField()
     queue_id = serializers.SerializerMethodField()
     queue_name = serializers.SerializerMethodField()
 
@@ -37,18 +36,24 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
         if obj.parent and obj.parent.queue:
             return obj.parent.queue
 
-        if (
-            obj.phase
-            and obj.phase.competition
-            and obj.phase.competition.queue
-        ):
+        if obj.phase and obj.phase.competition and obj.phase.competition.queue:
             return obj.phase.competition.queue
 
         return None
 
-    def get_queue_name(self, obj):
+    def _get_display_queue_name(self, obj):
         queue = self._get_effective_queue(obj)
-        return queue.name if queue else None
+        if not queue:
+            return None
+
+        raw_name = queue.name or ""
+        group_name = raw_name.rsplit("__", 1)[-1]  # comp10__CLB -> CLB, APHP -> APHP
+        submission_parent_id = obj.parent_id or obj.id
+
+        return f"{submission_parent_id}_{group_name}"
+
+    def get_queue_name(self, obj):
+        return self._get_display_queue_name(obj)
 
     def get_queue_id(self, obj):
         queue = self._get_effective_queue(obj)
@@ -59,5 +64,5 @@ class SubmissionLeaderBoardSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'parent', 'owner', 'leaderboard_id', 'fact_sheet_answers',
             'task', 'scores', 'display_name', 'slug_url', 'organization',
-            'detailed_result', 'created_when', 'queue_name', 'queue_id', 'queue_name',
+            'detailed_result', 'created_when', 'queue_name', 'queue_id',
         )

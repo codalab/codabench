@@ -152,6 +152,16 @@
       } catch(e) {}
 
       try {
+          if (self.refs && self.refs.group_queue) {
+              $(self.refs.group_queue).dropdown('destroy')
+              $(self.refs.group_queue).dropdown({
+                  clearable: true,
+                  placeholder: 'None'
+              })
+          }
+      } catch(e) {}
+
+      try {
         if (self.refs && self.refs.group_user_select) {
           const $us = $(self.refs.group_user_select)
           if (!$us.data('dd-init')) {
