@@ -187,6 +187,10 @@ def _send_to_compute_worker(submission, is_scoring):
     if is_scoring:
         run_args['scoring_program_data'] = make_url_sassy(path=task.scoring_program.data_file.name)
 
+    if not submission.data:
+        logger.error("Submission %s has no data file; marking as failed.", submission.pk)
+        submission.cancel(status=Submission.FAILED)
+        return
     run_args['submission_data'] = make_url_sassy(path=submission.data.data_file.name)
 
     if not is_scoring:
