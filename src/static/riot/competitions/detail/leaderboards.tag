@@ -63,7 +63,9 @@
                     { pretty_date(submission.created_when) }
                 </td>
                 <td>{submission.id}</td>
-                <td each="{ column in filtered_columns }">
+                <td each="{ column in filtered_columns }"
+                    data-sort="{ get_score_sort_value(column, submission) }"
+                    data-sort-value="{ get_score_sort_value(column, submission) }">
                     <a if="{column.title == 'Detailed Results'}" href="detailed_results/{get_detailed_result_submisison_id(column, submission)}" target="_blank" class="eye-icon-link">
                         <i class="icon grey eye eye-icon"></i>
                     </a>
@@ -227,6 +229,18 @@
             return dt.isValid ? dt.toMillis() : 0
         }
 
+        self.get_score_sort_value = function(column, submission) {
+            if (column.task_id === -1) {
+                let value = _.get(submission, 'fact_sheet_answers[' + column.key + ']')
+                return (value !== null && typeof value !== 'undefined' && value !== '') ? value : ''
+            }
+            let score = _.get(_.find(submission.scores, {
+                task_id: column.task_id,
+                column_key: column.key
+            }), 'score')
+            return (score !== null && typeof score !== 'undefined' && score !== '') ? score : ''
+        }
+
         self.bold_class = function(column, submission){
             return_class = ''
             if(column.task_id != -1){
@@ -245,7 +259,7 @@
                 return _.get(submission, 'fact_sheet_answers[' + column.key + ']', 'n/a')
             } else {
                 let score = _.get(_.find(submission.scores, {'task_id': column.task_id, 'column_key': column.key}), 'score')
-                if (score) {
+                if (score !== null && typeof score !== 'undefined' && score !== '') {
                     return score
                 }
             }

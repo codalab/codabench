@@ -1,4 +1,4 @@
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
@@ -102,7 +102,11 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         # asc == colname
         primary_col = instance.columns.get(index=instance.primary_index)
         # Order first by primary column. Then order by other columns after for tie breakers.
-        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        ordering = [
+            F('primary_col').desc(nulls_last=True)
+            if primary_col.sorting == 'desc'
+            else F('primary_col').asc(nulls_last=True)
+        ]
         submissions = (
             Submission.objects.filter(
                 leaderboard=instance,
@@ -114,7 +118,11 @@ class LeaderboardEntriesSerializer(serializers.ModelSerializer):
         )
         for column in instance.columns.exclude(id=primary_col.id).order_by('index'):
             col_name = f'col{column.index}'
-            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+            ordering.append(
+                F(col_name).desc(nulls_last=True)
+                if column.sorting == 'desc'
+                else F(col_name).asc(nulls_last=True)
+            )
             kwargs = {
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
             }
@@ -157,7 +165,11 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
         # desc == -colname
         # asc == colname
         primary_col = instance.leaderboard.columns.get(index=instance.leaderboard.primary_index)
-        ordering = [f'{"-" if primary_col.sorting == "desc" else ""}primary_col']
+        ordering = [
+            F('primary_col').desc(nulls_last=True)
+            if primary_col.sorting == 'desc'
+            else F('primary_col').asc(nulls_last=True)
+        ]
         submissions = (
             Submission.objects.filter(
                 phase=instance,
@@ -177,7 +189,11 @@ class LeaderboardPhaseSerializer(serializers.ModelSerializer):
             .order_by('index')
         ):
             col_name = f'col{column.index}'
-            ordering.append(f'{"-" if column.sorting == "desc" else ""}{col_name}')
+            ordering.append(
+                F(col_name).desc(nulls_last=True)
+                if column.sorting == 'desc'
+                else F(col_name).asc(nulls_last=True)
+            )
             kwargs = {
                 col_name: Sum('scores__score', filter=Q(scores__column__index=column.index))
             }
