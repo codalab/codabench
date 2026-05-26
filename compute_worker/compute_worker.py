@@ -317,7 +317,7 @@ def check_docker_image_update():
         tag=Settings.DOCKER_IMAGE_TAG,
         docker_base_url=Settings.CONTAINER_SOCKET
     )
-    result = checker.compare_local_vs_remote_images()
+    result = checker.compare_local_vs_remote_images(container_id=socket.gethostname())
     status = result["status"]
 
     log_level = logging.INFO
@@ -325,7 +325,7 @@ def check_docker_image_update():
     log_lines = [
         "",
         "=" * 60,
-        "DOCKER IMAGE UPDATE CHECK",
+        "COMPUTE WORKER DOCKER IMAGE UPDATE CHECK",
         "=" * 60,
         f"Image: {result.get('image_name')}",
     ]
@@ -350,7 +350,7 @@ def check_docker_image_update():
         log_level = logging.ERROR
 
     elif status == DockerImageStatus.LOCAL_MISSING:
-        log_lines.append("Status: Local image is not present. Pull required")
+        log_lines.append("Status: Local image not found. Pull required")
         log_level = logging.ERROR
 
     elif status == DockerImageStatus.REMOTE_UNAVAILABLE:
@@ -368,6 +368,10 @@ def check_docker_image_update():
 
     logger.log(log_level, "\n".join(log_lines))
 
+    if status != DockerImageStatus.UP_TO_DATE:
+        return "\n".join(log_lines) + "\n"
+    return None
+
 
 # -----------------------------------------------------------------------------
 # The main compute worker entrypoint, this is how a job is ran at the highest
@@ -376,12 +380,14 @@ def check_docker_image_update():
 @shared_task(name="compute_worker_run")
 def run_wrapper(run_args):
     # Check for docker image update
-    check_docker_image_update()
+    docker_image_warning = check_docker_image_update()
 
     # We need to convert the UUID given by celery into a byte like object otherwise things will break
     run_args.update(secret=str(run_args["secret"]))
     logger.info(f"Received run arguments: \n {colorize_run_args(json.dumps(run_args))}")
     run = Run(run_args)
+    if docker_image_warning:
+        run.docker_image_warning = docker_image_warning.encode()
     try:
         run.prepare()
         run.start()
@@ -531,6 +537,7 @@ class Run:
         self.output_dir = os.path.join(self.root_dir, "output")
         self.data_dir = os.path.join(Settings.HOST_DIRECTORY, "data")  # absolute path to data in the host
         self.logs = {}
+        self.docker_image_warning = None
 
         # Details for submission
         self.is_scoring = run_args["is_scoring"]
@@ -626,6 +633,8 @@ class Run:
                         continue
                     location = entry.get("location")
                     data = entry.get("data") or b""
+                    if self.docker_image_warning and stream_key == "stderr":
+                        data = self.docker_image_warning + data
                     if location:
                         self._put_file(location, raw_data=data)
         except Exception as e:
