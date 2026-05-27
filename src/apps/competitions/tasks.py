@@ -40,6 +40,7 @@ from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 r = get_redis_connection("default")
