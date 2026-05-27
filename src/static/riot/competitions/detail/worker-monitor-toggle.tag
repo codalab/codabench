@@ -46,12 +46,18 @@
             </div>
 
             <div class="workers-section">
+<<<<<<< HEAD
                 <div class="workers-section-title workers-section-header" onclick="{ toggleDefaultWorkers }">
                     <span>Default compute workers</span>
 
                     <i class="dropdown icon workers-collapse-icon { showDefaultWorkers ? 'open' : '' }"></i>
                 </div>
                 <div class="workers-table-wrap" if="{ showDefaultWorkers }">
+=======
+                <div class="workers-section-title">Default compute workers</div>
+
+                <div class="workers-table-wrap">
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
@@ -95,7 +101,12 @@
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
+<<<<<<< HEAD
                                 <th>Worker</th>
+=======
+                                <th>Competition</th>
+                                <th>Queue</th>
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
                                 <th>Status</th>
                                 <th>Jobs</th>
                                 <th>Last seen</th>
@@ -136,13 +147,19 @@
         self.wsReconnectTimer = null
         self.wsState = 'disconnected'
         self.lastSyncAt = null
+<<<<<<< HEAD
         self.showDefaultWorkers = true
+=======
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
 
         self.canViewWorkersPanel =
             String(self.opts.can_view_workers_panel || 'false') === 'true'
 
+<<<<<<< HEAD
         self.competitionId = parseInt(self.opts.competition_id) || null
 
+=======
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
         self.showWorkersPanel = false
         self.panelLeft = 24
         self.panelTop = 24
@@ -154,7 +171,6 @@
 
         self.toggleWorkersPanel = function () {
             self.showWorkersPanel = !self.showWorkersPanel
-            //   here, we make sure the network is not used when the pannel is closed
             if (self.showWorkersPanel) {
                 self.loadPanelPosition()
                 self.connect_workers_socket()
@@ -188,7 +204,11 @@
                 } catch (e) {}
                 self.ws = null
             }
+<<<<<<< HEAD
             var competitionId = parseInt(self.opts.competition_id) || null
+=======
+
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
             var scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
             var url = scheme + '://' + window.location.host + '/ws/workers/'
 
@@ -199,12 +219,18 @@
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
+<<<<<<< HEAD
                 if (self.competitionId) {
                     var msg = JSON.stringify({ type: 'subscribe', competition_id: self.competitionId })
                     self.ws.send(msg)
                 }
                 self.update()
             }
+=======
+                self.update()
+            }
+
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
             self.ws.onmessage = function (event) {
                 var message = null
 
@@ -375,11 +401,14 @@
             return 'red'
         }
 
+<<<<<<< HEAD
         self.toggleDefaultWorkers = function () {
             self.showDefaultWorkers = !self.showDefaultWorkers
             self.update()
         }
 
+=======
+>>>>>>> a2f07695 (new file for monitoring implentation imported into frontend)
         self.getStatusIcon = function (worker) {
             if (self.displayStatus(worker) === 'available') return 'check circle'
             if (self.displayStatus(worker) === 'busy') return 'clock'

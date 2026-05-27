@@ -71,7 +71,7 @@
                                     <span class="ui tiny label worker-status { getStatusClass(worker) }">
                                         <i class="{ getStatusIcon(worker) } icon"></i>
                                         { getStatusText(worker) }
-                            return        </span>
+                                    </span>
                                 </td>
                                 <td><span class="ui circular label">{ worker.running_jobs || 0 }</span></td>
                                 <td>{ formatLastSeen(worker.timestamp) }</td>
@@ -479,8 +479,8 @@
         .workers-toggle-btn
             z-index 10
             position relative
-            top 150%
-            right 1%
+            top 10%
+            right 100vh
             background #576671 !important
             color white !important
             
