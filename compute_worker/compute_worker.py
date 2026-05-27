@@ -1030,6 +1030,194 @@ class Run:
         # Communicate that the program is closing
         self.completed_program_counter += 1
 
+    async def _run_pod(self, kind, command, volumes_config):
+        """Kubernetes equivalent of _run_container_engine_cmd.
+
+        Creates a Pod, streams its logs via websocket, waits for completion,
+        and populates self.logs[kind] in the same format as _run_container_engine_cmd.
+        K8s merges stdout/stderr, so stderr will be empty bytes.
+        """
+        import kubernetes
+
+        core_v1 = kubernetes.client.CoreV1Api()
+        start = time.time()
+
+        websocket = None
+        websocket_url = f"{self.websocket_url}?kind={kind}"
+        try:
+            logger.debug(f"Connecting to {websocket_url}")
+            websocket = await asyncio.wait_for(
+                websockets.connect(websocket_url), timeout=10.0
+            )
+        except Exception as e:
+            logger.error(f"Failed to connect to websocket: {e}")
+
+        # Build VolumeMount list from Docker-style volumes_config
+        # {host_path: {"bind": "/app/...", "mode": "z"/"ro"}}
+        # subPath is the path within the PVC (relative to HOST_DIRECTORY = PVC root)
+        volume_mounts = []
+        for host_path, vol_config in volumes_config.items():
+            volume_mounts.append(
+                kubernetes.client.V1VolumeMount(
+                    name="shared-storage",
+                    mount_path=vol_config["bind"],
+                    sub_path=os.path.relpath(host_path, Settings.HOST_DIRECTORY),
+                    read_only=(vol_config.get("mode") == "ro"),
+                )
+            )
+
+        resources = node_selector = None
+        if Settings.USE_GPU:
+            try:
+                resources = kubernetes.client.V1ResourceRequirements(
+                    limits=json.loads(os.getenv("RESOURCE_LIMITS", "{}"))
+                )
+                node_selector = json.loads(os.getenv("NODE_SELECTOR", "{}")) or None
+            except json.JSONDecodeError:
+                logger.warning("Failed to parse RESOURCE_LIMITS or NODE_SELECTOR, ignoring GPU config")
+
+        try:
+            labels = json.loads(os.getenv("COMPUTE_WORKER_LABELS", "{}"))
+        except json.JSONDecodeError:
+            labels = {}
+        labels["submission_id"] = str(self.submission_id)
+
+        pod_spec = kubernetes.client.V1Pod(
+            metadata=kubernetes.client.V1ObjectMeta(
+                generate_name=f"codabench-{kind.replace('_', '-')}-",
+                namespace=Settings.CURRENT_NAMESPACE,
+                labels=labels,
+            ),
+            spec=kubernetes.client.V1PodSpec(
+                restart_policy="Never",
+                node_selector=node_selector,
+                security_context=kubernetes.client.V1PodSecurityContext(
+                    fs_group=Settings.SUBMISSION_POD_FS_GROUP,
+                ),
+                containers=[
+                    kubernetes.client.V1Container(
+                        name="runner",
+                        image=self.container_image,
+                        command=["sh", "-c", command],
+                        working_dir="/app/program",
+                        env=[kubernetes.client.V1EnvVar(name="PYTHONUNBUFFERED", value="1")],
+                        volume_mounts=volume_mounts,
+                        resources=resources,
+                        security_context=kubernetes.client.V1SecurityContext(
+                            allow_privilege_escalation=False,
+                            run_as_non_root=True,
+                            run_as_user=Settings.SUBMISSION_POD_USER_ID,
+                            run_as_group=Settings.SUBMISSION_POD_GROUP_ID,
+                            capabilities=kubernetes.client.V1Capabilities(drop=["ALL"]),
+                        ),
+                    )
+                ],
+                volumes=[
+                    kubernetes.client.V1Volume(
+                        name="shared-storage",
+                        persistent_volume_claim=kubernetes.client.V1PersistentVolumeClaimVolumeSource(
+                            claim_name=Settings.SHARED_JOB_PVC,
+                        ),
+                    )
+                ],
+            ),
+        )
+
+        pod = core_v1.create_namespaced_pod(namespace=Settings.CURRENT_NAMESPACE, body=pod_spec)
+        pod_name = pod.metadata.name
+        logger.info(f"Created pod {pod_name} for {kind}")
+
+        # Wait for pod to leave Pending state
+        elapsed = 0.0
+        while elapsed < Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            try:
+                pod = core_v1.read_namespaced_pod(pod_name, Settings.CURRENT_NAMESPACE)
+                if pod.status.phase in ("Running", "Succeeded", "Failed"):
+                    logger.info(f"Pod {pod_name} is {pod.status.phase}")
+                    break
+                if pod.status.container_statuses:
+                    waiting = pod.status.container_statuses[0].state.waiting
+                    if waiting and waiting.reason in ("ImagePullBackOff", "ErrImagePull"):
+                        raise DockerImagePullException(f"Image pull failed: {waiting.message}")
+            except DockerImagePullException:
+                raise
+            except Exception as e:
+                logger.error(f"Error checking pod status: {e}")
+            await asyncio.sleep(Settings.SLEEP_TIME_BETWEEN_RETRIES)
+            elapsed += Settings.SLEEP_TIME_BETWEEN_RETRIES
+
+        if elapsed >= Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            raise SubmissionException(
+                f"Pod {pod_name} did not start within {Settings.TOTAL_TIME_TO_WAIT_FOR_POD}s"
+            )
+
+        # Stream logs (K8s merges stdout/stderr; all output goes to stdout)
+        stdout = b""
+        try:
+            log_stream = core_v1.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=Settings.CURRENT_NAMESPACE,
+                follow=True,
+                _preload_content=False,
+            )
+            for line in log_stream:
+                stdout += line
+                decoded = line.decode(errors="ignore")
+                logger.info(decoded.rstrip())
+                if websocket:
+                    try:
+                        await websocket.send(json.dumps({"kind": kind, "message": decoded}))
+                    except Exception as e:
+                        logger.error(f"Error sending log to websocket: {e}")
+        except Exception as e:
+            logger.error(f"Error streaming pod logs: {e}")
+            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                logger.exception(e)
+
+        # Get final exit code
+        return_code = 1
+        elapsed = 0.0
+        while elapsed < Settings.TOTAL_TIME_TO_WAIT_FOR_POD:
+            try:
+                pod = core_v1.read_namespaced_pod(pod_name, Settings.CURRENT_NAMESPACE)
+                if pod.status.container_statuses:
+                    terminated = pod.status.container_statuses[0].state.terminated
+                    if terminated:
+                        return_code = terminated.exit_code
+                        break
+            except Exception as e:
+                logger.error(f"Error getting pod exit code: {e}")
+            await asyncio.sleep(Settings.SLEEP_TIME_BETWEEN_RETRIES)
+            elapsed += Settings.SLEEP_TIME_BETWEEN_RETRIES
+
+        logger.info(f"Pod {pod_name} exited with code {return_code}")
+
+        if websocket:
+            try:
+                await websocket.close()
+            except Exception:
+                pass
+
+        self.logs[kind] = {
+            "returncode": return_code,
+            "start": start,
+            "end": time.time(),
+            "stdout": {
+                "data": stdout,
+                "stream": stdout,
+                "continue": True,
+                "location": self.stdout if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stdout,
+            },
+            "stderr": {
+                # K8s does not separate stderr; empty bytes keeps push_logs happy
+                "data": b"",
+                "stream": b"",
+                "continue": True,
+                "location": self.stderr if kind == ProgramKind.SCORING_PROGRAM else self.ingestion_stderr,
+            },
+        }
+        self.completed_program_counter += 1
+
     def _get_host_path(self, *paths):
         """Turns an absolute path inside our container, into what the path
         would be on the host machine. We also ensure that the directory exists,
