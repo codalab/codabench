@@ -1494,7 +1494,9 @@ class Run:
 
         # Before the run starts we want to download images, they may take a while to download
         # and to do this during the run would subtract from the participants time.
-        self._get_container_image(self.container_image)
+        # Kubernetes pulls the image automatically when the pod starts.
+        if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+            self._get_container_image(self.container_image)
         self._update_status(SubmissionStatus.RUNNING)
 
     def start(self):
