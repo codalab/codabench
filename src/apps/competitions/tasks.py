@@ -37,19 +37,12 @@ from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
 from celery_config import app
-from utils.consumers import _extract_queue_names, _is_compute_worker, _known_compute_queue_names
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
 import logging
 
-<<<<<<< HEAD
 logger = logging.getLogger(__name__)
-=======
-r = get_redis_connection("default")
-WORKERS_REGISTRY_KEY = "workers:registry"
-WORKER_HEARTBEAT_TTL = 35
->>>>>>> b7de9241 (compute worker monitoring on private queues (amazing stuff))
 
 COMPETITION_FIELDS = [
     "title",
