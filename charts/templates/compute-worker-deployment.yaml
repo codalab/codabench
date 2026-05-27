@@ -55,6 +55,8 @@ spec:
                   fieldPath: metadata.namespace
             - name: SHARED_JOB_PVC
               value: '{{ $.Values.sharedJob.pvcName }}'
+            - name: KUBERNETES_VERIFY_SSL
+              value: '{{ $.Values.compute_worker.kubernetesVerifySsl }}'
             - name: BROKER_URL
               value: "{{ if .url }}{{ .url }}{{ else }}pyamqp://{{ $.Values.env.RABBITMQ_DEFAULT_USER }}:{{ $.Values.env.RABBITMQ_DEFAULT_PASS }}@{{ $.Values.env.RABBITMQ_HOST }}:{{ $.Values.env.RABBITMQ_PORT }}//{{ end }}"
             - name: CODALAB_IGNORE_CLEANUP_STEP

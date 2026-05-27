@@ -122,6 +122,8 @@ class Settings:
     SUBMISSION_POD_USER_ID = int(get("USERID", 1000))
     SUBMISSION_POD_GROUP_ID = int(get("GROUPID", 1000))
     SUBMISSION_POD_FS_GROUP = int(get("FSGROUP", 1000))
+    # Set to false for clusters whose CA cert is missing the Authority Key Identifier extension
+    KUBERNETES_VERIFY_SSL = to_bool(get("KUBERNETES_VERIFY_SSL", "true"))
 
 
 # -----------------------------------------------
@@ -189,6 +191,12 @@ else:
     except kubernetes.config.ConfigException:
         kubernetes.config.load_kube_config()
         logger.info("Kubernetes kubeconfig loaded")
+    if not Settings.KUBERNETES_VERIFY_SSL:
+        # https://github.com/kubernetes-client/python/issues/2329
+        _k8s_conf = kubernetes.client.Configuration.get_default_copy()
+        _k8s_conf.verify_ssl = False
+        kubernetes.client.Configuration.set_default(_k8s_conf)
+        logger.warning("Kubernetes SSL verification disabled (KUBERNETES_VERIFY_SSL=false)")
 
 
 # -----------------------------------------------

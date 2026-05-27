@@ -39,6 +39,7 @@ compute_worker:
     tag: <compute-worker-image-tag>
     pullPolicy: Always
   container_engine_executable: "kubernetes"
+  kubernetesVerifySsl: "false"
   podCreationRetries:
     totalTimeToWaitForPod: 300
     sleepTimeBetweenRetries: 0.5
