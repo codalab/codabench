@@ -1555,22 +1555,24 @@ class Run:
                 "is_scoring": self.is_scoring,
             }
 
-            # Cleanup containers
-            containers_to_kill = [
-                self.ingestion_program_container_name, 
-                self.scoring_program_container_name
-            ]
-            logger.debug("Trying to kill and remove container " + str(containers_to_kill))
-
-            for container in containers_to_kill:
-                try:
-                    client.remove_container(str(container), v=True, force=True)
-                except docker.errors.APIError as e:
-                    logger.error(e)
-                except Exception as e:
-                    logger.error(f"There was a problem killing {containers_to_kill}: {e}")
-                    if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                        logger.exception(e)
+            # Cleanup containers / pods
+            if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+                self._delete_submission_pods()
+            else:
+                containers_to_kill = [
+                    self.ingestion_program_container_name,
+                    self.scoring_program_container_name
+                ]
+                logger.debug("Trying to kill and remove container " + str(containers_to_kill))
+                for container in containers_to_kill:
+                    try:
+                        client.remove_container(str(container), force=True)
+                    except docker.errors.APIError as e:
+                        logger.error(e)
+                    except Exception as e:
+                        logger.error(f"There was a problem killing {containers_to_kill}: {e}")
+                        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                            logger.exception(e)
 
             # Send data to be written to ingestion/scoring std_err
             self._update_submission(execution_time_limit_exceeded_data)
@@ -1609,21 +1611,22 @@ class Run:
                 )
                 if return_code is None:
                     logger.warning("No return code from Process. Killing it")
-                    if kind == ProgramKind.INGESTION_PROGRAM:
-                        containers_to_kill = self.ingestion_program_container_name
-                    else:
-                        containers_to_kill = self.scoring_program_container_name
-                    try:
-                        client.kill(containers_to_kill)
-                        client.remove_container(containers_to_kill, v=True, force=True)
-                    except docker.errors.APIError as e:
-                        logger.error(e)
-                    except Exception as e:
-                        logger.error(
-                            f"There was a problem killing {containers_to_kill}: {e}"
-                        )
-                        if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
-                            logger.exception(e)
+                    if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+                        if kind == ProgramKind.INGESTION_PROGRAM:
+                            containers_to_kill = self.ingestion_program_container_name
+                        else:
+                            containers_to_kill = self.scoring_program_container_name
+                        try:
+                            client.kill(containers_to_kill)
+                            client.remove_container(containers_to_kill, force=True)
+                        except docker.errors.APIError as e:
+                            logger.error(e)
+                        except Exception as e:
+                            logger.error(
+                                f"There was a problem killing {containers_to_kill}: {e}"
+                            )
+                            if Settings.LOG_LEVEL == Settings.LOG_LEVEL_DEBUG:
+                                logger.exception(e)
                 if kind == ProgramKind.SCORING_PROGRAM:
                     self.scoring_program_exit_code = return_code
                     self.scoring_program_elapsed_time = elapsed_time
@@ -1640,6 +1643,9 @@ class Run:
 
                 # set logs of this kind to None, since we handled them already
                 logger.info("Program finished")
+
+            if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+                self._delete_submission_pods()
         signal.alarm(0)
 
         if self.is_scoring:
