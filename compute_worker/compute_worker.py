@@ -1326,7 +1326,14 @@ class Run:
             ingestion_only_during_scoring=self.ingestion_only_during_scoring,
         )
 
-        # Create container
+        if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
+            try:
+                return await self._run_pod(kind=kind, command=command, volumes_config=volumes_config)
+            except Exception as e:
+                logger.exception("Pod execution failed")
+                raise SubmissionException(str(e))
+
+        # Create container (Docker/Podman path)
         container_name = self.ingestion_program_container_name if kind == ProgramKind.INGESTION_PROGRAM else self.scoring_program_container_name
         container = self._create_container(
             container_name=container_name,
