@@ -36,13 +36,10 @@
                             Migrate
                         </button>
 
-                        <!--
                         <worker-monitor-toggle
                             if="{competition.admin}"
-                            can_view_workers_panel="true"
-                            competition_id="{ competition.id }">
+                            can_view_workers_panel="true">
                         </worker-monitor-toggle>
-                        -->
 
                     </div>
                     <div class="row">
