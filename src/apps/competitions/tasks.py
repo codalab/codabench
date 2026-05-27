@@ -36,6 +36,7 @@ from rest_framework.exceptions import ValidationError
 from tasks.models import Task
 
 from celery_config import app
+from utils.consumers import _extract_queue_names, _is_compute_worker, _known_compute_queue_names
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
 
