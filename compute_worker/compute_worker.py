@@ -1738,3 +1738,16 @@ class Run:
 
         logger.info(f"Destroying submission temp dir: {self.root_dir}")
         shutil.rmtree(self.root_dir)
+
+    def _delete_submission_pods(self):
+        import kubernetes
+        try:
+            core_v1 = kubernetes.client.CoreV1Api()
+            core_v1.delete_collection_namespaced_pod(
+                namespace=Settings.CURRENT_NAMESPACE,
+                label_selector=f"submission_id={self.submission_id}",
+                body=kubernetes.client.V1DeleteOptions(propagation_policy="Foreground"),
+            )
+            logger.info(f"Cleaned up Kubernetes pods for submission {self.submission_id}")
+        except Exception as e:
+            logger.warning(f"Could not clean up K8s pods for submission {self.submission_id}: {e}")
