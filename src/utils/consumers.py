@@ -3,6 +3,7 @@ import logging
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from queues.models import Queue
 
 from utils.worker_utils import fetch_compute_workers
 
