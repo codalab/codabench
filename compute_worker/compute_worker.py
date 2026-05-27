@@ -87,6 +87,7 @@ class Settings:
     # Constants
     DOCKER = "docker"
     PODMAN = "podman"
+    KUBERNETES = "kubernetes"
     LOG_LEVEL_DEBUG = "debug"
 
     # Defaults
@@ -112,6 +113,15 @@ class Settings:
     CODALAB_IGNORE_CLEANUP_STEP = to_bool(get("CODALAB_IGNORE_CLEANUP_STEP"))
 
     WORKER_BUNDLE_URL_REWRITE = get("WORKER_BUNDLE_URL_REWRITE", "").strip()
+
+    # Kubernetes settings (only used when CONTAINER_ENGINE_EXECUTABLE=kubernetes)
+    SHARED_JOB_PVC = get("SHARED_JOB_PVC", "shared-job-pvc")
+    CURRENT_NAMESPACE = get("CURRENT_NAMESPACE", "default")
+    TOTAL_TIME_TO_WAIT_FOR_POD = float(get("TOTAL_TIME_TO_WAIT_FOR_POD", 300))
+    SLEEP_TIME_BETWEEN_RETRIES = float(get("SLEEP_TIME_BETWEEN_RETRIES", 0.5))
+    SUBMISSION_POD_USER_ID = int(get("USERID", 1000))
+    SUBMISSION_POD_GROUP_ID = int(get("GROUPID", 1000))
+    SUBMISSION_POD_FS_GROUP = int(get("FSGROUP", 1000))
 
 
 # -----------------------------------------------
