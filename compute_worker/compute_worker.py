@@ -1329,6 +1329,8 @@ class Run:
         if Settings.CONTAINER_ENGINE_EXECUTABLE == Settings.KUBERNETES:
             try:
                 return await self._run_pod(kind=kind, command=command, volumes_config=volumes_config)
+            except DockerImagePullException:
+                raise
             except Exception as e:
                 logger.exception("Pod execution failed")
                 raise SubmissionException(str(e))
