@@ -1,10 +1,12 @@
 import asyncio
 import logging
 
+import urllib
+
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from kombu import Connection
 from queues.models import Queue
+from celery_config import app as celery_app, app_for_vhost
 
 from utils.worker_utils import fetch_compute_workers
 
