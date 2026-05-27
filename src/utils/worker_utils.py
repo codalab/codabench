@@ -1,70 +1,45 @@
-from queues.models import Queue
+# utils/worker_utils.py
 
 import logging
 import time
+
 import requests
 from django.conf import settings
-
-from queues.models import Queue as QueueModel
+from queues.models import Queue
 
 logger = logging.getLogger(__name__)
 
 PIDBOX_SUFFIX = ".celery.pidbox"
-WORKERS_REGISTRY_KEY = "workers:registry"
-WORKER_HEARTBEAT_TTL = 180
 
 
-def extract_queue_names(active_queues):
-    names = set()
-    for q in active_queues or []:
-        if isinstance(q, dict) and q.get("name"):
-            names.add(q["name"])
-    return names
+def _rabbitmq_auth():
+    return (settings.RABBITMQ_DEFAULT_USER, settings.RABBITMQ_DEFAULT_PASS)
 
 
-def known_compute_queue_names():
-    return set(
-        Queue.objects.exclude(name__isnull=True)
-        .exclude(name="")
-        .values_list("name", flat=True)
-    )
-
-
-def is_compute_worker(worker_name, queue_names, known_queue_names):
-    return (
-        bool(queue_names & known_queue_names)
-        or "compute-worker" in queue_names
-        or worker_name.startswith("compute-worker")
-    )
-
-def _get_rabbitmq_auth():
-    return (
-        settings.RABBITMQ_DEFAULT_USER,
-        settings.RABBITMQ_DEFAULT_PASS,
-    )
-
-
-def _get_rabbitmq_base_url():
-    return (
-        f"http://{settings.RABBITMQ_HOST}"
-        f":{settings.RABBITMQ_MANAGEMENT_PORT}/api"
-    )
+def _rabbitmq_base_url():
+    return f"http://{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/api"
 
 
 def _build_vhost_to_source_map():
+    """{ vhost_string: queue_source_name }. Default vhost '/' → 'default'."""
     mapping = {"/": "default"}
-    for q in QueueModel.objects.exclude(vhost__isnull=True).values("vhost", "name"):
+    for q in Queue.objects.exclude(vhost__isnull=True).values("vhost", "name"):
         mapping[str(q["vhost"])] = q["name"]
     return mapping
 
+
 def _fetch_all_queues():
     resp = requests.get(
-        f"{_get_rabbitmq_base_url()}/queues",
-        auth=_get_rabbitmq_auth(),
+        f"{_rabbitmq_base_url()}/queues",
+        auth=_rabbitmq_auth(),
         timeout=5,
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def is_compute_worker(worker_name):
+    return worker_name.startswith("compute-worker")
 
 
 def fetch_compute_workers():
@@ -74,8 +49,13 @@ def fetch_compute_workers():
         logger.exception("Failed to fetch queues from RabbitMQ Management API")
         return [], []
 
-    vhost_to_source = _build_vhost_to_source_map()
+    try:
+        vhost_to_source = _build_vhost_to_source_map()
+    except Exception:
+        logger.exception("Failed to build vhost→source map")
+        return [], []
 
+    # Grouper par vhost
     by_vhost: dict[str, list] = {}
     for q in all_queues:
         by_vhost.setdefault(q["vhost"], []).append(q)
@@ -93,29 +73,24 @@ def fetch_compute_workers():
         messages_unacked = cw_queue.get("messages_unacknowledged", 0) if cw_queue else 0
         cw_consumers = cw_queue.get("consumers", 0) if cw_queue else 0
 
-        pidbox_queues = [
-            q for q in queues
-            if q["name"].endswith(PIDBOX_SUFFIX)
-            and q["name"].startswith("compute-worker@")
-        ]
+        # Pidbox queues 1 worker / queue
+        for pidbox_q in queues:
+            name = pidbox_q["name"]
+            if not (name.endswith(PIDBOX_SUFFIX) and name.startswith("compute-worker@")):
+                continue
 
-        for pidbox_q in pidbox_queues:
-            hostname = pidbox_q["name"][: -len(PIDBOX_SUFFIX)]
-
-            if not is_compute_worker(hostname, {"compute-worker"}, set()):
+            hostname = name[: -len(PIDBOX_SUFFIX)]
+            if not is_compute_worker(hostname):
                 continue
 
             pidbox_alive = pidbox_q.get("consumers", 0) > 0
 
             if not pidbox_alive or cw_consumers == 0:
-                status = "unavailable"
-                running_jobs = 0
+                status, running_jobs = "unavailable", 0
             elif messages_unacked > 0:
-                status = "busy"
-                running_jobs = messages_unacked
+                status, running_jobs = "busy", messages_unacked
             else:
-                status = "available"
-                running_jobs = 0
+                status, running_jobs = "available", 0
 
             worker = {
                 "hostname": hostname,
@@ -133,5 +108,4 @@ def fetch_compute_workers():
 
     workers.sort(key=lambda x: x["hostname"])
     private_workers.sort(key=lambda x: (x["queue_source"], x["hostname"]))
-
     return workers, private_workers
