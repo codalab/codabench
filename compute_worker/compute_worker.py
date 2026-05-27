@@ -174,11 +174,21 @@ logger.info(
 )
 
 # Intializing client
-# NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must has either podman or docker
-client = docker.APIClient(
-    base_url=Settings.CONTAINER_SOCKET,
-    version="auto",
-)
+if Settings.CONTAINER_ENGINE_EXECUTABLE != Settings.KUBERNETES:
+    # NOTE: CONTAINER_SOCKET is set in Settings based on CONTAINER_ENGINE_EXECUTABLE which must have either podman or docker
+    client = docker.APIClient(
+        base_url=Settings.CONTAINER_SOCKET,
+        version="auto",
+    )
+else:
+    client = None
+    import kubernetes
+    try:
+        kubernetes.config.load_incluster_config()
+        logger.info("Kubernetes in-cluster config loaded")
+    except kubernetes.config.ConfigException:
+        kubernetes.config.load_kube_config()
+        logger.info("Kubernetes kubeconfig loaded")
 
 
 # -----------------------------------------------
