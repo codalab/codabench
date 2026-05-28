@@ -46,12 +46,9 @@
             </div>
 
             <div class="workers-section">
-                <div class="workers-section-title workers-section-header" onclick="{ toggleDefaultWorkers }">
-                    <span>Default compute workers</span>
+                <div class="workers-section-title">Default compute workers</div>
 
-                    <i class="dropdown icon workers-collapse-icon { showDefaultWorkers ? 'open' : '' }"></i>
-                </div>
-                <div class="workers-table-wrap" if="{ showDefaultWorkers }">
+                <div class="workers-table-wrap">
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
@@ -195,12 +192,9 @@
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
-                if (self.competitionId) {
-                    var msg = JSON.stringify({ type: 'subscribe', competition_id: self.competitionId })
-                    self.ws.send(msg)
-                }
                 self.update()
             }
+
             self.ws.onmessage = function (event) {
                 var message = null
 
