@@ -192,6 +192,13 @@
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
+                var competitionId = parseInt(self.opts.competition_id) || null
+                if (competitionId) {
+                    self.ws.send(JSON.stringify({
+                        type: 'subscribe',
+                        competition_id: competitionId
+                    }))
+                }
                 self.update()
             }
 
