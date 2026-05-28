@@ -253,6 +253,18 @@ class OrganizationViewSet(mixins.CreateModelMixin,
         mem_ser = MembershipSerializer(membership)
         return Response(mem_ser.data, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated])
+    def leave_organization(self, request, pk=None):
+        organization = self.get_object()
+        try:
+            member = organization.membership_set.get(user=request.user)
+        except Membership.DoesNotExist:
+            raise ValidationError('You are not a member of this organization')
+        if member.group == Membership.OWNER:
+            raise PermissionDenied('The owner cannot leave the organization')
+        organization.users.remove(request.user)
+        return Response({'success': True, 'message': 'You have left the organization'}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['delete'])
     def delete_organization(self, request, pk=None):
         try:
