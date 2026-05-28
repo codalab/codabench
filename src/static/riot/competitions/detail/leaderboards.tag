@@ -212,10 +212,6 @@
             const dt = luxon.DateTime.fromISO(date_string)
             return dt.isValid ? dt.toMillis() : 0
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c462729b (Clean up leaderboard ordering logic)
 
         self.get_score_sort_value = function(column, submission) {
             if (column.task_id === -1) {
@@ -229,11 +225,6 @@
             return (score !== null && typeof score !== 'undefined' && score !== '') ? score : ''
         }
 
-<<<<<<< HEAD
-=======
->>>>>>> ba0e679c (leaderboad group feature)
-=======
->>>>>>> c462729b (Clean up leaderboard ordering logic)
         self.bold_class = function(column, submission){
             return_class = ''
             if(column.task_id != -1){
