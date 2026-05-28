@@ -157,6 +157,7 @@ configurations = [
     ]}
 ]
 [project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.zensical.extensions.glightbox]
 # Extras
 [project.extra]
 footer_links = [
