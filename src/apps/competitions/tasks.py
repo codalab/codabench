@@ -120,19 +120,6 @@ MAX_EXECUTION_TIME_LIMIT = int(os.environ.get('MAX_EXECUTION_TIME_LIMIT', 600)) 
 
 
 def _get_user_group_queues(user, competition):
-    """
-    Group feature: retourne la liste des queues vers lesquelles router la soumission,
-    en fonction des groupes de la compétition auxquels l'utilisateur appartient.
-
-    Règles :
-    - Groupe avec queue  → sa queue est ajoutée au routage
-    - Groupe sans queue  → la queue de la compétition est ajoutée une seule fois
-                           (None si la compétition n'a pas de queue privée = queue par défaut)
-    - Utilisateur dans des groupes sans queue seulement → [] (soumission unique legacy)
-    - Utilisateur dans aucun groupe → [] (soumission unique legacy)
-    - Déduplication : si une queue de groupe est identique à la queue de la compétition,
-      un seul enfant est créé (pas de doublon)
-    """
     all_user_groups = list(
         competition.participant_groups
         .filter(user__pk=user.pk)

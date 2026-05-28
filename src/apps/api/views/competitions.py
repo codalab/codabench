@@ -411,7 +411,6 @@ class CompetitionViewSet(ModelViewSet):
         batch_send_email.apply_async((comp.pk, content))
         return Response({}, status=status.HTTP_200_OK)
 
-
     def collect_leaderboard_data(self, competition, phase_pk=None):
         if phase_pk:
             phase = get_object_or_404(competition.phases.all(), id=phase_pk)
@@ -965,6 +964,7 @@ class PhaseViewSet(ModelViewSet):
             response['tasks'].append(tempTask)
 
         return Response(response)
+
 
 class CompetitionParticipantViewSet(ModelViewSet):
     queryset = CompetitionParticipant.objects.all()
