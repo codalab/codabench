@@ -118,7 +118,9 @@ class SubmissionCreationSerializer(DefaultUserCreateMixin, serializers.ModelSeri
         }
 
     def get_filename(self, instance):
-        return basename(instance.data.data_file.name)
+        if instance.data and instance.data.data_file:
+            return basename(instance.data.data_file.name)
+        return None
 
     def create(self, validated_data):
         tasks = validated_data.pop('tasks', None)
