@@ -8,14 +8,10 @@ from datetime import timedelta, datetime
 from io import BytesIO
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
-# import json
-# import urllib
-
 import oyaml as yaml
 import requests
 from celery._state import app_or_default
 from django.conf import settings
-# from django_redis import get_redis_connection
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Subquery, OuterRef, Count, Case, When, Value, F
@@ -24,10 +20,9 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
-from celery_config import app  # , app_for_vhost
+from celery_config import app
 from competitions.models import Submission, CompetitionCreationTaskStatus, SubmissionDetails, Competition, \
     CompetitionDump, Phase
-# from queues.models import Queue
 from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
@@ -36,12 +31,9 @@ from tasks.models import Task
 from datasets.models import Data
 from utils.data import make_url_sassy
 from utils.email import codalab_send_markdown_email
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 import logging
 
-# from utils.worker_utils import WORKER_HEARTBEAT_TTL, WORKERS_REGISTRY_KEY, extract_queue_names, is_compute_worker, known_compute_queue_names
 logger = logging.getLogger(__name__)
 
 COMPETITION_FIELDS = [
@@ -863,18 +855,3 @@ def submission_status_cleanup():
                 sub.parent.cancel(status=Submission.FAILED)
             else:
                 sub.cancel(status=Submission.FAILED)
-
-
-# -------------------------------------------------
-def _broadcast_worker_state(payload):
-    channel_layer = get_channel_layer()
-    if not channel_layer:
-        return
-
-    async_to_sync(channel_layer.group_send)(
-        "compute_workers",
-        {
-            "type": "worker.health",
-            "worker": payload,
-        },
-    )
