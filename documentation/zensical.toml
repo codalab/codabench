@@ -98,6 +98,7 @@ features = [
     "navigation.expand",
     "navigation.instant",
     "navigation.instant.progress",
+    "navigation.indexes",
 ]
 font = false
 # Palette toggle for automatic mode
