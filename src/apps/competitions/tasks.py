@@ -234,7 +234,7 @@ def _send_to_compute_worker(submission, is_scoring):
     time_padding = 60 * 20  # 20 minutes
     time_limit = submission.phase.execution_time_limit + time_padding
 
-    effective_queue = submission.queue or submission.phase.competition.queue #  New way of managing queues
+    effective_queue = submission.queue or submission.phase.competition.queue    #  New way of managing queues
 
     if effective_queue:
         run_args['execution_time_limit'] = submission.phase.execution_time_limit
