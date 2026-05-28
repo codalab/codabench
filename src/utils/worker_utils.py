@@ -55,7 +55,6 @@ def fetch_compute_workers():
         logger.exception("Failed to build vhost→source map")
         return [], []
 
-    # Grouper par vhost
     by_vhost: dict[str, list] = {}
     for q in all_queues:
         by_vhost.setdefault(q["vhost"], []).append(q)
@@ -73,7 +72,6 @@ def fetch_compute_workers():
         messages_unacked = cw_queue.get("messages_unacknowledged", 0) if cw_queue else 0
         cw_consumers = cw_queue.get("consumers", 0) if cw_queue else 0
 
-        # Pidbox queues 1 worker / queue
         for pidbox_q in queues:
             name = pidbox_q["name"]
             if not (name.endswith(PIDBOX_SUFFIX) and name.startswith("compute-worker@")):
