@@ -73,7 +73,6 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
 
     async def _push_workers_loop(self):
         try:
-            # Attendre le subscribe avant le premier envoi (max 5s)
             try:
                 await asyncio.wait_for(self._subscribed.wait(), timeout=5.0)
             except asyncio.TimeoutError:
@@ -96,6 +95,5 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
                 except RuntimeError:
                     break
                 await asyncio.sleep(3)
-
         except asyncio.CancelledError:
             pass
