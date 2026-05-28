@@ -38,6 +38,7 @@ def _load_snapshot(competition_queue_name=None):
 
     return workers, private_workers
 
+
 class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):

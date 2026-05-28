@@ -1,7 +1,5 @@
 import asyncio
-import logging
 import os
-from queue import Queue
 import re
 import traceback
 import zipfile
@@ -25,7 +23,6 @@ from competitions.unpackers.utils import CompetitionUnpackingException
 from competitions.unpackers.v1 import V15Unpacker
 from competitions.unpackers.v2 import V2Unpacker
 from datasets.models import Data
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
