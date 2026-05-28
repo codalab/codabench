@@ -191,7 +191,7 @@ def competition_create_group(request, pk):
 
     if not name:
         return HttpResponseBadRequest("Missing name")
- 
+
     stored_name = _group_stored_name(competition.pk, name)
 
     allowed_user_ids = set(
@@ -377,6 +377,7 @@ def competition_delete_group(request, pk, group_id):
 
 def _group_stored_name(competition_pk, user_name):
     return f"comp{competition_pk}__{user_name}"
+
 
 def _group_display_name(stored_name, competition_pk):
     prefix = f"comp{competition_pk}__"
