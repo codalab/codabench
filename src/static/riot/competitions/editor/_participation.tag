@@ -132,54 +132,43 @@
     self.editing_group = null
 
     const initUI = () => {
-      try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
+        try { $('.ui.checkbox', self.root).checkbox() } catch(e) {}
+        try {
+            if (self.refs && self.refs.group_queue) {
+                const $q = $(self.refs.group_queue)
+                if (!$q.data('dd-init')) {
+                    $q.dropdown({ clearable: true, placeholder: 'None' })
+                    $q.data('dd-init', true)
+                }
+            }
+        } catch(e) {}
 
-      try {
-        if (self.refs && self.refs.group_queue) {
-          const $q = $(self.refs.group_queue)
-          if (!$q.data('dd-init')) {
-            $q.dropdown({ clearable: true, placeholder: 'None' })
-            $q.data('dd-init', true)
-          }
-        }
-      } catch(e) {}
+        try {
+            let $rest = $('.ui.dropdown', self.root)
+            if (self.refs && self.refs.group_queue)       $rest = $rest.not(self.refs.group_queue)
+            if (self.refs && self.refs.group_user_select) $rest = $rest.not(self.refs.group_user_select)
+            $rest.dropdown()
+        } catch(e) {}
 
-      try {
-        let $rest = $('.ui.dropdown', self.root)
-        if (self.refs && self.refs.group_queue)       $rest = $rest.not(self.refs.group_queue)
-        if (self.refs && self.refs.group_user_select) $rest = $rest.not(self.refs.group_user_select)
-        $rest.dropdown()
-      } catch(e) {}
-
-      try {
-          if (self.refs && self.refs.group_queue) {
-              $(self.refs.group_queue).dropdown('destroy')
-              $(self.refs.group_queue).dropdown({
-                  clearable: true,
-                  placeholder: 'None'
-              })
-          }
-      } catch(e) {}
-
-      try {
-        if (self.refs && self.refs.group_user_select) {
-          const $us = $(self.refs.group_user_select)
-          if (!$us.data('dd-init')) {
-            $us.dropdown({
-              allowAdditions: false,
-              forceSelection: false,
-              fullTextSearch: true,
-              onChange: (value) => {
-                const arr = (value || '').toString().trim()
-                let count = 0
-                if (arr.length) count = (arr + '').split(',').filter(Boolean).length
-                try { self.refs.selected_count.textContent = count } catch(e) {}
-              }
-            })
-            $us.data('dd-init', true)
-          }
-        }
-      } catch(e) {}
+        try {
+            if (self.refs && self.refs.group_user_select) {
+                const $us = $(self.refs.group_user_select)
+                if (!$us.data('dd-init')) {
+                    $us.dropdown({
+                        allowAdditions: false,
+                        forceSelection: false,
+                        fullTextSearch: true,
+                        onChange: (value) => {
+                            const arr = (value || '').toString().trim()
+                            let count = 0
+                            if (arr.length) count = (arr + '').split(',').filter(Boolean).length
+                            try { self.refs.selected_count.textContent = count } catch(e) {}
+                        }
+                    })
+                    $us.data('dd-init', true)
+                }
+            }
+        } catch(e) {}
     }
 
     const clearModalError = () => {
