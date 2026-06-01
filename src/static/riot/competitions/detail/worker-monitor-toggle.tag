@@ -1,6 +1,6 @@
 <worker-monitor-toggle>
     <button
-        if="{ canViewWorkersPanel }"
+        if="{ canViewWorkersPanel && !allWorkers }"
         class="ui small button"
         onclick="{ toggleWorkersPanel }">
         { showWorkersPanel ? 'Hide workers' : 'Show workers' }
@@ -104,7 +104,7 @@
                                 <td>
                                     <strong>{ worker.hostname || worker.competition_title || 'Private competition' }</strong>
                                 </td>
-                                <td>{ worker.queue_name || '—' }</td>
+                                <td>{ worker.queue_source || '—' }</td>
                                 <td>
                                     <span class="ui tiny label worker-status { getStatusClass(worker) }">
                                         <i class="{ getStatusIcon(worker) } icon"></i>
@@ -137,6 +137,12 @@
 
         self.canViewWorkersPanel =
             String(self.opts.can_view_workers_panel || 'false') === 'true'
+
+        self.allWorkers = String(self.opts.all_workers || 'false') === 'true'
+
+        if (self.allWorkers) {
+            self.showWorkersPanel = true
+        }
 
         self.showWorkersPanel = false
         self.panelLeft = 24
@@ -192,12 +198,13 @@
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
-                var competitionId = parseInt(self.opts.competition_id) || null
-                if (competitionId) {
-                    self.ws.send(JSON.stringify({
-                        type: 'subscribe',
-                        competition_id: competitionId
-                    }))
+                if (self.allWorkers) {
+                    self.ws.send(JSON.stringify({ type: 'subscribe', all_workers: true }))
+                } else {
+                    var competitionId = parseInt(self.opts.competition_id) || null
+                    if (competitionId) {
+                        self.ws.send(JSON.stringify({ type: 'subscribe', competition_id: competitionId }))
+                    }
                 }
                 self.update()
             }
@@ -275,8 +282,11 @@
 
         self.one('mount', function () {
             self.loadPanelPosition()
+            if (self.allWorkers) {
+                self.connect_workers_socket()
+            }
         })
-
+        
         self.one('unmount', function () {
             window.removeEventListener('mousemove', self.onPanelDragMove)
             window.removeEventListener('mouseup', self.stopPanelDrag)

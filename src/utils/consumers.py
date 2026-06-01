@@ -1,5 +1,3 @@
-# utils/consumers.py
-
 import asyncio
 import logging
 
@@ -7,7 +5,6 @@ from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from utils.worker_utils import fetch_compute_workers
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +22,12 @@ def _get_competition_queue_name(competition_id):
     return None
 
 
-def _load_snapshot(competition_queue_name=None):
+def _load_snapshot(competition_queue_name=None, show_all=False):
     workers, private_workers = fetch_compute_workers()
 
-    if competition_queue_name:
+    if show_all:
+        pass
+    elif competition_queue_name:
         private_workers = [
             w for w in private_workers
             if w.get("queue_source") == competition_queue_name
@@ -49,6 +48,7 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
         await self.channel_layer.group_add("compute_workers", self.channel_name)
         self._competition_queue_name = None
+        self._show_all = False
         self._running = True
         self._subscribed = asyncio.Event()
         self._task = asyncio.create_task(self._push_workers_loop())
@@ -66,10 +66,13 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         if content.get("type") == "subscribe":
-            competition_id = content.get("competition_id")
-            self._competition_queue_name = await sync_to_async(
-                _get_competition_queue_name
-            )(competition_id)
+            if content.get("all_workers"):
+                self._show_all = True
+            else:
+                competition_id = content.get("competition_id")
+                self._competition_queue_name = await sync_to_async(
+                    _get_competition_queue_name
+                )(competition_id)
             self._subscribed.set()
 
     async def _push_workers_loop(self):
@@ -77,13 +80,12 @@ class ComputeWorkersConsumer(AsyncJsonWebsocketConsumer):
             try:
                 await asyncio.wait_for(self._subscribed.wait(), timeout=5.0)
             except asyncio.TimeoutError:
-                logger.warning(
-                    "WebSocket subscribe timeout, proceeding without competition filter"
-                )
+                logger.warning("WebSocket subscribe timeout, proceeding without filter")
 
             while self._running:
                 workers, private_workers = await sync_to_async(_load_snapshot)(
-                    self._competition_queue_name
+                    competition_queue_name=self._competition_queue_name,
+                    show_all=self._show_all,
                 )
                 if not self._running:
                     break
