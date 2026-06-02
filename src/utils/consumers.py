@@ -26,7 +26,7 @@ def _load_snapshot(competition_queue_name=None, show_all=False):
     workers, private_workers = fetch_compute_workers()
 
     if show_all:
-        pass
+        pass  # tous les workers privés visibles
     elif competition_queue_name:
         private_workers = [
             w for w in private_workers

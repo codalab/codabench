@@ -67,16 +67,15 @@
     <div class="ui container">
         <h1>Monitor queues</h1>
 
-        <!-- Panneau compute workers — tous les workers de la plateforme -->
-        <div class="ui segment" style="margin-bottom: 24px;">
+        <div class="ui segment">
             <worker-monitor-toggle
                 can_view_workers_panel="true"
-                all_workers="true">
+                all_workers="true"
+                inline_mode="true">
             </worker-monitor-toggle>
         </div>
 
         <div id="external_monitors" class="ui two column grid">
-            <!-- ... reste inchangé ... -->
         </div>
     </div>
     {% endif %}

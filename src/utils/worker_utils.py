@@ -1,5 +1,3 @@
-# utils/worker_utils.py
-
 import logging
 import time
 

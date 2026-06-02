@@ -1,13 +1,140 @@
 <worker-monitor-toggle>
     <button
-        if="{ canViewWorkersPanel && !allWorkers }"
+        if="{ canViewWorkersPanel && !inlineMode && !allWorkers }"
         class="ui small button"
         onclick="{ toggleWorkersPanel }">
         { showWorkersPanel ? 'Hide workers' : 'Show workers' }
     </button>
 
+    <div if="{ canViewWorkersPanel && inlineMode }" class="workers-inline">
+        <div class="workers-card">
+            <div class="workers-header">
+                <div class="workers-title">
+                    <i class="server icon"></i>
+                    <div class="workers-title-text">
+                        Compute Workers
+                        <div class="workers-subtitle">
+                            <span class="workers-connection { wsState }">{ connectionLabel() }</span>
+                            <span class="workers-separator">•</span>
+                            <span>Last update: { lastSyncLabel() }</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workers-stats">
+                <div class="stat-card">
+                    <div class="stat-value">{ totalCount() }</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-green">{ availableCount() }</div>
+                    <div class="stat-label">Available</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-yellow">{ busyCount() }</div>
+                    <div class="stat-label">Busy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-red">{ unavailableCount() }</div>
+                    <div class="stat-label">Down</div>
+                </div>
+            </div>
+
+            <div class="workers-section">
+                <div class="workers-section-title">
+                    Public compute workers ({ sortedWorkers().length })
+                </div>
+
+                <div class="workers-table-wrap">
+                    <table class="ui very compact selectable striped table workers-table">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th>Status</th>
+                                <th>Jobs</th>
+                                <th>Last seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ worker in sortedWorkers() }">
+                                <td><strong>{ worker.hostname || '—' }</strong></td>
+                                <td>
+                                    <span class="ui tiny label worker-status { getStatusClass(worker) }">
+                                        <i class="{ getStatusIcon(worker) } icon"></i>
+                                        { getStatusText(worker) }
+                                    </span>
+                                </td>
+                                <td>{ worker.running_jobs || 0 }</td>
+                                <td>{ formatLastSeen(worker.timestamp) }</td>
+                            </tr>
+
+                            <tr if="{ sortedWorkers().length === 0 }">
+                                <td colspan="4" class="center aligned">
+                                    <div class="workers-empty">
+                                        <div class="header">No public compute workers detected</div>
+                                        <div class="description">Waiting for the first websocket snapshot.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="workers-section">
+                <div class="workers-section-title">
+                    Private compute workers ({ sortedPrivateWorkers().length })
+                </div>
+
+                <div class="workers-table-wrap">
+                    <table class="ui very compact selectable striped table workers-table">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th>Queue</th>
+                                <th>Status</th>
+                                <th>Jobs</th>
+                                <th>Last seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr each="{ worker in sortedPrivateWorkers() }">
+                                <td>
+                                    <strong>{ worker.hostname || worker.competition_title || 'Private worker' }</strong>
+                                </td>
+                                <td>{ worker.queue_source || '—' }</td>
+                                <td>
+                                    <span class="ui tiny label worker-status { getStatusClass(worker) }">
+                                        <i class="{ getStatusIcon(worker) } icon"></i>
+                                        { getStatusText(worker) }
+                                    </span>
+                                </td>
+                                <td>{ worker.running_jobs || 0 }</td>
+                                <td>{ formatLastSeen(worker.timestamp) }</td>
+                            </tr>
+
+                            <tr if="{ sortedPrivateWorkers().length === 0 }">
+                                <td colspan="5" class="center aligned">
+                                    <div class="workers-empty">
+                                        <div class="header">No private compute workers detected</div>
+                                        <div class="description">Waiting for the first websocket snapshot.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="workers-footer">
+                Green = available, yellow = busy, red = unavailable
+            </div>
+        </div>
+    </div>
+
     <aside
-        if="{ canViewWorkersPanel && showWorkersPanel }"
+        if="{ canViewWorkersPanel && !inlineMode && showWorkersPanel }"
         class="workers-panel"
         style="left: { panelLeft }px; top: { panelTop }px; width: { panelWidth }px;">
         <div class="workers-card">
@@ -19,7 +146,7 @@
                         <div class="workers-subtitle">
                             <span class="workers-connection { wsState }">{ connectionLabel() }</span>
                             <span class="workers-separator">•</span>
-                            Last update: { lastSyncLabel() }
+                            <span>Last update: { lastSyncLabel() }</span>
                         </div>
                     </div>
                 </div>
@@ -46,7 +173,9 @@
             </div>
 
             <div class="workers-section">
-                <div class="workers-section-title">Default compute workers</div>
+                <div class="workers-section-title">
+                    Public compute workers ({ sortedWorkers().length })
+                </div>
 
                 <div class="workers-table-wrap">
                     <table class="ui very compact selectable striped table workers-table">
@@ -60,9 +189,7 @@
                         </thead>
                         <tbody>
                             <tr each="{ worker in sortedWorkers() }">
-                                <td>
-                                    <strong>{ worker.hostname }</strong>
-                                </td>
+                                <td><strong>{ worker.hostname || '—' }</strong></td>
                                 <td>
                                     <span class="ui tiny label worker-status { getStatusClass(worker) }">
                                         <i class="{ getStatusIcon(worker) } icon"></i>
@@ -72,10 +199,11 @@
                                 <td>{ worker.running_jobs || 0 }</td>
                                 <td>{ formatLastSeen(worker.timestamp) }</td>
                             </tr>
+
                             <tr if="{ sortedWorkers().length === 0 }">
                                 <td colspan="4" class="center aligned">
                                     <div class="workers-empty">
-                                        <div class="header">No compute workers detected</div>
+                                        <div class="header">No public compute workers detected</div>
                                         <div class="description">Waiting for the first websocket snapshot.</div>
                                     </div>
                                 </td>
@@ -85,14 +213,16 @@
                 </div>
             </div>
 
-            <div class="workers-section" if="{ sortedPrivateWorkers().length }">
-                <div class="workers-section-title">Private queues</div>
+            <div class="workers-section">
+                <div class="workers-section-title">
+                    Private compute workers ({ sortedPrivateWorkers().length })
+                </div>
 
                 <div class="workers-table-wrap">
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
-                                <th>Competition</th>
+                                <th>Worker</th>
                                 <th>Queue</th>
                                 <th>Status</th>
                                 <th>Jobs</th>
@@ -102,7 +232,7 @@
                         <tbody>
                             <tr each="{ worker in sortedPrivateWorkers() }">
                                 <td>
-                                    <strong>{ worker.hostname || worker.competition_title || 'Private competition' }</strong>
+                                    <strong>{ worker.hostname || worker.competition_title || 'Private worker' }</strong>
                                 </td>
                                 <td>{ worker.queue_source || '—' }</td>
                                 <td>
@@ -113,6 +243,15 @@
                                 </td>
                                 <td>{ worker.running_jobs || 0 }</td>
                                 <td>{ formatLastSeen(worker.timestamp) }</td>
+                            </tr>
+
+                            <tr if="{ sortedPrivateWorkers().length === 0 }">
+                                <td colspan="5" class="center aligned">
+                                    <div class="workers-empty">
+                                        <div class="header">No private compute workers detected</div>
+                                        <div class="description">Waiting for the first websocket snapshot.</div>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -139,33 +278,39 @@
             String(self.opts.can_view_workers_panel || 'false') === 'true'
 
         self.allWorkers = String(self.opts.all_workers || 'false') === 'true'
+        self.inlineMode = String(self.opts.inline_mode || 'false') === 'true'
 
-        if (self.allWorkers) {
-            self.showWorkersPanel = true
-        }
+        self.showWorkersPanel = self.inlineMode || self.allWorkers
 
-        self.showWorkersPanel = false
         self.panelLeft = 24
         self.panelTop = 24
         self.panelWidth = 460
 
+        self.panelStorageKey = 'codabench_workers_panel_position'
         self.draggingPanel = false
         self.dragOffsetX = 0
         self.dragOffsetY = 0
 
+        self.shouldKeepSocketOpen = function () {
+            return self.inlineMode || self.showWorkersPanel || self.allWorkers
+        }
+
         self.toggleWorkersPanel = function () {
+            if (self.inlineMode) return
+
             self.showWorkersPanel = !self.showWorkersPanel
+
             if (self.showWorkersPanel) {
                 self.loadPanelPosition()
                 self.connect_workers_socket()
             } else {
-                self.close_workers_socket()
+                self.close_workers_socket(false)
             }
 
             self.update()
         }
 
-        self.close_workers_socket = function () {
+        self.close_workers_socket = function (allowReconnect) {
             if (self.wsReconnectTimer) {
                 clearTimeout(self.wsReconnectTimer)
                 self.wsReconnectTimer = null
@@ -173,39 +318,81 @@
 
             if (self.ws) {
                 try {
+                    self.ws.onopen = null
+                    self.ws.onmessage = null
+                    self.ws.onerror = null
+                    self.ws.onclose = null
                     self.ws.close()
                 } catch (e) {}
                 self.ws = null
             }
 
             self.wsState = 'disconnected'
+
+            if (allowReconnect && self.shouldKeepSocketOpen()) {
+                self.scheduleReconnect()
+            }
+        }
+
+        self.scheduleReconnect = function () {
+            if (self.wsReconnectTimer) return
+
+            self.wsReconnectTimer = setTimeout(function () {
+                self.wsReconnectTimer = null
+
+                if (!self.shouldKeepSocketOpen()) return
+
+                self.connect_workers_socket()
+            }, 3000)
         }
 
         self.connect_workers_socket = function () {
+            if (!self.canViewWorkersPanel) return
+
             if (self.ws) {
                 try {
                     self.ws.close()
                 } catch (e) {}
                 self.ws = null
             }
+
             var scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
             var url = scheme + '://' + window.location.host + '/ws/workers/'
 
             self.wsState = 'connecting'
             self.update()
 
-            self.ws = new WebSocket(url)
+            try {
+                self.ws = new WebSocket(url)
+            } catch (e) {
+                self.wsState = 'error'
+                self.update()
+                self.scheduleReconnect()
+                return
+            }
 
             self.ws.onopen = function () {
                 self.wsState = 'connected'
-                if (self.allWorkers) {
-                    self.ws.send(JSON.stringify({ type: 'subscribe', all_workers: true }))
+
+                var payload = { type: 'subscribe' }
+
+                if (self.allWorkers || self.inlineMode) {
+                    payload.all_workers = true
                 } else {
                     var competitionId = parseInt(self.opts.competition_id) || null
                     if (competitionId) {
-                        self.ws.send(JSON.stringify({ type: 'subscribe', competition_id: competitionId }))
+                        payload.competition_id = competitionId
+                    } else {
+                        payload.all_workers = true
                     }
                 }
+
+                try {
+                    self.ws.send(JSON.stringify(payload))
+                } catch (e) {
+                    console.error('Unable to send websocket subscribe payload', e)
+                }
+
                 self.update()
             }
 
@@ -227,13 +414,20 @@
                 }
             }
 
+            self.ws.onerror = function () {
+                self.wsState = 'error'
+                self.update()
+            }
+
             self.ws.onclose = function () {
                 self.wsState = 'disconnected'
                 self.update()
+                self.scheduleReconnect()
             }
         }
 
         self.startPanelDrag = function (e) {
+            if (self.inlineMode) return
             if (e.button !== 0) return
 
             var panel = self.root.querySelector('.workers-panel')
@@ -278,23 +472,13 @@
 
             window.removeEventListener('mousemove', self.onPanelDragMove)
             window.removeEventListener('mouseup', self.stopPanelDrag)
+
+            self.savePanelPosition()
         }
 
-        self.one('mount', function () {
-            self.loadPanelPosition()
-            if (self.allWorkers) {
-                self.connect_workers_socket()
-            }
-        })
-        
-        self.one('unmount', function () {
-            window.removeEventListener('mousemove', self.onPanelDragMove)
-            window.removeEventListener('mouseup', self.stopPanelDrag)
-            self.close_workers_socket()
-            document.body.classList.remove('workers-panel-dragging')
-        })
-
         self.loadPanelPosition = function () {
+            if (self.inlineMode) return
+
             try {
                 var raw = localStorage.getItem(self.panelStorageKey)
                 if (!raw) return
@@ -310,6 +494,8 @@
         }
 
         self.savePanelPosition = function () {
+            if (self.inlineMode) return
+
             try {
                 localStorage.setItem(self.panelStorageKey, JSON.stringify({
                     left: self.panelLeft,
@@ -321,6 +507,8 @@
         }
 
         self.clampPanelPosition = function () {
+            if (self.inlineMode) return
+
             var minLeft = 8
             var minTop = 8
             var maxLeft = Math.max(minLeft, window.innerWidth - self.panelWidth - 8)
@@ -328,48 +516,6 @@
 
             self.panelLeft = Math.min(Math.max(minLeft, self.panelLeft), maxLeft)
             self.panelTop = Math.min(Math.max(minTop, self.panelTop), maxTop)
-        }
-
-        self.sortedWorkers = function () {
-            var order = { available: 0, busy: 1, unavailable: 2 }
-
-            return (self.workers || []).slice().sort(function (a, b) {
-                var sa = self.displayStatus(a)
-                var sb = self.displayStatus(b)
-
-                var oa = order[sa] != null ? order[sa] : 99
-                var ob = order[sb] != null ? order[sb] : 99
-
-                if (oa !== ob) return oa - ob
-
-                if ((b.running_jobs || 0) !== (a.running_jobs || 0)) {
-                    return (b.running_jobs || 0) - (a.running_jobs || 0)
-                }
-
-                return (a.hostname || '').localeCompare(b.hostname || '')
-            })
-        }
-
-        self.sortedPrivateWorkers = function () {
-            var order = { available: 0, busy: 1, unavailable: 2 }
-
-            return (self.privateWorkers || []).slice().sort(function (a, b) {
-                var sa = self.displayStatus(a)
-                var sb = self.displayStatus(b)
-
-                var oa = order[sa] != null ? order[sa] : 99
-                var ob = order[sb] != null ? order[sb] : 99
-
-                if (oa !== ob) return oa - ob
-
-                if ((b.running_jobs || 0) !== (a.running_jobs || 0)) {
-                    return (b.running_jobs || 0) - (a.running_jobs || 0)
-                }
-
-                var an = a.competition_title || a.queue_name || a.hostname || ''
-                var bn = b.competition_title || b.queue_name || b.hostname || ''
-                return an.localeCompare(bn)
-            })
         }
 
         self.displayStatus = function (worker) {
@@ -418,24 +564,70 @@
             return minutes + 'm ago'
         }
 
+        self.allDisplayedWorkers = function () {
+            return (self.workers || []).concat(self.privateWorkers || [])
+        }
+
+        self.sortedWorkers = function () {
+            var order = { available: 0, busy: 1, unavailable: 2 }
+
+            return (self.workers || []).slice().sort(function (a, b) {
+                var sa = self.displayStatus(a)
+                var sb = self.displayStatus(b)
+
+                var oa = order[sa] != null ? order[sa] : 99
+                var ob = order[sb] != null ? order[sb] : 99
+
+                if (oa !== ob) return oa - ob
+
+                if ((b.running_jobs || 0) !== (a.running_jobs || 0)) {
+                    return (b.running_jobs || 0) - (a.running_jobs || 0)
+                }
+
+                return (a.hostname || '').localeCompare(b.hostname || '')
+            })
+        }
+
+        self.sortedPrivateWorkers = function () {
+            var order = { available: 0, busy: 1, unavailable: 2 }
+
+            return (self.privateWorkers || []).slice().sort(function (a, b) {
+                var sa = self.displayStatus(a)
+                var sb = self.displayStatus(b)
+
+                var oa = order[sa] != null ? order[sa] : 99
+                var ob = order[sb] != null ? order[sb] : 99
+
+                if (oa !== ob) return oa - ob
+
+                if ((b.running_jobs || 0) !== (a.running_jobs || 0)) {
+                    return (b.running_jobs || 0) - (a.running_jobs || 0)
+                }
+
+                var an = a.competition_title || a.queue_source || a.hostname || ''
+                var bn = b.competition_title || b.queue_source || b.hostname || ''
+                return an.localeCompare(bn)
+            })
+        }
+
         self.totalCount = function () {
-            return (self.workers || []).length
+            return self.allDisplayedWorkers().length
         }
 
         self.availableCount = function () {
-            return (self.workers || []).filter(function (w) {
+            return self.allDisplayedWorkers().filter(function (w) {
                 return self.displayStatus(w) === 'available'
             }).length
         }
 
         self.busyCount = function () {
-            return (self.workers || []).filter(function (w) {
+            return self.allDisplayedWorkers().filter(function (w) {
                 return self.displayStatus(w) === 'busy'
             }).length
         }
 
         self.unavailableCount = function () {
-            return (self.workers || []).filter(function (w) {
+            return self.allDisplayedWorkers().filter(function (w) {
                 return self.displayStatus(w) === 'unavailable'
             }).length
         }
@@ -447,12 +639,32 @@
             return 'Disconnected'
         }
 
-        self.panelStorageKey = 'codabench_workers_panel_position'
-
-        window.addEventListener('resize', function () {
+        self.onWindowResize = function () {
+            if (self.inlineMode) return
             if (!self.showWorkersPanel) return
+
             self.clampPanelPosition()
             self.update()
+        }
+
+        self.one('mount', function () {
+            if (!self.inlineMode) {
+                self.loadPanelPosition()
+            }
+
+            if (self.shouldKeepSocketOpen()) {
+                self.connect_workers_socket()
+            }
+
+            window.addEventListener('resize', self.onWindowResize)
+        })
+
+        self.one('unmount', function () {
+            window.removeEventListener('mousemove', self.onPanelDragMove)
+            window.removeEventListener('mouseup', self.stopPanelDrag)
+            window.removeEventListener('resize', self.onWindowResize)
+            self.close_workers_socket(false)
+            document.body.classList.remove('workers-panel-dragging')
         })
     </script>
 
@@ -462,6 +674,17 @@
             z-index 25
             max-height calc(100vh - 48px)
             overflow auto
+
+        .workers-inline
+            position relative
+            width 100%
+            max-height none
+            overflow visible
+
+        .workers-inline .workers-card
+            width 100%
+            box-shadow none
+            border-radius 12px
 
         .workers-card
             width 100%
@@ -610,7 +833,7 @@
             font-size 12px
             text-transform uppercase
 
-        .workers-table td
+        .workers-table td,
         .workers-table th
             vertical-align middle !important
 
