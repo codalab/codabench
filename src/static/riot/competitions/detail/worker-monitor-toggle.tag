@@ -42,11 +42,21 @@
             </div>
 
             <div class="workers-section">
-                <div class="workers-section-title">
-                    Public compute workers ({ sortedWorkers().length })
+                <div class="workers-section-header">
+                    <div class="workers-section-title">
+                        Public compute workers ({ sortedWorkers().length })
+                    </div>
+
+                    <button
+                        type="button"
+                        class="ui tiny basic button workers-collapse-btn"
+                        onclick="{ togglePublicWorkers }">
+                        <i class="{ publicWorkersCollapsed ? 'chevron down' : 'chevron up' } icon"></i>
+                        { publicWorkersCollapsed ? 'Show public workers' : 'Collapse public workers' }
+                    </button>
                 </div>
 
-                <div class="workers-table-wrap">
+                <div if="{ !publicWorkersCollapsed }" class="workers-table-wrap">
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
@@ -79,6 +89,10 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div if="{ publicWorkersCollapsed }" class="workers-collapsed">
+                    Public workers list collapsed.
                 </div>
             </div>
 
@@ -173,11 +187,21 @@
             </div>
 
             <div class="workers-section">
-                <div class="workers-section-title">
-                    Public compute workers ({ sortedWorkers().length })
+                <div class="workers-section-header">
+                    <div class="workers-section-title">
+                        Public compute workers ({ sortedWorkers().length })
+                    </div>
+
+                    <button
+                        type="button"
+                        class="ui tiny basic button workers-collapse-btn"
+                        onclick="{ togglePublicWorkers }">
+                        <i class="{ publicWorkersCollapsed ? 'chevron down' : 'chevron up' } icon"></i>
+                        { publicWorkersCollapsed ? 'Show public workers' : 'Collapse public workers' }
+                    </button>
                 </div>
 
-                <div class="workers-table-wrap">
+                <div if="{ !publicWorkersCollapsed }" class="workers-table-wrap">
                     <table class="ui very compact selectable striped table workers-table">
                         <thead>
                             <tr>
@@ -210,6 +234,10 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div if="{ publicWorkersCollapsed }" class="workers-collapsed">
+                    Public workers list collapsed.
                 </div>
             </div>
 
@@ -291,8 +319,20 @@
         self.dragOffsetX = 0
         self.dragOffsetY = 0
 
+        self.publicWorkersCollapsed = false
+
         self.shouldKeepSocketOpen = function () {
             return self.inlineMode || self.showWorkersPanel || self.allWorkers
+        }
+
+        self.togglePublicWorkers = function (e) {
+            if (e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            self.publicWorkersCollapsed = !self.publicWorkersCollapsed
+            self.update()
         }
 
         self.toggleWorkersPanel = function () {
@@ -805,13 +845,44 @@
         .workers-section
             margin-top 16px
 
-        .workers-section-title
+        .workers-section-header
+            display flex
+            align-items center
+            justify-content space-between
+            gap 12px
             margin 12px 0 8px 0
+
+        .workers-section-title
             font-size 12px
             font-weight 700
             text-transform uppercase
             letter-spacing .04em
             color #6b7280
+
+        .workers-collapse-btn
+            flex 0 0 auto
+            display inline-flex !important
+            align-items center
+            gap 6px
+            border-radius 999px !important
+            padding 0.65em 0.9em !important
+            line-height 1 !important
+            box-shadow none !important
+
+        .workers-collapse-btn:hover
+            transform translateY(-1px)
+
+        .workers-collapse-btn .icon
+            margin 0 !important
+
+        .workers-collapsed
+            padding 14px 12px
+            text-align center
+            color #6b7280
+            font-size 12px
+            border 1px dashed rgba(0,0,0,.12)
+            border-radius 12px
+            background #fafafa
 
         .workers-table-wrap
             max-height calc(100vh - 240px)
@@ -871,5 +942,13 @@
         @media (max-width: 768px)
             .workers-stats
                 grid-template-columns repeat(2, minmax(0, 1fr))
+
+            .workers-section-header
+                align-items flex-start
+                flex-direction column
+
+            .workers-collapse-btn
+                width 100%
+                justify-content center
     </style>
 </worker-monitor-toggle>
