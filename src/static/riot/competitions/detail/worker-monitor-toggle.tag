@@ -146,7 +146,8 @@
     <aside
         if="{ canViewWorkersPanel && !inlineMode && showWorkersPanel }"
         class="workers-panel"
-        style="left: { panelLeft }px; top: { panelTop }px; width: { panelWidth }px;">
+        style="left: { panelLeft }px; top: { panelTop }px; width: { panelWidth }px }"
+        onmouseup="{ savePanelSize }">
         <div class="workers-card">
             <div class="workers-header workers-drag-handle" onmousedown="{ startPanelDrag }">
                 <div class="workers-title">
@@ -214,7 +215,7 @@
                         </thead>
                         <tbody>
                             <tr each="{ worker in sortedWorkers() }">
-                                <td class="cell-worker"><span class="worker-hostname">{ worker.hostname || '—' }</span></td>
+                                <td class="cell-worker"><span class="worker-hostname">{ formatHostname(worker.hostname) }</span></td>
                                 <td>
                                     <span class="worker-status-badge { getStatusClass(worker) }">
                                         <i class="{ getStatusIcon(worker) } icon"></i>
@@ -305,6 +306,13 @@
         self.dragOffsetX = 0
         self.dragOffsetY = 0
         self.publicWorkersCollapsed = false
+        self.panelWidth  = 480
+
+        self.formatHostname = function (hostname) {
+            if (!hostname) return '—'
+            return hostname.replace(/^compute-worker@/, '')
+        }
+
         self.shouldKeepSocketOpen = function () {
             return self.inlineMode || self.showWorkersPanel || self.allWorkers
         }
@@ -415,6 +423,27 @@
                 if (typeof pos.top  === 'number') self.panelTop  = pos.top
                 self.clampPanelPosition()
             } catch (e) {}
+            self.loadPanelSize()
+        }
+        self.loadPanelSize = function () {
+            try {
+                var raw = localStorage.getItem(self.panelStorageKey + '_size')
+                if (!raw) return
+                var size = JSON.parse(raw)
+                if (typeof size.width  === 'number') self.panelWidth  = size.width
+                if (typeof size.height === 'number') self.panelHeight = size.height
+            } catch (e) {}
+        }
+
+        self.savePanelSize = function () {
+            try {
+                var panel = self.root.querySelector('.workers-panel')
+                if (!panel) return
+                localStorage.setItem(self.panelStorageKey + '_size', JSON.stringify({
+                    width:  panel.offsetWidth,
+                    height: panel.offsetHeight,
+                }))
+            } catch (e) {}
         }
         self.savePanelPosition = function () {
             if (self.inlineMode) return
@@ -520,9 +549,11 @@
         .workers-panel
             position fixed
             z-index 25
+            overflow auto
+            resize horizontal
+            min-width 340px
+            min-height 200px
             max-height calc(100vh - 48px)
-            overflow-y auto
-            overflow-x hidden
 
         .workers-inline
             position relative
