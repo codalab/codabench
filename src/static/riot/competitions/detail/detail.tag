@@ -6,14 +6,6 @@
             <comp-tabs class="comp-detail-paragraph-text" competition="{ competition }"></comp-tabs>
         </div>
 
-        <button
-            if="{ canViewWorkersPanel }"
-            class="ui button primary workers-toggle-btn"
-            onclick="{ toggleWorkersPanel }">
-            <i class="server icon"></i>
-            { showWorkersPanel ? 'Hide workers' : 'Show workers' }
-        </button>
-
         <aside if="{ canViewWorkersPanel && showWorkersPanel }"
                class="workers-panel"
                style="left: { panelLeft }px; top: { panelTop }px;">
@@ -475,14 +467,6 @@
             align-items: center;
             gap: 6px;
         }
-
-        .workers-toggle-btn
-            z-index 10
-            position relative
-            top 10%
-            right 100vh
-            background #576671 !important
-            color white !important
             
         .workers-connection {
             display: inline-flex;

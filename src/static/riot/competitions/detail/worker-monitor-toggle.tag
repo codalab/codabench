@@ -139,12 +139,6 @@
                     </table>
                 </div>
             </div>
-
-            <div class="workers-footer">
-                <span class="footer-dot green"></span> Available
-                <span class="footer-dot yellow"></span> Busy
-                <span class="footer-dot red"></span> Unavailable
-            </div>
         </div>
     </div>
 
@@ -286,12 +280,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <div class="workers-footer">
-                <span class="footer-dot green"></span> Available
-                <span class="footer-dot yellow"></span> Busy
-                <span class="footer-dot red"></span> Unavailable
             </div>
         </div>
     </aside>
@@ -528,11 +516,6 @@
         $bg = #fff
         $bg-alt = #f8fafc
         $bg-stat = #f9fafb
-
-        .workers-toggle-btn
-            display inline-flex !important
-            align-items center
-            gap 6px
 
         .workers-panel
             position fixed
